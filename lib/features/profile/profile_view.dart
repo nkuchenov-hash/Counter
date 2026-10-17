@@ -5,10 +5,9 @@ import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/timezone_quick_picker.dart';
+import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_settings.dart';
-import 'package:counter/features/settings/voice/desktop_voice_settings_desktop.dart';
-import 'package:counter/features/settings/voice/desktop_voice_settings_section.dart';
 import 'package:counter/features/settings/timezone_settings.dart'
     as tz_settings;
 import 'package:counter/l10n/app_locales.dart';
@@ -33,12 +32,14 @@ class ProfilePage extends StatefulWidget {
     this.onSaved,
     this.onDesktopVoiceHotkeyChanged,
     this.onTestDesktopVoice,
+    this.onOpenViktor,
   });
 
   final VoidCallback? onSaved;
   final Future<bool> Function(DesktopVoiceHotkeyConfig config)?
   onDesktopVoiceHotkeyChanged;
   final VoidCallback? onTestDesktopVoice;
+  final VoidCallback? onOpenViktor;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -276,7 +277,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final tabLabels = {
       AppSettingsTab.account: t(locale, 'settings_tab_account'),
       AppSettingsTab.preferences: t(locale, 'settings_tab_preferences'),
-      AppSettingsTab.desktopVoice: t(locale, 'settings_tab_desktop_voice'),
+      AppSettingsTab.desktopVoice: 'Виктор · ИИ',
       AppSettingsTab.notifications: t(locale, 'settings_tab_notifications'),
       AppSettingsTab.appearance: t(locale, 'settings_tab_appearance'),
       AppSettingsTab.about: t(locale, 'settings_tab_about'),
@@ -311,8 +312,13 @@ class _ProfilePageState extends State<ProfilePage> {
             title: t(locale, 'profile_time_locale_section'),
             child: _buildTimeLocaleFields(context, locale, safeTimeZone),
           ),
-          AppSettingsTab.desktopVoice => DesktopVoiceSettingsDesktopGrid(
-            onHotkeyChanged: widget.onDesktopVoiceHotkeyChanged,
+          AppSettingsTab.desktopVoice => AppSettingsSectionCard(
+            title: 'Виктор · ИИ',
+            child: AppButton.primary(
+              label: 'Открыть Виктора',
+              icon: Icons.auto_awesome_rounded,
+              onPressed: widget.onOpenViktor,
+            ),
           ),
           AppSettingsTab.notifications => AppSettingsSectionCard(
             title: t(locale, 'profile_notifications_section'),
@@ -360,9 +366,13 @@ class _ProfilePageState extends State<ProfilePage> {
           subtitle: kIsWeb ? null : t(locale, 'profile_notifications_subtitle'),
           child: ProfileNotificationsSection(embedded: true),
         ),
-        DesktopVoiceSettingsSection(
-          onHotkeyChanged: widget.onDesktopVoiceHotkeyChanged,
-          onTestVoice: widget.onTestDesktopVoice,
+        AppSettingsSectionCard(
+          title: 'Виктор · ИИ',
+          child: AppButton.primary(
+            label: 'Открыть Виктора',
+            icon: Icons.auto_awesome_rounded,
+            onPressed: widget.onOpenViktor,
+          ),
         ),
         AppSettingsSectionCard(
           title: t(locale, 'appearance'),

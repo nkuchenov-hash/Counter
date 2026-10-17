@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `f6aca042` on 2026-10-02.**
+**Generated from input HEAD `a2d24274` on 2026-10-17.**
 
-The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). The 2026-10-16 incremental manifest adds the new Calendar group files and their test; the original SHA remains the baseline for other entries.
+The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 893 — each appears **exactly once** below.
+**Tracked files:** 901 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,24 +26,24 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 180 |
-| `test` | 118 |
-| `Brain/data` | 93 |
+| `production UI` | 179 |
+| `test` | 121 |
+| `Brain/data` | 97 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
 | `developer tool` | 63 |
 | `platform resource` | 44 |
-| `governing documentation` | 39 |
+| `governing documentation` | 40 |
 | `Desktop Voice runtime` | 36 |
-| `shared Voice system` | 22 |
 | `test fixture` | 22 |
+| `shared Voice system` | 20 |
+| `PocketBase backend` | 18 |
 | `PocketBase migration` | 18 |
 | `historical engineering record` | 17 |
-| `PocketBase backend` | 16 |
 | `localization` | 13 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
-| `CI/deployment` | 9 |
+| `CI/deployment` | 10 |
 | `shared time` | 7 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
@@ -57,10 +57,10 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 487 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 220 |
+| `PROVEN_REQUIRED` | 484 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 232 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
-| `GOVERNING_DOCUMENTATION` | 39 |
+| `GOVERNING_DOCUMENTATION` | 40 |
 | `HISTORICAL_RECORD` | 17 |
 | `GENERATED_CANONICAL_OUTPUT` | 1 |
 
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 816 |
-| `MEDIUM` | 75 |
+| `HIGH` | 818 |
+| `MEDIUM` | 83 |
 
 ---
 
@@ -111,6 +111,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/core/navigation/`](#folder-libcorenavigation)
 - [`lib/core/services/`](#folder-libcoreservices)
 - [`lib/core/widgets/`](#folder-libcorewidgets)
+- [`lib/data/ai/`](#folder-libdataai)
 - [`lib/data/cache/`](#folder-libdatacache)
 - [`lib/data/calendar_integrations/`](#folder-libdatacalendar_integrations)
 - [`lib/data/categories/`](#folder-libdatacategories)
@@ -136,6 +137,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/features/shared/`](#folder-libfeaturesshared)
 - [`lib/features/stats/`](#folder-libfeaturesstats)
 - [`lib/features/timeline/`](#folder-libfeaturestimeline)
+- [`lib/features/viktor/`](#folder-libfeaturesviktor)
 - [`lib/features/voice/`](#folder-libfeaturesvoice)
 - [`lib/features/wear/`](#folder-libfeatureswear)
 - [`lib/l10n/langs/`](#folder-libl10nlangs)
@@ -2062,6 +2064,30 @@ RU:
 
 ---
 
+## Folder: `lib/data/ai/`
+
+EN:
+
+- **What this folder is:** Dart source subtree `lib/data/ai/` — part of app code for data/ai.
+- **Why it exists:** Code under `lib/` ships in every platform build; this folder groups related Dart modules.
+- **What lives here:** Dart modules listed in file entries below.
+- **What part of the app it affects:** App behavior for the feature or layer named in the path.
+- **When to open it:** Bug or feature work in `data/ai`.
+- **Can it be deleted?** No — required for app runtime unless explicitly deprecated in ROADMAP.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
+
+RU:
+
+- **Что это за папка:** Каталог исходного Dart-кода `lib/data/ai/`, отвечающий за область `data/ai`.
+- **Зачем нужна:** Собирает рядом файлы одного владельца, чтобы UI, данные и общая инфраструктура не смешивали обязанности.
+- **Что здесь лежит:** Dart-файлы и дочерние каталоги этого владельца; каждый файл описан ниже.
+- **На что влияет в приложении:** Поведение приложения в области `data/ai` и связанные с ней потоки данных или интерфейс.
+- **Когда открывать:** Открывать при изменениях или ошибках в области `data/ai`.
+- **Можно удалить?** Нет — нужен для работы приложения unless explicitly deprecated in ROADMAP.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
+
+---
+
 ## Folder: `lib/data/cache/`
 
 EN:
@@ -2659,6 +2685,30 @@ RU:
 - **Когда открывать:** Records на неверном дне, now-line, swipe между днями, tap/edit record card.
 - **Можно удалить?** Нет — это часть исходного кода приложения, пока владелец присутствует в архитектуре.
 - **Связанные пути:** `lib/data/record_service.dart`, `ActivityDetailSheet`.
+
+---
+
+## Folder: `lib/features/viktor/`
+
+EN:
+
+- **What this folder is:** Dart source subtree `lib/features/viktor/` — part of app code for features/viktor.
+- **Why it exists:** Code under `lib/` ships in every platform build; this folder groups related Dart modules.
+- **What lives here:** Dart modules listed in file entries below.
+- **What part of the app it affects:** App behavior for the feature or layer named in the path.
+- **When to open it:** Bug or feature work in `features/viktor`.
+- **Can it be deleted?** No — required for app runtime unless explicitly deprecated in ROADMAP.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
+
+RU:
+
+- **Что это за папка:** Каталог исходного Dart-кода `lib/features/viktor/`, отвечающий за область `features/viktor`.
+- **Зачем нужна:** Собирает рядом файлы одного владельца, чтобы UI, данные и общая инфраструктура не смешивали обязанности.
+- **Что здесь лежит:** Dart-файлы и дочерние каталоги этого владельца; каждый файл описан ниже.
+- **На что влияет в приложении:** Поведение приложения в области `features/viktor` и связанные с ней потоки данных или интерфейс.
+- **Когда открывать:** Открывать при изменениях или ошибках в области `features/viktor`.
+- **Можно удалить?** Нет — нужен для работы приложения unless explicitly deprecated in ROADMAP.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
 
 ---
 
@@ -4810,6 +4860,43 @@ RU:
 - **Связано с:** `.github/`, Flutter tooling.
 
 
+### `.github/workflows/viktor-structure-regen.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/viktor-structure-regen.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/viktor-structure-regen.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/viktor-structure-regen.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/viktor-structure-regen.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `viktor-structure-regen.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `viktor-structure-regen.yml`.
+- **When to open:** When behavior tied to `viktor-structure-regen.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `viktor-structure-regen.yml` для CI и операций репозитория. GitHub Actions читает `viktor-structure-regen.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `viktor-structure-regen.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `viktor-structure-regen.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `viktor-structure-regen.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `viktor-structure-regen.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor-structure-regen.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
 ### `.github/workflows/windows-desktop-build.yml`
 
 EN:
@@ -6336,7 +6423,7 @@ EN:
 - **Why needed:** Quick answer to ‘where does X live?’ without reading the full encyclopedia.
 - **Contents:** Tables of `lib/data`, features, scripts; architecture guard entry points.
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `.cursor/rules/flutter_expert.mdc`, `.github/copilot-instructions.md`, `AGENTS.md`, `AGENT_NAVIGATION.md`.
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `.cursor/rules/flutter_expert.mdc`, `.github/copilot-instructions.md`, `.github/workflows/viktor-structure-regen.yml`, `AGENTS.md`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -6954,6 +7041,43 @@ RU:
 - **Когда открывать:** Перед изменением interaction flows, edit sheets или offline banner.
 - **Можно удалить?** Нет — governing документация.
 - **Связано с:** `docs/ARCHITECTURE.md`, offline bar в `app_shell.dart`, `docs/DESIGN_SYSTEM.md`.
+
+
+### `docs/VIKTOR_AI_ACTION_ENGINE.md`
+
+EN:
+
+- **Human purpose:** Markdown document `VIKTOR_AI_ACTION_ENGINE.md` in `docs` — repo tooling or config. Tracked because `docs` needs `VIKTOR_AI_ACTION_ENGINE.md` for build, CI, or maintenance.
+- **What this is:** Markdown document `VIKTOR_AI_ACTION_ENGINE.md` in `docs` — repo tooling or config.
+- **Why needed:** Tracked because `docs` needs `VIKTOR_AI_ACTION_ENGINE.md` for build, CI, or maintenance.
+- **Contents:** Open `VIKTOR_AI_ACTION_ENGINE.md` when working on `docs` (see folder section above).
+- **Repository role:** governing documentation
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `.github/workflows/viktor-structure-regen.yml`, `docs/ARCHITECTURE.md`.
+- **Necessity status:** GOVERNING_DOCUMENTATION
+- **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
+- **Confidence:** HIGH
+- **Owner / layer:** documentation
+- **Responsibilities:** Supports `docs` workflow for `VIKTOR_AI_ACTION_ENGINE.md`.
+- **When to open:** When build output or maintenance cites `VIKTOR_AI_ACTION_ENGINE.md`.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** Текстовая спецификация `VIKTOR_AI_ACTION_ENGINE.md` в разделе `docs`. Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Что это:** Текстовая спецификация `VIKTOR_AI_ACTION_ENGINE.md` в разделе `docs`.
+- **Зачем:** Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Содержимое:** Структурированный Markdown-текст по теме `VIKTOR_AI_ACTION_ENGINE.md` без runtime-логики приложения.
+- **Роль в репозитории:** governing documentation
+- **Доказательства использования:** Управляющая/операционная документация для людей и агентов (см. Project Knowledge / AGENTS).
+- **Статус необходимости:** GOVERNING_DOCUMENTATION
+- **Что будет, если удалить:** Пропадёт архитектурное/операционное правило.
+- **Уверенность:** HIGH
+- **Владелец / слой:** документация
+- **Обязанности:** Хранит актуальную документацию по назначению `VIKTOR_AI_ACTION_ENGINE.md`.
+- **Когда открывать:** When результат сборки or maintenance cites `VIKTOR_AI_ACTION_ENGINE.md`.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`.
 
 
 ### `docs/releases/2026-09-06-people.md`
@@ -11154,44 +11278,6 @@ RU:
 - **Связано с:** Все main tabs, `app_shell.dart`
 
 
-### `lib/app/shell/shared/shell_voice_input.dart`
-
-EN:
-
-- **Human purpose:** App shell wiring — Generic FAB / VoiceInputSheet routing. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What this is:** App shell wiring — Generic FAB / VoiceInputSheet routing.
-- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **Contents:** Shell mixin or widget (`ShellVoiceInput`).
-- **Key code names:** `ShellVoiceInput`
-- **Repository role:** production UI
-- **Evidence of use:** Included by `lib/app/shell/app_shell.dart` through a `part` directive (not imported directly).
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
-- **Confidence:** HIGH
-- **Owner / layer:** app shell
-- **Responsibilities:** Generic FAB / VoiceInputSheet routing
-- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
-- **Can it be deleted?** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Generic FAB / VoiceInputSheet routing
-
-RU:
-
-- **Зачем файл человеку:** Оболочка приложения (shell) — Generic FAB / VoiceInputSheet routing. Связывает вкладки, voice, edit sheets и offline banner.
-- **Что это:** Оболочка приложения (shell) — Generic FAB / VoiceInputSheet routing.
-- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
-- **Содержимое:** Shell mixin или виджет (logic in `shell_voice_input`).
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Подключён из `lib/app/shell/app_shell.dart` через `part` (не импортируется напрямую).
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Сломается компиляция `lib/app/shell/app_shell.dart` и связанные экраны/данные.
-- **Уверенность:** HIGH
-- **Владелец / слой:** оболочка приложения
-- **Обязанности:** Реализует в shell: Generic FAB / VoiceInputSheet routing.
-- **Когда открывать:** Навигация, voice, edit host.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Все main tabs, `app_shell.dart`
-
-
 ### `lib/app/shell/shared/shell_voice_integration.dart`
 
 EN:
@@ -11354,7 +11440,7 @@ EN:
 - **Contents:** `AppColors` constants; `lightColorScheme()` / `darkColorScheme()` factories.
 - **Key code names:** `AppColors`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/life_card.dart`, `lib/features/calendar/calendar_month_grid.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/life_card.dart`, `lib/features/timeline/timeline_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -11371,7 +11457,7 @@ RU:
 - **Зачем:** Смена `actionPrimary` перекрашивает кнопки, tabs и nav chrome во всём приложении.
 - **Содержимое:** Константы `AppColors`; фабрики `lightColorScheme()` / `darkColorScheme()`.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/life_card.dart`, `lib/features/calendar/calendar_month_grid.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/life_card.dart`, `lib/features/timeline/timeline_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -11467,7 +11553,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `category_color_palette.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/create_category_dialog.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -11484,7 +11570,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `category_color_palette.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/create_category_dialog.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12216,7 +12302,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppIconButtonVariant`, `AppIconButtonSize`, `AppIconButton`).
 - **Key code names:** `AppIconButtonVariant`, `AppIconButtonSize`, `AppIconButton`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/dev/component_lab_view.dart`, `lib/features/notes/drawing_canvas_page.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`, `lib/features/paths/paths_page.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_chrome_header.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/notes/drawing_canvas_page.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12233,7 +12319,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_icon_button`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/dev/component_lab_view.dart`, `lib/features/notes/drawing_canvas_page.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`, `lib/features/paths/paths_page.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_chrome_header.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/notes/drawing_canvas_page.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12362,21 +12448,37 @@ RU:
 
 EN:
 
-- **Human purpose:** Canonical shared LIFE OS text-field input.
-- **What this is:** Design-system Flutter text input widget.
-- **Why needed:** Shared input behavior and consistent UI.
+- **Human purpose:** Shared design-system widget — Canonical app text-field input component. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — Canonical app text-field input component.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **Contents:** Canonical Flutter widget (`AppTextFieldSurface`, `AppTextField`).
+- **Key code names:** `AppTextFieldSurface`, `AppTextField`
 - **Repository role:** shared foundation
-- **Evidence of use:** Tracked widget in `lib/core/widgets/`.
-- **Necessity status:** REQUIRED
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/notes/notes_glm_surface.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
 - **Owner / layer:** shared design system
-- **Connected to:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
+- **Responsibilities:** Canonical app text-field input component
+- **When to open:** When behavior tied to `app_text_field.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Canonical app text-field input component
 
 RU:
 
-- **Зачем файл человеку:** Канонический компонент текстового поля LIFE OS.
-- **Что это:** Общий Flutter-виджет ввода design system.
-- **Зачем:** Единое поведение и стиль текстового ввода.
+- **Зачем файл человеку:** Общий виджет design system — Canonical app text-field input component. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — Canonical app text-field input component.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Содержимое:** Канонический Flutter-виджет (logic in `app_text_field`).
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/notes/notes_glm_surface.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
 - **Владелец / слой:** общий design system
+- **Обязанности:** Реализует в UI: Canonical app text-field input component.
+- **Когда открывать:** Когда ломается поведение, связанное с `app_text_field.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
 
 
@@ -12463,8 +12565,8 @@ EN:
 - **Human purpose:** Shared design-system widget — Compact segmented controls. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **What this is:** Shared design-system widget — Compact segmented controls.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **Contents:** Canonical Flutter widget (`AppCompactSegmentLabel`, `AppCompactTextTab`, `AppDesktopSectionControlRow`, `AppLibraryInput`, `_AppLibraryInputState`, `AppQuickEntryRow`).
-- **Key code names:** `AppCompactSegmentLabel`, `AppCompactTextTab`, `AppDesktopSectionControlRow`, `AppLibraryInput`, `_AppLibraryInputState`, `AppQuickEntryRow`
+- **Contents:** Canonical Flutter widget (`AppCompactSegmentLabel`, `AppCompactTextTab`, `AppDesktopSectionControlRow`, `AppQuickEntryRow`).
+- **Key code names:** `AppCompactSegmentLabel`, `AppCompactTextTab`, `AppDesktopSectionControlRow`, `AppQuickEntryRow`
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -12843,7 +12945,7 @@ EN:
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (logic in `plan_time_task_card`).
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_card.dart`, `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/planning/plan_time_view_layout.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_card.dart`, `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/calendar/calendar_task_group_sheet.dart`, `lib/features/dev/component_lab_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12860,7 +12962,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `plan_time_task_card`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_card.dart`, `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/planning/plan_time_view_layout.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_card.dart`, `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/calendar/calendar_task_group_sheet.dart`, `lib/features/dev/component_lab_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -13325,6 +13427,158 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `timezone_quick_picker.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/data/ai/viktor_action_contract.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — Strict allowlist and schema validation for suggested Viktor actions (no writes). Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Strict allowlist and schema validation for suggested Viktor actions (no writes).
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`ViktorAction`, `ViktorActionBatch`).
+- **Key code names:** `ViktorAction`, `ViktorActionBatch`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_schedule_planner.dart`, `lib/features/viktor/viktor_chat_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** Strict allowlist and schema validation for suggested Viktor actions (no writes)
+- **When to open:** When behavior tied to `viktor_action_contract.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Strict allowlist and schema validation for suggested Viktor actions (no writes)
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — viktor_action_contract. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — viktor_action_contract.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `viktor_action_contract`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_schedule_planner.dart`, `lib/features/viktor/viktor_chat_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `viktor_action_contract`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_action_contract.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/ai/viktor_executor.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — Brain-owned authenticated action execution and reviewed schedule diffs. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Brain-owned authenticated action execution and reviewed schedule diffs.
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`ViktorExecutor`).
+- **Key code names:** `ViktorExecutor`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/viktor/viktor_chat_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** Brain-owned authenticated action execution and reviewed schedule diffs
+- **When to open:** When behavior tied to `viktor_executor.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Brain-owned authenticated action execution and reviewed schedule diffs
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — viktor_executor. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — viktor_executor.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `viktor_executor`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/features/viktor/viktor_chat_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `viktor_executor`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_executor.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/ai/viktor_gateway.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — Server-side provider proposal client and transient BYOK model selection. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Server-side provider proposal client and transient BYOK model selection.
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`ViktorModelSettings`, `ViktorResponse`, `ViktorGateway`).
+- **Key code names:** `ViktorModelSettings`, `ViktorResponse`, `ViktorGateway`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/viktor/viktor_chat_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** Server-side provider proposal client and transient BYOK model selection
+- **When to open:** When behavior tied to `viktor_gateway.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Server-side provider proposal client and transient BYOK model selection
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — viktor_gateway. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — viktor_gateway.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `viktor_gateway`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/features/viktor/viktor_chat_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `viktor_gateway`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_gateway.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/ai/viktor_schedule_planner.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — Pure preview of requested relative order/durations and fixed-time collision guards. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Pure preview of requested relative order/durations and fixed-time collision guards.
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`ViktorSchedulePreview`, `ViktorSchedulePlanner`).
+- **Key code names:** `ViktorSchedulePreview`, `ViktorSchedulePlanner`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** Pure preview of requested relative order/durations and fixed-time collision guards
+- **When to open:** When behavior tied to `viktor_schedule_planner.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Pure preview of requested relative order/durations and fixed-time collision guards
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — viktor_schedule_planner. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — viktor_schedule_planner.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `viktor_schedule_planner`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `viktor_schedule_planner`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_schedule_planner.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
 
 
 ### `lib/data/auth_bridge.dart`
@@ -13906,7 +14160,7 @@ EN:
 - **Contents:** Shared streams, caches, and `part` declarations for records, plans, categories, profile.
 - **Key code names:** `_BuildNode`, `_OptimisticEndPatch`, `LegacyIdResolutionException`, `AuthenticatedUserIdRequiredException`, `AiBackendException`, `_DatabaseServiceLifecycleObserver`, `_HighlanderRollbackToken`, `DatabaseService`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/auth_bridge.dart`, `lib/data/calendar_integrations/calendar_integration_service.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13923,7 +14177,7 @@ RU:
 - **Зачем:** Один singleton держит правила PocketBase для всех вкладок.
 - **Содержимое:** Потоки, кэш, объявления `part` для records/plans/categories/profile.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/auth_bridge.dart`, `lib/data/calendar_integrations/calendar_integration_service.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -14238,46 +14492,6 @@ RU:
 - **Связано с:** UI вызывает `DatabaseService.instance`; Offline banner в shell, flush при reconnect
 
 
-### `lib/data/local_sync/web_record_journal.dart`
-
-EN:
-
-- **Human purpose:** Saves Timeline recordings reliably in the browser even when localStorage is full.
-- **What this is:** IndexedDB transaction-backed record queue and draft store for Flutter Web.
-- **Why needed:** The durable capture journal must not share the smaller localStorage capacity used by settings and cache.
-- **Contents:** `WebRecordJournal` opens, reads and atomically updates queued mutation payloads, migration marker and recovery drafts.
-- **Key code names:** `WebRecordJournal`
-- **Repository role:** Brain/data
-- **Evidence of use:** Imported by `record_mutation_outbox.dart` and `app_shell.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Web capture queue and draft code will not compile.
-- **Confidence:** HIGH
-- **Owner / layer:** Brain/data
-- **Responsibilities:** Transactional IndexedDB persistence and migration safety.
-- **When to open:** Missing new records, full browser settings storage or duplicate retries.
-- **Can it be deleted?** No.
-- **Connected to:** `lib/data/local_sync/record_mutation_outbox.dart`, `lib/app/shell/shared/shell_core.dart`.
-
-RU:
-
-- **Зачем файл человеку:** Записи должны сохраняться локально при сетевых сбоях и заполненном хранилище настроек.
-- **Что это:** Транзакционная очередь IndexedDB для браузера.
-- **Зачем:** Не допустить потери новых записей и старой очереди при миграции.
-- **Содержимое:** `WebRecordJournal`, восстановление черновиков, запись очереди.
-- **Ключевые имена:** `WebRecordJournal`
-- **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импорт в production-модулях.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Последствие удаления:** Сборка перестанет проходить.
-- **Достоверность:** HIGH
-- **Слой:** Brain/data
-- **Ответственность:** IndexedDB для офлайн-записей.
-- **Когда открывать:** Ошибка сохранения новых записей в веб-версии.
-- **Можно удалить?** Нет.
-- **Связано с:** `record_mutation_outbox.dart` и `shell_core.dart`.
-
----
-
 ### `lib/data/local_sync/sync_manager.dart`
 
 EN:
@@ -14312,6 +14526,44 @@ RU:
 - **Владелец / слой:** Brain/data
 - **Обязанности:** Реализует назначение `sync_manager.dart` для области `lib/data/local_sync`.
 - **Когда открывать:** Когда ломается поведение, связанное с `sync_manager.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`; Offline banner в shell, flush при reconnect
+
+
+### `lib/data/local_sync/web_record_journal.dart`
+
+EN:
+
+- **Human purpose:** Focused brain module for offline sync: browser indexeddb record mutation journal + recovery drafts. Maintains offline sync consistency between PocketBase and the UI cache.
+- **What this is:** Focused brain module for offline sync: browser indexeddb record mutation journal + recovery drafts.
+- **Why needed:** Maintains offline sync consistency between PocketBase and the UI cache.
+- **Contents:** Dart helpers and extensions (`WebRecordJournal`).
+- **Key code names:** `WebRecordJournal`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/data/local_sync/record_mutation_outbox.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** Browser IndexedDB record mutation journal + recovery drafts
+- **When to open:** When behavior tied to `web_record_journal.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; Offline banner in shell, reconnect flush; APP_STRUCTURE role: Browser IndexedDB record mutation journal + recovery drafts
+
+RU:
+
+- **Зачем файл человеку:** Сфокусированный модуль данных для offline sync — файл `web_record_journal`. Держит offline sync согласованным с PocketBase и экранами.
+- **Что это:** Сфокусированный модуль данных для offline sync — файл `web_record_journal`.
+- **Зачем:** Держит offline sync согласованным с PocketBase и экранами.
+- **Содержимое:** Dart-код (`WebRecordJournal`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/data/local_sync/record_mutation_outbox.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Реализует назначение `web_record_journal.dart` для области `lib/data/local_sync`.
+- **Когда открывать:** Когда ломается поведение, связанное с `web_record_journal.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`; Offline banner в shell, flush при reconnect
 
@@ -14857,7 +15109,7 @@ EN:
 - **Contents:** Dart helpers and types (`PbAppApiRoutes`, `PbCollections`, `PbOauthProviderNames`).
 - **Key code names:** `PbAppApiRoutes`, `PbCollections`, `PbOauthProviderNames`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/auth_bridge.dart`, `lib/data/calendar_integrations/calendar_integration_service.dart`, `lib/data/database_service.dart`, `lib/data/health/cloud_sleep_sync_service.dart`, `lib/data/people/people_integration_service.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_gateway.dart`, `lib/data/auth_bridge.dart`, `lib/data/calendar_integrations/calendar_integration_service.dart`, `lib/data/database_service.dart`, `lib/data/health/cloud_sleep_sync_service.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14874,7 +15126,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `pb_config`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/auth_bridge.dart`, `lib/data/calendar_integrations/calendar_integration_service.dart`, `lib/data/database_service.dart`, `lib/data/health/cloud_sleep_sync_service.dart`, `lib/data/people/people_integration_service.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_gateway.dart`, `lib/data/auth_bridge.dart`, `lib/data/calendar_integrations/calendar_integration_service.dart`, `lib/data/database_service.dart`, `lib/data/health/cloud_sleep_sync_service.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -15085,7 +15337,7 @@ EN:
 - **Contents:** Dart helpers and types (`PlanTimeSequentialCascadePatch`, `TimeViewTargetDropSchedule`, `TimeViewInsertPosition`, `TimeViewInsertionSource`, `TimeViewInsertionIntent`).
 - **Key code names:** `PlanTimeSequentialCascadePatch`, `TimeViewTargetDropSchedule`, `TimeViewInsertPosition`, `TimeViewInsertionSource`, `TimeViewInsertionIntent`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_drop_preview.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/calendar/calendar_drag_and_reschedule.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -15102,7 +15354,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `plan_time_sequential_cascade`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_drop_preview.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/calendar/calendar_drag_and_reschedule.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -16639,7 +16891,7 @@ EN:
 - **Contents:** Dart helpers and types (`RecurrenceEditScope`).
 - **Key code names:** `RecurrenceEditScope`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/planning/recurrence_scope_dialog.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/planning/recurrence_scope_dialog.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -16656,7 +16908,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `recurrence_edit_scope`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/planning/recurrence_scope_dialog.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/planning/recurrence_scope_dialog.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -16715,7 +16967,7 @@ EN:
 - **Contents:** Dart helpers and types (`TimeViewFixedTagPrefs`).
 - **Key code names:** `TimeViewFixedTagPrefs`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_drag_and_reschedule.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -16732,7 +16984,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `time_view_fixed_time_policy`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/calendar/calendar_drag_and_reschedule.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -17427,21 +17679,21 @@ RU:
 
 EN:
 
-- **Human purpose:** `calendar_chrome_header.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel. Users see `calendar_chrome_header.dart` when using Calendar tab.
-- **What this is:** `calendar_chrome_header.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel.
+- **Human purpose:** `calendar_chrome_header.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date. Users see `calendar_chrome_header.dart` when using Calendar tab.
+- **What this is:** `calendar_chrome_header.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date.
 - **Why needed:** Users see `calendar_chrome_header.dart` when using Calendar tab.
-- **Contents:** Primary symbols: `_CalendarChromeView`, `CalendarChromeHeader`.
-- **Key code names:** `_CalendarChromeView`, `CalendarChromeHeader`
+- **Contents:** Primary symbols: `CalendarChromeHeader`, `_CalendarChromeHeaderState`.
+- **Key code names:** `CalendarChromeHeader`, `_CalendarChromeHeaderState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Calendar UI
-- **Responsibilities:** Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Responsibilities:** Calendar tab: click-to-create date/time, separate from global header date
 - **When to open:** When behavior tied to `calendar_chrome_header.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Connected to:** APP_STRUCTURE role: Calendar tab: click-to-create date/time, separate from global header date
 
 RU:
 
@@ -17461,50 +17713,12 @@ RU:
 - **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
 
 
-### `lib/features/calendar/calendar_drag_and_reschedule.dart`
-
-EN:
-
-- **Human purpose:** Provides draggable plan handles, guarded drop validation, rigid group schedule shifts and persisted Planning batch updates.
-- **What this is:** Provides draggable plan handles, guarded drop validation, rigid group schedule shifts and persisted Planning batch updates.
-- **Why needed:** Enables reliable, interactive Calendar plan scheduling without changing Timeline state.
-- **Contents:** Flutter/Dart code and tests dedicated to Calendar UX behavior.
-- **Repository role:** production UI
-- **Evidence of use:** Imported by Month, Week and Calendar views; uses existing Brain and Time View fixed-time contracts.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Missing Calendar behavior or missing regression protection.
-- **Confidence:** HIGH
-- **Owner / layer:** Calendar UI
-- **Responsibilities:** Provides draggable plan handles, guarded drop validation, rigid group schedule shifts and persisted Planning batch updates.
-- **When to open:** Calendar adjacent-month, drag/drop or time label regressions.
-- **Can it be deleted?** No — required for Calendar UX and verification.
-- **Connected to:** Imported by Month, Week and Calendar views; uses existing Brain and Time View fixed-time contracts.
-
-RU:
-
-- **Зачем файл человеку:** Provides draggable plan handles, guarded drop validation, rigid group schedule shifts and persisted Planning batch updates.
-- **Что это:** Часть поведения календаря LIFE OS.
-- **Зачем:** Чтобы даты, время планов и переносы работали предсказуемо.
-- **Содержимое:** Dart-логика и связанные проверки.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Imported by Month, Week and Calendar views; uses existing Brain and Time View fixed-time contracts.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Пропадёт поведение календаря или его регрессионная проверка.
-- **Уверенность:** HIGH
-- **Владелец / слой:** UI календаря
-- **Обязанности:** Provides draggable plan handles, guarded drop validation, rigid group schedule shifts and persisted Planning batch updates.
-- **Когда открывать:** При ошибках планирования или переноса в календаре.
-- **Можно удалить?** Нет.
-- **Связано с:** Imported by Month, Week and Calendar views; uses existing Brain and Time View fixed-time contracts.
-
----
-
 ### `lib/features/calendar/calendar_day_events.dart`
 
 EN:
 
-- **Human purpose:** `calendar_day_events.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel. Users see `calendar_day_events.dart` when using Calendar tab.
-- **What this is:** `calendar_day_events.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel.
+- **Human purpose:** `calendar_day_events.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date. Users see `calendar_day_events.dart` when using Calendar tab.
+- **What this is:** `calendar_day_events.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date.
 - **Why needed:** Users see `calendar_day_events.dart` when using Calendar tab.
 - **Contents:** Primary symbols: `CalendarDayEventList`, `CalendarEventPill`.
 - **Key code names:** `CalendarDayEventList`, `CalendarEventPill`
@@ -17514,10 +17728,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Calendar UI
-- **Responsibilities:** Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Responsibilities:** Calendar tab: click-to-create date/time, separate from global header date
 - **When to open:** When behavior tied to `calendar_day_events.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Connected to:** APP_STRUCTURE role: Calendar tab: click-to-create date/time, separate from global header date
 
 RU:
 
@@ -17541,8 +17755,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `calendar_day_panel.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel. Users see `calendar_day_panel.dart` when using Calendar tab.
-- **What this is:** `calendar_day_panel.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel.
+- **Human purpose:** `calendar_day_panel.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date. Users see `calendar_day_panel.dart` when using Calendar tab.
+- **What this is:** `calendar_day_panel.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date.
 - **Why needed:** Users see `calendar_day_panel.dart` when using Calendar tab.
 - **Contents:** Primary symbols: `CalendarSelectedDayTaskPanel`, `_CalendarDayQuickAdd`, `_CalendarDayQuickAddState`.
 - **Key code names:** `CalendarSelectedDayTaskPanel`, `_CalendarDayQuickAdd`, `_CalendarDayQuickAddState`
@@ -17552,10 +17766,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Calendar UI
-- **Responsibilities:** Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Responsibilities:** Calendar tab: click-to-create date/time, separate from global header date
 - **When to open:** When behavior tied to `calendar_day_panel.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Connected to:** APP_STRUCTURE role: Calendar tab: click-to-create date/time, separate from global header date
 
 RU:
 
@@ -17575,12 +17789,50 @@ RU:
 - **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
 
 
+### `lib/features/calendar/calendar_drag_and_reschedule.dart`
+
+EN:
+
+- **Human purpose:** `calendar_drag_and_reschedule.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date. Users see `calendar_drag_and_reschedule.dart` when using Calendar tab.
+- **What this is:** `calendar_drag_and_reschedule.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date.
+- **Why needed:** Users see `calendar_drag_and_reschedule.dart` when using Calendar tab.
+- **Contents:** Primary symbols: `CalendarDragPayload`, `CalendarPlanDraggable`.
+- **Key code names:** `CalendarDragPayload`, `CalendarPlanDraggable`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_day_events.dart`, `lib/features/calendar/calendar_month_grid.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/calendar/calendar_week_grid.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Calendar UI
+- **Responsibilities:** Calendar tab: click-to-create date/time, separate from global header date
+- **When to open:** When behavior tied to `calendar_drag_and_reschedule.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Calendar tab: click-to-create date/time, separate from global header date
+
+RU:
+
+- **Зачем файл человеку:** `calendar_drag_and_reschedule.dart` на вкладка Calendar — Поддерживает поведение `calendar_drag_and_reschedule` в этой feature-зоне.. Пользователь видит UI из `calendar_drag_and_reschedule.dart` на вкладка Calendar.
+- **Что это:** `calendar_drag_and_reschedule.dart` на вкладка Calendar — Поддерживает поведение `calendar_drag_and_reschedule` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `calendar_drag_and_reschedule.dart` на вкладка Calendar.
+- **Содержимое:** Dart-модуль `calendar_drag_and_reschedule.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/calendar/calendar_day_events.dart`, `lib/features/calendar/calendar_month_grid.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/calendar/calendar_week_grid.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI календаря
+- **Обязанности:** Поддерживает поведение `calendar_drag_and_reschedule` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `calendar_drag_and_reschedule.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/features/calendar/calendar_helpers.dart`
 
 EN:
 
-- **Human purpose:** `calendar_helpers.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel. Users see `calendar_helpers.dart` when using Calendar tab.
-- **What this is:** `calendar_helpers.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel.
+- **Human purpose:** `calendar_helpers.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date. Users see `calendar_helpers.dart` when using Calendar tab.
+- **What this is:** `calendar_helpers.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date.
 - **Why needed:** Users see `calendar_helpers.dart` when using Calendar tab.
 - **Contents:** Primary symbols: `CalendarViewMode`.
 - **Key code names:** `CalendarViewMode`
@@ -17590,10 +17842,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Calendar UI
-- **Responsibilities:** Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Responsibilities:** Calendar tab: click-to-create date/time, separate from global header date
 - **When to open:** When behavior tied to `calendar_helpers.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Connected to:** APP_STRUCTURE role: Calendar tab: click-to-create date/time, separate from global header date
 
 RU:
 
@@ -17617,8 +17869,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `calendar_month_grid.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel. Users see `calendar_month_grid.dart` when using Calendar tab.
-- **What this is:** `calendar_month_grid.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel.
+- **Human purpose:** `calendar_month_grid.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date. Users see `calendar_month_grid.dart` when using Calendar tab.
+- **What this is:** `calendar_month_grid.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date.
 - **Why needed:** Users see `calendar_month_grid.dart` when using Calendar tab.
 - **Contents:** Primary symbols: `CalendarMonthGrid`, `CalendarMonthDayCell`, `_CalendarDayNumberBadge`.
 - **Key code names:** `CalendarMonthGrid`, `CalendarMonthDayCell`, `_CalendarDayNumberBadge`
@@ -17628,10 +17880,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Calendar UI
-- **Responsibilities:** Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Responsibilities:** Calendar tab: click-to-create date/time, separate from global header date
 - **When to open:** When behavior tied to `calendar_month_grid.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Connected to:** APP_STRUCTURE role: Calendar tab: click-to-create date/time, separate from global header date
 
 RU:
 
@@ -17655,46 +17907,46 @@ RU:
 
 EN:
 
-- **Human purpose:** Expanded category-group view with full interactive LIFE OS plan cards.
-- **What this is:** Expanded category-group view with full interactive LIFE OS plan cards.
-- **Why needed:** Expanded category-group view with full interactive LIFE OS plan cards.
-- **Contents:** Calendar plan grouping and interaction helpers.
+- **Human purpose:** `calendar_task_group_sheet.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date. Users see `calendar_task_group_sheet.dart` when using Calendar tab.
+- **What this is:** `calendar_task_group_sheet.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date.
+- **Why needed:** Users see `calendar_task_group_sheet.dart` when using Calendar tab.
+- **Contents:** Primary symbols: `CalendarTaskGroupSheet`, `_CalendarTaskGroupSheetState`.
+- **Key code names:** `CalendarTaskGroupSheet`, `_CalendarTaskGroupSheetState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported by production `lib/features/calendar/calendar_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** grouped calendar tasks lose editing, completion and play controls.
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Calendar UI
-- **Responsibilities:** Expanded category-group view with full interactive LIFE OS plan cards.
-- **When to open:** Calendar cell interactions, week grouping, or group detail regressions.
-- **Can it be deleted?** No — grouped calendar tasks lose editing, completion and play controls.
-- **Connected to:** Imported by production `lib/features/calendar/calendar_view.dart`.
+- **Responsibilities:** Calendar tab: click-to-create date/time, separate from global header date
+- **When to open:** When behavior tied to `calendar_task_group_sheet.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Calendar tab: click-to-create date/time, separate from global header date
 
 RU:
 
-- **Зачем файл человеку:** Expanded category-group view with full interactive LIFE OS plan cards.
-- **Что это:** Expanded category-group view with full interactive LIFE OS plan cards.
-- **Зачем:** Доступная и корректная работа календаря LIFE OS.
-- **Содержимое:** Flutter/Dart реализации группировки планов и взаимодействий.
+- **Зачем файл человеку:** `calendar_task_group_sheet.dart` на вкладка Calendar — Пользователь открывает sheet/dialog из entry `calendar_task_group_sheet`.. Пользователь видит UI из `calendar_task_group_sheet.dart` на вкладка Calendar.
+- **Что это:** `calendar_task_group_sheet.dart` на вкладка Calendar — Пользователь открывает sheet/dialog из entry `calendar_task_group_sheet`..
+- **Зачем:** Пользователь видит UI из `calendar_task_group_sheet.dart` на вкладка Calendar.
+- **Содержимое:** Основные символы: `CalendarTaskGroupSheet`, `_CalendarTaskGroupSheetState`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Imported by production `lib/features/calendar/calendar_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/calendar/calendar_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** grouped calendar tasks lose editing, completion and play controls.
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
-- **Владелец / слой:** Calendar UI
-- **Обязанности:** Expanded category-group view with full interactive LIFE OS plan cards.
-- **Когда открывать:** При проблемах с сеткой календаря или карточками планов.
-- **Можно удалить?** Нет — grouped calendar tasks lose editing, completion and play controls.
-- **Связано с:** Imported by production `lib/features/calendar/calendar_view.dart`.
+- **Владелец / слой:** UI календаря
+- **Обязанности:** Пользователь открывает sheet/dialog из entry `calendar_task_group_sheet`.
+- **Когда открывать:** Когда ломается поведение, связанное с `calendar_task_group_sheet.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
 
----
 
 ### `lib/features/calendar/calendar_view.dart`
 
 EN:
 
-- **Human purpose:** `calendar_view.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel. Users see `calendar_view.dart` when using Calendar tab.
-- **What this is:** `calendar_view.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel.
+- **Human purpose:** `calendar_view.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date. Users see `calendar_view.dart` when using Calendar tab.
+- **What this is:** `calendar_view.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date.
 - **Why needed:** Users see `calendar_view.dart` when using Calendar tab.
 - **Contents:** Primary symbols: `CalendarView`, `_CalendarViewState`.
 - **Key code names:** `CalendarView`, `_CalendarViewState`
@@ -17704,10 +17956,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Calendar UI
-- **Responsibilities:** Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Responsibilities:** Calendar tab: click-to-create date/time, separate from global header date
 - **When to open:** When behavior tied to `calendar_view.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Connected to:** APP_STRUCTURE role: Calendar tab: click-to-create date/time, separate from global header date
 
 RU:
 
@@ -17727,101 +17979,25 @@ RU:
 - **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
 
 
-### `lib/features/calendar/calendar_week_timeview_drag.dart`
-
-EN:
-
-- **Human purpose:** Wraps Calendar Week cards in the canonical TimelinePlanInteractionBlock and controls floating preview / pointer lifecycle.
-- **What this is:** Wraps Calendar Week cards in the canonical TimelinePlanInteractionBlock and controls floating preview / pointer lifecycle.
-- **Why needed:** Gives Calendar the same reliable drag gestures and scheduling semantics as Time View.
-- **Contents:** Focused Flutter/Dart code and its regression test.
-- **Repository role:** production UI
-- **Evidence of use:** Imported by `lib/features/calendar/calendar_week_grid.dart`; composes Time View interaction block.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Calendar drag/drop stops sharing Time View gestures or loses regression protection.
-- **Confidence:** HIGH
-- **Owner / layer:** Calendar UI
-- **Responsibilities:** Wraps Calendar Week cards in the canonical TimelinePlanInteractionBlock and controls floating preview / pointer lifecycle.
-- **When to open:** Calendar Week pointer, drag preview, snapping, or scheduler regressions.
-- **Can it be deleted?** No — required for the shared interaction contract.
-- **Connected to:** Imported by `lib/features/calendar/calendar_week_grid.dart`; composes Time View interaction block.
-
-RU:
-
-- **Зачем файл человеку:** Wraps Calendar Week cards in the canonical TimelinePlanInteractionBlock and controls floating preview / pointer lifecycle.
-- **Что это:** Модуль единого поведения перетаскивания календаря и Time View.
-- **Зачем:** Надёжное перемещение планов без смены даты шапки или перехвата прокруткой.
-- **Содержимое:** Flutter/Dart реализация и тест.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Imported by `lib/features/calendar/calendar_week_grid.dart`; composes Time View interaction block.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Пропадёт общий механизм жестов или его тестовая защита.
-- **Уверенность:** HIGH
-- **Владелец / слой:** UI календаря
-- **Обязанности:** Wraps Calendar Week cards in the canonical TimelinePlanInteractionBlock and controls floating preview / pointer lifecycle.
-- **Когда открывать:** При ошибках drag-and-drop календаря.
-- **Можно удалить?** Нет.
-- **Связано с:** Imported by `lib/features/calendar/calendar_week_grid.dart`; composes Time View interaction block.
-
----
-
-### `lib/features/calendar/calendar_week_grouping.dart`
-
-EN:
-
-- **Human purpose:** Pure contiguous category grouping and overlap-safe lane allocation for the Week grid.
-- **What this is:** Pure contiguous category grouping and overlap-safe lane allocation for the Week grid.
-- **Why needed:** Pure contiguous category grouping and overlap-safe lane allocation for the Week grid.
-- **Contents:** Calendar plan grouping and interaction helpers.
-- **Repository role:** production UI
-- **Evidence of use:** Imported by production `lib/features/calendar/calendar_week_grid.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** dense week blocks overlap and cannot be grouped.
-- **Confidence:** HIGH
-- **Owner / layer:** Calendar UI
-- **Responsibilities:** Pure contiguous category grouping and overlap-safe lane allocation for the Week grid.
-- **When to open:** Calendar cell interactions, week grouping, or group detail regressions.
-- **Can it be deleted?** No — dense week blocks overlap and cannot be grouped.
-- **Connected to:** Imported by production `lib/features/calendar/calendar_week_grid.dart`.
-
-RU:
-
-- **Зачем файл человеку:** Pure contiguous category grouping and overlap-safe lane allocation for the Week grid.
-- **Что это:** Pure contiguous category grouping and overlap-safe lane allocation for the Week grid.
-- **Зачем:** Доступная и корректная работа календаря LIFE OS.
-- **Содержимое:** Flutter/Dart реализации группировки планов и взаимодействий.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Imported by production `lib/features/calendar/calendar_week_grid.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** dense week blocks overlap and cannot be grouped.
-- **Уверенность:** HIGH
-- **Владелец / слой:** Calendar UI
-- **Обязанности:** Pure contiguous category grouping and overlap-safe lane allocation for the Week grid.
-- **Когда открывать:** При проблемах с сеткой календаря или карточками планов.
-- **Можно удалить?** Нет — dense week blocks overlap and cannot be grouped.
-- **Связано с:** Imported by production `lib/features/calendar/calendar_week_grid.dart`.
-
----
-
 ### `lib/features/calendar/calendar_week_grid.dart`
 
 EN:
 
-- **Human purpose:** `calendar_week_grid.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel. Users see `calendar_week_grid.dart` when using Calendar tab.
-- **What this is:** `calendar_week_grid.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel.
+- **Human purpose:** `calendar_week_grid.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date. Users see `calendar_week_grid.dart` when using Calendar tab.
+- **What this is:** `calendar_week_grid.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date.
 - **Why needed:** Users see `calendar_week_grid.dart` when using Calendar tab.
-- **Contents:** Primary symbols: `CalendarWeekPlannerGrid`, `CalendarWeekCompactStrip`.
-- **Key code names:** `CalendarWeekPlannerGrid`, `CalendarWeekCompactStrip`
+- **Contents:** Primary symbols: `CalendarWeekPlannerGrid`, `_CalendarWeekPlannerGridState`.
+- **Key code names:** `CalendarWeekPlannerGrid`, `_CalendarWeekPlannerGridState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Calendar UI
-- **Responsibilities:** Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Responsibilities:** Calendar tab: click-to-create date/time, separate from global header date
 - **When to open:** When behavior tied to `calendar_week_grid.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Connected to:** APP_STRUCTURE role: Calendar tab: click-to-create date/time, separate from global header date
 
 RU:
 
@@ -17837,6 +18013,82 @@ RU:
 - **Владелец / слой:** UI календаря
 - **Обязанности:** Поддерживает поведение `calendar_week_grid` в этой feature-зоне.
 - **Когда открывать:** Когда ломается поведение, связанное с `calendar_week_grid.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/calendar/calendar_week_grouping.dart`
+
+EN:
+
+- **Human purpose:** `calendar_week_grouping.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date. Users see `calendar_week_grouping.dart` when using Calendar tab.
+- **What this is:** `calendar_week_grouping.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date.
+- **Why needed:** Users see `calendar_week_grouping.dart` when using Calendar tab.
+- **Contents:** Primary symbols: `CalendarWeekBlock`, `CalendarWeekPlacement`.
+- **Key code names:** `CalendarWeekBlock`, `CalendarWeekPlacement`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_week_grid.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Calendar UI
+- **Responsibilities:** Calendar tab: click-to-create date/time, separate from global header date
+- **When to open:** When behavior tied to `calendar_week_grouping.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Calendar tab: click-to-create date/time, separate from global header date
+
+RU:
+
+- **Зачем файл человеку:** `calendar_week_grouping.dart` на вкладка Calendar — Поддерживает поведение `calendar_week_grouping` в этой feature-зоне.. Пользователь видит UI из `calendar_week_grouping.dart` на вкладка Calendar.
+- **Что это:** `calendar_week_grouping.dart` на вкладка Calendar — Поддерживает поведение `calendar_week_grouping` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `calendar_week_grouping.dart` на вкладка Calendar.
+- **Содержимое:** Dart-модуль `calendar_week_grouping.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/calendar/calendar_week_grid.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI календаря
+- **Обязанности:** Поддерживает поведение `calendar_week_grouping` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `calendar_week_grouping.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/calendar/calendar_week_timeview_drag.dart`
+
+EN:
+
+- **Human purpose:** `calendar_week_timeview_drag.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date. Users see `calendar_week_timeview_drag.dart` when using Calendar tab.
+- **What this is:** `calendar_week_timeview_drag.dart` on Calendar tab — Calendar tab: click-to-create date/time, separate from global header date.
+- **Why needed:** Users see `calendar_week_timeview_drag.dart` when using Calendar tab.
+- **Contents:** Primary symbols: `CalendarWeekTimeViewDrag`, `_CalendarWeekTimeViewDragState`.
+- **Key code names:** `CalendarWeekTimeViewDrag`, `_CalendarWeekTimeViewDragState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_week_grid.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Calendar UI
+- **Responsibilities:** Calendar tab: click-to-create date/time, separate from global header date
+- **When to open:** When behavior tied to `calendar_week_timeview_drag.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Calendar tab: click-to-create date/time, separate from global header date
+
+RU:
+
+- **Зачем файл человеку:** `calendar_week_timeview_drag.dart` на вкладка Calendar — Поддерживает поведение `calendar_week_timeview_drag` в этой feature-зоне.. Пользователь видит UI из `calendar_week_timeview_drag.dart` на вкладка Calendar.
+- **Что это:** `calendar_week_timeview_drag.dart` на вкладка Calendar — Поддерживает поведение `calendar_week_timeview_drag` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `calendar_week_timeview_drag.dart` на вкладка Calendar.
+- **Содержимое:** Dart-модуль `calendar_week_timeview_drag.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/calendar/calendar_week_grid.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI календаря
+- **Обязанности:** Поддерживает поведение `calendar_week_timeview_drag` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `calendar_week_timeview_drag.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
 
@@ -18268,7 +18520,7 @@ EN:
 - **Contents:** Primary symbols: `_NotesStructuredClipboard`, `_NotesStructuredCopyAction`, `NoteEditorPage`, `_NoteEditorPageState`.
 - **Key code names:** `_NotesStructuredClipboard`, `_NotesStructuredCopyAction`, `NoteEditorPage`, `_NoteEditorPageState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -18285,7 +18537,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `note_editor_page.dart` на Notes library/editor (Lists + full-screen editor).
 - **Содержимое:** Компоновка экрана и state в `note_editor_page.dart`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/notes_library_body.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -18417,10 +18669,10 @@ EN:
 - **Human purpose:** `notes_glm_surface.dart` on notes area — GLM background + centered library/editor column frames. Users see `notes_glm_surface.dart` when using notes area.
 - **What this is:** `notes_glm_surface.dart` on notes area — GLM background + centered library/editor column frames.
 - **Why needed:** Users see `notes_glm_surface.dart` when using notes area.
-- **Contents:** Primary symbols: `NotesGlmBackground`, `NotesGlmLibraryFrame`, `NotesGlmEditorFrame`, `NotesGlmLibraryInput`.
-- **Key code names:** `NotesGlmBackground`, `NotesGlmLibraryFrame`, `NotesGlmEditorFrame`, `NotesGlmLibraryInput`
+- **Contents:** Primary symbols: `NotesGlmBackground`, `NotesGlmLibraryFrame`, `NotesGlmEditorFrame`, `NotesGlmLibraryInput`, `NotesBottomGlassFade`.
+- **Key code names:** `NotesGlmBackground`, `NotesGlmLibraryFrame`, `NotesGlmEditorFrame`, `NotesGlmLibraryInput`, `NotesBottomGlassFade`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_card.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/note_card.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_card.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/note_card.dart`, `lib/features/notes/widgets/notes_editor_screen.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -18437,7 +18689,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `notes_glm_surface.dart` на Notes library/editor (Lists + full-screen editor).
 - **Содержимое:** Dart-модуль `notes_glm_surface.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_card.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/note_card.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_card.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/lists/lists_view.dart`, `lib/features/notes/widgets/note_card.dart`, `lib/features/notes/widgets/notes_editor_screen.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -18797,8 +19049,8 @@ EN:
 - **Human purpose:** `notes_editor_screen.dart` on notes area — Shared responsive Figma production screen shell for mobile/web/desktop: header, title/meta, visible document viewport, desktop glass surface, pinned finite toolbar. Users see `notes_editor_screen.dart` when using notes area.
 - **What this is:** `notes_editor_screen.dart` on notes area — Shared responsive Figma production screen shell for mobile/web/desktop: header, title/meta, visible document viewport, desktop glass surface, pinned finite toolbar.
 - **Why needed:** Users see `notes_editor_screen.dart` when using notes area.
-- **Contents:** Primary symbols: `NotesEditorMetadataTag`, `NotesEmbeddedEditorScope`, `NotesEditorScreen`, `_NotesEditorRail`, `_NotesEditorSurface`, `_NotesNavigationHeader`.
-- **Key code names:** `NotesEditorMetadataTag`, `NotesEmbeddedEditorScope`, `NotesEditorScreen`, `_NotesEditorRail`, `_NotesEditorSurface`, `_NotesNavigationHeader`
+- **Contents:** Primary symbols: `NotesEditorMetadataTag`, `NotesEditorBody`, `NotesEmbeddedEditorScope`, `NotesEditorScreen`, `_NotesEditorRail`, `_NotesEditorSurface`.
+- **Key code names:** `NotesEditorMetadataTag`, `NotesEditorBody`, `NotesEmbeddedEditorScope`, `NotesEditorScreen`, `_NotesEditorRail`, `_NotesEditorSurface`, `_NotesNavigationHeader`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/note_editor_page.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -18873,8 +19125,8 @@ EN:
 - **Human purpose:** `notes_library_body.dart` on notes area — NoteCard. Users see `notes_library_body.dart` when using notes area.
 - **What this is:** `notes_library_body.dart` on notes area — NoteCard.
 - **Why needed:** Users see `notes_library_body.dart` when using notes area.
-- **Contents:** Primary symbols: `NotesLibraryBody`, `_NotesLibraryBodyState`.
-- **Key code names:** `NotesLibraryBody`, `_NotesLibraryBodyState`
+- **Contents:** Primary symbols: `NotesLibraryBody`, `_NotesLibraryBodyState`, `_NotesListHeader`.
+- **Key code names:** `NotesLibraryBody`, `_NotesLibraryBodyState`, `_NotesListHeader`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -18911,8 +19163,8 @@ EN:
 - **Human purpose:** `notes_library_production_shell.dart` on notes area — Production Lists-tab GLM library shell + inline add row. Users see `notes_library_production_shell.dart` when using notes area.
 - **What this is:** `notes_library_production_shell.dart` on notes area — Production Lists-tab GLM library shell + inline add row.
 - **Why needed:** Users see `notes_library_production_shell.dart` when using notes area.
-- **Contents:** Primary symbols: `NotesLibraryProductionShell`, `_NotesHeaderAdapter`, `_HtmlNotesHeader`, `_ViewSwitch`, `_HtmlViewButton`.
-- **Key code names:** `NotesLibraryProductionShell`, `_NotesHeaderAdapter`, `_HtmlNotesHeader`, `_ViewSwitch`, `_HtmlViewButton`
+- **Contents:** Primary symbols: `NotesLibraryProductionShell`, `_MobileNotesLibrary`, `_MobileNotesModePill`, `_MobileRoundAction`, `_MobileRoundActionVisual`.
+- **Key code names:** `NotesLibraryProductionShell`, `_MobileNotesLibrary`, `_MobileNotesModePill`, `_MobileRoundAction`, `_MobileRoundActionVisual`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -19169,6 +19421,44 @@ RU:
 - **Связано с:** Вкладка Plans (shell index 1)
 
 
+### `lib/features/planning/planning_bulk_edit_actions.dart`
+
+EN:
+
+- **Human purpose:** `planning_bulk_edit_actions.dart` on Plans tab (second bottom tab) — Bulk multi-select calendar+time placement, source order, duration preservation and destination-day collision cascade. Users see `planning_bulk_edit_actions.dart` when using Plans tab (second bottom tab).
+- **What this is:** `planning_bulk_edit_actions.dart` on Plans tab (second bottom tab) — Bulk multi-select calendar+time placement, source order, duration preservation and destination-day collision cascade.
+- **Why needed:** Users see `planning_bulk_edit_actions.dart` when using Plans tab (second bottom tab).
+- **Contents:** Primary symbols: `PlanningBulkEditActions`.
+- **Key code names:** `PlanningBulkEditActions`
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/features/planning/planning_page.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/features/planning/planning_page.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** Planning UI
+- **Responsibilities:** Bulk multi-select calendar+time placement, source order, duration preservation and destination-day collision cascade
+- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
+- **Can it be deleted?** Brain/library compile failure in `lib/features/planning/planning_page.dart` and broken related UI/data ops.
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Bulk multi-select calendar+time placement, source order, duration preservation and destination-day collision cascade
+
+RU:
+
+- **Зачем файл человеку:** `planning_bulk_edit_actions.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `planning_bulk_edit_actions` в этой feature-зоне.. Пользователь видит UI из `planning_bulk_edit_actions.dart` на вкладка Plans (вторая снизу).
+- **Что это:** `planning_bulk_edit_actions.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `planning_bulk_edit_actions` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `planning_bulk_edit_actions.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Dart-модуль `planning_bulk_edit_actions.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/features/planning/planning_page.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/features/planning/planning_page.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI планов
+- **Обязанности:** Поддерживает поведение `planning_bulk_edit_actions` в этой feature-зоне.
+- **Когда открывать:** Вкладка Plans: день, карточки, play.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Вкладка Plans (shell index 1)
+
+
 ### `lib/features/planning/planning_day_start_prefs.dart`
 
 EN:
@@ -19179,7 +19469,7 @@ EN:
 - **Contents:** Primary symbols: `PlanningSheetTimelinePrefs`.
 - **Key code names:** `PlanningSheetTimelinePrefs`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/settings/planning_timeline_bounds_sheet.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_hour_grid.dart`, `lib/features/planning/time_view/time_view_resize_controller.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/settings/planning_timeline_bounds_sheet.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_hour_grid.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -19196,7 +19486,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `planning_day_start_prefs.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `planning_day_start_prefs.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/settings/planning_timeline_bounds_sheet.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_hour_grid.dart`, `lib/features/planning/time_view/time_view_resize_controller.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/settings/planning_timeline_bounds_sheet.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_hour_grid.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -19283,85 +19573,43 @@ RU:
 - **Связано с:** Вкладка Plans (shell index 1)
 
 
-### `lib/features/planning/planning_bulk_edit_actions.dart`
-
-EN:
-
-- **Human purpose:** Move multiple selected plans to a new date/time consecutively, starting at exactly the picked hour instead of assigning the same start to every plan.
-- **What this is:** A Dart part extending the Planning day page with multi-select bulk-edit actions.
-- **Why needed:** A bulk group moved from Thursday to Monday 09:00 must preserve order and full duration, prevent gaps/overlaps, and save correct timestamps for each plan.
-- **Contents:** `PlanningBulkEditActions`, `_openBulkPlanningEditImpl`, destination-day conflict cascade and optimistic batch.
-- **Key code names:** `PlanningBulkEditActions`, `_openBulkPlanningEditImpl`
-- **Repository role:** production UI
-- **Evidence of use:** Imported as a Dart part by `lib/features/planning/planning_page.dart` and invoked by its bulk bar.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compilation failure in PlanningPage bulk edit action.
-- **Confidence:** HIGH
-- **Owner / layer:** Planning UI (uses DatabaseService Brain for persistence).
-- **Responsibilities:** Apply one user-picked time to an ordered batch, maintain audit anchors and shift colliding destination plans.
-- **When to open:** Bulk plan rescheduling creates overlaps, gaps or unexpected clock times.
-- **Can it be deleted?** No, while PlanningPage uses the action.
-- **Connected to:** `planning_page.dart`, `bulk_planning_edit_sheet.dart`, `plan_service.dart`.
-
-RU:
-
-- **Зачем файл человеку:** Переносить выбранные планы на понедельник с 09:00 последовательно, а не одновременно.
-- **Что это:** Модуль группового переноса планов во вкладке «План».
-- **Зачем:** Сохраняет длительности, порядок, реальное расписание и проверку конфликтов.
-- **Содержимое:** `PlanningBulkEditActions`, перенос по датам, каскад планов уже назначенных на этот день.
-- **Ключевые имена:** `_openBulkPlanningEditImpl`
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Part-директива `planning_page.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Последствие удаления:** Ошибка компиляции.
-- **Достоверность:** HIGH
-- **Слой:** Planning UI.
-- **Ответственность:** Групповой перенос и создание последовательного расписания.
-- **Когда открывать:** Неправильное время после массового переноса.
-- **Можно удалить?** Нет.
-- **Связано с:** `bulk_planning_edit_sheet.dart` и `planning_page.dart`.
-
----
-
 ### `lib/features/planning/planning_quick_add_schedule.dart`
 
 EN:
 
-- **Human purpose:** Preserve the destination workday and date of quick-added plans.
-- **What this is:** Planning quick-add and Smart Plan scheduling extension, a Dart part of the day-page UI.
-- **Why needed:** Overflow should roll to an available workday without hiding the task from Time View.
-- **Contents:** Quick-add create, Smart Plan create, overload warning and destination notices.
-- **Key code names:** `PlanningQuickAddScheduling`, `_addTaskImpl`, `_injectSmartPlanTasksImpl`
+- **Human purpose:** `planning_quick_add_schedule.dart` on Plans tab (second bottom tab) — Quick-add and Smart Plan placement logic (private PlanningPageState part. Users see `planning_quick_add_schedule.dart` when using Plans tab (second bottom tab).
+- **What this is:** `planning_quick_add_schedule.dart` on Plans tab (second bottom tab) — Quick-add and Smart Plan placement logic (private PlanningPageState part.
+- **Why needed:** Users see `planning_quick_add_schedule.dart` when using Plans tab (second bottom tab).
+- **Contents:** Primary symbols: `PlanningQuickAddScheduling`.
+- **Key code names:** `PlanningQuickAddScheduling`
 - **Repository role:** production UI
-- **Evidence of use:** Dart part directive in `lib/features/planning/planning_page.dart`.
+- **Evidence of use:** Included by `lib/features/planning/planning_page.dart` through a `part` directive (not imported directly).
 - **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Planning quick-add and Smart Plan will not compile.
+- **Deletion consequence:** Brain/library compile failure in `lib/features/planning/planning_page.dart` and broken related UI/data ops.
 - **Confidence:** HIGH
 - **Owner / layer:** Planning UI
-- **Responsibilities:** Call Brain auto-schedule, preserve initial date, show rollover feedback.
-- **When to open:** New plan is beyond working hours or missing from Time View.
-- **Can it be deleted?** No, while the page uses this scheduling extension.
-- **Connected to:** `lib/data/plans/plan_time_cascade_helpers.dart`, `planning_page.dart`.
+- **Responsibilities:** Quick-add and Smart Plan placement logic (private PlanningPageState part
+- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
+- **Can it be deleted?** Brain/library compile failure in `lib/features/planning/planning_page.dart` and broken related UI/data ops.
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Quick-add and Smart Plan placement logic (private PlanningPageState part
 
 RU:
 
-- **Зачем файл человеку:** Быстрое добавление не должно сохранять план за пределами рабочего дня.
-- **Что это:** Логика Quick Add и Smart Plan, отдельный Dart part экрана.
-- **Зачем:** Сохраняет новую дату, исходную дату обязательства и выводит время переноса.
-- **Содержимое:** Создание планов, проверка нагрузки, уведомления.
-- **Ключевые имена:** `_addTaskImpl`, `_injectSmartPlanTasksImpl`
-- **Роль в репозитории:** Production UI
-- **Подтверждение использования:** Part в `planning_page.dart`.
+- **Зачем файл человеку:** `planning_quick_add_schedule.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `planning_quick_add_schedule` в этой feature-зоне.. Пользователь видит UI из `planning_quick_add_schedule.dart` на вкладка Plans (вторая снизу).
+- **Что это:** `planning_quick_add_schedule.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `planning_quick_add_schedule` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `planning_quick_add_schedule.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Dart-модуль `planning_quick_add_schedule.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/features/planning/planning_page.dart` через `part` (не импортируется напрямую).
 - **Статус необходимости:** PROVEN_REQUIRED
-- **Последствие удаления:** Ошибка компиляции планирования.
-- **Достоверность:** HIGH
-- **Слой:** Planning UI
-- **Ответственность:** Перенос автопланов между днями и обратная связь.
-- **Когда открывать:** Неверный перенос или исчезновение плана из Time View.
-- **Можно удалить?** Нет.
-- **Связано с:** `planning_page.dart`, `plan_time_cascade_helpers.dart`.
+- **Что будет, если удалить:** Сломается компиляция `lib/features/planning/planning_page.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI планов
+- **Обязанности:** Поддерживает поведение `planning_quick_add_schedule` в этой feature-зоне.
+- **Когда открывать:** Вкладка Plans: день, карточки, play.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Вкладка Plans (shell index 1)
 
----
 
 ### `lib/features/planning/planning_quick_add_tags_controller.dart`
 
@@ -19698,44 +19946,6 @@ RU:
 - **Уверенность:** HIGH
 - **Владелец / слой:** UI планов
 - **Обязанности:** Пользователь открывает sheet/dialog из entry `planning_timeline_bounds_sheet`.
-- **Когда открывать:** Вкладка Plans: день, карточки, play.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Вкладка Plans (shell index 1)
-
-
-### `lib/features/planning/smart_plan_sheet.dart`
-
-EN:
-
-- **Human purpose:** `smart_plan_sheet.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit. Users see `smart_plan_sheet.dart` when using Plans tab (second bottom tab).
-- **What this is:** `smart_plan_sheet.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit.
-- **Why needed:** Users see `smart_plan_sheet.dart` when using Plans tab (second bottom tab).
-- **Contents:** Primary symbols: `SmartPlanCommit`, `SmartPlanSheet`, `_SmartPlanSheetState`.
-- **Key code names:** `SmartPlanCommit`, `SmartPlanSheet`, `_SmartPlanSheetState`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Planning UI
-- **Responsibilities:** Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
-- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
-
-RU:
-
-- **Зачем файл человеку:** `smart_plan_sheet.dart` на вкладка Plans (вторая снизу) — Пользователь открывает sheet/dialog из entry `smart_plan_sheet`.. Пользователь видит UI из `smart_plan_sheet.dart` на вкладка Plans (вторая снизу).
-- **Что это:** `smart_plan_sheet.dart` на вкладка Plans (вторая снизу) — Пользователь открывает sheet/dialog из entry `smart_plan_sheet`..
-- **Зачем:** Пользователь видит UI из `smart_plan_sheet.dart` на вкладка Plans (вторая снизу).
-- **Содержимое:** Основные символы: `SmartPlanCommit`, `SmartPlanSheet`, `_SmartPlanSheetState`.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** UI планов
-- **Обязанности:** Пользователь открывает sheet/dialog из entry `smart_plan_sheet`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -20131,7 +20341,7 @@ EN:
 - **Contents:** Primary symbols: `TimelinePlanInteractionBlock`, `_TouchEditMode`, `TimelinePlanInteractionBlockState`.
 - **Key code names:** `TimelinePlanInteractionBlock`, `_TouchEditMode`, `TimelinePlanInteractionBlockState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_card_layer.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_week_timeview_drag.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20148,7 +20358,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `time_view_interaction_block.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `time_view_interaction_block.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_card_layer.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/calendar/calendar_week_timeview_drag.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21874,14 +22084,14 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoiceSettingsDesktopGrid`, `_DesktopVoiceSettingsDesktopGridState`.
 - **Key code names:** `DesktopVoiceSettingsDesktopGrid`, `_DesktopVoiceSettingsDesktopGridState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/profile_view.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`, `scripts/audit/architecture_guard.ps1`, `scripts/manual/structure_folder_ru_lib.py`, `scripts/manual/structure_guide_data.py`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** Voice settings UI
 - **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings
 - **When to open:** When behavior tied to `desktop_voice_settings_desktop.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sle
 
 RU:
@@ -21891,10 +22101,10 @@ RU:
 - **Зачем:** Пользователь видит UI из `desktop_voice_settings_desktop.dart` на settings.
 - **Содержимое:** Dart-модуль `desktop_voice_settings_desktop.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/profile_view.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`, `scripts/audit/architecture_guard.ps1`, `scripts/manual/structure_folder_ru_lib.py`, `scripts/manual/structure_guide_data.py`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** UI настроек Voice
 - **Обязанности:** Поддерживает поведение `desktop_voice_settings_desktop` в этой feature-зоне.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_settings_desktop.dart`.
@@ -21912,14 +22122,14 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoiceSettingsSection`, `_DesktopVoiceSettingsSectionState`, `HotkeyCaptureDialog`, `_HotkeyCaptureDialogState`.
 - **Key code names:** `DesktopVoiceSettingsSection`, `_DesktopVoiceSettingsSectionState`, `HotkeyCaptureDialog`, `_HotkeyCaptureDialogState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/profile_view.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/voice/desktop_voice_settings_desktop.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** Voice settings UI
 - **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings
 - **When to open:** When behavior tied to `desktop_voice_settings_section.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sle
 
 RU:
@@ -21929,10 +22139,10 @@ RU:
 - **Зачем:** Пользователь видит UI из `desktop_voice_settings_section.dart` на settings.
 - **Содержимое:** Dart-модуль `desktop_voice_settings_section.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/profile_view.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/voice/desktop_voice_settings_desktop.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** UI настроек Voice
 - **Обязанности:** Поддерживает поведение `desktop_voice_settings_section` в этой feature-зоне.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_settings_section.dart`.
@@ -22024,7 +22234,7 @@ EN:
 - **Why needed:** Users see `checklist_helpers.dart` when using edit sheets and voice UI on every tab.
 - **Contents:** Dart module `checklist_helpers.dart` — open file for classes and helpers.
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/shared_widgets.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/shared_widgets.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22041,7 +22251,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `checklist_helpers.dart` на edit sheets и voice UI на всех вкладках.
 - **Содержимое:** Dart-модуль `checklist_helpers.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/shared_widgets.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/shared_widgets.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22174,7 +22384,7 @@ EN:
 - **Why needed:** Users see `quill_link_launcher.dart` when using edit sheets and voice UI on every tab.
 - **Contents:** Dart module `quill_link_launcher.dart` — open file for classes and helpers.
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/shared_widgets.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/shared_widgets.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22191,7 +22401,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `quill_link_launcher.dart` на edit sheets и voice UI на всех вкладках.
 - **Содержимое:** Dart-модуль `quill_link_launcher.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/shared_widgets.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/shared_widgets.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22211,7 +22421,7 @@ EN:
 - **Why needed:** Users see `quill_toolbar_config.dart` when using edit sheets and voice UI on every tab.
 - **Contents:** Dart module `quill_toolbar_config.dart` — open file for classes and helpers.
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/shared_widgets.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/shared_widgets.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22228,7 +22438,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `quill_toolbar_config.dart` на edit sheets и voice UI на всех вкладках.
 - **Содержимое:** Dart-модуль `quill_toolbar_config.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/shared_widgets.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/shared_widgets.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -23070,6 +23280,44 @@ RU:
 - **Связано с:** Вкладка Timeline (shell index 0)
 
 
+### `lib/features/viktor/viktor_chat_page.dart`
+
+EN:
+
+- **Human purpose:** `viktor_chat_page.dart` on viktor area — Assistant chat, microphone, confirm preview and provider settings. Users see `viktor_chat_page.dart` when using viktor area.
+- **What this is:** `viktor_chat_page.dart` on viktor area — Assistant chat, microphone, confirm preview and provider settings.
+- **Why needed:** Users see `viktor_chat_page.dart` when using viktor area.
+- **Contents:** Primary symbols: `ViktorChatPage`, `_ViktorMessage`, `_ViktorChatPageState`.
+- **Key code names:** `ViktorChatPage`, `_ViktorMessage`, `_ViktorChatPageState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/planning_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** repository root
+- **Responsibilities:** Assistant chat, microphone, confirm preview and provider settings
+- **When to open:** When behavior tied to `viktor_chat_page.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Assistant chat, microphone, confirm preview and provider settings
+
+RU:
+
+- **Зачем файл человеку:** `viktor_chat_page.dart` на viktor — Отвечает за видимый UI, собранный в `viktor_chat_page.dart`.. Пользователь видит UI из `viktor_chat_page.dart` на viktor.
+- **Что это:** `viktor_chat_page.dart` на viktor — Отвечает за видимый UI, собранный в `viktor_chat_page.dart`..
+- **Зачем:** Пользователь видит UI из `viktor_chat_page.dart` на viktor.
+- **Содержимое:** Компоновка экрана и state в `viktor_chat_page.dart`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/planning_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Отвечает за видимый UI, собранный в `viktor_chat_page.dart`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_chat_page.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/viktor/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/features/voice/desktop_voice_capsule.dart`
 
 EN:
@@ -23344,7 +23592,7 @@ EN:
 - **Why needed:** UI labels resolve through l10n maps instead of hard-coded strings in widgets.
 - **Contents:** Dart maps/keys in `app_locales.dart`.
 - **Repository role:** localization
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/data/models.dart`, `lib/features/planning/smart_plan_sheet.dart`, `lib/features/profile/profile_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/data/models.dart`, `lib/features/profile/profile_view.dart`, `lib/main.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -23361,7 +23609,7 @@ RU:
 - **Зачем:** Подписи UI берутся из l10n maps, а не из hard-coded строк в виджетах.
 - **Содержимое:** Dart-карты ключей в `app_locales.dart`.
 - **Роль в репозитории:** localization
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/data/models.dart`, `lib/features/planning/smart_plan_sheet.dart`, `lib/features/profile/profile_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/data/models.dart`, `lib/features/profile/profile_view.dart`, `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -25835,13 +26083,13 @@ EN:
 - **Key code names:** `DesktopVoiceDevTools`
 - **Repository role:** Desktop Voice runtime
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/voice/desktop_voice_settings_desktop.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** Desktop Voice runtime
 - **Responsibilities:** Release-safe gate for developer / acceptance tooling
 - **When to open:** When behavior tied to `desktop_voice_dev_tools.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** APP_STRUCTURE role: Release-safe gate for developer / acceptance tooling
 
 RU:
@@ -25852,9 +26100,9 @@ RU:
 - **Содержимое:** Рантайм-модуль голосового ввода на компьютере (`desktop_voice_dev_tools.dart`).
 - **Роль в репозитории:** Desktop Voice runtime
 - **Доказательства использования:** Импортируется production Dart: `lib/features/settings/voice/desktop_voice_settings_desktop.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** Desktop Voice runtime
 - **Обязанности:** Реализует активацию, распознавание или оверлей голосового ввода на компьютере.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_dev_tools.dart`.
@@ -26779,14 +27027,14 @@ EN:
 - **Why needed:** Web Audio vs stub differs by platform; keep adapters under Voice ownership.
 - **Contents:** Voice audio adapter (logic in `voice_audio_stub`).
 - **Repository role:** mobile/web Voice adapters
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`, `scripts/audit/architecture_guard.ps1`, `scripts/manual/structure_folder_ru_lib.py`, `scripts/manual/structure_guide_data.py`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** mobile/web Voice adapters
 - **Responsibilities:** Non-web voice audio stub
 - **When to open:** When behavior tied to `voice_audio_stub.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** APP_STRUCTURE role: Non-web voice audio stub
 
 RU:
@@ -26796,10 +27044,10 @@ RU:
 - **Зачем:** Web Audio и заглушка отличаются по платформе; адаптеры живут рядом с голосовым вводом.
 - **Содержимое:** Аудио-адаптер голосового ввода (`voice_audio_stub.dart`).
 - **Роль в репозитории:** mobile/web Voice adapters
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`, `scripts/audit/architecture_guard.ps1`, `scripts/manual/structure_folder_ru_lib.py`, `scripts/manual/structure_guide_data.py`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** mobile/web Voice adapters
 - **Обязанности:** Даёт тон или звук для листа микрофона на web и остальных платформах.
 - **Когда открывать:** Когда ломается поведение, связанное с `voice_audio_stub.dart`.
@@ -26816,14 +27064,14 @@ EN:
 - **Why needed:** Web Audio vs stub differs by platform; keep adapters under Voice ownership.
 - **Contents:** Voice audio adapter (logic in `voice_audio_web`).
 - **Repository role:** mobile/web Voice adapters
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`, `scripts/audit/architecture_guard.ps1`, `scripts/manual/structure_folder_ru_lib.py`, `scripts/manual/structure_guide_data.py`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** mobile/web Voice adapters
 - **Responsibilities:** Web voice audio implementation
 - **When to open:** When behavior tied to `voice_audio_web.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** APP_STRUCTURE role: Web voice audio implementation
 
 RU:
@@ -26833,10 +27081,10 @@ RU:
 - **Зачем:** Web Audio и заглушка отличаются по платформе; адаптеры живут рядом с голосовым вводом.
 - **Содержимое:** Аудио-адаптер голосового ввода (`voice_audio_web.dart`).
 - **Роль в репозитории:** mobile/web Voice adapters
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`, `scripts/audit/architecture_guard.ps1`, `scripts/manual/structure_folder_ru_lib.py`, `scripts/manual/structure_guide_data.py`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** mobile/web Voice adapters
 - **Обязанности:** Даёт тон или звук для листа микрофона на web и остальных платформах.
 - **Когда открывать:** Когда ломается поведение, связанное с `voice_audio_web.dart`.
@@ -27004,14 +27252,14 @@ EN:
 - **Why needed:** Phone, desktop, web, and Wear activation share one command interpretation path.
 - **Contents:** Shared Voice module (logic in `speech_engine_controller`).
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared Voice system
 - **Responsibilities:** Shared SpeechToText instance lifecycle: initialization, readiness/error state, hard reset and locale diagnostics
 - **When to open:** When behavior tied to `speech_engine_controller.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** APP_STRUCTURE role: Shared SpeechToText instance lifecycle: initialization, readiness/error state, hard reset and locale diagnostics
 
 RU:
@@ -27021,10 +27269,10 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`speech_engine_controller.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий Voice system
 - **Обязанности:** Держит контракт, интерфейс или диагностику общей системы голосового ввода.
 - **Когда открывать:** Когда ломается поведение, связанное с `speech_engine_controller.dart`.
@@ -27041,14 +27289,14 @@ EN:
 - **Why needed:** Phone, desktop, web, and Wear activation share one command interpretation path.
 - **Contents:** Shared Voice module (logic in `speech_engine_handle`).
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/recognition/speech_engine_controller.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/recognition/speech_engine_controller.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared Voice system
 - **Responsibilities:** Speech-to-text engine holder
 - **When to open:** When behavior tied to `speech_engine_handle.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** APP_STRUCTURE role: Speech-to-text engine holder
 
 RU:
@@ -27058,10 +27306,10 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`speech_engine_handle.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/recognition/speech_engine_controller.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/recognition/speech_engine_controller.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий Voice system
 - **Обязанности:** Держит контракт, интерфейс или диагностику общей системы голосового ввода.
 - **Когда открывать:** Когда ломается поведение, связанное с `speech_engine_handle.dart`.
@@ -27079,14 +27327,14 @@ EN:
 - **Contents:** Shared Voice module (`SpeechListenLocale`).
 - **Key code names:** `SpeechListenLocale`
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/smart_plan_sheet.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`, `scripts/manual/structure_folder_ru_lib.py`, `scripts/manual/structure_guide_data.py`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared Voice system
 - **Responsibilities:** STT locale resolution
 - **When to open:** When behavior tied to `speech_listen_locale.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** APP_STRUCTURE role: STT locale resolution
 
 RU:
@@ -27096,10 +27344,10 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`speech_listen_locale.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/smart_plan_sheet.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`, `scripts/manual/structure_folder_ru_lib.py`, `scripts/manual/structure_guide_data.py`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий Voice system
 - **Обязанности:** Держит контракт, интерфейс или диагностику общей системы голосового ввода.
 - **Когда открывать:** Когда ломается поведение, связанное с `speech_listen_locale.dart`.
@@ -27179,82 +27427,6 @@ RU:
 - **Владелец / слой:** общий Voice system
 - **Обязанности:** Держит контракт, интерфейс или диагностику общей системы голосового ввода.
 - **Когда открывать:** Когда ломается поведение, связанное с `app_mic_level_bars.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/shared/voice/ui/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/shared/voice/ui/voice_capture_config.dart`
-
-EN:
-
-- **Human purpose:** Shared Voice system — Submit-intent config for the sheet. Phone, desktop, web, and Wear activation share one command interpretation path.
-- **What this is:** Shared Voice system — Submit-intent config for the sheet.
-- **Why needed:** Phone, desktop, web, and Wear activation share one command interpretation path.
-- **Contents:** Shared Voice module (`VoiceCaptureConfig`).
-- **Key code names:** `VoiceCaptureConfig`
-- **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared Voice system
-- **Responsibilities:** Submit-intent config for the sheet
-- **When to open:** When behavior tied to `voice_capture_config.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Submit-intent config for the sheet
-
-RU:
-
-- **Зачем файл человеку:** Общая система голосового ввода — файл `voice_capture_config.dart`. Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
-- **Что это:** Общая система голосового ввода — файл `voice_capture_config.dart`.
-- **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
-- **Содержимое:** Модуль общей системы голосового ввода (`voice_capture_config.dart`).
-- **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общий Voice system
-- **Обязанности:** Держит контракт, интерфейс или диагностику общей системы голосового ввода.
-- **Когда открывать:** Когда ломается поведение, связанное с `voice_capture_config.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/shared/voice/ui/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/shared/voice/ui/voice_input_sheet.dart`
-
-EN:
-
-- **Human purpose:** Mobile/web mic bottom sheet — speech-to-text capture routed by `VoiceCaptureConfig`. Voice submit on Timeline, Plans, and Lists opens this sheet; must not block main thread.
-- **What this is:** Mobile/web mic bottom sheet — speech-to-text capture routed by `VoiceCaptureConfig`.
-- **Why needed:** Voice submit on Timeline, Plans, and Lists opens this sheet; must not block main thread.
-- **Contents:** `VoiceInputSheet`, `_VoiceInputSheetState`; STT engine handle, permission prompts.
-- **Key code names:** `VoiceInputSheet`, `_VoiceInputSheetState`
-- **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared Voice system
-- **Responsibilities:** Listen/transcribe user speech; return text to shell voice routing.
-- **When to open:** When behavior tied to `voice_input_sheet.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Mobile/web mic sheet — speech-to-text via VoiceCaptureConfig
-
-RU:
-
-- **Зачем файл человеку:** Нижняя шторка микрофона (mobile/web) — speech-to-text по `VoiceCaptureConfig`. Voice submit на Timeline, Plans и Lists открывает эту шторку; не блокирует main thread.
-- **Что это:** Нижняя шторка микрофона (mobile/web) — speech-to-text по `VoiceCaptureConfig`.
-- **Зачем:** Voice submit на Timeline, Plans и Lists открывает эту шторку; не блокирует main thread.
-- **Содержимое:** `VoiceInputSheet`, `_VoiceInputSheetState`; STT handle, запрос permissions.
-- **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общий Voice system
-- **Обязанности:** Слушает/транскрибирует речь; отдаёт текст в shell voice routing.
-- **Когда открывать:** Когда ломается поведение, связанное с `voice_input_sheet.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/shared/voice/ui/`, `docs/APP_STRUCTURE.md`
 
@@ -29109,6 +29281,80 @@ RU:
 - **Связано с:** PocketBase Admin, Flutter auth/records client.
 
 
+### `pb_hooks/viktor.propose.pb.js`
+
+EN:
+
+- **Human purpose:** PocketBase server hook `viktor.propose` — runs on VPS when specific API events fire. Some rules (password reset email, overlapping records) must be enforced server-side.
+- **What this is:** PocketBase server hook `viktor.propose` — runs on VPS when specific API events fire.
+- **Why needed:** Some rules (password reset email, overlapping records) must be enforced server-side.
+- **Contents:** JavaScript hook handler copied to PocketBase `pb_hooks/` on server.
+- **Repository role:** PocketBase backend
+- **Evidence of use:** Server-side PocketBase hook; deployed with the PB instance (see `docs/POCKETBASE_MANIFEST.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken server-side validation/automation for PB collections.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase backend
+- **Responsibilities:** Server-side logic for `viktor.propose` (see `docs/POCKETBASE_MANIFEST.md`).
+- **When to open:** Server behavior differs from app expectations for auth/records.
+- **Can it be deleted?** No — production PocketBase deployment.
+- **Connected to:** PocketBase Admin, Flutter auth/records client.
+
+RU:
+
+- **Зачем файл человеку:** PocketBase hook `viktor.propose` — серверная логика при API-событиях на VPS. Часть правил (reset пароля, overlap записей) должна выполняться на сервере, не в APK.
+- **Что это:** PocketBase hook `viktor.propose` — серверная логика при API-событиях на VPS.
+- **Зачем:** Часть правил (reset пароля, overlap записей) должна выполняться на сервере, не в APK.
+- **Содержимое:** JavaScript handler `viktor.propose.pb.js` — копируется в PocketBase `pb_hooks/` на VPS.
+- **Роль в репозитории:** PocketBase backend
+- **Доказательства использования:** Серверный hook PocketBase; деплоится вместе с PB (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается серверная логика PocketBase.
+- **Уверенность:** HIGH
+- **Владелец / слой:** PocketBase backend
+- **Обязанности:** Серверная логика для `viktor.propose` (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Когда открывать:** Поведение auth/records на сервере не совпадает с ожиданиями приложения.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** PocketBase Admin, Flutter auth/records client.
+
+
+### `pb_hooks/viktor.protect_tier.pb.js`
+
+EN:
+
+- **Human purpose:** PocketBase server hook `viktor.protect_tier` — runs on VPS when specific API events fire. Some rules (password reset email, overlapping records) must be enforced server-side.
+- **What this is:** PocketBase server hook `viktor.protect_tier` — runs on VPS when specific API events fire.
+- **Why needed:** Some rules (password reset email, overlapping records) must be enforced server-side.
+- **Contents:** JavaScript hook handler copied to PocketBase `pb_hooks/` on server.
+- **Repository role:** PocketBase backend
+- **Evidence of use:** Server-side PocketBase hook; deployed with the PB instance (see `docs/POCKETBASE_MANIFEST.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken server-side validation/automation for PB collections.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase backend
+- **Responsibilities:** Server-side logic for `viktor.protect_tier` (see `docs/POCKETBASE_MANIFEST.md`).
+- **When to open:** Server behavior differs from app expectations for auth/records.
+- **Can it be deleted?** No — production PocketBase deployment.
+- **Connected to:** PocketBase Admin, Flutter auth/records client.
+
+RU:
+
+- **Зачем файл человеку:** PocketBase hook `viktor.protect_tier` — серверная логика при API-событиях на VPS. Часть правил (reset пароля, overlap записей) должна выполняться на сервере, не в APK.
+- **Что это:** PocketBase hook `viktor.protect_tier` — серверная логика при API-событиях на VPS.
+- **Зачем:** Часть правил (reset пароля, overlap записей) должна выполняться на сервере, не в APK.
+- **Содержимое:** JavaScript handler `viktor.protect_tier.pb.js` — копируется в PocketBase `pb_hooks/` на VPS.
+- **Роль в репозитории:** PocketBase backend
+- **Доказательства использования:** Серверный hook PocketBase; деплоится вместе с PB (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается серверная логика PocketBase.
+- **Уверенность:** HIGH
+- **Владелец / слой:** PocketBase backend
+- **Обязанности:** Серверная логика для `viktor.protect_tier` (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Когда открывать:** Поведение auth/records на сервере не совпадает с ожиданиями приложения.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** PocketBase Admin, Flutter auth/records client.
+
+
 ### `pb_hooks/xiaomi_sleep_bridge.py`
 
 EN:
@@ -30562,7 +30808,7 @@ EN:
 - **Why needed:** Maintains owner-readable structure guide in sync with repo after changes.
 - **Contents:** Python generator + curated folder/file descriptions.
 - **Repository role:** developer tool
-- **Evidence of use:** (1) Invoked or documented by: `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`, `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
+- **Evidence of use:** (1) Invoked or documented by: `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -30579,7 +30825,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `generate_app_structure_detailed.py`.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** (1) Вызывается или описан в: `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`, `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
+- **Доказательства использования:** (1) Вызывается или описан в: `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
@@ -31742,119 +31988,43 @@ RU:
 - **Связано с:** Production files под `lib/` с похожим именем.
 
 
-### `test/calendar_week_timeview_drag_test.dart`
-
-EN:
-
-- **Human purpose:** Widget regression verifying actual pointer drag, scroll-lock lifecycle and independent body tapping.
-- **What this is:** Widget regression verifying actual pointer drag, scroll-lock lifecycle and independent body tapping.
-- **Why needed:** Gives Calendar the same reliable drag gestures and scheduling semantics as Time View.
-- **Contents:** Focused Flutter/Dart code and its regression test.
-- **Repository role:** test
-- **Evidence of use:** Runs in Flutter CI: `test/calendar_week_timeview_drag_test.dart`.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Calendar drag/drop stops sharing Time View gestures or loses regression protection.
-- **Confidence:** HIGH
-- **Owner / layer:** tests
-- **Responsibilities:** Widget regression verifying actual pointer drag, scroll-lock lifecycle and independent body tapping.
-- **When to open:** Calendar Week pointer, drag preview, snapping, or scheduler regressions.
-- **Can it be deleted?** No — required for the shared interaction contract.
-- **Connected to:** Runs in Flutter CI: `test/calendar_week_timeview_drag_test.dart`.
-
-RU:
-
-- **Зачем файл человеку:** Widget regression verifying actual pointer drag, scroll-lock lifecycle and independent body tapping.
-- **Что это:** Модуль единого поведения перетаскивания календаря и Time View.
-- **Зачем:** Надёжное перемещение планов без смены даты шапки или перехвата прокруткой.
-- **Содержимое:** Flutter/Dart реализация и тест.
-- **Роль в репозитории:** test
-- **Доказательства использования:** Runs in Flutter CI: `test/calendar_week_timeview_drag_test.dart`.
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Пропадёт общий механизм жестов или его тестовая защита.
-- **Уверенность:** HIGH
-- **Владелец / слой:** Тесты
-- **Обязанности:** Widget regression verifying actual pointer drag, scroll-lock lifecycle and independent body tapping.
-- **Когда открывать:** При ошибках drag-and-drop календаря.
-- **Можно удалить?** Нет.
-- **Связано с:** Runs in Flutter CI: `test/calendar_week_timeview_drag_test.dart`.
-
----
-
-### `test/calendar_week_grouping_test.dart`
-
-EN:
-
-- **Human purpose:** Regression tests for contiguous grouping, category separation, collision lanes, and time gaps.
-- **What this is:** Regression tests for contiguous grouping, category separation, collision lanes, and time gaps.
-- **Why needed:** Regression tests for contiguous grouping, category separation, collision lanes, and time gaps.
-- **Contents:** Calendar plan grouping and interaction helpers.
-- **Repository role:** test
-- **Evidence of use:** Flutter test: `flutter test test/calendar_week_grouping_test.dart`.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** coverage for the calendar week grouping contract disappears.
-- **Confidence:** HIGH
-- **Owner / layer:** tests
-- **Responsibilities:** Regression tests for contiguous grouping, category separation, collision lanes, and time gaps.
-- **When to open:** Calendar cell interactions, week grouping, or group detail regressions.
-- **Can it be deleted?** No — coverage for the calendar week grouping contract disappears.
-- **Connected to:** Flutter test: `flutter test test/calendar_week_grouping_test.dart`.
-
-RU:
-
-- **Зачем файл человеку:** Regression tests for contiguous grouping, category separation, collision lanes, and time gaps.
-- **Что это:** Regression tests for contiguous grouping, category separation, collision lanes, and time gaps.
-- **Зачем:** Доступная и корректная работа календаря LIFE OS.
-- **Содержимое:** Flutter/Dart реализации группировки планов и взаимодействий.
-- **Роль в репозитории:** test
-- **Доказательства использования:** Flutter test: `flutter test test/calendar_week_grouping_test.dart`.
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** coverage for the calendar week grouping contract disappears.
-- **Уверенность:** HIGH
-- **Владелец / слой:** tests
-- **Обязанности:** Regression tests for contiguous grouping, category separation, collision lanes, and time gaps.
-- **Когда открывать:** При проблемах с сеткой календаря или карточками планов.
-- **Можно удалить?** Нет — coverage for the calendar week grouping contract disappears.
-- **Связано с:** Flutter test: `flutter test test/calendar_week_grouping_test.dart`.
-
----
-
 ### `test/calendar_drag_and_reschedule_test.dart`
 
 EN:
 
-- **Human purpose:** Regression coverage for cross-date calendar moves, duration fidelity and stable group member offsets.
-- **What this is:** Regression coverage for cross-date calendar moves, duration fidelity and stable group member offsets.
-- **Why needed:** Enables reliable, interactive Calendar plan scheduling without changing Timeline state.
-- **Contents:** Flutter/Dart code and tests dedicated to Calendar UX behavior.
+- **Human purpose:** Automated test `calendar_drag_and_reschedule_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `calendar_drag_and_reschedule_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
 - **Repository role:** test
-- **Evidence of use:** Flutter CI test/calendar_drag_and_reschedule_test.dart.
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/calendar_drag_and_reschedule_test.dart` / CI when enabled. (2) Namesake production subject: `lib/features/calendar/calendar_drag_and_reschedule.dart`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Missing Calendar behavior or missing regression protection.
+- **Deletion consequence:** Lost automated coverage for its contract.
 - **Confidence:** HIGH
 - **Owner / layer:** tests
-- **Responsibilities:** Regression coverage for cross-date calendar moves, duration fidelity and stable group member offsets.
-- **When to open:** Calendar adjacent-month, drag/drop or time label regressions.
-- **Can it be deleted?** No — required for Calendar UX and verification.
-- **Connected to:** Flutter CI test/calendar_drag_and_reschedule_test.dart.
+- **Responsibilities:** Assert expected behavior for `calendar_drag_and_reschedule_test` scenario.
+- **When to open:** CI failure or changing code near `calendar_drag_and_reschedule`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `calendar_drag_and_reschedule`.
 
 RU:
 
-- **Зачем файл человеку:** Regression coverage for cross-date calendar moves, duration fidelity and stable group member offsets.
-- **Что это:** Часть поведения календаря LIFE OS.
-- **Зачем:** Чтобы даты, время планов и переносы работали предсказуемо.
-- **Содержимое:** Dart-логика и связанные проверки.
+- **Зачем файл человеку:** Автотест `calendar_drag_and_reschedule` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `calendar_drag_and_reschedule` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `calendar_drag_and_reschedule`.
 - **Роль в репозитории:** test
-- **Доказательства использования:** Flutter CI test/calendar_drag_and_reschedule_test.dart.
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/calendar_drag_and_reschedule_test.dart`. (2) Парный production-файл: `lib/features/calendar/calendar_drag_and_reschedule.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Пропадёт поведение календаря или его регрессионная проверка.
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
 - **Уверенность:** HIGH
-- **Владелец / слой:** Тесты
-- **Обязанности:** Regression coverage for cross-date calendar moves, duration fidelity and stable group member offsets.
-- **Когда открывать:** При ошибках планирования или переноса в календаре.
-- **Можно удалить?** Нет.
-- **Связано с:** Flutter CI test/calendar_drag_and_reschedule_test.dart.
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `calendar_drag_and_reschedule`.
+- **Когда открывать:** Падение CI или правка кода рядом с `calendar_drag_and_reschedule`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
 
----
 
 ### `test/calendar_integrations_contract_test.dart`
 
@@ -31890,6 +32060,82 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `calendar_integrations_contract`.
 - **Когда открывать:** Падение CI или правка кода рядом с `calendar_integrations_contract`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/calendar_week_grouping_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `calendar_week_grouping_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `calendar_week_grouping_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/calendar_week_grouping_test.dart` / CI when enabled. (2) Namesake production subject: `lib/features/calendar/calendar_week_grouping.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `calendar_week_grouping_test` scenario.
+- **When to open:** CI failure or changing code near `calendar_week_grouping`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `calendar_week_grouping`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `calendar_week_grouping` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `calendar_week_grouping` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `calendar_week_grouping`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/calendar_week_grouping_test.dart`. (2) Парный production-файл: `lib/features/calendar/calendar_week_grouping.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `calendar_week_grouping`.
+- **Когда открывать:** Падение CI или правка кода рядом с `calendar_week_grouping`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/calendar_week_timeview_drag_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `calendar_week_timeview_drag_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `calendar_week_timeview_drag_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/calendar_week_timeview_drag_test.dart` / CI when enabled. (2) Namesake production subject: `lib/features/calendar/calendar_week_timeview_drag.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `calendar_week_timeview_drag_test` scenario.
+- **When to open:** CI failure or changing code near `calendar_week_timeview_drag`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `calendar_week_timeview_drag`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `calendar_week_timeview_drag` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `calendar_week_timeview_drag` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `calendar_week_timeview_drag`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/calendar_week_timeview_drag_test.dart`. (2) Парный production-файл: `lib/features/calendar/calendar_week_timeview_drag.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `calendar_week_timeview_drag`.
+- **Когда открывать:** Падение CI или правка кода рядом с `calendar_week_timeview_drag`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
@@ -35828,38 +36074,38 @@ RU:
 
 EN:
 
-- **Human purpose:** Regression test for the dated Planning edit-sheet layout, preventing oversized Notes from obscuring time/tags/recurrence and the Save footer.
-- **What this is:** Flutter widget test for desktop edit-sheet pane geometry.
-- **Why needed:** Protects the scheduled plan editor from the former desktop 5:1 Notes-to-schedule allocation.
-- **Contents:** Layout regression test (symbols: main).
+- **Human purpose:** Automated test `planning_edit_sheet_layout_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `planning_edit_sheet_layout_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
 - **Key code names:** `main`
 - **Repository role:** test
-- **Evidence of use:** GitHub Actions Android build runs `flutter test test/planning_edit_sheet_layout_test.dart`.
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/planning_edit_sheet_layout_test.dart` / CI when enabled.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Lost automated protection against the plan editor schedule controls being clipped.
+- **Deletion consequence:** Lost automated coverage for its contract.
 - **Confidence:** HIGH
 - **Owner / layer:** tests
-- **Responsibilities:** Verify Notes and schedule pane allocations remain readable on desktop.
-- **When to open:** Planning edit-sheet overflow or layout regressions.
-- **Can it be deleted?** No — regression coverage for a production user-visible defect.
-- **Connected to:** `lib/features/shared/planning_task_edit_sheet.dart`
+- **Responsibilities:** Assert expected behavior for `planning_edit_sheet_layout_test` scenario.
+- **When to open:** CI failure or changing code near `planning_edit_sheet_layout`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `planning_edit_sheet_layout`.
 
 RU:
 
-- **Зачем файл человеку:** Регрессионный тест окна редактирования плана, чтобы заметки не вытесняли время, теги и вкладки под кнопки сохранения.
-- **Что это:** Виджет-тест Flutter для геометрии окна плана на десктопе.
-- **Зачем:** Не допустить возврата соотношения 5:1 между заметками и настройками плана.
-- **Содержимое:** Проверки геометрии (символы: `main`).
+- **Зачем файл человеку:** Автотест `planning_edit_sheet_layout` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `planning_edit_sheet_layout` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `planning_edit_sheet_layout`.
 - **Роль в репозитории:** test
-- **Доказательства использования:** Запускается Android CI командой `flutter test test/planning_edit_sheet_layout_test.dart`.
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/planning_edit_sheet_layout_test.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Потеряется автоматическая защита от перекрытия нижних элементов окна.
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
 - **Уверенность:** HIGH
 - **Владелец / слой:** тесты
-- **Обязанности:** Проверять достаточную высоту блока времени/тегов/повтора.
-- **Когда открывать:** Ошибки компоновки редактора плана.
-- **Можно удалить?** Нет — требуется для регрессионных тестов.
-- **Связано с:** `lib/features/shared/planning_task_edit_sheet.dart`.
+- **Обязанности:** Assert ожидаемого поведения `planning_edit_sheet_layout`.
+- **Когда открывать:** Падение CI или правка кода рядом с `planning_edit_sheet_layout`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
 
 
 ### `test/planning_page_host_contract_test.dart`
@@ -36204,68 +36450,6 @@ RU:
 - **Связано с:** Production files под `lib/` с похожим именем.
 
 
-### `test/web_record_journal_test.dart`
-
-EN:
-
-- **Human purpose:** Verify real browser persistence, migration and draft recovery.
-- **What this is:** Headless Chrome Flutter regression for the Web IndexedDB record journal.
-- **Why needed:** Catch actual browser failures rather than relying on source-code inspection.
-- **Contents:** Migration from legacy prefs, duplicate suppression, pending queue reopen and draft recovery.
-- **Key code names:** `main`
-- **Repository role:** test
-- **Evidence of use:** Android release CI runs `flutter test --platform chrome test/web_record_journal_test.dart`.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Browser storage regression would no longer be caught by release CI.
-- **Confidence:** HIGH
-- **Owner / layer:** tests
-- **Responsibilities:** Enforce durable IndexedDB behavior on web.
-- **When to open:** IndexedDB browser test or recorded-input regression.
-- **Can it be deleted?** No while release checks require it.
-- **Connected to:** `web_record_journal.dart`, `record_mutation_outbox.dart`.
-
-RU:
-
-- **Зачем файл человеку:** Проверка реального браузерного сохранения записей.
-- **Что это:** Регрессионный тест Flutter под Chrome.
-- **Зачем:** Проверять очередь и миграцию IndexedDB.
-- **Содержимое:** Тест миграции, повторов, восстановления после перезапуска и черновиков.
-- **Ключевые имена:** `main`
-- **Роль в репозитории:** test
-- **Доказательства использования:** GitHub Actions Chrome test.
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Последствие удаления:** Потеря автоматической проверки.
-- **Достоверность:** HIGH
-- **Владелец / слой:** tests
-- **Обязанности:** Web IndexedDB smoke test.
-- **Когда открывать:** Ошибки сохранения записей.
-- **Можно удалить?** Нет.
-- **Связано с:** `record_mutation_outbox.dart`.
-
----
-
-### `test/record_write_durability_test.dart`
-
-EN:
-
-- **Human purpose:** Regression tests for rapid record input and durable record outbox.
-- **What this is:** Flutter tests for queue ordering, retry and acknowledgement.
-- **Why needed:** Prevents losing accepted records during overlapping submissions.
-- **Repository role:** test
-- **Evidence of use:** GitHub Actions Android build executes `flutter test test/record_write_durability_test.dart`.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Owner / layer:** tests
-- **Connected to:** `lib/data/local_sync/record_mutation_outbox.dart`, `lib/data/records/record_crud.dart`
-
-RU:
-
-- **Зачем файл человеку:** Проверка сохранности быстрых записей и очереди синхронизации.
-- **Что это:** Регрессионные тесты Flutter.
-- **Зачем:** Предотвращает потерю подтверждённых локально записей из-за сетевых гонок.
-- **Владелец / слой:** тесты
-- **Связано с:** `lib/data/local_sync/record_mutation_outbox.dart`, `lib/data/records/record_crud.dart`
-
-
 ### `test/record_category_edit_brain_test.dart`
 
 EN:
@@ -36300,6 +36484,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `record_category_edit_brain`.
 - **Когда открывать:** Падение CI или правка кода рядом с `record_category_edit_brain`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/record_write_durability_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `record_write_durability_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `record_write_durability_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/record_write_durability_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `record_write_durability_test` scenario.
+- **When to open:** CI failure or changing code near `record_write_durability`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `record_write_durability`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `record_write_durability` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `record_write_durability` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `record_write_durability`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/record_write_durability_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `record_write_durability`.
+- **Когда открывать:** Падение CI или правка кода рядом с `record_write_durability`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
@@ -36798,6 +37020,120 @@ RU:
 - **Связано с:** Production files под `lib/` с похожим именем.
 
 
+### `test/viktor_action_contract_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `viktor_action_contract_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `viktor_action_contract_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/viktor_action_contract_test.dart` / CI when enabled. (2) Namesake production subject: `lib/data/ai/viktor_action_contract.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `viktor_action_contract_test` scenario.
+- **When to open:** CI failure or changing code near `viktor_action_contract`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `viktor_action_contract`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `viktor_action_contract` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `viktor_action_contract` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `viktor_action_contract`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/viktor_action_contract_test.dart`. (2) Парный production-файл: `lib/data/ai/viktor_action_contract.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `viktor_action_contract`.
+- **Когда открывать:** Падение CI или правка кода рядом с `viktor_action_contract`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/viktor_chat_layout_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `viktor_chat_layout_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `viktor_chat_layout_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/viktor_chat_layout_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `viktor_chat_layout_test` scenario.
+- **When to open:** CI failure or changing code near `viktor_chat_layout`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `viktor_chat_layout`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `viktor_chat_layout` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `viktor_chat_layout` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `viktor_chat_layout`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/viktor_chat_layout_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `viktor_chat_layout`.
+- **Когда открывать:** Падение CI или правка кода рядом с `viktor_chat_layout`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/viktor_schedule_planner_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `viktor_schedule_planner_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `viktor_schedule_planner_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/viktor_schedule_planner_test.dart` / CI when enabled. (2) Namesake production subject: `lib/data/ai/viktor_schedule_planner.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `viktor_schedule_planner_test` scenario.
+- **When to open:** CI failure or changing code near `viktor_schedule_planner`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `viktor_schedule_planner`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `viktor_schedule_planner` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `viktor_schedule_planner` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `viktor_schedule_planner`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/viktor_schedule_planner_test.dart`. (2) Парный production-файл: `lib/data/ai/viktor_schedule_planner.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `viktor_schedule_planner`.
+- **Когда открывать:** Падение CI или правка кода рядом с `viktor_schedule_planner`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
 ### `test/voice_command_parser_test.dart`
 
 EN:
@@ -36832,6 +37168,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `voice_command_parser`.
 - **Когда открывать:** Падение CI или правка кода рядом с `voice_command_parser`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/web_record_journal_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `web_record_journal_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `web_record_journal_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/web_record_journal_test.dart` / CI when enabled. (2) Namesake production subject: `lib/data/local_sync/web_record_journal.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `web_record_journal_test` scenario.
+- **When to open:** CI failure or changing code near `web_record_journal`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `web_record_journal`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `web_record_journal` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `web_record_journal` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `web_record_journal`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/web_record_journal_test.dart`. (2) Парный production-файл: `lib/data/local_sync/web_record_journal.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `web_record_journal`.
+- **Когда открывать:** Падение CI или правка кода рядом с `web_record_journal`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 

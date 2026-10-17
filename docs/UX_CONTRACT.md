@@ -255,3 +255,8 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - Browser requests carry unique IDs and successful requests are deduped. A temporary bridge tab must stay alive until the canonical primary-record network chain has completed and the resulting running state is confirmed.
 - Browser-local snapshots are **render-only cache**. Opening the popup must always trigger a fresh `bridge_sync` through the authenticated web app; an open LIFE OS tab's stored snapshot must never suppress that canonical refresh. While the popup remains open, it refreshes the canonical current-record state periodically and applies pushed snapshots without blocking the local elapsed timer.
 - Bridge setup and request consumption run after the first frame and must not block normal LIFE OS startup.
+
+
+## Viktor consolidated voice and AI (2026-10-17)
+
+The single visible AI voice entry is the Viktor full-screen chat. The old floating microphone must not overlay planning cards, bottom navigation, or editing controls. Header/More/Profile/Planning Smart all open Viktor. The chat composer remains inside SafeArea and resizes for a soft keyboard; small-phone layout tests cover 320/390 px widths. User-approved mutations must show actual resulting start/end times before applying, and must abort if the underlying schedule changes. Recurring and fixed-time conflicts are blocked rather than silently rescheduled. The obsolete generic voice sheets and shell voice-input mixin have been deleted; desktop platform hotkey compatibility and STT services remain in use by the consolidated Viktor entry. Full legacy desktop runtime cleanup remains gated by Windows smoke tests.

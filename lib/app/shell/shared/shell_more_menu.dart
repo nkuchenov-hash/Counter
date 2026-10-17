@@ -24,6 +24,15 @@ mixin ShellMoreMenu on ShellCoreLogic {
     setState(() => setShellPageIndex(6));
   }
 
+  Future<void> openViktor() async {
+    if (!mounted) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => ViktorChatPage(wallDay: shellDateOnly(selectedDate)),
+      ),
+    );
+  }
+
   void openMoreMenu({bool secondaryOnly = false}) {
     final loc = currentLocale.value;
     final isRu = loc.toLowerCase().startsWith('ru');
@@ -44,6 +53,15 @@ mixin ShellMoreMenu on ShellCoreLogic {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                ListTile(
+                  leading: const Icon(Icons.auto_awesome_rounded),
+                  title: const Text('Виктор · ИИ'),
+                  subtitle: const Text('Общение, планы и голосовые команды'),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    unawaited(openViktor());
+                  },
+                ),
                 if (!secondaryOnly) ...[
                   ListTile(
                     leading: const Icon(Icons.person_rounded),

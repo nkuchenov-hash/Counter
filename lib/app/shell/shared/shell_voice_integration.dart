@@ -8,7 +8,7 @@ mixin ShellVoiceIntegration on ShellVoiceRouting {
     final loc = currentLocale.value;
     await DesktopTrayService.refreshMenuLabels(
       showCounter: t(loc, 'tray_show_counter'),
-      startVoice: t(loc, 'tray_start_voice'),
+      startVoice: loc.startsWith('ru') ? 'Виктор · ИИ' : 'Viktor AI',
       stopRecord: t(loc, 'tray_stop_record'),
       settings: t(loc, 'tray_settings'),
       exitCounter: t(loc, 'tray_exit_counter'),
@@ -31,7 +31,7 @@ mixin ShellVoiceIntegration on ShellVoiceRouting {
         setShellPageIndex(0);
         if (mounted) setState(() {});
       },
-      onStartVoice: () => unawaited(toggleDesktopVoiceWidget()),
+      onStartVoice: () => unawaited(_showViktorFromDesktop()),
       onStopRunningRecord: () => unawaited(stopAnyActiveTask()),
       onOpenSettings: () {
         unawaited(DesktopTrayService.showMainWindow());
@@ -55,7 +55,6 @@ mixin ShellVoiceIntegration on ShellVoiceRouting {
       );
       DesktopVoiceHotkeyMarkers.logRegistration(ok: ok);
       if (ok) {
-        DesktopSttHelperService.instance.prewarmRecognizerInBackground();
         DesktopVoicePipeline.mark('DESKTOP_VOICE_APP_READY');
       }
     } else {
@@ -66,8 +65,26 @@ mixin ShellVoiceIntegration on ShellVoiceRouting {
     }
   }
 
+  bool _viktorDesktopOpening = false;
+
+  Future<void> _showViktorFromDesktop() async {
+    if (_viktorDesktopOpening) return;
+    _viktorDesktopOpening = true;
+    try {
+      await DesktopTrayService.showMainWindow();
+      if (!mounted) return;
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => ViktorChatPage(wallDay: shellDateOnly(selectedDate)),
+        ),
+      );
+    } finally {
+      _viktorDesktopOpening = false;
+    }
+  }
+
   void onDesktopVoiceHotkeyToggle() {
-    unawaited(toggleDesktopVoiceWidget());
+    unawaited(_showViktorFromDesktop());
   }
 
   Future<bool> reattachDesktopVoiceHotkey() async {
@@ -92,7 +109,6 @@ mixin ShellVoiceIntegration on ShellVoiceRouting {
           : DesktopVoiceSettings.instance.hotkeyRegistrationError,
     );
     if (ok) {
-      DesktopSttHelperService.instance.prewarmRecognizerInBackground();
     }
     if (mounted) setState(() {});
     return ok;

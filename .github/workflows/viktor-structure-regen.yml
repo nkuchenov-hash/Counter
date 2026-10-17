@@ -1,0 +1,40 @@
+name: Regenerate Viktor structure map
+on:
+  pull_request:
+    types: [synchronize]
+    paths:
+      - 'lib/data/ai/**'
+      - 'lib/features/viktor/**'
+      - 'test/viktor_*'
+      - 'docs/VIKTOR_AI_ACTION_ENGINE.md'
+      - 'docs/APP_STRUCTURE.md'
+  workflow_dispatch:
+
+concurrency:
+  group: viktor-structure-regenerate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  update-detailed-map:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.number == 285
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Regenerate canonical detailed map
+        run: python scripts/manual/generate_app_structure_detailed.py
+      - name: Save generated parity map in PR branch
+        run: |
+          if ! git diff --quiet -- docs/APP_STRUCTURE_DETAILED.md; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/APP_STRUCTURE_DETAILED.md
+            git commit -m "Regenerate detailed structure map for Viktor"
+            git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+          fi

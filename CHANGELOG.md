@@ -1,3 +1,10 @@
+## 2026-10-17 — Viktor AI in-app chat [DRAFT; not deployed]
+
+- Added a full-screen text/voice Viktor with session-only user provider key, OpenAI/Groq/Gemini/OpenRouter allowlist and guarded PocketBase proposal hook. Hosted mode disabled until metered paid accounts exist.
+- Retired the old floating voice FAB and rewired header, More, Profile, Planning Smart and desktop tray/hotkey entry points to Viktor.
+- Added vetted action proposals, ordering-first day schedule preview, fixed/recurring time guards, change confirmation, actual Brain writes with stale-preview check, unit and responsive widget tests.
+- Still **not production ready**: detailed structure generator/CI, authenticated backend E2E, provider credentials, billing, transactional multi-write/undo and physical cleanup of all legacy voice modules require validation.
+
 ## 2026-10-17 — Calendar Week shares the Time View drag engine [fix]
 
 - Replaced Calendar Week's independent Flutter Draggable implementation with the canonical TimelinePlanInteractionBlock pointer/hold gesture, including drag preview and automatic scroll/page gesture lock.

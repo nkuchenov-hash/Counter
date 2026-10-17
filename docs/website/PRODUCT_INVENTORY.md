@@ -33,7 +33,7 @@
 | Field | Detail |
 | :--- | :--- |
 | **User-facing capability** | Daily plan list with cards: checkbox done, play-to-track, tags, category, time, recurring icon, rich notes, checklist. Swipe between days. Bulk selection/edit. Plan reminders (local notifications). Link records to plans (plan vs fact). *(Smart Plan / AI batch add exists in app — **exclude from v1 website**; see §21.)* |
-| **Proof** | `lib/features/planning/planning_view.dart` — `PlanningPage`, `PlanningSwipeWrapper`; `lib/features/planning/smart_plan_sheet.dart`; `lib/features/planning/bulk_planning_edit_sheet.dart`; `lib/data/plan_service.dart` — CRUD, rrule expansion, alarms |
+| **Proof** | `lib/features/planning/planning_view.dart` — `PlanningPage`, `PlanningSwipeWrapper`; `lib/features/viktor/viktor_chat_page.dart` (draft Viktor entry); `lib/features/planning/bulk_planning_edit_sheet.dart`; `lib/data/plan_service.dart` — CRUD, rrule expansion, alarms |
 | **User value** | Plan the day as real cards, then turn intent into tracked time with play |
 | **Status** | **public-ready** (F2A/F2C accepted per roadmap) |
 | **Risks / caveats** | Notes require explicit Save today (F3 auto-save paused). Full recurring *series* edit-scope dialog not shipped — virtual occurrence edit materializes one-off + `exception_dates`. F2B category filter deferred. |
@@ -136,8 +136,8 @@
 
 | Field | Detail |
 | :--- | :--- |
-| **User-facing capability** | Mic FAB opens speech-to-text sheet. Routes by active tab: timeline record, planning task, or list item. Bilingual STT toggle (app language ↔ English). Transcript editable before submit. |
-| **Proof** | `lib/shared/voice/ui/voice_input_sheet.dart`; `lib/app/shell/shared/shell_voice_input.dart`; `docs/ARCHITECTURE.md` § Voice Input Protocol |
+| **User-facing capability** | The standalone microphone FAB and speech sheet were retired in the draft Viktor implementation. The unified in-app assistant chat accepts editable text and microphone dictation and routes reviewed proposals to the Brain. |
+| **Proof** | `lib/features/viktor/viktor_chat_page.dart`; `lib/app/shell/shared/shell_chrome.dart`; `docs/ARCHITECTURE.md` § Voice Input Protocol |
 | **User value** | Capture tasks and time entries hands-free |
 | **Status** | **public-ready** |
 | **Risks / caveats** | Web STT depends on browser speech APIs; permissions required on mobile. |
@@ -277,8 +277,8 @@
 
 | Field | Detail |
 | :--- | :--- |
-| **User-facing capability** | Smart Plan sheet calls `POST /api/ai/parse-task` (`parsePlanningItemsViaAiBackend`) for batch plan items from natural language. |
-| **Proof** | `lib/features/planning/smart_plan_sheet.dart`; `lib/data/plan_service.dart` — `parsePlanningItemsViaAiBackend` |
+| **User-facing capability** | The legacy Smart Plan sheet was retired. Planning Smart opens the in-app Viktor chat, which uses `POST /api/viktor/propose` for model-generated action proposals with explicit confirmation. |
+| **Proof** | `lib/features/viktor/viktor_chat_page.dart`; `lib/data/ai/viktor_gateway.dart`; `lib/data/ai/viktor_executor.dart` — AI action proposals, confirmation and Brain writes (draft) |
 | **User value** | Faster bulk plan entry for power users |
 | **Status** | **do-not-market-yet** on v1 — `profiles.tier` in DATA_MAP but **not parsed in client**; `pro_badge_*` l10n unused; server tier rules not verified in repo |
 | **Risks / caveats** | Requires live AI route; failure modes silent/null in some paths |
