@@ -138,9 +138,7 @@ class _CalendarViewState extends State<CalendarView>
   }
 
   bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
-
   void _collapseDayFocus() { if (_dayFocusActive) setState(() => _dayFocusActive = false); }
-
   void _onDayTapped(DateTime day, {DateTime? startTime, bool createPlan = true}) {
     final d = calendarDateOnly(day);
     setState(() {
@@ -234,8 +232,7 @@ class _CalendarViewState extends State<CalendarView>
     if (_lastCalendarPlanDragEnd case final end?
         when DateTime.now().difference(end).inMilliseconds < 300) return;
     final velocity = details.primaryVelocity ?? 0;
-    if (velocity.abs() < 260) return;
-    _shiftActivePeriod(velocity < 0 ? 1 : -1);
+    if (velocity.abs() >= 260) _shiftActivePeriod(velocity < 0 ? 1 : -1);
   }
 
   void _setMode(CalendarViewMode mode) {
@@ -496,8 +493,7 @@ class _CalendarViewState extends State<CalendarView>
                   onDayTap: _onDayTapped,
                   onTaskTap: widget.onEditTask,
                   onSlotTap: (time) => _onDayTapped(time, startTime: time),
-                  onPlanDrop: (tasks, target, fingerWall) =>
-                      calendarReschedulePlans(context, tasks, target, fingerWall),
+                  onPlanDrop: (tasks, target, fingerWall) => calendarReschedulePlans(context, tasks, target, fingerWall),
                   onDragActiveChanged: (active) {
                     _calendarPlanDragging = active;
                     if (!active) _lastCalendarPlanDragEnd = DateTime.now();
