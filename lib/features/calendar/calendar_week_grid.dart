@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 /// Week browsing grid — real time grid with hourly rows and positioned events.
-class CalendarWeekPlannerGrid extends StatelessWidget {
+class CalendarWeekPlannerGrid extends StatefulWidget {
   const CalendarWeekPlannerGrid({
     super.key,
     required this.weekStart,
@@ -25,6 +25,7 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
     required this.onSlotTap,
     required this.onGroupTap,
     required this.onPlanDrop,
+    required this.onDragActiveChanged,
   });
 
   final DateTime weekStart;
@@ -37,6 +38,41 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
   final ValueChanged<DateTime> onSlotTap;
   final void Function(DateTime day, String categoryName, List<PlanningTask> tasks) onGroupTap;
   final Future<void> Function(List<PlanningTask>, DateTime, DateTime?) onPlanDrop;
+  final ValueChanged<bool> onDragActiveChanged;
+
+  @override
+  State<CalendarWeekPlannerGrid> createState() => _CalendarWeekPlannerGridState();
+}
+
+class _CalendarWeekPlannerGridState extends State<CalendarWeekPlannerGrid> {
+  DateTime get weekStart => widget.weekStart;
+  DateTime get today => widget.today;
+  Map<String, List<PlanningTask>> get tasksByDay => widget.tasksByDay;
+  bool get loading => widget.loading;
+  bool get showEventPills => widget.showEventPills;
+  ValueChanged<DateTime> get onDayTap => widget.onDayTap;
+  ValueChanged<PlanningTask> get onTaskTap => widget.onTaskTap;
+  ValueChanged<DateTime> get onSlotTap => widget.onSlotTap;
+  void Function(DateTime, String, List<PlanningTask>) get onGroupTap =>
+      widget.onGroupTap;
+  Future<void> Function(List<PlanningTask>, DateTime, DateTime?) get onPlanDrop =>
+      widget.onPlanDrop;
+
+  bool _dragActive = false;
+  final ScrollController _weekScrollController =
+      ScrollController(initialScrollOffset: 7 * 64);
+
+  void _setDragActive(bool active) {
+    if (_dragActive == active || !mounted) return;
+    widget.onDragActiveChanged(active);
+    setState(() => _dragActive = active);
+  }
+
+  @override
+  void dispose() {
+    _weekScrollController.dispose();
+    super.dispose();
+  }
 
   static const double _hourHeight = 64;
   static const double _timeGutter = 44;
@@ -84,10 +120,6 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
-    final scrollController = ScrollController(
-      initialScrollOffset: 7 * _hourHeight,
-    );
-
     return Stack(
       children: [
         Column(
@@ -159,7 +191,10 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
             ),
             Expanded(
               child: SingleChildScrollView(
-                controller: scrollController,
+                controller: _weekScrollController,
+                physics: _dragActive
+                    ? const NeverScrollableScrollPhysics()
+                    : null,
                 child: SizedBox(
                   height: 24 * _hourHeight,
                   child: Row(
@@ -336,6 +371,7 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                                                             onTap: grouped
                                                                 ? () => onGroupTap(day, name, List.unmodifiable(block.tasks))
                                                                 : () => onTaskTap(block.tasks.single),
+                                                            onDragActiveChanged: _setDragActive,
                                                             onDrop: (dragged, pointer, grabOffset) async {
                                                               // Day columns sit in the SAME 7-day RenderFlex.
                                                               // Use the full canvas, not this task's card or
