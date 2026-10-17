@@ -9,6 +9,7 @@ import 'package:counter/features/calendar/calendar_day_events.dart';
 import 'package:counter/features/calendar/calendar_helpers.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 
 /// Week browsing grid — real time grid with hourly rows and positioned events.
