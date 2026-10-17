@@ -38,6 +38,18 @@ extension PlanOptimisticOverlayExtension on DatabaseService {
     return applied;
   }
 
+  void _rollbackOptimisticPlanBulkDeletion(Iterable<String> ids) {
+    for (final raw in ids) {
+      final id = raw.trim();
+      if (id.isEmpty || id.startsWith('virt-')) continue;
+      final biz = _outboxBusinessPlanId(id);
+      final pb = _tryResolvePlanPbIdFromCacheOnly(id);
+      _clearOptimisticPlanDeletion(id, biz, pb ?? '');
+    }
+    notifyPlanningRefresh(scheduleNetworkRefresh: false);
+    AppSnack.failed();
+  }
+
   void _clearOptimisticPlanDeletion(
     String originalInput, String businessId, String pocketBaseId,
   ) {
