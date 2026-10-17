@@ -1,6 +1,6 @@
 part of '../app_shell.dart';
 
-mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
+mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
   List<Widget> buildShellPages() => <Widget>[
     timelineTabHost,
     planningTabHost,
@@ -284,7 +284,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
                     DesktopVoiceCommandIntent:
                         CallbackAction<DesktopVoiceCommandIntent>(
                           onInvoke: (_) {
-                            unawaited(toggleDesktopVoiceWidget());
+                            unawaited(openViktor());
                             return null;
                           },
                         ),
