@@ -111,7 +111,6 @@ Product sections own section-specific code later; this phase only separates shel
 | `app/shell/shared/shell_edit_hosts.dart` | Timeline/plan edit modal hosts *(part)* |
 | `app/shell/shared/shell_more_menu.dart` | More bottom sheet and shell navigation actions only; Paths opens shell destination 6 *(part)* |
 | `app/shell/shared/shell_voice_routing.dart` | Desktop voice command, hotkey/overlay submission and confirmation routing; generic FAB voice input is separate *(part)* |
-| `app/shell/shared/shell_voice_input.dart` | Generic FAB / VoiceInputSheet orchestration for Timeline record, Planning task and Backlog task submission *(part)* |
 | `app/shell/shared/shell_voice_integration.dart` | Desktop tray/global-hotkey attachment and reattachment at the shell boundary *(part)* |
 | `app/shell/shared/shell_top_status_bars.dart` | Presentation-only top status stack for offline sync, Profile hydration, and unfilled-time notices |
 | `app/shell/shared/offline_sync_status_bar.dart` | Shell-owned O1 offline/sync status UI; renders Brain `OfflineSyncController` state and forwards tap-to-retry |
@@ -399,8 +398,6 @@ Command execution (`parse` → `normalize` → `writeRecord`) lives in Brain: `l
 
 | File | Role |
 | :--- | :--- |
-| `voice_input_sheet.dart` | Mobile/web mic bottom sheet |
-| `voice_capture_config.dart` | Submit-intent config for the sheet |
 | `app_mic_level_bars.dart` | Mic level visualization bars |
 
 #### `platforms/mobile/` — mobile/web audio adapters
@@ -489,7 +486,7 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `auth/` | `auth_view.dart`, `auth_screen.dart`, `oauth_session.dart` | Sign-in, register, OAuth, password reset |
 | `timeline/` | `timeline_view.dart`, `timeline_continuous_history.dart`, `timeline_header_controls.dart`, `timeline_day_page.dart`, `timeline_record_card.dart`, `timeline_helpers.dart`, `unfilled_time_gap_banner.dart` | Timeline coordinator; continuous history; per-day stats; header controls; record cards; current unfilled-time recovery banner |
 | `stats/` | `stats_view.dart`, `stats_visual_overview.dart`, `stats_detail_tree.dart` | Productivity stats (embedded in Timeline): waking-day time tree plus top-level donut distribution and hourly category timeline |
-| `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_quick_add_tags_controller.dart`**, **`planning_quick_add_schedule.dart`**, **`planning_bulk_edit_actions.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** | Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit |
+| `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_quick_add_tags_controller.dart`**, **`planning_quick_add_schedule.dart`**, **`planning_bulk_edit_actions.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** | Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit |
 | `paths/` | `paths_page.dart`, `widgets/path_stage_card.dart` | First-class Paths destination: project list/detail, compact goal header, Variant-2 structured stage/action cards, nested stage/action reorder, progress and completion controls |
 | `lists/` | `lists_view.dart`, `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_empty_state.dart`, `lists_card.dart`, `lists_export.dart`, `category_filter_tree_field.dart` | Lists/backlog coordinator + filter/bulk/empty modules + card + export + Lists-only “All categories” filter field |
 | `notes/` | `drawing_canvas_page.dart`, `notes_audio_controller.dart`, `notes_image_tools.dart`, `notes_editor_document_controller.dart`, `notes_glm_surface.dart`, `notes_visual_tokens.dart`, `notes_figma_tokens.dart`, `note_editor_page.dart`, **`widgets/`** (`notes_library_body.dart`, `notes_library_production_shell.dart`, `note_card.dart`, `note_editor_block_widgets.dart`, `notes_editor_tools.dart`, `notes_special_block_widgets.dart`, `notes_canonical_components.dart`, `notes_component_text_blocks.dart`, `notes_component_structural_blocks.dart`, `notes_component_media_blocks.dart`, `notes_component_tools.dart`) | Notes library/editor/drawing feature UI; exact roles in §3.4 Notes below |
@@ -644,7 +641,6 @@ Copy `pb_hooks/` beside the PocketBase executable on the server. Client Brain co
 | `app/shell/shared/shell_tab_host.dart` | Feature tab composition; depends on edit hosts *(part)* |
 | `app/shell/shared/shell_more_menu.dart` | More navigation actions *(part)* |
 | `app/shell/shared/shell_voice_routing.dart` | Desktop voice command/hotkey/overlay routing *(part)* |
-| `app/shell/shared/shell_voice_input.dart` | Generic FAB / VoiceInputSheet routing *(part)* |
 | `app/shell/shared/shell_voice_integration.dart` | Desktop tray/global-hotkey attachment *(part)* |
 | `app/shell/shared/shell_lifecycle.dart` | Shell startup/dispose wiring *(part)* |
 | `app/shell/shared/shell_chrome.dart` | Responsive shell scaffold/chrome *(part)* |
