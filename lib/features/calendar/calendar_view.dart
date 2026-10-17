@@ -9,6 +9,7 @@ import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/calendar/calendar_chrome_header.dart';
+import 'package:counter/features/calendar/calendar_drag_and_reschedule.dart';
 import 'package:counter/features/calendar/calendar_task_group_sheet.dart';
 import 'package:counter/features/calendar/calendar_day_panel.dart';
 import 'package:counter/features/calendar/calendar_helpers.dart';
@@ -76,16 +77,6 @@ class _CalendarViewState extends State<CalendarView>
         unawaited(_reloadIndicators());
       },
     );
-  }
-
-  @override
-  void didUpdateWidget(CalendarView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final next = calendarDateOnly(widget.selectedDate);
-    if (!_isSameDay(next, _selectedDay)) {
-      _selectedDay = next;
-      _dayStream = _createDayStream(_selectedDay);
-    }
   }
 
   @override
@@ -159,10 +150,6 @@ class _CalendarViewState extends State<CalendarView>
       _dayFocusActive = false;
       _dayStream = _createDayStream(d);
       _weekAnchor = calendarWeekStartMonday(d);
-      if (_mode == CalendarViewMode.month &&
-          (d.month != _focusedMonth.month || d.year != _focusedMonth.year)) {
-        _focusedMonth = DateTime(d.year, d.month);
-      }
     });
     unawaited(_reloadIndicators());
     if (createPlan) _openAddPlanForSelectedDay('', startTime);
@@ -494,6 +481,9 @@ class _CalendarViewState extends State<CalendarView>
                   browsing: true,
                   onDayTap: _onDayTapped,
                   currentMonthOnly: true,
+                  onPlanDrop: (tasks, target) async {
+                    await calendarReschedulePlans(context, tasks, target);
+                  },
                 ),
               CalendarViewMode.week => CalendarWeekPlannerGrid(
                   weekStart: _weekAnchor,
@@ -504,6 +494,9 @@ class _CalendarViewState extends State<CalendarView>
                   onDayTap: _onDayTapped,
                   onTaskTap: widget.onEditTask,
                   onSlotTap: (time) => _onDayTapped(time, startTime: time),
+                  onPlanDrop: (tasks, target) async {
+                    await calendarReschedulePlans(context, tasks, target);
+                  },
                   onGroupTap: (day, category, grouped) => showCalendarTaskGroupSheet(
                     context: context,
                     day: day,
