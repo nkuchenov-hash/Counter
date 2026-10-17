@@ -25,6 +25,7 @@ void main() {
     );
     var taps = 0;
     var drops = 0;
+    final activities = <bool>[];
     Offset? dropPointer;
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
@@ -37,6 +38,7 @@ void main() {
               canMove: true,
               height: 70,
               onTap: () => taps++,
+              onDragActiveChanged: activities.add,
               onDrop: (tasks, pointer, grabOffset) async {
                 drops++;
                 dropPointer = pointer;
@@ -57,6 +59,7 @@ void main() {
     await tester.pump();
 
     expect(drops, 1);
+    expect(activities, [true, false]);
     expect(taps, 0);
     expect(dropPointer, isNotNull);
     expect(dropPointer!.dy, greaterThan(center.dy));
