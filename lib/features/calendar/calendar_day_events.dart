@@ -15,6 +15,7 @@ class CalendarDayEventList extends StatelessWidget {
     this.vertical = false,
     this.enableDrag = false,
     this.outsideMonth = false,
+    this.onTaskTap,
   });
 
   final List<PlanningTask> tasks;
@@ -24,6 +25,7 @@ class CalendarDayEventList extends StatelessWidget {
   final bool vertical;
   final bool enableDrag;
   final bool outsideMonth;
+  final ValueChanged<PlanningTask>? onTaskTap;
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +42,9 @@ class CalendarDayEventList extends StatelessWidget {
           for (final task in visible)
             CalendarPlanDraggable(
               tasks: enableDrag ? [task] : const [],
-              child: Padding(
+              child: InkWell(
+                onTap: onTaskTap == null ? null : () => onTaskTap!(task),
+                child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
                 child: Text(
                   task.startTime == null
@@ -54,6 +58,7 @@ class CalendarDayEventList extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
+              ),
               ),
             ),
           if (extra > 0)
@@ -77,9 +82,12 @@ class CalendarDayEventList extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 2),
             child: CalendarPlanDraggable(
               tasks: enableDrag ? [t] : const [],
-              child: Opacity(
-                opacity: outsideMonth ? 0.62 : 1,
-                child: CalendarEventPill(task: t, loc: loc),
+              child: InkWell(
+                onTap: onTaskTap == null ? null : () => onTaskTap!(t),
+                child: Opacity(
+                  opacity: outsideMonth ? 0.62 : 1,
+                  child: CalendarEventPill(task: t, loc: loc),
+                ),
               ),
             ),
           ),
