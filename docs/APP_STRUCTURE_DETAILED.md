@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `dc9da0b9` on 2026-10-17.**
+**Generated from input HEAD `f874a8fa` on 2026-10-17.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 904 — each appears **exactly once** below.
+**Tracked files:** 900 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,7 +26,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 181 |
+| `production UI` | 179 |
 | `test` | 121 |
 | `Brain/data` | 97 |
 | `platform build` | 83 |
@@ -35,8 +35,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | `platform resource` | 44 |
 | `governing documentation` | 40 |
 | `Desktop Voice runtime` | 36 |
-| `shared Voice system` | 22 |
 | `test fixture` | 22 |
+| `shared Voice system` | 20 |
 | `PocketBase migration` | 18 |
 | `PocketBase backend` | 17 |
 | `historical engineering record` | 17 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 491 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 228 |
+| `PROVEN_REQUIRED` | 483 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 232 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 40 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 825 |
-| `MEDIUM` | 79 |
+| `HIGH` | 817 |
+| `MEDIUM` | 83 |
 
 ---
 
@@ -11278,44 +11278,6 @@ RU:
 - **Связано с:** Все main tabs, `app_shell.dart`
 
 
-### `lib/app/shell/shared/shell_voice_input.dart`
-
-EN:
-
-- **Human purpose:** App shell wiring — Generic FAB / VoiceInputSheet routing. Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What this is:** App shell wiring — Generic FAB / VoiceInputSheet routing.
-- **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **Contents:** Shell mixin or widget (`ShellVoiceInput`).
-- **Key code names:** `ShellVoiceInput`
-- **Repository role:** production UI
-- **Evidence of use:** Included by `lib/app/shell/app_shell.dart` through a `part` directive (not imported directly).
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
-- **Confidence:** HIGH
-- **Owner / layer:** app shell
-- **Responsibilities:** Generic FAB / VoiceInputSheet routing
-- **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
-- **Can it be deleted?** Brain/library compile failure in `lib/app/shell/app_shell.dart` and broken related UI/data ops.
-- **Connected to:** All main tabs, `app_shell.dart`; APP_STRUCTURE role: Generic FAB / VoiceInputSheet routing
-
-RU:
-
-- **Зачем файл человеку:** Оболочка приложения (shell) — Generic FAB / VoiceInputSheet routing. Связывает вкладки, voice, edit sheets и offline banner.
-- **Что это:** Оболочка приложения (shell) — Generic FAB / VoiceInputSheet routing.
-- **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
-- **Содержимое:** Shell mixin или виджет (logic in `shell_voice_input`).
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Подключён из `lib/app/shell/app_shell.dart` через `part` (не импортируется напрямую).
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Сломается компиляция `lib/app/shell/app_shell.dart` и связанные экраны/данные.
-- **Уверенность:** HIGH
-- **Владелец / слой:** оболочка приложения
-- **Обязанности:** Реализует в shell: Generic FAB / VoiceInputSheet routing.
-- **Когда открывать:** Навигация, voice, edit host.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Все main tabs, `app_shell.dart`
-
-
 ### `lib/app/shell/shared/shell_voice_integration.dart`
 
 EN:
@@ -19989,44 +19951,6 @@ RU:
 - **Связано с:** Вкладка Plans (shell index 1)
 
 
-### `lib/features/planning/smart_plan_sheet.dart`
-
-EN:
-
-- **Human purpose:** `smart_plan_sheet.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit. Users see `smart_plan_sheet.dart` when using Plans tab (second bottom tab).
-- **What this is:** `smart_plan_sheet.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit.
-- **Why needed:** Users see `smart_plan_sheet.dart` when using Plans tab (second bottom tab).
-- **Contents:** Primary symbols: `SmartPlanCommit`, `SmartPlanSheet`, `_SmartPlanSheetState`.
-- **Key code names:** `SmartPlanCommit`, `SmartPlanSheet`, `_SmartPlanSheetState`
-- **Repository role:** production UI
-- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`, `docs/FUNCTIONS.md`, `docs/VIKTOR_AI_ACTION_ENGINE.md`, `docs/reports/DESIGN_SYSTEM_INVENTORY.md`.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Removing it breaks a required repository capability.
-- **Confidence:** MEDIUM
-- **Owner / layer:** Planning UI
-- **Responsibilities:** Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
-- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
-- **Can it be deleted?** Removing it breaks a required repository capability.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
-
-RU:
-
-- **Зачем файл человеку:** `smart_plan_sheet.dart` на вкладка Plans (вторая снизу) — Пользователь открывает sheet/dialog из entry `smart_plan_sheet`.. Пользователь видит UI из `smart_plan_sheet.dart` на вкладка Plans (вторая снизу).
-- **Что это:** `smart_plan_sheet.dart` на вкладка Plans (вторая снизу) — Пользователь открывает sheet/dialog из entry `smart_plan_sheet`..
-- **Зачем:** Пользователь видит UI из `smart_plan_sheet.dart` на вкладка Plans (вторая снизу).
-- **Содержимое:** Основные символы: `SmartPlanCommit`, `SmartPlanSheet`, `_SmartPlanSheetState`.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`, `docs/FUNCTIONS.md`, `docs/VIKTOR_AI_ACTION_ENGINE.md`, `docs/reports/DESIGN_SYSTEM_INVENTORY.md`.
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
-- **Уверенность:** MEDIUM
-- **Владелец / слой:** UI планов
-- **Обязанности:** Пользователь открывает sheet/dialog из entry `smart_plan_sheet`.
-- **Когда открывать:** Вкладка Plans: день, карточки, play.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Вкладка Plans (shell index 1)
-
-
 ### `lib/features/planning/time_view/planning_time_view.dart`
 
 EN:
@@ -23668,7 +23592,7 @@ EN:
 - **Why needed:** UI labels resolve through l10n maps instead of hard-coded strings in widgets.
 - **Contents:** Dart maps/keys in `app_locales.dart`.
 - **Repository role:** localization
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/data/models.dart`, `lib/features/planning/smart_plan_sheet.dart`, `lib/features/profile/profile_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/data/models.dart`, `lib/features/profile/profile_view.dart`, `lib/main.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -23685,7 +23609,7 @@ RU:
 - **Зачем:** Подписи UI берутся из l10n maps, а не из hard-coded строк в виджетах.
 - **Содержимое:** Dart-карты ключей в `app_locales.dart`.
 - **Роль в репозитории:** localization
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/data/models.dart`, `lib/features/planning/smart_plan_sheet.dart`, `lib/features/profile/profile_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/data/models.dart`, `lib/features/profile/profile_view.dart`, `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -27103,14 +27027,14 @@ EN:
 - **Why needed:** Web Audio vs stub differs by platform; keep adapters under Voice ownership.
 - **Contents:** Voice audio adapter (logic in `voice_audio_stub`).
 - **Repository role:** mobile/web Voice adapters
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`, `scripts/audit/architecture_guard.ps1`, `scripts/manual/structure_folder_ru_lib.py`, `scripts/manual/structure_guide_data.py`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** mobile/web Voice adapters
 - **Responsibilities:** Non-web voice audio stub
 - **When to open:** When behavior tied to `voice_audio_stub.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** APP_STRUCTURE role: Non-web voice audio stub
 
 RU:
@@ -27120,10 +27044,10 @@ RU:
 - **Зачем:** Web Audio и заглушка отличаются по платформе; адаптеры живут рядом с голосовым вводом.
 - **Содержимое:** Аудио-адаптер голосового ввода (`voice_audio_stub.dart`).
 - **Роль в репозитории:** mobile/web Voice adapters
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`, `scripts/audit/architecture_guard.ps1`, `scripts/manual/structure_folder_ru_lib.py`, `scripts/manual/structure_guide_data.py`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** mobile/web Voice adapters
 - **Обязанности:** Даёт тон или звук для листа микрофона на web и остальных платформах.
 - **Когда открывать:** Когда ломается поведение, связанное с `voice_audio_stub.dart`.
@@ -27140,14 +27064,14 @@ EN:
 - **Why needed:** Web Audio vs stub differs by platform; keep adapters under Voice ownership.
 - **Contents:** Voice audio adapter (logic in `voice_audio_web`).
 - **Repository role:** mobile/web Voice adapters
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`, `scripts/audit/architecture_guard.ps1`, `scripts/manual/structure_folder_ru_lib.py`, `scripts/manual/structure_guide_data.py`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** mobile/web Voice adapters
 - **Responsibilities:** Web voice audio implementation
 - **When to open:** When behavior tied to `voice_audio_web.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** APP_STRUCTURE role: Web voice audio implementation
 
 RU:
@@ -27157,10 +27081,10 @@ RU:
 - **Зачем:** Web Audio и заглушка отличаются по платформе; адаптеры живут рядом с голосовым вводом.
 - **Содержимое:** Аудио-адаптер голосового ввода (`voice_audio_web.dart`).
 - **Роль в репозитории:** mobile/web Voice adapters
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`, `scripts/audit/architecture_guard.ps1`, `scripts/manual/structure_folder_ru_lib.py`, `scripts/manual/structure_guide_data.py`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** mobile/web Voice adapters
 - **Обязанности:** Даёт тон или звук для листа микрофона на web и остальных платформах.
 - **Когда открывать:** Когда ломается поведение, связанное с `voice_audio_web.dart`.
@@ -27328,14 +27252,14 @@ EN:
 - **Why needed:** Phone, desktop, web, and Wear activation share one command interpretation path.
 - **Contents:** Shared Voice module (logic in `speech_engine_controller`).
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared Voice system
 - **Responsibilities:** Shared SpeechToText instance lifecycle: initialization, readiness/error state, hard reset and locale diagnostics
 - **When to open:** When behavior tied to `speech_engine_controller.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** APP_STRUCTURE role: Shared SpeechToText instance lifecycle: initialization, readiness/error state, hard reset and locale diagnostics
 
 RU:
@@ -27345,10 +27269,10 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`speech_engine_controller.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий Voice system
 - **Обязанности:** Держит контракт, интерфейс или диагностику общей системы голосового ввода.
 - **Когда открывать:** Когда ломается поведение, связанное с `speech_engine_controller.dart`.
@@ -27365,14 +27289,14 @@ EN:
 - **Why needed:** Phone, desktop, web, and Wear activation share one command interpretation path.
 - **Contents:** Shared Voice module (logic in `speech_engine_handle`).
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/recognition/speech_engine_controller.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Imported/exported by production Dart: `lib/shared/voice/recognition/speech_engine_controller.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared Voice system
 - **Responsibilities:** Speech-to-text engine holder
 - **When to open:** When behavior tied to `speech_engine_handle.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** APP_STRUCTURE role: Speech-to-text engine holder
 
 RU:
@@ -27382,10 +27306,10 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`speech_engine_handle.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/recognition/speech_engine_controller.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Доказательства использования:** Импортируется production Dart: `lib/shared/voice/recognition/speech_engine_controller.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий Voice system
 - **Обязанности:** Держит контракт, интерфейс или диагностику общей системы голосового ввода.
 - **Когда открывать:** Когда ломается поведение, связанное с `speech_engine_handle.dart`.
@@ -27403,14 +27327,14 @@ EN:
 - **Contents:** Shared Voice module (`SpeechListenLocale`).
 - **Key code names:** `SpeechListenLocale`
 - **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/smart_plan_sheet.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`, `scripts/manual/structure_folder_ru_lib.py`, `scripts/manual/structure_guide_data.py`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** shared Voice system
 - **Responsibilities:** STT locale resolution
 - **When to open:** When behavior tied to `speech_listen_locale.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** APP_STRUCTURE role: STT locale resolution
 
 RU:
@@ -27420,10 +27344,10 @@ RU:
 - **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
 - **Содержимое:** Модуль общей системы голосового ввода (`speech_listen_locale.dart`).
 - **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/smart_plan_sheet.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`, `scripts/manual/structure_folder_ru_lib.py`, `scripts/manual/structure_guide_data.py`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** общий Voice system
 - **Обязанности:** Держит контракт, интерфейс или диагностику общей системы голосового ввода.
 - **Когда открывать:** Когда ломается поведение, связанное с `speech_listen_locale.dart`.
@@ -27503,82 +27427,6 @@ RU:
 - **Владелец / слой:** общий Voice system
 - **Обязанности:** Держит контракт, интерфейс или диагностику общей системы голосового ввода.
 - **Когда открывать:** Когда ломается поведение, связанное с `app_mic_level_bars.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/shared/voice/ui/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/shared/voice/ui/voice_capture_config.dart`
-
-EN:
-
-- **Human purpose:** Shared Voice system — Submit-intent config for the sheet. Phone, desktop, web, and Wear activation share one command interpretation path.
-- **What this is:** Shared Voice system — Submit-intent config for the sheet.
-- **Why needed:** Phone, desktop, web, and Wear activation share one command interpretation path.
-- **Contents:** Shared Voice module (`VoiceCaptureConfig`).
-- **Key code names:** `VoiceCaptureConfig`
-- **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared Voice system
-- **Responsibilities:** Submit-intent config for the sheet
-- **When to open:** When behavior tied to `voice_capture_config.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Submit-intent config for the sheet
-
-RU:
-
-- **Зачем файл человеку:** Общая система голосового ввода — файл `voice_capture_config.dart`. Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
-- **Что это:** Общая система голосового ввода — файл `voice_capture_config.dart`.
-- **Зачем:** Телефон, компьютер, web и Wear сходятся в один путь разбора команд.
-- **Содержимое:** Модуль общей системы голосового ввода (`voice_capture_config.dart`).
-- **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/shared/voice/ui/voice_input_sheet.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общий Voice system
-- **Обязанности:** Держит контракт, интерфейс или диагностику общей системы голосового ввода.
-- **Когда открывать:** Когда ломается поведение, связанное с `voice_capture_config.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/shared/voice/ui/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/shared/voice/ui/voice_input_sheet.dart`
-
-EN:
-
-- **Human purpose:** Mobile/web mic bottom sheet — speech-to-text capture routed by `VoiceCaptureConfig`. Voice submit on Timeline, Plans, and Lists opens this sheet; must not block main thread.
-- **What this is:** Mobile/web mic bottom sheet — speech-to-text capture routed by `VoiceCaptureConfig`.
-- **Why needed:** Voice submit on Timeline, Plans, and Lists opens this sheet; must not block main thread.
-- **Contents:** `VoiceInputSheet`, `_VoiceInputSheetState`; STT engine handle, permission prompts.
-- **Key code names:** `VoiceInputSheet`, `_VoiceInputSheetState`
-- **Repository role:** shared Voice system
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared Voice system
-- **Responsibilities:** Listen/transcribe user speech; return text to shell voice routing.
-- **When to open:** When behavior tied to `voice_input_sheet.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Mobile/web mic sheet — speech-to-text via VoiceCaptureConfig
-
-RU:
-
-- **Зачем файл человеку:** Нижняя шторка микрофона (mobile/web) — speech-to-text по `VoiceCaptureConfig`. Voice submit на Timeline, Plans и Lists открывает эту шторку; не блокирует main thread.
-- **Что это:** Нижняя шторка микрофона (mobile/web) — speech-to-text по `VoiceCaptureConfig`.
-- **Зачем:** Voice submit на Timeline, Plans и Lists открывает эту шторку; не блокирует main thread.
-- **Содержимое:** `VoiceInputSheet`, `_VoiceInputSheetState`; STT handle, запрос permissions.
-- **Роль в репозитории:** shared Voice system
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общий Voice system
-- **Обязанности:** Слушает/транскрибирует речь; отдаёт текст в shell voice routing.
-- **Когда открывать:** Когда ломается поведение, связанное с `voice_input_sheet.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/shared/voice/ui/`, `docs/APP_STRUCTURE.md`
 
