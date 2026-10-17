@@ -15,6 +15,7 @@ class CalendarWeekTimeViewDrag extends StatefulWidget {
     required this.child,
     required this.onTap,
     required this.onDrop,
+    required this.onDragActiveChanged,
   });
   final List<PlanningTask> tasks;
   final bool canMove;
@@ -22,6 +23,7 @@ class CalendarWeekTimeViewDrag extends StatefulWidget {
   final Widget child;
   final VoidCallback onTap;
   final Future<void> Function(List<PlanningTask>, Offset, double) onDrop;
+  final ValueChanged<bool> onDragActiveChanged;
 
   @override
   State<CalendarWeekTimeViewDrag> createState() =>
@@ -36,6 +38,7 @@ class _CalendarWeekTimeViewDragState extends State<CalendarWeekTimeViewDrag> {
   OverlayEntry? _feedback;
 
   void _removeFeedback() {
+    if (_active) widget.onDragActiveChanged(false);
     _feedback?.remove();
     _feedback?.dispose();
     _feedback = null;
@@ -45,6 +48,7 @@ class _CalendarWeekTimeViewDragState extends State<CalendarWeekTimeViewDrag> {
   void _start(double grabOffset) {
     if (!widget.canMove) return;
     _active = true;
+    widget.onDragActiveChanged(true);
     _grabOffset = grabOffset;
     if (_feedback != null) return;
     _feedback = OverlayEntry(builder: (overlayContext) {
