@@ -67,6 +67,7 @@ class ViktorModelSettings {
 
   void selectProvider(String newProvider) {
     if (!models.containsKey(newProvider)) return;
+    if (provider != newProvider) sessionApiKey = '';
     provider = newProvider;
     model = models[newProvider]!.first;
   }
