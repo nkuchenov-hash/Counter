@@ -60,7 +60,7 @@ class CalendarPlanDraggable extends StatelessWidget {
             ),
           ),
         ),
-      ),
+      );
     if (MediaQuery.sizeOf(context).width >= kShellDesktopNavBreakpoint) {
       // Desktop mirrors Time View: drag immediately with the pointer.
       return Draggable<CalendarDragPayload>(
