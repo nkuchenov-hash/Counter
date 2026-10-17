@@ -4,6 +4,7 @@ import 'package:counter/data/models.dart';
 import 'package:counter/features/calendar/calendar_drag_and_reschedule.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/calendar/calendar_week_grouping.dart';
+import 'package:counter/features/calendar/calendar_week_timeview_drag.dart';
 import 'package:counter/features/calendar/calendar_day_events.dart';
 import 'package:counter/features/calendar/calendar_helpers.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -218,25 +219,8 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                                             .where((task) => task.startTime != null)
                                             .toList();
                                         final blocks = buildCalendarWeekBlocks(tasks, _groupCategory);
-                                        return DragTarget<CalendarDragPayload>(
-                                          onWillAcceptWithDetails: (details) => details.data.canMove,
-                                          onAcceptWithDetails: (details) {
-                                            final box = context.findRenderObject() as RenderBox?;
-                                            if (box == null) return;
-                                            final local = box.globalToLocal(details.offset);
-                                            final minutes = ((local.dy / _hourHeight * 60) / 10).round() * 10;
-                                            final snapped = minutes.clamp(0, 23 * 60 + 50);
-                                            unawaited(onPlanDrop(
-                                              details.data.tasks,
-                                              DateTime(day.year, day.month, day.day,
-                                                  snapped ~/ 60, snapped % 60),
-                                            ));
-                                          },
-                                          builder: (context, candidates, rejected) => DecoratedBox(
+                                        return DecoratedBox(
                                           decoration: BoxDecoration(
-                                            color: candidates.isNotEmpty
-                                                ? scheme.primary.withValues(alpha: 0.10)
-                                                : Colors.transparent,
                                             border: Border(
                                               left: BorderSide(
                                                 color: scheme.outlineVariant.withValues(alpha: 0.34),
@@ -344,9 +328,34 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                                                               ),
                                                             ),
                                                           );
-                                                          return CalendarPlanDraggable(
+                                                          return CalendarWeekTimeViewDrag(
                                                             tasks: block.tasks,
+                                                            canMove: block.tasks.every(calendarPlanCanMove),
+                                                            height: _blockHeight(block),
                                                             child: card,
+                                                            onTap: grouped
+                                                                ? () => onGroupTap(day, name, List.unmodifiable(block.tasks))
+                                                                : () => onTaskTap(block.tasks.single),
+                                                            onDrop: (dragged, pointer, grabOffset) async {
+                                                              // Day columns sit in the SAME 7-day RenderFlex.
+                                                              // Use the full canvas, not this task's card or
+                                                              // one-day column, when resolving drop position.
+                                                              final canvas = context.findAncestorRenderObjectOfType<RenderFlex>();
+                                                              if (canvas == null || !canvas.attached) return;
+                                                              final local = canvas.globalToLocal(pointer);
+                                                              final size = canvas.size;
+                                                              if (local.dx < 0 || local.dx >= size.width ||
+                                                                  local.dy < 0 || local.dy >= size.height) return;
+                                                              final column = (local.dx / (size.width / 7)).floor().clamp(0, 6);
+                                                              final destinationDay = weekStart.add(Duration(days: column));
+                                                              final minutesFromTop = ((local.dy - grabOffset) / _hourHeight * 60);
+                                                              // Time View wall-clock snap: five-minute increments.
+                                                              final snapped = (minutesFromTop / 5).round() * 5;
+                                                              final minutes = snapped.clamp(0, 23 * 60 + 55);
+                                                              final wall = DateTime(destinationDay.year, destinationDay.month,
+                                                                  destinationDay.day, minutes ~/ 60, minutes % 60);
+                                                              await onPlanDrop(dragged, wall);
+                                                            },
                                                           );
                                                         },
                                                       ),
@@ -354,7 +363,6 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                                                 ],
                                               );
                                             },
-                                          ),
                                           ),
                                         );
                                       },
