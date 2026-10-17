@@ -872,4 +872,5 @@ extension PlanOutboxSyncExtension on DatabaseService {
     _clearOptimisticPlanDeletion(originalInput, businessId, resolvedPbId);
     notifyPlanningRefresh(scheduleNetworkRefresh: false);
     return (ok: false, queued: false);
-  }}
+  }
+}
