@@ -24,7 +24,6 @@ import 'package:counter/shared/voice/platforms/desktop/desktop_voice_hotkey.dart
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_hotkey_markers.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_settings.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_smoke_bridge.dart';
-import 'package:counter/shared/voice/recognition/speech_engine_controller.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
@@ -48,8 +47,6 @@ import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/features/voice/desktop_voice_widget.dart';
 import 'package:counter/features/viktor/viktor_chat_page.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
-import 'package:counter/shared/voice/ui/voice_capture_config.dart';
-import 'package:counter/shared/voice/ui/voice_input_sheet.dart';
 import 'package:counter/features/timeline/timeline_view.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -63,7 +60,6 @@ import 'package:counter/app/shell/tablet/tablet_shell_frame.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -73,7 +69,6 @@ part 'shared/shell_tab_host.dart';
 part 'shared/shell_edit_hosts.dart';
 part 'shared/shell_more_menu.dart';
 part 'shared/shell_voice_routing.dart';
-part 'shared/shell_voice_input.dart';
 part 'shared/shell_voice_integration.dart';
 part 'shared/shell_browser_extension.dart';
 part 'shared/shell_lifecycle.dart';
@@ -124,8 +119,6 @@ mixin ShellDashboardBase on State<LifeOSDashboard> {
   StreamSubscription<void>? browserExtensionRecordSub;
 
   final ShellLayoutController shellLayout = ShellLayoutController();
-  final SpeechEngineController speechEngine = SpeechEngineController();
-  bool isVoiceListening = false;
 
   /// Tracks device-local calendar day so an open session can follow midnight without restart.
   Timer? deviceLocalMidnightWatchTimer;
@@ -175,7 +168,6 @@ class ShellDashboardState extends State<LifeOSDashboard>
         ShellTabHost,
         ShellMoreMenu,
         ShellVoiceRouting,
-        ShellVoiceInput,
         ShellVoiceIntegration,
         ShellBrowserExtensionQuickAdd,
         ShellLifecycle,
