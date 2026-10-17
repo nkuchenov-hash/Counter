@@ -21,7 +21,7 @@ import 'package:counter/features/planning/bulk_planning_edit_sheet.dart';
 import 'package:counter/features/planning/planning_quick_add_tags_controller.dart';
 import 'package:counter/features/planning/recurrence_scope_dialog.dart';
 import 'package:counter/data/smart_input_parser.dart';
-import 'package:counter/features/planning/smart_plan_sheet.dart';
+import 'package:counter/features/viktor/viktor_chat_page.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -767,14 +767,12 @@ class _PlanningPageState extends State<PlanningPage>
   Future<int> _injectSmartPlanTasks(List<Map<String, dynamic>> items) =>
       this._injectSmartPlanTasksImpl(items);
 
-  void _openSmartPlanSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (ctx) => SmartPlanSheet(onCommit: _injectSmartPlanTasks),
-    );
+  void _openViktorChat() {
+    final day = widget.selectedDate ??
+        DateTime.tryParse(widget.selectedDateString) ?? DateTime.now();
+    Navigator.of(context).push<void>(MaterialPageRoute<void>(
+      builder: (_) => ViktorChatPage(wallDay: day),
+    ));
   }
 
   Future<void> _toggleDone(PlanningTask task, bool currentDisplayDone) async {
@@ -1502,7 +1500,7 @@ class _PlanningPageState extends State<PlanningPage>
           smartTooltip: t(currentLocale.value, 'smart_plan_tooltip'),
           onAdd: _addTask,
           onSettings: timeView.showPlanningSettingsSheet,
-          onSmart: _openSmartPlanSheet,
+          onSmart: _openViktorChat,
           loading: _planQuickAddInFlight,
         ),
         Expanded(
