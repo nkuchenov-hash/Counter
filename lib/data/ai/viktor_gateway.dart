@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/pb_config.dart';
+import 'package:counter/l10n/dictionary.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,6 +27,15 @@ class ViktorModelSettings {
   String model = 'gpt-4o-mini';
   String sessionApiKey = '';
   bool _loaded = false;
+  String? _credentialOwner;
+
+  void ensureOwner(String userId) {
+    final id = userId.trim();
+    if (_credentialOwner != null && _credentialOwner != id) {
+      sessionApiKey = '';
+    }
+    _credentialOwner = id;
+  }
 
   Future<void> load() async {
     if (_loaded) return;
@@ -80,6 +90,7 @@ class ViktorGateway {
     final service = DatabaseService.instance;
     await service.ensurePocketBaseReady();
     final token = service.pocketBase.authStore.token.trim();
+    settings.ensureOwner(service.pocketBase.authStore.record?.id ?? '');
     if (token.isEmpty) throw const FormatException('Sign in to LIFE OS first.');
     if (settings.mode == 'byok' && settings.sessionApiKey.trim().isEmpty) {
       throw const FormatException('Set your provider API key in Viktor settings.');
@@ -93,7 +104,7 @@ class ViktorGateway {
       'text': input,
       'wall_day': dayKey,
       'request_id': reqId,
-      'ui_locale': 'ru',
+      'ui_locale': currentLocale.value,
       'mode': settings.mode,
       'provider': settings.mode == 'hosted' ? 'openai' : settings.provider,
       'model': settings.mode == 'hosted' ? 'gpt-4o-mini' : settings.model,
