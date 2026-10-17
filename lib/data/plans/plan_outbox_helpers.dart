@@ -660,12 +660,14 @@ extension PlanOutboxSyncExtension on DatabaseService {
         _removePlanFromUserCache(originalInput);
         clearOptimisticPlanningForPlanRow(originalInput);
         clearOptimisticPlanningForPlanRow(pbId);
+        _clearOptimisticPlanDeletion(originalInput, businessId, pbId);
         notifyPlanningRefresh(scheduleNetworkRefresh: false);
         return true;
       } on ClientException catch (e) {
         if (e.statusCode == 404) {
           _removePlanFromUserCache(pbId);
           _removePlanFromUserCache(originalInput);
+          _clearOptimisticPlanDeletion(originalInput, businessId, pbId);
           notifyPlanningRefresh(scheduleNetworkRefresh: false);
           return true;
         }
