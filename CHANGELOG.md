@@ -1,3 +1,10 @@
+## 2026-10-17 — Calendar adjacent dates, visible time and drag/drop [fix]
+
+- Render dates and scheduled plan indicators for the preceding/following months in muted grey; keep them interactive.
+- Preserve visible start times on compact Week cards and category groups. Month existing-plan taps open editing, empty cells create new plans.
+- Add hold-to-drag of individual plans and grouped blocks to Week slots or Month dates, with duration/gap preservation and a fixed-time-aware, conflict-cascading backend update path.
+- Add Calendar drag/reschedule regression tests and document the interaction contract.
+
 ## 2026-10-16 — Calendar click-to-create and week category groups [fix]
 
 - Calendar date-cell and empty week time-slot taps now open a new plan draft with the clicked date/time, without changing the global header or Timeline/Plans day.
