@@ -494,10 +494,7 @@ class _CalendarViewState extends State<CalendarView>
                   onTaskTap: widget.onEditTask,
                   onSlotTap: (time) => _onDayTapped(time, startTime: time),
                   onPlanDrop: (tasks, target, fingerWall) => calendarReschedulePlans(context, tasks, target, fingerWall),
-                  onDragActiveChanged: (active) {
-                    _calendarPlanDragging = active;
-                    if (!active) _lastCalendarPlanDragEnd = DateTime.now();
-                  },
+                  onDragActiveChanged: (active) { _calendarPlanDragging = active; if (!active) _lastCalendarPlanDragEnd = DateTime.now(); },
                   onGroupTap: (day, category, grouped) => showCalendarTaskGroupSheet(
                     context: context,
                     day: day,
