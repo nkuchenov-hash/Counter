@@ -337,13 +337,14 @@ extension RecordOutboxSyncExtension on DatabaseService {
       final businessId = (item['businessId'] ?? payload['record_id'] ?? '')
           .toString()
           .trim();
-      // ignore: avoid_print
-      print(
-        'RECORD_OUTBOX_CREATE_PAYLOAD op=highlander_start '
-        'businessId=${businessId.isEmpty ? '-' : businessId} '
-        'category_id=${payload['category_id']} category_link=${payload['category_link']} '
-        'source_plan_id=${payload['source_plan_id']}',
-      );
+      if (kDebugMode) {
+        debugPrint(
+          'RECORD_OUTBOX_CREATE_PAYLOAD op=highlander_start '
+          'businessId=${businessId.isEmpty ? '-' : businessId} '
+          'category_id=${payload['category_id']} category_link=${payload['category_link']} '
+          'source_plan_id=${payload['source_plan_id']}',
+        );
+      }
       // A stale category catalog is a synchronization dependency, not a
       // reason to reject or recategorize a locally accepted record.
       if (!_normalizeRecordCategoryFieldsForPbApi(

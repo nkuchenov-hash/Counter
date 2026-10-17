@@ -1386,7 +1386,7 @@ extension PlanServiceExtension on DatabaseService {
     if (raw.isEmpty) return false;
 
     var deferredNotify = false;
-    var skipDeletedSnack = false;
+    var skipDeletedSnack = _beginOptimisticPlanBulkDeletion(raw);
     for (final id in raw) {
       final trimmed = id.trim();
       if (trimmed.startsWith('optimistic-')) {
@@ -1404,7 +1404,7 @@ extension PlanServiceExtension on DatabaseService {
           deferPlanningNotify: true,
         );
         if (!ok) {
-          AppSnack.failed();
+          _rollbackOptimisticPlanBulkDeletion(raw);
           return false;
         }
         deferredNotify = true;
@@ -1420,7 +1420,7 @@ extension PlanServiceExtension on DatabaseService {
           businessId: businessId,
         );
         if (!del.ok) {
-          AppSnack.failed();
+          _rollbackOptimisticPlanBulkDeletion(raw);
           return false;
         }
         if (del.queued) skipDeletedSnack = true;
@@ -1446,7 +1446,7 @@ extension PlanServiceExtension on DatabaseService {
           businessId: businessId,
         );
         if (!del.ok) {
-          AppSnack.failed();
+          _rollbackOptimisticPlanBulkDeletion(raw);
           return false;
         }
         if (del.queued) skipDeletedSnack = true;
@@ -1478,7 +1478,7 @@ extension PlanServiceExtension on DatabaseService {
           deferredNotify = true;
           continue;
         }
-        AppSnack.failed();
+        _rollbackOptimisticPlanBulkDeletion(raw);
         return false;
       } catch (e, st) {
         DatabaseService._log('DELETE_PLAN_PB_BULK: $e');
@@ -1494,7 +1494,7 @@ extension PlanServiceExtension on DatabaseService {
           deferredNotify = true;
           continue;
         }
-        AppSnack.failed();
+        _rollbackOptimisticPlanBulkDeletion(raw);
         return false;
       }
     }
