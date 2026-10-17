@@ -6,6 +6,7 @@ import 'package:counter/data/ai/viktor_action_contract.dart';
 import 'package:counter/data/ai/viktor_executor.dart';
 import 'package:counter/data/ai/viktor_gateway.dart';
 import 'package:counter/data/database_service.dart';
+import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -52,6 +53,9 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
   Future<void> _loadSettings() async {
     try {
       await _settings.load();
+      _settings.ensureOwner(
+        DatabaseService.instance.pocketBase.authStore.record?.id ?? '',
+      );
       if (mounted) setState(() => _settingsReady = true);
     } catch (_) {
       if (mounted) setState(() => _settingsReady = true);
@@ -199,7 +203,8 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
             if (result.finalResult) _listening = false;
           });
         },
-        localeId: 'ru_RU',
+        localeId: currentLocale.value.toLowerCase().startsWith('ru')
+            ? 'ru_RU' : 'en_US',
         listenOptions: stt.SpeechListenOptions(
           partialResults: true,
           cancelOnError: false,
