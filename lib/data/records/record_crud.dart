@@ -1197,7 +1197,6 @@ extension RecordCrudExtension on DatabaseService {
       if (k.isNotEmpty) _optimisticDeletedKeys.add(k);
     }
     _notifyTimelineAfterRecordCacheMutation();
-    // Confirm the locally accepted delete; remote sync must not delay feedback.
     AppSnack.deleted();
 
     final shadowRid = _tryResolveRecordIdFromCacheOnly(originalInput);
