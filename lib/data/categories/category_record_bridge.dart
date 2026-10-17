@@ -315,20 +315,22 @@ extension CategoryRecordBridgeExtension on DatabaseService {
 
     final after = pair.relationId;
     if (beforeCat?.toString() != after || beforeLink?.toString() != after) {
-      // ignore: avoid_print
-      print(
+      if (kDebugMode) {
+        debugPrint(
         'RECORD_CATEGORY_NORMALIZED businessId=${recordBizId.isEmpty ? '-' : recordBizId} '
         'before=$oldCategory after=$after resolvedBy=$resolvedBy',
-      );
+        );
+      }
       if (resolvedBy != 'cache' &&
           oldCategory != null &&
           oldCategory.toString().trim().isNotEmpty &&
           oldCategory.toString() != after) {
-        // ignore: avoid_print
-        print(
+        if (kDebugMode) {
+          debugPrint(
           'RECORD_OUTBOX_REPAIRED_CATEGORY businessId=${recordBizId.isEmpty ? '-' : recordBizId} '
           'oldCategory=$oldCategory newCategoryPbId=$after',
-        );
+          );
+        }
       }
     }
     return true;
@@ -497,12 +499,13 @@ extension CategoryRecordBridgeExtension on DatabaseService {
         throw AuthenticatedUserIdRequiredException();
       }
       final businessId = (rawFields['record_id'] ?? '').toString().trim();
-      // ignore: avoid_print
-      print(
+      if (kDebugMode) {
+        debugPrint(
         'RECORD_OUTBOX_CREATE_PAYLOAD op=create businessId=${businessId.isEmpty ? '-' : businessId} '
         'category_id=${rawFields['category_id']} category_link=${rawFields['category_link']} '
         'source_plan_id=${rawFields['source_plan_id']}',
-      );
+        );
+      }
       final merged = _recordsPatchFieldsJsonStrings(
         _nocoFieldsForPatch(Map<String, dynamic>.from(rawFields)),
       );
@@ -511,11 +514,12 @@ extension CategoryRecordBridgeExtension on DatabaseService {
         logBusinessId: businessId.isEmpty ? null : businessId,
       )) {
         _lastRecordCreateFailureHttpCode = 400;
-        // ignore: avoid_print
-        print(
+        if (kDebugMode) {
+          debugPrint(
           'PB_CREATE_ERROR_DETAILS: status=400 category relation not resolved '
           'rawCategory=${rawFields['category_id']}',
-        );
+          );
+        }
         return null;
       }
       merged['user_id'] = authRowId;
@@ -530,10 +534,11 @@ extension CategoryRecordBridgeExtension on DatabaseService {
       return created.id;
     } on ClientException catch (e) {
       _lastRecordCreateFailureHttpCode = e.statusCode;
-      // ignore: avoid_print
-      print(
+      if (kDebugMode) {
+        debugPrint(
         'PB_CREATE_ERROR_DETAILS: status=${e.statusCode} ${e.response}',
-      );
+        );
+      }
       DatabaseService._log('RECORDS_PB create failed: ${e.statusCode}');
       final code = e.statusCode;
       if (code == 403 || code == 401) {
