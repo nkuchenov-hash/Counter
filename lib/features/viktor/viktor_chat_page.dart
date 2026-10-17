@@ -252,6 +252,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                       updateDialog(() {
                         mode = v;
                         if (mode == 'hosted') {
+                          keyCtrl.clear();
                           provider = 'openai';
                           model = 'gpt-4o-mini';
                         }
@@ -272,6 +273,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                       onChanged: (v) {
                         if (v == null) return;
                         updateDialog(() {
+                          if (provider != v) keyCtrl.clear();
                           provider = v;
                           model = ViktorModelSettings.models[v]!.first;
                         });
