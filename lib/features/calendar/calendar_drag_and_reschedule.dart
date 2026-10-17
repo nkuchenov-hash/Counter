@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/plan_time_sequential_cascade.dart';
@@ -43,11 +44,7 @@ class CalendarPlanDraggable extends StatelessWidget {
     final first = payload.tasks.first;
     final time = first.startTime!;
     final label = tasks.length == 1 ? first.title : '${tasks.length} × ${first.title}';
-    return LongPressDraggable<CalendarDragPayload>(
-      data: payload,
-      delay: const Duration(milliseconds: 190),
-      dragAnchorStrategy: pointerDragAnchorStrategy,
-      feedback: Material(
+    final feedback = Material(
         elevation: 6,
         borderRadius: BorderRadius.circular(8),
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -64,6 +61,22 @@ class CalendarPlanDraggable extends StatelessWidget {
           ),
         ),
       ),
+    if (MediaQuery.sizeOf(context).width >= kShellDesktopNavBreakpoint) {
+      // Desktop mirrors Time View: drag immediately with the pointer.
+      return Draggable<CalendarDragPayload>(
+        data: payload,
+        dragAnchorStrategy: pointerDragAnchorStrategy,
+        feedback: feedback,
+        childWhenDragging: Opacity(opacity: 0.32, child: child),
+        child: child,
+      );
+    }
+    // Phone scrolling remains intentional; hold before dragging a plan.
+    return LongPressDraggable<CalendarDragPayload>(
+      data: payload,
+      delay: const Duration(milliseconds: 190),
+      dragAnchorStrategy: pointerDragAnchorStrategy,
+      feedback: feedback,
       childWhenDragging: Opacity(opacity: 0.32, child: child),
       child: child,
     );
