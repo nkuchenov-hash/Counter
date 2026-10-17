@@ -495,8 +495,8 @@ class _CalendarViewState extends State<CalendarView>
                   onDayTap: _onDayTapped,
                   onTaskTap: widget.onEditTask,
                   onSlotTap: (time) => _onDayTapped(time, startTime: time),
-                  onPlanDrop: (tasks, target) async {
-                    await calendarReschedulePlans(context, tasks, target);
+                  onPlanDrop: (tasks, target, fingerWall) async {
+                    await calendarReschedulePlans(context, tasks, target, fingerWall);
                   },
                   onGroupTap: (day, category, grouped) => showCalendarTaskGroupSheet(
                     context: context,
