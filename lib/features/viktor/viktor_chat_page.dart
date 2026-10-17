@@ -53,8 +53,9 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
   Future<void> _loadSettings() async {
     try {
       await _settings.load();
+      await DatabaseService.instance.ensurePocketBaseReady();
       _settings.ensureOwner(
-        DatabaseService.instance.currentProfileId ?? 'signed_out',
+        DatabaseService.instance.pocketBase.authStore.record?.id ?? 'signed_out',
       );
       if (mounted) setState(() => _settingsReady = true);
     } catch (_) {
