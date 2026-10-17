@@ -25,6 +25,7 @@ Use `CHANGELOG.md` and `docs/ROADMAP.md` to understand what is already built bef
 
 ## Active Priorities
 
+- **P0 highest interaction priority — OPTIMISTIC_UI_FIRST:** For every valid user mutation (Records, Plans, Lists, edit sheets, Voice, browser extension), update canonical local state and its visible live consumer first (target ≤100 ms); durable local staging and remote PocketBase synchronization follow without delaying feedback. Never block visible updates on network, id lookup, refetch, persistence, or animations. Do not misrepresent visual feedback as durable/server success; preserve lossless capture, auth, confirmation, and recovery. See `docs/ARCHITECTURE.md` §3 and `docs/UX_CONTRACT.md`.
 - Correctness and performance regressions outrank design, feature, preload, cache, or cleanup work.
 - Active foundation tracks are V3/V7: `docs/UX_CONTRACT.md`, `docs/DESIGN_SYSTEM.md`, canonical Flutter components, and admin-only Component Lab.
 - Feature work is paused unless explicitly requested or required by the current task.

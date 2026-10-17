@@ -21,6 +21,7 @@ class AppSnack {
     if (messenger == null) return;
     messenger
       ..clearSnackBars()
+      ..removeCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           content: Text(message),
@@ -52,6 +53,7 @@ class AppSnack {
     if (messenger == null) return;
     messenger
       ..clearSnackBars()
+      ..removeCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           content: Text(message),

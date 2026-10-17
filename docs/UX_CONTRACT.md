@@ -4,6 +4,8 @@ This document defines how Life OS behaves when people interact with it. It is th
 
 ## Core Rules
 
+**P0 — Optimistic UI first:** Every valid user action immediately changes the active visible UI; PocketBase, outbox persistence, refresh, and animations are secondary operations. Visual feedback target is **≤100 ms**, including create, edit, delete, start/stop, toggle, reorder, and bulk actions in Records, Plans, and Lists. A visible local acknowledgment must never be confused with confirmed remote synchronization. See `ARCHITECTURE.md` § `OPTIMISTIC_UI_FIRST`.
+
 - Every user action must produce visible feedback within ~100ms.
 - User intent updates local UI first, then syncs in the background when the action writes data.
 - Errors are visible, specific enough to act on, and never spammed.
@@ -39,7 +41,7 @@ This document defines how Life OS behaves when people interact with it. It is th
 
 ## Save Behavior
 
-- Saves that affect records, plans, lists, Paths, categories, tags, or profile settings must update local state before network sync when the current architecture supports it.
+- Saves that affect records, plans, lists, Paths, categories, tags, or profile settings update the active local state before remote sync. Where a feature lacks a safe optimistic mutation path, implement the path rather than waiting for PocketBase; never bypass required validation, authorization, or local lossless-capture safeguards.
 - Retriable network failures keep the optimistic state and enqueue where an outbox exists.
 - For records, successful local staging means the input is accepted even when PocketBase is slow/offline; rapid consecutive creates are distinct and never rejected because an earlier request is in flight.
 - A staged record remains visible across a full refresh or app restart until confirmed on the server; an uncertain POST retries against the same business ID without duplicating it.
@@ -56,7 +58,7 @@ This document defines how Life OS behaves when people interact with it. It is th
 ## Delete Behavior
 
 - Destructive actions require either an explicit confirmation or a clearly reversible affordance.
-- Delete UI should disappear optimistically after confirmation.
+- After confirmation, the deleted item disappears from the active UI immediately (≤100 ms), and deletion acknowledgment reflects local acceptance rather than delayed PocketBase success. If persistence or a non-retriable error prevents deletion, restore/reconcile the item and explain the failure once.
 - Failed non-retriable deletes restore the item or show a clear recovery path.
 - Background delete retries must not produce repeated identical errors.
 
@@ -136,7 +138,7 @@ This document defines how Life OS behaves when people interact with it. It is th
 
 ## Optimistic UI Expectations
 
-- Records and Planning/Lists CRUD follow the Iron Laws: local shadow first, network later.
+- **Priority 1:** Records and Planning/Lists CRUD follow the Iron Laws: visible local shadow and immediate local acknowledgment first, durable outbox handoff second, PocketBase sync third. No success toast waits for a forced refetch or remote acknowledgment; a server-confirmed claim requires real server acknowledgment.
 - The UI must not wait for PocketBase writes before reflecting a user action.
 - Rollback is reserved for non-retriable failures; ordinary offline/network failures use queues where available.
 - Do not introduce full refetch fan-out after a small mutation unless unavoidable.
