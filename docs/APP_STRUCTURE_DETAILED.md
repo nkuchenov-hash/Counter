@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). The 2026-10-16 incremental manifest adds the new Calendar group files and their test; the original SHA remains the baseline for other entries.
 
-**Tracked files:** 891 — each appears **exactly once** below.
+**Tracked files:** 893 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,8 +26,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 179 |
-| `test` | 117 |
+| `production UI` | 180 |
+| `test` | 118 |
 | `Brain/data` | 93 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 486 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 219 |
+| `PROVEN_REQUIRED` | 487 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 220 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 39 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 814 |
+| `HIGH` | 816 |
 | `MEDIUM` | 75 |
 
 ---
@@ -17727,6 +17727,44 @@ RU:
 - **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
 
 
+### `lib/features/calendar/calendar_week_timeview_drag.dart`
+
+EN:
+
+- **Human purpose:** Wraps Calendar Week cards in the canonical TimelinePlanInteractionBlock and controls floating preview / pointer lifecycle.
+- **What this is:** Wraps Calendar Week cards in the canonical TimelinePlanInteractionBlock and controls floating preview / pointer lifecycle.
+- **Why needed:** Gives Calendar the same reliable drag gestures and scheduling semantics as Time View.
+- **Contents:** Focused Flutter/Dart code and its regression test.
+- **Repository role:** production UI
+- **Evidence of use:** Imported by `lib/features/calendar/calendar_week_grid.dart`; composes Time View interaction block.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Calendar drag/drop stops sharing Time View gestures or loses regression protection.
+- **Confidence:** HIGH
+- **Owner / layer:** Calendar UI
+- **Responsibilities:** Wraps Calendar Week cards in the canonical TimelinePlanInteractionBlock and controls floating preview / pointer lifecycle.
+- **When to open:** Calendar Week pointer, drag preview, snapping, or scheduler regressions.
+- **Can it be deleted?** No — required for the shared interaction contract.
+- **Connected to:** Imported by `lib/features/calendar/calendar_week_grid.dart`; composes Time View interaction block.
+
+RU:
+
+- **Зачем файл человеку:** Wraps Calendar Week cards in the canonical TimelinePlanInteractionBlock and controls floating preview / pointer lifecycle.
+- **Что это:** Модуль единого поведения перетаскивания календаря и Time View.
+- **Зачем:** Надёжное перемещение планов без смены даты шапки или перехвата прокруткой.
+- **Содержимое:** Flutter/Dart реализация и тест.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Imported by `lib/features/calendar/calendar_week_grid.dart`; composes Time View interaction block.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Пропадёт общий механизм жестов или его тестовая защита.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI календаря
+- **Обязанности:** Wraps Calendar Week cards in the canonical TimelinePlanInteractionBlock and controls floating preview / pointer lifecycle.
+- **Когда открывать:** При ошибках drag-and-drop календаря.
+- **Можно удалить?** Нет.
+- **Связано с:** Imported by `lib/features/calendar/calendar_week_grid.dart`; composes Time View interaction block.
+
+---
+
 ### `lib/features/calendar/calendar_week_grouping.dart`
 
 EN:
@@ -31703,6 +31741,44 @@ RU:
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
+
+### `test/calendar_week_timeview_drag_test.dart`
+
+EN:
+
+- **Human purpose:** Widget regression verifying actual pointer drag, scroll-lock lifecycle and independent body tapping.
+- **What this is:** Widget regression verifying actual pointer drag, scroll-lock lifecycle and independent body tapping.
+- **Why needed:** Gives Calendar the same reliable drag gestures and scheduling semantics as Time View.
+- **Contents:** Focused Flutter/Dart code and its regression test.
+- **Repository role:** test
+- **Evidence of use:** Runs in Flutter CI: `test/calendar_week_timeview_drag_test.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Calendar drag/drop stops sharing Time View gestures or loses regression protection.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Widget regression verifying actual pointer drag, scroll-lock lifecycle and independent body tapping.
+- **When to open:** Calendar Week pointer, drag preview, snapping, or scheduler regressions.
+- **Can it be deleted?** No — required for the shared interaction contract.
+- **Connected to:** Runs in Flutter CI: `test/calendar_week_timeview_drag_test.dart`.
+
+RU:
+
+- **Зачем файл человеку:** Widget regression verifying actual pointer drag, scroll-lock lifecycle and independent body tapping.
+- **Что это:** Модуль единого поведения перетаскивания календаря и Time View.
+- **Зачем:** Надёжное перемещение планов без смены даты шапки или перехвата прокруткой.
+- **Содержимое:** Flutter/Dart реализация и тест.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Runs in Flutter CI: `test/calendar_week_timeview_drag_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт общий механизм жестов или его тестовая защита.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Тесты
+- **Обязанности:** Widget regression verifying actual pointer drag, scroll-lock lifecycle and independent body tapping.
+- **Когда открывать:** При ошибках drag-and-drop календаря.
+- **Можно удалить?** Нет.
+- **Связано с:** Runs in Flutter CI: `test/calendar_week_timeview_drag_test.dart`.
+
+---
 
 ### `test/calendar_week_grouping_test.dart`
 

@@ -4,14 +4,16 @@ import 'package:counter/data/models.dart';
 import 'package:counter/features/calendar/calendar_drag_and_reschedule.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/calendar/calendar_week_grouping.dart';
+import 'package:counter/features/calendar/calendar_week_timeview_drag.dart';
 import 'package:counter/features/calendar/calendar_day_events.dart';
 import 'package:counter/features/calendar/calendar_helpers.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 
 /// Week browsing grid — real time grid with hourly rows and positioned events.
-class CalendarWeekPlannerGrid extends StatelessWidget {
+class CalendarWeekPlannerGrid extends StatefulWidget {
   const CalendarWeekPlannerGrid({
     super.key,
     required this.weekStart,
@@ -24,6 +26,7 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
     required this.onSlotTap,
     required this.onGroupTap,
     required this.onPlanDrop,
+    required this.onDragActiveChanged,
   });
 
   final DateTime weekStart;
@@ -35,7 +38,42 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
   final ValueChanged<PlanningTask> onTaskTap;
   final ValueChanged<DateTime> onSlotTap;
   final void Function(DateTime day, String categoryName, List<PlanningTask> tasks) onGroupTap;
-  final Future<void> Function(List<PlanningTask>, DateTime) onPlanDrop;
+  final Future<void> Function(List<PlanningTask>, DateTime, DateTime?) onPlanDrop;
+  final ValueChanged<bool> onDragActiveChanged;
+
+  @override
+  State<CalendarWeekPlannerGrid> createState() => _CalendarWeekPlannerGridState();
+}
+
+class _CalendarWeekPlannerGridState extends State<CalendarWeekPlannerGrid> {
+  DateTime get weekStart => widget.weekStart;
+  DateTime get today => widget.today;
+  Map<String, List<PlanningTask>> get tasksByDay => widget.tasksByDay;
+  bool get loading => widget.loading;
+  bool get showEventPills => widget.showEventPills;
+  ValueChanged<DateTime> get onDayTap => widget.onDayTap;
+  ValueChanged<PlanningTask> get onTaskTap => widget.onTaskTap;
+  ValueChanged<DateTime> get onSlotTap => widget.onSlotTap;
+  void Function(DateTime, String, List<PlanningTask>) get onGroupTap =>
+      widget.onGroupTap;
+  Future<void> Function(List<PlanningTask>, DateTime, DateTime?) get onPlanDrop =>
+      widget.onPlanDrop;
+
+  bool _dragActive = false;
+  final ScrollController _weekScrollController =
+      ScrollController(initialScrollOffset: 7 * 64);
+
+  void _setDragActive(bool active) {
+    if (_dragActive == active || !mounted) return;
+    widget.onDragActiveChanged(active);
+    setState(() => _dragActive = active);
+  }
+
+  @override
+  void dispose() {
+    _weekScrollController.dispose();
+    super.dispose();
+  }
 
   static const double _hourHeight = 64;
   static const double _timeGutter = 44;
@@ -83,10 +121,6 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
-    final scrollController = ScrollController(
-      initialScrollOffset: 7 * _hourHeight,
-    );
-
     return Stack(
       children: [
         Column(
@@ -158,7 +192,10 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
             ),
             Expanded(
               child: SingleChildScrollView(
-                controller: scrollController,
+                controller: _weekScrollController,
+                physics: _dragActive
+                    ? const NeverScrollableScrollPhysics()
+                    : null,
                 child: SizedBox(
                   height: 24 * _hourHeight,
                   child: Row(
@@ -218,25 +255,8 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                                             .where((task) => task.startTime != null)
                                             .toList();
                                         final blocks = buildCalendarWeekBlocks(tasks, _groupCategory);
-                                        return DragTarget<CalendarDragPayload>(
-                                          onWillAcceptWithDetails: (details) => details.data.canMove,
-                                          onAcceptWithDetails: (details) {
-                                            final box = context.findRenderObject() as RenderBox?;
-                                            if (box == null) return;
-                                            final local = box.globalToLocal(details.offset);
-                                            final minutes = ((local.dy / _hourHeight * 60) / 10).round() * 10;
-                                            final snapped = minutes.clamp(0, 23 * 60 + 50);
-                                            unawaited(onPlanDrop(
-                                              details.data.tasks,
-                                              DateTime(day.year, day.month, day.day,
-                                                  snapped ~/ 60, snapped % 60),
-                                            ));
-                                          },
-                                          builder: (context, candidates, rejected) => DecoratedBox(
+                                        return DecoratedBox(
                                           decoration: BoxDecoration(
-                                            color: candidates.isNotEmpty
-                                                ? scheme.primary.withValues(alpha: 0.10)
-                                                : Colors.transparent,
                                             border: Border(
                                               left: BorderSide(
                                                 color: scheme.outlineVariant.withValues(alpha: 0.34),
@@ -344,9 +364,40 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                                                               ),
                                                             ),
                                                           );
-                                                          return CalendarPlanDraggable(
+                                                          return CalendarWeekTimeViewDrag(
                                                             tasks: block.tasks,
+                                                            canMove: block.tasks.every(calendarPlanCanMove),
+                                                            height: _blockHeight(block),
                                                             child: card,
+                                                            onTap: grouped
+                                                                ? () => onGroupTap(day, name, List.unmodifiable(block.tasks))
+                                                                : () => onTaskTap(block.tasks.single),
+                                                            onDragActiveChanged: _setDragActive,
+                                                            onDrop: (dragged, pointer, grabOffset) async {
+                                                              // Day columns sit in the SAME 7-day RenderFlex.
+                                                              // Use the full canvas, not this task's card or
+                                                              // one-day column, when resolving drop position.
+                                                              final canvas = context.findAncestorRenderObjectOfType<RenderFlex>();
+                                                              if (canvas == null || !canvas.attached) return;
+                                                              final local = canvas.globalToLocal(pointer);
+                                                              final size = canvas.size;
+                                                              if (local.dx < 0 || local.dx >= size.width ||
+                                                                  local.dy < 0 || local.dy >= size.height) return;
+                                                              final column = (local.dx / (size.width / 7)).floor().clamp(0, 6);
+                                                              final destinationDay = weekStart.add(Duration(days: column));
+                                                              final minutesFromTop = ((local.dy - grabOffset) / _hourHeight * 60);
+                                                              // Time View wall-clock snap: five-minute increments.
+                                                              final snapped = (minutesFromTop / 5).round() * 5;
+                                                              final minutes = snapped.clamp(0, 23 * 60 + 55);
+                                                              final wall = DateTime(destinationDay.year, destinationDay.month,
+                                                                  destinationDay.day, minutes ~/ 60, minutes % 60);
+                                                              final fingerMinute = ((local.dy / _hourHeight * 60) / 5).round() * 5;
+                                                              final fingerSnap = fingerMinute.clamp(0, 23 * 60 + 55);
+                                                              final fingerWall = DateTime(destinationDay.year,
+                                                                  destinationDay.month, destinationDay.day,
+                                                                  fingerSnap ~/ 60, fingerSnap % 60);
+                                                              await onPlanDrop(dragged, wall, fingerWall);
+                                                            },
                                                           );
                                                         },
                                                       ),
@@ -354,7 +405,6 @@ class CalendarWeekPlannerGrid extends StatelessWidget {
                                                 ],
                                               );
                                             },
-                                          ),
                                           ),
                                         );
                                       },

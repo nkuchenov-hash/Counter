@@ -1,3 +1,9 @@
+## 2026-10-17 — Calendar Week shares the Time View drag engine [fix]
+
+- Replaced Calendar Week's independent Flutter Draggable implementation with the canonical TimelinePlanInteractionBlock pointer/hold gesture, including drag preview and automatic scroll/page gesture lock.
+- Reused the existing Time View insertion cascade for drop-before/drop-after and 5-minute snapped empty slots, with fixed-time barriers, group offsets and canonical optimistic Brain persistence.
+- Removed Calendar-only PocketBase ID eligibility rejection and added a pointer drag regression test covering gesture start/end and tap preservation.
+
 ## 2026-10-17 — Calendar adjacent dates, visible time and drag/drop [fix]
 
 - Render dates and scheduled plan indicators for the preceding/following months in muted grey; keep them interactive.
