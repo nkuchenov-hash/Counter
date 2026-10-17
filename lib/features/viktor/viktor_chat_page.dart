@@ -163,7 +163,9 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       if (mounted) setState(() => _listening = false);
       return;
     }
-    if (!kIsWeb) {
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+         defaultTargetPlatform == TargetPlatform.iOS)) {
       final permission = await Permission.microphone.request();
       if (!permission.isGranted) {
         _push('Разрешите доступ к микрофону в настройках устройства.');
