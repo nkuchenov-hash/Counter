@@ -480,6 +480,7 @@ class _CalendarViewState extends State<CalendarView>
                   showEventPills: showPills,
                   browsing: true,
                   onDayTap: _onDayTapped,
+                  onTaskTap: widget.onEditTask,
                   currentMonthOnly: true,
                   onPlanDrop: (tasks, target) async {
                     await calendarReschedulePlans(context, tasks, target);
