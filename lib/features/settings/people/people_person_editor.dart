@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/omni_date_time_picker_dialog.dart';
 import 'package:counter/data/people/people_models.dart';
 import 'package:counter/data/people/people_service.dart';
@@ -386,18 +387,98 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
               ? person?.sourceAvatarUrl ?? ''
               : person?.avatarUrl ?? '';
           final theme = Theme.of(context);
+          final media = MediaQuery.of(context);
+          final isCompact = media.size.width < 600;
+          final availableHeight = media.size.height -
+              media.viewInsets.bottom -
+              media.padding.vertical -
+              24;
 
-          return AlertDialog(
-            title: Text(
-              peopleT(locale, person == null ? 'add_person' : 'edit_person'),
+          return Dialog(
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
             ),
-            content: SizedBox(
-              width: 620,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 720,
+                maxHeight: availableHeight > 200 ? availableHeight : 200,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 16, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            peopleT(
+                              locale,
+                              person == null ? 'add_person' : 'edit_person',
+                            ),
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        if (person != null)
+                          PopupMenuButton<String>(
+                            enabled: !saving,
+                            tooltip: peopleT(locale, 'archive'),
+                            icon: const Icon(Icons.more_horiz_rounded),
+                            onSelected: (action) async {
+                              if (action != 'archive') return;
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (confirmContext) => AlertDialog(
+                                  title: Text(peopleT(locale, 'archive')),
+                                  content: Text(
+                                    peopleT(locale, 'archive_confirmation'),
+                                  ),
+                                  actions: [
+                                    AppButton.ghost(
+                                      label: peopleT(locale, 'cancel'),
+                                      onPressed: () => Navigator.of(
+                                        confirmContext,
+                                      ).pop(false),
+                                    ),
+                                    AppButton.destructive(
+                                      label: peopleT(locale, 'archive'),
+                                      onPressed: () => Navigator.of(
+                                        confirmContext,
+                                      ).pop(true),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirmed == true && dialogContext.mounted) {
+                                unawaited(archive());
+                              }
+                            },
+                            itemBuilder: (_) => [
+                              PopupMenuItem<String>(
+                                value: 'archive',
+                                child: Text(peopleT(locale, 'archive')),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
                     Row(
                       children: [
                         PeopleAvatar(
@@ -412,8 +493,9 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                             spacing: 8,
                             runSpacing: 8,
                             children: [
-                              AppButton.secondary(
+                              AppButton.outlined(
                                 label: peopleT(locale, 'choose_photo'),
+                                size: AppButtonSize.s,
                                 icon: Icons.photo_camera_back_rounded,
                                 onPressed: saving
                                     ? null
@@ -509,7 +591,9 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                           ),
                         ),
                         const SizedBox(width: 8),
-                        IconButton.filledTonal(
+                        AppIconButton(
+                          icon: Icons.add_rounded,
+                          variant: AppIconButtonVariant.filled,
                           tooltip: peopleT(locale, 'add'),
                           onPressed: saving
                               ? null
@@ -522,136 +606,196 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                                     relationshipController.clear();
                                   });
                                 },
-                          icon: const Icon(Icons.add_rounded),
                         ),
                       ],
                     ),
                     const SizedBox(height: 24),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: theme.colorScheme.outlineVariant,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
+                    Text(
+                      peopleT(locale, 'contact_details'),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
+                    ),
+                    const SizedBox(height: 4),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: AppButton.ghost(
+                        size: AppButtonSize.s,
+                        label: peopleT(locale, 'add_contact'),
+                        icon: Icons.add_rounded,
+                        onPressed: saving
+                            ? null
+                            : () => setDialogState(
+                                  () => contacts.add(_ContactDraft()),
+                                ),
+                      ),
+                    ),
+                    if (contacts.isEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        peopleT(locale, 'contact_details_hint'),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                    for (var index = 0; index < contacts.length; index++) ...[
+                      const SizedBox(height: 12),
+                      if (isCompact)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Column(
                             children: [
-                              Expanded(
-                                child: Text(
-                                  peopleT(locale, 'contact_details'),
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: contacts[index].labelController,
+                                      enabled: !saving,
+                                      decoration: InputDecoration(
+                                        labelText: peopleT(locale, 'contact_type'),
+                                      ),
+                                    ),
                                   ),
+                                  const SizedBox(width: 8),
+                                  AppIconButton(
+                                    icon: Icons.delete_outline_rounded,
+                                    variant: AppIconButtonVariant.danger,
+                                    tooltip: peopleT(locale, 'remove_contact'),
+                                    onPressed: saving
+                                        ? null
+                                        : () => setDialogState(() {
+                                              final removed =
+                                                  contacts.removeAt(index);
+                                              removed.dispose();
+                                            }),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              TextField(
+                                controller: contacts[index].valueController,
+                                enabled: !saving,
+                                decoration: InputDecoration(
+                                  labelText: peopleT(locale, 'contact_value'),
                                 ),
                               ),
-                              AppButton.ghost(
-                                label: peopleT(locale, 'add_contact'),
-                                icon: Icons.add_link_rounded,
-                                onPressed: saving
-                                    ? null
-                                    : () => setDialogState(
-                                          () => contacts.add(_ContactDraft()),
-                                        ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: contacts[index].linkController,
+                                      enabled: !saving,
+                                      keyboardType: TextInputType.url,
+                                      onChanged: (_) => setDialogState(() {}),
+                                      decoration: InputDecoration(
+                                        labelText: peopleT(locale, 'contact_link'),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  AppIconButton(
+                                    icon: Icons.open_in_new_rounded,
+                                    tooltip: peopleT(locale, 'open_link'),
+                                    onPressed: contacts[index]
+                                            .linkController
+                                            .text
+                                            .trim()
+                                            .isEmpty
+                                        ? null
+                                        : () {
+                                            final uri = Uri.tryParse(
+                                              contacts[index]
+                                                  .linkController
+                                                  .text
+                                                  .trim(),
+                                            );
+                                            if (uri != null) {
+                                              unawaited(launchUrl(uri));
+                                            }
+                                          },
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                          if (contacts.isEmpty) ...[
-                            const SizedBox(height: 10),
-                            Text(
-                              peopleT(locale, 'contact_details_hint'),
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
+                        )
+                      else
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 125,
+                              child: TextField(
+                                controller: contacts[index].labelController,
+                                enabled: !saving,
+                                decoration: InputDecoration(
+                                  labelText: peopleT(locale, 'contact_type'),
+                                ),
                               ),
                             ),
-                          ],
-                          for (var index = 0;
-                              index < contacts.length;
-                              index++) ...[
-                            if (index > 0) const SizedBox(height: 14),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  width: 125,
-                                  child: TextField(
-                                    controller:
-                                        contacts[index].labelController,
-                                    enabled: !saving,
-                                    decoration: InputDecoration(
-                                      labelText:
-                                          peopleT(locale, 'contact_type'),
-                                    ),
-                                  ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextField(
+                                controller: contacts[index].valueController,
+                                enabled: !saving,
+                                decoration: InputDecoration(
+                                  labelText: peopleT(locale, 'contact_value'),
                                 ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: TextField(
-                                    controller:
-                                        contacts[index].valueController,
-                                    enabled: !saving,
-                                    decoration: InputDecoration(
-                                      labelText:
-                                          peopleT(locale, 'contact_value'),
-                                    ),
-                                  ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextField(
+                                controller: contacts[index].linkController,
+                                enabled: !saving,
+                                keyboardType: TextInputType.url,
+                                onChanged: (_) => setDialogState(() {}),
+                                decoration: InputDecoration(
+                                  labelText: peopleT(locale, 'contact_link'),
                                 ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: TextField(
-                                    controller:
-                                        contacts[index].linkController,
-                                    enabled: !saving,
-                                    keyboardType: TextInputType.url,
-                                    onChanged: (_) => setDialogState(() {}),
-                                    decoration: InputDecoration(
-                                      labelText:
-                                          peopleT(locale, 'contact_link'),
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  tooltip: peopleT(locale, 'open_link'),
-                                  onPressed: contacts[index]
-                                          .linkController
-                                          .text
-                                          .trim()
-                                          .isEmpty
-                                      ? null
-                                      : () {
-                                          final uri = Uri.tryParse(
-                                            contacts[index]
-                                                .linkController
-                                                .text
-                                                .trim(),
-                                          );
-                                          if (uri != null) {
-                                            unawaited(launchUrl(uri));
-                                          }
-                                        },
-                                  icon:
-                                      const Icon(Icons.open_in_new_rounded),
-                                ),
-                                IconButton(
-                                  tooltip: peopleT(locale, 'remove_contact'),
-                                  onPressed: saving
-                                      ? null
-                                      : () => setDialogState(() {
-                                            final removed =
-                                                contacts.removeAt(index);
-                                            removed.dispose();
-                                          }),
-                                  icon: const Icon(Icons.close_rounded),
-                                ),
-                              ],
+                              ),
+                            ),
+                            AppIconButton(
+                              icon: Icons.open_in_new_rounded,
+                              tooltip: peopleT(locale, 'open_link'),
+                              onPressed: contacts[index]
+                                      .linkController
+                                      .text
+                                      .trim()
+                                      .isEmpty
+                                  ? null
+                                  : () {
+                                      final uri = Uri.tryParse(
+                                        contacts[index]
+                                            .linkController
+                                            .text
+                                            .trim(),
+                                      );
+                                      if (uri != null) {
+                                        unawaited(launchUrl(uri));
+                                      }
+                                    },
+                            ),
+                            AppIconButton(
+                              icon: Icons.delete_outline_rounded,
+                              variant: AppIconButtonVariant.danger,
+                              tooltip: peopleT(locale, 'remove_contact'),
+                              onPressed: saving
+                                  ? null
+                                  : () => setDialogState(() {
+                                        final removed = contacts.removeAt(index);
+                                        removed.dispose();
+                                      }),
                             ),
                           ],
-                        ],
-                      ),
-                    ),
+                        ),
+                    ],
                     const SizedBox(height: 24),
                     Text(
                       peopleT(locale, 'birthday'),
@@ -815,29 +959,41 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                         style: TextStyle(color: theme.colorScheme.error),
                       ),
                     ],
-                  ],
-                ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: AppButton.ghost(
+                            label: peopleT(locale, 'cancel'),
+                            fullWidth: true,
+                            onPressed: saving
+                                ? null
+                                : () => Navigator.of(dialogContext).pop(),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: AppButton.primary(
+                            label: peopleT(locale, 'save'),
+                            fullWidth: true,
+                            loading: saving,
+                            onPressed: saving
+                                ? null
+                                : () => unawaited(save()),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            actions: [
-              if (person != null)
-                AppButton.destructive(
-                  label: peopleT(locale, 'archive'),
-                  onPressed:
-                      saving ? null : () => unawaited(archive()),
-                ),
-              AppButton.ghost(
-                label: peopleT(locale, 'cancel'),
-                onPressed: saving
-                    ? null
-                    : () => Navigator.of(dialogContext).pop(),
-              ),
-              AppButton.primary(
-                label: peopleT(locale, 'save'),
-                loading: saving,
-                onPressed: saving ? null : () => unawaited(save()),
-              ),
-            ],
           );
         },
       ),
