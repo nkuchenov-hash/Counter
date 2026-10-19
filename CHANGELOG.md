@@ -1,3 +1,9 @@
+## 2026-10-19 — Notes restored folder tabs and explicit category + [fix]
+
+- Restored colored folder-edge tabs on mobile and desktop Notes, including category color as the tab paper and legible 16px labels.
+- Kept + permanently visible beside the scrollable categories and added explicit choose-existing and create-new options using the shared category tree/creation flow.
+- Pinned tab choices synchronize with Lists state immediately and persist as manual chips. Added action-sheet regression coverage.
+
 ## 2026-10-17 — Calendar Week shares the Time View drag engine [fix]
 
 - Replaced Calendar Week's independent Flutter Draggable implementation with the canonical TimelinePlanInteractionBlock pointer/hold gesture, including drag preview and automatic scroll/page gesture lock.
