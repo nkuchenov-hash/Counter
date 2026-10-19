@@ -517,7 +517,7 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `notes/widgets/notes_library_body.dart` | Grid/list body of `NoteCard`s for Lists tab |
 | `notes/widgets/notes_library_production_shell.dart` | Production Notes shell, physical slanted overlapping folder-edge tabs with fixed All/+ and scrollable category middle on mobile/desktop |
 | `notes/widgets/notes_category_plus_sheet.dart` | Explicit Notes + category actions: select existing categories or create and pin a new category via the shared picker |
-| `notes/widgets/notes_folder_pane.dart` | Animating category-color folder-paper surface aligned with the selected physical tab; 18px internal card inset |
+| `notes/widgets/notes_folder_pane.dart` | Animated category-color folder paper with 18px inset plus reusable slanted overlapping spine/rail: fixed All and +, scrollable categories |
 | `notes/widgets/note_card.dart` | Grid/list note card with block preview, pin/done badges |
 | `notes/widgets/notes_canonical_components.dart` | Public barrel, shared enums, rich text controller, semantic Notes geometry/helpers |
 | `notes/widgets/notes_component_text_blocks.dart` | Canonical responsive Body/H1/H2/H3, list, and checklist block components *(part)* |
