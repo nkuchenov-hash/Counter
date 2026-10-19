@@ -177,7 +177,7 @@ class NotesPhysicalFolderShape extends ShapeBorder {
     final top = rect.top;
     final right = rect.right;
     final bottom = rect.bottom;
-    final slope = (rect.width * 0.32).clamp(19.0, 43.0);
+    final slope = (rect.width * 0.32).clamp(19.0, 43.0).toDouble();
     return Path()
       ..moveTo(left, bottom)
       ..lineTo(left, top + 13)
