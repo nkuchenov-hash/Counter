@@ -1074,7 +1074,7 @@ Color _paneColorFor(int? categoryId) {
   final rule = DatabaseService.instance.getCategoryRuleById(categoryId);
   if (rule == null) return _kAllFolderSurface;
   return Color.alphaBlend(
-    rule.colorOrDefault.withValues(alpha: 0.12),
+    rule.colorOrDefault.withValues(alpha: 0.30),
     const Color(0xFFF7F8FA),
   );
 }
