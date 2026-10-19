@@ -14,9 +14,11 @@ Color notesFolderPaper(BuildContext context, int? categoryId) {
   }
   final accent = DatabaseService.instance.getCategoryRuleById(categoryId)?.colorOrDefault;
   if (accent == null) return scheme.surface;
+  // Real folder paper: the selected spine and the page use one saturated
+  // category surface, not a nearly-white tint that hides the active color.
   return Color.alphaBlend(
-    accent.withValues(alpha: dark ? 0.28 : 0.25),
-    dark ? scheme.surface : const Color(0xFFF7F8FA),
+    accent.withValues(alpha: dark ? 0.68 : 0.82),
+    dark ? scheme.surface : Colors.white,
   );
 }
 
