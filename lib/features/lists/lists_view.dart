@@ -568,8 +568,7 @@ class _ListsPageState extends State<ListsPage>
     return out;
   }
 
-  List<int> _chipIdsForBar() {
-    final List<int> raw;
+  List<int> _chipIdsForBar() { final List<int> raw;
     if (_chipMode == 'frequent') {
       raw = _computeTopFrequentCategoryIds(maxN: 5);
     } else {
@@ -1035,10 +1034,7 @@ class _ListsPageState extends State<ListsPage>
               body: NotesLibraryProductionShell(
                 topBar: null,
                 onNewNote: _submitInline,
-                onFolderTabsChanged: (ids) => setState(() {
-                  _chipMode = 'manual';
-                  _pinnedChipIds = _sanitizeIntCategoryIds(ids);
-                }),
+                onFolderTabsChanged: (ids) => setState(() { _chipMode = 'manual'; _pinnedChipIds = _sanitizeIntCategoryIds(ids); }),
                 creatingNewNote: _creatingNote,
                 header: _NotesLibraryHeader(
                         locale: loc,
