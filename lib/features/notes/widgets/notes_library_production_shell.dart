@@ -1190,7 +1190,7 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
                       label: _allLabel(currentLocale.value),
                       icon: Icons.format_list_bulleted_rounded,
                       accent: const Color(0xFF285B99),
-                      fill: _kAllFolderSurface,
+                      fill: notesFolderPaper(context, null),
                       selected: widget.adapter.filterCategoryId == null,
                       onTap: () => widget.adapter.onFilterChanged(null),
                     ),
