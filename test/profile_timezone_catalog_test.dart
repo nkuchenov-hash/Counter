@@ -1,6 +1,8 @@
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:counter/features/settings/timezone_settings.dart' as tz_settings;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:counter/data/database_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -163,6 +165,26 @@ void main() {
     test('legacy offsetForLabel delegates to catalog offsets', () {
       expect(tz_settings.offsetForLabel('Moscow'), 3);
       expect(tz_settings.offsetForLabel('GMT+3'), 3);
+    });
+  });
+
+  group('morning_start_preference', () {
+    setUp(() => SharedPreferences.setMockInitialValues({}));
+
+    test('enabled by default', () async {
+      expect(await MorningStartPreference.isEnabled('profile-1'), isTrue);
+    });
+
+    test('off/on value survives subsequent reads', () async {
+      await MorningStartPreference.setEnabled('profile-1', false);
+      expect(await MorningStartPreference.isEnabled('profile-1'), isFalse);
+      await MorningStartPreference.setEnabled('profile-1', true);
+      expect(await MorningStartPreference.isEnabled('profile-1'), isTrue);
+    });
+
+    test('preference is isolated per profile', () async {
+      await MorningStartPreference.setEnabled('profile-1', false);
+      expect(await MorningStartPreference.isEnabled('profile-2'), isTrue);
     });
   });
 }
