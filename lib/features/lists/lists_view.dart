@@ -1035,6 +1035,10 @@ class _ListsPageState extends State<ListsPage>
               body: NotesLibraryProductionShell(
                 topBar: null,
                 onNewNote: _submitInline,
+                onFolderTabsChanged: (ids) => setState(() {
+                  _chipMode = 'manual';
+                  _pinnedChipIds = _sanitizeIntCategoryIds(ids);
+                }),
                 creatingNewNote: _creatingNote,
                 header: _NotesLibraryHeader(
                         locale: loc,
