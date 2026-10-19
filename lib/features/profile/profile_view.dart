@@ -19,6 +19,7 @@ import 'package:flutter/services.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/features/profile/settings/account_settings_section.dart';
 import 'package:counter/features/profile/settings/notification_settings_section.dart';
+import 'package:counter/features/profile/settings/morning_start_settings_section.dart';
 import 'package:counter/features/profile/settings/security_settings_section.dart';
 
 // ---------------------------------------------------------------------------
@@ -307,9 +308,19 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
           ),
-          AppSettingsTab.preferences => AppSettingsSectionCard(
-            title: t(locale, 'profile_time_locale_section'),
-            child: _buildTimeLocaleFields(context, locale, safeTimeZone),
+          AppSettingsTab.preferences => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AppSettingsSectionCard(
+                title: t(locale, 'profile_time_locale_section'),
+                child: _buildTimeLocaleFields(context, locale, safeTimeZone),
+              ),
+              const SizedBox(height: 16),
+              AppSettingsSectionCard(
+                title: t(locale, 'morning_prompt_section'),
+                child: const MorningStartSettingsSection(),
+              ),
+            ],
           ),
           AppSettingsTab.desktopVoice => DesktopVoiceSettingsDesktopGrid(
             onHotkeyChanged: widget.onDesktopVoiceHotkeyChanged,
@@ -371,6 +382,10 @@ class _ProfilePageState extends State<ProfilePage> {
         AppSettingsSectionCard(
           title: t(locale, 'profile_time_locale_section'),
           child: _buildTimeLocaleFields(context, locale, safeTimeZone),
+        ),
+        AppSettingsSectionCard(
+          title: t(locale, 'morning_prompt_section'),
+          child: const MorningStartSettingsSection(),
         ),
         AppSettingsSectionCard(
           title: t(locale, 'profile_about_section'),
