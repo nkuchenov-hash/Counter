@@ -1,5 +1,4 @@
 import 'package:counter/features/notes/widgets/notes_folder_pane.dart';
-import 'package:counter/features/notes/widgets/notes_folder_tab_strip.dart';
 import 'package:flutter/gestures.dart';
 import 'package:counter/features/notes/widgets/notes_library_production_shell.dart';
 import 'package:flutter/material.dart';
