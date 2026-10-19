@@ -159,7 +159,8 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 
 - Notes categories appear as color-filled physical folder-edge tabs on both desktop and mobile, not translucent pill chips or mobile drawer-only navigation. Labels use at least 16px.
 - The + action remains fixed beside the horizontal scrolling tabs and explicitly separates selecting existing categories from creating a new category with the canonical Brain-backed dialog; created categories are pinned immediately.
-- Manual pinned categories update Lists/Notes in memory at once and persist in settings across navigation/restart. No duplicate category store.
+- Pinned category order is stable: selecting an existing tab must never move it to slot 0, persist reordered IDs, or forcibly scroll the tab rail. An externally selected unpinned category may be appended after pinned tabs without disturbing them. Manual pinned categories persist across navigation/restart. No duplicate category store.
+- The active folder tab connects seamlessly to a single, borderless folder-paper surface with exactly the same color, changing with a 260ms smooth animation on category selection (including dark theme). The first note card is inset at least 18px below the tab/paper seam. Do not introduce nested frames around the Notes grid. Use the approved October 5 physical folder-tab shape as reference.
 
 ## Calendar navigation and view modes
 
