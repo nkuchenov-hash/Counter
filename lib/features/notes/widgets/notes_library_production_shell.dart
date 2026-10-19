@@ -1160,42 +1160,48 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
     final ids = _ids;
     return SizedBox(
       height: 42,
-      child: ScrollConfiguration(
-        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-        child: ListView(
-          controller: widget.adapter.scrollController,
-          scrollDirection: Axis.horizontal,
-          clipBehavior: Clip.none,
-          padding: const EdgeInsets.only(right: 12),
-          children: [
-            Align(
-              alignment: Alignment.bottomLeft,
-              child: _FolderTab(
-                label: _allLabel(currentLocale.value),
-                icon: Icons.format_list_bulleted_rounded,
-                accent: const Color(0xFF285B99),
-                fill: _kAllFolderSurface,
-                selected: widget.adapter.filterCategoryId == null,
-                onTap: () => widget.adapter.onFilterChanged(null),
+      child: Row(
+        children: [
+          Expanded(
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+              child: ListView(
+                controller: widget.adapter.scrollController,
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                children: [
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: _FolderTab(
+                      label: _allLabel(currentLocale.value),
+                      icon: Icons.format_list_bulleted_rounded,
+                      accent: const Color(0xFF285B99),
+                      fill: _kAllFolderSurface,
+                      selected: widget.adapter.filterCategoryId == null,
+                      onTap: () => widget.adapter.onFilterChanged(null),
+                    ),
+                  ),
+                  for (final id in ids)
+                    Align(alignment: Alignment.bottomLeft, child: _categoryTab(id)),
+                ],
               ),
             ),
-            for (final id in ids)
-              Align(alignment: Alignment.bottomLeft, child: _categoryTab(id)),
-            Align(
-              alignment: Alignment.bottomLeft,
-              child: _FolderTab(
-                label: '',
-                icon: Icons.add_rounded,
-                accent: Colors.white,
-                fill: kNotesInk,
-                selected: false,
-                compact: true,
-                onTap: () => unawaited(_editSections()),
-                onLongPress: widget.onOpenSettings,
-              ),
+          ),
+          Semantics(
+            label: currentLocale.value == 'ru' ? 'Добавить категорию' : 'Add category',
+            button: true,
+            child: _FolderTab(
+              label: '',
+              icon: Icons.add_rounded,
+              accent: Colors.white,
+              fill: kNotesInk,
+              selected: false,
+              compact: true,
+              onTap: () => unawaited(_editSections()),
+              onLongPress: widget.onOpenSettings,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
