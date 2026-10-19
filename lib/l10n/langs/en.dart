@@ -678,6 +678,10 @@ const Map<String, String> kEnL10n = {
   'desktop_voice_mic_select_subtitle': 'Select microphone input',
   'desktop_voice_mic_input_level': 'Input level',
   'desktop_voice_save_settings': 'Save settings',
+  'morning_prompt_section': 'Start of day',
+  'morning_prompt_toggle': 'Show morning check-in',
+  'morning_prompt_description':
+      'Ask about sleep quality when opening Timeline. This setting applies to this device.',
   'profile_time_locale_section': 'Time & Locale',
   'profile_about_section': 'About',
   'state_enabled': 'Enabled',
