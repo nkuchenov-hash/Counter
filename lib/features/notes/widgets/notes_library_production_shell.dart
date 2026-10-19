@@ -7,6 +7,7 @@ import 'dart:convert';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
+import 'package:counter/features/notes/widgets/notes_category_plus_sheet.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -266,7 +267,15 @@ class _MobileNotesLibrary extends StatelessWidget {
                 color: scheme.onSurface,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 44,
+              child: _NotesPhysicalFolderTabs(
+                adapter: category,
+                onOpenSettings: header.onOpenSettings,
+              ),
+            ),
+            const SizedBox(height: 12),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 86),
@@ -1121,9 +1130,9 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
 
   Future<void> _editSections() async {
     final current = _ids;
-    final picked = await showCategoryTreeMultiPicker(
+    final picked = await showNotesAddFolderSheet(
       context,
-      initialCategoryIds: Set<int>.from(current),
+      currentCategoryIds: Set<int>.from(current),
     );
     if (!mounted || picked == null) return;
 
@@ -1254,49 +1263,44 @@ class _FolderTab extends StatelessWidget {
     final scheme = theme.colorScheme;
     final mobile = MediaQuery.sizeOf(context).width <= 520;
 
-    final selectedFill = dark
-        ? Color.alphaBlend(
-            accent.withValues(alpha: 0.16),
-            scheme.surfaceContainerHigh,
-          )
-        : Color.alphaBlend(
-            accent.withValues(alpha: 0.13),
-            const Color(0xFFFCFDFE),
-          );
-    final foreground = dark
-        ? Color.lerp(accent, Colors.white, 0.22)!
-        : Color.lerp(accent, const Color(0xFF111827), 0.08)!;
-    final idleForeground = selected
-        ? foreground
-        : Color.lerp(
-            foreground,
-            scheme.onSurfaceVariant,
-            dark ? 0.40 : 0.52,
-          )!;
+    // Physical folder-edge tabs: fill is the category's real tab paper,
+    // not a transparent chip with a coloured underline.
+    final paper = dark
+        ? Color.alphaBlend(accent.withValues(alpha: 0.32), scheme.surface)
+        : fill;
+    final idlePaper = dark
+        ? Color.lerp(paper, scheme.surface, 0.30)!
+        : Color.lerp(paper, scheme.surface, 0.22)!;
+    final ink = scheme.onSurface;
 
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(compact ? 12 : 10),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           onLongPress: onLongPress,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 140),
-            height: 38,
+            height: selected ? 42 : 38,
             constraints: BoxConstraints(
-              minWidth: compact ? 42 : (mobile ? 82 : 92),
+              minWidth: compact ? 42 : (mobile ? 92 : 108),
             ),
             padding: EdgeInsets.symmetric(
-              horizontal: compact ? 12 : (mobile ? 12 : 14),
+              horizontal: compact ? 12 : (mobile ? 12 : 15),
             ),
             decoration: BoxDecoration(
               color: compact
                   ? kNotesInk
-                  : (selected ? selectedFill : Colors.transparent),
-              borderRadius: BorderRadius.circular(compact ? 12 : 10),
+                  : (selected ? paper : idlePaper),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              border: compact ? null : Border(
+                top: BorderSide(color: accent.withValues(alpha: 0.90), width: selected ? 3 : 2),
+                left: BorderSide(color: accent.withValues(alpha: 0.20)),
+                right: BorderSide(color: accent.withValues(alpha: 0.20)),
+              ),
             ),
             child: Stack(
               alignment: Alignment.center,
@@ -1307,8 +1311,8 @@ class _FolderTab extends StatelessWidget {
                   children: [
                     Icon(
                       icon,
-                      size: compact ? 17 : 15,
-                      color: compact ? Colors.white : idleForeground,
+                      size: compact ? 19 : 18,
+                      color: compact ? Colors.white : accent,
                     ),
                     if (!compact) ...[
                       const SizedBox(width: 7),
@@ -1319,30 +1323,17 @@ class _FolderTab extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 12.5,
-                            height: 1,
-                            fontWeight:
-                                selected ? FontWeight.w700 : FontWeight.w600,
-                            color: idleForeground,
+                            fontSize: 16,
+                            height: 1.08,
+                            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                            color: ink,
                           ),
                         ),
                       ),
                     ],
                   ],
                 ),
-                if (selected && !compact)
-                  Positioned(
-                    left: 8,
-                    right: 8,
-                    bottom: 0,
-                    child: Container(
-                      height: 2,
-                      decoration: BoxDecoration(
-                        color: foreground,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  ),
+
               ],
             ),
           ),
