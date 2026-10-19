@@ -15,7 +15,6 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const Color _kAllFolderSurface = Color(0xFFE3ECF8);
 const String _kChipModePrefsKey = 'list_chip_mode';
 const String _kPinnedIdsPrefsKey = 'list_pinned_ids';
 
