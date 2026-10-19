@@ -7,10 +7,10 @@ import 'dart:convert';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
+import 'package:counter/features/notes/widgets/notes_category_plus_sheet.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -29,11 +29,13 @@ class NotesLibraryProductionShell extends StatelessWidget {
     required this.content,
     this.topBar,
     this.onNewNote,
+    this.onFolderTabsChanged,
     this.creatingNewNote = false,
   });
 
   final Widget? topBar;
   final VoidCallback? onNewNote;
+  final ValueChanged<List<int>>? onFolderTabsChanged;
   final bool creatingNewNote;
   final Widget header;
   final Widget categoryBar;
@@ -94,6 +96,7 @@ class NotesLibraryProductionShell extends StatelessWidget {
         : _NotesPhysicalFolderTabs(
             adapter: category,
             onOpenSettings: headerAdapter?.onOpenSettings,
+            onChanged: onFolderTabsChanged,
           );
 
     final newNote = onNewNote ??
@@ -112,6 +115,7 @@ class NotesLibraryProductionShell extends StatelessWidget {
           content: content,
           onNewNote: newNote,
           creatingNewNote: creatingNewNote,
+          onFolderTabsChanged: onFolderTabsChanged,
         ),
       );
     }
@@ -175,6 +179,7 @@ class _MobileNotesLibrary extends StatelessWidget {
     required this.content,
     required this.onNewNote,
     required this.creatingNewNote,
+    this.onFolderTabsChanged,
   });
 
   final _NotesHeaderAdapter header;
@@ -182,6 +187,7 @@ class _MobileNotesLibrary extends StatelessWidget {
   final Widget content;
   final VoidCallback onNewNote;
   final bool creatingNewNote;
+  final ValueChanged<List<int>>? onFolderTabsChanged;
 
   String _activeTitle() {
     final id = category.filterCategoryId;
@@ -266,7 +272,16 @@ class _MobileNotesLibrary extends StatelessWidget {
                 color: scheme.onSurface,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 44,
+              child: _NotesPhysicalFolderTabs(
+                adapter: category,
+                onOpenSettings: header.onOpenSettings,
+                onChanged: onFolderTabsChanged,
+              ),
+            ),
+            const SizedBox(height: 12),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 86),
@@ -1059,7 +1074,7 @@ Color _paneColorFor(int? categoryId) {
   final rule = DatabaseService.instance.getCategoryRuleById(categoryId);
   if (rule == null) return _kAllFolderSurface;
   return Color.alphaBlend(
-    rule.colorOrDefault.withValues(alpha: 0.12),
+    rule.colorOrDefault.withValues(alpha: 0.30),
     const Color(0xFFF7F8FA),
   );
 }
@@ -1086,9 +1101,11 @@ class _NotesPhysicalFolderTabs extends StatefulWidget {
   const _NotesPhysicalFolderTabs({
     required this.adapter,
     this.onOpenSettings,
+    this.onChanged,
   });
 
   final _NotesCategoryAdapter adapter;
+  final ValueChanged<List<int>>? onChanged;
   final VoidCallback? onOpenSettings;
 
   @override
@@ -1121,9 +1138,9 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
 
   Future<void> _editSections() async {
     final current = _ids;
-    final picked = await showCategoryTreeMultiPicker(
+    final picked = await showNotesAddFolderSheet(
       context,
-      initialCategoryIds: Set<int>.from(current),
+      currentCategoryIds: Set<int>.from(current),
     );
     if (!mounted || picked == null) return;
 
@@ -1140,6 +1157,7 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
     if (!mounted) return;
 
     setState(() => _localChipIds = next);
+    widget.onChanged?.call(next);
     final active = widget.adapter.filterCategoryId;
     if (active != null && !next.contains(active)) {
       widget.adapter.onFilterChanged(null);
@@ -1151,42 +1169,48 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
     final ids = _ids;
     return SizedBox(
       height: 42,
-      child: ScrollConfiguration(
-        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-        child: ListView(
-          controller: widget.adapter.scrollController,
-          scrollDirection: Axis.horizontal,
-          clipBehavior: Clip.none,
-          padding: const EdgeInsets.only(right: 12),
-          children: [
-            Align(
-              alignment: Alignment.bottomLeft,
-              child: _FolderTab(
-                label: _allLabel(currentLocale.value),
-                icon: Icons.format_list_bulleted_rounded,
-                accent: const Color(0xFF285B99),
-                fill: _kAllFolderSurface,
-                selected: widget.adapter.filterCategoryId == null,
-                onTap: () => widget.adapter.onFilterChanged(null),
+      child: Row(
+        children: [
+          Expanded(
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+              child: ListView(
+                controller: widget.adapter.scrollController,
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                children: [
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: _FolderTab(
+                      label: _allLabel(currentLocale.value),
+                      icon: Icons.format_list_bulleted_rounded,
+                      accent: const Color(0xFF285B99),
+                      fill: _kAllFolderSurface,
+                      selected: widget.adapter.filterCategoryId == null,
+                      onTap: () => widget.adapter.onFilterChanged(null),
+                    ),
+                  ),
+                  for (final id in ids)
+                    Align(alignment: Alignment.bottomLeft, child: _categoryTab(id)),
+                ],
               ),
             ),
-            for (final id in ids)
-              Align(alignment: Alignment.bottomLeft, child: _categoryTab(id)),
-            Align(
-              alignment: Alignment.bottomLeft,
-              child: _FolderTab(
-                label: '',
-                icon: Icons.add_rounded,
-                accent: Colors.white,
-                fill: kNotesInk,
-                selected: false,
-                compact: true,
-                onTap: () => unawaited(_editSections()),
-                onLongPress: widget.onOpenSettings,
-              ),
+          ),
+          Semantics(
+            label: currentLocale.value == 'ru' ? 'Добавить категорию' : 'Add category',
+            button: true,
+            child: _FolderTab(
+              label: '',
+              icon: Icons.add_rounded,
+              accent: Colors.white,
+              fill: kNotesInk,
+              selected: false,
+              compact: true,
+              onTap: () => unawaited(_editSections()),
+              onLongPress: widget.onOpenSettings,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1208,22 +1232,14 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
     );
   }
 
-  String _allLabel(String locale) {
-    switch (locale) {
-      case 'ru':
-        return 'Все';
-      case 'de':
-        return 'Alle';
-      case 'fr':
-        return 'Tous';
-      case 'es':
-        return 'Todo';
-      case 'it':
-        return 'Tutte';
-      default:
-        return 'All';
-    }
-  }
+  String _allLabel(String locale) => switch (locale) {
+    'ru' => 'Все',
+    'de' => 'Alle',
+    'fr' => 'Tous',
+    'es' => 'Todo',
+    'it' => 'Tutte',
+    _ => 'All',
+  };
 }
 
 class _FolderTab extends StatelessWidget {
@@ -1254,49 +1270,44 @@ class _FolderTab extends StatelessWidget {
     final scheme = theme.colorScheme;
     final mobile = MediaQuery.sizeOf(context).width <= 520;
 
-    final selectedFill = dark
-        ? Color.alphaBlend(
-            accent.withValues(alpha: 0.16),
-            scheme.surfaceContainerHigh,
-          )
-        : Color.alphaBlend(
-            accent.withValues(alpha: 0.13),
-            const Color(0xFFFCFDFE),
-          );
-    final foreground = dark
-        ? Color.lerp(accent, Colors.white, 0.22)!
-        : Color.lerp(accent, const Color(0xFF111827), 0.08)!;
-    final idleForeground = selected
-        ? foreground
-        : Color.lerp(
-            foreground,
-            scheme.onSurfaceVariant,
-            dark ? 0.40 : 0.52,
-          )!;
+    // Physical folder-edge tabs: fill is the category's real tab paper,
+    // not a transparent chip with a coloured underline.
+    final paper = dark
+        ? Color.alphaBlend(accent.withValues(alpha: 0.32), scheme.surface)
+        : fill;
+    final idlePaper = dark
+        ? Color.lerp(paper, scheme.surface, 0.30)!
+        : Color.lerp(paper, scheme.surface, 0.22)!;
+    final ink = scheme.onSurface;
 
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(compact ? 12 : 10),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           onLongPress: onLongPress,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 140),
-            height: 38,
+            height: selected ? 42 : 38,
             constraints: BoxConstraints(
-              minWidth: compact ? 42 : (mobile ? 82 : 92),
+              minWidth: compact ? 42 : (mobile ? 92 : 108),
             ),
             padding: EdgeInsets.symmetric(
-              horizontal: compact ? 12 : (mobile ? 12 : 14),
+              horizontal: compact ? 12 : (mobile ? 12 : 15),
             ),
             decoration: BoxDecoration(
               color: compact
                   ? kNotesInk
-                  : (selected ? selectedFill : Colors.transparent),
-              borderRadius: BorderRadius.circular(compact ? 12 : 10),
+                  : (selected ? paper : idlePaper),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              border: compact ? null : Border(
+                top: BorderSide(color: accent.withValues(alpha: 0.90), width: selected ? 3 : 2),
+                left: BorderSide(color: accent.withValues(alpha: 0.20)),
+                right: BorderSide(color: accent.withValues(alpha: 0.20)),
+              ),
             ),
             child: Stack(
               alignment: Alignment.center,
@@ -1307,8 +1318,8 @@ class _FolderTab extends StatelessWidget {
                   children: [
                     Icon(
                       icon,
-                      size: compact ? 17 : 15,
-                      color: compact ? Colors.white : idleForeground,
+                      size: compact ? 19 : 18,
+                      color: compact ? Colors.white : accent,
                     ),
                     if (!compact) ...[
                       const SizedBox(width: 7),
@@ -1319,30 +1330,17 @@ class _FolderTab extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 12.5,
-                            height: 1,
-                            fontWeight:
-                                selected ? FontWeight.w700 : FontWeight.w600,
-                            color: idleForeground,
+                            fontSize: 16,
+                            height: 1.08,
+                            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                            color: ink,
                           ),
                         ),
                       ),
                     ],
                   ],
                 ),
-                if (selected && !compact)
-                  Positioned(
-                    left: 8,
-                    right: 8,
-                    bottom: 0,
-                    child: Container(
-                      height: 2,
-                      decoration: BoxDecoration(
-                        color: foreground,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  ),
+
               ],
             ),
           ),

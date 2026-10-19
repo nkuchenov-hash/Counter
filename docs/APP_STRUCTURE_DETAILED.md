@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). The 2026-10-16 incremental manifest adds the new Calendar group files and their test; the original SHA remains the baseline for other entries.
 
-**Tracked files:** 893 — each appears **exactly once** below.
+**Tracked files:** 895 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,8 +26,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 180 |
-| `test` | 118 |
+| `production UI` | 181 |
+| `test` | 119 |
 | `Brain/data` | 93 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 487 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 220 |
+| `PROVEN_REQUIRED` | 488 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 221 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 39 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 816 |
+| `HIGH` | 818 |
 | `MEDIUM` | 75 |
 
 ---
@@ -18904,6 +18904,44 @@ RU:
 - **Связано с:** `lib/features/notes/widgets/`, `docs/APP_STRUCTURE.md`
 
 
+### `lib/features/notes/widgets/notes_category_plus_sheet.dart`
+
+EN:
+
+- **Human purpose:** Explicit Notes add-folder sheet offering existing multi-select or canonical new-category creation.
+- **What this is:** Explicit Notes add-folder sheet offering existing multi-select or canonical new-category creation.
+- **Why needed:** Restores the Notes folder navigation and category creation interaction.
+- **Contents:** Flutter implementation or automated test for the canonical Notes + action.
+- **Repository role:** production UI
+- **Evidence of use:** Imported by NotesLibraryProductionShell; canonical shared category picker and Brain.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Notes category addition loses its clear selection/create flow or regression coverage.
+- **Confidence:** HIGH
+- **Owner / layer:** Notes UI
+- **Responsibilities:** Explicit Notes add-folder sheet offering existing multi-select or canonical new-category creation.
+- **When to open:** Notes folder tabs and plus-picker category regressions.
+- **Can it be deleted?** No — needed for requested UI behavior.
+- **Connected to:** Imported by NotesLibraryProductionShell; canonical shared category picker and Brain.
+
+RU:
+
+- **Зачем файл человеку:** Explicit Notes add-folder sheet offering existing multi-select or canonical new-category creation.
+- **Что это:** Часть интерфейса вкладок заметок.
+- **Зачем:** Добавить существующую категорию или создать новую через привычный механизм.
+- **Содержимое:** Flutter-код и регрессионный тест.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Imported by NotesLibraryProductionShell; canonical shared category picker and Brain.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Не будет прозрачного сценария добавления категорий или проверки.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI заметок
+- **Обязанности:** Explicit Notes add-folder sheet offering existing multi-select or canonical new-category creation.
+- **Когда открывать:** При ошибках выбора/создания категорий в заметках.
+- **Можно удалить?** Нет.
+- **Связано с:** Imported by NotesLibraryProductionShell; canonical shared category picker and Brain.
+
+---
+
 ### `lib/features/notes/widgets/notes_library_production_shell.dart`
 
 EN:
@@ -34911,6 +34949,44 @@ RU:
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
+
+### `test/notes_category_plus_sheet_test.dart`
+
+EN:
+
+- **Human purpose:** Widget test asserting Notes + action offers existing and new category paths.
+- **What this is:** Widget test asserting Notes + action offers existing and new category paths.
+- **Why needed:** Restores the Notes folder navigation and category creation interaction.
+- **Contents:** Flutter implementation or automated test for the canonical Notes + action.
+- **Repository role:** test
+- **Evidence of use:** Flutter CI: test/notes_category_plus_sheet_test.dart.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Notes category addition loses its clear selection/create flow or regression coverage.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Widget test asserting Notes + action offers existing and new category paths.
+- **When to open:** Notes folder tabs and plus-picker category regressions.
+- **Can it be deleted?** No — needed for requested UI behavior.
+- **Connected to:** Flutter CI: test/notes_category_plus_sheet_test.dart.
+
+RU:
+
+- **Зачем файл человеку:** Widget test asserting Notes + action offers existing and new category paths.
+- **Что это:** Часть интерфейса вкладок заметок.
+- **Зачем:** Добавить существующую категорию или создать новую через привычный механизм.
+- **Содержимое:** Flutter-код и регрессионный тест.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Flutter CI: test/notes_category_plus_sheet_test.dart.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Не будет прозрачного сценария добавления категорий или проверки.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Тесты
+- **Обязанности:** Widget test asserting Notes + action offers existing and new category paths.
+- **Когда открывать:** При ошибках выбора/создания категорий в заметках.
+- **Можно удалить?** Нет.
+- **Связано с:** Flutter CI: test/notes_category_plus_sheet_test.dart.
+
+---
 
 ### `test/notes_canonical_components_test.dart`
 
