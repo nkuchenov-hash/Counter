@@ -19,6 +19,13 @@ const Color _kAllFolderSurface = Color(0xFFE3ECF8);
 const String _kChipModePrefsKey = 'list_chip_mode';
 const String _kPinnedIdsPrefsKey = 'list_pinned_ids';
 
+// Folder tabs retain the user's saved order on selection. If a category was
+// opened externally but is not pinned, append it without displacing other tabs.
+List<int> notesStableTabIds(List<int> pinnedIds, int? activeId) => [
+  ...pinnedIds,
+  if (activeId != null && !pinnedIds.contains(activeId)) activeId,
+];
+
 class NotesLibraryProductionShell extends StatelessWidget {
   const NotesLibraryProductionShell({
     super.key,
