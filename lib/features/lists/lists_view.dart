@@ -574,12 +574,7 @@ class _ListsPageState extends State<ListsPage>
     } else {
       raw = List<int>.from(_pinnedChipIds);
     }
-    final available = _sanitizeIntCategoryIds(raw);
-    final active = _filterCategoryId;
-    if (active != null && available.contains(active)) {
-      return [active, ...available.where((x) => x != active)];
-    }
-    return available;
+    return notesStableTabIds(_sanitizeIntCategoryIds(raw), _filterCategoryId);
   }
 
   List<Tag> _tagsForFilterBar() {
@@ -609,19 +604,12 @@ class _ListsPageState extends State<ListsPage>
   }
 
   void _onFilterChanged(int? id) {
-    if (id != null && _chipMode == 'manual') {
-      final next = List<int>.from(_pinnedChipIds)..remove(id);
-      next.insert(0, id);
-      _pinnedChipIds = _sanitizeIntCategoryIds(next);
-      unawaited(_persistPinnedChipIds(_pinnedChipIds));
-    }
     setState(() {
       _filterCategoryId = id;
       _listsSelectMode = false;
       _selectedListKeys.clear();
     });
     unawaited(_persistFilterCategoryId(id));
-    _scrollChipBarToStart();
   }
 
   void _onTagFilterChanged(String? tagPbId) {

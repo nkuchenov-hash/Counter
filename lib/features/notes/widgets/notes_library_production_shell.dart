@@ -8,15 +8,22 @@ import 'dart:convert';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/widgets/notes_category_plus_sheet.dart';
+import 'package:counter/features/notes/widgets/notes_folder_pane.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const Color _kAllFolderSurface = Color(0xFFE3ECF8);
 const String _kChipModePrefsKey = 'list_chip_mode';
 const String _kPinnedIdsPrefsKey = 'list_pinned_ids';
+
+// Folder tabs retain the user's saved order on selection. If a category was
+// opened externally but is not pinned, append it without displacing other tabs.
+List<int> notesStableTabIds(List<int> pinnedIds, int? activeId) => [
+  ...pinnedIds,
+  if (activeId != null && !pinnedIds.contains(activeId)) activeId,
+];
 
 class NotesLibraryProductionShell extends StatelessWidget {
   const NotesLibraryProductionShell({
@@ -134,7 +141,12 @@ class NotesLibraryProductionShell extends StatelessWidget {
             ),
           const SizedBox(height: 12),
           SizedBox(height: 42, child: tabs),
-          Expanded(child: content),
+          Expanded(
+            child: NotesFolderPane(
+              categoryId: category?.filterCategoryId,
+              child: content,
+            ),
+          ),
         ],
       ),
     );
@@ -281,11 +293,13 @@ class _MobileNotesLibrary extends StatelessWidget {
                 onChanged: onFolderTabsChanged,
               ),
             ),
-            const SizedBox(height: 12),
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 86),
-                child: content,
+              child: NotesFolderPane(
+                categoryId: category.filterCategoryId,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 86),
+                  child: content,
+                ),
               ),
             ),
           ],
@@ -1069,16 +1083,6 @@ class _NewNoteButton extends StatelessWidget {
   }
 }
 
-Color _paneColorFor(int? categoryId) {
-  if (categoryId == null) return _kAllFolderSurface;
-  final rule = DatabaseService.instance.getCategoryRuleById(categoryId);
-  if (rule == null) return _kAllFolderSurface;
-  return Color.alphaBlend(
-    rule.colorOrDefault.withValues(alpha: 0.30),
-    const Color(0xFFF7F8FA),
-  );
-}
-
 class _NotesCategoryAdapter {
   const _NotesCategoryAdapter({
     required this.chipIds,
@@ -1185,7 +1189,7 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
                       label: _allLabel(currentLocale.value),
                       icon: Icons.format_list_bulleted_rounded,
                       accent: const Color(0xFF285B99),
-                      fill: _kAllFolderSurface,
+                      fill: notesFolderPaper(context, null),
                       selected: widget.adapter.filterCategoryId == null,
                       onTap: () => widget.adapter.onFilterChanged(null),
                     ),
@@ -1226,7 +1230,7 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
       label: rule.name.trim().isEmpty ? '—' : rule.name.trim(),
       icon: icon,
       accent: accent,
-      fill: _paneColorFor(id),
+      fill: notesFolderPaper(context, id),
       selected: widget.adapter.filterCategoryId == id,
       onTap: () => widget.adapter.onFilterChanged(id),
     );
@@ -1270,78 +1274,69 @@ class _FolderTab extends StatelessWidget {
     final scheme = theme.colorScheme;
     final mobile = MediaQuery.sizeOf(context).width <= 520;
 
-    // Physical folder-edge tabs: fill is the category's real tab paper,
-    // not a transparent chip with a coloured underline.
-    final paper = dark
-        ? Color.alphaBlend(accent.withValues(alpha: 0.32), scheme.surface)
-        : fill;
-    final idlePaper = dark
-        ? Color.lerp(paper, scheme.surface, 0.30)!
-        : Color.lerp(paper, scheme.surface, 0.22)!;
-    final ink = scheme.onSurface;
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 6),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: onLongPress,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 140),
-            height: selected ? 42 : 38,
-            constraints: BoxConstraints(
-              minWidth: compact ? 42 : (mobile ? 92 : 108),
-            ),
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? 12 : (mobile ? 12 : 15),
-            ),
-            decoration: BoxDecoration(
-              color: compact
-                  ? kNotesInk
-                  : (selected ? paper : idlePaper),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              border: compact ? null : Border(
-                top: BorderSide(color: accent.withValues(alpha: 0.90), width: selected ? 3 : 2),
-                left: BorderSide(color: accent.withValues(alpha: 0.20)),
-                right: BorderSide(color: accent.withValues(alpha: 0.20)),
+    // The selected tab is the leading edge of the SAME folder-paper body.
+    // No pill outline, underline, or competing frame within the folder.
+    final idlePaper = Color.lerp(fill, scheme.surface, dark ? 0.48 : 0.36)!;
+    const tabShape = BorderRadius.only(
+      topLeft: Radius.circular(11),
+      topRight: Radius.circular(15),
+    );
+    return Transform.translate(
+      offset: Offset(0, selected ? 1 : 0),
+      child: Padding(
+        padding: const EdgeInsets.only(right: 5),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: tabShape,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            onLongPress: onLongPress,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 240),
+              curve: Curves.easeInOutCubic,
+              height: selected ? 42 : 36,
+              constraints: BoxConstraints(
+                minWidth: compact ? 42 : (mobile ? 96 : 110),
               ),
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      icon,
-                      size: compact ? 19 : 18,
-                      color: compact ? Colors.white : accent,
-                    ),
-                    if (!compact) ...[
-                      const SizedBox(width: 7),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 160),
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 16,
-                            height: 1.08,
-                            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                            color: ink,
-                          ),
+              padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 15),
+              decoration: BoxDecoration(
+                color: compact ? kNotesInk : (selected ? fill : idlePaper),
+                borderRadius: tabShape,
+                border: compact ? null : Border(
+                  top: BorderSide(color: accent.withValues(alpha: 0.32)),
+                  left: BorderSide(color: accent.withValues(alpha: 0.16)),
+                  right: BorderSide(color: accent.withValues(alpha: 0.16)),
+                  bottom: BorderSide(color: selected ? fill : accent.withValues(alpha: 0.10)),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    icon,
+                    size: compact ? 19 : 18,
+                    color: compact ? Colors.white : accent,
+                  ),
+                  if (!compact) ...[
+                    const SizedBox(width: 7),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 160),
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                          color: scheme.onSurface,
                         ),
                       ),
-                    ],
+                    ),
                   ],
-                ),
-
-              ],
+                ],
+              ),
             ),
           ),
         ),
