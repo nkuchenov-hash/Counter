@@ -1172,18 +1172,19 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
   @override
   Widget build(BuildContext context) {
     final db = DatabaseService.instance;
-    final folders = <NotesFolderTabData>[
-      for (final id in _ids)
-        if (db.getCategoryRuleById(id) case final rule?)
-          NotesFolderTabData(
-            id: id,
-            label: rule.name.trim().isEmpty ? '—' : rule.name.trim(),
-            icon: rule.iconCodePoint == null
-                ? Icons.folder_outlined
-                : IconData(rule.iconCodePoint!, fontFamily: 'MaterialIcons'),
-            paper: notesFolderPaper(context, id),
-          ),
-    ];
+    final folders = <NotesFolderTabData>[];
+    for (final id in _ids) {
+      final rule = db.getCategoryRuleById(id);
+      if (rule == null) continue;
+      folders.add(NotesFolderTabData(
+        id: id,
+        label: rule.name.trim().isEmpty ? '—' : rule.name.trim(),
+        icon: rule.iconCodePoint == null
+            ? Icons.folder_outlined
+            : IconData(rule.iconCodePoint!, fontFamily: 'MaterialIcons'),
+        paper: notesFolderPaper(context, id),
+      ));
+    }
     return NotesFolderTabStrip(
       tabs: folders,
       selectedId: widget.adapter.filterCategoryId,
