@@ -140,7 +140,7 @@ class NotesLibraryProductionShell extends StatelessWidget {
               onNewNote: newNote,
             ),
           const SizedBox(height: 12),
-          SizedBox(height: 42, child: tabs),
+          SizedBox(height: NotesFolderTabStrip.height, child: tabs),
           Expanded(
             child: NotesFolderPane(
               categoryId: category?.filterCategoryId,
@@ -286,7 +286,7 @@ class _MobileNotesLibrary extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             SizedBox(
-              height: 44,
+              height: NotesFolderTabStrip.height,
               child: _NotesPhysicalFolderTabs(
                 adapter: category,
                 onOpenSettings: header.onOpenSettings,
@@ -1170,69 +1170,29 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
 
   @override
   Widget build(BuildContext context) {
-    final ids = _ids;
-    return SizedBox(
-      height: 42,
-      child: Row(
-        children: [
-          Expanded(
-            child: ScrollConfiguration(
-              behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-              child: ListView(
-                controller: widget.adapter.scrollController,
-                scrollDirection: Axis.horizontal,
-                clipBehavior: Clip.none,
-                children: [
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: _FolderTab(
-                      label: _allLabel(currentLocale.value),
-                      icon: Icons.format_list_bulleted_rounded,
-                      accent: const Color(0xFF285B99),
-                      fill: notesFolderPaper(context, null),
-                      selected: widget.adapter.filterCategoryId == null,
-                      onTap: () => widget.adapter.onFilterChanged(null),
-                    ),
-                  ),
-                  for (final id in ids)
-                    Align(alignment: Alignment.bottomLeft, child: _categoryTab(id)),
-                ],
-              ),
-            ),
-          ),
-          Semantics(
-            label: currentLocale.value == 'ru' ? 'Добавить категорию' : 'Add category',
-            button: true,
-            child: _FolderTab(
-              label: '',
-              icon: Icons.add_rounded,
-              accent: Colors.white,
-              fill: kNotesInk,
-              selected: false,
-              compact: true,
-              onTap: () => unawaited(_editSections()),
-              onLongPress: widget.onOpenSettings,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _categoryTab(int id) {
-    final rule = DatabaseService.instance.getCategoryRuleById(id);
-    if (rule == null) return const SizedBox.shrink();
-    final accent = rule.colorOrDefault;
-    final icon = rule.iconCodePoint == null
-        ? Icons.folder_outlined
-        : IconData(rule.iconCodePoint!, fontFamily: 'MaterialIcons');
-    return _FolderTab(
-      label: rule.name.trim().isEmpty ? '—' : rule.name.trim(),
-      icon: icon,
-      accent: accent,
-      fill: notesFolderPaper(context, id),
-      selected: widget.adapter.filterCategoryId == id,
-      onTap: () => widget.adapter.onFilterChanged(id),
+    final db = DatabaseService.instance;
+    final folders = <NotesFolderTabData>[];
+    for (final id in _ids) {
+      final rule = db.getCategoryRuleById(id);
+      if (rule == null) continue;
+      folders.add(NotesFolderTabData(
+        id: id,
+        label: rule.name.trim().isEmpty ? '—' : rule.name.trim(),
+        icon: rule.iconCodePoint == null
+            ? Icons.folder_outlined
+            : IconData(rule.iconCodePoint!, fontFamily: 'MaterialIcons'),
+        paper: notesFolderPaper(context, id),
+      ));
+    }
+    return NotesFolderTabStrip(
+      tabs: folders,
+      selectedId: widget.adapter.filterCategoryId,
+      scrollController: widget.adapter.scrollController,
+      allLabel: _allLabel(currentLocale.value),
+      allPaper: notesFolderPaper(context, null),
+      onSelect: widget.adapter.onFilterChanged,
+      onAdd: () => unawaited(_editSections()),
+      onManage: widget.onOpenSettings,
     );
   }
 
@@ -1244,105 +1204,6 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
     'it' => 'Tutte',
     _ => 'All',
   };
-}
-
-class _FolderTab extends StatelessWidget {
-  const _FolderTab({
-    required this.label,
-    required this.icon,
-    required this.accent,
-    required this.fill,
-    required this.selected,
-    required this.onTap,
-    this.compact = false,
-    this.onLongPress,
-  });
-
-  final String label;
-  final IconData icon;
-  final Color accent;
-  final Color fill;
-  final bool selected;
-  final VoidCallback onTap;
-  final bool compact;
-  final VoidCallback? onLongPress;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final dark = theme.brightness == Brightness.dark;
-    final scheme = theme.colorScheme;
-    final mobile = MediaQuery.sizeOf(context).width <= 520;
-
-    // The selected tab is the leading edge of the SAME folder-paper body.
-    // No pill outline, underline, or competing frame within the folder.
-    final idlePaper = Color.lerp(fill, scheme.surface, dark ? 0.48 : 0.36)!;
-    const tabShape = BorderRadius.only(
-      topLeft: Radius.circular(11),
-      topRight: Radius.circular(15),
-    );
-    return Transform.translate(
-      offset: Offset(0, selected ? 1 : 0),
-      child: Padding(
-        padding: const EdgeInsets.only(right: 5),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: tabShape,
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            onLongPress: onLongPress,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 240),
-              curve: Curves.easeInOutCubic,
-              height: selected ? 42 : 36,
-              constraints: BoxConstraints(
-                minWidth: compact ? 42 : (mobile ? 96 : 110),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 15),
-              decoration: BoxDecoration(
-                color: compact ? kNotesInk : (selected ? fill : idlePaper),
-                borderRadius: tabShape,
-                border: compact ? null : Border(
-                  top: BorderSide(color: accent.withValues(alpha: 0.32)),
-                  left: BorderSide(color: accent.withValues(alpha: 0.16)),
-                  right: BorderSide(color: accent.withValues(alpha: 0.16)),
-                  bottom: BorderSide(color: selected ? fill : accent.withValues(alpha: 0.10)),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    icon,
-                    size: compact ? 19 : 18,
-                    color: compact ? Colors.white : accent,
-                  ),
-                  if (!compact) ...[
-                    const SizedBox(width: 7),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 160),
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                          color: scheme.onSurface,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 /// Retained for compatibility with ListsPage. The production shell deliberately

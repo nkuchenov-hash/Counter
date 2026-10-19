@@ -317,6 +317,8 @@
 
 # 📖 DEV_JOURNAL (Changelog)
 
+## [2026-10-19] - Notes physical folder tabs and usable category scrolling [in review]\n\n* **Notes:** Curved diagonal folder spines with overlap (reference: physical colored index folders); active category paper matches the tab with a 260ms animated change.\n* **Folder navigation:** `All` pinned left, `+` pinned right, categories horizontally scroll between; mouse wheel, mouse drag and touch supported. Selecting a category no longer reorders tabs.\n* **Regression:** Widget tests for folder silhouette, fixed controls and scroll, while preserving the 18px interior card gap.\n\n
+
 ## [2026-10-06] - Calendar view selector and swipe navigation [shipped]
 
 * **Calendar mobile/desktop chrome:** removed persistent previous/next arrows; period navigation now uses horizontal swipe and a compact top action capsule.
