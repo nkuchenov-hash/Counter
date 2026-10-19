@@ -37,6 +37,7 @@ class MorningStartGate extends StatefulWidget {
 class _MorningStartGateState extends State<MorningStartGate> {
   bool _sheetOpen = false;
   bool _checkScheduled = false;
+  bool _checking = false;
   String? _lastCheckedDay;
   bool _disabledByPreference = false;
   String? _preferenceProfileId;
@@ -72,7 +73,7 @@ class _MorningStartGateState extends State<MorningStartGate> {
   }
 
   void _scheduleCheck() {
-    if (_checkScheduled || _sheetOpen || !widget.active) return;
+    if (_checkScheduled || _checking || _sheetOpen || !widget.active) return;
     if (_disabledByPreference &&
         _preferenceProfileId == DatabaseService.instance.currentProfileId) {
       return;
@@ -80,8 +81,13 @@ class _MorningStartGateState extends State<MorningStartGate> {
     _checkScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _checkScheduled = false;
-      if (!mounted || !widget.active || _sheetOpen) return;
-      await _maybeShow();
+      if (!mounted || !widget.active || _sheetOpen || _checking) return;
+      _checking = true;
+      try {
+        await _maybeShow();
+      } finally {
+        _checking = false;
+      }
     });
   }
 
