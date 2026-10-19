@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/shared/sleep_record_policy.dart';
+import 'package:counter/services/morning_start_preference.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,6 +38,25 @@ class _MorningStartGateState extends State<MorningStartGate> {
   bool _sheetOpen = false;
   bool _checkScheduled = false;
   String? _lastCheckedDay;
+  bool _disabledByPreference = false;
+  String? _preferenceProfileId;
+
+  @override
+  void initState() {
+    super.initState();
+    MorningStartPreference.changes.addListener(_onPreferenceChanged);
+  }
+
+  @override
+  void dispose() {
+    MorningStartPreference.changes.removeListener(_onPreferenceChanged);
+    super.dispose();
+  }
+
+  void _onPreferenceChanged() {
+    _disabledByPreference = false;
+    _scheduleCheck();
+  }
 
   DateTime _day(DateTime d) => DateTime(d.year, d.month, d.day);
 
@@ -53,6 +73,10 @@ class _MorningStartGateState extends State<MorningStartGate> {
 
   void _scheduleCheck() {
     if (_checkScheduled || _sheetOpen || !widget.active) return;
+    if (_disabledByPreference &&
+        _preferenceProfileId == DatabaseService.instance.currentProfileId) {
+      return;
+    }
     _checkScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _checkScheduled = false;
@@ -69,6 +93,13 @@ class _MorningStartGateState extends State<MorningStartGate> {
 
     final key = _dayKey(day);
     if (_lastCheckedDay == key) return;
+
+    final profileId = db.currentProfileId;
+    final enabled = await MorningStartPreference.isEnabled(profileId);
+    if (!mounted || !widget.active || profileId != db.currentProfileId) return;
+    _preferenceProfileId = profileId;
+    _disabledByPreference = !enabled;
+    if (!enabled) return;
 
     final current = db.peekTimelineRecordsForDate(day);
     final adjacent = SleepRecordPolicy.adjacentRecordsForDay(day, current);
