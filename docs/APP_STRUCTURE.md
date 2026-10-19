@@ -490,7 +490,7 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `lists/` | `lists_view.dart`, `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_empty_state.dart`, `lists_card.dart`, `lists_export.dart`, `category_filter_tree_field.dart` | Lists/backlog coordinator + filter/bulk/empty modules + card + export + Lists-only “All categories” filter field |
 | `notes/` | `drawing_canvas_page.dart`, `notes_audio_controller.dart`, `notes_image_tools.dart`, `notes_editor_document_controller.dart`, `notes_glm_surface.dart`, `notes_visual_tokens.dart`, `notes_figma_tokens.dart`, `note_editor_page.dart`, **`widgets/`** (`notes_library_body.dart`, `notes_library_production_shell.dart`, `notes_category_plus_sheet.dart`, `notes_folder_pane.dart`, `note_card.dart`, `note_editor_block_widgets.dart`, `notes_editor_tools.dart`, `notes_special_block_widgets.dart`, `notes_canonical_components.dart`, `notes_component_text_blocks.dart`, `notes_component_structural_blocks.dart`, `notes_component_media_blocks.dart`, `notes_component_tools.dart`) | Notes library/editor/drawing feature UI; exact roles in §3.4 Notes below |
 | `calendar/` | `calendar_view.dart` (orchestrator), `calendar_chrome_header.dart`, `calendar_month_grid.dart`, `calendar_week_grid.dart`, `calendar_day_panel.dart`, `calendar_day_events.dart`, `calendar_helpers.dart`, `calendar_drag_and_reschedule.dart` (shared Time View insertion cascade/persistence), `calendar_week_timeview_drag.dart` (canonical Time View gesture adapter + overlay), `calendar_week_grouping.dart` (pure visual grouping/lane placement), `calendar_task_group_sheet.dart` (interactive category group details) | Calendar tab: click-to-create date/time, separate from global header date; category-based week grouping, month/week grids, focused-day panel |
-| `profile/` | `profile_view.dart`, **`settings/`** (account, notification, security sections), `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart` | Profile & tag settings |
+| `profile/` | `profile_view.dart`, **`settings/`** (account, notification, security, morning-start sections), `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart` | Profile & tag settings |
 | `settings/` | `timezone_settings.dart`, **`voice/`** (`desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart`), **`categories/`** (`category_list_view.dart`, `category_row_widget.dart`, `category_editor_sheet.dart`, `category_appearance_sheet.dart`, `category_tag_input_field.dart`, `category_helpers.dart`, `create_category_dialog.dart`, `category_recursive_browse_panel.dart`), **`notifications/`** (`unfilled_time_notifications_section.dart`), **`health/`** (`health_connect_settings_section.dart`) | Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings |
 | `voice/` | `desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_correction_sheet.dart` | Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel) |
 | `dev/` | `component_lab_view.dart`, `component_lab_cards_demo.dart`, `component_lab_notes_demo.dart` | Admin-only Component Lab including canonical Notes block/media/tool states |
@@ -543,6 +543,7 @@ Every production Notes feature module above must be listed by exact filename (no
 | File | Role |
 | :--- | :--- |
 | `notification_service.dart` | Local notifications and plan alarms |
+| `morning_start_preference.dart` | Device-local profile-scoped on/off setting for Timeline's morning check-in; independent of sleep-sync data |
 | `plan_alarm_schedule.dart` | UI-free plan reminder schedule specifications, wall-time conversion, dedupe, and limits |
 | `unfilled_time_notification_service.dart` | OS notification bridge for unfilled Timeline-gap reminders |
 | `health_connect/health_connect_sleep_models.dart` | Health Connect sleep-session/value objects shared by platform adapters |
@@ -623,7 +624,7 @@ Copy `pb_hooks/` beside the PocketBase executable on the server. Client Brain co
 | `planning/time_view/time_view_settings_sheet.dart` | Time View settings + default plan times |
 | `planning/time_view/time_view_search_delegate.dart` | Category default-time search UI |
 | `timeline/timeline_header_controls.dart` | List/stats segmented control + record input row |
-| `timeline/timeline_morning_start.dart` | Morning Start Day check-in: sleep confirmation + first Timeline record |
+| `timeline/timeline_morning_start.dart` | Morning Start Day check-in: sleep confirmation + first Timeline record, gated by device-local preference |
 | `shared/sleep_record_policy.dart` | Shared Timeline/Stats policy for sleep detection and wake-to-bed day boundaries |
 | `timeline/timeline_day_page.dart` | `TimelineDayCardList`, lazy record list |
 | `timeline/timeline_record_card.dart` | `TimelineRecordCard` |
@@ -696,6 +697,7 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `profile/settings/account_settings_section.dart` | Signed-in identity + logout row |
 | `profile/calendar_integrations/calendar_integrations_section.dart` | In-app Microsoft/Google calendar connection, calendar selection, sync, and per-calendar fallback-category settings |
 | `profile/settings/notification_settings_section.dart` | OS notification permission block |
+| `profile/settings/morning_start_settings_section.dart` | Profile-scoped morning check-in toggle in desktop/mobile Settings preferences |
 | `profile/settings/security_settings_section.dart` | Password reset + biometric lock |
 | `shared/activity_detail_sheet.dart` | Edit sheet router (`ActivityDetailKind`) |
 | `shared/planning_task_edit_sheet.dart` | Plan/list task edit sheet |
