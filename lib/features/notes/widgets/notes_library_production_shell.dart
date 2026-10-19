@@ -11,7 +11,6 @@ import 'package:counter/features/notes/widgets/notes_category_plus_sheet.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
