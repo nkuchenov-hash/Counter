@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). The 2026-10-16 incremental manifest adds the new Calendar group files and their test; the original SHA remains the baseline for other entries.
 
-**Tracked files:** 895 — each appears **exactly once** below.
+**Tracked files:** 897 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,8 +26,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 181 |
-| `test` | 119 |
+| `production UI` | 182 |
+| `test` | 120 |
 | `Brain/data` | 93 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 488 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 221 |
+| `PROVEN_REQUIRED` | 489 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 222 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 39 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 818 |
+| `HIGH` | 820 |
 | `MEDIUM` | 75 |
 
 ---
@@ -18942,6 +18942,44 @@ RU:
 
 ---
 
+### `lib/features/notes/widgets/notes_folder_pane.dart`
+
+EN:
+
+- **Human purpose:** Color-coordinated animated folder body with seamless tab boundary and 18px gap before notes.
+- **What this is:** Color-coordinated animated folder body with seamless tab boundary and 18px gap before notes.
+- **Why needed:** Preserve the approved physical folder-tab navigation and category-paper transition.
+- **Contents:** Flutter widget and deterministic Notes UX regression checks.
+- **Repository role:** production UI
+- **Evidence of use:** Used in lib/features/notes/widgets/notes_library_production_shell.dart for mobile and desktop.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Folder-color animation/inset or stable order regression goes unimplemented or untested.
+- **Confidence:** HIGH
+- **Owner / layer:** Notes UI
+- **Responsibilities:** Color-coordinated animated folder body with seamless tab boundary and 18px gap before notes.
+- **When to open:** Notes tab shape, paper seam, tint animation, card spacing, or stable tab order issues.
+- **Can it be deleted?** No — user-requested UX contract.
+- **Connected to:** Used in lib/features/notes/widgets/notes_library_production_shell.dart for mobile and desktop.
+
+RU:
+
+- **Зачем файл человеку:** Color-coordinated animated folder body with seamless tab boundary and 18px gap before notes.
+- **Что это:** Корректное поведение корешков цветных папок в заметках LIFE OS.
+- **Зачем:** Фон должен плавно следовать за вкладкой, а порядок вкладок не должен меняться.
+- **Содержимое:** Dart-виджет или его регрессионные проверки.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Used in lib/features/notes/widgets/notes_library_production_shell.dart for mobile and desktop.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Потеря цветной папки, отступов или защиты от пересортировки.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Интерфейс заметок
+- **Обязанности:** Color-coordinated animated folder body with seamless tab boundary and 18px gap before notes.
+- **Когда открывать:** При неисправности корешков папок и переключения категорий.
+- **Можно удалить?** Нет.
+- **Связано с:** Used in lib/features/notes/widgets/notes_library_production_shell.dart for mobile and desktop.
+
+---
+
 ### `lib/features/notes/widgets/notes_library_production_shell.dart`
 
 EN:
@@ -34949,6 +34987,44 @@ RU:
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
+
+### `test/notes_folder_tabs_contract_test.dart`
+
+EN:
+
+- **Human purpose:** Regression tests that selection cannot reorder folder tabs, and that folder content is animated and padded.
+- **What this is:** Regression tests that selection cannot reorder folder tabs, and that folder content is animated and padded.
+- **Why needed:** Preserve the approved physical folder-tab navigation and category-paper transition.
+- **Contents:** Flutter widget and deterministic Notes UX regression checks.
+- **Repository role:** test
+- **Evidence of use:** Android CI flutter test test/notes_folder_tabs_contract_test.dart.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Folder-color animation/inset or stable order regression goes unimplemented or untested.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Regression tests that selection cannot reorder folder tabs, and that folder content is animated and padded.
+- **When to open:** Notes tab shape, paper seam, tint animation, card spacing, or stable tab order issues.
+- **Can it be deleted?** No — user-requested UX contract.
+- **Connected to:** Android CI flutter test test/notes_folder_tabs_contract_test.dart.
+
+RU:
+
+- **Зачем файл человеку:** Regression tests that selection cannot reorder folder tabs, and that folder content is animated and padded.
+- **Что это:** Корректное поведение корешков цветных папок в заметках LIFE OS.
+- **Зачем:** Фон должен плавно следовать за вкладкой, а порядок вкладок не должен меняться.
+- **Содержимое:** Dart-виджет или его регрессионные проверки.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Android CI flutter test test/notes_folder_tabs_contract_test.dart.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Потеря цветной папки, отступов или защиты от пересортировки.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Тесты
+- **Обязанности:** Regression tests that selection cannot reorder folder tabs, and that folder content is animated and padded.
+- **Когда открывать:** При неисправности корешков папок и переключения категорий.
+- **Можно удалить?** Нет.
+- **Связано с:** Android CI flutter test test/notes_folder_tabs_contract_test.dart.
+
+---
 
 ### `test/notes_category_plus_sheet_test.dart`
 
