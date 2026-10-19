@@ -155,6 +155,12 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - Any perceived performance regression (lag, freeze, missing instant update, “impossible to work”) is a **P0 correctness bug** and outranks feature/design/preload work.
 - No feature, design, preload, cache, animation, or architecture idea may remain active if it hurts app speed or stability.
 
+## Notes library folder tabs
+
+- Notes categories appear as color-filled physical folder-edge tabs on both desktop and mobile, not translucent pill chips or mobile drawer-only navigation. Labels use at least 16px.
+- The + action remains fixed beside the horizontal scrolling tabs and explicitly separates selecting existing categories from creating a new category with the canonical Brain-backed dialog; created categories are pinned immediately.
+- Manual pinned categories update Lists/Notes in memory at once and persist in settings across navigation/restart. No duplicate category store.
+
 ## Calendar navigation and view modes
 
 - Calendar period navigation is gesture-first: horizontal swipe moves to the previous/next year, month, week, day-focus date, or Events month. Do not add persistent previous/next arrow buttons to the calendar header.
