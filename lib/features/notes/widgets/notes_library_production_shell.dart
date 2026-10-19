@@ -30,11 +30,13 @@ class NotesLibraryProductionShell extends StatelessWidget {
     required this.content,
     this.topBar,
     this.onNewNote,
+    this.onFolderTabsChanged,
     this.creatingNewNote = false,
   });
 
   final Widget? topBar;
   final VoidCallback? onNewNote;
+  final ValueChanged<List<int>>? onFolderTabsChanged;
   final bool creatingNewNote;
   final Widget header;
   final Widget categoryBar;
@@ -95,6 +97,7 @@ class NotesLibraryProductionShell extends StatelessWidget {
         : _NotesPhysicalFolderTabs(
             adapter: category,
             onOpenSettings: headerAdapter?.onOpenSettings,
+            onChanged: onFolderTabsChanged,
           );
 
     final newNote = onNewNote ??
@@ -113,6 +116,7 @@ class NotesLibraryProductionShell extends StatelessWidget {
           content: content,
           onNewNote: newNote,
           creatingNewNote: creatingNewNote,
+          onFolderTabsChanged: onFolderTabsChanged,
         ),
       );
     }
@@ -176,6 +180,7 @@ class _MobileNotesLibrary extends StatelessWidget {
     required this.content,
     required this.onNewNote,
     required this.creatingNewNote,
+    this.onFolderTabsChanged,
   });
 
   final _NotesHeaderAdapter header;
@@ -183,6 +188,7 @@ class _MobileNotesLibrary extends StatelessWidget {
   final Widget content;
   final VoidCallback onNewNote;
   final bool creatingNewNote;
+  final ValueChanged<List<int>>? onFolderTabsChanged;
 
   String _activeTitle() {
     final id = category.filterCategoryId;
@@ -273,6 +279,7 @@ class _MobileNotesLibrary extends StatelessWidget {
               child: _NotesPhysicalFolderTabs(
                 adapter: category,
                 onOpenSettings: header.onOpenSettings,
+                onChanged: onFolderTabsChanged,
               ),
             ),
             const SizedBox(height: 12),
@@ -1095,9 +1102,11 @@ class _NotesPhysicalFolderTabs extends StatefulWidget {
   const _NotesPhysicalFolderTabs({
     required this.adapter,
     this.onOpenSettings,
+    this.onChanged,
   });
 
   final _NotesCategoryAdapter adapter;
+  final ValueChanged<List<int>>? onChanged;
   final VoidCallback? onOpenSettings;
 
   @override
@@ -1149,6 +1158,7 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
     if (!mounted) return;
 
     setState(() => _localChipIds = next);
+    widget.onChanged?.call(next);
     final active = widget.adapter.filterCategoryId;
     if (active != null && !next.contains(active)) {
       widget.adapter.onFilterChanged(null);
@@ -1223,22 +1233,14 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
     );
   }
 
-  String _allLabel(String locale) {
-    switch (locale) {
-      case 'ru':
-        return 'Все';
-      case 'de':
-        return 'Alle';
-      case 'fr':
-        return 'Tous';
-      case 'es':
-        return 'Todo';
-      case 'it':
-        return 'Tutte';
-      default:
-        return 'All';
-    }
-  }
+  String _allLabel(String locale) => switch (locale) {
+    'ru' => 'Все',
+    'de' => 'Alle',
+    'fr' => 'Tous',
+    'es' => 'Todo',
+    'it' => 'Tutte',
+    _ => 'All',
+  };
 }
 
 class _FolderTab extends StatelessWidget {
