@@ -1,3 +1,9 @@
+## 2026-10-19 — Restore real Notes folder paper, spacing and fixed tab positions [fix]
+
+- Correct regression in Lists where merely selecting a pinned category removed/reinserted it at the front, wrote altered preference order and scrolled tabs to start. Selection now preserves position and scroll offset.
+- Revived the approved early-October real folder-tab silhouette and its seamless content-paper connection without nested frames. Animated folder background (260ms) follows selected category in light/dark mode with 18px interior card separation.
+- Added regression tests for stable selected-category tab ordering and animated folder paper inset.
+
 ## 2026-10-19 — Notes restored folder tabs and explicit category + [fix]
 
 - Restored colored folder-edge tabs on mobile and desktop Notes, including category color as the tab paper and legible 16px labels.
