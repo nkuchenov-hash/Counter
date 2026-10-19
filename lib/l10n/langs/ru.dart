@@ -824,6 +824,10 @@ const Map<String, String> kRuL10n = {
   'desktop_voice_mic_select_subtitle': 'Выберите микрофон',
   'desktop_voice_mic_input_level': 'Уровень сигнала',
   'desktop_voice_save_settings': 'Сохранить настройки',
+  'morning_prompt_section': 'Начало дня',
+  'morning_prompt_toggle': 'Показывать утренний опрос',
+  'morning_prompt_description':
+      'Спрашивать о качестве сна при открытии Таймлайна. Настройка действует на этом устройстве.',
   'profile_time_locale_section': 'Время и локаль',
   'profile_about_section': 'О приложении',
   'state_enabled': 'Включено',
