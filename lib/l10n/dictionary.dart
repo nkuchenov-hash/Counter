@@ -10,6 +10,20 @@ import 'package:counter/l10n/langs/ko.dart' show kKoL10n;
 import 'package:counter/l10n/langs/ru.dart' show kRuL10n;
 import 'package:counter/l10n/langs/zh.dart' show kZhL10n;
 
+const Map<String, String> _morningPromptEn = {
+  'morning_prompt_section': 'Start of day',
+  'morning_prompt_toggle': 'Show morning check-in',
+  'morning_prompt_description':
+      'Ask about sleep quality when opening Timeline. This setting applies to this device.',
+};
+
+const Map<String, String> _morningPromptRu = {
+  'morning_prompt_section': 'Начало дня',
+  'morning_prompt_toggle': 'Показывать утренний опрос',
+  'morning_prompt_description':
+      'Спрашивать о качестве сна при открытии Таймлайна. Настройка действует на этом устройстве.',
+};
+
 const Map<String, String> _recordWriteEn = {
   'record_create_not_saved':
       'Record not saved. Check your account, category, or device storage, then retry.',
@@ -255,6 +269,7 @@ final ValueNotifier<String> currentLocale = ValueNotifier<String>('en');
 final Map<String, String> _englishCatalog = Map<String, String>.unmodifiable({
   ...kEnL10n,
   ..._recordWriteEn,
+  ..._morningPromptEn,
   ..._planningAutoPlacementEn,
   ..._healthAndGapEn,
   ..._calendarIntegrationsEn,
@@ -263,6 +278,7 @@ final Map<String, String> _englishCatalog = Map<String, String>.unmodifiable({
 final Map<String, String> _russianCatalog = Map<String, String>.unmodifiable({
   ...kRuL10n,
   ..._recordWriteRu,
+  ..._morningPromptRu,
   ..._planningAutoPlacementRu,
   ..._healthAndGapRu,
   ..._calendarIntegrationsRu,
