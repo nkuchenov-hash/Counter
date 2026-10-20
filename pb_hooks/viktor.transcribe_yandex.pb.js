@@ -5,8 +5,27 @@ function viktorYandexSpeechAuth(e, withAudio) {
   const info = e.requestInfo();
   if (!info.auth || !info.auth.id) return {error: "auth_required", status: 401};
   const body = info.body || {};
-  const key = String(body.api_key || "").trim();
-  const folder = String(body.yandex_folder_id || "").trim();
+  let key = String(body.api_key || "").trim();
+  let folder = String(body.yandex_folder_id || "").trim();
+  if (key.length === 0) {
+    const secret = String($os.getenv("VIKTOR_VAULT_KEY") || "");
+    if (secret.length === 32) {
+      try {
+        const row = $app.findFirstRecordByFilter(
+          "viktor_connections",
+          "user_id = {:owner} && provider = 'yandex'",
+          {owner: info.auth.id}
+        );
+        const raw = $security.decrypt(row.getString("payload_enc"), secret);
+        const data = JSON.parse(typeof raw === "string"
+          ? raw : Buffer.from(raw).toString("utf8"));
+        key = String(data.api_key || "").trim();
+        folder = folder || String(data.folder_id || "");
+      } catch (_) {
+        // Missing or inaccessible credentials fail closed.
+      }
+    }
+  }
   if (key.length < 12 || key.length > 512) return {error: "speech_api_key_required", status: 400};
   if (!/^[a-zA-Z0-9_-]{10,64}$/.test(folder)) {
     return {error: "yandex_folder_id_required", status: 400};
