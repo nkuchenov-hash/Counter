@@ -19,6 +19,7 @@ class ViktorAction {
     'update_plan_duration',
     'move_plan_after',
     'swap_plan_positions',
+    'bulk_replan',
     'start_record',
     'stop_record',
   };
@@ -77,6 +78,52 @@ class ViktorAction {
           throw const FormatException('Cannot swap a plan with itself');
         }
         _day(args, 'wall_day');
+      case 'bulk_replan':
+        // A generic status-filtered schedule operation. The model describes
+        // WHAT to change; the Brain resolves actual row IDs and previews all
+        // resulting wall times before any write.
+        _onlyKeys(args, const {'operations'});
+        final raw = args['operations'];
+        if (raw is! List || raw.isEmpty || raw.length > 3) {
+          throw const FormatException('Expected 1–3 bulk planning operations');
+        }
+        final seen = <String>{};
+        for (final item in raw) {
+          if (item is! Map) {
+            throw const FormatException('Invalid bulk planning operation');
+          }
+          final operation = Map<String, Object?>.from(item);
+          _onlyKeys(operation, const {
+            'kind', 'status', 'source_day', 'target_day',
+            'start_time', 'timezone',
+          });
+          final kind = _text(operation, 'kind', maxLength: 16);
+          if (!const {'move', 'compact'}.contains(kind)) {
+            throw const FormatException('Invalid bulk operation kind');
+          }
+          final status = _text(operation, 'status', maxLength: 16);
+          if (!const {'complete', 'incomplete', 'all'}.contains(status)) {
+            throw const FormatException('Invalid bulk status filter');
+          }
+          final source = _day(operation, 'source_day');
+          if (!seen.add('$source|$status')) {
+            throw const FormatException('Overlapping bulk plan filters');
+          }
+          if (kind == 'move') {
+            final target = _day(operation, 'target_day');
+            if (source == target) {
+              throw const FormatException('Move target must differ from source');
+            }
+            _clock(operation, 'start_time');
+          } else if (operation.containsKey('target_day')) {
+            throw const FormatException('Compaction is always same-day');
+          } else if (operation.containsKey('start_time')) {
+            _clock(operation, 'start_time');
+          }
+          if (operation.containsKey('timezone')) {
+            _text(operation, 'timezone', maxLength: 64);
+          }
+        }
       case 'start_record':
         _onlyKeys(args, const {'title', 'category_id'});
         _title(args, 'title');
@@ -107,7 +154,8 @@ class ViktorActionBatch {
   /// Previews are mandatory for multi-step edits and operations which may
   /// cascade scheduling. The executor can still require additional approval.
   bool get requiresPreview => actions.where((a) => a.isMutation).length > 1 ||
-      actions.any((a) => a.name == 'move_plan_after');
+      actions.any((a) =>
+          a.name == 'move_plan_after' || a.name == 'bulk_replan');
 
   factory ViktorActionBatch.fromJson(Map<String, dynamic> raw) {
     _onlyKeys(raw, const {'version', 'request_id', 'actions'});
