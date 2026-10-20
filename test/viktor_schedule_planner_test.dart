@@ -70,7 +70,7 @@ void main() {
           rrule: 'FREQ=DAILY')],
       actions: proposal([{'name': 'update_plan_duration', 'arguments': {
         'plan_id': a, 'expected_duration_minutes': 40,
-        'duration_minutes': 30,
+        'duration_minutes': 60,
       }}]).actions,
       fixedTime: (_) => false,
     ), throwsStateError);
