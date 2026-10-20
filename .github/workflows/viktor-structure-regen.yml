@@ -1,7 +1,7 @@
 name: Regenerate Viktor structure map
 on:
   pull_request:
-    types: [synchronize]
+    types: [opened, synchronize, reopened]
     paths:
       - 'lib/data/ai/**'
       - 'lib/features/viktor/**'
@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   update-detailed-map:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.number == 285
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

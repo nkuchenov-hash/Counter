@@ -243,3 +243,8 @@ This boundary preserves single PocketBase ownership, category inference, singlet
 ## Viktor integrated AI (draft BYOK beta, 2026-10-20)
 
 One Viktor full-screen UI (`lib/features/viktor/viktor_chat_page.dart`) replaces the legacy floating microphone and Smart Plan sheet. The server route `POST /api/viktor/propose` returns **untrusted proposals only**; model output passes `lib/data/ai/viktor_action_contract.dart`. `ViktorExecutor` resolves objects against the signed-in Brain, checks freshness, previews actual times and requires confirmation. Recurring instances and pinned plans cannot be moved by a cascade. Mixed independent writes are blocked to prevent partially successful batches. **BYOK** is available to authenticated Free/Pro accounts; the user provides a transient provider key. Hosted mode is disabled until production quotas, billing and metering are implemented. Beta gates: `docs/VIKTOR_BETA_RELEASE_CHECKLIST.md`.
+
+
+### Viktor cloud speech input (2026-10-20)
+
+`ViktorVoiceRecorder` (`lib/data/ai/viktor_voice_recorder.dart`) uses existing platform `record` package with streamed PCM16, live amplitude/time feedback and WAV wrapping. `ViktorVoiceGateway` is the Brain-owned authenticated transport for `/api/viktor/transcribe` (PocketBase hook). It only submits captured WAV plus an ephemeral personal provider key. The backend restricts provider URLs to OpenAI, Groq or Gemini; OpenRouter text users supply a separate speech-provider API key. No browser native speech service, no phone-local dependencies, no unmetered hosted provider keys. The editable transcript remains in the Viktor input until the user sends it; model action mutations retain preview/confirmation.

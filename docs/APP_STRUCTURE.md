@@ -135,6 +135,8 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 | `ai/viktor_schedule_planner.dart` | Pure plan order/time previews with collision protection |
 | `ai/viktor_executor.dart` | Brain-backed approved changes and real schedule checks |
 | `ai/viktor_gateway.dart` | Authenticated provider gateway client, session-only BYOK settings |
+| `ai/viktor_voice_recorder.dart` | Real PCM16 microphone capture and WAV encoding, audio-level and duration feedback |
+| `ai/viktor_voice_gateway.dart` | Signed-in transient BYOK cloud transcription and returned editable text |
 | `db_core.dart` | Bootstrap: `loadInitialData`, PocketBase health, lifecycle, flush outboxes *(part)* |
 | `record_service.dart` | Records coordinator: cache, fetch, upsert, start/stop entry, streams *(part)* |
 | `records/record_crud.dart` | Record CRUD, PATCH/DELETE network phases, `writeRecord` / `updateRecord` / `stopRecord` *(part)* |

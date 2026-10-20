@@ -39,6 +39,7 @@ jobs:
           (( ${#files[@]} > 0 ))
           for file in "${files[@]}"; do node --check "$file"; done
           node test/viktor_pocketbase_hook_test.cjs
+          node test/viktor_audio_transcribe_hook_test.cjs
 
       - name: Detect PocketBase bundle changes
         id: changes
@@ -131,7 +132,10 @@ jobs:
             viktor="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 -X POST \
               -H 'Content-Type: application/json' \
               --data '{}' https://217-114-0-201.sslip.io/api/viktor/propose || true)"
-            if [[ "$health" == "200" && ( "$route" == "401" || "$route" == "403" ) && "$viktor" == "401" ]]; then exit 0; fi
+            viktor_audio="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 -X POST \
+              -H 'Content-Type: application/json' \
+              --data '{}' https://217-114-0-201.sslip.io/api/viktor/transcribe || true)"
+            if [[ "$health" == "200" && ( "$route" == "401" || "$route" == "403" ) && "$viktor" == "401" && "$viktor_audio" == "401" ]]; then exit 0; fi
             sleep 2
           done
           exit 1

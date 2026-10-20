@@ -16,6 +16,15 @@ Goal: make the in-app Viktor chat usable with an authenticated LIFE OS account a
 ## Beta scope
 BYOK supports authenticated users without a paid platform plan. Server-funded AI remains disabled until metering, limits, billing and subscription management are implemented. Provider keys are session-only. The core scheduling and record mutations go through the existing Brain, never model-generated API endpoints.
 
+## Dictation regression release gate (2026-10-20)
+- [x] Replace browser SpeechRecognition with the Notes-proven record PCM16 WAV capture and live audio level/byte count.
+- [x] Add session-only BYOK speech transcription support to PocketBase for OpenAI, Groq and Gemini; OpenRouter requires an independent speech provider key.
+- [x] Add WAV unit tests and speech endpoint authentication/provider contract tests to CI.
+- [ ] Pass architecture parity, web/Android/Windows compile and PocketBase hook tests on the final commit.
+- [ ] Deploy the endpoint to production and confirm anonymous access gets 401 (not 404).
+- [ ] In Yandex Browser, verify speaking causes changing mic level and accumulating captured bytes; after pressing stop, editable recognized words appear.
+- [ ] If the provider rejects the key or no audio arrives, check the inline error appears and no false transcript or plan write happens.
+
 ## After beta
 Hosted AI and subscriptions, persistent credential vault, synced chat history, transaction-level undo, recurring-series editing, and external ChatGPT access.
 
