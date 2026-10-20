@@ -141,7 +141,7 @@ class ViktorGateway {
     final token = service.pocketBase.authStore.token.trim();
     settings.ensureOwner(service.pocketBase.authStore.record?.id ?? '');
     if (token.isEmpty) throw const FormatException('Sign in to LIFE OS first.');
-    if (settings.mode == 'byok' && settings.sessionApiKey.trim().isEmpty) {
+    if (settings.mode == 'byok' && !settings.modelConnected) {
       throw const FormatException('Set your provider API key in Viktor settings.');
     }
     final dayKey = '${wallDay.year.toString().padLeft(4, '0')}-'
