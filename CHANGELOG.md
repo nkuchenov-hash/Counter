@@ -1,3 +1,10 @@
+## 2026-10-20 — Viktor recorded speech fallback (staging branch)
+
+- Replaced unreliable Yandex/Chrome Web Speech browser dictation with actual PCM16 WAV capture, visible mic level and timer and provider-funded server transcription.
+- Transcript is displayed in the chat input for review, not automatically sent; errors are inline and informative.
+- BYOK OpenAI/Groq/Gemini speech providers supported, separate voice key for OpenRouter. Added authenticated server-side speech hook and contract tests.
+- Not shipped until live CI, PocketBase endpoint deployment and web publish are verified.
+
 ## 2026-10-20 — Prevent Time View cards covering one another [fix]
 
 - Time View now assigns separate horizontal visual lanes within overlapping scheduled intervals (including fixed meetings) while preserving actual start/end times and hour alignment.
