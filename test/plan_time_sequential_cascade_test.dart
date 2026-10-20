@@ -397,6 +397,111 @@ void main() {
       );
     }
 
+    test('moving a late plan into the 19:00 free slot leaves morning meeting untouched', () {
+      final meeting = _t('meeting090000001', 9, 0, 30, fixed: true);
+      final previous = _t('previous18500001', 18, 50, 10);
+      final target = _t('target194500001', 19, 45, 45);
+      final moved = _t('moved2030000001', 20, 30, 45);
+      final result = computeTimeViewInsertionCascade(
+        scheduledTasks: [meeting, previous, target, moved],
+        draggedPlanIds: {moved.planRowIdForBackend},
+        primaryDraggedPlanId: moved.planRowIdForBackend,
+        fixedPlanIds: {meeting.planRowIdForBackend},
+        resolveDurationMinutes: (_) => 45,
+        targetIntent: TimeViewInsertionIntent(
+          draggedPlanId: moved.planRowIdForBackend,
+          targetPlanId: target.planRowIdForBackend,
+          insertPosition: TimeViewInsertPosition.before,
+          targetStartWall: target.startTime!,
+          targetEndWall: target.endDateTime!,
+          draggedDurationMinutes: 45,
+          draggedHadEnd: true,
+        ),
+      );
+      expect(result.accepted, isTrue, reason: result.blockedReason);
+      expect(result.patches.map((patch) => patch.task.planRowIdForBackend),
+          [moved.planRowIdForBackend]);
+      final byId = {
+        for (final row in result.previewRows) row.planRowIdForBackend: row,
+      };
+      expect(byId[moved.planRowIdForBackend]!.startTime,
+          DateTime(2026, 6, 15, 19));
+      expect(byId[meeting.planRowIdForBackend]!.startTime,
+          meeting.startTime);
+      expect(byId[previous.planRowIdForBackend]!.endDateTime,
+          previous.endDateTime);
+    });
+
+    test('target insertion ignores an unrelated old overlap with a fixed meeting', () {
+      final early = _t('early0900000001', 9, 0, 30);
+      final fixed = _t('fixed0915000001', 9, 15, 30, fixed: true);
+      final target = _t('target194500001', 19, 45, 45);
+      final moved = _t('moved2030000001', 20, 30, 45);
+      final result = computeTimeViewInsertionCascade(
+        scheduledTasks: [early, fixed, target, moved],
+        draggedPlanIds: {moved.planRowIdForBackend},
+        primaryDraggedPlanId: moved.planRowIdForBackend,
+        fixedPlanIds: {fixed.planRowIdForBackend},
+        resolveDurationMinutes: (_) => 45,
+        targetIntent: TimeViewInsertionIntent(
+          draggedPlanId: moved.planRowIdForBackend,
+          targetPlanId: target.planRowIdForBackend,
+          insertPosition: TimeViewInsertPosition.before,
+          targetStartWall: target.startTime!,
+          targetEndWall: target.endDateTime!,
+          draggedDurationMinutes: 45,
+          draggedHadEnd: true,
+        ),
+      );
+      expect(result.accepted, isTrue, reason: result.blockedReason);
+      expect(result.patches.length, 1);
+      expect(result.patches.single.task.planRowIdForBackend,
+          moved.planRowIdForBackend);
+    });
+
+    test('empty-canvas move ignores an unrelated old fixed overlap', () {
+      final early = _t('early0900000001', 9, 0, 30);
+      final fixed = _t('fixed0915000001', 9, 15, 30, fixed: true);
+      final target = _t('target194500001', 19, 45, 45);
+      final moved = _t('moved2030000001', 20, 30, 45);
+      final result = computeTimeViewInsertionCascade(
+        scheduledTasks: [early, fixed, target, moved],
+        draggedPlanIds: {moved.planRowIdForBackend},
+        primaryDraggedPlanId: moved.planRowIdForBackend,
+        fixedPlanIds: {fixed.planRowIdForBackend},
+        resolveDurationMinutes: (_) => 45,
+        emptyCanvasStartWall: DateTime(2026, 6, 15, 19),
+        emptyCanvasHadEnd: true,
+      );
+      expect(result.accepted, isTrue, reason: result.blockedReason);
+      expect(result.patches.map((patch) => patch.task.planRowIdForBackend),
+          [moved.planRowIdForBackend]);
+    });
+
+    test('a fixed meeting in the actual shifted chain still blocks the move', () {
+      final target = _t('target190000001', 19, 0, 30);
+      final meeting = _t('meeting193000001', 19, 30, 30, fixed: true);
+      final moved = _t('moved2100000001', 21, 0, 45);
+      final result = computeTimeViewInsertionCascade(
+        scheduledTasks: [target, meeting, moved],
+        draggedPlanIds: {moved.planRowIdForBackend},
+        primaryDraggedPlanId: moved.planRowIdForBackend,
+        fixedPlanIds: {meeting.planRowIdForBackend},
+        resolveDurationMinutes: (_) => 45,
+        targetIntent: TimeViewInsertionIntent(
+          draggedPlanId: moved.planRowIdForBackend,
+          targetPlanId: target.planRowIdForBackend,
+          insertPosition: TimeViewInsertPosition.after,
+          targetStartWall: target.startTime!,
+          targetEndWall: target.endDateTime!,
+          draggedDurationMinutes: 45,
+          draggedHadEnd: true,
+        ),
+      );
+      expect(result.accepted, isFalse);
+      expect(result.blockedReason, 'fixedBarrier');
+    });
+
     test('flexible insert blocked by fixed unselected meeting', () {
       final meeting = _t('meet00000000001', 11, 30, 30, fixed: true);
       final flex = _t('flex000000000001', 11, 0, 30);

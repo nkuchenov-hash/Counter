@@ -1,3 +1,9 @@
+## 2026-10-20 — Prevent false fixed-time barrier on Time View drag [fix]
+
+- Limit target-card insertion, empty-slot drops, and multi-plan cascades to the moved plans and their collision-connected chain.
+- Preserve unrelated fixed meetings and pre-existing conflicts elsewhere on the day. Genuine fixed-time collisions still reject the move.
+- Cover a 19:00–19:45 free-slot move, unrelated fixed overlap, and real fixed collision with regression tests.
+
 ## 2026-10-20 — Viktor BYOK beta integration (draft, not deployed)
 
 - Unified in-app Viktor chat and dictation; removed separate floating microphone and Smart Plan voice sheets. Provider options OpenAI/Gemini/Groq/OpenRouter with session-only BYOK.
