@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `c70af707` on 2026-10-20.**
+**Generated from input HEAD `a2c6c9dc` on 2026-10-20.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 912 — each appears **exactly once** below.
+**Tracked files:** 913 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,7 +26,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 181 |
+| `production UI` | 182 |
 | `test` | 123 |
 | `Brain/data` | 99 |
 | `platform build` | 83 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 489 |
+| `PROVEN_REQUIRED` | 490 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 236 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 42 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 829 |
+| `HIGH` | 830 |
 | `MEDIUM` | 83 |
 
 ---
@@ -19945,6 +19945,44 @@ RU:
 - **Уверенность:** HIGH
 - **Владелец / слой:** UI планов
 - **Обязанности:** Единая точка входа для модулей вкладки Plans.
+- **Когда открывать:** Вкладка Plans: день, карточки, play.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Вкладка Plans (shell index 1)
+
+
+### `lib/features/planning/planning_viktor_navigation.dart`
+
+EN:
+
+- **Human purpose:** `planning_viktor_navigation.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit. Users see `planning_viktor_navigation.dart` when using Plans tab (second bottom tab).
+- **What this is:** `planning_viktor_navigation.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit.
+- **Why needed:** Users see `planning_viktor_navigation.dart` when using Plans tab (second bottom tab).
+- **Contents:** Primary symbols: `PlanningViktorNavigation`.
+- **Key code names:** `PlanningViktorNavigation`
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/features/planning/planning_page.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/features/planning/planning_page.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** Planning UI
+- **Responsibilities:** Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
+- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
+- **Can it be deleted?** Brain/library compile failure in `lib/features/planning/planning_page.dart` and broken related UI/data ops.
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
+
+RU:
+
+- **Зачем файл человеку:** `planning_viktor_navigation.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `planning_viktor_navigation` в этой feature-зоне.. Пользователь видит UI из `planning_viktor_navigation.dart` на вкладка Plans (вторая снизу).
+- **Что это:** `planning_viktor_navigation.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `planning_viktor_navigation` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `planning_viktor_navigation.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Dart-модуль `planning_viktor_navigation.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/features/planning/planning_page.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/features/planning/planning_page.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI планов
+- **Обязанности:** Поддерживает поведение `planning_viktor_navigation` в этой feature-зоне.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
