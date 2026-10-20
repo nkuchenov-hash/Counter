@@ -246,8 +246,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                     items: const [
                       DropdownMenuItem(value: 'byok',
                         child: Text('Своя модель · свой API-ключ')),
-                      DropdownMenuItem(value: 'hosted',
-                        child: Text('ИИ LIFE OS · включено в Pro')),
                     ],
                     onChanged: (v) {
                       if (v == null) return;
@@ -260,6 +258,12 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                         }
                       });
                     },
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Бета-версия работает с вашим API-ключом. '
+                    'Встроенный ИИ LIFE OS появится после запуска подписок.',
+                    style: TextStyle(fontSize: 16),
                   ),
                   const SizedBox(height: 16),
                   if (mode == 'byok') ...[
