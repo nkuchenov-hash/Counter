@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `25e57073` on 2026-10-20.**
+**Generated from input HEAD `88fe480b` on 2026-10-20.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -7089,7 +7089,7 @@ EN:
 - **Why needed:** Tracked because `docs` needs `VIKTOR_BETA_RELEASE_CHECKLIST.md` for build, CI, or maintenance.
 - **Contents:** Open `VIKTOR_BETA_RELEASE_CHECKLIST.md` when working on `docs` (see folder section above).
 - **Repository role:** governing documentation
-- **Evidence of use:** Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing).
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `CHANGELOG.md`, `docs/ARCHITECTURE.md`, `docs/UX_CONTRACT.md`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -13470,8 +13470,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain helper for data/sync — viktor action contract. Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What this is:** Brain helper for data/sync — viktor action contract.
+- **Human purpose:** Brain helper for data/sync — AI action allowlist and schema validation, no direct writes. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — AI action allowlist and schema validation, no direct writes.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
 - **Contents:** Dart helpers and types (`ViktorAction`, `ViktorActionBatch`).
 - **Key code names:** `ViktorAction`, `ViktorActionBatch`
@@ -13481,10 +13481,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** viktor action contract
+- **Responsibilities:** AI action allowlist and schema validation, no direct writes
 - **When to open:** When behavior tied to `viktor_action_contract.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor action contract
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: AI action allowlist and schema validation, no direct writes
 
 RU:
 
@@ -13508,8 +13508,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain helper for data/sync — viktor executor. Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What this is:** Brain helper for data/sync — viktor executor.
+- **Human purpose:** Brain helper for data/sync — Brain-backed approved changes and real schedule checks. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Brain-backed approved changes and real schedule checks.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
 - **Contents:** Dart helpers and types (`ViktorExecutor`).
 - **Key code names:** `ViktorExecutor`
@@ -13519,10 +13519,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** viktor executor
+- **Responsibilities:** Brain-backed approved changes and real schedule checks
 - **When to open:** When behavior tied to `viktor_executor.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor executor
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Brain-backed approved changes and real schedule checks
 
 RU:
 
@@ -13546,8 +13546,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain helper for data/sync — viktor gateway. Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What this is:** Brain helper for data/sync — viktor gateway.
+- **Human purpose:** Brain helper for data/sync — Authenticated provider gateway client, session-only BYOK settings. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Authenticated provider gateway client, session-only BYOK settings.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
 - **Contents:** Dart helpers and types (`ViktorModelSettings`, `ViktorResponse`, `ViktorGateway`).
 - **Key code names:** `ViktorModelSettings`, `ViktorResponse`, `ViktorGateway`
@@ -13557,10 +13557,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** viktor gateway
+- **Responsibilities:** Authenticated provider gateway client, session-only BYOK settings
 - **When to open:** When behavior tied to `viktor_gateway.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor gateway
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Authenticated provider gateway client, session-only BYOK settings
 
 RU:
 
@@ -13584,8 +13584,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain helper for data/sync — viktor schedule planner. Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What this is:** Brain helper for data/sync — viktor schedule planner.
+- **Human purpose:** Brain helper for data/sync — Pure plan order/time previews with collision protection. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Pure plan order/time previews with collision protection.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
 - **Contents:** Dart helpers and types (`ViktorSchedulePreview`, `ViktorSchedulePlanner`).
 - **Key code names:** `ViktorSchedulePreview`, `ViktorSchedulePlanner`
@@ -13595,10 +13595,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** viktor schedule planner
+- **Responsibilities:** Pure plan order/time previews with collision protection
 - **When to open:** When behavior tied to `viktor_schedule_planner.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor schedule planner
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Pure plan order/time previews with collision protection
 
 RU:
 
@@ -23397,8 +23397,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `viktor_chat_page.dart` on viktor area — viktor chat page. Users see `viktor_chat_page.dart` when using viktor area.
-- **What this is:** `viktor_chat_page.dart` on viktor area — viktor chat page.
+- **Human purpose:** `viktor_chat_page.dart` on viktor area — Full-screen AI chat with text, mic and provider settings. Users see `viktor_chat_page.dart` when using viktor area.
+- **What this is:** `viktor_chat_page.dart` on viktor area — Full-screen AI chat with text, mic and provider settings.
 - **Why needed:** Users see `viktor_chat_page.dart` when using viktor area.
 - **Contents:** Primary symbols: `ViktorChatPage`, `_ViktorMessage`, `_ViktorChatPageState`.
 - **Key code names:** `ViktorChatPage`, `_ViktorMessage`, `_ViktorChatPageState`
@@ -23408,10 +23408,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** repository root
-- **Responsibilities:** Implements `ViktorChatPage` and related API in `viktor_chat_page.dart`.
+- **Responsibilities:** Full-screen AI chat with text, mic and provider settings
 - **When to open:** When behavior tied to `viktor_chat_page.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: viktor chat page
+- **Connected to:** APP_STRUCTURE role: Full-screen AI chat with text, mic and provider settings
 
 RU:
 
