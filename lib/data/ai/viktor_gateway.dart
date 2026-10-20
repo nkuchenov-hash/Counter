@@ -146,12 +146,21 @@ class ViktorGateway {
         }),
       );
     }
+    final nextDay = DateTime(
+      wallDay.year, wallDay.month, wallDay.day + 1);
+    // The provider receives actual completion state and destination-day
+    // obstacles. Never ask the user to find backend row IDs.
+    final nextDayPlans = await service.getPlanningTasksForWallDate(nextDay);
     final activeId = service.canonicalPrimaryRunningBusinessId;
     final data = <String, Object?>{
       'text': input,
       'wall_day': dayKey,
       'request_id': reqId,
       'ui_locale': currentLocale.value,
+      'profile_timezone': service.settings.preferredTimeZone,
+      'next_day': '${nextDay.year.toString().padLeft(4, '0')}-'
+          '${nextDay.month.toString().padLeft(2, '0')}-'
+          '${nextDay.day.toString().padLeft(2, '0')}',
       'mode': settings.mode,
       'provider': settings.mode == 'hosted' ? 'openai' : settings.provider,
       'model': settings.mode == 'hosted' ? 'gpt-4o-mini' : settings.model,
@@ -167,6 +176,8 @@ class ViktorGateway {
             {
               'id': p.pocketRecordId,
               'title': p.title,
+              'is_done': p.isDone,
+              'category_id': p.categoryId,
               'duration_minutes': p.startTime != null && p.endDateTime != null
                   ? p.endDateTime!.difference(p.startTime!).inMinutes
                   : null,
@@ -174,6 +185,24 @@ class ViktorGateway {
                   ? null
                   : '${p.startTime!.hour.toString().padLeft(2, '0')}:'
                     '${p.startTime!.minute.toString().padLeft(2, '0')}',
+              'recurrent': (p.rrule ?? '').isNotEmpty ||
+                  (p.recurrenceInstanceDateKey ?? '').isNotEmpty,
+            }
+      ],
+      'next_day_plans': [
+        for (final p in nextDayPlans)
+          if (p.pocketRecordId != null && p.pocketRecordId!.isNotEmpty)
+            {
+              'id': p.pocketRecordId,
+              'title': p.title,
+              'is_done': p.isDone,
+              'start_time': p.startTime == null ? null :
+                  '${p.startTime!.hour.toString().padLeft(2, '0')}:'
+                  '${p.startTime!.minute.toString().padLeft(2, '0')}',
+              'duration_minutes': p.startTime != null &&
+                      p.endDateTime != null
+                  ? p.endDateTime!.difference(p.startTime!).inMinutes
+                  : null,
               'recurrent': (p.rrule ?? '').isNotEmpty ||
                   (p.recurrenceInstanceDateKey ?? '').isNotEmpty,
             }
