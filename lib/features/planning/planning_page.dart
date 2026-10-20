@@ -768,7 +768,7 @@ class _PlanningPageState extends State<PlanningPage>
   Future<int> _injectSmartPlanTasks(List<Map<String, dynamic>> items) =>
       this._injectSmartPlanTasksImpl(items);
 
-  void _openViktorChat() => _openViktorChatImpl();
+  void _openViktorChat() => this._openViktorChatImpl();
 
   Future<void> _toggleDone(PlanningTask task, bool currentDisplayDone) async {
     if (task.planRowIdForBackend.startsWith('optimistic-')) return;
