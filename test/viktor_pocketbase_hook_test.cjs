@@ -14,9 +14,13 @@ const sandbox = {
     route = callback;
   },
   $os: { getenv: () => '' },
+  $security: {randomString: () => '1234567890abcdef1234567890abcdef'},
   $http: { send(request) {
     calls++;
     lastRequest = request;
+    if (request.url.includes('/api/v2/oauth')) {
+      return {statusCode: 200, raw: JSON.stringify({access_token: 'test-access-token-from-oauth'})};
+    }
     return {
       statusCode: 200,
       raw: JSON.stringify({
@@ -77,6 +81,42 @@ assert.equal(calls, 1, 'Only one call reached the provider');
 assert.equal(lastRequest.url, 'https://api.openai.com/v1/chat/completions');
 assert.equal(lastRequest.headers.Authorization, 'Bearer ' + base.api_key);
 assert.equal(JSON.parse(lastRequest.body).messages[1].role, 'user');
+
+// Russian model providers have independent request/authentication contracts.
+const yandex = invoke({...base,
+  provider: 'yandex',
+  model: 'yandexgpt/rc',
+  yandex_folder_id: 'b1g9testfolder11',
+});
+assert.equal(yandex.status, 200);
+assert.equal(lastRequest.url,
+  'https://ai.api.cloud.yandex.net/v1/chat/completions');
+assert.equal(lastRequest.headers.Authorization, 'Api-Key ' + base.api_key);
+assert.equal(lastRequest.headers['OpenAI-Project'], 'b1g9testfolder11');
+assert.equal(JSON.parse(lastRequest.body).model,
+  'gpt://b1g9testfolder11/yandexgpt/rc');
+assert.equal(invoke({...base, provider: 'yandex',
+  model: 'yandexgpt/rc', yandex_folder_id: ''}).status, 400);
+
+const giga = invoke({...base,
+  provider: 'gigachat', model: 'GigaChat-2',
+  api_key: 'personal-basic-sber-key-test',
+});
+assert.equal(giga.status, 200);
+assert.equal(lastRequest.url, 'https://api.giga.chat/v1/chat/completions');
+assert.equal(lastRequest.headers.Authorization,
+  'Bearer test-access-token-from-oauth');
+
+const selected = invoke({...base,
+  selected_plan_ids: ['aaaaabbbbbccccc', 'not-real-id'],
+  day_plans: [{
+    id: 'aaaaabbbbbccccc', title: 'Зарядка',
+    duration_minutes: 30, start_time: '09:00', recurrent: false
+  }],
+});
+assert.equal(selected.status, 200);
+const modelContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
+assert.deepEqual(modelContext.selected_plan_ids, ['aaaaabbbbbccccc']);
 
 const protectSource = fs.readFileSync('pb_hooks/viktor.protect_tier.pb.js', 'utf8');
 const hooks = {};
