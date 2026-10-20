@@ -21,6 +21,15 @@ class ViktorVoiceGateway {
     throw const FormatException('invalid_speech_response');
   }
 
+  FormatException _failure(Map<String, dynamic> data) {
+    final code = (data['error'] ?? 'speech_request_failed').toString();
+    final status = data['status'];
+    if (status is int && status >= 400 && status <= 599) {
+      return FormatException('$code (HTTP $status)');
+    }
+    return FormatException(code);
+  }
+
   Future<String> transcribe({
     required Uint8List wav,
     required ViktorModelSettings settings,
@@ -89,8 +98,7 @@ class ViktorVoiceGateway {
         final state = _payload(check);
         if (check.statusCode == 202) continue;
         if (check.statusCode != 200) {
-          throw FormatException(
-            (state['error'] ?? 'speech_request_failed').toString());
+          throw _failure(state);
         }
         final transcript = (state['transcript'] ?? '').toString().trim();
         if (transcript.isEmpty) throw const FormatException('no_speech_detected');
@@ -99,8 +107,7 @@ class ViktorVoiceGateway {
       throw const FormatException('speech_recognition_timeout');
     }
     if (response.statusCode != 200) {
-      throw FormatException(
-        (payload['error'] ?? 'speech_request_failed').toString());
+      throw _failure(payload);
     }
     final transcript = (payload['transcript'] ?? '').toString().trim();
     if (transcript.isEmpty) throw const FormatException('no_speech_detected');
