@@ -89,6 +89,13 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
       recurrent: !!p.recurrent
     });
   }
+  // The model sees chronological order rather than PocketBase insertion order.
+  // The client resolves explicit "last two" swap requests independently.
+  plans.sort((a, b) => {
+    const left = a.start_time || "99:99";
+    const right = b.start_time || "99:99";
+    return left.localeCompare(right) || a.id.localeCompare(b.id);
+  });
   const planIds = new Set(plans.map(p => p.id));
   const selectedIds = Array.isArray(body.selected_plan_ids)
     ? body.selected_plan_ids.filter(id => typeof id === "string" && planIds.has(id)).slice(0, 2)
