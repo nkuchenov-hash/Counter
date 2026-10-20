@@ -1,0 +1,67 @@
+name: KADR Relay VPS capacity read-only audit
+on:
+  push:
+    branches:
+      - audit/kadr-relay-capacity-20261020
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+    steps:
+      - name: Inspect VPS resources and listeners without changing anything
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY"
+          user="${SSH_USER:-root}"
+          host="${SSH_HOST:-217.114.0.201}"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/kadr_readonly_audit
+          chmod 600 ~/.ssh/kadr_readonly_audit
+          ssh-keyscan -T 8 -p "$SSH_PORT" -H "$host" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/kadr_readonly_audit -o BatchMode=yes -o ConnectTimeout=12 -p "$SSH_PORT" "$user@$host" 'bash -s' <<'REMOTE'
+          set -eu
+          echo 'KADR_VPS_READ_ONLY_AUDIT'
+          echo "timestamp_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "cpu_count=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo unknown)"
+          awk '/^MemTotal:/ {print "ram_total_mib=" int($2/1024)} /^MemAvailable:/ {print "ram_available_mib=" int($2/1024)} /^SwapTotal:/ {print "swap_total_mib=" int($2/1024)} /^SwapFree:/ {print "swap_free_mib=" int($2/1024)}' /proc/meminfo
+          awk '{print "load_1m="$1" load_5m="$2" load_15m="$3}' /proc/loadavg
+          df -Pm / | awk 'NR==2 {print "root_disk_total_mib="$2" root_disk_available_mib="$4" root_disk_used_pct="$5}'
+          for process in pocketbase caddy nginx node; do
+            if pgrep -x "$process" >/dev/null 2>&1; then echo "${process}_running=yes"; else echo "${process}_running=no"; fi
+          done
+          if command -v ss >/dev/null 2>&1; then
+            for port in 443 8080 8780; do
+              if ss -ltn "sport = :$port" | awk 'NR>1 {f=1} END {exit !f}'; then
+                echo "tcp_${port}_listening=yes"
+              else
+                echo "tcp_${port}_listening=no"
+              fi
+            done
+          fi
+          if command -v docker >/dev/null 2>&1; then
+            echo "docker_available=yes"
+            docker info --format '{{.ServerVersion}}' >/dev/null 2>&1 && echo 'docker_daemon_access=yes' || echo 'docker_daemon_access=no'
+          else
+            echo "docker_available=no"
+          fi
+          for target in 'http://127.0.0.1:8780/health' 'https://217-114-0-201.sslip.io/api/health'; do
+            case "$target" in
+              *8780*) name=kadr_relay_health ;;
+              *) name=life_os_health ;;
+            esac
+            code=$(curl -k -sS -o /dev/null -w '%{http_code}' --connect-timeout 4 --max-time 8 "$target" 2>/dev/null || true)
+            echo "${name}_http=${code:-000}"
+          done
+          echo 'READ_ONLY_AUDIT_END'
+          REMOTE
