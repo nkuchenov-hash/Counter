@@ -272,3 +272,8 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - Browser requests carry unique IDs and successful requests are deduped. A temporary bridge tab must stay alive until the canonical primary-record network chain has completed and the resulting running state is confirmed.
 - Browser-local snapshots are **render-only cache**. Opening the popup must always trigger a fresh `bridge_sync` through the authenticated web app; an open LIFE OS tab's stored snapshot must never suppress that canonical refresh. While the popup remains open, it refreshes the canonical current-record state periodically and applies pushed snapshots without blocking the local elapsed timer.
 - Bridge setup and request consumption run after the first frame and must not block normal LIFE OS startup.
+
+
+## Viktor AI and voice entry (2026-10-20 beta)
+
+Shell header, More, Planning Smart and Profile open the same Viktor chat; no overlapping floating voice FAB or competing Smart Plan sheet. Dictation remains inside the safe-area chat composer, resized for the keyboard. Changes have actual-time preview before approval; remote schedule changes invalidate approval. Recurring/fixed plans cannot be shifted implicitly. Small screens require 320/390 px no-overflow widget tests and real-device checks. See `docs/VIKTOR_BETA_RELEASE_CHECKLIST.md`.
