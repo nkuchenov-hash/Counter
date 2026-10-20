@@ -782,30 +782,30 @@ List<PlanningTask>? cascadeScheduledPlansForExplicitTimeViewOrderWithBarriers({
   Set<String> fixedPlanIds = const {},
   Set<String> draggedPlanIds = const {},
 }) {
-  final ordered = [
-    for (final task in explicitOrder)
-      if (targetIntent != null &&
-          task.planRowIdForBackend == targetIntent.draggedPlanId)
-        (() {
-          final schedule = computeTimeViewTargetDropSchedule(
-            targetStartWall: targetIntent.targetStartWall,
-            targetEndWall: targetIntent.targetEndWall,
-            draggedDurationMinutes: targetIntent.draggedDurationMinutes,
-            insertBefore: targetIntent.insertBefore,
-            draggedHadEnd: targetIntent.draggedHadEnd,
-          );
-          return task.copyWith(
-            startTime: schedule.startWall,
-            endDateTime: schedule.endWall ??
-                schedule.startWall.add(Duration(minutes:
-                    planWallDurationMinutesForCascade(
-                        task, resolveDurationMinutes: resolveDurationMinutes))),
-            clearEnd: false,
-          );
-        })()
-      else
-        task,
-  ];
+  final ordered = <PlanningTask>[];
+  for (final task in explicitOrder) {
+    if (targetIntent == null ||
+        task.planRowIdForBackend != targetIntent.draggedPlanId) {
+      ordered.add(task);
+      continue;
+    }
+    final schedule = computeTimeViewTargetDropSchedule(
+      targetStartWall: targetIntent.targetStartWall,
+      targetEndWall: targetIntent.targetEndWall,
+      draggedDurationMinutes: targetIntent.draggedDurationMinutes,
+      insertBefore: targetIntent.insertBefore,
+      draggedHadEnd: targetIntent.draggedHadEnd,
+    );
+    final duration = planWallDurationMinutesForCascade(
+      task, resolveDurationMinutes: resolveDurationMinutes,
+    );
+    ordered.add(task.copyWith(
+      startTime: schedule.startWall,
+      endDateTime: schedule.endWall ??
+          schedule.startWall.add(Duration(minutes: duration)),
+      clearEnd: false,
+    ));
+  }
   final result = cascadeTimeViewAffectedChain(
     orderedTasks: ordered,
     draggedPlanIds: draggedPlanIds.isEmpty && targetIntent != null
