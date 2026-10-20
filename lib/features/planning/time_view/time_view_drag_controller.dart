@@ -5,6 +5,7 @@ import 'package:counter/shared/diagnostics/performance/shell_flags.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/plan_time_sequential_cascade.dart';
+import 'package:counter/data/time_view_fixed_time_policy.dart';
 import 'package:counter/features/planning/plan_time_gesture_contract.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -464,9 +465,12 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
       }
     }
 
-    if (scheduledPlansHaveWallOverlap(
-      resolved.where((row) => row.startTime != null).toList(growable: false),
-      resolveDurationMinutes: resolveDuration,
+    if (timeViewAffectedPlansHaveOverlap(
+      original: scheduledTasks,
+      resolved: resolved,
+      draggedPlanIds: draggedPlanIds,
+      durationMinutes: (task) => planWallDurationMinutesForCascade(
+        task, resolveDurationMinutes: resolveDuration),
     )) {
       return const TimeViewInsertionCascadeResult(
         accepted: false,
