@@ -16,8 +16,8 @@ class ViktorModelSettings {
   static final ViktorModelSettings instance = ViktorModelSettings._();
 
   static const models = <String, List<String>>{
-    'gigachat': ['GigaChat-2', 'GigaChat-2-Pro', 'GigaChat-2-Max'],
     'yandex': ['yandexgpt/rc', 'yandexgpt/latest'],
+    'gigachat': ['GigaChat-2', 'GigaChat-2-Pro', 'GigaChat-2-Max'],
     'openai': ['gpt-4o-mini', 'gpt-4.1-mini'],
     'groq': ['llama-3.3-70b-versatile', 'openai/gpt-oss-20b'],
     'gemini': ['gemini-2.5-flash', 'gemini-2.5-flash-lite'],
@@ -25,12 +25,13 @@ class ViktorModelSettings {
   };
 
   String mode = 'byok';
-  String provider = 'gigachat';
-  String model = 'GigaChat-2';
+  String provider = 'yandex';
+  String model = 'yandexgpt/rc';
   String yandexFolderId = '';
   String gigachatScope = 'pers';
   String sessionApiKey = '';
-  // A different speech provider can be used with OpenRouter text models.
+  // GigaChat and OpenRouter can use a separate STT provider. YandexGPT
+  // shares its AI Studio service-account key with Yandex SpeechKit.
   // Both credentials are session-only and never saved in preferences.
   String speechProvider = 'groq';
   String sessionSpeechApiKey = '';
