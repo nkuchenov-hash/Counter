@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `88fe480b` on 2026-10-20.**
+**Generated from input HEAD `c2d85bfa` on 2026-10-20.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 906 — each appears **exactly once** below.
+**Tracked files:** 907 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -35,7 +35,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `platform resource` | 44 |
 | `governing documentation` | 41 |
 | `Desktop Voice runtime` | 36 |
-| `test fixture` | 22 |
+| `test fixture` | 23 |
 | `shared Voice system` | 20 |
 | `PocketBase backend` | 18 |
 | `PocketBase migration` | 18 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 486 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 234 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 235 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 41 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 823 |
+| `HIGH` | 824 |
 | `MEDIUM` | 83 |
 
 ---
@@ -37283,6 +37283,43 @@ RU:
 - **Когда открывать:** Падение CI или правка кода рядом с `viktor_chat_layout`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/viktor_pocketbase_hook_test.cjs`
+
+EN:
+
+- **Human purpose:** Automated test `viktor_pocketbase_hook_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `viktor_pocketbase_hook_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: test groups).
+- **Repository role:** test fixture
+- **Evidence of use:** Read/referenced by: `.github/workflows/deploy-pocketbase.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `viktor_pocketbase_hook_test` scenario.
+- **When to open:** CI failure or changing code near `viktor_pocketbase_hook`.
+- **Can it be deleted?** Broken fixture-backed test or missing diagnostic sample.
+- **Connected to:** `test/` suite; production subject near `viktor_pocketbase_hook`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `viktor_pocketbase_hook_test` — проверяет поведение без ручных нажатий. Ловит регрессии при правках связанного production-кода.
+- **Что это:** Автотест `viktor_pocketbase_hook_test` — проверяет поведение без ручных нажатий.
+- **Зачем:** Ловит регрессии при правках связанного production-кода.
+- **Содержимое:** Тест-кейсы (символы: test groups).
+- **Роль в репозитории:** test fixture
+- **Доказательства использования:** Читается/упоминается: `.github/workflows/deploy-pocketbase.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Проверяет ожидаемое поведение сценария `viktor_pocketbase_hook_test`.
+- **Когда открывать:** Падение CI или правка кода около `viktor_pocketbase_hook`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Набор `test/`; production-субъект около `viktor_pocketbase_hook`.
 
 
 ### `test/viktor_schedule_planner_test.dart`
