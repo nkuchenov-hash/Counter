@@ -51,6 +51,49 @@ void main() {
     expect(result.changed.length, 2);
   });
 
+  test('swap adjacent cards directly and preserve durations', () {
+    final result = calc.calculate(
+      day: day, plans: basics,
+      actions: proposal([{'name': 'swap_plan_positions', 'arguments': {
+        'first_plan_id': a, 'second_plan_id': b, 'wall_day': '2026-10-17',
+      }}]).actions,
+      fixedTime: (_) => false,
+    );
+    final exercise = result.after.firstWhere((p) => p.pocketRecordId == a);
+    final breakfast = result.after.firstWhere((p) => p.pocketRecordId == b);
+    expect(breakfast.startTime, DateTime(2026, 10, 17, 9));
+    expect(breakfast.endDateTime, DateTime(2026, 10, 17, 9, 30));
+    expect(exercise.startTime, DateTime(2026, 10, 17, 9, 30));
+    expect(exercise.endDateTime, DateTime(2026, 10, 17, 10, 10));
+    expect(result.changed.length, 3); // The following card cascades too.
+  });
+
+  test('swap nonadjacent plans updates all affected positions', () {
+    final result = calc.calculate(
+      day: day, plans: basics,
+      actions: proposal([{'name': 'swap_plan_positions', 'arguments': {
+        'first_plan_id': a, 'second_plan_id': c, 'wall_day': '2026-10-17',
+      }}]).actions,
+      fixedTime: (_) => false,
+    );
+    final byId = {for (final p in result.after) p.pocketRecordId: p};
+    expect(byId[c]!.startTime, DateTime(2026, 10, 17, 9));
+    expect(byId[b]!.startTime, DateTime(2026, 10, 17, 9, 30));
+    expect(byId[a]!.startTime, DateTime(2026, 10, 17, 10));
+  });
+
+  test('swap refuses pinned or recurring cards', () {
+    final actions = proposal([{'name': 'swap_plan_positions', 'arguments': {
+      'first_plan_id': a, 'second_plan_id': b, 'wall_day': '2026-10-17',
+    }}]).actions;
+    expect(() => calc.calculate(day: day, plans: basics, actions: actions,
+        fixedTime: (p) => p.pocketRecordId == a), throwsStateError);
+    expect(() => calc.calculate(day: day,
+        plans: [basics.first, task(b, 'Завтрак', 580, 610,
+            rrule: 'FREQ=DAILY')],
+        actions: actions, fixedTime: (_) => false), throwsStateError);
+  });
+
   test('fixed-time later task blocks a collision', () {
     final result = () => calc.calculate(
       day: day, plans: basics,
