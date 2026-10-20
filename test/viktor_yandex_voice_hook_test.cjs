@@ -8,6 +8,7 @@ const outbound = [];
 let ready = false;
 let resultMode = 'final';
 const sandbox = {
+  $os: {getenv: () => ''},
   routerAdd(method, path, callback) {
     assert.equal(method, 'POST');
     routes[path] = callback;
