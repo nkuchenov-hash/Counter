@@ -461,8 +461,10 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                       obscureText: true,
                       autocorrect: false,
                       enableSuggestions: false,
-                      decoration: const InputDecoration(
-                        labelText: 'API-ключ поставщика',
+                      decoration: InputDecoration(
+                        labelText: provider == 'gigachat'
+                            ? 'Ключ авторизации GigaChat API'
+                            : 'API-ключ модели',
                         border: OutlineInputBorder(),
                       ),
                     ),
