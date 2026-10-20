@@ -6,7 +6,30 @@ routerAdd("POST", "/api/viktor/transcribe", (e) => {
   if (!auth || !auth.id) return e.json(401, {error: "auth_required"});
   const body = e.requestInfo().body || {};
   const provider = String(body.provider || "");
-  const key = String(body.api_key || "").trim();
+  let key = String(body.api_key || "").trim();
+  if (key.length === 0) {
+    const modelProvider = String(body.model_provider || provider);
+    const known = ["yandex", "gigachat", "openai", "groq", "gemini", "openrouter"];
+    const secret = String($os.getenv("VIKTOR_VAULT_KEY") || "");
+    if (known.includes(modelProvider) && secret.length === 32) {
+      try {
+        const row = $app.findFirstRecordByFilter(
+          "viktor_connections",
+          "user_id = {:owner} && provider = {:provider}",
+          {owner: auth.id, provider: modelProvider}
+        );
+        const raw = $security.decrypt(row.getString("payload_enc"), secret);
+        const data = JSON.parse(typeof raw === "string"
+          ? raw : Buffer.from(raw).toString("utf8"));
+        key = modelProvider === provider
+          ? String(data.api_key || "") :
+          data.speech_provider === provider
+            ? String(data.speech_api_key || "") : "";
+      } catch (_) {
+        // Missing or invalid vault credentials fail closed.
+      }
+    }
+  }
   const audioB64 = String(body.audio_base64 || "");
   const language = String(body.language || "ru").slice(0, 2).toLowerCase();
   if (!["openai", "groq", "gemini"].includes(provider)) {
@@ -21,7 +44,7 @@ routerAdd("POST", "/api/viktor/transcribe", (e) => {
   }
   let wav;
   try {
-    wav = $security.base64Decode(audioB64);
+    wav = Buffer.from(audioB64, 'base64');
   } catch (_) {
     return e.json(400, {error: "invalid_audio_encoding"});
   }
