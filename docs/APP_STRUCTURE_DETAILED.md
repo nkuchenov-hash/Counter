@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `d00e3385` on 2026-10-20.**
+**Generated from input HEAD `d896607a` on 2026-10-20.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 911 — each appears **exactly once** below.
+**Tracked files:** 912 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -33,7 +33,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `shared foundation` | 65 |
 | `developer tool` | 63 |
 | `platform resource` | 44 |
-| `governing documentation` | 41 |
+| `governing documentation` | 42 |
 | `Desktop Voice runtime` | 36 |
 | `test fixture` | 24 |
 | `shared Voice system` | 20 |
@@ -60,7 +60,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `PROVEN_REQUIRED` | 489 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 236 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
-| `GOVERNING_DOCUMENTATION` | 41 |
+| `GOVERNING_DOCUMENTATION` | 42 |
 | `HISTORICAL_RECORD` | 17 |
 | `GENERATED_CANONICAL_OUTPUT` | 1 |
 
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 828 |
+| `HIGH` | 829 |
 | `MEDIUM` | 83 |
 
 ---
@@ -7113,6 +7113,43 @@ RU:
 - **Владелец / слой:** документация
 - **Обязанности:** Хранит актуальную документацию по назначению `VIKTOR_BETA_RELEASE_CHECKLIST.md`.
 - **Когда открывать:** When результат сборки or maintenance cites `VIKTOR_BETA_RELEASE_CHECKLIST.md`.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+
+### `docs/VIKTOR_RUSSIAN_AI_AND_SWAPS.md`
+
+EN:
+
+- **Human purpose:** Markdown document `VIKTOR_RUSSIAN_AI_AND_SWAPS.md` in `docs` — repo tooling or config. Tracked because `docs` needs `VIKTOR_RUSSIAN_AI_AND_SWAPS.md` for build, CI, or maintenance.
+- **What this is:** Markdown document `VIKTOR_RUSSIAN_AI_AND_SWAPS.md` in `docs` — repo tooling or config.
+- **Why needed:** Tracked because `docs` needs `VIKTOR_RUSSIAN_AI_AND_SWAPS.md` for build, CI, or maintenance.
+- **Contents:** Open `VIKTOR_RUSSIAN_AI_AND_SWAPS.md` when working on `docs` (see folder section above).
+- **Repository role:** governing documentation
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `docs/ARCHITECTURE.md`, `docs/POCKETBASE_MANIFEST.md`.
+- **Necessity status:** GOVERNING_DOCUMENTATION
+- **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
+- **Confidence:** HIGH
+- **Owner / layer:** documentation
+- **Responsibilities:** Supports `docs` workflow for `VIKTOR_RUSSIAN_AI_AND_SWAPS.md`.
+- **When to open:** When build output or maintenance cites `VIKTOR_RUSSIAN_AI_AND_SWAPS.md`.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** Текстовая спецификация `VIKTOR_RUSSIAN_AI_AND_SWAPS.md` в разделе `docs`. Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Что это:** Текстовая спецификация `VIKTOR_RUSSIAN_AI_AND_SWAPS.md` в разделе `docs`.
+- **Зачем:** Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Содержимое:** Структурированный Markdown-текст по теме `VIKTOR_RUSSIAN_AI_AND_SWAPS.md` без runtime-логики приложения.
+- **Роль в репозитории:** governing documentation
+- **Доказательства использования:** Управляющая/операционная документация для людей и агентов (см. Project Knowledge / AGENTS).
+- **Статус необходимости:** GOVERNING_DOCUMENTATION
+- **Что будет, если удалить:** Пропадёт архитектурное/операционное правило.
+- **Уверенность:** HIGH
+- **Владелец / слой:** документация
+- **Обязанности:** Хранит актуальную документацию по назначению `VIKTOR_RUSSIAN_AI_AND_SWAPS.md`.
+- **Когда открывать:** When результат сборки or maintenance cites `VIKTOR_RUSSIAN_AI_AND_SWAPS.md`.
 - **Можно удалить?** Нет — governing документация.
 - **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`.
 
