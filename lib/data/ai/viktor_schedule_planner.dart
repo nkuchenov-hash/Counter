@@ -354,18 +354,20 @@ class ViktorBulkPlanner {
       throw StateError('Нет подходящих планов.');
     }
     final changed = moves.map((m) => m.plan.pocketRecordId).toSet();
-    final intervals = <({String day, DateTime start, DateTime end, String title})>[
+    final intervals = <({String day, DateTime start, DateTime end, String title, bool changed})>[
       for (final p in [...source, ...target])
         if (!changed.contains(p.pocketRecordId) &&
             p.startTime != null && p.endDateTime != null)
           (day: key(p.startTime!), start: p.startTime!,
-           end: p.endDateTime!, title: p.title),
+           end: p.endDateTime!, title: p.title, changed: false),
       for (final m in moves)
-        (day: m.day, start: m.start, end: m.end, title: m.plan.title),
+        (day: m.day, start: m.start, end: m.end,
+         title: m.plan.title, changed: true),
     ];
     for (var i = 0; i < intervals.length; i++) {
       for (var j = i + 1; j < intervals.length; j++) {
         final a = intervals[i], b = intervals[j];
+        if (!(a.changed || b.changed)) continue;
         if (a.day == b.day && a.start.isBefore(b.end) &&
             a.end.isAfter(b.start)) {
           throw StateError('Конфликт: «${a.title}» и «${b.title}». '
