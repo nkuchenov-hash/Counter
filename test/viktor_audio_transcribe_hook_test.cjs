@@ -8,6 +8,7 @@ let handle;
 let outbound;
 let requests = 0;
 const sandbox = {
+  Buffer,
   routerAdd(method, path, callback) {
     assert.equal(method, 'POST');
     assert.equal(path, '/api/viktor/transcribe');
