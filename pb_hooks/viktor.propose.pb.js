@@ -142,7 +142,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
           "Content-Type": "application/x-www-form-urlencoded",
           "Accept": "application/json",
           "RqUID": requestUUID,
-          "Authorization": "Basic " + key.replace(/^Basic\\s+/i, "")
+          "Authorization": "Basic " + key.replace(/^Basic\s+/i, "")
         },
         body: "scope=" + gigaScopes[gigaScope],
         timeout: 15
