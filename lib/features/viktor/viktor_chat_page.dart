@@ -5,6 +5,7 @@ import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/ai/viktor_action_contract.dart';
 import 'package:counter/data/ai/viktor_executor.dart';
 import 'package:counter/data/ai/viktor_gateway.dart';
+import 'package:counter/data/ai/viktor_schedule_planner.dart';
 import 'package:counter/data/ai/viktor_voice_gateway.dart';
 import 'package:counter/data/ai/viktor_voice_recorder.dart';
 import 'package:counter/data/database_service.dart';
@@ -101,6 +102,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     try {
       final db = DatabaseService.instance;
       final plans = await db.getPlanningTasksForWallDate(widget.wallDay);
+      final lastTwoIds = ViktorSchedulePlanner.resolveLastTwoSwap(input, plans);
       final response = await _gateway.propose(
         input: input,
         wallDay: widget.wallDay,
