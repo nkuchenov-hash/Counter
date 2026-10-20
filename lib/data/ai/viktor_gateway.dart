@@ -104,6 +104,7 @@ class ViktorGateway {
     required DateTime wallDay,
     required List<PlanningTask> plans,
     required ViktorModelSettings settings,
+    List<String> selectedPlanIds = const [],
   }) async {
     final service = DatabaseService.instance;
     await service.ensurePocketBaseReady();
@@ -128,6 +129,9 @@ class ViktorGateway {
       'model': settings.mode == 'hosted' ? 'gpt-4o-mini' : settings.model,
       if (settings.mode == 'byok') 'api_key': settings.sessionApiKey,
       if (settings.provider == 'yandex') 'yandex_folder_id': settings.yandexFolderId,
+      // Only saved plans from this day can be selected as command referents.
+      'selected_plan_ids': selectedPlanIds.where(
+        (id) => plans.any((p) => p.pocketRecordId == id)).toSet().toList(),
       'day_plans': [
         for (final p in plans)
           if (p.pocketRecordId != null && p.pocketRecordId!.isNotEmpty)
