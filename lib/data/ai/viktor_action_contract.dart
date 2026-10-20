@@ -18,6 +18,7 @@ class ViktorAction {
     'create_plan',
     'update_plan_duration',
     'move_plan_after',
+    'swap_plan_positions',
     'start_record',
     'stop_record',
   };
@@ -66,6 +67,14 @@ class ViktorAction {
         final afterId = _id(args, 'after_plan_id');
         if (id == afterId) {
           throw const FormatException('Cannot move an item after itself');
+        }
+        _day(args, 'wall_day');
+      case 'swap_plan_positions':
+        _onlyKeys(args, const {'first_plan_id', 'second_plan_id', 'wall_day'});
+        final first = _id(args, 'first_plan_id');
+        final second = _id(args, 'second_plan_id');
+        if (first == second) {
+          throw const FormatException('Cannot swap a plan with itself');
         }
         _day(args, 'wall_day');
       case 'start_record':

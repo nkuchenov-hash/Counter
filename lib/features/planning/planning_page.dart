@@ -49,6 +49,7 @@ import 'package:counter/features/planning/widgets/planning_quick_add_strip.dart'
 
 part 'planning_quick_add_schedule.dart';
 part 'planning_bulk_edit_actions.dart';
+part 'planning_viktor_navigation.dart';
 
 class PlanningPage extends StatefulWidget {
   const PlanningPage({
@@ -767,13 +768,7 @@ class _PlanningPageState extends State<PlanningPage>
   Future<int> _injectSmartPlanTasks(List<Map<String, dynamic>> items) =>
       this._injectSmartPlanTasksImpl(items);
 
-  void _openViktorChat() {
-    final day = widget.selectedDate ??
-        DateTime.tryParse(widget.selectedDateString) ?? DateTime.now();
-    Navigator.of(context).push<void>(MaterialPageRoute<void>(
-      builder: (_) => ViktorChatPage(wallDay: day),
-    ));
-  }
+  void _openViktorChat() => this._openViktorChatImpl();
 
   Future<void> _toggleDone(PlanningTask task, bool currentDisplayDone) async {
     if (task.planRowIdForBackend.startsWith('optimistic-')) return;

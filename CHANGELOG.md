@@ -1,3 +1,10 @@
+## 2026-10-20 — Viktor Russian model candidates + two-card voice swap [PR, not deployed]
+
+- Add Sber GigaChat and YandexGPT AI Studio BYOK model adapters and an explicit account-scope/folder-ID UI; provider URLs and scope values are allowlisted.
+- Add validated two-card swap proposal with chronological reflow, fixed/recurrence guards and tests.
+- Ground voice instructions in selected planning cards or both spoken card titles. After STT, send recognized command automatically; allow simple unambiguous swap without a second modal.
+- Keep existing independent STT providers for Giga/Yandex text models. True Yandex live Realtime voice remains follow-up. Require CI, live credential testing and release before claiming complete.
+
 ## 2026-10-20 — Viktor recorded speech fallback (staging branch)
 
 - Replaced unreliable Yandex/Chrome Web Speech browser dictation with actual PCM16 WAV capture, visible mic level and timer and provider-funded server transcription.

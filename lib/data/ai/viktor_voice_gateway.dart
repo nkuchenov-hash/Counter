@@ -24,12 +24,12 @@ class ViktorVoiceGateway {
     settings.ensureOwner(db.pocketBase.authStore.record?.id ?? 'signed_out');
     if (token.isEmpty) throw const FormatException('auth_required');
 
-    final provider = settings.provider == 'openrouter'
-        ? settings.speechProvider
-        : settings.provider;
-    final apiKey = settings.provider == 'openrouter'
-        ? settings.sessionSpeechApiKey.trim()
-        : settings.sessionApiKey.trim();
+    final externalSpeechProvider = const {'openrouter', 'gigachat', 'yandex'}
+        .contains(settings.provider);
+    final provider = externalSpeechProvider
+        ? settings.speechProvider : settings.provider;
+    final apiKey = externalSpeechProvider
+        ? settings.sessionSpeechApiKey.trim() : settings.sessionApiKey.trim();
     if (!const {'openai', 'groq', 'gemini'}.contains(provider)) {
       throw const FormatException('speech_provider_unavailable');
     }

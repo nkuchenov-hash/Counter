@@ -16,6 +16,8 @@ class ViktorModelSettings {
   static final ViktorModelSettings instance = ViktorModelSettings._();
 
   static const models = <String, List<String>>{
+    'gigachat': ['GigaChat-2', 'GigaChat-2-Pro', 'GigaChat-2-Max'],
+    'yandex': ['yandexgpt/rc', 'yandexgpt/latest'],
     'openai': ['gpt-4o-mini', 'gpt-4.1-mini'],
     'groq': ['llama-3.3-70b-versatile', 'openai/gpt-oss-20b'],
     'gemini': ['gemini-2.5-flash', 'gemini-2.5-flash-lite'],
@@ -23,8 +25,10 @@ class ViktorModelSettings {
   };
 
   String mode = 'byok';
-  String provider = 'openai';
-  String model = 'gpt-4o-mini';
+  String provider = 'gigachat';
+  String model = 'GigaChat-2';
+  String yandexFolderId = '';
+  String gigachatScope = 'pers';
   String sessionApiKey = '';
   // A different speech provider can be used with OpenRouter text models.
   // Both credentials are session-only and never saved in preferences.
@@ -53,6 +57,11 @@ class ViktorModelSettings {
         savedSpeech == 'gemini') {
       speechProvider = savedSpeech!;
     }
+    yandexFolderId = prefs.getString('viktor_yandex_folder_id') ?? '';
+    final savedGigaScope = prefs.getString('viktor_gigachat_scope');
+    if (const {'pers', 'b2b', 'corp'}.contains(savedGigaScope)) {
+      gigachatScope = savedGigaScope!;
+    }
     final savedProvider = prefs.getString('viktor_provider');
     if (models.containsKey(savedProvider)) provider = savedProvider!;
     final savedModel = prefs.getString('viktor_model');
@@ -74,6 +83,8 @@ class ViktorModelSettings {
     await prefs.setString('viktor_provider', provider);
     await prefs.setString('viktor_model', model);
     await prefs.setString('viktor_speech_provider', speechProvider);
+    await prefs.setString('viktor_yandex_folder_id', yandexFolderId);
+    await prefs.setString('viktor_gigachat_scope', gigachatScope);
     // Deliberately never persist the raw provider credential.
   }
 
@@ -99,6 +110,7 @@ class ViktorGateway {
     required DateTime wallDay,
     required List<PlanningTask> plans,
     required ViktorModelSettings settings,
+    List<String> selectedPlanIds = const [],
   }) async {
     final service = DatabaseService.instance;
     await service.ensurePocketBaseReady();
@@ -122,6 +134,11 @@ class ViktorGateway {
       'provider': settings.mode == 'hosted' ? 'openai' : settings.provider,
       'model': settings.mode == 'hosted' ? 'gpt-4o-mini' : settings.model,
       if (settings.mode == 'byok') 'api_key': settings.sessionApiKey,
+      if (settings.provider == 'yandex') 'yandex_folder_id': settings.yandexFolderId,
+      if (settings.provider == 'gigachat') 'gigachat_scope': settings.gigachatScope,
+      // Only saved plans from this day can be selected as command referents.
+      'selected_plan_ids': selectedPlanIds.where(
+        (id) => plans.any((p) => p.pocketRecordId == id)).toSet().toList(),
       'day_plans': [
         for (final p in plans)
           if (p.pocketRecordId != null && p.pocketRecordId!.isNotEmpty)
