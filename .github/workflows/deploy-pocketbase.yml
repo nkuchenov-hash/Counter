@@ -38,6 +38,7 @@ jobs:
           mapfile -d '' files < <(find pb_hooks pb_migrations -type f -name '*.js' -print0 | sort -z)
           (( ${#files[@]} > 0 ))
           for file in "${files[@]}"; do node --check "$file"; done
+          node test/viktor_pocketbase_hook_test.cjs
 
       - name: Detect PocketBase bundle changes
         id: changes
