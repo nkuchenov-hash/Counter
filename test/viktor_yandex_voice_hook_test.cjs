@@ -7,8 +7,26 @@ const routes = {};
 const outbound = [];
 let ready = false;
 let resultMode = 'final';
+let vaultKey = '';
 const sandbox = {
-  $os: {getenv: () => ''},
+  $os: {getenv: name => name === 'VIKTOR_VAULT_KEY' ? vaultKey : ''},
+  $app: {
+    findFirstRecordByFilter(table, condition, params) {
+      assert.equal(table, 'viktor_connections');
+      assert.equal(params.owner, 'aaaaabbbbbccccc');
+      return {getString: () => 'ciphertext-not-client-visible'};
+    }
+  },
+  $security: {
+    decrypt(cipher, key) {
+      assert.equal(cipher, 'ciphertext-not-client-visible');
+      assert.equal(key, vaultKey);
+      return JSON.stringify({
+        api_key: 'yandex-server-stored-key',
+        folder_id: 'b1g9testfolder11',
+      });
+    },
+  },
   routerAdd(method, path, callback) {
     assert.equal(method, 'POST');
     routes[path] = callback;
@@ -100,4 +118,15 @@ const normalized = invoke(status, polling);
 assert.equal(normalized.statusCode, 200);
 assert.equal(normalized.data.transcript, 'Включи запись');
 assert.equal(outbound.length, 6, 'Both Yandex result formats were requested');
-process.stdout.write('Viktor Yandex one-key SpeechKit contract: PASS\n');
+vaultKey = '0123456789abcdef0123456789abcdef';
+const cloudStarted = invoke(start, {
+  ...base,
+  api_key: '',
+  yandex_folder_id: '',
+});
+assert.equal(cloudStarted.statusCode, 202,
+  'SpeechKit must use server-stored key without device secret');
+assert.equal(outbound[6].headers.Authorization,
+  'Api-Key yandex-server-stored-key');
+assert.equal(outbound[6].headers['x-folder-id'], 'b1g9testfolder11');
+process.stdout.write('Viktor Yandex one-key SpeechKit contract: PASS\\n');
