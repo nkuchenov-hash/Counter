@@ -102,7 +102,7 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 
 | Concept | File | Symbol |
 | :--- | :--- | :--- |
-| Generic voice input dispatcher (routes by active tab) | `lib/app/shell/shared/shell_voice_input.dart` | `ShellVoiceInput` — FAB/VoiceInputSheet → Timeline/Planning/Backlog |
+| Viktor universal AI voice chat | `lib/features/viktor/viktor_chat_page.dart` | Text and microphone → reviewed AI proposals → Brain execution |
 | Desktop Price Reporter voice command (kill switch) | `lib/app/shell/shared/shell_voice_routing.dart` | Desktop Voice submit / toggle wiring |
 | Voice command parser (one system) | `lib/data/voice/voice_command_parser.dart` | `parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`, `parseVoiceCommand` |
 | Voice record submit (Brain) | `lib/data/voice/desktop_voice_record_submit.dart` | `DesktopVoiceRecordSubmit` — parse → normalize → `writeRecord` |

@@ -14,7 +14,7 @@
 | `planning.recurring_plans` | Повторяющиеся планы | Planning / Brain | `lib/data/plans/plan_recurrence_helpers.dart`, `plan_recurrence_split_helpers.dart` | реализовано |
 | `planning.time_view` | Временная раскладка, snap, cascade, fixed barriers | Planning / Brain | `lib/data/plans/plan_time_cascade_helpers.dart`, `lib/data/time_view_fixed_time_policy.dart` | реализовано; fixed tags локальные |
 | `planning.smart_input` | Распознавание времени из текста | Planning / Brain | `lib/data/smart_input_parser.dart` | реализовано |
-| `planning.smart_plan` | AI-разбор текста в несколько планов + диктовка | Planning | `lib/features/planning/smart_plan_sheet.dart`, `lib/data/plans/plan_ai_parse_helpers.dart` | реализовано |
+| `planning.smart_plan` | Создание и перестановка планов через чат Виктора | Planning / Viktor | `lib/features/viktor/viktor_chat_page.dart`, `lib/data/ai/viktor_schedule_planner.dart`, `lib/data/ai/viktor_executor.dart` | draft PR, не опубликовано |
 | `planning.plan_record_link` | Связь план ↔ фактическая запись | Planning / Brain | `lib/data/plans/plan_record_link_helpers.dart` | реализовано |
 | `planning.reminders` | Напоминания планов / OS alarm bridge | Planning / Brain | `lib/data/plans/plan_alarm_helpers.dart` | реализовано |
 | `lists.backlog` | Backlog/Lists, фильтры, bulk, export | Lists / Brain | `lib/features/lists/`, `lib/data/plan_service.dart` | реализовано |
@@ -27,7 +27,7 @@
 | `notes.editor` | Блочный редактор, media/audio/drawing | Notes | `lib/features/notes/`, `docs/NOTES_EDITOR_CONTRACT.md` | реализовано |
 | `paths.projects` | Paths, immutable revisions, stages/actions | Paths / Brain | `lib/data/paths/`, `lib/features/paths/` | реализовано |
 | `paths.planner_bridge` | Единственная граница Path → Planner | Paths / Planning | `lib/data/plans/path_planner_bridge.dart` | реализовано |
-| `voice.generic` | Голосовой ввод в Timeline/Planning/Backlog | Voice / Shell | `lib/app/shell/shared/shell_voice_input.dart`, `lib/shared/voice/` | реализовано |
+| `voice.viktor` | Голосовой ввод в универсальном чате ИИ | Viktor | `lib/features/viktor/viktor_chat_page.dart`, `lib/data/ai/viktor_gateway.dart` | draft PR, не опубликовано |
 | `voice.desktop` | Desktop GOLOS, hotkey, tray, commands | Voice / Shell | `lib/features/voice/`, `lib/shared/voice/platforms/desktop/`, `shell_voice_routing.dart` | реализовано |
 | `health.sleep` | Device/cloud sleep import + reconcile | Health / Brain | `lib/data/health/`, `lib/services/health_connect/` | реализовано по поддерживаемым источникам |
 | `calendar.integrations` | Google/Microsoft calendar connection/sync | Integrations | `lib/data/calendar_integrations/`, `docs/CALENDAR_INTEGRATIONS.md` | реализовано по контракту интеграции |

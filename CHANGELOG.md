@@ -1,3 +1,10 @@
+## 2026-10-20 — Viktor BYOK beta integration (draft, not deployed)
+
+- Unified in-app Viktor chat and dictation; removed separate floating microphone and Smart Plan voice sheets. Provider options OpenAI/Gemini/Groq/OpenRouter with session-only BYOK.
+- Authenticated BYOK for Free and Pro, hosted disabled pending billing and metering.
+- Strict action proposals, schedule preview, recurrence guards, overlapping new-plan check, stale-preview rejection, and Brain writes.
+- Beta release checklist: `docs/VIKTOR_BETA_RELEASE_CHECKLIST.md`.
+
 ## 2026-10-19 — Optional Timeline morning check-in [feature]
 
 - Added Settings → Preferences → Start of day (mobile Settings also) to disable or re-enable the automatic "Start the day" sleep check-in.
