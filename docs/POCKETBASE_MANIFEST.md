@@ -267,3 +267,8 @@ Collections: `people`, `people_circles`, `people_source_contacts`, `people_integ
 ### Viktor real audio STT (2026-10-20)
 
 `POST /api/viktor/transcribe` in `pb_hooks/viktor.transcribe.pb.js` is an authenticated, no-storage BYOK WAV transcription route. Only OpenAI (gpt-4o-mini-transcribe), Groq (whisper-large-v3-turbo), and Gemini (gemini-2.5-flash audio input) are permitted, with fixed service URLs, user-supplied transient provider keys and a 60-second 16kHz mono PCM WAV limit. OpenRouter users choose a separate speech provider/key within Viktor settings. The server responds with the recognized text only. No server-funded AI, no persisted recordings or API keys; the voice input does not rely on the browser SpeechRecognition API. Tests: `test/viktor_audio_transcribe_hook_test.cjs` run in PocketBase validate workflow.
+
+
+## Viktor Russian providers + two-card swap proposals (candidate, 2026-10-20)
+
+`pb_hooks/viktor.propose.pb.js` recognizes BYOK providers `gigachat` and `yandex`, in addition to existing providers. Sber authorization keys are exchanged at a fixed OAuth endpoint with an allowlisted account scope; Yandex uses fixed AI Studio OpenAI-compatible endpoint and a user folder ID in `OpenAI-Project`. No provider-defined network URL, database write, or credential persistence. The proposal allowlist adds `swap_plan_positions {first_plan_id,second_plan_id,wall_day}`. All execution remains in the signed-in Flutter Brain; the model never edits PocketBase. See `docs/VIKTOR_RUSSIAN_AI_AND_SWAPS.md`.
