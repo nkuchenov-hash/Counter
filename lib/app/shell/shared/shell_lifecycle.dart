@@ -69,8 +69,6 @@ mixin ShellLifecycle
           pbBackoffActive: DatabaseService.instance.pbHttpBackoffActive,
         );
       }());
-      StartupLog.deferred(name: 'sttInit', reason: 'notNeededForFirstFrame');
-      unawaited(speechEngine.ensureReady());
       unawaited(initDesktopVoiceLayer());
     });
 
@@ -95,7 +93,6 @@ mixin ShellLifecycle
   }
 
   void disposeShellLifecycle() {
-    unawaited(speechEngine.dispose());
     SleepForegroundReconcileService.instance.stop();
     deviceLocalMidnightWatchTimer?.cancel();
     notificationSub?.cancel();

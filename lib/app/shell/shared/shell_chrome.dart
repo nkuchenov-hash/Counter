@@ -1,6 +1,6 @@
 part of '../app_shell.dart';
 
-mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
+mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
   List<Widget> buildShellPages() => <Widget>[
     timelineTabHost,
     planningTabHost,
@@ -29,9 +29,8 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
         unawaited(refreshDesktopTrayMenu());
       },
       onDesktopVoiceHotkeyChanged: (_) => reattachDesktopVoiceHotkey(),
-      onTestDesktopVoice: () {
-        unawaited(toggleDesktopVoiceWidget());
-      },
+      onOpenViktor: () => unawaited(openViktor()),
+      onTestDesktopVoice: () => unawaited(openViktor()),
     ),
     const PathsPage(),
   ];
@@ -122,6 +121,8 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
                                       : null,
                                   title: Row(
                                     children: [
+                                      if (desktopShell ||
+                                          MediaQuery.sizeOf(context).width >= 430) ...[
                                       Text(
                                         t(loc, 'app_title'),
                                         maxLines: 1,
@@ -138,6 +139,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
                                             ),
                                       ),
                                       const SizedBox(width: 12),
+                                      ],
                                       Expanded(
                                         child: Align(
                                           alignment:
@@ -159,6 +161,14 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
                                       ),
                                     ],
                                   ),
+                                  actions: [
+                                    AppIconButton(
+                                      icon: Icons.auto_awesome_rounded,
+                                      tooltip: 'Виктор — ИИ-помощник',
+                                      onPressed: () => unawaited(openViktor()),
+                                    ),
+                                    const SizedBox(width: 4),
+                                  ],
                                 )
                               : null,
                           body: LayoutBuilder(
@@ -231,46 +241,8 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
                               };
                             },
                           ),
-                          floatingActionButtonLocation:
-                              FloatingActionButtonLocation.endFloat,
-                          floatingActionButton: ListenableBuilder(
-                            listenable: selectedDateListenable,
-                            builder: (context, _) {
-                              final showFab =
-                                  shellPageIndex != 3 &&
-                                  shellPageIndex != 6 &&
-                                  (shellPageIndex == 1 || !isFutureDate);
-                              if (!showFab) return const SizedBox.shrink();
-                              return ListenableBuilder(
-                                listenable: shellLayout,
-                                builder: (context, child) {
-                                  final bulkReservePx =
-                                      shellLayout.fabBottomReservePx;
-                                  return AnimatedPadding(
-                                    duration: const Duration(milliseconds: 240),
-                                    curve: Curves.easeOutCubic,
-                                    padding: EdgeInsets.only(
-                                      bottom:
-                                          MediaQuery.paddingOf(context).bottom +
-                                          bulkReservePx,
-                                    ),
-                                    child: child,
-                                  );
-                                },
-                                child: FloatingActionButton(
-                                  onPressed: startVoiceInput,
-                                  tooltip: isVoiceListening
-                                      ? t(currentLocale.value, 'listening')
-                                      : t(currentLocale.value, 'voice_input'),
-                                  child: Icon(
-                                    isVoiceListening
-                                        ? Icons.graphic_eq_rounded
-                                        : Icons.mic_rounded,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                          // Viktor is in the header/Menu, never floating over plan cards.
+                          floatingActionButton: null,
                           bottomNavigationBar: LayoutBuilder(
                             builder: (context, constraints) {
                               final formFactor = shellFormFactorForWidth(
@@ -312,7 +284,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu, ShellVoiceInput {
                     DesktopVoiceCommandIntent:
                         CallbackAction<DesktopVoiceCommandIntent>(
                           onInvoke: (_) {
-                            unawaited(toggleDesktopVoiceWidget());
+                            unawaited(openViktor());
                             return null;
                           },
                         ),
