@@ -36,7 +36,6 @@ class ViktorModelSettings {
   // Both credentials are session-only and never saved in preferences.
   String speechProvider = 'groq';
   String sessionSpeechApiKey = '';
-  /// Metadata only. Saved API credentials never leave the server vault.
   final Set<String> cloudProviders = {};
   final Map<String, Map<String, dynamic>> cloudInfo = {};
   bool _loaded = false;
@@ -96,14 +95,18 @@ class ViktorModelSettings {
     // Deliberately never persist the raw provider credential.
   }
 
+
+  /// Whether Viktor can call a model without entering a key on this device.
   bool get modelConnected =>
       sessionApiKey.trim().isNotEmpty || cloudProviders.contains(provider);
 
-  bool get speechConnected =>
-      const {'gigachat', 'openrouter'}.contains(provider)
-          ? sessionSpeechApiKey.trim().isNotEmpty ||
-              cloudInfo[provider]?['has_speech_key'] == true
-          : modelConnected;
+  bool get speechConnected {
+    if (const {'gigachat', 'openrouter'}.contains(provider)) {
+      return sessionSpeechApiKey.trim().isNotEmpty ||
+          cloudInfo[provider]?['has_speech_key'] == true;
+    }
+    return modelConnected;
+  }
 
   Future<void> loadCloudConnection() async {
     final db = DatabaseService.instance;
@@ -112,13 +115,16 @@ class ViktorModelSettings {
     ensureOwner(owner);
     final token = db.pocketBase.authStore.token.trim();
     if (owner.isEmpty || token.isEmpty) return;
-    final base = kPocketBaseUrl.replaceAll(RegExp(r'/$'), '');
+    final root = kPocketBaseUrl.endsWith('/')
+        ? kPocketBaseUrl.substring(0, kPocketBaseUrl.length - 1)
+        : kPocketBaseUrl;
     final response = await http.get(
-      Uri.parse('$base/api/viktor/connection'),
+      Uri.parse('$root/api/viktor/connection'),
       headers: {'Authorization': 'Bearer $token'},
     ).timeout(const Duration(seconds: 18));
     if (response.statusCode != 200) {
-      throw FormatException('cloud_connection_unavailable: ${response.statusCode}');
+      throw FormatException(
+          'cloud_connection_unavailable: ${response.statusCode}');
     }
     final data = jsonDecode(utf8.decode(response.bodyBytes));
     if (data is! Map || data['connections'] is! List) {
@@ -126,30 +132,32 @@ class ViktorModelSettings {
     }
     final entries = (data['connections'] as List)
         .whereType<Map>()
-        .map((e) => Map<String, dynamic>.from(e)).toList();
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
     cloudProviders.clear();
     cloudInfo.clear();
     for (final item in entries) {
       final p = item['provider']?.toString() ?? '';
-      if (!models.containsKey(p)) continue;
-      cloudProviders.add(p);
-      cloudInfo[p] = item;
+      if (models.containsKey(p)) {
+        cloudProviders.add(p);
+        cloudInfo[p] = item;
+      }
     }
     if (entries.isNotEmpty && !cloudProviders.contains(provider)) {
-      final first = entries.first['provider']?.toString() ?? '';
-      if (cloudProviders.contains(first)) provider = first;
+      final p = entries.first['provider']?.toString() ?? '';
+      if (cloudProviders.contains(p)) provider = p;
     }
-    if (cloudInfo.containsKey(provider)) {
-      final meta = cloudInfo[provider]!;
-      final remoteModel = meta['model']?.toString();
-      if (models[provider]!.contains(remoteModel)) model = remoteModel!;
-      if (provider == 'yandex') {
-        yandexFolderId = meta['folder_id']?.toString() ?? yandexFolderId;
-      }
-      final speech = meta['speech_provider']?.toString();
-      if (const {'groq','openai','gemini'}.contains(speech)) {
-        speechProvider = speech!;
-      }
+    final active = cloudInfo[provider];
+    if (active == null) return;
+    final savedModel = active['model']?.toString() ?? '';
+    if (models[provider]!.contains(savedModel)) model = savedModel;
+    if (provider == 'yandex') {
+      final folder = active['folder_id']?.toString() ?? '';
+      if (folder.isNotEmpty) yandexFolderId = folder;
+    }
+    final speech = active['speech_provider']?.toString() ?? '';
+    if (const {'groq', 'openai', 'gemini'}.contains(speech)) {
+      speechProvider = speech;
     }
   }
 
@@ -162,42 +170,20 @@ class ViktorModelSettings {
     if (owner.isEmpty || token.isEmpty) {
       throw const FormatException('auth_required');
     }
-    final base = kPocketBaseUrl.replaceAll(RegExp(r'/$'), '');
-    final reply = await http.post(
-      Uri.parse('$base/api/viktor/propose'),
-      headers: {'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token'},
-      body: jsonEncode(data),
-    ).timeout(const Duration(seconds: 45));
-    final decoded = jsonDecode(utf8.decode(reply.bodyBytes));
-    if (decoded is! Map) throw const FormatException('Invalid server reply.');
-    final map = Map<String, dynamic>.from(decoded);
-    if (reply.statusCode != 200) {
-      final reason = map['error']?.toString() ?? 'request_failed';
-      throw FormatException('Viktor: $reason');
-    }
-    final raw = map['actions'];
-    if (raw is! List) throw const FormatException('Invalid action list.');
-    final actions = raw.isEmpty ? null : ViktorActionBatch.fromJson({
-      'version': map['version'],
-      'request_id': map['request_id'],
-      'actions': raw,
-    });
-    return ViktorResponse(message: (map['message'] ?? '').toString(),
-        actions: actions);
-  }
-}
-), '');
-    final reply = await http.post(
-      Uri.parse('$base/api/viktor/connection'),
+    final root = kPocketBaseUrl.endsWith('/')
+        ? kPocketBaseUrl.substring(0, kPocketBaseUrl.length - 1)
+        : kPocketBaseUrl;
+    final response = await http.post(
+      Uri.parse('$root/api/viktor/connection'),
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
       },
       body: jsonEncode({
         'provider': provider,
         'model': model,
-        if (sessionApiKey.trim().isNotEmpty) 'api_key': sessionApiKey.trim(),
+        if (sessionApiKey.trim().isNotEmpty)
+          'api_key': sessionApiKey.trim(),
         if (sessionSpeechApiKey.trim().isNotEmpty)
           'speech_api_key': sessionSpeechApiKey.trim(),
         'folder_id': yandexFolderId.trim(),
@@ -205,11 +191,9 @@ class ViktorModelSettings {
         'gigachat_scope': gigachatScope,
       }),
     ).timeout(const Duration(seconds: 20));
-    if (reply.statusCode != 200) {
-      final result = jsonDecode(utf8.decode(reply.bodyBytes));
-      final reason = result is Map ? result['error']?.toString() : null;
-      throw FormatException('cloud_connection_save_failed: '
-          '${reason ?? reply.statusCode}');
+    if (response.statusCode != 200) {
+      throw FormatException(
+          'cloud_connection_save_failed: ${response.statusCode}');
     }
     cloudProviders.add(provider);
     cloudInfo[provider] = {
