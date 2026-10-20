@@ -22,6 +22,54 @@ class ViktorSchedulePreview {
 class ViktorSchedulePlanner {
   const ViktorSchedulePlanner();
 
+  /// Deterministic positional reference resolution. Never delegate "last two"
+  /// to an LLM or to the unordered PocketBase rows array.
+  ///
+  /// Returns null for non-positional messages. For an explicit positional swap,
+  /// returns the TWO final scheduled plans in chronological order; if they
+  /// cannot be identified safely, fails closed instead of guessing IDs.
+  static List<String>? resolveLastTwoSwap(
+      String input, List<PlanningTask> plans) {
+    final text = input.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
+    final command = RegExp(
+      r'(^|[\s,])(?:поменяй|переставь|обменяй|перекинь|swap|switch)(?=\s|[,.!?]|$)',
+    ).hasMatch(text);
+    if (!command || RegExp(
+      r'(^|[\s,])не\s+(?:поменяй|переставь|обменяй|перекинь|swap|switch)',
+    ).hasMatch(text)) return null;
+    final russian = RegExp(
+      r'(?:последн[а-яё]*\s+(?:два|две|2)\s+(?:план[а-яё]*|задач[а-яё]*|карточк[а-яё]*)'
+      r'|(?:два|две|2)\s+последн[а-яё]*\s+(?:план[а-яё]*|задач[а-яё]*|карточк[а-яё]*))',
+    ).hasMatch(text);
+    final english = RegExp(
+      r'last\s+(?:two|2)\s+(?:plans?|tasks?|cards?)',
+    ).hasMatch(text);
+    if (!russian && !english) return null;
+
+    final scheduled = plans.where((p) =>
+      p.startTime != null && p.endDateTime != null).toList()
+      ..sort((left, right) {
+        final time = left.startTime!.compareTo(right.startTime!);
+        if (time != 0) return time;
+        final order = left.order.compareTo(right.order);
+        if (order != 0) return order;
+        return left.recordIdForBackend.compareTo(right.recordIdForBackend);
+      });
+    if (scheduled.length < 2) {
+      throw StateError('Для перестановки нужны два запланированных дела.');
+    }
+    final first = scheduled[scheduled.length - 2];
+    final second = scheduled.last;
+    if (first.startTime == second.startTime ||
+        first.endDateTime!.isAfter(second.startTime!) ||
+        first.pocketRecordId == null || second.pocketRecordId == null ||
+        first.pocketRecordId == second.pocketRecordId) {
+      throw StateError('Последние две карточки нельзя определить однозначно. '
+          'Выберите две карточки вручную.');
+    }
+    return [first.pocketRecordId!, second.pocketRecordId!];
+  }
+
   ViktorSchedulePreview calculate({
     required DateTime day,
     required List<PlanningTask> plans,

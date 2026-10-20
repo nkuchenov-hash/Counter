@@ -130,6 +130,53 @@ void main() {
     ), throwsStateError);
   });
 
+  test('last two means latest scheduled, not last two backend rows', () {
+    final unordered = [
+      task(c, 'LS Screening Auth Mod', 1205, 1250),
+      task(a, 'ASE Direct New Auth Negotiator mod', 555, 600),
+      task(b, 'GSG Auth Mods', 1160, 1205),
+    ];
+    final actual = ViktorSchedulePlanner.resolveLastTwoSwap(
+      'поменяй местами последние два плана', unordered);
+    expect(actual, [b, c]);
+    final preview = calc.calculate(
+      day: day,
+      plans: unordered,
+      actions: proposal([{'name': 'swap_plan_positions', 'arguments': {
+        'first_plan_id': actual![0],
+        'second_plan_id': actual[1],
+        'wall_day': '2026-10-17',
+      }}]).actions,
+      fixedTime: (_) => false,
+    );
+    final byId = {for (final p in preview.after) p.pocketRecordId: p};
+    expect(byId[a]!.startTime, DateTime(2026, 10, 17, 9, 15));
+    expect(byId[c]!.startTime, DateTime(2026, 10, 17, 19, 20));
+    expect(byId[b]!.startTime, DateTime(2026, 10, 17, 20, 5));
+    expect(preview.changed.map((p) => p.pocketRecordId).toSet(), {b, c});
+  });
+
+  test('last two aliases work, and questions are not imperative', () {
+    expect(ViktorSchedulePlanner.resolveLastTwoSwap(
+      'переставь местами две последние карточки', basics), [b, c]);
+    expect(ViktorSchedulePlanner.resolveLastTwoSwap(
+      'swap the last two plans', basics), [b, c]);
+    expect(ViktorSchedulePlanner.resolveLastTwoSwap(
+      'покажи последние два плана', basics), isNull);
+    expect(ViktorSchedulePlanner.resolveLastTwoSwap(
+      'не поменяй местами последние два плана', basics), isNull);
+  });
+
+  test('last two rejects tied starts instead of guessing', () {
+    final ambiguous = [
+      task(a, 'Утро', 540, 570),
+      task(b, 'Одновременно 1', 580, 610),
+      task(c, 'Одновременно 2', 580, 620),
+    ];
+    expect(() => ViktorSchedulePlanner.resolveLastTwoSwap(
+      'поменяй местами последние два плана', ambiguous), throwsStateError);
+  });
+
   test('cannot move item after itself', () {
     expect(() => proposal([{'name': 'move_plan_after', 'arguments': {
       'plan_id': a, 'after_plan_id': a, 'wall_day': '2026-10-17',
