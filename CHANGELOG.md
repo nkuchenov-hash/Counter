@@ -1,3 +1,9 @@
+## 2026-10-20 — Time View isolated cascade for fixed meetings [fix]
+
+- Restricted drag/drop cascades to the moved plan(s) and collision-connected tasks, preventing unrelated fixed-time meetings or pre-existing overlaps elsewhere on the day from blocking valid moves.
+- Applied the same isolation to single-plan target insert, empty-canvas drop and multi-plan drag while retaining rejection of real fixed-time collisions.
+- Added regression tests reproducing an early fixed meeting plus a valid 19:00 insertion, pre-existing unrelated overlaps, and genuinely blocked shifts.
+
 ## 2026-10-19 — Optional Timeline morning check-in [feature]
 
 - Added Settings → Preferences → Start of day (mobile Settings also) to disable or re-enable the automatic "Start the day" sleep check-in.
