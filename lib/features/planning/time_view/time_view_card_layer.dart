@@ -25,6 +25,7 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
   Widget buildTimelinePlanStackLayer({
     required PlanTimeViewBlockLayout layout,
     required double canvasHeight,
+    required double canvasWidth,
     required ColorScheme scheme,
     required DateTime planWallDay,
     required int rangeStart,
@@ -62,6 +63,16 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
         : layout.heightPx;
     const horizontalPad =
         PlanningTimeViewCoordinator.kTimelineBlockHorizontalPadPx;
+    const overlapLaneGapPx = 6.0;
+    final laneCount = math.max(1, layout.overlapLaneCount);
+    final lane = layout.overlapLaneIndex.clamp(0, laneCount - 1);
+    final laneWidth = math.max(
+      0.0,
+      (canvasWidth - overlapLaneGapPx * (laneCount - 1)) / laneCount,
+    );
+    final laneLeft = lane * (laneWidth + overlapLaneGapPx);
+    final laneRight =
+        (laneCount - lane - 1) * (laneWidth + overlapLaneGapPx);
     final isRecurring = DatabaseService.instance
         .planningTaskIsRecurringForScope(layout.task);
     final canMove =
@@ -97,8 +108,8 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
           if (isInteracting)
             Positioned(
               top: layout.topPx,
-              left: 0,
-              right: 0,
+              left: laneLeft,
+              right: laneRight,
               height: layout.heightPx,
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -119,7 +130,8 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
           if (isInteracting && (interactionLabel ?? '').isNotEmpty)
             Positioned(
               top: (topPx - 22).clamp(0, canvasHeight - 20),
-              left: horizontalPad,
+              left: laneLeft + horizontalPad,
+              width: math.max(0, laneWidth - horizontalPad * 2),
               child: Material(
                 elevation: 1,
                 borderRadius: BorderRadius.circular(6),
@@ -131,6 +143,8 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                   ),
                   child: Text(
                     interactionLabel!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(host.context).textTheme.labelSmall
                         ?.copyWith(
                           color: scheme.onPrimary,
@@ -144,8 +158,8 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
           if (isInteracting)
             Positioned(
               top: topPx + heightPx - 2,
-              left: horizontalPad,
-              right: horizontalPad,
+              left: laneLeft + horizontalPad,
+              right: laneRight + horizontalPad,
               child: Container(
                 height: 2,
                 decoration: BoxDecoration(
@@ -159,16 +173,17 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
             duration: settleDuration,
             curve: Curves.easeOutCubic,
             top: topPx,
-            left: 0,
-            right: 0,
+            left: laneLeft,
+            right: laneRight,
             height: resizeHeightPx,
             child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal:
                     PlanningTimeViewCoordinator.kTimelineBlockHorizontalPadPx,
               ),
-              child: RepaintBoundary(
-                child: TimelinePlanInteractionBlock(
+              child: ClipRect(
+                child: RepaintBoundary(
+                  child: TimelinePlanInteractionBlock(
                   canMove: canMove,
                   canResize: canResize,
                   bulkSelectMode: host.planSelectMode,
@@ -301,6 +316,7 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                         timelineBlockHeightPx: resizeHeightPx,
                       ),
                     ),
+                  ),
                   ),
                 ),
               ),
