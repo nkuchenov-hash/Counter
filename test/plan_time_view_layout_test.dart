@@ -66,6 +66,81 @@ PlanTimeViewBlockLayout _layoutCard(
     layouts.firstWhere((l) => l.task.planRowId == id);
 
 void main() {
+  group('Time View overlap lanes preserve every card', () {
+    test('14:00–15:00 webinar and 14:30–15:15 work remain visible', () {
+      final webinar = _proj(hour: 14, minute: 0, durationMin: 60, id: 'webinar');
+      final falcon = _proj(hour: 14, minute: 30, durationMin: 45, id: 'falcon');
+      final following = _proj(hour: 15, minute: 15, durationMin: 45, id: 'following');
+      final result = _layout(
+        [webinar, falcon, following],
+        visibleHours: [14, 15, 16],
+        rangeStart: 14,
+      );
+      final a = _layoutCard(result.layouts, 'webinar');
+      final b = _layoutCard(result.layouts, 'falcon');
+      final c = _layoutCard(result.layouts, 'following');
+
+      expect(a.overlapLaneCount, 2);
+      expect(b.overlapLaneCount, 2);
+      expect(a.overlapLaneIndex, isNot(b.overlapLaneIndex));
+      expect(c.overlapLaneCount, 1);
+      expect(c.overlapLaneIndex, 0);
+      expect(a.topPx, closeTo(result.grid.yForMinute(0), 0.01));
+      expect(b.topPx, closeTo(result.grid.yForMinute(30), 0.01));
+      expect(c.topPx, closeTo(result.grid.yForMinute(75), 0.01));
+      expect(a.task.startTime, webinar.projectedTask.startTime);
+      expect(b.task.startTime, falcon.projectedTask.startTime);
+      expect(c.task.startTime, following.projectedTask.startTime);
+    });
+
+    test('transitive crossing chains reuse lanes and never conceal cards', () {
+      final result = _layout([
+        _proj(hour: 14, minute: 0, durationMin: 60, id: 'a'),
+        _proj(hour: 14, minute: 15, durationMin: 60, id: 'b'),
+        _proj(hour: 14, minute: 30, durationMin: 60, id: 'c'),
+        _proj(hour: 15, minute: 0, durationMin: 30, id: 'd'),
+        _proj(hour: 15, minute: 30, durationMin: 30, id: 'e'),
+      ], visibleHours: [14, 15, 16], rangeStart: 14);
+      final byId = {
+        for (final item in result.layouts) item.task.planRowId: item,
+      };
+      expect(byId['a']!.overlapLaneCount, 3);
+      expect(byId['b']!.overlapLaneCount, 3);
+      expect(byId['c']!.overlapLaneCount, 3);
+      expect(byId['d']!.overlapLaneCount, 3);
+      expect(byId['e']!.overlapLaneCount, 1);
+      expect(byId['d']!.overlapLaneIndex, byId['a']!.overlapLaneIndex);
+      for (var i = 0; i < result.layouts.length; i++) {
+        for (var j = i + 1; j < result.layouts.length; j++) {
+          final first = result.layouts[i];
+          final second = result.layouts[j];
+          final firstStart = first.task.startTime!;
+          final firstEnd = first.task.endDateTime!;
+          final secondStart = second.task.startTime!;
+          final secondEnd = second.task.endDateTime!;
+          if (firstStart.isBefore(secondEnd) &&
+              secondStart.isBefore(firstEnd)) {
+            expect(first.overlapLaneCount, second.overlapLaneCount);
+            expect(first.overlapLaneIndex, isNot(second.overlapLaneIndex));
+          }
+        }
+      }
+    });
+
+    test('touching tasks and nonconflicting days keep full-width cards', () {
+      final result = _layout([
+        _proj(hour: 14, minute: 0, durationMin: 45, id: 'first'),
+        _proj(hour: 14, minute: 45, durationMin: 45, id: 'second'),
+        _proj(hour: 15, minute: 30, durationMin: 30, id: 'third'),
+      ], visibleHours: [14, 15, 16], rangeStart: 14);
+      for (final card in result.layouts) {
+        expect(card.overlapLaneCount, 1);
+        expect(card.overlapLaneIndex, 0);
+        expect(card.hasScheduleConflict, isFalse);
+      }
+    });
+  });
+
   group('planTimeCardVisualDensityForRenderedHeight', () {
     test('10-minute block is VerySmall at 38px', () {
       expect(planTimeCardRenderedHeightPxForDuration(10), closeTo(38, 0.01));
