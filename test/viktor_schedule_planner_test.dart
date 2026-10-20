@@ -65,7 +65,7 @@ void main() {
     expect(breakfast.endDateTime, DateTime(2026, 10, 17, 9, 30));
     expect(exercise.startTime, DateTime(2026, 10, 17, 9, 30));
     expect(exercise.endDateTime, DateTime(2026, 10, 17, 10, 10));
-    expect(result.changed.length, 3); // The following card cascades too.
+    expect(result.changed.length, 2); // The next card can retain its slot.
   });
 
   test('swap nonadjacent plans updates all affected positions', () {
