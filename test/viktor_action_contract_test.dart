@@ -157,6 +157,25 @@ void main() {
       );
     });
 
+    test('swaps two distinct saved plans with same-day scope', () {
+      final result = ViktorActionBatch.fromJson(batch([
+        action('swap_plan_positions', {
+          'first_plan_id': planA,
+          'second_plan_id': planB,
+          'wall_day': '2026-10-17',
+        }),
+      ]));
+      expect(result.actions.single.name, 'swap_plan_positions');
+      expect(result.requiresPreview, false);
+      expect(() => ViktorActionBatch.fromJson(batch([
+        action('swap_plan_positions', {
+          'first_plan_id': planA,
+          'second_plan_id': planA,
+          'wall_day': '2026-10-17',
+        }),
+      ])), throwsFormatException);
+    });
+
     test('rejects self-referential plan moves', () {
       expect(
         () => ViktorActionBatch.fromJson(batch([
