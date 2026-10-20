@@ -28,6 +28,7 @@ class ViktorModelSettings {
   String provider = 'gigachat';
   String model = 'GigaChat-2';
   String yandexFolderId = '';
+  String gigachatScope = 'pers';
   String sessionApiKey = '';
   // A different speech provider can be used with OpenRouter text models.
   // Both credentials are session-only and never saved in preferences.
@@ -57,6 +58,10 @@ class ViktorModelSettings {
       speechProvider = savedSpeech!;
     }
     yandexFolderId = prefs.getString('viktor_yandex_folder_id') ?? '';
+    final savedGigaScope = prefs.getString('viktor_gigachat_scope');
+    if (const {'pers', 'b2b', 'corp'}.contains(savedGigaScope)) {
+      gigachatScope = savedGigaScope!;
+    }
     final savedProvider = prefs.getString('viktor_provider');
     if (models.containsKey(savedProvider)) provider = savedProvider!;
     final savedModel = prefs.getString('viktor_model');
@@ -79,6 +84,7 @@ class ViktorModelSettings {
     await prefs.setString('viktor_model', model);
     await prefs.setString('viktor_speech_provider', speechProvider);
     await prefs.setString('viktor_yandex_folder_id', yandexFolderId);
+    await prefs.setString('viktor_gigachat_scope', gigachatScope);
     // Deliberately never persist the raw provider credential.
   }
 
@@ -129,6 +135,7 @@ class ViktorGateway {
       'model': settings.mode == 'hosted' ? 'gpt-4o-mini' : settings.model,
       if (settings.mode == 'byok') 'api_key': settings.sessionApiKey,
       if (settings.provider == 'yandex') 'yandex_folder_id': settings.yandexFolderId,
+      if (settings.provider == 'gigachat') 'gigachat_scope': settings.gigachatScope,
       // Only saved plans from this day can be selected as command referents.
       'selected_plan_ids': selectedPlanIds.where(
         (id) => plans.any((p) => p.pocketRecordId == id)).toSet().toList(),
