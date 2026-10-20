@@ -18,6 +18,12 @@ class ViktorVoiceGateway {
     required Uint8List wav,
     required ViktorModelSettings settings,
   }) async {
+    final db = DatabaseService.instance;
+    await db.ensurePocketBaseReady();
+    final token = db.pocketBase.authStore.token.trim();
+    settings.ensureOwner(db.pocketBase.authStore.record?.id ?? 'signed_out');
+    if (token.isEmpty) throw const FormatException('auth_required');
+
     final provider = settings.provider == 'openrouter'
         ? settings.speechProvider
         : settings.provider;
@@ -30,12 +36,6 @@ class ViktorVoiceGateway {
     if (apiKey.isEmpty) {
       throw const FormatException('speech_api_key_required');
     }
-
-    final db = DatabaseService.instance;
-    await db.ensurePocketBaseReady();
-    final token = db.pocketBase.authStore.token.trim();
-    settings.ensureOwner(db.pocketBase.authStore.record?.id ?? 'signed_out');
-    if (token.isEmpty) throw const FormatException('auth_required');
 
     final response = await http.post(
       Uri.parse('${kPocketBaseUrl.replaceAll(RegExp(r'/$'), '')}/api/viktor/transcribe'),
