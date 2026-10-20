@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `9266cda5` on 2026-10-20.**
+**Generated from input HEAD `7d585696` on 2026-10-20.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -13624,8 +13624,8 @@ EN:
 - **Human purpose:** Brain helper for data/sync — Pure plan order/time previews with collision protection. Shared PocketBase/auth/parse logic used by multiple tabs.
 - **What this is:** Brain helper for data/sync — Pure plan order/time previews with collision protection.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **Contents:** Dart helpers and types (`ViktorSchedulePreview`, `ViktorSchedulePlanner`).
-- **Key code names:** `ViktorSchedulePreview`, `ViktorSchedulePlanner`
+- **Contents:** Dart helpers and types (`ViktorSchedulePreview`, `ViktorSchedulePlanner`, `ViktorBulkMove`, `ViktorBulkPreview`, `ViktorBulkPlanner`).
+- **Key code names:** `ViktorSchedulePreview`, `ViktorSchedulePlanner`, `ViktorBulkMove`, `ViktorBulkPreview`, `ViktorBulkPlanner`
 - **Repository role:** Brain/data
 - **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -25321,7 +25321,7 @@ EN:
 - **Contents:** Time helper or injectable clock hook (`ProfileTimezoneCatalogEntry`).
 - **Key code names:** `ProfileTimezoneCatalogEntry`
 - **Repository role:** shared time
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/database_service.dart`, `lib/features/settings/timezone_settings.dart`, `lib/shared/time/wall_clock.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/database_service.dart`, `lib/features/settings/timezone_settings.dart`, `lib/shared/time/wall_clock.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -25338,7 +25338,7 @@ RU:
 - **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
 - **Содержимое:** Time helper или injectable clock hook (`ProfileTimezoneCatalogEntry`).
 - **Роль в репозитории:** shared time
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/database_service.dart`, `lib/features/settings/timezone_settings.dart`, `lib/shared/time/wall_clock.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/database_service.dart`, `lib/features/settings/timezone_settings.dart`, `lib/shared/time/wall_clock.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
