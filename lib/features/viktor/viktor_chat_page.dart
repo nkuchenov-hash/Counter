@@ -473,7 +473,8 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                         'Голос работает через Yandex SpeechKit с тем же '
                         'API-ключом, что и YandexGPT. Сервисному аккаунту '
                         'нужны роли ai.languageModels.user и '
-                        'ai.speechkit-stt.user.',
+                        'ai.speechkit-stt.user, а API-ключу — разрешения '
+                        'на генерацию текста и распознавание речи.',
                         style: TextStyle(fontSize: 16),
                       ),
                     ],
