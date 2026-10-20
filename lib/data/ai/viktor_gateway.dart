@@ -86,9 +86,14 @@ class ViktorModelSettings {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('viktor_remember_connection_$owner', false);
     rememberConnection = false;
-    // Remove only this account's connection, never any other account's keys.
-    await _secrets.delete(key: _apiKeyId(owner, provider));
-    await _secrets.delete(key: _speechKeyId(owner, speechProvider));
+    // Opting out removes ALL locally remembered provider keys for this LIFE OS
+    // account, not just the currently selected model.
+    for (final vendor in models.keys) {
+      await _secrets.delete(key: _apiKeyId(owner, vendor));
+    }
+    for (final vendor in const ['groq', 'openai', 'gemini']) {
+      await _secrets.delete(key: _speechKeyId(owner, vendor));
+    }
     await _secrets.delete(key: _folderId(owner));
   }
 
