@@ -263,3 +263,7 @@ Collections: `people`, `people_circles`, `people_source_contacts`, `people_integ
 - Device contacts are imported only after explicit user action and OS permission.
 - Google Contacts/Microsoft/VK/Facebook use server-owned integration routes under `/api/people-integrations/`.
 - Telegram supports explicit export import; no fake bot/OAuth contact sync is presented.
+
+### Viktor real audio STT (2026-10-20)
+
+`POST /api/viktor/transcribe` in `pb_hooks/viktor.transcribe.pb.js` is an authenticated, no-storage BYOK WAV transcription route. Only OpenAI (gpt-4o-mini-transcribe), Groq (whisper-large-v3-turbo), and Gemini (gemini-2.5-flash audio input) are permitted, with fixed service URLs, user-supplied transient provider keys and a 60-second 16kHz mono PCM WAV limit. OpenRouter users choose a separate speech provider/key within Viktor settings. The server responds with the recognized text only. No server-funded AI, no persisted recordings or API keys; the voice input does not rely on the browser SpeechRecognition API. Tests: `test/viktor_audio_transcribe_hook_test.cjs` run in PocketBase validate workflow.
