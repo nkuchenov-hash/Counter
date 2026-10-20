@@ -128,8 +128,11 @@ class ViktorGateway {
     final reqId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
     final lastTwo = ViktorSchedulePlanner.resolveLastTwoSwap(input, plans);
     if (lastTwo != null) {
+      final earlier = plans.singleWhere((p) => p.pocketRecordId == lastTwo[0]);
+      final later = plans.singleWhere((p) => p.pocketRecordId == lastTwo[1]);
       return ViktorResponse(
-        message: 'Выбраны последние два плана по времени.',
+        message: 'Переставлю местами последние по времени планы: '
+            '«${earlier.title}» и «${later.title}».',
         actions: ViktorActionBatch.fromJson({
           'version': 1,
           'request_id': reqId,
