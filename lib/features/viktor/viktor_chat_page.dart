@@ -15,8 +15,10 @@ import 'package:flutter/material.dart';
 /// Single LIFE OS assistant entry point. Replaces the old record-only mic FAB.
 /// No overlay over the planner, no extra button beside bottom navigation.
 class ViktorChatPage extends StatefulWidget {
-  const ViktorChatPage({super.key, required this.wallDay});
+  const ViktorChatPage({super.key, required this.wallDay,
+    this.selectedPlanIds = const <String>[]});
   final DateTime wallDay;
+  final List<String> selectedPlanIds;
 
   @override
   State<ViktorChatPage> createState() => _ViktorChatPageState();
@@ -39,6 +41,8 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
   bool _listening = false;
   bool _startingMic = false;
   bool _transcribing = false;
+  bool _speechDetected = false;
+  DateTime? _lastVoiceActivity;
   String? _voiceNotice;
   bool _settingsReady = false;
 
@@ -102,6 +106,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         wallDay: widget.wallDay,
         plans: plans,
         settings: _settings,
+        selectedPlanIds: widget.selectedPlanIds,
       );
       if (!mounted) return;
       if (response.message.trim().isNotEmpty) _push(response.message.trim());
@@ -114,7 +119,12 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         _push(preview);
         return;
       }
-      final approved = await _confirm(actions, preview);
+      // An explicit, unambiguous two-card swap is a reversible low-scope
+      // schedule command. The Brain still validates current state and guards.
+      // Other mutations retain their mandatory explicit approval dialog.
+      final isSimpleSwap = actions.actions.length == 1 &&
+          actions.actions.single.name == 'swap_plan_positions';
+      final approved = isSimpleSwap ? true : await _confirm(actions, preview);
       if (!mounted) return;
       if (!approved) {
         _push('Изменения отменены.');
@@ -163,6 +173,22 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
 
   void _onRecorderChanged() {
     if (!mounted) return;
+    // Simple end-of-utterance detection. The stop button remains available,
+    // so failure to detect silence never blocks manual completion.
+    if (_recorder.isRecording && !_startingMic && !_transcribing &&
+        _recorder.capturedBytes > 16000) {
+      final now = DateTime.now();
+      if (_recorder.level > 0.22) {
+        _speechDetected = true;
+        _lastVoiceActivity = now;
+      } else if (_speechDetected && _lastVoiceActivity != null &&
+          now.difference(_lastVoiceActivity!).inMilliseconds > 1450 &&
+          _recorder.durationMs >= 1900) {
+        _speechDetected = false;
+        unawaited(_finishRecording());
+        return;
+      }
+    }
     setState(() {
       if (_recorder.isRecording && _recorder.durationMs > 3000 &&
           _recorder.capturedBytes == 0) {
@@ -210,6 +236,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
   }
 
   Future<void> _finishRecording() async {
+    var shouldSubmit = false;
     if (_startingMic || _transcribing || !_recorder.isRecording) return;
     setState(() {
       _startingMic = true;
@@ -235,8 +262,9 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         _controller.selection = TextSelection.collapsed(
           offset: _controller.text.length,
         );
-        _voiceNotice = 'Речь распознана. Проверьте текст и отправьте команду.';
+        _voiceNotice = 'Команда распознана. Выполняю…';
       });
+      shouldSubmit = true;
     } catch (error) {
       if (!mounted) return;
       setState(() => _voiceNotice = _voiceErrorText(error));
@@ -247,6 +275,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
           _transcribing = false;
           _listening = false;
         });
+        if (shouldSubmit) unawaited(_send());
       }
     }
   }
@@ -273,6 +302,8 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         return;
       }
     }
+    _speechDetected = false;
+    _lastVoiceActivity = null;
     setState(() {
       _startingMic = true;
       _voiceNotice = 'Подключаю микрофон…';
@@ -298,6 +329,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     var provider = _settings.provider;
     var model = _settings.model;
     final keyCtrl = TextEditingController(text: _settings.sessionApiKey);
+    final folderCtrl = TextEditingController(text: _settings.yandexFolderId);
     var speechProvider = _settings.speechProvider;
     final speechKeyCtrl = TextEditingController(text: _settings.sessionSpeechApiKey);
     final saved = await showDialog<bool>(
@@ -374,13 +406,24 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                         if (v != null) updateDialog(() => model = v);
                       },
                     ),
-                    if (provider == 'openrouter') ...[
+                    if (provider == 'yandex') ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: folderCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'ID каталога Yandex Cloud',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ],
+                    if (provider == 'openrouter' ||
+                        provider == 'gigachat' || provider == 'yandex') ...[
                       const SizedBox(height: 16),
                       const Text('Распознавание речи', style: TextStyle(fontSize: 16)),
                       const SizedBox(height: 8),
                       const Text(
-                        'OpenRouter не предоставляет универсальную модель '
-                        'диктовки. Выберите отдельного провайдера для голоса.',
+                        'Для диктовки выберите поставщика распознавания. '
+                        'Он может отличаться от модели, управляющей планами.',
                         style: TextStyle(fontSize: 16),
                       ),
                       const SizedBox(height: 8),
@@ -453,12 +496,14 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       _settings.provider = provider;
       _settings.model = model;
       _settings.sessionApiKey = keyCtrl.text.trim();
+      _settings.yandexFolderId = folderCtrl.text.trim();
       _settings.speechProvider = speechProvider;
       _settings.sessionSpeechApiKey = speechKeyCtrl.text.trim();
       await _settings.save();
       if (mounted) setState(() {});
     }
     keyCtrl.dispose();
+    folderCtrl.dispose();
     speechKeyCtrl.dispose();
   }
 
