@@ -36,7 +36,7 @@ class ViktorModelSettings {
   // Both credentials are session-only and never saved in preferences.
   String speechProvider = 'groq';
   String sessionSpeechApiKey = '';
-  /// Remote connections contain metadata only, not plaintext credentials.
+  /// Metadata only. Saved API credentials never leave the server vault.
   final Set<String> cloudProviders = {};
   final Map<String, Map<String, dynamic>> cloudInfo = {};
   bool _loaded = false;
@@ -112,155 +112,7 @@ class ViktorModelSettings {
     ensureOwner(owner);
     final token = db.pocketBase.authStore.token.trim();
     if (owner.isEmpty || token.isEmpty) return;
-    final base = kPocketBaseUrl.replaceAll(RegExp(r'/
-    if (!models.containsKey(newProvider)) return;
-    if (provider != newProvider) sessionApiKey = '';
-    provider = newProvider;
-    model = models[newProvider]!.first;
-  }
-}
-
-class ViktorResponse {
-  ViktorResponse({required this.message, required this.actions});
-  final String message;
-  final ViktorActionBatch? actions;
-}
-
-class ViktorGateway {
-  const ViktorGateway();
-
-  Future<ViktorResponse> propose({
-    required String input,
-    required DateTime wallDay,
-    required List<PlanningTask> plans,
-    required ViktorModelSettings settings,
-    List<String> selectedPlanIds = const [],
-  }) async {
-    final service = DatabaseService.instance;
-    await service.ensurePocketBaseReady();
-    final token = service.pocketBase.authStore.token.trim();
-    settings.ensureOwner(service.pocketBase.authStore.record?.id ?? '');
-    if (token.isEmpty) throw const FormatException('Sign in to LIFE OS first.');
-    if (settings.mode == 'byok' && !settings.modelConnected) {
-      throw const FormatException('Set your provider API key in Viktor settings.');
-    }
-    final dayKey = '${wallDay.year.toString().padLeft(4, '0')}-'
-        '${wallDay.month.toString().padLeft(2, '0')}-'
-        '${wallDay.day.toString().padLeft(2, '0')}';
-    final reqId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
-    final lastTwo = ViktorSchedulePlanner.resolveLastTwoSwap(input, plans);
-    if (lastTwo != null) {
-      final earlier = plans.singleWhere((p) => p.pocketRecordId == lastTwo[0]);
-      final later = plans.singleWhere((p) => p.pocketRecordId == lastTwo[1]);
-      return ViktorResponse(
-        message: 'Переставлю местами последние по времени планы: '
-            '«${earlier.title}» и «${later.title}».',
-        actions: ViktorActionBatch.fromJson({
-          'version': 1,
-          'request_id': reqId,
-          'actions': [
-            {'name': 'swap_plan_positions', 'arguments': {
-              'first_plan_id': lastTwo[0],
-              'second_plan_id': lastTwo[1],
-              'wall_day': dayKey,
-            }},
-          ],
-        }),
-      );
-    }
-    final nextDay = DateTime(
-      wallDay.year, wallDay.month, wallDay.day + 1);
-    // The provider receives actual completion state and destination-day
-    // obstacles. Never ask the user to find backend row IDs.
-    final nextDayPlans = await service.getPlanningTasksForWallDate(nextDay);
-    final activeId = service.canonicalPrimaryRunningBusinessId;
-    final data = <String, Object?>{
-      'text': input,
-      'wall_day': dayKey,
-      'request_id': reqId,
-      'ui_locale': currentLocale.value,
-      'profile_timezone': service.settings.preferredTimeZone,
-      'next_day': '${nextDay.year.toString().padLeft(4, '0')}-'
-          '${nextDay.month.toString().padLeft(2, '0')}-'
-          '${nextDay.day.toString().padLeft(2, '0')}',
-      'mode': settings.mode,
-      'provider': settings.mode == 'hosted' ? 'openai' : settings.provider,
-      'model': settings.mode == 'hosted' ? 'gpt-4o-mini' : settings.model,
-      if (settings.mode == 'byok') 'api_key': settings.sessionApiKey,
-      if (settings.provider == 'yandex') 'yandex_folder_id': settings.yandexFolderId,
-      if (settings.provider == 'gigachat') 'gigachat_scope': settings.gigachatScope,
-      // Only saved plans from this day can be selected as command referents.
-      'selected_plan_ids': selectedPlanIds.where(
-        (id) => plans.any((p) => p.pocketRecordId == id)).toSet().toList(),
-      'day_plans': [
-        for (final p in plans)
-          if (p.pocketRecordId != null && p.pocketRecordId!.isNotEmpty)
-            {
-              'id': p.pocketRecordId,
-              'title': p.title,
-              'is_done': p.isDone,
-              'category_id': p.categoryId,
-              'duration_minutes': p.startTime != null && p.endDateTime != null
-                  ? p.endDateTime!.difference(p.startTime!).inMinutes
-                  : null,
-              'start_time': p.startTime == null
-                  ? null
-                  : '${p.startTime!.hour.toString().padLeft(2, '0')}:'
-                    '${p.startTime!.minute.toString().padLeft(2, '0')}',
-              'recurrent': (p.rrule ?? '').isNotEmpty ||
-                  (p.recurrenceInstanceDateKey ?? '').isNotEmpty,
-            }
-      ],
-      'next_day_plans': [
-        for (final p in nextDayPlans)
-          if (p.pocketRecordId != null && p.pocketRecordId!.isNotEmpty)
-            {
-              'id': p.pocketRecordId,
-              'title': p.title,
-              'is_done': p.isDone,
-              'start_time': p.startTime == null ? null :
-                  '${p.startTime!.hour.toString().padLeft(2, '0')}:'
-                  '${p.startTime!.minute.toString().padLeft(2, '0')}',
-              'duration_minutes': p.startTime != null &&
-                      p.endDateTime != null
-                  ? p.endDateTime!.difference(p.startTime!).inMinutes
-                  : null,
-              'recurrent': (p.rrule ?? '').isNotEmpty ||
-                  (p.recurrenceInstanceDateKey ?? '').isNotEmpty,
-            }
-      ],
-      'active_record': activeId == null ? null : {
-        'id': activeId,
-        'title': service.cachedPrimaryRunningTitle ?? '',
-      }
-    };
     final base = kPocketBaseUrl.replaceAll(RegExp(r'/$'), '');
-    // The provider credential is transient in this HTTPS body, never a URL or log.
-    final reply = await http.post(
-      Uri.parse('$base/api/viktor/propose'),
-      headers: {'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token'},
-      body: jsonEncode(data),
-    ).timeout(const Duration(seconds: 45));
-    final decoded = jsonDecode(utf8.decode(reply.bodyBytes));
-    if (decoded is! Map) throw const FormatException('Invalid server reply.');
-    final map = Map<String, dynamic>.from(decoded);
-    if (reply.statusCode != 200) {
-      final reason = map['error']?.toString() ?? 'request_failed';
-      throw FormatException('Viktor: $reason');
-    }
-    final raw = map['actions'];
-    if (raw is! List) throw const FormatException('Invalid action list.');
-    final actions = raw.isEmpty ? null : ViktorActionBatch.fromJson({
-      'version': map['version'],
-      'request_id': map['request_id'],
-      'actions': raw,
-    });
-    return ViktorResponse(message: (map['message'] ?? '').toString(),
-        actions: actions);
-  }
-}
-), '');
     final response = await http.get(
       Uri.parse('$base/api/viktor/connection'),
       headers: {'Authorization': 'Bearer $token'},
@@ -310,130 +162,7 @@ class ViktorGateway {
     if (owner.isEmpty || token.isEmpty) {
       throw const FormatException('auth_required');
     }
-    final base = kPocketBaseUrl.replaceAll(RegExp(r'/
-    if (!models.containsKey(newProvider)) return;
-    if (provider != newProvider) sessionApiKey = '';
-    provider = newProvider;
-    model = models[newProvider]!.first;
-  }
-}
-
-class ViktorResponse {
-  ViktorResponse({required this.message, required this.actions});
-  final String message;
-  final ViktorActionBatch? actions;
-}
-
-class ViktorGateway {
-  const ViktorGateway();
-
-  Future<ViktorResponse> propose({
-    required String input,
-    required DateTime wallDay,
-    required List<PlanningTask> plans,
-    required ViktorModelSettings settings,
-    List<String> selectedPlanIds = const [],
-  }) async {
-    final service = DatabaseService.instance;
-    await service.ensurePocketBaseReady();
-    final token = service.pocketBase.authStore.token.trim();
-    settings.ensureOwner(service.pocketBase.authStore.record?.id ?? '');
-    if (token.isEmpty) throw const FormatException('Sign in to LIFE OS first.');
-    if (settings.mode == 'byok' && settings.sessionApiKey.trim().isEmpty) {
-      throw const FormatException('Set your provider API key in Viktor settings.');
-    }
-    final dayKey = '${wallDay.year.toString().padLeft(4, '0')}-'
-        '${wallDay.month.toString().padLeft(2, '0')}-'
-        '${wallDay.day.toString().padLeft(2, '0')}';
-    final reqId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
-    final lastTwo = ViktorSchedulePlanner.resolveLastTwoSwap(input, plans);
-    if (lastTwo != null) {
-      final earlier = plans.singleWhere((p) => p.pocketRecordId == lastTwo[0]);
-      final later = plans.singleWhere((p) => p.pocketRecordId == lastTwo[1]);
-      return ViktorResponse(
-        message: 'Переставлю местами последние по времени планы: '
-            '«${earlier.title}» и «${later.title}».',
-        actions: ViktorActionBatch.fromJson({
-          'version': 1,
-          'request_id': reqId,
-          'actions': [
-            {'name': 'swap_plan_positions', 'arguments': {
-              'first_plan_id': lastTwo[0],
-              'second_plan_id': lastTwo[1],
-              'wall_day': dayKey,
-            }},
-          ],
-        }),
-      );
-    }
-    final nextDay = DateTime(
-      wallDay.year, wallDay.month, wallDay.day + 1);
-    // The provider receives actual completion state and destination-day
-    // obstacles. Never ask the user to find backend row IDs.
-    final nextDayPlans = await service.getPlanningTasksForWallDate(nextDay);
-    final activeId = service.canonicalPrimaryRunningBusinessId;
-    final data = <String, Object?>{
-      'text': input,
-      'wall_day': dayKey,
-      'request_id': reqId,
-      'ui_locale': currentLocale.value,
-      'profile_timezone': service.settings.preferredTimeZone,
-      'next_day': '${nextDay.year.toString().padLeft(4, '0')}-'
-          '${nextDay.month.toString().padLeft(2, '0')}-'
-          '${nextDay.day.toString().padLeft(2, '0')}',
-      'mode': settings.mode,
-      'provider': settings.mode == 'hosted' ? 'openai' : settings.provider,
-      'model': settings.mode == 'hosted' ? 'gpt-4o-mini' : settings.model,
-      if (settings.mode == 'byok') 'api_key': settings.sessionApiKey,
-      if (settings.provider == 'yandex') 'yandex_folder_id': settings.yandexFolderId,
-      if (settings.provider == 'gigachat') 'gigachat_scope': settings.gigachatScope,
-      // Only saved plans from this day can be selected as command referents.
-      'selected_plan_ids': selectedPlanIds.where(
-        (id) => plans.any((p) => p.pocketRecordId == id)).toSet().toList(),
-      'day_plans': [
-        for (final p in plans)
-          if (p.pocketRecordId != null && p.pocketRecordId!.isNotEmpty)
-            {
-              'id': p.pocketRecordId,
-              'title': p.title,
-              'is_done': p.isDone,
-              'category_id': p.categoryId,
-              'duration_minutes': p.startTime != null && p.endDateTime != null
-                  ? p.endDateTime!.difference(p.startTime!).inMinutes
-                  : null,
-              'start_time': p.startTime == null
-                  ? null
-                  : '${p.startTime!.hour.toString().padLeft(2, '0')}:'
-                    '${p.startTime!.minute.toString().padLeft(2, '0')}',
-              'recurrent': (p.rrule ?? '').isNotEmpty ||
-                  (p.recurrenceInstanceDateKey ?? '').isNotEmpty,
-            }
-      ],
-      'next_day_plans': [
-        for (final p in nextDayPlans)
-          if (p.pocketRecordId != null && p.pocketRecordId!.isNotEmpty)
-            {
-              'id': p.pocketRecordId,
-              'title': p.title,
-              'is_done': p.isDone,
-              'start_time': p.startTime == null ? null :
-                  '${p.startTime!.hour.toString().padLeft(2, '0')}:'
-                  '${p.startTime!.minute.toString().padLeft(2, '0')}',
-              'duration_minutes': p.startTime != null &&
-                      p.endDateTime != null
-                  ? p.endDateTime!.difference(p.startTime!).inMinutes
-                  : null,
-              'recurrent': (p.rrule ?? '').isNotEmpty ||
-                  (p.recurrenceInstanceDateKey ?? '').isNotEmpty,
-            }
-      ],
-      'active_record': activeId == null ? null : {
-        'id': activeId,
-        'title': service.cachedPrimaryRunningTitle ?? '',
-      }
-    };
     final base = kPocketBaseUrl.replaceAll(RegExp(r'/$'), '');
-    // The provider credential is transient in this HTTPS body, never a URL or log.
     final reply = await http.post(
       Uri.parse('$base/api/viktor/propose'),
       headers: {'Content-Type': 'application/json',
@@ -522,7 +251,7 @@ class ViktorGateway {
     final token = service.pocketBase.authStore.token.trim();
     settings.ensureOwner(service.pocketBase.authStore.record?.id ?? '');
     if (token.isEmpty) throw const FormatException('Sign in to LIFE OS first.');
-    if (settings.mode == 'byok' && settings.sessionApiKey.trim().isEmpty) {
+    if (settings.mode == 'byok' && !settings.modelConnected) {
       throw const FormatException('Set your provider API key in Viktor settings.');
     }
     final dayKey = '${wallDay.year.toString().padLeft(4, '0')}-'
