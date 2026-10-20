@@ -307,15 +307,16 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       return;
     }
     if (!_settingsReady) return;
-    final missingKey = _settings.provider == 'openrouter'
-        ? _settings.sessionSpeechApiKey.isEmpty
-        : _settings.sessionApiKey.isEmpty;
-    if (missingKey) {
+    bool missingSpeechKey() {
+      final provider = _settings.provider;
+      return const {'openrouter', 'gigachat', 'yandex'}.contains(provider)
+          ? _settings.sessionSpeechApiKey.trim().isEmpty
+          : _settings.sessionApiKey.trim().isEmpty;
+    }
+    if (missingSpeechKey()) {
       await _openSettings();
       if (!mounted) return;
-      final stillMissing = _settings.provider == 'openrouter'
-          ? _settings.sessionSpeechApiKey.isEmpty
-          : _settings.sessionApiKey.isEmpty;
+      final stillMissing = missingSpeechKey();
       if (stillMissing) {
         setState(() => _voiceNotice =
             'Для диктовки нужен API-ключ провайдера распознавания.');
