@@ -249,8 +249,33 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       return 'Укажите ID каталога Yandex Cloud в настройках Виктора.';
     }
     if (value.contains('speech_provider_rejected')) {
-      return 'Провайдер отклонил распознавание. Проверьте API-ключ, '
-          'баланс и доступ к голосовой модели.';
+      if (value.contains('http 401') || value.contains('http 403')) {
+        return 'SpeechKit отклонил доступ. Проверьте API-ключ Yandex, '
+            'роль ai.speechkit-stt.user и разрешение на распознавание речи.';
+      }
+      if (value.contains('http 429')) {
+        return 'SpeechKit: превышена квота запросов. Проверьте лимиты '
+            'и баланс Yandex Cloud.';
+      }
+      if (value.contains('http 400') || value.contains('http 415')) {
+        return 'SpeechKit отклонил формат записи (HTTP 400/415). '
+            'Попробуйте ещё раз; если повторится — это ошибка интеграции.';
+      }
+      return 'SpeechKit отклонил распознавание. Проверьте доступ, '
+          'квоты и баланс Yandex Cloud.';
+    }
+    if (value.contains('invalid_audio_encoding') ||
+        value.contains('invalid_audio_format')) {
+      return 'LIFE OS не смог прочитать записанный WAV. '
+          'Это ошибка обработки аудио, а не команды.';
+    }
+    if (value.contains('invalid_speech_response') ||
+        value.contains('invalid_speech_operation')) {
+      return 'Получен некорректный ответ сервиса распознавания SpeechKit.';
+    }
+    if (value.contains('invalid_or_oversized_audio')) {
+      return 'Диктовка слишком короткая или длинная. '
+          'Попробуйте запись длительностью 2–30 секунд.';
     }
     if (value.contains('auth_required')) {
       return 'Для распознавания войдите в LIFE OS.';

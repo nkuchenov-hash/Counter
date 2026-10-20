@@ -26,7 +26,7 @@ function viktorYandexSpeechAuth(e, withAudio) {
     return {error: "invalid_or_oversized_audio", status: 413};
   }
   let wav;
-  try { wav = $security.base64Decode(encoded); } catch (_) {
+  try { wav = Buffer.from(encoded, 'base64'); } catch (_) {
     return {error: "invalid_audio_encoding", status: 400};
   }
   if (!wav || wav.length < 16044 || wav.length > 1920044 ||
@@ -98,7 +98,7 @@ routerAdd("POST", "/api/viktor/transcribe-yandex/status", (e) => {
     if (!state.done) return e.json(202, {status: "pending"});
     if (state.error) return e.json(502, {error: "speech_provider_rejected"});
     const recognized = $http.send({
-      url: "https://stt.api.cloud.yandex.net/stt/v3/getRecognition?operation_id=" +
+      url: "https://stt.api.cloud.yandex.net/stt/v3/getRecognition?operationId=" +
         request.operationId,
       method: "GET", headers, timeout: 15
     });
@@ -118,7 +118,8 @@ routerAdd("POST", "/api/viktor/transcribe-yandex/status", (e) => {
     const phrases = [];
     for (const entry of entries) {
       const event = entry && (entry.result || entry);
-      const finalized = event && (event.final || event.finalRefinement);
+      const finalized = event && (event.final ||
+        (event.finalRefinement && event.finalRefinement.normalizedText));
       const alternatives = finalized && finalized.alternatives;
       if (!Array.isArray(alternatives) || alternatives.length === 0) continue;
       const phrase = String(alternatives[0].text || "").trim();
