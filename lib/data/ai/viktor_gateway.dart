@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'viktor_action_contract.dart';
+import 'viktor_schedule_planner.dart';
 
 /// Model selection is local preference. API keys are intentionally only kept
 /// in process memory: they are NOT written to SharedPreferences or PocketBase.
@@ -125,6 +126,23 @@ class ViktorGateway {
         '${wallDay.month.toString().padLeft(2, '0')}-'
         '${wallDay.day.toString().padLeft(2, '0')}';
     final reqId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
+    final lastTwo = ViktorSchedulePlanner.resolveLastTwoSwap(input, plans);
+    if (lastTwo != null) {
+      return ViktorResponse(
+        message: 'Выбраны последние два плана по времени.',
+        actions: ViktorActionBatch.fromJson({
+          'version': 1,
+          'request_id': reqId,
+          'actions': [
+            {'name': 'swap_plan_positions', 'arguments': {
+              'first_plan_id': lastTwo[0],
+              'second_plan_id': lastTwo[1],
+              'wall_day': dayKey,
+            }},
+          ],
+        }),
+      );
+    }
     final activeId = service.canonicalPrimaryRunningBusinessId;
     final data = <String, Object?>{
       'text': input,
