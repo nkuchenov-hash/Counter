@@ -142,9 +142,12 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       }
       // Zero extra taps only when the two referents are grounded in an
       // explicit two-item selection or BOTH names in this request.
+      final groundedByPosition = lastTwoIds != null &&
+          firstId == lastTwoIds[0] && secondId == lastTwoIds[1];
       final isUnambiguousSwap = swapArgs != null &&
           firstId != secondId &&
-          (matchedSelection || (titleSpoken(firstId) && titleSpoken(secondId)));
+          (groundedByPosition || matchedSelection ||
+              (titleSpoken(firstId) && titleSpoken(secondId)));
       final approved = isUnambiguousSwap
           ? true : await _confirm(actions, preview);
       if (!mounted) return;
