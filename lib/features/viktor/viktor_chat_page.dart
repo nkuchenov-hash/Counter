@@ -122,9 +122,29 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       // An explicit, unambiguous two-card swap is a reversible low-scope
       // schedule command. The Brain still validates current state and guards.
       // Other mutations retain their mandatory explicit approval dialog.
-      final isSimpleSwap = actions.actions.length == 1 &&
-          actions.actions.single.name == 'swap_plan_positions';
-      final approved = isSimpleSwap ? true : await _confirm(actions, preview);
+      final swapArgs = actions.actions.length == 1 &&
+              actions.actions.single.name == 'swap_plan_positions'
+          ? actions.actions.single.arguments
+          : null;
+      final firstId = swapArgs?['first_plan_id'] as String?;
+      final secondId = swapArgs?['second_plan_id'] as String?;
+      final selected = widget.selectedPlanIds.toSet();
+      final matchedSelection = selected.length == 2 &&
+          selected.contains(firstId) && selected.contains(secondId);
+      bool titleSpoken(String? id) {
+        if (id == null) return false;
+        final matching = plans.where((p) => p.pocketRecordId == id);
+        if (matching.length != 1) return false;
+        final title = matching.single.title.toLowerCase().trim();
+        return title.length >= 3 && input.toLowerCase().contains(title);
+      }
+      // Zero extra taps only when the two referents are grounded in an
+      // explicit two-item selection or BOTH names in this request.
+      final isUnambiguousSwap = swapArgs != null &&
+          firstId != secondId &&
+          (matchedSelection || (titleSpoken(firstId) && titleSpoken(secondId)));
+      final approved = isUnambiguousSwap
+          ? true : await _confirm(actions, preview);
       if (!mounted) return;
       if (!approved) {
         _push('Изменения отменены.');
