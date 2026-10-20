@@ -770,9 +770,21 @@ class _PlanningPageState extends State<PlanningPage>
   void _openViktorChat() {
     final day = widget.selectedDate ??
         DateTime.tryParse(widget.selectedDateString) ?? DateTime.now();
+    final selectedIds = _latestPlanningDayTasks
+        .where((task) => _selectedPlanKeys.contains(_planKey(task)))
+        .map((task) => task.pocketRecordId)
+        .whereType<String>()
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
     Navigator.of(context).push<void>(MaterialPageRoute<void>(
-      builder: (_) => ViktorChatPage(wallDay: day),
-    ));
+      builder: (_) => ViktorChatPage(
+        wallDay: day,
+        selectedPlanIds: selectedIds,
+      ),
+    )).then((_) {
+      if (mounted && _selectedPlanKeys.isNotEmpty) _exitSelectMode();
+    });
   }
 
   Future<void> _toggleDone(PlanningTask task, bool currentDisplayDone) async {
