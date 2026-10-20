@@ -51,8 +51,11 @@ class ViktorVoiceGateway {
     if (!const {'openai', 'groq', 'gemini', 'yandex'}.contains(provider)) {
       throw const FormatException('speech_provider_unavailable');
     }
-    if (apiKey.isEmpty) throw const FormatException('speech_api_key_required');
-    if (isYandex && settings.yandexFolderId.trim().isEmpty) {
+    if (apiKey.isEmpty && !settings.speechConnected) {
+      throw const FormatException('speech_api_key_required');
+    }
+    if (isYandex && settings.yandexFolderId.trim().isEmpty &&
+        !settings.cloudProviders.contains('yandex')) {
       throw const FormatException('yandex_folder_id_required');
     }
 
@@ -66,7 +69,8 @@ class ViktorVoiceGateway {
       headers: headers,
       body: jsonEncode({
         'provider': provider,
-        'api_key': apiKey,
+        'model_provider': settings.provider,
+        if (apiKey.isNotEmpty) 'api_key': apiKey,
         'audio_base64': base64Encode(wav),
         'language': currentLocale.value.toLowerCase().startsWith('ru')
             ? 'ru' : 'en',
@@ -90,7 +94,7 @@ class ViktorVoiceGateway {
           headers: headers,
           body: jsonEncode({
             'provider': 'yandex',
-            'api_key': apiKey,
+            if (apiKey.isNotEmpty) 'api_key': apiKey,
             'yandex_folder_id': settings.yandexFolderId.trim(),
             'operation_id': operationId,
           }),
