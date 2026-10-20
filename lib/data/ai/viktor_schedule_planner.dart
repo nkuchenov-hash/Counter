@@ -30,19 +30,19 @@ class ViktorSchedulePlanner {
   /// cannot be identified safely, fails closed instead of guessing IDs.
   static List<String>? resolveLastTwoSwap(
       String input, List<PlanningTask> plans) {
-    final text = input.toLowerCase().replaceAll(RegExp(r'\\s+'), ' ').trim();
+    final text = input.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
     final command = RegExp(
-      r'(^|[\\s,])(?:поменяй|переставь|обменяй|перекинь|swap|switch)(?=\\s|[,.!?]|$)',
+      r'(^|[\s,])(?:поменяй|переставь|обменяй|перекинь|swap|switch)(?=\s|[,.!?]|$)',
     ).hasMatch(text);
     if (!command || RegExp(
-      r'(^|[\\s,])не\\s+(?:поменяй|переставь|обменяй|перекинь|swap|switch)',
+      r'(^|[\s,])не\s+(?:поменяй|переставь|обменяй|перекинь|swap|switch)',
     ).hasMatch(text)) return null;
     final russian = RegExp(
-      r'(?:последн[а-яё]*\\s+(?:два|две|2)\\s+(?:план[а-яё]*|задач[а-яё]*|карточк[а-яё]*)'
-      r'|(?:два|две|2)\\s+последн[а-яё]*\\s+(?:план[а-яё]*|задач[а-яё]*|карточк[а-яё]*))',
+      r'(?:последн[а-яё]*\s+(?:два|две|2)\s+(?:план[а-яё]*|задач[а-яё]*|карточк[а-яё]*)'
+      r'|(?:два|две|2)\s+последн[а-яё]*\s+(?:план[а-яё]*|задач[а-яё]*|карточк[а-яё]*))',
     ).hasMatch(text);
     final english = RegExp(
-      r'last\\s+(?:two|2)\\s+(?:plans?|tasks?|cards?)',
+      r'last\s+(?:two|2)\s+(?:plans?|tasks?|cards?)',
     ).hasMatch(text);
     if (!russian && !english) return null;
 
