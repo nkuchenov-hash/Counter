@@ -343,7 +343,7 @@ class ViktorBulkPlanner {
           guard(p);
           final end = cursor.add(p.endDateTime!.difference(p.startTime!));
           if (key(cursor) != date || key(end) != date) {
-            throw StateError('«${p.title}»: время выходит за границы ${$date}.');
+            throw StateError('«${p.title}»: время выходит за границы ${date}.');
           }
           moves.add(ViktorBulkMove(p, cursor, end, date, kind));
           cursor = end;
