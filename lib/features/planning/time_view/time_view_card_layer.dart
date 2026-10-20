@@ -96,7 +96,10 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
     final hasTrailingPlay = !host.planSelectMode && !displayDone;
     final resizeHeightPx = math.max(heightPx, kPlanTimeCardMinHeightPx);
     final reduceMotion = MediaQuery.disableAnimationsOf(host.context);
-    final settleDuration = isInteracting || reduceMotion
+    // No animated full-width-to-lane transition: even intermediate frames
+    // must never paint one conflicting card on top of another.
+    final settleDuration = isInteracting || reduceMotion ||
+            layout.hasScheduleConflict
         ? Duration.zero
         : const Duration(milliseconds: 140);
 
