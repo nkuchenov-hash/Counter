@@ -240,6 +240,9 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     if (value.contains('speech_api_key_required')) {
       return 'Укажите API-ключ для распознавания речи в настройках Виктора.';
     }
+    if (value.contains('yandex_folder_id_required')) {
+      return 'Укажите ID каталога Yandex Cloud в настройках Виктора.';
+    }
     if (value.contains('speech_provider_rejected')) {
       return 'Провайдер отклонил распознавание. Проверьте API-ключ, '
           'баланс и доступ к голосовой модели.';
@@ -309,17 +312,22 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     if (!_settingsReady) return;
     bool missingSpeechKey() {
       final provider = _settings.provider;
-      return const {'openrouter', 'gigachat', 'yandex'}.contains(provider)
+      return const {'openrouter', 'gigachat'}.contains(provider)
           ? _settings.sessionSpeechApiKey.trim().isEmpty
           : _settings.sessionApiKey.trim().isEmpty;
     }
-    if (missingSpeechKey()) {
+    if (missingSpeechKey() ||
+        (_settings.provider == 'yandex' &&
+         _settings.yandexFolderId.trim().isEmpty)) {
       await _openSettings();
       if (!mounted) return;
-      final stillMissing = missingSpeechKey();
+      final stillMissing = missingSpeechKey() ||
+          (_settings.provider == 'yandex' &&
+           _settings.yandexFolderId.trim().isEmpty);
       if (stillMissing) {
         setState(() => _voiceNotice =
-            'Для диктовки нужен API-ключ провайдера распознавания.');
+            'Для диктовки нужны API-ключ и ID каталога Yandex Cloud '
+            'либо ключ выбранного провайдера речи.');
         return;
       }
     }
@@ -459,8 +467,18 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                         ),
                       ),
                     ],
+                    if (provider == 'yandex') ...[
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Голос работает через Yandex SpeechKit с тем же '
+                        'API-ключом, что и YandexGPT. Сервисному аккаунту '
+                        'нужны роли ai.languageModels.user и '
+                        'ai.speechkit-stt.user.',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ],
                     if (provider == 'openrouter' ||
-                        provider == 'gigachat' || provider == 'yandex') ...[
+                        provider == 'gigachat') ...[
                       const SizedBox(height: 16),
                       const Text('Распознавание речи', style: TextStyle(fontSize: 16)),
                       const SizedBox(height: 8),
@@ -658,7 +676,8 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                           ),
                           const SizedBox(height: 5),
                           const Text(
-                            'Нажмите квадрат, чтобы закончить запись и получить текст.',
+                            'Команда отправится после паузы в речи. '
+                            'Квадрат — остановить вручную.',
                             style: TextStyle(fontSize: 16),
                           ),
                         ] else
