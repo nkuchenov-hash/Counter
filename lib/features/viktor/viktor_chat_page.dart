@@ -12,6 +12,35 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
+/// Web Speech API expects BCP-47 with hyphens, while native speech plugins
+/// return platform-dependent locale identifiers (often with underscores).
+/// On native platforms use an identifier actually returned by the recognizer.
+@visibleForTesting
+String? viktorSpeechLocaleId({
+  required String language,
+  required bool isWeb,
+  required Iterable<String> availableLocales,
+}) {
+  final code = language.toLowerCase().startsWith('ru') ? 'ru' : 'en';
+  if (isWeb) return code == 'ru' ? 'ru-RU' : 'en-US';
+
+  final available = availableLocales.toList(growable: false);
+  if (available.isEmpty) return null; // Let the native recognizer decide.
+
+  final preferred = code == 'ru' ? 'ru-RU' : 'en-US';
+  for (final locale in available) {
+    if (locale.replaceAll('_', '-').toLowerCase() == preferred.toLowerCase()) {
+      return locale;
+    }
+  }
+  for (final locale in available) {
+    if (locale.replaceAll('_', '-').toLowerCase().split('-').first == code) {
+      return locale;
+    }
+  }
+  return null;
+}
+
 /// Single LIFE OS assistant entry point. Replaces the old record-only mic FAB.
 /// No overlay over the planner, no extra button beside bottom navigation.
 class ViktorChatPage extends StatefulWidget {
@@ -36,6 +65,9 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
   final _gateway = const ViktorGateway();
   bool _busy = false;
   bool _listening = false;
+  bool _startingMic = false;
+  bool _micFailed = false;
+  String? _voiceNotice;
   bool _settingsReady = false;
   String _speechPrefix = '';
 
@@ -156,40 +188,85 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     return answer == true;
   }
 
+  void _speechFailure(String error) {
+    if (!mounted || _micFailed) return;
+    _micFailed = true;
+    final code = error.toLowerCase();
+    final notice = code.contains('language') || code.contains('locale')
+        ? 'Этот браузер или устройство не поддерживает русский голосовой ввод. '
+          'Попробуйте обновлённый Chrome или Edge либо введите текст.'
+        : code.contains('permission') || code.contains('not-allowed')
+            ? 'Доступ к микрофону запрещён. Разрешите его в настройках браузера.'
+            : code.contains('network')
+                ? 'Голосовой сервис браузера недоступен по сети. '
+                  'Попробуйте ещё раз или введите текст.'
+                : 'Не удалось распознать речь. Проверьте микрофон '
+                  'или введите команду текстом.';
+    setState(() {
+      _listening = false;
+      // Transient UI status, never a repeated conversation message.
+      _voiceNotice = notice;
+    });
+  }
+
   Future<void> _toggleMic() async {
-    if (_busy) return;
+    if (_busy || _startingMic) return;
     if (_speech.isListening) {
       await _speech.stop();
       if (mounted) setState(() => _listening = false);
       return;
     }
-    if (!kIsWeb &&
-        (defaultTargetPlatform == TargetPlatform.android ||
-         defaultTargetPlatform == TargetPlatform.iOS)) {
-      final permission = await Permission.microphone.request();
-      if (!permission.isGranted) {
-        _push('Разрешите доступ к микрофону в настройках устройства.');
-        return;
-      }
-    }
+
+    // Lock as soon as the mic is tapped, before awaiting initialization.
+    setState(() {
+      _startingMic = true;
+      _micFailed = false;
+      _voiceNotice = null;
+    });
+
     try {
+      if (!kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.android ||
+           defaultTargetPlatform == TargetPlatform.iOS)) {
+        final permission = await Permission.microphone.request();
+        if (!permission.isGranted) {
+          _speechFailure('permission-denied');
+          return;
+        }
+      }
+
       final ready = await _speech.initialize(
-        onError: (e) {
-          if (mounted) {
-            setState(() => _listening = false);
-            _push('Ошибка распознавания голоса: ${e.errorMsg}');
-          }
-        },
+        onError: (error) => _speechFailure(error.errorMsg),
         onStatus: (status) {
           if (mounted && (status == 'done' || status == 'notListening')) {
             setState(() => _listening = false);
           }
         },
       );
+      if (!mounted) return;
       if (!ready) {
-        _push('Распознавание речи недоступно. Можно ввести команду текстом.');
+        _speechFailure('recognizer-unavailable');
         return;
       }
+
+      final localeId = viktorSpeechLocaleId(
+        language: currentLocale.value,
+        isWeb: kIsWeb,
+        availableLocales: kIsWeb
+            ? const <String>[]
+            : (await _speech.locales()).map((locale) => locale.localeId),
+      );
+
+      if (!kIsWeb && localeId == null) {
+        // On a platform that reported concrete locales, never silently
+        // transcribe a Russian utterance as English.
+        final available = await _speech.locales();
+        if (available.isNotEmpty) {
+          _speechFailure('language-not-supported');
+          return;
+        }
+      }
+
       _speechPrefix = _controller.text.trim();
       await _speech.listen(
         onResult: (result) {
@@ -206,16 +283,17 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
             if (result.finalResult) _listening = false;
           });
         },
-        localeId: currentLocale.value.toLowerCase().startsWith('ru')
-            ? 'ru_RU' : 'en_US',
+        localeId: localeId,
         listenOptions: stt.SpeechListenOptions(
           partialResults: true,
           cancelOnError: false,
         ),
       );
-      if (mounted) setState(() => _listening = true);
-    } catch (_) {
-      if (mounted) _push('Микрофон недоступен. Попробуйте текстовый ввод.');
+      if (mounted && !_micFailed) setState(() => _listening = true);
+    } catch (error) {
+      _speechFailure(error.toString());
+    } finally {
+      if (mounted) setState(() => _startingMic = false);
     }
   }
 
@@ -420,6 +498,17 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                     },
                   ),
                 ),
+                if (_voiceNotice != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+                    child: Text(
+                      _voiceNotice!,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
                 DecoratedBox(
                   decoration: BoxDecoration(
                     color: scheme.surface,
@@ -436,7 +525,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                             Icons.mic_none_rounded,
                           tooltip: _listening ? 'Остановить диктовку' :
                             'Продиктовать Виктору',
-                          onPressed: _busy ? null : _toggleMic,
+                          onPressed: _busy || _startingMic ? null : _toggleMic,
                           selected: _listening,
                         ),
                         const SizedBox(width: 8),
