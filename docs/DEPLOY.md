@@ -201,3 +201,10 @@ Every `main` push starts `.github/workflows/deploy-pocketbase.yml`. It validates
 A `main` push with no PocketBase bundle change still completes the server validation workflow but skips SSH/restart; Web remains downstream of the successful gate. To repeat a release, create an empty `main` commit and let the same gated chain run again rather than bypassing the server gate.
 
 **Main integrity gate:** Architecture Guard runs on PRs and on every `main` push. Independently, the PocketBase release workflow reruns strict architecture, documentation parity, repository hygiene, PocketBase schema, and deployment-order contracts before its server stage. Web publication is downstream of that successful workflow, so a structurally invalid direct push cannot be released even when repository branch-protection settings are unavailable.
+
+
+## Viktor cloud BYOK vault (required for cross-device connection)
+
+The PocketBase workflow provisions `/etc/lifeos/viktor-vault.env` **once** on the VPS with a 32-character server-only `VIKTOR_VAULT_KEY` for PocketBase's AES-256-GCM `$security.encrypt`/`decrypt`. The file is mode 600 under `/etc/lifeos` and added via the service's systemd `EnvironmentFile`; it is never committed, downloaded, logged or regenerated on routine deploy. **Back up the vault key separately and securely**: losing/rotating it without migration renders already encrypted connections unreadable. This key is not the end user's Yandex/GPT API key.
+
+The `1792533600_viktor_connections.js` migration creates a closed server-only collection. Authenticated `GET/POST/DELETE /api/viktor/connection` implements owner-isolated save/status/disconnect without returning API secrets. Model and speech PocketBase hooks read/decrypt only the authenticated user's connection. Missing master key returns 503; no plaintext fallback. Deployment/restart must complete before the matching web client is published. Test the first connection save from a signed-in account, log in on a second device, verify the model works with **no API key present in that device's memory**, and verify another account cannot view/use/delete it.

@@ -22,7 +22,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **records** | Base | Standard collection. |
 | **plans** | Base | Standard collection. |
 | **tags** | Base | Standard collection. |
-| **sleep_sync_connections** | Base, server-only | Closed provider connection/sync state. Xiaomi Cloud is the active primary sleep provider; clients use `/api/sleep-sync/*`. |
+| **viktor_connections** | Base, server-only | Encrypted BYOK credentials per authenticated owner and provider; closed collection, accessible through `/api/viktor/connection` only. |\n| **sleep_sync_connections** | Base, server-only | Closed provider connection/sync state. Xiaomi Cloud is the active primary sleep provider; clients use `/api/sleep-sync/*`. |
 
 ## 1. Collection: `records`
 **Business PK:** `record_id` (UUID) | **System PK (REST):** `id` (15-char String)
@@ -262,3 +262,7 @@ Hidden provider index with durable review/linked/ignored/blocked state. A source
 
 ### `people_integrations`
 Server-only OAuth/session rows for Google Contacts, Microsoft, VK and Facebook. Tokens stay server-side.
+
+## Viktor cross-device credentials (server-only, sensitive)
+
+PocketBase migration `pb_migrations/1792533600_viktor_connections.js` creates `viktor_connections` with `user_id` (relation → `profiles.id`), `provider` (select), `model` (text) and `payload_enc` (text). Unique index on (`user_id`, `provider`). Direct list/view/create/update/delete APIs are locked with null rules; authenticated hooks implement owner isolation. `payload_enc` is AES-256-GCM ciphertext of a JSON object containing `api_key`, `folder_id`, `speech_provider`, `speech_api_key`, `gigachat_scope`. Server master key is in `VIKTOR_VAULT_KEY` (environment only) and must never enter client, repository, or SQLite. Legacy transient BYOK requests continue to work. Never expose decrypted keys to clients.

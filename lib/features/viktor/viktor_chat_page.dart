@@ -66,6 +66,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       _settings.ensureOwner(
         DatabaseService.instance.pocketBase.authStore.record?.id ?? 'signed_out',
       );
+      await _settings.loadCloudConnection();
       if (mounted) setState(() => _settingsReady = true);
     } catch (_) {
       if (mounted) setState(() => _settingsReady = true);
@@ -90,9 +91,9 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     final input = _controller.text.trim();
     if (input.isEmpty) return;
     if (!_settingsReady) return;
-    if (_settings.mode == 'byok' && _settings.sessionApiKey.isEmpty) {
+    if (_settings.mode == 'byok' && !_settings.modelConnected) {
       await _openSettings();
-      if (!mounted || _settings.sessionApiKey.isEmpty) return;
+      if (!mounted || !_settings.modelConnected) return;
     }
     if (_listening || _transcribing || _startingMic) return;
     if (!mounted) return;
@@ -342,9 +343,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     if (!_settingsReady) return;
     bool missingSpeechKey() {
       final provider = _settings.provider;
-      return const {'openrouter', 'gigachat'}.contains(provider)
-          ? _settings.sessionSpeechApiKey.trim().isEmpty
-          : _settings.sessionApiKey.trim().isEmpty;
+      return !_settings.speechConnected;
     }
     if (missingSpeechKey() ||
         (_settings.provider == 'yandex' &&
@@ -561,10 +560,15 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Ключ используется только в этом сеансе. '
-                      'Он не сохраняется в приложении или PocketBase.',
-                      style: TextStyle(fontSize: 16),
+                    Text(
+                      _settings.cloudProviders.contains(provider)
+                        ? 'Подключение сохранено для всех устройств LIFE OS. '
+                          'API-ключ хранится на сервере в зашифрованном виде. '
+                          'Оставьте поле ключа пустым, чтобы использовать сохранённый.'
+                        : 'Нажмите «Сохранить»: ключ будет зашифрован на '
+                          'сервере LIFE OS и станет доступен Виктору на '
+                          'других ваших устройствах. Сам ключ на них не передаётся.',
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ] else
                     const Text(
@@ -589,12 +593,28 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       _settings.mode = mode;
       _settings.provider = provider;
       _settings.model = model;
-      _settings.sessionApiKey = keyCtrl.text.trim();
-      _settings.yandexFolderId = folderCtrl.text.trim();
+      if (keyCtrl.text.trim().isNotEmpty) {
+        _settings.sessionApiKey = keyCtrl.text.trim();
+      }
+      if (folderCtrl.text.trim().isNotEmpty) {
+        _settings.yandexFolderId = folderCtrl.text.trim();
+      }
       _settings.gigachatScope = gigachatScope;
       _settings.speechProvider = speechProvider;
-      _settings.sessionSpeechApiKey = speechKeyCtrl.text.trim();
+      if (speechKeyCtrl.text.trim().isNotEmpty) {
+        _settings.sessionSpeechApiKey = speechKeyCtrl.text.trim();
+      }
       await _settings.save();
+      try {
+        await _settings.saveCloudConnection();
+        if (mounted) _push('Подключение сохранено для всех устройств LIFE OS.');
+      } catch (error) {
+        if (mounted) _push(
+          'Не удалось сохранить подключение на сервере. '
+          'Ключ действует только до перезагрузки страницы. '
+          '${error.toString().replaceAll('FormatException: ', '')}',
+        );
+      }
       if (mounted) setState(() {});
     }
     keyCtrl.dispose();

@@ -36,6 +36,8 @@ class ViktorModelSettings {
   // Both credentials are session-only and never saved in preferences.
   String speechProvider = 'groq';
   String sessionSpeechApiKey = '';
+  final Set<String> cloudProviders = {};
+  final Map<String, Map<String, dynamic>> cloudInfo = {};
   bool _loaded = false;
   String? _credentialOwner;
 
@@ -44,6 +46,9 @@ class ViktorModelSettings {
     if (_credentialOwner != null && _credentialOwner != id) {
       sessionApiKey = '';
       sessionSpeechApiKey = '';
+      yandexFolderId = '';
+      cloudProviders.clear();
+      cloudInfo.clear();
     }
     _credentialOwner = id;
   }
@@ -90,6 +95,117 @@ class ViktorModelSettings {
     // Deliberately never persist the raw provider credential.
   }
 
+
+  /// Whether Viktor can call a model without entering a key on this device.
+  bool get modelConnected =>
+      sessionApiKey.trim().isNotEmpty || cloudProviders.contains(provider);
+
+  bool get speechConnected {
+    if (const {'gigachat', 'openrouter'}.contains(provider)) {
+      return sessionSpeechApiKey.trim().isNotEmpty ||
+          cloudInfo[provider]?['has_speech_key'] == true;
+    }
+    return modelConnected;
+  }
+
+  Future<void> loadCloudConnection() async {
+    final db = DatabaseService.instance;
+    await db.ensurePocketBaseReady();
+    final owner = db.pocketBase.authStore.record?.id ?? '';
+    ensureOwner(owner);
+    final token = db.pocketBase.authStore.token.trim();
+    if (owner.isEmpty || token.isEmpty) return;
+    final root = kPocketBaseUrl.endsWith('/')
+        ? kPocketBaseUrl.substring(0, kPocketBaseUrl.length - 1)
+        : kPocketBaseUrl;
+    final response = await http.get(
+      Uri.parse('$root/api/viktor/connection'),
+      headers: {'Authorization': 'Bearer $token'},
+    ).timeout(const Duration(seconds: 18));
+    if (response.statusCode != 200) {
+      throw FormatException(
+          'cloud_connection_unavailable: ${response.statusCode}');
+    }
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
+    if (data is! Map || data['connections'] is! List) {
+      throw const FormatException('invalid_cloud_connection');
+    }
+    final entries = (data['connections'] as List)
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+    cloudProviders.clear();
+    cloudInfo.clear();
+    for (final item in entries) {
+      final p = item['provider']?.toString() ?? '';
+      if (models.containsKey(p)) {
+        cloudProviders.add(p);
+        cloudInfo[p] = item;
+      }
+    }
+    if (entries.isNotEmpty && !cloudProviders.contains(provider)) {
+      final p = entries.first['provider']?.toString() ?? '';
+      if (cloudProviders.contains(p)) provider = p;
+    }
+    final active = cloudInfo[provider];
+    if (active == null) return;
+    final savedModel = active['model']?.toString() ?? '';
+    if (models[provider]!.contains(savedModel)) model = savedModel;
+    if (provider == 'yandex') {
+      final folder = active['folder_id']?.toString() ?? '';
+      if (folder.isNotEmpty) yandexFolderId = folder;
+    }
+    final speech = active['speech_provider']?.toString() ?? '';
+    if (const {'groq', 'openai', 'gemini'}.contains(speech)) {
+      speechProvider = speech;
+    }
+  }
+
+  Future<void> saveCloudConnection() async {
+    final db = DatabaseService.instance;
+    await db.ensurePocketBaseReady();
+    final owner = db.pocketBase.authStore.record?.id ?? '';
+    ensureOwner(owner);
+    final token = db.pocketBase.authStore.token.trim();
+    if (owner.isEmpty || token.isEmpty) {
+      throw const FormatException('auth_required');
+    }
+    final root = kPocketBaseUrl.endsWith('/')
+        ? kPocketBaseUrl.substring(0, kPocketBaseUrl.length - 1)
+        : kPocketBaseUrl;
+    final response = await http.post(
+      Uri.parse('$root/api/viktor/connection'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'provider': provider,
+        'model': model,
+        if (sessionApiKey.trim().isNotEmpty)
+          'api_key': sessionApiKey.trim(),
+        if (sessionSpeechApiKey.trim().isNotEmpty)
+          'speech_api_key': sessionSpeechApiKey.trim(),
+        'folder_id': yandexFolderId.trim(),
+        'speech_provider': speechProvider,
+        'gigachat_scope': gigachatScope,
+      }),
+    ).timeout(const Duration(seconds: 20));
+    if (response.statusCode != 200) {
+      throw FormatException(
+          'cloud_connection_save_failed: ${response.statusCode}');
+    }
+    cloudProviders.add(provider);
+    cloudInfo[provider] = {
+      'provider': provider,
+      'model': model,
+      'folder_id': yandexFolderId,
+      'speech_provider': speechProvider,
+      'has_speech_key': sessionSpeechApiKey.trim().isNotEmpty ||
+          cloudInfo[provider]?['has_speech_key'] == true,
+    };
+  }
+
   void selectProvider(String newProvider) {
     if (!models.containsKey(newProvider)) return;
     if (provider != newProvider) sessionApiKey = '';
@@ -119,7 +235,7 @@ class ViktorGateway {
     final token = service.pocketBase.authStore.token.trim();
     settings.ensureOwner(service.pocketBase.authStore.record?.id ?? '');
     if (token.isEmpty) throw const FormatException('Sign in to LIFE OS first.');
-    if (settings.mode == 'byok' && settings.sessionApiKey.trim().isEmpty) {
+    if (settings.mode == 'byok' && !settings.modelConnected) {
       throw const FormatException('Set your provider API key in Viktor settings.');
     }
     final dayKey = '${wallDay.year.toString().padLeft(4, '0')}-'
