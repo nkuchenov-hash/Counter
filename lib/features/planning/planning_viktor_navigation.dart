@@ -7,7 +7,7 @@ extension PlanningViktorNavigation on _PlanningPageState {
     final day = widget.selectedDate ??
         DateTime.tryParse(widget.selectedDateString) ?? DateTime.now();
     final selectedIds = _latestPlanningDayTasks
-        .where((task) => _selectedPlanKeys.contains(_planKey(task)))
+        .where((task) => _selectedPlanKeys.contains(_PlanningPageState._planKey(task)))
         .map((task) => task.pocketRecordId)
         .whereType<String>()
         .where((id) => id.isNotEmpty)
