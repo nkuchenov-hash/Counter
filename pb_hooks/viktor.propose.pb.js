@@ -61,7 +61,8 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     return e.json(400, {error: "invalid_mode"});
   }
 
-  if (Array.isArray(body.day_plans) && body.day_plans.length > 60) {
+  if ((Array.isArray(body.day_plans) && body.day_plans.length > 60) ||
+      (Array.isArray(body.next_day_plans) && body.next_day_plans.length > 60)) {
     return e.json(413, {error: "day_context_too_large"});
   }
   const gigaScopes = {
@@ -86,6 +87,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
       id: id, title: String(p.title || "").slice(0, 160),
       duration_minutes: Number(p.duration_minutes) || null,
       start_time: p.start_time == null ? null : String(p.start_time).slice(0, 5),
+      is_done: p.is_done === true,
       recurrent: !!p.recurrent
     });
   }
@@ -96,6 +98,20 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     const right = b.start_time || "99:99";
     return left.localeCompare(right) || a.id.localeCompare(b.id);
   });
+  const tomorrow = String(body.next_day || "");
+  const zone = String(body.profile_timezone || "profile").slice(0, 64);
+  const tomorrowPlans = [];
+  for (const p of (Array.isArray(body.next_day_plans) ? body.next_day_plans : [])) {
+    if (!p || typeof p !== "object" ||
+        !/^[a-z0-9]{15}$/.test(String(p.id || ""))) continue;
+    tomorrowPlans.push({
+      id: String(p.id), title: String(p.title || "").slice(0, 160),
+      is_done: p.is_done === true,
+      start_time: p.start_time == null ? null : String(p.start_time).slice(0, 5),
+      duration_minutes: Number(p.duration_minutes) || null,
+      recurrent: !!p.recurrent
+    });
+  }
   const planIds = new Set(plans.map(p => p.id));
   const selectedIds = Array.isArray(body.selected_plan_ids)
     ? body.selected_plan_ids.filter(id => typeof id === "string" && planIds.has(id)).slice(0, 2)
@@ -114,6 +130,20 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "move_plan_after {plan_id,after_plan_id,wall_day};",
     "swap_plan_positions {first_plan_id,second_plan_id,wall_day}; exchange two cards' chronological positions.",
     "start_record {title}; stop_record {record_id}.",
+    "bulk_replan {operations:[{kind,status,source_day,target_day?,start_time?,timezone?}]}.",
+    "Use bulk_replan for set-based changes such as move ALL incomplete plans to another",
+    "day or compact completed plans sequentially. This is one high-level action,",
+    "not a list of individual card IDs. Allowed kind: move or compact.",
+    "Allowed status: complete, incomplete, all. 'move' requires source_day,",
+    "target_day (YYYY-MM-DD), start_time HH:mm. 'compact' requires source_day,",
+    "status and may omit start_time to keep the earliest matching plan start.",
+    "timezone may be 'profile', 'New York', or a supported IANA timezone.",
+    "When the user requests two groups (e.g. move incomplete tomorrow from 09:00",
+    "New York AND compact completed today), emit ONE bulk_replan with two operations.",
+    "Take statuses from is_done in day_plans; never ask the user for IDs/status",
+    "already present in the context. Resolve 'tomorrow' using next_day.",
+    "Do not claim you have applied actions: the app previews and saves after approval.",
+    "Do not invent extra operations or reclassify completion states.",
     "Every create_plan must include a proposed start_time (HH:mm). If no safe time can be chosen, ask the user and return actions [].",
     "Use 10-1440 integer duration minutes. Times HH:mm. Dates YYYY-MM-DD.",
     "Only use IDs from the context. If multiple matches, ask a question; actions must be [].",
@@ -128,7 +158,10 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
   ].join("\n");
   const userContext = {
     wall_day: day,
+    next_day: tomorrow,
+    profile_timezone: zone,
     day_plans: plans,
+    next_day_plans: tomorrowPlans,
     selected_plan_ids: selectedIds,
     active_record: active,
     user_request: input
