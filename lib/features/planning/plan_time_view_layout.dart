@@ -213,6 +213,8 @@ class PlanTimeViewBlockLayout {
     this.projection,
     this.visualDensity = PlanTimeCardVisualDensity.medium,
     this.hasScheduleConflict = false,
+    this.overlapLaneIndex = 0,
+    this.overlapLaneCount = 1,
   });
 
   final PlanningTask task;
@@ -222,6 +224,11 @@ class PlanTimeViewBlockLayout {
   final PlanTimeTaskCardDensity density;
   final PlanTimeCardVisualDensity visualDensity;
   final bool hasScheduleConflict;
+
+  /// Visual-only lane for plans whose wall-time intervals overlap.
+  /// Never changes stored/planned timestamps or the shared hour Y scale.
+  final int overlapLaneIndex;
+  final int overlapLaneCount;
 }
 
 class _PlanTimeViewCardSlot {
@@ -447,6 +454,39 @@ abstract final class PlanTimeViewLayoutCalculator {
   ) {
     final layouts = <PlanTimeViewBlockLayout>[];
 
+    // Partition interval-overlap components into adjacent horizontal lanes.
+    // In a conflict, the cards keep their true wall-time tops (and keep drag
+    // and resize coordinates aligned with the hour rail). Only width changes.
+    // Adjacent end/start boundaries are NOT overlapping.
+    final laneIndex = List<int>.filled(slots.length, 0);
+    final laneCount = List<int>.filled(slots.length, 1);
+    var groupStart = 0;
+    while (groupStart < slots.length) {
+      var groupEnd = groupStart + 1;
+      var latestEnd = slots[groupStart].endMin;
+      while (groupEnd < slots.length &&
+          slots[groupEnd].startMin < latestEnd - 0.001) {
+        latestEnd = math.max(latestEnd, slots[groupEnd].endMin);
+        groupEnd++;
+      }
+      final laneEnds = <double>[];
+      for (var i = groupStart; i < groupEnd; i++) {
+        final start = slots[i].startMin;
+        var lane = laneEnds.indexWhere((end) => end <= start + 0.001);
+        if (lane < 0) {
+          lane = laneEnds.length;
+          laneEnds.add(slots[i].endMin);
+        } else {
+          laneEnds[lane] = slots[i].endMin;
+        }
+        laneIndex[i] = lane;
+      }
+      for (var i = groupStart; i < groupEnd; i++) {
+        laneCount[i] = laneEnds.length;
+      }
+      groupStart = groupEnd;
+    }
+
     for (var i = 0; i < slots.length; i++) {
       final slot = slots[i];
       final topPx = yScale.yForMinute(slot.startMin);
@@ -469,6 +509,9 @@ abstract final class PlanTimeViewLayoutCalculator {
           heightPx: heightPx,
           density: planTimeCardTaskDensityForVisual(visual),
           visualDensity: visual,
+          hasScheduleConflict: laneCount[i] > 1,
+          overlapLaneIndex: laneIndex[i],
+          overlapLaneCount: laneCount[i],
         ),
       );
 
@@ -616,6 +659,23 @@ abstract final class PlanTimeViewLayoutCalculator {
         'TIME_VIEW_WALL_START_MISMATCH: '
         'top ${layout.topPx} != wall-time y $expectedTop',
       );
+    }
+
+    // Time collisions must be separated horizontally; no two intersecting
+    // wall-time intervals may occupy the same lane.
+    for (var i = 0; i < layouts.length; i++) {
+      for (var j = i + 1; j < layouts.length; j++) {
+        final aSlot = slots[i];
+        final bSlot = slots[j];
+        if (aSlot.startMin < bSlot.endMin - 0.001 &&
+            bSlot.startMin < aSlot.endMin - 0.001) {
+          assert(
+            layouts[i].overlapLaneCount == layouts[j].overlapLaneCount &&
+                layouts[i].overlapLaneIndex != layouts[j].overlapLaneIndex,
+            'TIME_VIEW_CARD_OCCLUSION: overlapping cards share a lane',
+          );
+        }
+      }
     }
 
     for (var i = 0; i < layouts.length - 1; i++) {

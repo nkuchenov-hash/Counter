@@ -1,3 +1,9 @@
+## 2026-10-20 — Prevent Time View cards covering one another [fix]
+
+- Time View now assigns separate horizontal visual lanes within overlapping scheduled intervals (including fixed meetings) while preserving actual start/end times and hour alignment.
+- Unrelated and merely adjacent cards remain full width; overlapping clusters reclaim full width when the conflict ends.
+- Added regression cases for 14:00–15:00 webinar / 14:30–15:15 task, transitive 3-way overlaps and touching boundaries.
+
 ## 2026-10-20 — Prevent false fixed-time barrier on Time View drag [fix]
 
 - Limit target-card insertion, empty-slot drops, and multi-plan cascades to the moved plans and their collision-connected chain.

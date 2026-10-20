@@ -334,6 +334,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                                       (layout) => buildTimelinePlanStackLayer(
                                         layout: layout,
                                         canvasHeight: canvasHeight,
+                                        canvasWidth: constraints.maxWidth,
                                         scheme: scheme,
                                         planWallDay: planWallDay,
                                         rangeStart: rangeStart,
@@ -353,6 +354,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                                       (layout) => buildTimelinePlanStackLayer(
                                         layout: layout,
                                         canvasHeight: canvasHeight,
+                                        canvasWidth: constraints.maxWidth,
                                         scheme: scheme,
                                         planWallDay: planWallDay,
                                         rangeStart: rangeStart,
