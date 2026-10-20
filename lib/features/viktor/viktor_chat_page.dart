@@ -63,7 +63,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     try {
       await _settings.load();
       await DatabaseService.instance.ensurePocketBaseReady();
-      _settings.ensureOwner(
+      await _settings.restoreConnectionForOwner(
         DatabaseService.instance.pocketBase.authStore.record?.id ?? 'signed_out',
       );
       if (mounted) setState(() => _settingsReady = true);
@@ -387,6 +387,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     var mode = _settings.mode;
     var provider = _settings.provider;
     var model = _settings.model;
+    var rememberConnection = _settings.rememberConnection;
     final keyCtrl = TextEditingController(text: _settings.sessionApiKey);
     final folderCtrl = TextEditingController(text: _settings.yandexFolderId);
     var gigachatScope = _settings.gigachatScope;
@@ -561,10 +562,24 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Ключ используется только в этом сеансе. '
-                      'Он не сохраняется в приложении или PocketBase.',
-                      style: TextStyle(fontSize: 16),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      value: rememberConnection,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      onChanged: (value) => updateDialog(
+                        () => rememberConnection = value ?? false),
+                      title: const Text(
+                        'Запомнить подключение на этом устройстве',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      subtitle: const Text(
+                        'Ключ сохраняется в защищённом хранилище '
+                        'этого браузера или устройства, отдельно для '
+                        'аккаунта LIFE OS. Не передаётся в PocketBase '
+                        'для хранения. При очистке данных браузера '
+                        'может потребоваться подключение заново.',
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ),
                   ] else
                     const Text(
@@ -589,13 +604,27 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       _settings.mode = mode;
       _settings.provider = provider;
       _settings.model = model;
-      _settings.sessionApiKey = keyCtrl.text.trim();
-      _settings.yandexFolderId = folderCtrl.text.trim();
+      // An empty field on re-save must not silently disconnect the user.
+      if (keyCtrl.text.trim().isNotEmpty) {
+        _settings.sessionApiKey = keyCtrl.text.trim();
+      }
+      if (folderCtrl.text.trim().isNotEmpty) {
+        _settings.yandexFolderId = folderCtrl.text.trim();
+      }
+      _settings.rememberConnection = rememberConnection;
       _settings.gigachatScope = gigachatScope;
       _settings.speechProvider = speechProvider;
-      _settings.sessionSpeechApiKey = speechKeyCtrl.text.trim();
-      await _settings.save();
-      if (mounted) setState(() {});
+      if (speechKeyCtrl.text.trim().isNotEmpty) {
+        _settings.sessionSpeechApiKey = speechKeyCtrl.text.trim();
+      }
+      try {
+        await _settings.save();
+        if (mounted) setState(() {});
+      } catch (_) {
+        _push('Подключение работает в этом сеансе, но браузер '
+            'не разрешил сохранить ключ. Проверьте режим приватности '
+            'и доступность защищённого хранилища.');
+      }
     }
     keyCtrl.dispose();
     folderCtrl.dispose();
