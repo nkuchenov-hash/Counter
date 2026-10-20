@@ -6,12 +6,13 @@ const vm = require('node:vm');
 const routes = {};
 const outbound = [];
 let ready = false;
+let resultMode = 'final';
 const sandbox = {
   routerAdd(method, path, callback) {
     assert.equal(method, 'POST');
     routes[path] = callback;
   },
-  $security: {base64Decode: encoded => Buffer.from(encoded, 'base64')},
+  Buffer,
   $http: {
     send(request) {
       outbound.push(request);
@@ -22,9 +23,13 @@ const sandbox = {
         return {statusCode: 200, raw: JSON.stringify({done: ready})};
       }
       if (request.url.includes('getRecognition')) {
-        return {statusCode: 200, raw: JSON.stringify({
-          result: {final: {alternatives: [{text: 'Поменяй эти две карточки местами'}]}}
-        })};
+        assert.ok(request.url.endsWith('getRecognition?operationId=recognition12345'),
+          'SpeechKit REST v3 requires the camelCase operationId parameter');
+        const result = resultMode === 'refinement'
+          ? {finalRefinement: {normalizedText: {
+              alternatives: [{text: 'Включи запись'}]}}}
+          : {final: {alternatives: [{text: 'Поменяй эти две карточки местами'}]}};
+        return {statusCode: 200, raw: JSON.stringify({result})};
       }
       throw Error('Unexpected host');
     }
@@ -89,4 +94,9 @@ const finished = invoke(status, polling);
 assert.equal(finished.statusCode, 200);
 assert.equal(finished.data.transcript, 'Поменяй эти две карточки местами');
 assert.equal(outbound[2].headers.Authorization, 'Api-Key ' + base.api_key);
+resultMode = 'refinement';
+const normalized = invoke(status, polling);
+assert.equal(normalized.statusCode, 200);
+assert.equal(normalized.data.transcript, 'Включи запись');
+assert.equal(outbound.length, 6, 'Both Yandex result formats were requested');
 process.stdout.write('Viktor Yandex one-key SpeechKit contract: PASS\n');
