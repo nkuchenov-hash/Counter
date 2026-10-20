@@ -7,14 +7,36 @@ const source = fs.readFileSync('pb_hooks/viktor.propose.pb.js', 'utf8');
 let route;
 let calls = 0;
 let lastRequest;
+let vaultSecret = '';
+let vaultAccesses = 0;
 const sandbox = {
   routerAdd(method, url, callback) {
     assert.equal(method, 'POST');
     assert.equal(url, '/api/viktor/propose');
     route = callback;
   },
-  $os: { getenv: () => '' },
-  $security: {randomStringWithAlphabet: () => '1234567890abcdef1234567890abcdef'},
+  $os: { getenv: key => key === 'VIKTOR_VAULT_KEY' ? vaultSecret : '' },
+  $app: {
+    findFirstRecordByFilter(collection, query, vars) {
+      assert.equal(collection, 'viktor_connections');
+      assert.equal(vars.owner, 'aaaaabbbbbccccc');
+      assert.equal(vars.provider, 'yandex');
+      vaultAccesses++;
+      return {getString: name => name === 'payload_enc' ? 'encrypted-example' : ''};
+    }
+  },
+  Buffer,
+  $security: {
+    randomStringWithAlphabet: () => '1234567890abcdef1234567890abcdef',
+    decrypt(cipher, master) {
+      assert.equal(cipher, 'encrypted-example');
+      assert.equal(master, vaultSecret);
+      return JSON.stringify({
+        api_key: 'cloud-yandex-key-not-on-device',
+        folder_id: 'b1g9testfolder11',
+      });
+    },
+  },
   $http: { send(request) {
     calls++;
     lastRequest = request;
@@ -141,6 +163,20 @@ assert.equal(bulkContext.profile_timezone, 'New York');
 assert.equal(bulkContext.next_day, '2026-10-21');
 assert.match(JSON.parse(lastRequest.body).messages[0].content, /bulk_replan/,
   'Model receives the generic bulk planning tool schema');
+
+
+vaultSecret = '0123456789abcdef0123456789abcdef';
+const fromCloud = invoke({...base,
+  provider: 'yandex', model: 'yandexgpt/rc',
+  api_key: '', yandex_folder_id: '',
+});
+assert.equal(fromCloud.status, 200,
+  'Model call should use server-vault BYOK without device secret');
+assert.equal(vaultAccesses, 1);
+assert.equal(lastRequest.headers.Authorization,
+  'Api-Key cloud-yandex-key-not-on-device');
+assert.equal(lastRequest.headers['OpenAI-Project'], 'b1g9testfolder11');
+assert.ok(!JSON.stringify(fromCloud).includes('cloud-yandex-key-not-on-device'));
 
 const protectSource = fs.readFileSync('pb_hooks/viktor.protect_tier.pb.js', 'utf8');
 const hooks = {};
