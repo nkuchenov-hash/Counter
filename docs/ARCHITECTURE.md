@@ -248,3 +248,8 @@ One Viktor full-screen UI (`lib/features/viktor/viktor_chat_page.dart`) replaces
 ### Viktor cloud speech input (2026-10-20)
 
 `ViktorVoiceRecorder` (`lib/data/ai/viktor_voice_recorder.dart`) uses existing platform `record` package with streamed PCM16, live amplitude/time feedback and WAV wrapping. `ViktorVoiceGateway` is the Brain-owned authenticated transport for `/api/viktor/transcribe` (PocketBase hook). It only submits captured WAV plus an ephemeral personal provider key. The backend restricts provider URLs to OpenAI, Groq or Gemini; OpenRouter text users supply a separate speech-provider API key. No browser native speech service, no phone-local dependencies, no unmetered hosted provider keys. The editable transcript remains in the Viktor input until the user sends it; model action mutations retain preview/confirmation.
+
+
+### Viktor two-card swaps and Russian LLM adapters (2026-10-20 candidate)
+
+`swap_plan_positions` is a new strict model-independent action. `ViktorSchedulePlanner` exchanges the ordinal positions of two saved non-recurring, nonfixed cards and reflows from the first affected clock slot. It refuses when a fixed or recurring plan would need shifting; executor applies only after freshness/ownership checks via the canonical bulk Brain path. A swap skips extra confirmation only when both full names are stated or exactly the same two cards were selected in Planning. YandexGPT/GigaChat receive only day-safe IDs and never execute app tools. See `docs/VIKTOR_RUSSIAN_AI_AND_SWAPS.md`.
