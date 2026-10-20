@@ -132,8 +132,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     if (provider === "gigachat") {
       // The key from Sber's developer dashboard is a Basic authorization key,
       // not a bearer access token. Access tokens expire after 30 minutes.
-      const seed = $security.randomString(32);
-      const hex = Array.from(seed).map(c => (c.charCodeAt(0) % 16).toString(16)).join("");
+      const hex = $security.randomStringWithAlphabet(32, "0123456789abcdef");
       const requestUUID = hex.slice(0, 8) + "-" + hex.slice(8, 12) + "-4" +
         hex.slice(13, 16) + "-8" + hex.slice(17, 20) + "-" + hex.slice(20, 32);
       const authResponse = $http.send({
