@@ -350,6 +350,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     var model = _settings.model;
     final keyCtrl = TextEditingController(text: _settings.sessionApiKey);
     final folderCtrl = TextEditingController(text: _settings.yandexFolderId);
+    var gigachatScope = _settings.gigachatScope;
     var speechProvider = _settings.speechProvider;
     final speechKeyCtrl = TextEditingController(text: _settings.sessionSpeechApiKey);
     final saved = await showDialog<bool>(
@@ -426,6 +427,27 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                         if (v != null) updateDialog(() => model = v);
                       },
                     ),
+                    if (provider == 'gigachat') ...[
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: gigachatScope,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Тип доступа GigaChat API',
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'pers',
+                            child: Text('Личный доступ')),
+                          DropdownMenuItem(value: 'b2b',
+                            child: Text('Бизнес · пакеты')),
+                          DropdownMenuItem(value: 'corp',
+                            child: Text('Бизнес · оплата по факту')),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) updateDialog(() => gigachatScope = value);
+                        },
+                      ),
+                    ],
                     if (provider == 'yandex') ...[
                       const SizedBox(height: 12),
                       TextField(
@@ -519,6 +541,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       _settings.model = model;
       _settings.sessionApiKey = keyCtrl.text.trim();
       _settings.yandexFolderId = folderCtrl.text.trim();
+      _settings.gigachatScope = gigachatScope;
       _settings.speechProvider = speechProvider;
       _settings.sessionSpeechApiKey = speechKeyCtrl.text.trim();
       await _settings.save();
