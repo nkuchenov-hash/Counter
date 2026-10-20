@@ -5,41 +5,12 @@ import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/ai/viktor_action_contract.dart';
 import 'package:counter/data/ai/viktor_executor.dart';
 import 'package:counter/data/ai/viktor_gateway.dart';
+import 'package:counter/data/ai/viktor_voice_gateway.dart';
+import 'package:counter/data/ai/viktor_voice_recorder.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
-
-/// Web Speech API expects BCP-47 with hyphens, while native speech plugins
-/// return platform-dependent locale identifiers (often with underscores).
-/// On native platforms use an identifier actually returned by the recognizer.
-@visibleForTesting
-String? viktorSpeechLocaleId({
-  required String language,
-  required bool isWeb,
-  required Iterable<String> availableLocales,
-}) {
-  final code = language.toLowerCase().startsWith('ru') ? 'ru' : 'en';
-  if (isWeb) return code == 'ru' ? 'ru-RU' : 'en-US';
-
-  final available = availableLocales.toList(growable: false);
-  if (available.isEmpty) return null; // Let the native recognizer decide.
-
-  final preferred = code == 'ru' ? 'ru-RU' : 'en-US';
-  for (final locale in available) {
-    if (locale.replaceAll('_', '-').toLowerCase() == preferred.toLowerCase()) {
-      return locale;
-    }
-  }
-  for (final locale in available) {
-    if (locale.replaceAll('_', '-').toLowerCase().split('-').first == code) {
-      return locale;
-    }
-  }
-  return null;
-}
 
 /// Single LIFE OS assistant entry point. Replaces the old record-only mic FAB.
 /// No overlay over the planner, no extra button beside bottom navigation.
@@ -59,21 +30,22 @@ class _ViktorMessage {
 
 class _ViktorChatPageState extends State<ViktorChatPage> {
   final _controller = TextEditingController();
-  final _speech = stt.SpeechToText();
+  final _recorder = ViktorVoiceRecorder();
+  final _voiceGateway = const ViktorVoiceGateway();
   final _messages = <_ViktorMessage>[];
   final _settings = ViktorModelSettings.instance;
   final _gateway = const ViktorGateway();
   bool _busy = false;
   bool _listening = false;
   bool _startingMic = false;
-  bool _micFailed = false;
+  bool _transcribing = false;
   String? _voiceNotice;
   bool _settingsReady = false;
-  String _speechPrefix = '';
 
   @override
   void initState() {
     super.initState();
+    _recorder.addListener(_onRecorderChanged);
     unawaited(_loadSettings());
     _messages.add(const _ViktorMessage(
       'Я Виктор. Могу посмотреть планы, составить расписание, изменить '
@@ -97,7 +69,8 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
 
   @override
   void dispose() {
-    unawaited(_speech.cancel());
+    _recorder.removeListener(_onRecorderChanged);
+    _recorder.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -116,7 +89,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       await _openSettings();
       if (!mounted || _settings.sessionApiKey.isEmpty) return;
     }
-    if (_speech.isListening) await _speech.stop();
+    if (_listening || _transcribing || _startingMic) return;
     if (!mounted) return;
     _controller.clear();
     _push(input, mine: true);
@@ -188,110 +161,126 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     return answer == true;
   }
 
-  void _speechFailure(String error) {
-    if (!mounted || _micFailed) return;
-    _micFailed = true;
-    final code = error.toLowerCase();
-    final notice = code.contains('language') || code.contains('locale')
-        ? 'Этот браузер или устройство не поддерживает русский голосовой ввод. '
-          'Попробуйте обновлённый Chrome или Edge либо введите текст.'
-        : code.contains('permission') || code.contains('not-allowed')
-            ? 'Доступ к микрофону запрещён. Разрешите его в настройках браузера.'
-            : code.contains('network')
-                ? 'Голосовой сервис браузера недоступен по сети. '
-                  'Попробуйте ещё раз или введите текст.'
-                : 'Не удалось распознать речь. Проверьте микрофон '
-                  'или введите команду текстом.';
+  void _onRecorderChanged() {
+    if (!mounted) return;
     setState(() {
-      _listening = false;
-      // Transient UI status, never a repeated conversation message.
-      _voiceNotice = notice;
+      if (_recorder.isRecording && _recorder.durationMs > 3000 &&
+          _recorder.capturedBytes == 0) {
+        _voiceNotice = 'Микрофон открыт, но звук пока не поступает. '
+            'Проверьте разрешение и устройство ввода.';
+      }
     });
+    if (_recorder.limitReached && _recorder.isRecording &&
+        !_startingMic && !_transcribing) {
+      unawaited(_finishRecording());
+    }
+  }
+
+  String _voiceErrorText(Object error) {
+    final value = error.toString().toLowerCase();
+    if (value.contains('permission') || value.contains('not-allowed')) {
+      return 'Доступ к микрофону запрещён. Разрешите запись звука '
+          'в настройках браузера или устройства.';
+    }
+    if (value.contains('recording_too_short') ||
+        value.contains('no_speech_detected')) {
+      return 'Речь не обнаружена. Запишите голосовую команду ещё раз.';
+    }
+    if (value.contains('speech_api_key_required')) {
+      return 'Укажите API-ключ для распознавания речи в настройках Виктора.';
+    }
+    if (value.contains('speech_provider_rejected')) {
+      return 'Провайдер отклонил распознавание. Проверьте API-ключ, '
+          'баланс и доступ к голосовой модели.';
+    }
+    if (value.contains('auth_required')) {
+      return 'Для распознавания войдите в LIFE OS.';
+    }
+    if (value.contains('timeout') || value.contains('unreachable') ||
+        value.contains('network')) {
+      return 'Нет ответа от сервиса распознавания. '
+          'Проверьте сеть и попробуйте ещё раз.';
+    }
+    return 'Не удалось обработать звук. Попробуйте ещё раз.';
+  }
+
+  Future<void> _finishRecording() async {
+    if (_startingMic || _transcribing || !_recorder.isRecording) return;
+    setState(() {
+      _startingMic = true;
+      _listening = false;
+      _voiceNotice = 'Завершаю запись…';
+    });
+    try {
+      final wav = await _recorder.stop();
+      if (!mounted) return;
+      setState(() {
+        _transcribing = true;
+        _voiceNotice = 'Распознаю речь…';
+      });
+      final transcript = await _voiceGateway.transcribe(
+        wav: wav, settings: _settings);
+      if (!mounted) return;
+      final original = _controller.text.trim();
+      setState(() {
+        _controller.text = [
+          if (original.isNotEmpty) original,
+          transcript,
+        ].join(' ');
+        _controller.selection = TextSelection.collapsed(
+          offset: _controller.text.length,
+        );
+        _voiceNotice = 'Речь распознана. Проверьте текст и отправьте команду.';
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _voiceNotice = _voiceErrorText(error));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _startingMic = false;
+          _transcribing = false;
+          _listening = false;
+        });
+      }
+    }
   }
 
   Future<void> _toggleMic() async {
-    if (_busy || _startingMic) return;
-    if (_speech.isListening) {
-      await _speech.stop();
-      if (mounted) setState(() => _listening = false);
+    if (_busy || _startingMic || _transcribing) return;
+    if (_recorder.isRecording) {
+      await _finishRecording();
       return;
     }
-
-    // Lock as soon as the mic is tapped, before awaiting initialization.
-    setState(() {
-      _startingMic = true;
-      _micFailed = false;
-      _voiceNotice = null;
-    });
-
-    try {
-      if (!kIsWeb &&
-          (defaultTargetPlatform == TargetPlatform.android ||
-           defaultTargetPlatform == TargetPlatform.iOS)) {
-        final permission = await Permission.microphone.request();
-        if (!permission.isGranted) {
-          _speechFailure('permission-denied');
-          return;
-        }
-      }
-
-      final ready = await _speech.initialize(
-        onError: (error) => _speechFailure(error.errorMsg),
-        onStatus: (status) {
-          if (mounted && (status == 'done' || status == 'notListening')) {
-            setState(() => _listening = false);
-          }
-        },
-      );
+    if (!_settingsReady) return;
+    final missingKey = _settings.provider == 'openrouter'
+        ? _settings.sessionSpeechApiKey.isEmpty
+        : _settings.sessionApiKey.isEmpty;
+    if (missingKey) {
+      await _openSettings();
       if (!mounted) return;
-      if (!ready) {
-        _speechFailure('recognizer-unavailable');
+      final stillMissing = _settings.provider == 'openrouter'
+          ? _settings.sessionSpeechApiKey.isEmpty
+          : _settings.sessionApiKey.isEmpty;
+      if (stillMissing) {
+        setState(() => _voiceNotice =
+            'Для диктовки нужен API-ключ провайдера распознавания.');
         return;
       }
-
-      final localeId = viktorSpeechLocaleId(
-        language: currentLocale.value,
-        isWeb: kIsWeb,
-        availableLocales: kIsWeb
-            ? const <String>[]
-            : (await _speech.locales()).map((locale) => locale.localeId),
-      );
-
-      if (!kIsWeb && localeId == null) {
-        // On a platform that reported concrete locales, never silently
-        // transcribe a Russian utterance as English.
-        final available = await _speech.locales();
-        if (available.isNotEmpty) {
-          _speechFailure('language-not-supported');
-          return;
-        }
-      }
-
-      _speechPrefix = _controller.text.trim();
-      await _speech.listen(
-        onResult: (result) {
-          if (!mounted) return;
-          final words = result.recognizedWords.trim();
-          setState(() {
-            _controller.text = [
-              if (_speechPrefix.isNotEmpty) _speechPrefix,
-              if (words.isNotEmpty) words,
-            ].join(' ');
-            _controller.selection = TextSelection.collapsed(
-              offset: _controller.text.length,
-            );
-            if (result.finalResult) _listening = false;
-          });
-        },
-        localeId: localeId,
-        listenOptions: stt.SpeechListenOptions(
-          partialResults: true,
-          cancelOnError: false,
-        ),
-      );
-      if (mounted && !_micFailed) setState(() => _listening = true);
+    }
+    setState(() {
+      _startingMic = true;
+      _voiceNotice = 'Подключаю микрофон…';
+    });
+    try {
+      await _recorder.start();
+      if (!mounted) return;
+      setState(() {
+        _listening = true;
+        _voiceNotice = null;
+      });
     } catch (error) {
-      _speechFailure(error.toString());
+      if (mounted) setState(() => _voiceNotice = _voiceErrorText(error));
     } finally {
       if (mounted) setState(() => _startingMic = false);
     }
@@ -304,6 +293,8 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     var provider = _settings.provider;
     var model = _settings.model;
     final keyCtrl = TextEditingController(text: _settings.sessionApiKey);
+    var speechProvider = _settings.speechProvider;
+    final speechKeyCtrl = TextEditingController(text: _settings.sessionSpeechApiKey);
     final saved = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -378,6 +369,44 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                         if (v != null) updateDialog(() => model = v);
                       },
                     ),
+                    if (provider == 'openrouter') ...[
+                      const SizedBox(height: 16),
+                      const Text('Распознавание речи', style: TextStyle(fontSize: 16)),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'OpenRouter не предоставляет универсальную модель '
+                        'диктовки. Выберите отдельного провайдера для голоса.',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: speechProvider,
+                        isExpanded: true,
+                        items: const [
+                          DropdownMenuItem(value: 'groq', child: Text('Groq · Whisper')),
+                          DropdownMenuItem(value: 'openai', child: Text('OpenAI · Transcribe')),
+                          DropdownMenuItem(value: 'gemini', child: Text('Gemini · Audio')),
+                        ],
+                        onChanged: (value) {
+                          if (value == null) return;
+                          updateDialog(() {
+                            if (speechProvider != value) speechKeyCtrl.clear();
+                            speechProvider = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: speechKeyCtrl,
+                        obscureText: true,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        decoration: const InputDecoration(
+                          labelText: 'API-ключ для диктовки',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     TextField(
                       controller: keyCtrl,
@@ -419,10 +448,13 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       _settings.provider = provider;
       _settings.model = model;
       _settings.sessionApiKey = keyCtrl.text.trim();
+      _settings.speechProvider = speechProvider;
+      _settings.sessionSpeechApiKey = speechKeyCtrl.text.trim();
       await _settings.save();
       if (mounted) setState(() {});
     }
     keyCtrl.dispose();
+    speechKeyCtrl.dispose();
   }
 
   @override
@@ -498,6 +530,41 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                     },
                   ),
                 ),
+                if (_listening || _transcribing || _startingMic)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(_listening ? Icons.graphic_eq_rounded :
+                              Icons.hourglass_top_rounded,
+                              size: 20, color: scheme.primary),
+                            const SizedBox(width: 10),
+                            Text(
+                              _transcribing ? 'Распознаю запись…' :
+                                _startingMic ? 'Подключение…' :
+                                  'Запись · ${Duration(milliseconds: _recorder.durationMs).inSeconds} с',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            ),
+                            const Spacer(),
+                            if (_listening)
+                              Text('${(_recorder.capturedBytes / 1024).toStringAsFixed(0)} КБ',
+                                style: const TextStyle(fontSize: 16)),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        if (_listening)
+                          LinearProgressIndicator(
+                            minHeight: 6,
+                            value: _recorder.level.clamp(0.015, 1.0),
+                          )
+                        else
+                          const LinearProgressIndicator(minHeight: 3),
+                      ],
+                    ),
+                  ),
                 if (_voiceNotice != null)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
@@ -525,20 +592,20 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                             Icons.mic_none_rounded,
                           tooltip: _listening ? 'Остановить диктовку' :
                             'Продиктовать Виктору',
-                          onPressed: _busy || _startingMic ? null : _toggleMic,
+                          onPressed: _busy || _startingMic || _transcribing ? null : _toggleMic,
                           selected: _listening,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: TextField(
                             controller: _controller,
-                            enabled: !_busy,
+                            enabled: !_busy && !_startingMic && !_transcribing,
                             minLines: 1,
                             maxLines: 4,
                             textCapitalization: TextCapitalization.sentences,
                             style: const TextStyle(fontSize: 16),
                             decoration: InputDecoration(
-                              hintText: _listening ? 'Слушаю…' :
+                              hintText: _listening ? 'Идёт запись — нажмите стоп' :
                                 'Что сделать в LIFE OS?',
                               filled: true,
                               fillColor: scheme.surfaceContainerLow,
@@ -556,7 +623,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                         AppIconButton(
                           icon: Icons.arrow_upward_rounded,
                           tooltip: 'Отправить Виктору',
-                          onPressed: _busy || !_settingsReady ? null :
+                          onPressed: _busy || _listening || _transcribing || _startingMic || !_settingsReady ? null :
                             () => unawaited(_send()),
                           variant: AppIconButtonVariant.filled,
                         ),
