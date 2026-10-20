@@ -64,6 +64,14 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
   if (Array.isArray(body.day_plans) && body.day_plans.length > 60) {
     return e.json(413, {error: "day_context_too_large"});
   }
+  const gigaScopes = {
+    pers: "GIGACHAT_API_PERS",
+    b2b: "GIGACHAT_API_B2B",
+    corp: "GIGACHAT_API_CORP"
+  };
+  const gigaScope = provider === "gigachat"
+    ? String(body.gigachat_scope || "pers") : "pers";
+  if (!gigaScopes[gigaScope]) return e.json(400, {error: "gigachat_scope_invalid"});
   const folderId = provider === "yandex" ? String(body.yandex_folder_id || "") : "";
   if (provider === "yandex" && !/^[a-zA-Z0-9_-]{10,64}$/.test(folderId)) {
     return e.json(400, {error: "yandex_folder_id_required"});
@@ -137,7 +145,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
           "RqUID": requestUUID,
           "Authorization": "Basic " + key.replace(/^Basic\\s+/i, "")
         },
-        body: "scope=GIGACHAT_API_PERS",
+        body: "scope=" + gigaScopes[gigaScope],
         timeout: 15
       });
       if (authResponse.statusCode < 200 || authResponse.statusCode >= 300) {
