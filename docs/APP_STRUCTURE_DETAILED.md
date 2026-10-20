@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `468c5d66` on 2026-10-20.**
+**Generated from input HEAD `6f0a4057` on 2026-10-20.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 907 — each appears **exactly once** below.
+**Tracked files:** 911 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -28,16 +28,16 @@ python scripts/manual/generate_app_structure_detailed.py
 | :--- | ---: |
 | `production UI` | 181 |
 | `test` | 123 |
-| `Brain/data` | 97 |
+| `Brain/data` | 99 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
 | `developer tool` | 63 |
 | `platform resource` | 44 |
 | `governing documentation` | 41 |
 | `Desktop Voice runtime` | 36 |
-| `test fixture` | 23 |
+| `test fixture` | 24 |
 | `shared Voice system` | 20 |
-| `PocketBase backend` | 18 |
+| `PocketBase backend` | 19 |
 | `PocketBase migration` | 18 |
 | `historical engineering record` | 17 |
 | `localization` | 13 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 486 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 235 |
+| `PROVEN_REQUIRED` | 489 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 236 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 41 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 824 |
+| `HIGH` | 828 |
 | `MEDIUM` | 83 |
 
 ---
@@ -13552,7 +13552,7 @@ EN:
 - **Contents:** Dart helpers and types (`ViktorModelSettings`, `ViktorResponse`, `ViktorGateway`).
 - **Key code names:** `ViktorModelSettings`, `ViktorResponse`, `ViktorGateway`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/viktor/viktor_chat_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_voice_gateway.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13569,7 +13569,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `viktor_gateway`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/features/viktor/viktor_chat_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_voice_gateway.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -13614,6 +13614,82 @@ RU:
 - **Владелец / слой:** Brain/data
 - **Обязанности:** Поддерживает операции данных в `viktor_schedule_planner`.
 - **Когда открывать:** Когда ломается поведение, связанное с `viktor_schedule_planner.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/ai/viktor_voice_gateway.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — Signed-in transient BYOK cloud transcription and returned editable text. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Signed-in transient BYOK cloud transcription and returned editable text.
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`ViktorVoiceGateway`).
+- **Key code names:** `ViktorVoiceGateway`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/viktor/viktor_chat_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** Signed-in transient BYOK cloud transcription and returned editable text
+- **When to open:** When behavior tied to `viktor_voice_gateway.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Signed-in transient BYOK cloud transcription and returned editable text
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — viktor_voice_gateway. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — viktor_voice_gateway.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `viktor_voice_gateway`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/features/viktor/viktor_chat_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `viktor_voice_gateway`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_voice_gateway.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/ai/viktor_voice_recorder.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — Real PCM16 microphone capture and WAV encoding, audio-level and duration feedback. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Real PCM16 microphone capture and WAV encoding, audio-level and duration feedback.
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`ViktorVoiceRecorder`).
+- **Key code names:** `ViktorVoiceRecorder`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/viktor/viktor_chat_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** Real PCM16 microphone capture and WAV encoding, audio-level and duration feedback
+- **When to open:** When behavior tied to `viktor_voice_recorder.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Real PCM16 microphone capture and WAV encoding, audio-level and duration feedback
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — viktor_voice_recorder. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — viktor_voice_recorder.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `viktor_voice_recorder`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/features/viktor/viktor_chat_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `viktor_voice_recorder`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_voice_recorder.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
@@ -15146,7 +15222,7 @@ EN:
 - **Contents:** Dart helpers and types (`PbAppApiRoutes`, `PbCollections`, `PbOauthProviderNames`).
 - **Key code names:** `PbAppApiRoutes`, `PbCollections`, `PbOauthProviderNames`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_gateway.dart`, `lib/data/auth_bridge.dart`, `lib/data/calendar_integrations/calendar_integration_service.dart`, `lib/data/database_service.dart`, `lib/data/health/cloud_sleep_sync_service.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_voice_gateway.dart`, `lib/data/auth_bridge.dart`, `lib/data/calendar_integrations/calendar_integration_service.dart`, `lib/data/database_service.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -15163,7 +15239,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `pb_config`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_gateway.dart`, `lib/data/auth_bridge.dart`, `lib/data/calendar_integrations/calendar_integration_service.dart`, `lib/data/database_service.dart`, `lib/data/health/cloud_sleep_sync_service.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_voice_gateway.dart`, `lib/data/auth_bridge.dart`, `lib/data/calendar_integrations/calendar_integration_service.dart`, `lib/data/database_service.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -17004,7 +17080,7 @@ EN:
 - **Contents:** Dart helpers and types (`TimeViewFixedTagPrefs`).
 - **Key code names:** `TimeViewFixedTagPrefs`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_drag_and_reschedule.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_drag_and_reschedule.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -17021,7 +17097,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `time_view_fixed_time_policy`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/features/calendar/calendar_drag_and_reschedule.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_drag_and_reschedule.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -29468,6 +29544,43 @@ RU:
 - **Связано с:** PocketBase Admin, Flutter auth/records client.
 
 
+### `pb_hooks/viktor.transcribe.pb.js`
+
+EN:
+
+- **Human purpose:** PocketBase server hook `viktor.transcribe` — runs on VPS when specific API events fire. Some rules (password reset email, overlapping records) must be enforced server-side.
+- **What this is:** PocketBase server hook `viktor.transcribe` — runs on VPS when specific API events fire.
+- **Why needed:** Some rules (password reset email, overlapping records) must be enforced server-side.
+- **Contents:** JavaScript hook handler copied to PocketBase `pb_hooks/` on server.
+- **Repository role:** PocketBase backend
+- **Evidence of use:** Server-side PocketBase hook; deployed with the PB instance (see `docs/POCKETBASE_MANIFEST.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken server-side validation/automation for PB collections.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase backend
+- **Responsibilities:** Server-side logic for `viktor.transcribe` (see `docs/POCKETBASE_MANIFEST.md`).
+- **When to open:** Server behavior differs from app expectations for auth/records.
+- **Can it be deleted?** No — production PocketBase deployment.
+- **Connected to:** PocketBase Admin, Flutter auth/records client.
+
+RU:
+
+- **Зачем файл человеку:** PocketBase hook `viktor.transcribe` — серверная логика при API-событиях на VPS. Часть правил (reset пароля, overlap записей) должна выполняться на сервере, не в APK.
+- **Что это:** PocketBase hook `viktor.transcribe` — серверная логика при API-событиях на VPS.
+- **Зачем:** Часть правил (reset пароля, overlap записей) должна выполняться на сервере, не в APK.
+- **Содержимое:** JavaScript handler `viktor.transcribe.pb.js` — копируется в PocketBase `pb_hooks/` на VPS.
+- **Роль в репозитории:** PocketBase backend
+- **Доказательства использования:** Серверный hook PocketBase; деплоится вместе с PB (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается серверная логика PocketBase.
+- **Уверенность:** HIGH
+- **Владелец / слой:** PocketBase backend
+- **Обязанности:** Серверная логика для `viktor.transcribe` (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Когда открывать:** Поведение auth/records на сервере не совпадает с ожиданиями приложения.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** PocketBase Admin, Flutter auth/records client.
+
+
 ### `pb_hooks/xiaomi_sleep_bridge.py`
 
 EN:
@@ -37245,6 +37358,43 @@ RU:
 - **Когда открывать:** Падение CI или правка кода рядом с `viktor_action_contract`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/viktor_audio_transcribe_hook_test.cjs`
+
+EN:
+
+- **Human purpose:** Automated test `viktor_audio_transcribe_hook_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `viktor_audio_transcribe_hook_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: test groups).
+- **Repository role:** test fixture
+- **Evidence of use:** Read/referenced by: `.github/workflows/deploy-pocketbase.yml`, `docs/POCKETBASE_MANIFEST.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `viktor_audio_transcribe_hook_test` scenario.
+- **When to open:** CI failure or changing code near `viktor_audio_transcribe_hook`.
+- **Can it be deleted?** Broken fixture-backed test or missing diagnostic sample.
+- **Connected to:** `test/` suite; production subject near `viktor_audio_transcribe_hook`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `viktor_audio_transcribe_hook_test` — проверяет поведение без ручных нажатий. Ловит регрессии при правках связанного production-кода.
+- **Что это:** Автотест `viktor_audio_transcribe_hook_test` — проверяет поведение без ручных нажатий.
+- **Зачем:** Ловит регрессии при правках связанного production-кода.
+- **Содержимое:** Тест-кейсы (символы: test groups).
+- **Роль в репозитории:** test fixture
+- **Доказательства использования:** Читается/упоминается: `.github/workflows/deploy-pocketbase.yml`, `docs/POCKETBASE_MANIFEST.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Проверяет ожидаемое поведение сценария `viktor_audio_transcribe_hook_test`.
+- **Когда открывать:** Падение CI или правка кода около `viktor_audio_transcribe_hook`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Набор `test/`; production-субъект около `viktor_audio_transcribe_hook`.
 
 
 ### `test/viktor_chat_layout_test.dart`
