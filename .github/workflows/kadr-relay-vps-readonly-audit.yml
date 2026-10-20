@@ -63,5 +63,15 @@ jobs:
             code=$(curl -k -sS -o /dev/null -w '%{http_code}' --connect-timeout 4 --max-time 8 "$target" 2>/dev/null || true)
             echo "${name}_http=${code:-000}"
           done
+          echo 'LISTENER_AND_SERVICE_DETAILS'
+          if command -v ss >/dev/null 2>&1; then
+            ss -ltnp 2>/dev/null | grep -E '(:443 |:443$|:8780 |:8780$|:8080 |:8080$)' | sed -E 's/.*users:\(\(("([^"]+)".*/socket_process=\1/' | sort -u | head -10 || true
+          fi
+          for service in caddy nginx apache2 haproxy traefik docker; do
+            state=$(systemctl is-active "$service" 2>/dev/null || true)
+            echo "service_${service}=${state:-unknown}"
+          done
+          docker ps --format '{{.Names}}' 2>/dev/null | wc -l | awk '{print "docker_running_containers="$1}'
+          echo 'LISTENER_AND_SERVICE_END'
           echo 'READ_ONLY_AUDIT_END'
           REMOTE
