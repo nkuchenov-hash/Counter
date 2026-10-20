@@ -26,6 +26,10 @@ class ViktorModelSettings {
   String provider = 'openai';
   String model = 'gpt-4o-mini';
   String sessionApiKey = '';
+  // A different speech provider can be used with OpenRouter text models.
+  // Both credentials are session-only and never saved in preferences.
+  String speechProvider = 'groq';
+  String sessionSpeechApiKey = '';
   bool _loaded = false;
   String? _credentialOwner;
 
@@ -33,6 +37,7 @@ class ViktorModelSettings {
     final id = userId.trim();
     if (_credentialOwner != null && _credentialOwner != id) {
       sessionApiKey = '';
+      sessionSpeechApiKey = '';
     }
     _credentialOwner = id;
   }
@@ -43,6 +48,11 @@ class ViktorModelSettings {
     // Until the hosted model has durable metering, beta only offers BYOK.
     // Ignore a pre-release stored hosted selection to avoid a dead first-run UI.
     mode = 'byok';
+    final savedSpeech = prefs.getString('viktor_speech_provider');
+    if (savedSpeech == 'groq' || savedSpeech == 'openai' ||
+        savedSpeech == 'gemini') {
+      speechProvider = savedSpeech!;
+    }
     final savedProvider = prefs.getString('viktor_provider');
     if (models.containsKey(savedProvider)) provider = savedProvider!;
     final savedModel = prefs.getString('viktor_model');
@@ -63,6 +73,7 @@ class ViktorModelSettings {
     await prefs.setString('viktor_mode', mode);
     await prefs.setString('viktor_provider', provider);
     await prefs.setString('viktor_model', model);
+    await prefs.setString('viktor_speech_provider', speechProvider);
     // Deliberately never persist the raw provider credential.
   }
 
