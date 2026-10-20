@@ -69,3 +69,69 @@ class TimeViewFixedTagPrefs {
     return out;
   }
 }
+
+
+/// Only the dragged task and its connected collision chain may move.
+/// Existing unrelated overlaps elsewhere on the day are not normalized by a
+/// single drag. A fixed plan rejects the move only if this chain reaches it.
+List<PlanningTask>? cascadeTimeViewAffectedChain({
+  required List<PlanningTask> orderedTasks,
+  required Set<String> draggedPlanIds,
+  required Set<String> fixedPlanIds,
+  required int Function(PlanningTask task) durationMinutes,
+}) {
+  final out = <PlanningTask>[];
+  DateTime? occupiedUntil;
+  var activeChain = draggedPlanIds.isEmpty;
+  for (final task in orderedTasks) {
+    final originalStart = task.startTime;
+    if (originalStart == null) {
+      out.add(task);
+      continue;
+    }
+    final id = task.planRowIdForBackend;
+    final moved = draggedPlanIds.contains(id);
+    var start = originalStart;
+    final collision = occupiedUntil != null && start.isBefore(occupiedUntil);
+    if (moved) activeChain = true;
+    if (collision && activeChain) {
+      if (fixedPlanIds.contains(id) && !moved) return null;
+      start = occupiedUntil;
+    } else if (!collision && !moved && draggedPlanIds.isNotEmpty) {
+      activeChain = false;
+    }
+    final end = start.add(Duration(minutes: durationMinutes(task)));
+    out.add(task.copyWith(startTime: start, endDateTime: end, clearEnd: false));
+    if (occupiedUntil == null || end.isAfter(occupiedUntil)) {
+      occupiedUntil = end;
+    }
+  }
+  return out;
+}
+
+/// Reject overlaps caused by the move, not pre-existing conflicts between
+/// untouched plans somewhere else on the day.
+bool timeViewAffectedPlansHaveOverlap({
+  required List<PlanningTask> original,
+  required List<PlanningTask> resolved,
+  required Set<String> draggedPlanIds,
+  required int Function(PlanningTask task) durationMinutes,
+}) {
+  final before = {for (final task in original) task.planRowIdForBackend: task};
+  final scheduled = resolved.where((task) => task.startTime != null).toList();
+  for (final task in scheduled) {
+    final id = task.planRowIdForBackend;
+    if (!draggedPlanIds.contains(id) && before[id]?.startTime == task.startTime) {
+      continue;
+    }
+    final start = task.startTime!;
+    final end = start.add(Duration(minutes: durationMinutes(task)));
+    for (final other in scheduled) {
+      if (other.planRowIdForBackend == id) continue;
+      final otherStart = other.startTime!;
+      final otherEnd = otherStart.add(Duration(minutes: durationMinutes(other)));
+      if (start.isBefore(otherEnd) && otherStart.isBefore(end)) return true;
+    }
+  }
+  return false;
+}
