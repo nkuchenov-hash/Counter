@@ -118,6 +118,30 @@ assert.equal(selected.status, 200);
 const modelContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
 assert.deepEqual(modelContext.selected_plan_ids, ['aaaaabbbbbccccc']);
 
+
+const bulk = invoke({...base,
+  next_day: '2026-10-21',
+  profile_timezone: 'New York',
+  day_plans: [{
+    id: 'aaaaabbbbbccccc', title: 'Completed plan', is_done: true,
+    start_time: '09:00', duration_minutes: 30, recurrent: false,
+  }],
+  next_day_plans: [{
+    id: 'dddddeeeeefffff', title: 'Existing tomorrow', is_done: false,
+    start_time: '10:00', duration_minutes: 30, recurrent: false,
+  }],
+});
+assert.equal(bulk.status, 200);
+const bulkContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
+assert.equal(bulkContext.day_plans[0].is_done, true,
+  'Completion status must be supplied to the model');
+assert.equal(bulkContext.next_day_plans[0].start_time, '10:00',
+  'Tomorrow obstacles must be supplied');
+assert.equal(bulkContext.profile_timezone, 'New York');
+assert.equal(bulkContext.next_day, '2026-10-21');
+assert.match(JSON.parse(lastRequest.body).messages[0].content, /bulk_replan/,
+  'Model receives the generic bulk planning tool schema');
+
 const protectSource = fs.readFileSync('pb_hooks/viktor.protect_tier.pb.js', 'utf8');
 const hooks = {};
 vm.runInNewContext(protectSource, {

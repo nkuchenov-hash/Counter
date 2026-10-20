@@ -2,13 +2,60 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'viktor_action_contract.dart';
 import 'viktor_schedule_planner.dart';
+import 'package:counter/shared/time/profile_timezone_catalog.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 /// Application-only execution: re-read state, compare the approved result, then
 /// use the existing Brain. No model is ever given direct database access.
 class ViktorExecutor {
   ViktorExecutor(this.db);
   final DatabaseService db;
+
   final ViktorSchedulePlanner _planner = const ViktorSchedulePlanner();
+  final ViktorBulkPlanner _bulk = const ViktorBulkPlanner();
+  String? _bulkSignature;
+
+  Future<ViktorBulkPreview> _planBulk(ViktorAction action, DateTime day) async {
+    final operations = action.arguments['operations'] as List;
+    final targetDays = <String>{
+      for (final raw in operations)
+        if ((raw as Map)['kind'] == 'move') raw['target_day'] as String,
+    };
+    if (targetDays.length > 1) {
+      throw StateError('Несколько целевых дней: разделите запрос.');
+    }
+    final dest = targetDays.isEmpty ? null : targetDays.single;
+    final source = await db.getPlanningTasksForWallDate(day);
+    final target = dest == null ? <PlanningTask>[] :
+      await db.getPlanningTasksForWallDate(DateTime.parse(dest));
+    DateTime wallTime(String date, String time, String zone) {
+      final parts = date.split('-').map(int.parse).toList();
+      final clock = time.split(':').map(int.parse).toList();
+      final requested = zone.trim();
+      if (requested.isEmpty || requested == 'profile' ||
+          profileTimezoneValuesMatch(requested, db.settings.preferredTimeZone)) {
+        return DateTime(parts[0], parts[1], parts[2], clock[0], clock[1]);
+      }
+      final catalog = catalogEntryForStoredTimezone(requested);
+      if (catalog == null) {
+        throw StateError('Неизвестный часовой пояс: $requested');
+      }
+      final zoned = tz.TZDateTime(tz.getLocation(catalog.ianaId),
+        parts[0], parts[1], parts[2], clock[0], clock[1]);
+      if (zoned.year != parts[0] || zoned.month != parts[1] ||
+          zoned.day != parts[2] || zoned.hour != clock[0] ||
+          zoned.minute != clock[1]) {
+        throw StateError('Указанное время отсутствует из-за перевода часов.');
+      }
+      return db.applyUserOffset(zoned.toUtc());
+    }
+    return _bulk.calculate(
+      action: action, source: source, target: target,
+      sourceDay: _key(day), targetDay: dest, wallTime: wallTime,
+      fixedTime: _fixed,
+    );
+  }
+
 
   static String _key(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-'
@@ -49,6 +96,14 @@ class ViktorExecutor {
 
   Future<String> describe(ViktorActionBatch batch, DateTime day) async {
     _checkScope(batch, day);
+    if (batch.actions.any((a) => a.name == 'bulk_replan')) {
+      if (batch.actions.length != 1) {
+        throw StateError('Групповая операция должна выполняться отдельно.');
+      }
+      final preview = await _planBulk(batch.actions.single, day);
+      _bulkSignature = preview.signature;
+      return preview.describe();
+    }
     final plans = await db.getPlanningTasksForWallDate(day);
     final lines = <String>[];
     for (final action in batch.actions) {
@@ -125,10 +180,44 @@ class ViktorExecutor {
   Future<String> apply(ViktorActionBatch batch, DateTime day, {
     required String approvedPreview,
   }) async {
+    final approvedSignature = _bulkSignature;
     final fresh = await describe(batch, day);
-    if (fresh != approvedPreview) {
+    if (fresh != approvedPreview ||
+        (batch.actions.length == 1 &&
+         batch.actions.single.name == 'bulk_replan' &&
+         approvedSignature != _bulkSignature)) {
       throw StateError('Расписание изменилось после подтверждения. '
           'Проверьте новый вариант.');
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'bulk_replan') {
+      final result = await _planBulk(batch.actions.single, day);
+      if (result.signature != _bulkSignature) {
+        throw StateError('Планы изменились после подтверждения.');
+      }
+      final patches = <PlanningBulkPatch>[
+        for (final m in result.moves)
+          PlanningBulkPatch(
+            planRowId: m.plan.recordIdForBackend,
+            planBusinessId: m.plan.planRowId,
+            startTimeDisplay: m.start,
+            endDateTimeDisplay: m.end,
+            initialDateKey: m.kind == 'move'
+              ? db.planningAuditAnchorDateKey(m.plan) : null,
+            isPostponed: m.kind == 'move'
+              ? db.planningShouldMarkPostponed(
+                  anchorKey: db.planningAuditAnchorDateKey(m.plan),
+                  newScheduleKey: m.day,
+                ) : null,
+          ),
+      ];
+      final ok = await db.bulkUpdatePlans(patches, suppressAppSnack: true);
+      if (!ok) {
+        throw StateError('Не все изменения сохранены. Проверьте оба дня '
+            'перед повторной попыткой.');
+      }
+      return 'Изменено планов: ${result.moves.length}. '
+          'Проверьте синхронизацию.';
     }
     final plans = await db.getPlanningTasksForWallDate(day);
     final preview = _schedule(batch, day, plans);
@@ -158,6 +247,7 @@ class ViktorExecutor {
         case 'update_plan_duration':
         case 'move_plan_after':
         case 'swap_plan_positions':
+        case 'bulk_replan':
           break;
         case 'create_plan':
           final category = db.defaultCategoryId ??

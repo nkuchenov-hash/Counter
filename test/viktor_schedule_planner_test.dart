@@ -182,4 +182,82 @@ void main() {
       'plan_id': a, 'after_plan_id': a, 'wall_day': '2026-10-17',
     }}]), throwsFormatException);
   });
+
+  test('bulk replan moves incomplete tomorrow and compacts completed today', () {
+    final source = [
+      task(a, 'Completed morning', 540, 600).copyWith(isDone: true),
+      task(b, 'Incomplete midday', 600, 660),
+      task(c, 'Completed afternoon', 660, 720).copyWith(isDone: true),
+      task('jjjjjkkkkklllll', 'Incomplete evening', 720, 780),
+    ];
+    final action = proposal([{
+      'name': 'bulk_replan',
+      'arguments': {'operations': [
+        {
+          'kind': 'move', 'status': 'incomplete',
+          'source_day': '2026-10-17', 'target_day': '2026-10-18',
+          'start_time': '09:00', 'timezone': 'New York',
+        },
+        {
+          'kind': 'compact', 'status': 'complete',
+          'source_day': '2026-10-17',
+        },
+      ]},
+    }]).actions.single;
+    final result = const ViktorBulkPlanner().calculate(
+      action: action, source: source, target: [],
+      sourceDay: '2026-10-17', targetDay: '2026-10-18',
+      wallTime: (date, hhmm, zone) {
+        expect(zone, 'New York');
+        final h = int.parse(hhmm.split(':')[0]);
+        final m = int.parse(hhmm.split(':')[1]);
+        final parts = date.split('-').map(int.parse).toList();
+        return DateTime(parts[0], parts[1], parts[2], h, m);
+      },
+      fixedTime: (_) => false,
+    );
+    final byId = {for (final move in result.moves) move.plan.pocketRecordId: move};
+    expect(byId[b]!.day, '2026-10-18');
+    expect(byId[b]!.start.hour, 9);
+    expect(byId['jjjjjkkkkklllll']!.start.hour, 10);
+    expect(byId[a]!.day, '2026-10-17');
+    expect(byId[c]!.start.hour, 10);
+    expect(result.describe(), contains('Incomplete evening'));
+  });
+
+  test('bulk replan rejects destination collision before any write', () {
+    final action = proposal([{
+      'name': 'bulk_replan',
+      'arguments': {'operations': [{
+        'kind': 'move', 'status': 'incomplete',
+        'source_day': '2026-10-17',
+        'target_day': '2026-10-18',
+        'start_time': '09:00',
+      }]},
+    }]).actions.single;
+    expect(() => const ViktorBulkPlanner().calculate(
+      action: action, source: [task(a, 'Move', 600, 660)],
+      target: [
+        task(b, 'Existing tomorrow', 570, 630).copyWith(
+          dateKey: '2026-10-18',
+          startTime: DateTime(2026, 10, 18, 9, 30),
+          endDateTime: DateTime(2026, 10, 18, 10, 30),
+        ),
+      ],
+      sourceDay: '2026-10-17', targetDay: '2026-10-18',
+      wallTime: (date, clock, _) => DateTime(2026, 10, 18, 9),
+      fixedTime: (_) => false,
+    ), throwsStateError);
+  });
+
+  test('bulk filter contract rejects missing status and invalid dates', () {
+    expect(() => proposal([{
+      'name': 'bulk_replan',
+      'arguments': {'operations': [{
+        'kind': 'move', 'source_day': '2026-10-17',
+        'target_day': '2026-10-18', 'start_time': '09:00',
+      }]},
+    }]), throwsFormatException);
+  });
+
 }

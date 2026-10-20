@@ -23,8 +23,8 @@ const sandbox = {
         return {statusCode: 200, raw: JSON.stringify({done: ready})};
       }
       if (request.url.includes('getRecognition')) {
-        assert.ok(request.url.endsWith('getRecognition?operationId=recognition12345'),
-          'SpeechKit REST v3 requires the camelCase operationId parameter');
+        assert.ok(request.url.endsWith('getRecognition?operation_id=recognition12345'),
+          'SpeechKit REST v3 requires operation_id (per official Yandex docs)');
         const result = resultMode === 'refinement'
           ? {finalRefinement: {normalizedText: {
               alternatives: [{text: 'Включи запись'}]}}}

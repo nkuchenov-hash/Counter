@@ -98,7 +98,7 @@ routerAdd("POST", "/api/viktor/transcribe-yandex/status", (e) => {
     if (!state.done) return e.json(202, {status: "pending"});
     if (state.error) return e.json(502, {error: "speech_provider_rejected"});
     const recognized = $http.send({
-      url: "https://stt.api.cloud.yandex.net/stt/v3/getRecognition?operationId=" +
+      url: "https://stt.api.cloud.yandex.net/stt/v3/getRecognition?operation_id=" +
         request.operationId,
       method: "GET", headers, timeout: 15
     });
