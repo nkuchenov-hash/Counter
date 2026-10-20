@@ -558,7 +558,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                         if (_listening)
                           LinearProgressIndicator(
                             minHeight: 6,
-                            value: _recorder.level.clamp(0.015, 1.0),
+                            value: _recorder.level.clamp(0.015, 1.0).toDouble(),
                           )
                         else
                           const LinearProgressIndicator(minHeight: 3),
