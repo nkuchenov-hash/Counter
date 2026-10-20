@@ -44,9 +44,31 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     return e.json(400, {error: "unsupported_model"});
   }
   let key = "";
+  let savedVault = null;
   if (mode === "byok") {
     key = String(body.api_key || "").trim();
-    if (key.length < 12 || key.length > 512) return e.json(400, {error: "api_key_required"});
+    if (key.length === 0) {
+      // The server can use its own encrypted account vault when a different
+      // device sends no credential. Never expose decrypted BYOK keys to UI.
+      const vaultKey = String($os.getenv("VIKTOR_VAULT_KEY") || "");
+      if (vaultKey.length === 32) {
+        try {
+          const row = $app.findFirstRecordByFilter(
+            "viktor_connections",
+            "user_id = {:owner} && provider = {:provider}",
+            {owner: auth.id, provider: provider}
+          );
+          const raw = $security.decrypt(row.getString("payload_enc"), vaultKey);
+          savedVault = JSON.parse(typeof raw === "string"
+            ? raw : Buffer.from(raw).toString("utf8"));
+          key = String(savedVault.api_key || "").trim();
+        } catch (_) {
+          return e.json(400, {error: "api_key_required"});
+        }
+      }
+    }
+    if (key.length < 12 || key.length > 512)
+      return e.json(400, {error: "api_key_required"});
   } else if (mode === "hosted") {
     if (provider !== "openai" || $os.getenv("VIKTOR_HOSTED_ENABLED") !== "1") {
       return e.json(503, {error: "hosted_not_configured"});
@@ -71,9 +93,12 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     corp: "GIGACHAT_API_CORP"
   };
   const gigaScope = provider === "gigachat"
-    ? String(body.gigachat_scope || "pers") : "pers";
+    ? String(body.gigachat_scope ||
+      (savedVault && savedVault.gigachat_scope) || "pers") : "pers";
   if (!gigaScopes[gigaScope]) return e.json(400, {error: "gigachat_scope_invalid"});
-  const folderId = provider === "yandex" ? String(body.yandex_folder_id || "") : "";
+  const folderId = provider === "yandex" ?
+    (String(body.yandex_folder_id || "").trim() ||
+     (savedVault ? String(savedVault.folder_id || "") : "")) : "";
   if (provider === "yandex" && !/^[a-zA-Z0-9_-]{10,64}$/.test(folderId)) {
     return e.json(400, {error: "yandex_folder_id_required"});
   }
