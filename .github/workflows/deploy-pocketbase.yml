@@ -40,6 +40,7 @@ jobs:
           for file in "${files[@]}"; do node --check "$file"; done
           node test/viktor_pocketbase_hook_test.cjs
           node test/viktor_audio_transcribe_hook_test.cjs
+          node test/viktor_yandex_voice_hook_test.cjs
 
       - name: Detect PocketBase bundle changes
         id: changes
