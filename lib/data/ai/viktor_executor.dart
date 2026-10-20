@@ -92,6 +92,8 @@ class ViktorExecutor {
               '${a['duration_minutes']} мин.');
         case 'move_plan_after':
           lines.add('Переставить план сразу после выбранного.');
+        case 'swap_plan_positions':
+          lines.add('Поменять местами две выбранные карточки.');
         case 'start_record':
           if (db.canonicalPrimaryRunningBusinessId != null) {
             throw StateError('Уже есть активная запись. Остановите её сначала.');
@@ -155,6 +157,7 @@ class ViktorExecutor {
         case 'list_day_plans':
         case 'update_plan_duration':
         case 'move_plan_after':
+        case 'swap_plan_positions':
           break;
         case 'create_plan':
           final category = db.defaultCategoryId ??
