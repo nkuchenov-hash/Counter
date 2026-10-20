@@ -1,3 +1,9 @@
+## 2026-10-19 — Optional Timeline morning check-in [feature]
+
+- Added Settings → Preferences → Start of day (mobile Settings also) to disable or re-enable the automatic "Start the day" sleep check-in.
+- The default remains enabled. The per-profile device preference survives restart; the gate skips suppressed prompts without modifying sleep imports, stored sleep records, or per-day completed check-ins.
+- Added preference isolation/persistence tests; no PocketBase schema changes.
+
 ## 2026-10-19 — Restore real Notes folder paper, spacing and fixed tab positions [fix]
 
 - Correct regression in Lists where merely selecting a pinned category removed/reinserted it at the front, wrote altered preference order and scrolled tabs to start. Selection now preserves position and scroll offset.

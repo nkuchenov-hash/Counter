@@ -12,6 +12,13 @@ This document defines how Life OS behaves when people interact with it. It is th
 - Loading, empty, disabled, and offline states are first-class states, not afterthought text.
 - Feature screens compose canonical components from `lib/core/widgets/` and approved shared feature widgets.
 
+## Morning Start prompt (Timeline)
+
+- The existing "Start the day" sleep check-in is enabled by default. Settings → Preferences → Start of day provides an explicit on/off switch (also available on mobile Settings).
+- The switch is stored in device-local SharedPreferences under the signed-in profile's ID and survives application restarts. It is not synchronized to other devices.
+- When disabled, Timeline's morning gate must never open the check-in automatically. Enabling it restores the existing one-per-day, wake-window and done/dismissed rules.
+- This visibility preference does not disable sleep synchronization, delete sleep records, or alter the existing first-activity start flow.
+
 ## Tap Feedback
 
 - Tappable controls must have an obvious pressed/selected/disabled state.
