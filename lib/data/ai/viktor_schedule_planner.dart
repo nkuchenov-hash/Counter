@@ -30,7 +30,8 @@ class ViktorSchedulePlanner {
   }) {
     final edits = actions.where((a) =>
         a.name == 'update_plan_duration' ||
-        a.name == 'move_plan_after').toList(growable: false);
+        a.name == 'move_plan_after' ||
+        a.name == 'swap_plan_positions').toList(growable: false);
     final ordered = plans.where((p) =>
         p.startTime != null && p.endDateTime != null).toList()
       ..sort((a, b) {
@@ -67,8 +68,34 @@ class ViktorSchedulePlanner {
       return id;
     }
     final forcedAfterIds = <String>{};
+    int? swapFirstIndex;
+    int? swapLastIndex;
+    DateTime? swapAnchorStart;
     for (final action in edits) {
       final a = action.arguments;
+      if (action.name == 'swap_plan_positions') {
+        if (swapFirstIndex != null || edits.length != 1) {
+          throw StateError('Обмен двух планов должен быть отдельной операцией.');
+        }
+        final leftId = resolve(a['first_plan_id'] as String);
+        final rightId = resolve(a['second_plan_id'] as String);
+        final left = ordered.indexWhere((p) => p.pocketRecordId == leftId);
+        final right = ordered.indexWhere((p) => p.pocketRecordId == rightId);
+        if (left == right || left < 0 || right < 0) {
+          throw StateError('Две разные карточки не найдены.');
+        }
+        if (immutable(ordered[left]) || immutable(ordered[right]) ||
+            fixedTime(ordered[left]) || fixedTime(ordered[right])) {
+          throw StateError('Закреплённую или повторяющуюся задачу нельзя обменять.');
+        }
+        swapFirstIndex = left < right ? left : right;
+        swapLastIndex = left > right ? left : right;
+        swapAnchorStart = ordered[swapFirstIndex].startTime!;
+        final previous = ordered[left];
+        ordered[left] = ordered[right];
+        ordered[right] = previous;
+        continue;
+      }
       final id = resolve(a['plan_id'] as String);
       var i = ordered.indexWhere((p) => p.pocketRecordId == id);
       final current = ordered[i];
@@ -107,13 +134,21 @@ class ViktorSchedulePlanner {
     }
     final updated = <PlanningTask>[];
     DateTime? cursor;
-    for (final p in ordered) {
+    for (var index = 0; index < ordered.length; index++) {
+      final p = ordered[index];
       final duration = p.endDateTime!.difference(p.startTime!).inMinutes;
       if (duration < 10 || duration > 1440) {
         throw StateError('Некорректная длительность плана.');
       }
       var start = p.startTime!;
-      if (cursor != null &&
+      // A swap exchanges ordinal positions, NOT just the two start times.
+      // Reflow the affected segment from the earlier card's original start.
+      if (swapFirstIndex == index) {
+        start = swapAnchorStart!;
+      } else if (swapFirstIndex != null &&
+          index > swapFirstIndex && index <= swapLastIndex!) {
+        start = cursor!;
+      } else if (cursor != null &&
           (start.isBefore(cursor) || forcedAfterIds.contains(p.pocketRecordId))) {
         start = cursor;
       }
