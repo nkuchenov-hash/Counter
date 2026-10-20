@@ -6,12 +6,14 @@ import 'package:counter/data/pb_config.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'viktor_action_contract.dart';
 import 'viktor_schedule_planner.dart';
 
-/// Model selection is local preference. API keys are intentionally only kept
-/// in process memory: they are NOT written to SharedPreferences or PocketBase.
+/// Model and folder preferences are local. BYOK credentials can optionally be
+/// retained in OS/browser-backed secure storage, scoped to LIFE OS user ID.
+/// Never put API keys into SharedPreferences or PocketBase.
 class ViktorModelSettings {
   ViktorModelSettings._();
   static final ViktorModelSettings instance = ViktorModelSettings._();
@@ -31,19 +33,71 @@ class ViktorModelSettings {
   String yandexFolderId = '';
   String gigachatScope = 'pers';
   String sessionApiKey = '';
-  // GigaChat and OpenRouter can use a separate STT provider. YandexGPT
-  // shares its AI Studio service-account key with Yandex SpeechKit.
-  // Both credentials are session-only and never saved in preferences.
+  // One Yandex key may be used for YandexGPT and SpeechKit.
   String speechProvider = 'groq';
   String sessionSpeechApiKey = '';
+  /// Default on for new connections. User can opt out in Viktor settings.
+  bool rememberConnection = true;
+  static const _secrets = FlutterSecureStorage();
   bool _loaded = false;
   String? _credentialOwner;
+
+  // Secure storage is scoped by authenticated user AND provider, never shared
+  // between accounts or between distinct model/speech vendors.
+  String _apiKeyId(String owner, String provider) =>
+      'viktor/byok/$owner/model/$provider';
+  String _speechKeyId(String owner, String provider) =>
+      'viktor/byok/$owner/speech/$provider';
+  String _folderId(String owner) => 'viktor/byok/$owner/yandex_folder';
+
+  Future<void> restoreConnectionForOwner(String userId) async {
+    final id = userId.trim();
+    ensureOwner(id);
+    if (id.isEmpty || id == 'signed_out') return;
+    final prefs = await SharedPreferences.getInstance();
+    rememberConnection =
+        prefs.getBool('viktor_remember_connection_$id') ?? true;
+    if (!rememberConnection) return;
+    try {
+      // Never overwrite a newly typed in-memory credential with an older
+      // persisted value (e.g. during account hydration).
+      if (sessionApiKey.trim().isEmpty) {
+        sessionApiKey = await _secrets.read(
+            key: _apiKeyId(id, provider)) ?? '';
+      }
+      if (sessionSpeechApiKey.trim().isEmpty) {
+        sessionSpeechApiKey = await _secrets.read(
+            key: _speechKeyId(id, speechProvider)) ?? '';
+      }
+      final backupFolder = await _secrets.read(key: _folderId(id));
+      if (yandexFolderId.trim().isEmpty && backupFolder != null) {
+        yandexFolderId = backupFolder;
+        await prefs.setString('viktor_yandex_folder_id', backupFolder);
+      }
+    } catch (_) {
+      // Storage may be unavailable (private browsing, denied browser crypto).
+      // Keep current-session functionality and never delete an existing key.
+    }
+  }
+
+  Future<void> deleteSavedConnection() async {
+    final owner = _credentialOwner?.trim() ?? '';
+    if (owner.isEmpty || owner == 'signed_out') return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('viktor_remember_connection_$owner', false);
+    rememberConnection = false;
+    // Remove only this account's connection, never any other account's keys.
+    await _secrets.delete(key: _apiKeyId(owner, provider));
+    await _secrets.delete(key: _speechKeyId(owner, speechProvider));
+    await _secrets.delete(key: _folderId(owner));
+  }
 
   void ensureOwner(String userId) {
     final id = userId.trim();
     if (_credentialOwner != null && _credentialOwner != id) {
       sessionApiKey = '';
       sessionSpeechApiKey = '';
+      yandexFolderId = '';
     }
     _credentialOwner = id;
   }
@@ -85,9 +139,34 @@ class ViktorModelSettings {
     await prefs.setString('viktor_provider', provider);
     await prefs.setString('viktor_model', model);
     await prefs.setString('viktor_speech_provider', speechProvider);
-    await prefs.setString('viktor_yandex_folder_id', yandexFolderId);
+    // Never erase a previously saved folder when the editor submits an empty
+    // value accidentally. Explicit disconnect is a separate user action.
+    if (yandexFolderId.trim().isNotEmpty) {
+      await prefs.setString('viktor_yandex_folder_id', yandexFolderId);
+    }
     await prefs.setString('viktor_gigachat_scope', gigachatScope);
-    // Deliberately never persist the raw provider credential.
+    final owner = _credentialOwner?.trim() ?? '';
+    if (owner.isEmpty || owner == 'signed_out') return;
+    await prefs.setBool('viktor_remember_connection_$owner',
+        rememberConnection);
+    if (rememberConnection) {
+      // A failed secure write must be visible to the caller; do not claim
+      // persistence when the browser rejects it.
+      if (sessionApiKey.trim().isNotEmpty) {
+        await _secrets.write(key: _apiKeyId(owner, provider),
+          value: sessionApiKey.trim());
+      }
+      if (sessionSpeechApiKey.trim().isNotEmpty) {
+        await _secrets.write(key: _speechKeyId(owner, speechProvider),
+          value: sessionSpeechApiKey.trim());
+      }
+      if (yandexFolderId.trim().isNotEmpty) {
+        await _secrets.write(key: _folderId(owner),
+          value: yandexFolderId.trim());
+      }
+    } else {
+      await deleteSavedConnection();
+    }
   }
 
   void selectProvider(String newProvider) {
