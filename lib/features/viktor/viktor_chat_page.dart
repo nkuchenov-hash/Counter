@@ -170,6 +170,11 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
             'Проверьте разрешение и устройство ввода.';
       }
     });
+    if (_recorder.captureError != null && _recorder.isRecording &&
+        !_startingMic && !_transcribing) {
+      unawaited(_finishRecording());
+      return;
+    }
     if (_recorder.limitReached && _recorder.isRecording &&
         !_startingMic && !_transcribing) {
       unawaited(_finishRecording());
@@ -555,12 +560,17 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                           ],
                         ),
                         const SizedBox(height: 6),
-                        if (_listening)
+                        if (_listening) ...[
                           LinearProgressIndicator(
                             minHeight: 6,
                             value: _recorder.level.clamp(0.015, 1.0).toDouble(),
-                          )
-                        else
+                          ),
+                          const SizedBox(height: 5),
+                          const Text(
+                            'Нажмите квадрат, чтобы закончить запись и получить текст.',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ] else
                           const LinearProgressIndicator(minHeight: 3),
                       ],
                     ),
