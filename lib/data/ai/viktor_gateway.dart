@@ -40,8 +40,9 @@ class ViktorModelSettings {
   Future<void> load() async {
     if (_loaded) return;
     final prefs = await SharedPreferences.getInstance();
-    final savedMode = prefs.getString('viktor_mode');
-    if (savedMode == 'byok' || savedMode == 'hosted') mode = savedMode!;
+    // Until the hosted model has durable metering, beta only offers BYOK.
+    // Ignore a pre-release stored hosted selection to avoid a dead first-run UI.
+    mode = 'byok';
     final savedProvider = prefs.getString('viktor_provider');
     if (models.containsKey(savedProvider)) provider = savedProvider!;
     final savedModel = prefs.getString('viktor_model');
