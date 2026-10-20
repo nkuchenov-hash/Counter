@@ -96,7 +96,7 @@ List<PlanningTask>? cascadeTimeViewAffectedChain({
     if (moved) activeChain = true;
     if (collision && activeChain) {
       if (fixedPlanIds.contains(id) && !moved) return null;
-      start = occupiedUntil;
+      start = occupiedUntil!;
     } else if (!collision && !moved && draggedPlanIds.isNotEmpty) {
       activeChain = false;
     }
