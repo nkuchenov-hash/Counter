@@ -28,4 +28,3 @@ This increment keeps the current actual recorded WAV and BYOK Groq/OpenAI/Gemini
 - [ ] Real Russian BYOK chat instruction and update visible after refresh/device sync
 - [ ] One-tap speech end-of-utterance detection on Yandex Browser and Android mic (fallback manual stop)
 - [ ] Do not claim live full-duplex voice or subscription-funded unlimited access
-
