@@ -25,6 +25,15 @@ BYOK supports authenticated users without a paid platform plan. Server-funded AI
 - [ ] In Yandex Browser, verify speaking causes changing mic level and accumulating captured bytes; after pressing stop, editable recognized words appear.
 - [ ] If the provider rejects the key or no audio arrives, check the inline error appears and no false transcript or plan write happens.
 
+## Russian-first model and one-command swap (2026-10-20)
+- [x] PR #302 merged into main as `82a4a75`: GigaChat (personal/B2B/CORP), YandexGPT, two-card swap, selected-card context and voice auto-submit after recording.
+- [x] Fixed GigaChat Authorization Key prefix parsing and separate speech credential check for Russian text models.
+- [x] Production PocketBase hook deployment and existing data/sleep health checks passed (run 39479047773).
+- [x] Architecture Guard passed on integration commit (run 39479047855).
+- [ ] Publish current-main Flutter web build to gh-pages and verify the exact `lifeos-build.txt` SHA.
+- [ ] Verify actual BYOK GigaChat/YandexGPT key with a signed-in user. Browser voice currently needs an independent Groq, OpenAI or Gemini STT key for Russian text models.
+- [ ] In Planning, select two stored cards and verify one spoken/text command swaps only those two with correct schedule cascade, remote refresh and safe error behavior.
+
 ## After beta
 Hosted AI and subscriptions, persistent credential vault, synced chat history, transaction-level undo, recurring-series editing, and external ChatGPT access.
 
