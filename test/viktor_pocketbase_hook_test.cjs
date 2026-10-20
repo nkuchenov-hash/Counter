@@ -14,7 +14,7 @@ const sandbox = {
     route = callback;
   },
   $os: { getenv: () => '' },
-  $security: {randomString: () => '1234567890abcdef1234567890abcdef'},
+  $security: {randomStringWithAlphabet: () => '1234567890abcdef1234567890abcdef'},
   $http: { send(request) {
     calls++;
     lastRequest = request;
