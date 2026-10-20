@@ -118,17 +118,20 @@ jobs:
           grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=' "$fit_env"
           grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=' "$fit_env"
 
-          # Provision the AES-GCM vault master key only once, on the server.
-          # Never commit, publish, log, overwrite or rotate it on deploy.
+          # Generate the server-held AES key ONCE. Never rotate on deploy.
+          # Keep it outside git and SQLite, with root-only file permissions.
           vault_dir="/etc/lifeos"
           vault_env="$vault_dir/viktor-vault.env"
           $SUDO install -d -m 700 "$vault_dir"
           if ! $SUDO test -f "$vault_env"; then
-            printf 'VIKTOR_VAULT_KEY=%s\n' "$(openssl rand -hex 16)" |
-              $SUDO tee "$vault_env" >/dev/null
+            printf 'VIKTOR_VAULT_KEY=%s\n' "$(openssl rand -hex 16)" | $SUDO tee "$vault_env" >/dev/null
             $SUDO chmod 600 "$vault_env"
           fi
-          $SUDO grep -Eq '^VIKTOR_VAULT_KEY=[0-9a-f]{32}
+          $SUDO grep -Eq '^VIKTOR_VAULT_KEY=[0-9a-f]{32}$' "$vault_env"
+
+          override_dir="/etc/systemd/system/${service_name}.d"
+          $SUDO mkdir -p "$override_dir"
+          printf '[Service]\nEnvironmentFile=%s\nEnvironmentFile=%s\n' "$fit_env" "$vault_env" | $SUDO tee "$override_dir/lifeos-google-fit.conf" >/dev/null
 
           $SUDO mkdir -p "$app_dir/pb_hooks" "$app_dir/pb_migrations"
           $SUDO tar -xzf "$ARCHIVE" -C "$app_dir" pb_hooks pb_migrations
