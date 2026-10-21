@@ -52,10 +52,12 @@ class ViktorAction {
       case 'update_plan_duration':
         _onlyKeys(args, const {
           'plan_id', 'expected_duration_minutes', 'duration_minutes',
+          'wall_day',
         });
         _id(args, 'plan_id');
         _duration(args, 'expected_duration_minutes');
         _duration(args, 'duration_minutes');
+        if (args.containsKey('wall_day')) _day(args, 'wall_day');
       case 'move_plan_after':
         _onlyKeys(args, const {'plan_id', 'after_plan_id', 'wall_day'});
         final id = _id(args, 'plan_id');

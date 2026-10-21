@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'viktor_action_contract.dart';
+import 'viktor_date_scope.dart';
 import 'viktor_agent_capabilities.dart';
 import 'package:counter/data/paths/path_repository.dart';
 import 'viktor_schedule_planner.dart';
@@ -291,9 +292,12 @@ class ViktorGateway {
     if (settings.mode == 'byok' && !settings.modelConnected) {
       throw const FormatException('Set your provider API key in Viktor settings.');
     }
-    final dayKey = '${wallDay.year.toString().padLeft(4, '0')}-'
-        '${wallDay.month.toString().padLeft(2, '0')}-'
-        '${wallDay.day.toString().padLeft(2, '0')}';
+    final dayKey = ViktorDateScope.key(wallDay);
+    // The profile clock, not the opened calendar tab or device time zone,
+    // defines relative dates in user language (today/yesterday/tomorrow).
+    final today = service.getProjectedToday();
+    final yesterday = DateTime(today.year, today.month, today.day - 1);
+    final tomorrow = DateTime(today.year, today.month, today.day + 1);
     final reqId = requestId ?? 'viktor_${DateTime.now().microsecondsSinceEpoch}';
     final lastTwo = ViktorSchedulePlanner.resolveLastTwoSwap(input, plans);
     if (lastTwo != null) {
@@ -363,6 +367,9 @@ class ViktorGateway {
     final data = <String, Object?>{
       'text': input,
       'wall_day': dayKey,
+      'today_day': ViktorDateScope.key(today),
+      'yesterday_day': ViktorDateScope.key(yesterday),
+      'tomorrow_day': ViktorDateScope.key(tomorrow),
       'request_id': reqId,
       'ui_locale': currentLocale.value,
       'tool_observations': toolObservations.take(4)
