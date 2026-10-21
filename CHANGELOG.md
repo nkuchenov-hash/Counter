@@ -1,3 +1,9 @@
+## [2026-10-21] — Viktor Yandex refusal diagnostics and prompt reduction (pending CI)
+
+- Split Yandex upstream `content_filter` from explicit model `refusal`, with precise Russian-language diagnostics. Neither is silently retried or circumvented.
+- Reduce the model-facing Yandex system prompt to a concise universal catalog of the same allowed LIFE OS tools; keep all actual authorization and data validation in Brain.
+- Add JS regression cases for distinct refusal markers, valid null refusal and compact agent instructions. A real authenticated provider response is still required to determine whether Yandex actually filters the reported benign event request.
+
 ## [2026-10-21] — Restore original Time View drag with isolated cursor lock
 
 - Restored the exact pre-regression Time View pointer handler, collision/drop resolver, scroll ticker, and positioned-card animation. All unrelated interaction rules retain their original behavior.

@@ -507,6 +507,10 @@ class ViktorGateway {
           'invalid_provider_envelope': 'поставщик вернул повреждённый ответ',
           'missing_model_message': 'в ответе отсутствует сообщение модели',
           'invalid_action_proposal': 'модель вернула неверную структуру действий',
+          'provider_content_filter':
+              'YandexGPT заблокировал ответ своим фильтром содержимого',
+          'explicit_model_refusal':
+              'YandexGPT явно отказался выполнять запрос',
           'model_refusal': 'модель отклонила запрос',
         };
         throw FormatException(

@@ -2,6 +2,12 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor provider refusal handling and compact agent tools (2026-10-21)
+
+- Separate the Yandex `finish_reason: content_filter` upstream-content-filter signal from a nonempty `message.refusal` model refusal. Do not retry either refusal or bypass them with modified prompts. Return only a fixed reason code, never provider response text or confidential data.
+- For Yandex, use a short, model-specific formulation of the **same** approved tool catalog, rather than the older lengthy and repetitive general-agent instructions. This changes prompting only; permitted operations, date semantics, model independence, Brain authorization, freshness and confirmation are unchanged.
+- A refusal in a benign user scenario is a provider outcome unless an actual authenticated test demonstrates an application parsing error. The frontend should show which of the two independent refusal mechanisms occurred rather than misleadingly treating them as identical.
+
 ## Viktor provider response recovery (2026-10-21)
 
 - Provider-success HTTP 200 does not guarantee a usable proposal. The PocketBase provider adapter classifies missing choices/messages, refusal, length-truncated completions, empty content, invalid JSON and invalid action-envelope shape without logging user context, model text or credentials.
