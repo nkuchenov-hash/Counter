@@ -212,13 +212,13 @@ This document defines how Life OS behaves when people interact with it. It is th
 - A warm reload MUST reuse versioned web assets and the last-known per-profile local state; never clear browser caches or unregister workers on each visit.
 - An unexpired, scoped local auth record can open the cached shell without a blocking health check or token refresh. Foreground synchronization MUST still validate the server token and end the session on confirmed 4xx revocation.
 - Existing categories and plans are restored from user-scoped local caches before network reconciliation. Failed/empty catalog reads must never erase a known-good category tree.
-- Time View ordinary pointer drag retains the old bounded geometry and responds to each pointer move. During edge auto-scroll, light card positioning updates every frame; heavyweight insertion previews can update independently at bounded cadence.
+- Time View ordinary pointer drag retains its original gesture recognizer, collision logic, animations and card positioning. When the timeline scrolls under a stationary pointer, only the lifted card compensates for the scroll offset; drop placement uses the final cursor position.
 
 ## Time View pointer-locked drag (2026-10-21)
 
 - A grabbed scheduled card maintains the exact initial pointer-to-card offset throughout drag, regardless of pointer direction, canvas scroll offset, auto-scrolling, proximity to other cards, or drop-grid snapping. Drop targets may snap; the card itself must not snap or hit an invisible collision wall while held.
-- Drag geometry uses pointer movement **plus the difference between current and grab-start scroll offsets**. Edge auto-scroll updates visual geometry and target preview even while the pointer is stationary, on each scroll frame.
-- The dragged scheduled card retains a substantial tactile appearance (0.90 opacity); the original position remains an understated placeholder. A new-time indicator is a compact theme-aware neutral chip near the card, not a full-width black overlay; it must not intercept pointer input.
+- Normal drag geometry is unchanged. During auto-scroll, the dragged card receives the scroll offset that has not yet been applied by the last pointer event; only its transform updates on scroll. The final drop recalculates against the true cursor position at release.
+- The dragged scheduled card uses the requested 0.74 opacity; the original position remains an understated placeholder. A new-time indicator is a compact theme-aware neutral chip near the card, not a full-width black overlay; it must not intercept pointer input.
 - The drag ending snaps/persists the final intended position only after release, maintaining the established fixed-time and cascade safeguards. Rules apply equally to browser, Android and desktop.
 
 ## P0: immediate Planning create across Web, Android and desktop (2026-10-21)
