@@ -557,10 +557,9 @@ extension DbCoreExtension on DatabaseService {
   }
 
   Future<void> _loadInnerAfterProfile() async {
-    // Always hydrate categories before the shell is marked initialized.
-    // _loadRulesFromNoco() falls back to the last-known local catalog when
-    // PocketBase is unavailable, so transient backoff cannot blank categories.
-    await _loadRulesFromNoco();
+    // Restore the complete known category tree before showing the shell, but
+    // never keep the user waiting for a category network request.
+    await restoreCategoryRulesFromLocalCacheAtBoot();
     if (_pbHttpBackoffActive) {
       await bootstrapTimelineRecordsCacheFromPrefsAtBoot(criticalOnly: true);
       await restorePlansWarmSnapshotsFromDiskAtBoot();
@@ -587,8 +586,11 @@ extension DbCoreExtension on DatabaseService {
     _tasksController.add(List.from(_tasksCache));
     _isInitialized = true;
     _registerAppLifecycleObserverOnce();
-    // App-open freshness must not depend on a frame callback or user gesture.
-    // Realtime is armed first; the following pull is a single catch-up only.
+    // Category reconciliation cannot gate first paint. Empty server lists
+    // cannot erase the cached tree (enforced by _loadRulesFromNoco).
+    unawaited(_loadRulesFromNoco().catchError((Object _, StackTrace _) {}));
+    // App-open freshness is asynchronous; auth, realtime and a single catch-up
+    // pull will run without blocking the restored local shell.
     unawaited(refreshForegroundData());
     StartupLog.scheduleAfterFirstFrame(
       'deferredBootWork',
