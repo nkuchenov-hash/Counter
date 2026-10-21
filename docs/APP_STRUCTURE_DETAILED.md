@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `07308311` on 2026-10-21.**
+**Generated from input HEAD `b4230e9b` on 2026-10-21.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -13583,8 +13583,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain helper for data/sync — viktor date scope. Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What this is:** Brain helper for data/sync — viktor date scope.
+- **Human purpose:** Brain helper for data/sync — Model-independent user-intent date resolver for read/schedule tools. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Model-independent user-intent date resolver for read/schedule tools.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
 - **Contents:** Dart helpers and types (`ViktorDateScope`, `ViktorBulkDateScope`).
 - **Key code names:** `ViktorDateScope`, `ViktorBulkDateScope`
@@ -13594,10 +13594,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** viktor date scope
+- **Responsibilities:** Model-independent user-intent date resolver for read/schedule tools; resolves bulk source and target days separately from selected UI date
 - **When to open:** When behavior tied to `viktor_date_scope.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor date scope
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Model-independent user-intent date resolver for read/schedule tools
 
 RU:
 
