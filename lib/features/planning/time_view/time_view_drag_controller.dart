@@ -110,12 +110,12 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
       timelineVerticalDragDeltaPx = 0;
       timelineFingerDragDeltaPx = 0;
       timelineFingerGrabOffsetCanvasPx = fingerGrabOffsetCanvasPx;
-      timelineVerticalDragOriginScrollOffsetPx =
-          hourGridScrollController.hasClients
-              ? hourGridScrollController.offset
-              : 0;
-      timelineRecomputeDragAfterAutoScroll = null;
-      timelineLastAutoScrollTargetResolveAt = null;
+      timelineDragStartScrollOffsetPx = hourGridScrollController.hasClients
+          ? hourGridScrollController.offset
+          : 0;
+      timelineDragLastRenderedScrollOffsetPx =
+          timelineDragStartScrollOffsetPx;
+      timelineDragLastPointerDeltaPx = 0;
       timelineVerticalDragSequenceId =
           ++PlanningTimeViewCoordinator.timelineNextDragSequenceId;
       timelineVerticalDragOriginTopPx = originTopPx;
@@ -143,62 +143,28 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
     required double canvasHeight,
     required List<PlanningTask> scheduledInRange,
     required Map<String, int> planActualByPbId,
-    bool fromAutoScroll = false,
   }) {
     final grid = activeTimelineDurationGrid;
     if (grid == null) return;
 
-    // Scroll offset contributes to the card's canvas position. Without this
-    // compensation a scrolling timeline makes the card drift off the cursor.
-    final scrollNow = hourGridScrollController.hasClients
-        ? hourGridScrollController.offset
-        : timelineVerticalDragOriginScrollOffsetPx;
-    final effectiveDeltaPx = planTimePointerAnchoredDeltaPx(
-      pointerDeltaPx: deltaPx,
-      scrollStartOffsetPx: timelineVerticalDragOriginScrollOffsetPx,
-      scrollCurrentOffsetPx: scrollNow,
-    );
+    // The old pointer movement path is unchanged when the graph is not
+    // scrolling. Convert screen motion to canvas motion by adding only the
+    // scroll since pickup, preserving the original grabbed offset.
+    timelineDragLastPointerDeltaPx = deltaPx;
+    final effectiveDeltaPx = timelineEffectivePointerDeltaPx;
     timelineFingerDragDeltaPx = effectiveDeltaPx;
-    timelineRecomputeDragAfterAutoScroll = () {
-      if (!host.mounted || timelineVerticalDragPlanKey == null) return;
-      updateTimelineVerticalDrag(
-        deltaPx: deltaPx,
-        globalDy: globalDy,
-        planWallDay: planWallDay,
-        rangeStart: rangeStart,
-        rangeEnd: rangeEnd,
-        canvasHeight: canvasHeight,
-        scheduledInRange: scheduledInRange,
-        planActualByPbId: planActualByPbId,
-        fromAutoScroll: true,
-      );
-    };
+    final currentScrollOffset = hourGridScrollController.hasClients
+        ? hourGridScrollController.offset
+        : timelineDragStartScrollOffsetPx;
     final durMin = timelineVerticalDragDurationMin.toDouble();
     final maxTopPx = grid.yForMinutesFromRangeStart(
       math.max(0, grid.totalMinutes - durMin),
     );
-    final fingerCanvasY = timelineFingerCanvasY(deltaPx);
+    final fingerCanvasY = timelineFingerCanvasY(effectiveDeltaPx);
     final pointerAnchoredTopPx =
         (fingerCanvasY - timelineFingerGrabOffsetCanvasPx)
             .clamp(0.0, maxTopPx)
             .toDouble();
-
-    // Keep the prior tactile pointer-move/drop solver untouched. During
-    // stationary-pointer edge scroll we still repaint the grabbed card every
-    // frame, but run the expensive full insertion/cascade calculation only
-    // about once per 64 ms. This keeps visual motion at display frame rate.
-    if (fromAutoScroll) {
-      final now = DateTime.now();
-      final previous = timelineLastAutoScrollTargetResolveAt;
-      if (!planTimeShouldResolveAutoScrollTarget(previous, now)) {
-        host.notifySetState(() {
-          timelineVerticalDragDeltaPx =
-              pointerAnchoredTopPx - timelineVerticalDragOriginTopPx;
-        });
-        return;
-      }
-      timelineLastAutoScrollTargetResolveAt = now;
-    }
 
     final selectedDayKey = host.pageWidget.selectedDateString.length >= 10
         ? host.pageWidget.selectedDateString.substring(0, 10)
@@ -275,10 +241,9 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
     );
 
     host.notifySetState(() {
-      // Restore the original bounded visual position during normal drag.
-      // Scroll compensation is already part of pointerAnchoredTopPx.
       timelineVerticalDragDeltaPx =
           pointerAnchoredTopPx - timelineVerticalDragOriginTopPx;
+      timelineDragLastRenderedScrollOffsetPx = currentScrollOffset;
       timelineBulkDragPreviewTopPxByPlanId = {};
       timelineDragInsertTargetKey = insertKey;
       timelineDragInsertBefore = insertBefore;
@@ -550,6 +515,12 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
     final planKey = timelineVerticalDragPlanKey;
     final bulkDragIds = Set<String>.from(timelineBulkDragPlanIds);
     final bulkOffsets = Map<String, int>.from(timelineBulkDragRelativeOffsetMin);
+    // Read the FINAL scroll offset even if the mouse was stationary during
+    // edge autoscroll; stale target intent cannot override final cursor Y.
+    if (timelinePendingScrollCompensationPx.abs() > 0.001) {
+      timelineStoredInsertionIntent = null;
+    }
+    timelineFingerDragDeltaPx = timelineEffectivePointerDeltaPx;
     stopHourGridEdgeScroll();
     if (task == null || planKey == null) {
       cancelTimelineVerticalDrag();
