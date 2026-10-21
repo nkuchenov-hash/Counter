@@ -60,22 +60,10 @@
   <meta name="yandex-oauth-client-id" content="YANDEX_CLIENT_ID">
 </head>
 <body>
-  <!-- Bust stale Flutter service-worker caches on GitHub Pages (P0 profile hydration deploy). -->
-  <script>
-    (function () {
-      if (!('serviceWorker' in navigator)) return;
-      navigator.serviceWorker.getRegistrations().then(function (regs) {
-        for (var i = 0; i < regs.length; i++) {
-          regs[i].unregister();
-        }
-      });
-      if (window.caches && caches.keys) {
-        caches.keys().then(function (keys) {
-          keys.forEach(function (k) { caches.delete(k); });
-        });
-      }
-    })();
-  </script>
+  <!-- P0 warm reload: the release build versions Flutter JS assets in deploy.yml
+       and uses --pwa-strategy=none. Do not unregister workers or erase Cache
+       Storage on every page load; that forces fresh downloads on every reload.
+       Legacy Flutter worker cleanup, if needed, belongs to a one-time migration. -->
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
@@ -84,6 +72,6 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
-  <script src="flutter_bootstrap.js?v=96ca073012ea830778e9867d2d3c2f5c82155f65" async></script>
+  <script src="flutter_bootstrap.js?v=8728a47238f64f0a9feb55bbe8f1877ad9c885d8" async></script>
 </body>
 </html>
