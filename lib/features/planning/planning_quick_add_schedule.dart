@@ -26,6 +26,7 @@ extension PlanningQuickAddScheduling on _PlanningPageState {
   /// Roll back only this failed creation; never overwrite the next draft.
   void _rollbackFailedQuickAdd({
     required String clientPlanId,
+    required int createGeneration,
     required String rawInput,
     required String dateKey,
     required List<Tag> tags,
@@ -33,7 +34,8 @@ extension PlanningQuickAddScheduling on _PlanningPageState {
     if (!mounted) return;
     setState(() {
       _optimisticTasks.removeWhere((t) => t.planRowId == clientPlanId);
-      if (widget.selectedDateString == dateKey &&
+      if (_planQuickAddCreateGeneration == createGeneration &&
+          widget.selectedDateString == dateKey &&
           _textController.text.trim().isEmpty) {
         _textController.value = TextEditingValue(
           text: rawInput,
@@ -124,6 +126,7 @@ extension PlanningQuickAddScheduling on _PlanningPageState {
       ),
       schedule,
     );
+    final createGeneration = ++_planQuickAddCreateGeneration;
     final localOptimistic = localPlan.copyWith(
       planRowId: clientPlanId,
       pocketRecordId: 'optimistic-$clientPlanId',
@@ -151,6 +154,7 @@ extension PlanningQuickAddScheduling on _PlanningPageState {
           if (!ok) {
             _rollbackFailedQuickAdd(
               clientPlanId: clientPlanId,
+              createGeneration: createGeneration,
               rawInput: raw,
               dateKey: taskDateKey,
               tags: tagsForCreate,
@@ -174,6 +178,7 @@ extension PlanningQuickAddScheduling on _PlanningPageState {
           }
           _rollbackFailedQuickAdd(
             clientPlanId: clientPlanId,
+            createGeneration: createGeneration,
             rawInput: raw,
             dateKey: taskDateKey,
             tags: tagsForCreate,
