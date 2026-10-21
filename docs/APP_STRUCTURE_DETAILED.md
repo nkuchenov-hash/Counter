@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `ed431cf8` on 2026-10-21.**
+**Generated from input HEAD `c21d3757` on 2026-10-21.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -14690,7 +14690,7 @@ EN:
 - **Contents:** Dart helpers and extensions (`WebRecordJournal`).
 - **Key code names:** `WebRecordJournal`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/data/local_sync/record_mutation_outbox.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/data/database_service.dart`, `lib/data/local_sync/record_mutation_outbox.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14707,7 +14707,7 @@ RU:
 - **Зачем:** Держит offline sync согласованным с PocketBase и экранами.
 - **Содержимое:** Dart-код (`WebRecordJournal`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/data/local_sync/record_mutation_outbox.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/data/database_service.dart`, `lib/data/local_sync/record_mutation_outbox.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
