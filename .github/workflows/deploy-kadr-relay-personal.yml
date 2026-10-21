@@ -1,0 +1,104 @@
+name: Deploy isolated KADR personal HTTPS relay
+on:
+  push:
+    branches: [experiment/kadr-relay-personal-20261021]
+    paths: ['.github/workflows/deploy-kadr-relay-personal.yml']
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read-only resource and LIFE OS preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/kadr_personal
+          chmod 600 ~/.ssh/kadr_personal
+          host="${SSH_HOST:-217.114.0.201}"
+          user="${SSH_USER:-root}"
+          ssh-keyscan -T 8 -p "$SSH_PORT" -H "$host" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/kadr_personal -o BatchMode=yes -p "$SSH_PORT" "$user@$host" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          ram=$(awk '/^MemAvailable:/ {print int($2/1024)}' /proc/meminfo)
+          disk=$(df -Pm / | awk 'NR==2 {print $4}')
+          echo "preflight_ram_available_mib=$ram"
+          echo "preflight_disk_available_mib=$disk"
+          [ "$ram" -ge 360 ] && [ "$disk" -ge 1600 ]
+          curl -fsS --max-time 8 https://217-114-0-201.sslip.io/api/health >/dev/null
+          echo 'life_os_preflight=healthy'
+          [ "$(ss -H -ltn sport = :8443 | wc -l)" -eq 0 ]
+          if docker container inspect kadr-relay-personal >/dev/null 2>&1; then
+            echo 'existing_personal_relay_unsupported'; exit 30
+          fi
+          [ -r /etc/letsencrypt/live/217-114-0-201.sslip.io/fullchain.pem ]
+          [ -r /etc/letsencrypt/live/217-114-0-201.sslip.io/privkey.pem ]
+          docker info >/dev/null
+          echo 'isolation_preflight=PASS'
+          REMOTE
+      - name: Build isolated relay image on CI runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build --pull=false -t kadr-relay-personal:trial experiments/kadr-relay
+          docker save kadr-relay-personal:trial | gzip -1 > /tmp/kadr-relay-personal-image.tar.gz
+          test -s /tmp/kadr-relay-personal-image.tar.gz
+      - name: Deploy, verify encrypted relay and preserve LIFE OS
+        shell: bash
+        run: |
+          set -euo pipefail
+          host="${SSH_HOST:-217.114.0.201}"
+          user="${SSH_USER:-root}"
+          scp_remote="$user@$host"
+          remote() { ssh -i ~/.ssh/kadr_personal -o BatchMode=yes -p "$SSH_PORT" "$scp_remote" "$@"; }
+          started=1
+          success=0
+          cleanup_on_failure() {
+            if [ "$started" = 1 ] && [ "$success" != 1 ]; then
+              remote 'docker rm -f kadr-relay-personal >/dev/null 2>&1 || true; curl -fsS --max-time 8 https://217-114-0-201.sslip.io/api/health >/dev/null && echo life_os_rollback=healthy || echo life_os_rollback=unhealthy' || true
+            fi
+          }
+          trap cleanup_on_failure EXIT
+          scp -i ~/.ssh/kadr_personal -P "$SSH_PORT" /tmp/kadr-relay-personal-image.tar.gz "$scp_remote:/tmp/kadr-relay-personal-image.tar.gz"
+          remote 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          docker load -i /tmp/kadr-relay-personal-image.tar.gz >/dev/null
+          rm -f /tmp/kadr-relay-personal-image.tar.gz
+          fullchain=$(readlink -f /etc/letsencrypt/live/217-114-0-201.sslip.io/fullchain.pem)
+          privatekey=$(readlink -f /etc/letsencrypt/live/217-114-0-201.sslip.io/privkey.pem)
+          [ -r "$fullchain" ] && [ -r "$privatekey" ]
+          docker run -d --name kadr-relay-personal --restart unless-stopped \
+            --memory 128m --memory-swap 128m --cpus 0.25 --pids-limit 64 \
+            --read-only --tmpfs /tmp:rw,nosuid,size=8m \
+            --cap-drop ALL --security-opt no-new-privileges \
+            --log-opt max-size=2m --log-opt max-file=2 \
+            -p 0.0.0.0:8443:8443 \
+            -v "$fullchain":/tls/fullchain.pem:ro \
+            -v "$privatekey":/tls/privkey.pem:ro \
+            kadr-relay-personal:trial >/dev/null
+          for attempt in $(seq 1 16); do
+            if curl -fsS --max-time 3 https://217-114-0-201.sslip.io:8443/health | grep -q 'kadr-relay'; then
+              echo 'relay_local_health=PASS'; break
+            fi
+            if [ "$attempt" -eq 16 ]; then docker logs --tail 15 kadr-relay-personal; exit 41; fi
+            sleep 1
+          done
+          curl -fsS --max-time 8 https://217-114-0-201.sslip.io/api/health >/dev/null
+          echo 'life_os_postdeploy=healthy'
+          REMOTE
+          curl -fsS --connect-timeout 6 --max-time 12 https://217-114-0-201.sslip.io:8443/health | grep -q '"persistentSessions":true'
+          echo 'relay_external_https=PASS'
+          npm install --no-fund --no-audit --prefix experiments/kadr-relay --no-save ws@8.18.3
+          node experiments/kadr-relay/smoke-test.js
+          remote 'curl -fsS --max-time 8 https://217-114-0-201.sslip.io/api/health >/dev/null && echo life_os_final=healthy; docker inspect --format "relay_running={{.State.Running}} relay_oom_killed={{.State.OOMKilled}}" kadr-relay-personal'
+          success=1
+          echo 'KADR_PERSONAL_RELAY_DEPLOYED'
