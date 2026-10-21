@@ -1,3 +1,10 @@
+## [2026-10-21] — Viktor general application-agent foundation (in validation)
+
+- Added a model-neutral capability catalog and validated tool proposals for Notes, Paths, Categories, Tags, safe Profile settings and existing plan/record operations.
+- Brain-owned domain executor provides authenticated reads, note text creation/editing, category/tag CRUD, creation of versioned Paths and allowlisted settings changes. Mutation proposals require an explicit dry-run preview; multi-domain requests warn that cross-service writes are not atomic.
+- Yandex/OpenAI/Gemini/Groq/GigaChat proposals now receive safe user-scoped category/tag/note/Path metadata when relevant. Prompts list supported tools and prohibit code/database access or imaginary execution.
+- Added contract tests for cross-domain input, multiline Notes, Paths staging, scope and forbidden settings. Full parity with every LIFE OS UI action, autonomous iterative tool-calling and real-user E2E remain open; do not advertise as complete.
+
 ## 2026-10-21 — Viktor cloud save quota and dialog width [fix]
 
 - Fix false red `QuotaExceededError` after successfully saving BYOK credentials to PocketBase: web uses authenticated cloud metadata as the source of truth and skips redundant SharedPreferences/localStorage writes; native optional preferences fail gracefully.

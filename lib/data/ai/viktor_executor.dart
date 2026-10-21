@@ -2,6 +2,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'viktor_action_contract.dart';
 import 'viktor_schedule_planner.dart';
+import 'viktor_domain_tools.dart';
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -13,6 +14,7 @@ class ViktorExecutor {
 
   final ViktorSchedulePlanner _planner = const ViktorSchedulePlanner();
   final ViktorBulkPlanner _bulk = const ViktorBulkPlanner();
+  late final ViktorDomainTools _domain = ViktorDomainTools(db);
   String? _bulkSignature;
 
   Future<ViktorBulkPreview> _planBulk(ViktorAction action, DateTime day) async {
@@ -67,15 +69,20 @@ class ViktorExecutor {
           .trim().isNotEmpty;
 
   void _checkScope(ViktorActionBatch batch, DateTime day) {
-    // Mixed command types cannot be rolled back as one transaction through the
-    // current Brain. Permit multi-step schedule edits (one bulk operation) but
-    // require separate confirmations for creates and record start/stop.
+    // Multiple application-domain tools can form one approved intent.
+    // Multi-row schedule recalculation and record timers still require an
+    // isolated operation: their writes are not atomic with other domains.
     final mutations = batch.actions.where((a) => a.isMutation).toList();
     if (mutations.length > 1 &&
-        mutations.any((a) => a.name != 'update_plan_duration' &&
+        mutations.any((a) =>
+            !ViktorDomainTools.names.contains(a.name) &&
+            a.name != 'update_plan_duration' &&
             a.name != 'move_plan_after')) {
-      throw StateError('Выполните добавление и управление записью отдельными '
-          'сообщениями. Несколько изменений расписания можно объединять.');
+      throw StateError('Изменения расписания и запуск/остановка записи '
+          'должны быть отдельной защищённой операцией.');
+    }
+    if (mutations.length > 12) {
+      throw StateError('Не более 12 изменений за один шаг.');
     }
     for (final a in batch.actions) {
       final selected = a.arguments['wall_day'];
@@ -159,6 +166,19 @@ class ViktorExecutor {
             throw StateError('Указанная запись больше не является активной.');
           }
           lines.add('Остановить текущую запись');
+        case 'list_categories':
+        case 'create_category':
+        case 'list_tags':
+        case 'create_tag':
+        case 'rename_tag':
+        case 'list_notes':
+        case 'create_note':
+        case 'edit_note':
+        case 'list_paths':
+        case 'create_path':
+        case 'get_settings':
+        case 'change_setting':
+          lines.add(await _domain.preview(action));
       }
     }
     final preview = _schedule(batch, day, plans);
@@ -173,6 +193,12 @@ class ViktorExecutor {
             '${t.minute.toString().padLeft(2, '0')}';
         lines.add('${clock(p.startTime!)}–${clock(p.endDateTime!)}  ${p.title}');
       }
+    }
+    if (batch.actions.where((a) => a.isMutation).length > 1) {
+      lines.add('');
+      lines.add('Это несколько независимых операций. '
+        'Если сохранение оборвётся, часть изменений может быть '
+        'применена. Проверьте результат перед повторным запросом.');
     }
     return lines.join('\n');
   }
@@ -240,6 +266,7 @@ class ViktorExecutor {
       }
     }
     var done = patches.isNotEmpty ? 1 : 0;
+    final receipts = <String>[];
     for (final action in batch.actions) {
       final a = action.arguments;
       switch (action.name) {
@@ -292,9 +319,31 @@ class ViktorExecutor {
           final ok = await db.stopRecordByDocId(id);
           if (!ok) throw StateError('Не удалось остановить запись.');
           done++;
+        case 'list_categories':
+        case 'create_category':
+        case 'list_tags':
+        case 'create_tag':
+        case 'rename_tag':
+        case 'list_notes':
+        case 'create_note':
+        case 'edit_note':
+        case 'list_paths':
+        case 'create_path':
+        case 'get_settings':
+        case 'change_setting':
+          try {
+            receipts.add(await _domain.execute(action));
+            if (action.isMutation) done++;
+          } catch (error) {
+            throw StateError('Операция «${action.name}» не завершилась: '
+                '$error. Ранее выполненные действия могли сохраниться. '
+                'Проверьте результат перед повтором.');
+          }
       }
     }
-    return done == 0 ? 'План прочитан.' :
-        'Изменения переданы в LIFE OS. Проверьте синхронизацию.';
+    return done == 0 ? receipts.join('\n') :
+        (receipts.isEmpty ?
+          'Изменения переданы в LIFE OS. Проверьте синхронизацию.' :
+          receipts.join('\n'));
   }
 }

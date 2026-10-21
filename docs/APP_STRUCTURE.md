@@ -132,9 +132,12 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 | :--- | :--- |
 | `database_service.dart` | Singleton root: shared state, streams, static helpers; `part` coordinator |
 | `ai/viktor_action_contract.dart` | AI action allowlist and schema validation, no direct writes |
+| `ai/viktor_agent_capabilities.dart` | Model-independent capability registry, risk labels and approval policy for supported Viktor tools |
+| `ai/viktor_domain_tools.dart` | Scoped Brain-backed tool adapters for categories, tags, notes, Paths and safe profile settings; preview/read/execute |
+
 | `ai/viktor_schedule_planner.dart` | Pure plan order/time previews with collision protection |
 | `ai/viktor_executor.dart` | Brain-backed approved changes and real schedule checks |
-| `ai/viktor_gateway.dart` | Authenticated provider gateway client, session-only BYOK settings |
+| `ai/viktor_gateway.dart` | Authenticated model-independent provider gateway and scoped per-account cloud BYOK connection, observation context for tools |
 | `ai/viktor_voice_recorder.dart` | Real PCM16 microphone capture and WAV encoding, audio-level and duration feedback |
 | `ai/viktor_voice_gateway.dart` | Signed-in transient BYOK cloud transcription and returned editable text |
 | `db_core.dart` | Bootstrap: `loadInitialData`, PocketBase health, lifecycle, flush outboxes *(part)* |

@@ -6,6 +6,8 @@
 /// time rules, conflicts, tier, confirmation and idempotency before any write.
 library;
 
+import 'viktor_agent_capabilities.dart';
+
 class ViktorAction {
   ViktorAction._(this.name, Map<String, Object?> arguments)
       : arguments = Map<String, Object?>.unmodifiable(arguments);
@@ -13,18 +15,10 @@ class ViktorAction {
   final String name;
   final Map<String, Object?> arguments;
 
-  static const names = <String>{
-    'list_day_plans',
-    'create_plan',
-    'update_plan_duration',
-    'move_plan_after',
-    'swap_plan_positions',
-    'bulk_replan',
-    'start_record',
-    'stop_record',
-  };
+  static final Set<String> names = ViktorAgentCapabilities.names;
 
-  bool get isMutation => name != 'list_day_plans';
+  bool get isMutation =>
+      ViktorAgentCapabilities.byName[name]?.requiresApproval ?? true;
 
   factory ViktorAction.fromJson(Map<String, dynamic> raw) {
     _onlyKeys(raw, const {'name', 'arguments'});
@@ -124,6 +118,94 @@ class ViktorAction {
             _text(operation, 'timezone', maxLength: 64);
           }
         }
+      case 'list_categories':
+      case 'list_notes':
+      case 'list_paths':
+      case 'get_settings':
+        _onlyKeys(args, const {});
+      case 'list_tags':
+        _onlyKeys(args, const {'domain'});
+        if (!const {'plan', 'list'}.contains(args['domain'])) {
+          throw const FormatException('Tag domain must be plan or list');
+        }
+      case 'create_tag':
+        _onlyKeys(args, const {'name', 'domain'});
+        _title(args, 'name');
+        if (!const {'plan', 'list'}.contains(args['domain'])) {
+          throw const FormatException('Tag domain must be plan or list');
+        }
+      case 'rename_tag':
+        _onlyKeys(args, const {'tag_id', 'expected_name', 'name'});
+        _id(args, 'tag_id');
+        _title(args, 'expected_name');
+        _title(args, 'name');
+      case 'create_category':
+        _onlyKeys(args, const {'name', 'parent_category_id'});
+        _title(args, 'name');
+        if (args.containsKey('parent_category_id')) {
+          _id(args, 'parent_category_id');
+        }
+      case 'create_note':
+        _onlyKeys(args, const {'title', 'text', 'category_id'});
+        _title(args, 'title');
+        _longText(args, 'text', maxLength: 8000);
+        if (args.containsKey('category_id')) _id(args, 'category_id');
+      case 'edit_note':
+        _onlyKeys(args, const {'note_id', 'expected_title', 'text'});
+        _id(args, 'note_id');
+        _title(args, 'expected_title');
+        _longText(args, 'text', maxLength: 8000);
+      case 'create_path':
+        _onlyKeys(args, const {'name', 'category_id', 'goal', 'stages'});
+        _title(args, 'name');
+        _id(args, 'category_id');
+        _text(args, 'goal', maxLength: 2000);
+        final stages = args['stages'];
+        if (stages is! List || stages.isEmpty || stages.length > 16) {
+          throw const FormatException('Path needs 1–16 stages');
+        }
+        for (final raw in stages) {
+          if (raw is! Map) throw const FormatException('Invalid Path stage');
+          final stage = Map<String, Object?>.from(raw);
+          _onlyKeys(stage, const {'title', 'criteria', 'actions'});
+          _title(stage, 'title');
+          _text(stage, 'criteria', maxLength: 1000);
+          final actions = stage['actions'];
+          if (actions is! List || actions.isEmpty || actions.length > 24) {
+            throw const FormatException('Path stage needs 1–24 actions');
+          }
+          for (final one in actions) {
+            if (one is! Map) {
+              throw const FormatException('Invalid Path action');
+            }
+            final task = Map<String, Object?>.from(one);
+            _onlyKeys(task, const {'text', 'result', 'minutes'});
+            _title(task, 'text');
+            _text(task, 'result', maxLength: 1000);
+            final minutes = task['minutes'];
+            if (minutes is! int || minutes < 10 || minutes > 480) {
+              throw const FormatException('Invalid Path action minutes');
+            }
+          }
+        }
+      case 'change_setting':
+        _onlyKeys(args, const {'field', 'value'});
+        final field = _text(args, 'field', maxLength: 40);
+        if (!const {
+          'theme_mode', 'preferred_timezone', 'primary_language',
+          'list_completion_behavior', 'display_name',
+        }.contains(field)) {
+          throw const FormatException('Setting cannot be changed by AI');
+        }
+        final value = _text(args, 'value', maxLength: 120);
+        if (field == 'theme_mode' &&
+            !const {'light', 'dark', 'system'}.contains(value)) {
+          throw const FormatException('Invalid theme mode');
+        }
+        if (field == 'list_completion_behavior' &&
+            !const {'stay', 'bottom', 'hide', 'archive'}.contains(value)) {
+          throw const FormatException('Invalid list completion behavior');
+        }
       case 'start_record':
         _onlyKeys(args, const {'title', 'category_id'});
         _title(args, 'title');
@@ -153,9 +235,15 @@ class ViktorActionBatch {
 
   /// Previews are mandatory for multi-step edits and operations which may
   /// cascade scheduling. The executor can still require additional approval.
-  bool get requiresPreview => actions.where((a) => a.isMutation).length > 1 ||
+  bool get requiresPreview =>
+      actions.where((a) => a.isMutation).length > 1 ||
       actions.any((a) =>
-          a.name == 'move_plan_after' || a.name == 'bulk_replan');
+          a.name == 'move_plan_after' || a.name == 'bulk_replan' ||
+          (ViktorAgentCapabilities.byName[a.name]?.requiresApproval == true &&
+           !const {
+             'create_plan', 'update_plan_duration', 'swap_plan_positions',
+             'start_record', 'stop_record',
+           }.contains(a.name)));
 
   factory ViktorActionBatch.fromJson(Map<String, dynamic> raw) {
     _onlyKeys(raw, const {'version', 'request_id', 'actions'});
@@ -253,6 +341,16 @@ String _clock(Map<String, Object?> args, String key) {
   final p = value.split(':').map(int.parse).toList();
   if (p[0] > 23 || p[1] > 59) {
     throw FormatException('Invalid wall clock: $key');
+  }
+  return value;
+}
+
+String _longText(Map<String, Object?> args, String key,
+    {int maxLength = 8000}) {
+  final value = args[key];
+  if (value is! String || value.trim().isEmpty || value.length > maxLength ||
+      value.contains(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'))) {
+    throw FormatException('Invalid $key');
   }
   return value;
 }

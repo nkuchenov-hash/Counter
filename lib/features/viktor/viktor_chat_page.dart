@@ -54,9 +54,10 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     _recorder.addListener(_onRecorderChanged);
     unawaited(_loadSettings());
     _messages.add(const _ViktorMessage(
-      'Я Виктор. Могу посмотреть планы, составить расписание, изменить '
-      'длительность, переставить задачи или начать запись. '
-      'Напишите команду или нажмите микрофон.',
+      'Я Виктор. Могу работать с планами, записями, заметками, '
+      'тегами, категориями, Путями и настройками LIFE OS. '
+      'Опишите результат, а не последовательность нажатий. '
+      'Перед изменениями я покажу план для подтверждения.',
     ));
   }
 
@@ -113,18 +114,44 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       final db = DatabaseService.instance;
       final plans = await db.getPlanningTasksForWallDate(widget.wallDay);
       final lastTwoIds = ViktorSchedulePlanner.resolveLastTwoSwap(input, plans);
-      final response = await _gateway.propose(
+      final executor = ViktorExecutor(db);
+      final toolObservations = <String>[];
+      var response = await _gateway.propose(
         input: input,
         wallDay: widget.wallDay,
         plans: plans,
         settings: _settings,
         selectedPlanIds: widget.selectedPlanIds,
       );
+      // Autonomous tool loop: read actual user-owned app data and let the
+      // model reason again. Two bounded observations maximum. Mutations
+      // always stop the loop and require one normal confirmation preview.
+      for (var step = 0; step < 2; step++) {
+        if (!mounted) return;
+        final proposed = response.actions;
+        if (!response.needsMoreContext || proposed == null ||
+            proposed.hasMutations) break;
+        final observation = await executor.describe(
+          proposed, widget.wallDay);
+        toolObservations.add(observation);
+        response = await _gateway.propose(
+          input: input,
+          wallDay: widget.wallDay,
+          plans: plans,
+          settings: _settings,
+          selectedPlanIds: widget.selectedPlanIds,
+          toolObservations: toolObservations,
+        );
+      }
       if (!mounted) return;
       if (response.message.trim().isNotEmpty) _push(response.message.trim());
       final actions = response.actions;
-      if (actions == null) return;
-      final executor = ViktorExecutor(db);
+      if (actions == null) {
+        if (toolObservations.isNotEmpty) {
+          _push(toolObservations.last);
+        }
+        return;
+      }
       final preview = await executor.describe(actions, widget.wallDay);
       if (!mounted) return;
       if (!actions.hasMutations) {

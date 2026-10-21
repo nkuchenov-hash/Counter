@@ -2,6 +2,14 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor agent tool execution (2026-10-21)
+
+- Viktor is an application agent, not an editor of source code. User voice or text is mapped to allowlisted tool proposals that call the exact same Brain/repository functions used by the UI. Model providers are interchangeable and cannot write arbitrary PocketBase rows or change code.
+- Canonical supported agent domains must have an inventory/tool contract, owner-scoped read operations, typed validation, and a dry-run preview for consequential mutations. The first expanded capabilities include notes, tags, categories, Paths and selected profile settings; this is not yet complete UI-action parity.
+- The agent must never guess PocketBase IDs. Catalogs are read from the signed-in user's Brain. Invalid, recurring, stale or ambiguous changes must fail safely. Preview and apply refresh the state before executing; a failed multi-domain write may have left earlier writes applied and must report partial success risk rather than claim atomicity.
+- Destructive actions, credential changes, admin fields, unrestricted API/SQL, file access and source-code modification are explicitly outside the public tool registry. Adding UI parity requires a reviewed handler with tests, not prompt-only permission.
+- Long/complex requests can be decomposed into several proposed tool operations, but unresolved dependencies (such as referencing IDs of items not yet created) must not be silently invented. User must see what will be changed.
+
 ## Core Rules
 
 **P0 — Optimistic UI first:** Every valid user action immediately changes the active visible UI; PocketBase, outbox persistence, refresh, and animations are secondary operations. Visual feedback target is **≤100 ms**, including create, edit, delete, start/stop, toggle, reorder, and bulk actions in Records, Plans, and Lists. A visible local acknowledgment must never be confused with confirmed remote synchronization. See `ARCHITECTURE.md` § `OPTIMISTIC_UI_FIRST`.
