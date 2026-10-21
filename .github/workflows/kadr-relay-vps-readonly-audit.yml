@@ -98,5 +98,18 @@ jobs:
           resolved=$(getent ahostsv4 relay.217-114-0-201.sslip.io | awk 'NR==1 {print $1}' || true)
           if [ "$resolved" = '217.114.0.201' ]; then echo 'relay_dns_resolves_to_vps=yes'; else echo 'relay_dns_resolves_to_vps=no'; fi
           echo 'TLS_CHALLENGE_FEASIBILITY_END'
+          echo 'PUBLIC_ENDPOINT_OPTIONS'
+          if [ -d /etc/letsencrypt/live ]; then
+            find /etc/letsencrypt/live -mindepth 1 -maxdepth 1 -type d -printf 'letsencrypt_cert_domain=%f\n' 2>/dev/null || true
+          fi
+          for f in /etc/cloudflared/config.yml /etc/cloudflared/config.yaml /root/.cloudflared/cert.pem /root/.cloudflared/config.yml /root/.cloudflared/config.yaml; do
+            if [ -f "$f" ]; then echo "tunnel_config_present=yes"; fi
+          done
+          if command -v ip >/dev/null; then
+            count=$(ip -6 -o addr show scope global | wc -l)
+            echo "public_ipv6_interface_count=$count"
+          fi
+          echo "port_8443_listening=$(ss -H -ltn sport = :8443 | wc -l)"
+          echo 'PUBLIC_ENDPOINT_OPTIONS_END'
           echo 'READ_ONLY_AUDIT_END'
           REMOTE
