@@ -267,7 +267,7 @@ class ViktorDomainTools {
         }
         final created = await _paths.createPath(
           category: category, goal: a['goal'] as String,
-          stages: stages, name: a['name'] as String, source: 'viktor');
+          stages: stages, name: a['name'] as String, source: 'ai');
         if (created == null) throw StateError('Не удалось создать Путь.');
         return 'Создан Путь «' + created.name + '».';
       case 'change_setting':
