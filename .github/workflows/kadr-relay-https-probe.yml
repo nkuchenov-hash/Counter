@@ -1,0 +1,69 @@
+name: KADR TLS 8443 external access probe
+on:
+  push:
+    branches: [audit/kadr-relay-capacity-20261020]
+    paths: ['.github/workflows/kadr-relay-https-probe.yml']
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+    steps:
+      - name: Start temporary HTTPS server, probe externally, and remove it
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/kadr_probe
+          chmod 600 ~/.ssh/kadr_probe
+          host="${SSH_HOST:-217.114.0.201}"
+          user="${SSH_USER:-root}"
+          ssh-keyscan -T 8 -p "$SSH_PORT" -H "$host" >> ~/.ssh/known_hosts 2>/dev/null
+          remote() { ssh -i ~/.ssh/kadr_probe -o BatchMode=yes -p "$SSH_PORT" "$user@$host" "$@"; }
+          cleanup() {
+            remote 'if test -f /tmp/kadr-8443-probe.pid; then kill "$(cat /tmp/kadr-8443-probe.pid)" 2>/dev/null || :; fi; rm -f /tmp/kadr-8443-probe.py /tmp/kadr-8443-probe.pid /tmp/kadr-8443-probe.log' || true
+          }
+          trap cleanup EXIT
+          remote 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          [ "$(ss -H -ltn sport = :8443 | wc -l)" -eq 0 ]
+          [ ! -e /tmp/kadr-8443-probe.pid ]
+          curl -fsS --max-time 8 https://217-114-0-201.sslip.io/api/health >/dev/null
+          cat >/tmp/kadr-8443-probe.py <<'PY'
+          import ssl, http.server
+          class Handler(http.server.BaseHTTPRequestHandler):
+              def do_GET(self):
+                  if self.path != '/health': self.send_error(404); return
+                  self.send_response(200)
+                  self.send_header('Content-Type','application/json')
+                  self.end_headers()
+                  self.wfile.write(b'{"service":"kadr-tls-probe","ok":true}')
+              def log_message(self,*args): pass
+          app=http.server.HTTPServer(('0.0.0.0',8443),Handler)
+          tls=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+          tls.load_cert_chain('/etc/letsencrypt/live/217-114-0-201.sslip.io/fullchain.pem','/etc/letsencrypt/live/217-114-0-201.sslip.io/privkey.pem')
+          app.socket=tls.wrap_socket(app.socket,server_side=True)
+          app.serve_forever()
+          PY
+          nohup python3 /tmp/kadr-8443-probe.py </dev/null >/tmp/kadr-8443-probe.log 2>&1 &
+          echo $! > /tmp/kadr-8443-probe.pid
+          REMOTE
+          ready=no
+          for i in $(seq 1 10); do
+            if remote 'curl -fsS --max-time 2 https://217-114-0-201.sslip.io:8443/health' | grep -q 'kadr-tls-probe'; then ready=yes; break; fi
+            sleep 1
+          done
+          echo "tls_local_probe=$ready"
+          if [ "$ready" != yes ]; then echo 'local probe failed'; exit 1; fi
+          if curl -fsS --connect-timeout 6 --max-time 12 https://217-114-0-201.sslip.io:8443/health | grep -q 'kadr-tls-probe'; then
+             echo 'tls_external_probe=reachable'
+          else
+             echo 'tls_external_probe=blocked'
+          fi
+          remote 'curl -fsS --max-time 8 https://217-114-0-201.sslip.io/api/health >/dev/null && echo lifeos_healthy=yes'
