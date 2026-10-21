@@ -132,6 +132,9 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 | :--- | :--- |
 | `database_service.dart` | Singleton root: shared state, streams, static helpers; `part` coordinator |
 | `ai/viktor_action_contract.dart` | AI action allowlist and schema validation, no direct writes |
+| `ai/viktor_agent_capabilities.dart` | Model-independent capability registry, risk labels and approval policy for supported Viktor tools |
+| `ai/viktor_domain_tools.dart` | Scoped Brain-backed tool adapters for categories, tags, notes, Paths and safe profile settings; preview/read/execute |
+
 | `ai/viktor_schedule_planner.dart` | Pure plan order/time previews with collision protection |
 | `ai/viktor_executor.dart` | Brain-backed approved changes and real schedule checks |
 | `ai/viktor_gateway.dart` | Authenticated provider gateway client, session-only BYOK settings |
