@@ -17,7 +17,8 @@ class ViktorAction {
 
   static final Set<String> names = ViktorAgentCapabilities.names;
 
-  bool get isMutation => name != 'list_day_plans';
+  bool get isMutation =>
+      ViktorAgentCapabilities.byName[name]?.requiresApproval ?? true;
 
   factory ViktorAction.fromJson(Map<String, dynamic> raw) {
     _onlyKeys(raw, const {'name', 'arguments'});
