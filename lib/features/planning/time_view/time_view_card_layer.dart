@@ -211,18 +211,20 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                 horizontal:
                     PlanningTimeViewCoordinator.kTimelineBlockHorizontalPadPx,
               ),
-              child: ClipRect(
-                child: RepaintBoundary(
-                  child: AnimatedBuilder(
-                    animation: isPrimaryDraggedCard
-                        ? hourGridScrollController
-                        : const AlwaysStoppedAnimation<int>(0),
-                    builder: (context, child) => isPrimaryDraggedCard
-                        ? Transform.translate(
-                            offset: Offset(0, timelinePendingScrollCompensationPx),
-                            child: child,
-                          )
-                        : child!,
+              // Transform the entire clipped card, not its clipped contents.
+              // Otherwise Flutter cuts off the lifted card at the old slot.
+              child: AnimatedBuilder(
+                animation: isPrimaryDraggedCard
+                    ? hourGridScrollController
+                    : const AlwaysStoppedAnimation<int>(0),
+                builder: (context, child) => isPrimaryDraggedCard
+                    ? Transform.translate(
+                        offset: Offset(0, timelinePendingScrollCompensationPx),
+                        child: child,
+                      )
+                    : child!,
+                child: ClipRect(
+                  child: RepaintBoundary(
                     child: TimelinePlanInteractionBlock(
                   canMove: canMove,
                   canResize: canResize,
@@ -360,12 +362,11 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                       ),
                     ),
                   ),
-                  ), // AnimatedBuilder: only picked-up card tracks scroll
                   ), // RepaintBoundary
-                ),
-              ),
-            ),
-          ),
+                ), // ClipRect
+              ), // AnimatedBuilder: only the lifted card tracks scroll
+            ), // Padding
+          ), // AnimatedPositioned
         ],
       ),
     );
