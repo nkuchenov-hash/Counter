@@ -11,6 +11,10 @@ void main() {
       expect(shouldPersistViktorLocalPreferences(
           isWeb: false, hasCloudConnection: true), isTrue);
     });
+    test('native disconnected settings retain local fallback', () {
+      expect(shouldPersistViktorLocalPreferences(
+          isWeb: false, hasCloudConnection: false), isTrue);
+    });
     test('legacy offline web preferences remain a best-effort fallback', () {
       expect(shouldPersistViktorLocalPreferences(
           isWeb: true, hasCloudConnection: false), isTrue);
