@@ -307,6 +307,14 @@ class ViktorGateway {
     }
     final nextDay = DateTime(
       wallDay.year, wallDay.month, wallDay.day + 1);
+    final previousDay = DateTime(
+      wallDay.year, wallDay.month, wallDay.day - 1);
+    final previousDayPlans =
+        await service.getPlanningTasksForWallDate(previousDay);
+    final previousDayKey =
+        '${previousDay.year.toString().padLeft(4, '0')}-'
+        '${previousDay.month.toString().padLeft(2, '0')}-'
+        '${previousDay.day.toString().padLeft(2, '0')}';
     // The provider receives actual completion state and destination-day
     // obstacles. Never ask the user to find backend row IDs.
     final nextDayPlans = await service.getPlanningTasksForWallDate(nextDay);
@@ -320,6 +328,28 @@ class ViktorGateway {
       'next_day': '${nextDay.year.toString().padLeft(4, '0')}-'
           '${nextDay.month.toString().padLeft(2, '0')}-'
           '${nextDay.day.toString().padLeft(2, '0')}',
+      'previous_day': previousDayKey,
+      'previous_day_plans': [
+        for (final p in previousDayPlans)
+          if (p.pocketRecordId != null && p.pocketRecordId!.isNotEmpty)
+            {
+              'id': p.pocketRecordId,
+              'title': p.title,
+              'category_name':
+                  service.getCategoryRuleById(p.categoryId)?.name ?? '',
+              'tags': [for (final tag in p.tags) tag.name],
+              'is_done': p.isDone,
+              'duration_minutes': p.startTime != null &&
+                      p.endDateTime != null
+                  ? p.endDateTime!.difference(p.startTime!).inMinutes
+                  : null,
+              'start_time': p.startTime == null ? null :
+                  '${p.startTime!.hour.toString().padLeft(2, '0')}:'
+                  '${p.startTime!.minute.toString().padLeft(2, '0')}',
+              'recurrent': (p.rrule ?? '').isNotEmpty ||
+                  (p.recurrenceInstanceDateKey ?? '').isNotEmpty,
+            },
+      ],
       'mode': settings.mode,
       'provider': settings.mode == 'hosted' ? 'openai' : settings.provider,
       'model': settings.mode == 'hosted' ? 'gpt-4o-mini' : settings.model,
@@ -337,6 +367,9 @@ class ViktorGateway {
               'title': p.title,
               'is_done': p.isDone,
               'category_id': p.categoryId,
+              'category_name':
+                  service.getCategoryRuleById(p.categoryId)?.name ?? '',
+              'tags': [for (final tag in p.tags) tag.name],
               'duration_minutes': p.startTime != null && p.endDateTime != null
                   ? p.endDateTime!.difference(p.startTime!).inMinutes
                   : null,
