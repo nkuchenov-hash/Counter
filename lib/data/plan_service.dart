@@ -946,23 +946,6 @@ extension PlanServiceExtension on DatabaseService {
     }
   }
 
-  /// Create with an honest persistence receipt for agent/UI surfaces.
-  /// addPlanningTask returns true for both an acknowledged PocketBase POST
-  /// and a successfully queued offline write; callers must not treat those
-  /// two states as equivalent.
-  Future<({bool accepted, bool pendingSync, String clientPlanId})>
-      addPlanningTaskWithReceipt(PlanningTask task) async {
-    final clientPlanId = DatabaseService._newClientRecordUuid();
-    final accepted = await addPlanningTask(
-      task, clientPlanId: clientPlanId);
-    return (
-      accepted: accepted,
-      pendingSync: accepted &&
-          _hasPendingPlanMutationForBusinessId(clientPlanId),
-      clientPlanId: clientPlanId,
-    );
-  }
-
   /// Flat `plans` scalar PATCH map (no `user_id` key). Shared by [updatePlanningTask] and [bulkUpdatePlans].
   Map<String, dynamic> _scalarPatchBodyForPlanningRow({
     String? planBusinessId,
