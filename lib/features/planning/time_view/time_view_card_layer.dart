@@ -133,7 +133,7 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
           // Compact label next to the dragged card; never a full-width plate.
           if (isInteracting && (interactionLabel ?? '').isNotEmpty)
             Positioned(
-              top: math.max(0, topPx - 36),
+              top: math.max(0.0, topPx - 36.0),
               right: laneRight + horizontalPad + 4,
               child: IgnorePointer(
                 child: DecoratedBox(
