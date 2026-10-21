@@ -1,3 +1,10 @@
+## [2026-10-21] — Viktor malformed Yandex response recovery (pending CI)
+
+- Classify upstream model response failures and retry a malformed YandexGPT proposal once with supported `json_object` mode instead of failing immediately with `invalid_model_response`.
+- Support common structured text content variants while refusing truncated output, missing actions, and safety refusals; never infer tool actions from ordinary prose.
+- Show bounded, private, Russian-language error reasons. Added Node regression cases for truncated/invalid/refused and safely recovered model output; no user-data writes.
+- Requires CI, production PocketBase->Flutter Web deployment and authenticated YandexGPT test before claiming full end-to-end success.
+
 ## [2026-10-21] — Tactile drag restoration and cache-first warm reload
 
 - Restored bounded Time View pointer drag geometry. Auto-scroll keeps the lifted card under the original grab point but no longer reruns full insertion/cascade calculations on every scroll frame (64-ms preview cadence).

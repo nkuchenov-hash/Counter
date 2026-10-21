@@ -2,6 +2,13 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor provider response recovery (2026-10-21)
+
+- Provider-success HTTP 200 does not guarantee a usable proposal. The PocketBase provider adapter classifies missing choices/messages, refusal, length-truncated completions, empty content, invalid JSON and invalid action-envelope shape without logging user context, model text or credentials.
+- For YandexGPT only, a malformed proposed response (except refusal) triggers **at most one** retry using `response_format: json_object` rather than `json_schema`. Both requests are proposal-only; no Brain mutation occurs before validated client-side action execution. Keep the complete provider time budget below the Flutter HTTP timeout.
+- Decode strict JSON, an optional whole-response Markdown code fence, a JSON-string-wrapped JSON object and provider text-content arrays. Never attempt fuzzy JSON extraction from arbitrary natural language; never turn a refusal or truncated output into a write.
+- On failure, return a short allowlisted `reason` code, not model text or secrets; Flutter translates the reason into a useful Russian error. A failed proposal MUST NOT mutate user data.
+
 ## Viktor model/tool contract and validation repair (2026-10-21)
 
 - Model prose is not an executable command. YandexGPT Chat Completions must request schema-governed JSON proposals with exactly `message`, `actions`, `continue` at the envelope, and each action has only `name` and `arguments`. Tool names are constrained by a server-side allowlist intersected with the client-advertised capabilities.
