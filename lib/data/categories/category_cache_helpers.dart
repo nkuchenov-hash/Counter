@@ -353,6 +353,40 @@ extension CategoryCacheExtension on DatabaseService {
     _categoryDialogUniverse = list;
   }
 
+  /// First paint uses the last-known scoped category tree, never a
+  /// network call. The background category refresh reconciles afterward.
+  /// An absent/invalid disk cache must never erase a valid in-memory tree.
+  Future<void> restoreCategoryRulesFromLocalCacheAtBoot() async {
+    try {
+      final rows = await _readCachedCategoryMaps();
+      if (rows == null || rows.isEmpty) {
+        _categoryController.add(List.from(_rules));
+        return;
+      }
+      _rebuildReservedCategorySlugsFromRows(rows);
+      _rebuildCategoryDialogUniverse(rows);
+      final flat = rows
+          .map(
+            (row) => CategoryServiceExtension._flattenNocoRecord(
+              row,
+              allowCategoryIdAsRowPk: true,
+            ),
+          )
+          .where(_categoryFlatRowIsActive)
+          .toList();
+      if (flat.isNotEmpty) {
+        final built = _buildCategoryTreeFromFlat(flat);
+        if (built.$1.isNotEmpty) {
+          _rules = built.$1;
+        }
+      }
+      _categoryController.add(List.from(_rules));
+    } catch (e) {
+      DatabaseService._log('CATEGORY_LOCAL_BOOT: $e');
+      _categoryController.add(List.from(_rules));
+    }
+  }
+
   Future<void> _loadRulesFromNoco() async {
     List<Map<String, dynamic>>? allRows;
     try {
