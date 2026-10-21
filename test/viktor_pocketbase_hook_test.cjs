@@ -165,6 +165,15 @@ assert.deepEqual(JSON.parse(lastRequest.body).response_format.json_schema
   ['create_plan', 'list_day_plans'],
   'Untrusted tool names may never enter the model proposal schema');
 
+const feedback = invoke({...base,
+  proposal_feedback: 'Action 1: Tool create_plan: Unexpected field category_name. Allowed fields: title, wall_day, start_time, duration_minutes',
+});
+assert.equal(feedback.status, 200);
+const feedbackContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
+assert.match(feedbackContext.if_previous_proposal_rejected,
+  /Tool create_plan.*category_name/,
+  'Repair model must see the specific rejected field rather than a generic error');
+
 const bulk = invoke({...base,
   next_day: '2026-10-21',
   profile_timezone: 'New York',
