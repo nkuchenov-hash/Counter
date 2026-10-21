@@ -1,3 +1,9 @@
+## 2026-10-21 — Morning prompt browser persistence repair [fix]
+
+- Use existing browser IndexedDB storage for the morning check-in switch instead of SharedPreferences/localStorage, whose browser quota/invalid cached settings can reject even small saves.
+- Keep native device settings in SharedPreferences; migrate old browser OFF state best-effort. Do not block switching when old localStorage cannot be read.
+- Add Chrome browser persistence regression covering OFF across reload, bad legacy values and ON/OFF transitions.
+
 ## 2026-10-21 — Morning toggle web save error hotfix [fix]
 
 - Remove the extra SharedPreferences reload after setting the morning check-in switch. Await the real write and read the updated cache directly, avoiding a web-only error/false rollback.
