@@ -53,7 +53,18 @@ jobs:
             # after the successful server workflow. Never publish stale code
             # when another application, schema or workflow file changed.
             changed="$(git diff --name-only "$TRIGGER_SHA" "$MAIN_SHA")"
-            other="$(printf '%s\n' "$changed" | grep -Ev '^(_tmp_sleep_cloud_result[.]txt)?
+            if [[ "$changed" == "_tmp_sleep_cloud_result.txt" ]]; then
+              echo 'fresh=true' >> "$GITHUB_OUTPUT"
+              echo "Publishing validated $TRIGGER_SHA after audit-only $MAIN_SHA"
+            else
+              echo 'fresh=false' >> "$GITHUB_OUTPUT"
+              echo "Skipping stale code $TRIGGER_SHA; main advanced to $MAIN_SHA"
+            fi
+          else
+            echo 'fresh=false' >> "$GITHUB_OUTPUT"
+            echo "Skipping unrelated release $TRIGGER_SHA; main is $MAIN_SHA"
+          fi
+
       - name: Checkout validated main revision
         if: steps.freshness.outputs.fresh == 'true'
         uses: actions/checkout@v4
