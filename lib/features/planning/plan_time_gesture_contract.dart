@@ -48,6 +48,17 @@ double planTimePointerAnchoredDeltaPx({
 }) =>
     pointerDeltaPx + (scrollCurrentOffsetPx - scrollStartOffsetPx);
 
+/// Full insertion/cascade resolution is not a 60fps animation concern.
+/// During auto-scroll the picked-up card paints every frame, while the
+/// neighboring plans' heavy preview is refreshed at a bounded cadence.
+bool planTimeShouldResolveAutoScrollTarget(
+  DateTime? lastResolution,
+  DateTime now, {
+  Duration minimumInterval = const Duration(milliseconds: 64),
+}) =>
+    lastResolution == null ||
+    now.difference(lastResolution) >= minimumInterval;
+
 /// TIME_VIEW_TAP_NO_TIME_MUTATION — movement below threshold is a tap, not a drag commit.
 bool planTimeViewMovementBelowDragThreshold(
   double movementPx, {
