@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `3b774886` on 2026-10-21.**
+**Generated from input HEAD `d42cd90c` on 2026-10-21.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 918 — each appears **exactly once** below.
+**Tracked files:** 919 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -36,7 +36,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `governing documentation` | 42 |
 | `Desktop Voice runtime` | 36 |
 | `test fixture` | 26 |
-| `PocketBase backend` | 21 |
+| `PocketBase backend` | 22 |
 | `shared Voice system` | 20 |
 | `PocketBase migration` | 19 |
 | `historical engineering record` | 17 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 493 |
+| `PROVEN_REQUIRED` | 494 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 238 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 42 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 835 |
+| `HIGH` | 836 |
 | `MEDIUM` | 83 |
 
 ---
@@ -29728,6 +29728,43 @@ RU:
 - **Когда открывать:** Поведение auth/records на сервере не совпадает с ожиданиями приложения.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** PocketBase Admin, Flutter auth/records client.
+
+
+### `pb_hooks/viktor_vault_helpers.js`
+
+EN:
+
+- **Human purpose:** pb_hooks build file `viktor_vault_helpers.js` in `pb_hooks` — required by Flutter/native toolchain. Without `viktor_vault_helpers.js`, pb_hooks compile or packaging step for this folder may fail.
+- **What this is:** pb_hooks build file `viktor_vault_helpers.js` in `pb_hooks` — required by Flutter/native toolchain.
+- **Why needed:** Without `viktor_vault_helpers.js`, pb_hooks compile or packaging step for this folder may fail.
+- **Contents:** Native/config source for `pb_hooks` (open file only when build errors cite it).
+- **Repository role:** PocketBase backend
+- **Evidence of use:** Server-side PocketBase hook; deployed with the PB instance (see `docs/POCKETBASE_MANIFEST.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken server-side validation/automation for PB collections.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase backend
+- **Responsibilities:** Support pb_hooks embedder build for `pb_hooks` — not Dart business logic.
+- **When to open:** Build log mentions `viktor_vault_helpers.js` or `pb_hooks`.
+- **Can it be deleted?** Broken server-side validation/automation for PB collections.
+- **Connected to:** `pb_hooks/` platform folder, Flutter embedder.
+
+RU:
+
+- **Зачем файл человеку:** Platform file `viktor_vault_helpers.js` в `pb_hooks` — читает Flutter platform tool при сборке pb_hooks build. Без этого файла Flutter platform tool может не собрать или упаковать pb_hooks build.
+- **Что это:** Platform file `viktor_vault_helpers.js` в `pb_hooks` — читает Flutter platform tool при сборке pb_hooks build.
+- **Зачем:** Без этого файла Flutter platform tool может не собрать или упаковать pb_hooks build.
+- **Содержимое:** Содержимое native/config слоя `pb_hooks` (смотреть файл при build errors).
+- **Роль в репозитории:** PocketBase backend
+- **Доказательства использования:** Серверный hook PocketBase; деплоится вместе с PB (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается серверная логика PocketBase.
+- **Уверенность:** HIGH
+- **Владелец / слой:** PocketBase backend
+- **Обязанности:** Участвует в Flutter platform tool pipeline для pb_hooks build — не Dart business logic.
+- **Когда открывать:** Build log pb_hooks ссылается на `viktor_vault_helpers.js` или `pb_hooks`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `pb_hooks/`, Flutter embedder.
 
 
 ### `pb_hooks/xiaomi_sleep_bridge.py`
