@@ -156,7 +156,7 @@ routerAdd("POST", "/api/viktor/transcribe-yandex/status", (e) => {
         ? event.finalRefinement.finalIndex
         : event.audioCursors && event.audioCursors.finalIndex;
       const index = rawIndex !== undefined && rawIndex !== null &&
-          /^\\d+$/.test(String(rawIndex)) ? Number(rawIndex) : sequential++;
+          /^\d+$/.test(String(rawIndex)) ? Number(rawIndex) : sequential++;
       const current = phrasesByIndex[index];
       if (!current || refined) {
         phrasesByIndex[index] = {text: phrase, refined: Boolean(refined)};
