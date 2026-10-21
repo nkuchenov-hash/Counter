@@ -46,6 +46,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
   DateTime? _lastVoiceActivity;
   String? _voiceNotice;
   bool _settingsReady = false;
+  String? _cloudConnectionError;
 
   @override
   void initState() {
@@ -67,9 +68,17 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         DatabaseService.instance.pocketBase.authStore.record?.id ?? 'signed_out',
       );
       await _settings.loadCloudConnection();
-      if (mounted) setState(() => _settingsReady = true);
-    } catch (_) {
-      if (mounted) setState(() => _settingsReady = true);
+      if (mounted) setState(() {
+        _cloudConnectionError = null;
+        _settingsReady = true;
+      });
+    } catch (error) {
+      if (mounted) setState(() {
+        _cloudConnectionError = error.toString().replaceAll(
+          'FormatException: ', '',
+        );
+        _settingsReady = true;
+      });
     }
   }
 
@@ -382,6 +391,15 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
 
   Future<void> _openSettings() async {
     if (!_settingsReady) await _loadSettings();
+    // Refresh actual server status every time settings are opened, including
+    // after account auth becomes available later than the first page render.
+    try {
+      await _settings.loadCloudConnection();
+      _cloudConnectionError = null;
+    } catch (error) {
+      _cloudConnectionError = error.toString()
+          .replaceAll('FormatException: ', '');
+    }
     if (!mounted) return;
     var mode = _settings.mode;
     var provider = _settings.provider;
@@ -556,20 +574,49 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                         labelText: provider == 'gigachat'
                             ? 'Ключ авторизации GigaChat API'
                             : 'API-ключ модели',
+                        hintText: _cloudConnectionError == null &&
+                                _settings.cloudProviders.contains(provider)
+                            ? 'Ключ сохранён на сервере'
+                            : 'Введите ключ для подключения',
                         border: OutlineInputBorder(),
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      _settings.cloudProviders.contains(provider)
-                        ? 'Подключение сохранено для всех устройств LIFE OS. '
-                          'API-ключ хранится на сервере в зашифрованном виде. '
-                          'Оставьте поле ключа пустым, чтобы использовать сохранённый.'
-                        : 'Нажмите «Сохранить»: ключ будет зашифрован на '
-                          'сервере LIFE OS и станет доступен Виктору на '
-                          'других ваших устройствах. Сам ключ на них не передаётся.',
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                    if (_cloudConnectionError != null) ...[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.error_outline, color: Colors.red),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(
+                            'Не удалось проверить сохранённое подключение: '
+                            '$_cloudConnectionError',
+                            style: const TextStyle(fontSize: 16),
+                          )),
+                        ],
+                      ),
+                    ] else if (_settings.cloudProviders.contains(provider)) ...[
+                      const Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.check_circle_outline, color: Colors.green),
+                          SizedBox(width: 8),
+                          Expanded(child: Text(
+                            'Подключено. API-ключ сохранён на сервере LIFE OS '
+                            'и доступен на всех устройствах этого аккаунта. '
+                            'Поле ключа намеренно пустое: сервер не отправляет '
+                            'секрет обратно в браузер.',
+                            style: TextStyle(fontSize: 16),
+                          )),
+                        ],
+                      ),
+                    ] else
+                      const Text(
+                        'Не подключено. Введите API-ключ и нажмите «Сохранить». '
+                        'После проверки подключения оно появится на всех '
+                        'устройствах этого аккаунта.',
+                        style: TextStyle(fontSize: 16),
+                      ),
                   ] else
                     const Text(
                       'Встроенная модель станет доступна после включения '
@@ -604,15 +651,21 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       if (speechKeyCtrl.text.trim().isNotEmpty) {
         _settings.sessionSpeechApiKey = speechKeyCtrl.text.trim();
       }
-      await _settings.save();
       try {
         await _settings.saveCloudConnection();
-        if (mounted) _push('Подключение сохранено для всех устройств LIFE OS.');
-      } catch (error) {
+        await _settings.save();
+        _cloudConnectionError = null;
         if (mounted) _push(
-          'Не удалось сохранить подключение на сервере. '
-          'Ключ действует только до перезагрузки страницы. '
-          '${error.toString().replaceAll('FormatException: ', '')}',
+          'Подключение проверено: API-ключ сохранён на сервере '
+          'и доступен на других устройствах LIFE OS.',
+        );
+      } catch (error) {
+        _cloudConnectionError = error.toString()
+            .replaceAll('FormatException: ', '');
+        if (mounted) _push(
+          'Подключение НЕ подтверждено сервером. '
+          'После Ctrl + F5 ключ может быть недоступен. '
+          '$_cloudConnectionError',
         );
       }
       if (mounted) setState(() {});

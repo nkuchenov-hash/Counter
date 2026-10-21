@@ -66,7 +66,9 @@ routerAdd("GET", "/api/viktor/connection", (e) => {
         has_speech_key: !!payload.speech_api_key,
       });
     } catch (_) {
-      // Never expose ciphertext, decryption errors, or secret values.
+      // A stored-but-unreadable credential is NOT an empty connection.
+      // Report a safe error rather than silently telling the UI no key exists.
+      return e.json(503, {error: "vault_connection_unreadable"});
     }
   }
   return e.json(200, {connections: connections});
@@ -131,6 +133,15 @@ routerAdd("POST", "/api/viktor/connection", (e) => {
     record.set("model", model);
     record.set("payload_enc", $security.encrypt(JSON.stringify(payload), secret));
     $app.save(record);
+    // The write isn't successful until the saved ciphertext can be read
+    // back and decrypted using the exact same master key.
+    const persisted = viktorVaultFind(owner, provider);
+    if (!persisted) throw new Error("missing saved connection");
+    const verified = viktorVaultDec(persisted.getString("payload_enc"), secret);
+    if (verified.api_key !== effectiveKey ||
+        (provider === "yandex" && verified.folder_id !== effectiveFolder)) {
+      throw new Error("saved connection did not match");
+    }
   } catch (_) {
     return e.json(503, {error: "vault_save_failed"});
   }

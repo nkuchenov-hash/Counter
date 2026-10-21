@@ -123,8 +123,14 @@ class ViktorModelSettings {
       headers: {'Authorization': 'Bearer $token'},
     ).timeout(const Duration(seconds: 18));
     if (response.statusCode != 200) {
-      throw FormatException(
-          'cloud_connection_unavailable: ${response.statusCode}');
+      String reason = 'HTTP ${response.statusCode}';
+      try {
+        final errorBody = jsonDecode(utf8.decode(response.bodyBytes));
+        if (errorBody is Map && errorBody['error'] is String) {
+          reason = errorBody['error'] as String;
+        }
+      } catch (_) {}
+      throw FormatException('cloud_connection_unavailable: $reason');
     }
     final data = jsonDecode(utf8.decode(response.bodyBytes));
     if (data is! Map || data['connections'] is! List) {
@@ -192,18 +198,28 @@ class ViktorModelSettings {
       }),
     ).timeout(const Duration(seconds: 20));
     if (response.statusCode != 200) {
-      throw FormatException(
-          'cloud_connection_save_failed: ${response.statusCode}');
+      String reason = 'HTTP ${response.statusCode}';
+      try {
+        final errorBody = jsonDecode(utf8.decode(response.bodyBytes));
+        if (errorBody is Map && errorBody['error'] is String) {
+          reason = errorBody['error'] as String;
+        }
+      } catch (_) {}
+      throw FormatException('cloud_connection_save_failed: $reason');
     }
-    cloudProviders.add(provider);
-    cloudInfo[provider] = {
-      'provider': provider,
-      'model': model,
-      'folder_id': yandexFolderId,
-      'speech_provider': speechProvider,
-      'has_speech_key': sessionSpeechApiKey.trim().isNotEmpty ||
-          cloudInfo[provider]?['has_speech_key'] == true,
-    };
+    // Prove persistence by fetching the account's server state, not by
+    // trusting the POST response or inserting a fake local "connected" flag.
+    final expectedProvider = provider;
+    final expectedModel = model;
+    final expectedFolder = yandexFolderId.trim();
+    await loadCloudConnection();
+    final actual = cloudInfo[expectedProvider];
+    if (actual == null || actual['model'] != expectedModel ||
+        (expectedProvider == 'yandex' &&
+            actual['folder_id'] != expectedFolder)) {
+      throw const FormatException(
+          'cloud_connection_readback_failed');
+    }
   }
 
   void selectProvider(String newProvider) {
