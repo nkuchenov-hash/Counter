@@ -1,3 +1,9 @@
+## [2026-10-21] — Time View cursor anchor and compact time feedback
+
+- Fixed Time View scheduled card dragging through edge auto-scroll by compensating for the change in scroll offset since pointer pickup. Every scroll-ticker frame recomputes drag and insertion preview even when the pointer is stationary; the card is rendered at raw pointer position, while snapping is confined to the drop target.
+- Dragged card uses 74% opacity; the full-width dark time stripe has been replaced by a compact neutral time chip with a 16px label.
+- Added scroll-offset/pointer anchoring regressions in `test/plan_time_drag_gesture_contract_test.dart`. Web deployment and real-device drag interactions remain verification gates.
+
 ## [2026-10-21] — Viktor same-day priority insertion (pending CI)
 
 - Added `create_plan.conflict_policy = shift|reject`: reusable deterministic planner inserts priority blocks and cascades flexible saved plans preserving each duration/order; blocks completed/fixed/recurring/virtual/unsynced tasks and day overflow.
