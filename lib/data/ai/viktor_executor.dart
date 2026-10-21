@@ -252,6 +252,7 @@ class ViktorExecutor {
     required String approvedPreview,
   }) async {
     final approvedSignature = _bulkSignature;
+    final approvedComposeSignature = _composeSignature;
     final fresh = await describe(batch, day);
     if (fresh != approvedPreview ||
         (batch.actions.length == 1 &&
@@ -259,7 +260,8 @@ class ViktorExecutor {
          approvedSignature != _bulkSignature) ||
         (batch.actions.length == 1 &&
          batch.actions.single.name == 'compose_day' &&
-         _composeSignature == null)) {
+         (approvedComposeSignature == null ||
+          approvedComposeSignature != _composeSignature))) {
       throw StateError('Расписание изменилось после подтверждения. '
           'Проверьте новый вариант.');
     }
@@ -269,6 +271,14 @@ class ViktorExecutor {
       if (_composeSignature == null ||
           preview.signature != _composeSignature) {
         throw StateError('Исходные планы изменились после подтверждения.');
+      }
+      // Check meeting destination category BEFORE any partial write.
+      final category = preview.moves.isNotEmpty
+          ? preview.moves.first.plan.categoryId
+          : db.defaultCategoryId;
+      if (category == null || db.getCategoryRuleById(category) == null) {
+        throw StateError('Нет категории для новых встреч. '
+            'Никаких изменений не внесено.');
       }
       final patches = <PlanningBulkPatch>[
         for (final m in preview.moves)
@@ -291,13 +301,6 @@ class ViktorExecutor {
           throw StateError('Перенос завершился не полностью. '
               'Проверьте оба дня, прежде чем повторять.');
         }
-      }
-      final category = preview.moves.isNotEmpty
-          ? preview.moves.first.plan.categoryId
-          : db.defaultCategoryId;
-      if (category == null || db.getCategoryRuleById(category) == null) {
-        throw StateError('Нет категории для новых встреч. '
-            'Перенос мог сохраниться; проверьте расписание.');
       }
       var created = 0;
       for (final meeting in preview.meetings.where(
