@@ -55,17 +55,25 @@ const sandbox = {
     }
   },
   routerAdd(method, path, handler) {
-    handlers.set(method + ' ' + path, handler);
+    // PocketBase serializes each callback; outer lexical declarations are LOST.
+    handlers.set(method + ' ' + path, handler.toString());
   }
 };
 vm.runInNewContext(fs.readFileSync('pb_hooks/viktor.connection.pb.js', 'utf8'),
   sandbox, {timeout: 2000});
+const cjs = {exports: {}};
+vm.runInNewContext(
+  fs.readFileSync('pb_hooks/viktor_vault_helpers.js', 'utf8'),
+  {...sandbox, module: cjs, toString: v => Buffer.from(v).toString('utf8')},
+  {timeout: 2000}
+);
+const helpers = cjs.exports;
 
 function call(method, owner, body = {}) {
-  const route = handlers.get(method + ' /api/viktor/connection');
-  assert.equal(typeof route, 'function');
+  const handlerText = handlers.get(method + ' /api/viktor/connection');
+  assert.equal(typeof handlerText, 'string');
   let result;
-  route({
+  const request = {
     requestInfo: () => ({
       auth: owner ? {id: owner} : null,
       body
@@ -74,7 +82,22 @@ function call(method, owner, body = {}) {
       result = {status, payload: JSON.parse(JSON.stringify(payload))};
       return result;
     }
-  });
+  };
+  // Match production: fresh isolated runtime with only official bindings,
+  // NOT functions/constants declared outside the registered route handler.
+  const isolated = {
+    e: request,
+    __hooks: '/virtual/pb_hooks',
+    require: path => {
+      assert.equal(path, '/virtual/pb_hooks/viktor_vault_helpers.js');
+      return helpers;
+    },
+    Record, Buffer,
+    $app: app,
+    $os: sandbox.$os,
+    $security: sandbox.$security,
+  };
+  vm.runInNewContext('(' + handlerText + ')(e)', isolated, {timeout: 2000});
   return result;
 }
 const first = 'aaaaabbbbbccccc';
@@ -87,6 +110,10 @@ const config = {
 };
 assert.equal(call('POST', null, config).status, 401);
 assert.equal(call('GET', null).status, 401);
+const initiallyEmpty = call('GET', first);
+assert.equal(initiallyEmpty.status, 200);
+assert.equal(initiallyEmpty.payload.connections.length, 0,
+  'A first-time user should have no warning/error from GET');
 const missingKey = call('POST', first, {...config, api_key: ''});
 assert.equal(missingKey.status, 400);
 assert.equal(missingKey.payload.error, 'api_key_required');
