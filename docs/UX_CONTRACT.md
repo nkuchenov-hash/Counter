@@ -193,6 +193,13 @@ This document defines how Life OS behaves when people interact with it. It is th
 - Rollback is reserved for non-retriable failures; ordinary offline/network failures use queues where available.
 - Do not introduce full refetch fan-out after a small mutation unless unavoidable.
 
+## Time View pointer-locked drag (2026-10-21)
+
+- A grabbed scheduled card maintains the exact initial pointer-to-card offset throughout drag, regardless of pointer direction, canvas scroll offset, auto-scrolling, proximity to other cards, or drop-grid snapping. Drop targets may snap; the card itself must not snap or hit an invisible collision wall while held.
+- Drag geometry uses pointer movement **plus the difference between current and grab-start scroll offsets**. Edge auto-scroll updates visual geometry and target preview even while the pointer is stationary, on each scroll frame.
+- The dragged scheduled card is semi-transparent (0.74 opacity); the original position remains an understated placeholder. A new-time indicator is a compact theme-aware neutral chip near the card, not a full-width black overlay; it must not intercept pointer input.
+- The drag ending snaps/persists the final intended position only after release, maintaining the established fixed-time and cascade safeguards. Rules apply equally to browser, Android and desktop.
+
 ## P0: immediate Planning create across Web, Android and desktop (2026-10-21)
 
 - Submitting a valid new plan synchronously stages a locally identified task in the visible Planning page before any awaited work, PocketBase request, network refresh, outbox storage or heavy projection. It must appear on the Time graph/list on the first subsequent Flutter frame.
