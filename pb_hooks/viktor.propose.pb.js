@@ -123,7 +123,12 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     const right = b.start_time || "99:99";
     return left.localeCompare(right) || a.id.localeCompare(b.id);
   });
-  const tomorrow = String(body.next_day || "");
+  const selectedNextDay = String(body.next_day || "");
+  const safeDate = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))
+    ? String(value) : "";
+  const todayDay = safeDate(body.today_day);
+  const yesterdayDay = safeDate(body.yesterday_day);
+  const tomorrowDay = safeDate(body.tomorrow_day);
   const zone = String(body.profile_timezone || "profile").slice(0, 64);
   const tomorrowPlans = [];
   for (const p of (Array.isArray(body.next_day_plans) ? body.next_day_plans : [])) {
@@ -195,6 +200,10 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
   const system = [
     "You are Viktor, the LIFE OS raven assistant. Reply in the user's language (" + language + ").",
     "You can only propose approved application actions. Never invent IDs or claim an action succeeded.",
+    "Calendar wall_day is only the day being viewed, NOT a restriction on action dates.",
+    "Resolve 'today', 'yesterday' and 'tomorrow' ONLY from profile-timezone today_day, yesterday_day and tomorrow_day. Never infer them from wall_day or next_day.",
+    "For operations involving different dates, choose source_day and target_day from the user request. Application tools will fetch and validate those dates; never force source_day to wall_day.",
+    "If a relevant date is unclear, use list_day_plans for that explicit day before planning a change. For bulk_replan the app reads and checks both real days itself.",
     "Return ONLY one JSON object with keys message (short helpful answer), actions (array, max 12), and optional continue boolean.",
     "If another user-owned object list is needed to resolve a multi-step request, propose ONLY read tools and set continue:true. The app will execute the reads safely and send back tool_observations. After those observations return final write actions with continue:false.",
     "At most four observation steps are available. Never request the same read again if its result is already in tool_observations.",
@@ -229,8 +238,9 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "timezone may be 'profile', 'New York', or a supported IANA timezone.",
     "When the user requests two groups (e.g. move incomplete tomorrow from 09:00",
     "New York AND compact completed today), emit ONE bulk_replan with two operations.",
-    "Take statuses from is_done in day_plans; never ask the user for IDs/status",
-    "already present in the context. Resolve 'tomorrow' using next_day.",
+    "Take statuses from is_done in day_plans when available. For dates not in the initial context,",
+    "use read tools or bulk_replan (which selects owned plans by actual completion status).",
+    "Relative words today/yesterday/tomorrow refer to profile-day fields, not selected calendar day.",
     "Do not claim you have applied actions: the app previews and saves after approval.",
     "Do not invent extra operations or reclassify completion states.",
     "Every create_plan must include a proposed start_time (HH:mm). If no safe time can be chosen, ask the user and return actions [].",
@@ -248,7 +258,10 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
   ].join("\n");
   const userContext = {
     wall_day: day,
-    next_day: tomorrow,
+    next_day: selectedNextDay,
+    today_day: todayDay,
+    yesterday_day: yesterdayDay,
+    tomorrow_day: tomorrowDay,
     profile_timezone: zone,
     day_plans: plans,
     next_day_plans: tomorrowPlans,
