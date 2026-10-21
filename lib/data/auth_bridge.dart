@@ -96,23 +96,23 @@ class AuthBridge {
       // persisted token with PocketBase before treating protected list results
       // as authoritative; an invalid token otherwise looks like a valid empty
       // account because list rules return HTTP 200 with zero visible rows.
-      if (verifyWithServer) try {
-        await pb
-  .collection(PbCollections.profiles)
-  .authRefresh()
-  .timeout(const Duration(seconds: 3));
-      } on ClientException catch (e) {
-        if (e.statusCode >= 400 && e.statusCode < 500) {
-          try {
-            pb.authStore.clear();
-            await _storage.delete(key: _profileIdKey);
-          } catch (_) {}
-          return null;
+      if (verifyWithServer) {
+        try {
+          await pb.collection(PbCollections.profiles)
+              .authRefresh()
+              .timeout(const Duration(seconds: 3));
+        } on ClientException catch (e) {
+          if (e.statusCode >= 400 && e.statusCode < 500) {
+            try {
+              pb.authStore.clear();
+              await _storage.delete(key: _profileIdKey);
+            } catch (_) {}
+            return null;
+          }
+          // Keep unexpired local sessions during transport/server outages.
+        } catch (_) {
+          // The background refresh reconciles connectivity and revocation.
         }
-        // Keep an unexpired local session during a real network/server outage
-        // so the existing offline caches remain usable.
-      } catch (_) {
-        // Same offline behavior for transport errors outside ClientException.
       }
 
       if (!pb.authStore.isValid || pb.authStore.record == null) {
