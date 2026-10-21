@@ -28,8 +28,9 @@ class ViktorDateScope {
       ViktorActionBatch batch, DateTime displayedDay) {
     final dates = <String>{
       for (final action in batch.actions)
-        if (const {'move_plan_after', 'swap_plan_positions'}
-                .contains(action.name))
+        if (const {'move_plan_after', 'swap_plan_positions',
+                    'update_plan_duration'}.contains(action.name) &&
+            action.arguments.containsKey('wall_day'))
           action.arguments['wall_day'] as String,
     };
     if (dates.length > 1) {
