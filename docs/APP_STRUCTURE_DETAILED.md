@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `f59548be` on 2026-10-21.**
+**Generated from input HEAD `2f70d390` on 2026-10-21.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -19695,7 +19695,7 @@ EN:
 - **Why needed:** Users see `plan_time_gesture_contract.dart` when using Plans tab (second bottom tab).
 - **Contents:** Dart module `plan_time_gesture_contract.dart` — open file for classes and helpers.
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_interaction_block.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_interaction_block.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -19712,7 +19712,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `plan_time_gesture_contract.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `plan_time_gesture_contract.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_interaction_block.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_interaction_block.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
