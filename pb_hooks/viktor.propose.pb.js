@@ -332,6 +332,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     additionalProperties: false
   };
   let response;
+  let completionRequest;
   try {
     let bearer = key;
     if (provider === "gigachat") {
@@ -363,7 +364,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
       "Content-Type": "application/json"
     };
     if (provider === "yandex") providerHeaders["OpenAI-Project"] = folderId;
-    response = $http.send({
+    completionRequest = {
       url: urls[provider],
       method: "POST",
       headers: providerHeaders,
@@ -382,27 +383,85 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
           }
         } : {})
       }),
-      timeout: 35
-    });
+      timeout: provider === "yandex" ? 21 : 35
+    };
+    response = $http.send(completionRequest);
   } catch (_) {
     return e.json(502, {error: "provider_unreachable"});
   }
   if (response.statusCode < 200 || response.statusCode >= 300) {
     return e.json(502, {error: "provider_rejected", status: response.statusCode});
   }
-  let candidate;
-  try {
-    const packet = JSON.parse(response.raw);
-    const text = String(packet.choices[0].message.content || "").trim();
-    const noFences = text.replace(/^\`\`\`(?:json)?\s*/i, "").replace(/\s*\`\`\`$/, "");
-    candidate = JSON.parse(noFences);
-  } catch (_) {
-    return e.json(502, {error: "invalid_model_response"});
+  // No model response is trusted for execution until the typed Flutter
+  // contract validates it. Diagnose failures with safe reason codes only.
+  function parseProposal(raw) {
+    let packet;
+    try { packet = JSON.parse(raw); }
+    catch (_) { return {reason: "invalid_provider_envelope"}; }
+    const choice = packet && Array.isArray(packet.choices)
+      ? packet.choices[0] : null;
+    if (!choice || !choice.message) return {reason: "missing_model_message"};
+    const message = choice.message;
+    if (message.refusal || choice.finish_reason === "content_filter")
+      return {reason: "model_refusal"};
+    if (choice.finish_reason === "length") return {reason: "response_truncated"};
+
+    let content = message.content;
+    if (Array.isArray(content)) {
+      content = content.filter(part => part && part.type === "text" &&
+        typeof part.text === "string").map(part => part.text).join("");
+    }
+    if (content && typeof content === "object") content = JSON.stringify(content);
+    if (typeof content !== "string" || !content.trim()) {
+      return {reason: "empty_model_content"};
+    }
+    const text = content.trim().replace(/^`{3}(?:json)?\s*/i, "")
+      .replace(/\s*`{3}$/, "");
+    let candidate;
+    try {
+      candidate = JSON.parse(text);
+      if (typeof candidate === "string") candidate = JSON.parse(candidate);
+    } catch (_) {
+      return {reason: "non_json_model_content"};
+    }
+    if (!candidate || typeof candidate !== "object" ||
+        Array.isArray(candidate) || !Array.isArray(candidate.actions) ||
+        candidate.actions.length > 12) {
+      return {reason: "invalid_action_proposal"};
+    }
+    return {candidate: candidate};
   }
-  if (!candidate || typeof candidate !== "object" || !Array.isArray(candidate.actions) ||
-      candidate.actions.length > 12) {
-    return e.json(502, {error: "invalid_action_proposal"});
+
+  let parsed = parseProposal(response.raw);
+  // The one fallback uses Yandex's older JSON-object mode. It asks the
+  // provider to propose again; no database action is performed here.
+  if (!parsed.candidate && provider === "yandex" &&
+      parsed.reason !== "model_refusal") {
+    try {
+      const retryBody = JSON.parse(completionRequest.body);
+      retryBody.response_format = {type: "json_object"};
+      retryBody.max_tokens = 3600;
+      const retry = $http.send({
+        ...completionRequest, body: JSON.stringify(retryBody), timeout: 19
+      });
+      if (retry.statusCode < 200 || retry.statusCode >= 300) {
+        return e.json(502, {
+          error: "provider_rejected", status: retry.statusCode, stage: "retry"
+        });
+      }
+      parsed = parseProposal(retry.raw);
+    } catch (_) {
+      return e.json(502, {error: "provider_unreachable", stage: "retry"});
+    }
   }
+  if (!parsed.candidate) {
+    return e.json(502, {
+      error: parsed.reason === "invalid_action_proposal" ?
+        "invalid_action_proposal" : "invalid_model_response",
+      reason: parsed.reason
+    });
+  }
+  const candidate = parsed.candidate;
   return e.json(200, {
     request_id: requestId,
     version: 1,

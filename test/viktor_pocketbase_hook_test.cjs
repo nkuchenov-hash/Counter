@@ -7,6 +7,7 @@ const source = fs.readFileSync('pb_hooks/viktor.propose.pb.js', 'utf8');
 let route;
 let calls = 0;
 let lastRequest;
+let nextModelReplies = [];
 let vaultSecret = '';
 let vaultAccesses = 0;
 const sandbox = {
@@ -43,6 +44,7 @@ const sandbox = {
     if (request.url.includes('/api/v2/oauth')) {
       return {statusCode: 200, raw: JSON.stringify({access_token: 'test-access-token-from-oauth'})};
     }
+    if (nextModelReplies.length > 0) return nextModelReplies.shift();
     return {
       statusCode: 200,
       raw: JSON.stringify({
@@ -210,6 +212,61 @@ assert.equal(lastRequest.headers.Authorization,
   'Api-Key cloud-yandex-key-not-on-device');
 assert.equal(lastRequest.headers['OpenAI-Project'], 'b1g9testfolder11');
 assert.ok(!JSON.stringify(fromCloud).includes('cloud-yandex-key-not-on-device'));
+
+// Simulate Yandex responding with a truncated schema result and then a
+// correct JSON-mode reply. No external provider account is needed here.
+const yandexRequest = {...base, provider: 'yandex', model: 'yandexgpt/rc',
+  yandex_folder_id: 'b1g9testfolder11', available_tools: ['create_plan']};
+function modelReply(content, finish_reason = 'stop') {
+  return {statusCode: 200, raw: JSON.stringify({
+    choices: [{finish_reason, message: {content}}]
+  })};
+}
+const validEvent = {message: 'Создам встречу 24 октября в 20:00',
+  actions: [{name: 'create_plan', arguments: {
+    title: 'RCC Meeting Failover Bar', wall_day: '2026-10-24',
+    start_time: '20:00', duration_minutes: 30
+  }}], continue: false};
+const beforeRecovery = calls;
+nextModelReplies = [
+  modelReply('{"message":"long response"', 'length'),
+  modelReply(JSON.stringify(validEvent))
+];
+const recovered = invoke(yandexRequest);
+assert.equal(recovered.status, 200, 'Yandex should recover from incomplete output');
+assert.equal(recovered.value.actions[0].name, 'create_plan');
+assert.equal(calls - beforeRecovery, 2, 'Only one fallback is permitted');
+assert.equal(JSON.parse(lastRequest.body).response_format.type, 'json_object',
+  'Retry uses simpler supported JSON mode');
+assert.equal(lastRequest.headers.Authorization, 'Api-Key ' + base.api_key);
+
+const beforeMalformed = calls;
+nextModelReplies = [
+  modelReply('not even JSON'),
+  modelReply('not even JSON')
+];
+const malformed = invoke(yandexRequest);
+assert.equal(malformed.status, 502);
+assert.equal(malformed.value.error, 'invalid_model_response');
+assert.equal(malformed.value.reason, 'non_json_model_content');
+assert.equal(calls - beforeMalformed, 2, 'Bad responses never loop forever');
+assert.ok(!JSON.stringify(malformed).includes('not even JSON'),
+  'Raw model content must not leak to client errors');
+
+const beforeRefusal = calls;
+nextModelReplies = [modelReply('', 'content_filter')];
+const refused = invoke(yandexRequest);
+assert.equal(refused.status, 502);
+assert.equal(refused.value.reason, 'model_refusal');
+assert.equal(calls - beforeRefusal, 1, 'Never retry a safety refusal');
+
+nextModelReplies = [modelReply([{type: 'text', text: JSON.stringify(validEvent)}])];
+const segmented = invoke(yandexRequest);
+assert.equal(segmented.status, 200, 'Text segment response is supported');
+
+nextModelReplies = [modelReply(JSON.stringify(JSON.stringify(validEvent)))];
+const encoded = invoke(yandexRequest);
+assert.equal(encoded.status, 200, 'Double-encoded JSON is parsed safely');
 
 const protectSource = fs.readFileSync('pb_hooks/viktor.protect_tier.pb.js', 'utf8');
 const hooks = {};

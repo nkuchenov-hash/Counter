@@ -496,8 +496,25 @@ class ViktorGateway {
     if (decoded is! Map) throw const FormatException('Invalid server reply.');
     final map = Map<String, dynamic>.from(decoded);
     if (reply.statusCode != 200) {
-      final reason = map['error']?.toString() ?? 'request_failed';
-      throw FormatException('Viktor: $reason');
+      final errorCode = map['error']?.toString() ?? 'request_failed';
+      if (errorCode == 'invalid_model_response' ||
+          errorCode == 'invalid_action_proposal') {
+        final reason = map['reason']?.toString() ?? '';
+        const details = <String, String>{
+          'response_truncated': 'ответ модели был обрезан',
+          'empty_model_content': 'модель вернула пустой ответ',
+          'non_json_model_content': 'модель не вернула корректный JSON',
+          'invalid_provider_envelope': 'поставщик вернул повреждённый ответ',
+          'missing_model_message': 'в ответе отсутствует сообщение модели',
+          'invalid_action_proposal': 'модель вернула неверную структуру действий',
+          'model_refusal': 'модель отклонила запрос',
+        };
+        throw FormatException(
+          'Виктор: ' +
+          (details[reason] ?? 'не удалось разобрать ответ ИИ') +
+          '. Изменения не выполнялись.');
+      }
+      throw FormatException('Viktor: $errorCode');
     }
     final raw = map['actions'];
     if (raw is! List) throw const FormatException('Invalid action list.');
