@@ -445,11 +445,16 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     var speechProvider = _settings.speechProvider;
     final speechKeyCtrl = TextEditingController(text: _settings.sessionSpeechApiKey);
     var savingConnection = false;
+    var localPreferencesSaved = true;
     String? saveError;
     final saved = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, updateDialog) => AlertDialog(
+          // Long errors must not change the dialog's width on desktop.
+          constraints: const BoxConstraints(maxWidth: 560),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16, vertical: 24),
           title: const Text('Модель Виктора'),
           content: SizedBox(
             width: 480,
@@ -660,19 +665,18 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                       'подписки и серверного учёта лимитов.',
                       style: TextStyle(fontSize: 16),
                     ),
+                  // Error belongs inside the bounded scrollable content,
+                  // not in AlertDialog.actions (which uses intrinsic width).
+                  if (saveError != null) ...[
+                    const SizedBox(height: 16),
+                    Text(saveError!, style: const TextStyle(
+                      fontSize: 16, color: Colors.red)),
+                  ],
                 ],
               ),
             ),
           ),
           actions: [
-            if (saveError != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  saveError!,
-                  style: const TextStyle(fontSize: 16, color: Colors.red),
-                ),
-              ),
             AppButton.ghost(
               label: 'Отмена',
               onPressed: savingConnection
@@ -717,8 +721,10 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                   _settings.sessionSpeechApiKey = speechKeyCtrl.text.trim();
                 }
                 try {
+                  // Successful encrypted cloud save is authoritative. A full
+                  // browser localStorage must not turn it into a false error.
                   await _settings.saveCloudConnection();
-                  await _settings.save();
+                  localPreferencesSaved = await _settings.save();
                   _cloudConnectionError = null;
                   if (dialogContext.mounted) {
                     Navigator.of(dialogContext).pop(true);
@@ -739,7 +745,10 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       ),
     );
     if (saved == true && mounted) {
-      _push('Подключение проверено: сохранено на сервере LIFE OS.');
+      _push(localPreferencesSaved
+          ? 'Подключение проверено: сохранено на сервере LIFE OS.'
+          : 'Подключение сохранено на сервере LIFE OS. '
+            'Локальные настройки устройства не записались.');
       setState(() {});
     }
     keyCtrl.dispose();
