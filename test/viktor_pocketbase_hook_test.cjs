@@ -162,8 +162,8 @@ const cappedSchema = invoke({...base,
 assert.equal(cappedSchema.status, 200);
 assert.deepEqual(JSON.parse(lastRequest.body).response_format.json_schema
   .schema.properties.actions.items.properties.name.enum,
-  ['create_plan', 'list_day_plans', 'delete_all_data'],
-  'Advertised names constrain generation, but local contract still owns rights');
+  ['create_plan', 'list_day_plans'],
+  'Untrusted tool names may never enter the model proposal schema');
 
 const bulk = invoke({...base,
   next_day: '2026-10-21',
