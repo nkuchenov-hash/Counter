@@ -269,13 +269,24 @@ const Map<String, String> kEnL10n = {
   'plan_bulk_shift_applied': 'Times updated.',
   'plan_bulk_edit': 'Edit',
   'plan_bulk_edit_sheet_title': 'Edit %s tasks',
+  'plan_bulk_edit_block_start': 'Start of sequence',
+  'plan_bulk_edit_date_only_start': 'New date',
+  'plan_bulk_edit_pick_start': 'Choose date and time',
+  'plan_bulk_edit_pick_date': 'Choose date',
+  'plan_bulk_edit_date_only_mode': 'Move date only, keep task times',
+  'plan_bulk_edit_sequential_hint':
+      'Tasks run consecutively in the selected order. The first starts at the chosen time, with no gaps between tasks. Durations are preserved.',
+  'plan_bulk_edit_date_only_hint':
+      'Only the date changes. Each task keeps its start time and duration.',
+  'plan_bulk_edit_timezone_hint':
+      'Time is interpreted in the profile time zone.',
   'plan_bulk_edit_date_label': 'Date',
   'plan_bulk_edit_new_start_label': 'Set time',
   'plan_bulk_edit_set_time_label': 'Set time',
   'plan_bulk_edit_time_not_set': 'Unchanged — only the date moves',
   'plan_bulk_edit_time_reset': 'Reset time',
   'plan_bulk_edit_time_hint':
-      'Every selected task gets this same start time on the chosen date. Tasks that had both start and end keep their original duration.',
+      'Tasks are scheduled consecutively from the chosen time, with no gaps and with their durations preserved.',
   'plan_bulk_edit_shift_section': 'Set time',
   'plan_bulk_edit_shift_hint':
       'Moves start and end by the same amount (tasks without a time use 09:00).',
