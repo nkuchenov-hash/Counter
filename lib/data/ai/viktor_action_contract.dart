@@ -148,13 +148,13 @@ class ViktorAction {
       case 'create_note':
         _onlyKeys(args, const {'title', 'text', 'category_id'});
         _title(args, 'title');
-        _text(args, 'text', maxLength: 8000);
+        _longText(args, 'text', maxLength: 8000);
         if (args.containsKey('category_id')) _id(args, 'category_id');
       case 'edit_note':
         _onlyKeys(args, const {'note_id', 'expected_title', 'text'});
         _id(args, 'note_id');
         _title(args, 'expected_title');
-        _text(args, 'text', maxLength: 8000);
+        _longText(args, 'text', maxLength: 8000);
       case 'create_path':
         _onlyKeys(args, const {'name', 'category_id', 'goal', 'stages'});
         _title(args, 'name');
@@ -333,6 +333,16 @@ String _clock(Map<String, Object?> args, String key) {
   final p = value.split(':').map(int.parse).toList();
   if (p[0] > 23 || p[1] > 59) {
     throw FormatException('Invalid wall clock: $key');
+  }
+  return value;
+}
+
+String _longText(Map<String, Object?> args, String key,
+    {int maxLength = 8000}) {
+  final value = args[key];
+  if (value is! String || value.trim().isEmpty || value.length > maxLength ||
+      value.contains(RegExp(r'[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]'))) {
+    throw FormatException('Invalid $key');
   }
   return value;
 }
