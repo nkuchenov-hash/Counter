@@ -289,6 +289,12 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 Shell header, More, Planning Smart and Profile open the same Viktor chat; no overlapping floating voice FAB or competing Smart Plan sheet. Dictation remains inside the safe-area chat composer, resized for the keyboard. Changes have actual-time preview before approval; remote schedule changes invalidate approval. Recurring/fixed plans cannot be shifted implicitly. Small screens require 320/390 px no-overflow widget tests and real-device checks. See `docs/VIKTOR_BETA_RELEASE_CHECKLIST.md`.
 
 
+## Viktor BYOK settings dialog and browser quota (2026-10-21)
+
+- On desktop, Viktor's model settings dialog has a bounded maximum width of 560 logical pixels; it must never stretch horizontally in response to a long server/storage error. On mobile it fits available screen width with 16 px side insets. Validation errors appear in its scrollable content, not the actions row, and never cause width changes.
+- After an authenticated encrypted PocketBase connection POST **and subsequent GET/readback** succeed, the BYOK connection is saved. Web clients must **not** subsequently write redundant Viktor preference keys into SharedPreferences/localStorage: the user's cloud connection metadata is the source of truth and localStorage can be full. Native optional preferences are best-effort and cannot downgrade a confirmed cloud connection to failure.
+- Never clear all localStorage/IndexedDB to free quota automatically, because it may contain unsynced offline app data. A browser quota error in unrelated settings must be diagnosed separately.
+
 ## Viktor recorded dictation and feedback (2026-10-20)
 
 The web microphone MUST capture actual audio through `record`, not browser `SpeechRecognition`. On start, show record duration, current sampled volume and captured byte count; microphone stays a stop control. After stop, show a transcription progress indicator, then place recognized words as **editable** text in the existing composer; do not automatically submit or execute model actions. A silent/too-short recording, no microphone permission, rejected provider key or unavailable service MUST show a visible inline error, not produce a fake listening/success state or repeated chat bubbles. Audio (up to 60 seconds) is sent to the selected transcription provider via authenticated PocketBase, using BYOK; never store credentials or recordings. On Android and Windows the same capture/submit UX replaces silent speech service behavior.

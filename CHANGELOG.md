@@ -1,3 +1,9 @@
+## 2026-10-21 — Viktor cloud save quota and dialog width [fix]
+
+- Fix false red `QuotaExceededError` after successfully saving BYOK credentials to PocketBase: web uses authenticated cloud metadata as the source of truth and skips redundant SharedPreferences/localStorage writes; native optional preferences fail gracefully.
+- Bound Viktor model-settings dialog to 560 logical pixels on desktop (responsive 16 px screen inset), and place errors in the scrollable body instead of the action bar to prevent full-screen horizontal expansion.
+- Add deterministic test for cloud/browser preference-write policy. No browser cache/IndexedDB data is cleared.
+
 ## 2026-10-21 — Morning prompt browser persistence repair [fix]
 
 - Use existing browser IndexedDB storage for the morning check-in switch instead of SharedPreferences/localStorage, whose browser quota/invalid cached settings can reject even small saves.
