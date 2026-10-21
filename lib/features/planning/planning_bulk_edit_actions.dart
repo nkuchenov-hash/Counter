@@ -25,17 +25,6 @@ extension PlanningBulkEditActions on _PlanningPageState {
       selectedTasks: selected,
     );
     if (result == null || !mounted) return;
-    final refDay = widget.selectedDate ?? _today;
-    final sameDay = result.targetDate.year == refDay.year &&
-        result.targetDate.month == refDay.month &&
-        result.targetDate.day == refDay.day;
-    if (sameDay && !result.applyTargetTime) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(loc, 'plan_bulk_edit_no_changes'))),
-      );
-      return;
-    }
-
     final db = DatabaseService.instance;
     final placements = computeSequentialBulkEditWallTimes(
       selected,
@@ -43,6 +32,18 @@ extension PlanningBulkEditActions on _PlanningPageState {
       durationMinutesForTask: (task) =>
           db.resolvePlanDurationMinutesFromTags(task.tags),
     );
+    // Compare the actual resulting schedule. The same calendar day can
+    // still have a new start time; conversely an identical placement must
+    // never generate writes or shift other plans.
+    if (selected.asMap().entries.every(
+      (entry) => bulkPlacementMatchesTask(entry.value, placements[entry.key]),
+    )) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(loc, 'plan_bulk_edit_no_changes'))),
+      );
+      return;
+    }
+
     // The source block has priority from the user-selected clock time.
     // Cascade only destination-day incumbents it would otherwise overlap.
     final destinationMoves =
@@ -115,10 +116,14 @@ extension PlanningBulkEditActions on _PlanningPageState {
     // Apply the complete coherent block before persistence. Single refresh,
     // not a per-row cascade that can reshuffle equal timestamps.
     for (var i = 0; i < selected.length; i++) {
-      stage(selected[i], placements[i]);
+      if (!bulkPlacementMatchesTask(selected[i], placements[i])) {
+        stage(selected[i], placements[i]);
+      }
     }
     for (final move in destinationMoves) {
-      stage(move.task, move.times);
+      if (!bulkPlacementMatchesTask(move.task, move.times)) {
+        stage(move.task, move.times);
+      }
     }
     if (patches.isEmpty) return;
     db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
