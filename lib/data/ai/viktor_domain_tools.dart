@@ -146,8 +146,14 @@ class ViktorDomainTools {
           throw StateError('Заметка содержит вложения: нельзя заменить '
               'её целиком без потерь.');
         }
+        // Re-rendered just before execution by ViktorExecutor. Including
+        // the server/cached document fingerprint in the *approved preview*
+        // rejects edits made after user consent even when the title matches.
+        final fingerprint = (note.notesDeltaJson ?? '').hashCode
+            .toUnsigned(32).toRadixString(16);
         return 'Заменить текст заметки «' + note.title +
-            '» на:\n' + (a['text'] as String);
+            '» (версия документа: ' + fingerprint +
+            ') на:\n' + (a['text'] as String);
       case 'create_path':
         final category = _category(a['category_id'] as String);
         if (category == null || category.backendRowId == null) {
