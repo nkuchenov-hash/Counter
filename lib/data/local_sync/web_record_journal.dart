@@ -44,6 +44,27 @@ abstract final class WebRecordJournal {
     });
   }
 
+  /// A separate IndexedDB record, independent of the potentially full
+  /// SharedPreferences localStorage. Null deletes the preference for tests or
+  /// intentional reset; false is a first-class persisted value.
+  static Future<bool?> readPreferenceBool(String key) async {
+    final db = await _database();
+    final row = await _store.record('preference:$key').get(db);
+    return row?['enabled'] as bool?;
+  }
+
+  static Future<void> writePreferenceBool(String key, bool? enabled) async {
+    final db = await _database();
+    await db.transaction<void>((txn) async {
+      final ref = _store.record('preference:$key');
+      if (enabled == null) {
+        await ref.delete(txn);
+      } else {
+        await ref.put(txn, <String, Object?>{'enabled': enabled});
+      }
+    });
+  }
+
   static Future<String?> readDraft(String key) async {
     final db = await _database();
     final row = await _store.record('draft:$key').get(db);
