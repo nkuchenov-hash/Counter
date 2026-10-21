@@ -77,7 +77,9 @@ routerAdd("POST", "/api/viktor/transcribe-yandex", (e) => {
           audioFormat: {containerAudio: {containerAudioType: "WAV"}},
           languageRestriction: {
             restrictionType: "WHITELIST",
-            languageCode: [request.language === "ru" ? "ru-RU" : "en-US"]
+            // LIFE OS commands frequently mix Russian and English names.
+            // A UI locale is not a reliable audio-language restriction.
+            languageCode: ["ru-RU", "en-US"]
           }
         }
       }),
