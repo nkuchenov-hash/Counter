@@ -802,7 +802,12 @@ extension PlanServiceExtension on DatabaseService {
     );
     // Creation is not a reorder operation. Existing plans must never be shifted
     // just to make the new row fit; only createTask may be repositioned above.
-    notifyPlanningRefresh(scheduleNetworkRefresh: false);
+    // P0: all visible Planning subscribers see the local overlay right now,
+    // before create-body building, the offline queue or PocketBase requests.
+    notifyPlanningRefresh(
+      scheduleNetworkRefresh: false,
+      immediateLocal: true,
+    );
     late final Map<String, dynamic> body;
     try {
       body = await _buildPocketPlanCreateBody(
