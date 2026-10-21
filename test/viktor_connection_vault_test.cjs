@@ -163,4 +163,4 @@ assert.equal(rows.length, 0);
 masterKey = '';
 assert.equal(call('GET', first).status, 503, 'Unconfigured vault fails closed');
 assert.equal(call('POST', first, config).status, 503);
-process.stdout.write('Viktor account BYOK vault access and encryption contract: PASS\n');
+process.stdout.write('Viktor isolated-route BYOK vault access, encryption and guest GET: PASS\n');
