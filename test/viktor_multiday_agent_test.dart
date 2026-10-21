@@ -76,6 +76,20 @@ void main() {
         DateTime(2026, 10, 20));
   });
 
+  test('Duration edit can explicitly target a day outside the UI', () {
+    final batch = _batch([{
+      'name': 'update_plan_duration',
+      'arguments': {
+        'plan_id': 'aaaaabbbbbccccc',
+        'expected_duration_minutes': 60,
+        'duration_minutes': 45,
+        'wall_day': '2026-10-20',
+      }
+    }]);
+    expect(ViktorDateScope.scheduleDay(batch, DateTime(2026, 10, 21)),
+        DateTime(2026, 10, 20));
+  });
+
   test('Bulk move independently selects only unfinished source plans', () {
     final action = _move().actions.single;
     final scope = ViktorDateScope.bulkDays(action);
