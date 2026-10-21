@@ -235,7 +235,15 @@ class ViktorActionBatch {
 
   /// Previews are mandatory for multi-step edits and operations which may
   /// cascade scheduling. The executor can still require additional approval.
-  bool get requiresPreview => hasMutations;
+  bool get requiresPreview =>
+      actions.where((a) => a.isMutation).length > 1 ||
+      actions.any((a) =>
+          a.name == 'move_plan_after' || a.name == 'bulk_replan' ||
+          (ViktorAgentCapabilities.byName[a.name]?.requiresApproval == true &&
+           !const {
+             'create_plan', 'update_plan_duration', 'swap_plan_positions',
+             'start_record', 'stop_record',
+           }.contains(a.name)));
 
   factory ViktorActionBatch.fromJson(Map<String, dynamic> raw) {
     _onlyKeys(raw, const {'version', 'request_id', 'actions'});
