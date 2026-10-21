@@ -11,7 +11,7 @@ extension DbCoreExtension on DatabaseService {
   // PocketBase init & health
   // ---------------------------------------------------------------------------
 
-  Future<void> ensurePocketBaseReady() async {
+  Future<void> ensurePocketBaseReady({bool verifyReachability = true}) async {
     if (_pocketBase == null) {
       final prefs = await SharedPreferences.getInstance();
       final baseUrl = kPocketBaseUrl;
@@ -31,7 +31,9 @@ extension DbCoreExtension on DatabaseService {
         );
       }
     }
-    await _maybeVerifyPocketBaseReachable();
+    // Boot needs an authStore instance, not a blocking health round-trip.
+    // The first post-shell foreground sync verifies connectivity.
+    if (verifyReachability) await _maybeVerifyPocketBaseReachable();
     _attachPocketBaseRealtimeGuards();
     SyncManager.instance.attachIfNeeded();
   }
@@ -406,7 +408,7 @@ extension DbCoreExtension on DatabaseService {
   // ---------------------------------------------------------------------------
 
   Future<bool> loadInitialData(String uid) async {
-    await ensurePocketBaseReady();
+    await ensurePocketBaseReady(verifyReachability: false);
     _isInitialized = false;
     _loadErrorMessage = null;
     _profileHydratedFromPb = false;
@@ -420,7 +422,8 @@ extension DbCoreExtension on DatabaseService {
     currentProfileId = trimmed;
     try {
       _prefs = await SharedPreferences.getInstance();
-      await _debugPocketBaseHealth();
+      // Server health is checked by refreshForegroundData after the shell
+      // paints; do not pay up to 3s here on every reload.
       await StartupLog.stageAsync(
         'profileFetch',
         () => _loadSettingsFromNoco().timeout(
