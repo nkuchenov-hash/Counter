@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `1fb33315` on 2026-10-21.**
+**Generated from input HEAD `ef88d836` on 2026-10-21.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -13545,8 +13545,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain helper for data/sync — viktor agent capabilities. Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What this is:** Brain helper for data/sync — viktor agent capabilities.
+- **Human purpose:** Brain helper for data/sync — Model-independent capability registry, risk labels and approval policy for supported Viktor tools. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Model-independent capability registry, risk labels and approval policy for supported Viktor tools.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
 - **Contents:** Dart helpers and types (`ViktorToolRisk`, `ViktorToolCapability`, `ViktorAgentCapabilities`).
 - **Key code names:** `ViktorToolRisk`, `ViktorToolCapability`, `ViktorAgentCapabilities`
@@ -13556,10 +13556,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** viktor agent capabilities
+- **Responsibilities:** Model-independent capability registry, risk labels and approval policy for supported Viktor tools
 - **When to open:** When behavior tied to `viktor_agent_capabilities.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor agent capabilities
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Model-independent capability registry, risk labels and approval policy for supported Viktor tools
 
 RU:
 
@@ -13583,8 +13583,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain helper for data/sync — viktor domain tools. Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What this is:** Brain helper for data/sync — viktor domain tools.
+- **Human purpose:** Brain helper for data/sync — Scoped Brain-backed tool adapters for categories, tags, notes, Paths and safe profile settings. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Scoped Brain-backed tool adapters for categories, tags, notes, Paths and safe profile settings.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
 - **Contents:** Dart helpers and types (`ViktorDomainTools`).
 - **Key code names:** `ViktorDomainTools`
@@ -13594,10 +13594,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** viktor domain tools
+- **Responsibilities:** Scoped Brain-backed tool adapters for categories, tags, notes, Paths and safe profile settings; preview/read/execute
 - **When to open:** When behavior tied to `viktor_domain_tools.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor domain tools
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Scoped Brain-backed tool adapters for categories, tags, notes, Paths and safe profile settings
 
 RU:
 
