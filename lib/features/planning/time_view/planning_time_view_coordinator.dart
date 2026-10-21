@@ -72,6 +72,9 @@ class PlanningTimeViewCoordinator {
   /// Called on every auto-scroll frame, even without new pointer movement.
   /// Keeps the card and insertion preview attached to the stationary cursor.
   VoidCallback? timelineRecomputeDragAfterAutoScroll;
+  /// The drop target may be recalculated less often than pointer painting
+  /// during edge auto-scroll; normal pointer movement always resolves at once.
+  DateTime? timelineLastAutoScrollTargetResolveAt;
   int timelineVerticalDragSequenceId = 0;
   String? timelineResizePlanKey;
   TimelineResizeEdge? timelineResizeEdge;
