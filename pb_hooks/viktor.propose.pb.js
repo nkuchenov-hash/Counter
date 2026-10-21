@@ -289,6 +289,14 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
   // response_format=json_schema. Constrain the ACTION ENVELOPE at generation
   // time, independently of the application-side validated tool allowlist.
   // Argument keys remain subject to the stricter typed Flutter contract.
+  // The advertised registry is supplied by the actual Flutter client.
+  // It constrains MODEL OUTPUT only; executable rights remain exclusively
+  // with the local typed validator and authenticated Brain tools.
+  const names = Array.isArray(body.available_tools)
+    ? [...new Set(body.available_tools
+        .filter(name => typeof name === "string" &&
+          /^[a-z][a-z0-9_]{0,59}$/.test(name)).slice(0, 60))]
+    : [];
   const proposalSchema = {
     type: "object",
     properties: {
@@ -298,7 +306,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
         items: {
           type: "object",
           properties: {
-            name: {type: "string"},
+            name: names.length ? {type: "string", enum: names} : {type: "string"},
             arguments: {type: "object"}
           },
           required: ["name", "arguments"],
