@@ -115,6 +115,7 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
               ? hourGridScrollController.offset
               : 0;
       timelineRecomputeDragAfterAutoScroll = null;
+      timelineLastAutoScrollTargetResolveAt = null;
       timelineVerticalDragSequenceId =
           ++PlanningTimeViewCoordinator.timelineNextDragSequenceId;
       timelineVerticalDragOriginTopPx = originTopPx;
@@ -142,6 +143,7 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
     required double canvasHeight,
     required List<PlanningTask> scheduledInRange,
     required Map<String, int> planActualByPbId,
+    bool fromAutoScroll = false,
   }) {
     final grid = activeTimelineDurationGrid;
     if (grid == null) return;
@@ -168,6 +170,7 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
         canvasHeight: canvasHeight,
         scheduledInRange: scheduledInRange,
         planActualByPbId: planActualByPbId,
+        fromAutoScroll: true,
       );
     };
     final durMin = timelineVerticalDragDurationMin.toDouble();
@@ -179,6 +182,24 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
         (fingerCanvasY - timelineFingerGrabOffsetCanvasPx)
             .clamp(0.0, maxTopPx)
             .toDouble();
+
+    // Keep the prior tactile pointer-move/drop solver untouched. During
+    // stationary-pointer edge scroll we still repaint the grabbed card every
+    // frame, but run the expensive full insertion/cascade calculation only
+    // about once per 64 ms. This keeps visual motion at display frame rate.
+    if (fromAutoScroll) {
+      final now = DateTime.now();
+      final previous = timelineLastAutoScrollTargetResolveAt;
+      if (previous != null &&
+          now.difference(previous) < const Duration(milliseconds: 64)) {
+        host.notifySetState(() {
+          timelineVerticalDragDeltaPx =
+              pointerAnchoredTopPx - timelineVerticalDragOriginTopPx;
+        });
+        return;
+      }
+      timelineLastAutoScrollTargetResolveAt = now;
+    }
 
     final selectedDayKey = host.pageWidget.selectedDateString.length >= 10
         ? host.pageWidget.selectedDateString.substring(0, 10)
@@ -255,10 +276,10 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
     );
 
     host.notifySetState(() {
-      // Render the grabbed card at raw pointer geometry, never at the
-      // snapped/clamped drop geometry. Snapping affects the target, not the
-      // visual pointer lock or grab offset.
-      timelineVerticalDragDeltaPx = effectiveDeltaPx;
+      // Restore the original bounded visual position during normal drag.
+      // Scroll compensation is already part of pointerAnchoredTopPx.
+      timelineVerticalDragDeltaPx =
+          pointerAnchoredTopPx - timelineVerticalDragOriginTopPx;
       timelineBulkDragPreviewTopPxByPlanId = {};
       timelineDragInsertTargetKey = insertKey;
       timelineDragInsertBefore = insertBefore;
