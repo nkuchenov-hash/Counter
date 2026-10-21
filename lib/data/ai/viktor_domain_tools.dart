@@ -10,7 +10,7 @@ import 'viktor_action_contract.dart';
 class ViktorDomainTools {
   ViktorDomainTools(this.db);
   final DatabaseService db;
-  final PathRepository _paths = PathRepository();
+  late final PathRepository _paths = PathRepository(database: db);
 
   static const names = <String>{
     'list_categories', 'create_category',
