@@ -1,0 +1,37 @@
+name: Verify KADR relay remains healthy alongside LIFE OS
+on:
+  push:
+    branches: [experiment/kadr-relay-personal-20261021]
+    paths: ['.github/workflows/check-kadr-relay-health.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+    steps:
+      - name: Confirm cloud, resources, and PocketBase unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 12 https://217-114-0-201.sslip.io:8443/health | grep -q '"service":"kadr-relay"'
+          echo 'cloud_relay_external=healthy'
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/kadr_verify
+          chmod 600 ~/.ssh/kadr_verify
+          host="${SSH_HOST:-217.114.0.201}"
+          user="${SSH_USER:-root}"
+          ssh-keyscan -T 8 -p "$SSH_PORT" -H "$host" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/kadr_verify -p "$SSH_PORT" -o BatchMode=yes "$user@$host" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          curl -fsS --max-time 8 https://217-114-0-201.sslip.io/api/health >/dev/null
+          echo 'life_os_health=healthy'
+          docker inspect --format 'relay_running={{.State.Running}} relay_restart_count={{.RestartCount}} relay_oom_killed={{.State.OOMKilled}}' kadr-relay-personal
+          docker stats --no-stream --format 'relay_ram_usage={{.MemUsage}} relay_cpu={{.CPUPerc}}' kadr-relay-personal
+          awk '/^MemAvailable:/ {print "vps_available_ram_mib=" int($2/1024)}' /proc/meminfo
+          REMOTE
