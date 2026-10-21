@@ -490,11 +490,10 @@ class _PlanningPageState extends State<PlanningPage>
           (o) => !server.any((s) {
             final oBiz = _planBusinessUuidForMerge(o);
             final sBiz = _planBusinessUuidForMerge(s);
-            if (oBiz != null &&
-                sBiz != null &&
-                oBiz.isNotEmpty &&
-                oBiz == sBiz) {
-              return true;
+            // Distinct tasks may have identical titles on the same day.
+            // A pending create with a business ID is reconciled ONLY by ID.
+            if (oBiz != null && oBiz.isNotEmpty) {
+              return sBiz != null && sBiz == oBiz;
             }
             return s.title.trim() == o.title.trim() && s.dateKey == o.dateKey;
           }),
@@ -1378,11 +1377,8 @@ class _PlanningPageState extends State<PlanningPage>
                     (o) => server.any((s) {
                       final oBiz = _planBusinessUuidForMerge(o);
                       final sBiz = _planBusinessUuidForMerge(s);
-                      if (oBiz != null &&
-                          sBiz != null &&
-                          oBiz.isNotEmpty &&
-                          oBiz == sBiz) {
-                        return true;
+                      if (oBiz != null && oBiz.isNotEmpty) {
+                        return sBiz != null && sBiz == oBiz;
                       }
                       return s.title.trim() == o.title.trim() &&
                           s.dateKey == o.dateKey;
