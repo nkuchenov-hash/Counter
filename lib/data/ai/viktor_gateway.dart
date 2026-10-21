@@ -260,9 +260,15 @@ class ViktorModelSettings {
 }
 
 class ViktorResponse {
-  ViktorResponse({required this.message, required this.actions});
+  ViktorResponse({
+    required this.message,
+    required this.actions,
+    this.needsMoreContext = false,
+  });
   final String message;
   final ViktorActionBatch? actions;
+  /// Model requested another read-only observation before its final action.
+  final bool needsMoreContext;
 }
 
 class ViktorGateway {
@@ -274,6 +280,7 @@ class ViktorGateway {
     required List<PlanningTask> plans,
     required ViktorModelSettings settings,
     List<String> selectedPlanIds = const [],
+    List<String> toolObservations = const [],
   }) async {
     final service = DatabaseService.instance;
     await service.ensurePocketBaseReady();
@@ -354,6 +361,9 @@ class ViktorGateway {
       'wall_day': dayKey,
       'request_id': reqId,
       'ui_locale': currentLocale.value,
+      'tool_observations': toolObservations.take(2)
+          .map((entry) => entry.length > 4500 ?
+             entry.substring(0, 4500) : entry).toList(),
       'profile_timezone': service.settings.preferredTimeZone,
       'available_tools': ViktorAgentCapabilities.tools
           .map((tool) => tool.name).toList(growable: false),
@@ -469,6 +479,7 @@ class ViktorGateway {
       'actions': raw,
     });
     return ViktorResponse(message: (map['message'] ?? '').toString(),
-        actions: actions);
+        actions: actions,
+        needsMoreContext: map['continue'] == true);
   }
 }
