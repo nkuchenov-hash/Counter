@@ -4,6 +4,7 @@ import 'viktor_action_contract.dart';
 import 'viktor_schedule_planner.dart';
 import 'viktor_domain_tools.dart';
 import 'viktor_date_scope.dart';
+import 'viktor_plan_category.dart';
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -45,22 +46,44 @@ class ViktorExecutor {
     );
   }
 
-  Future<bool> _createPlan(ViktorAction action, DateTime start) async {
-    final category = db.defaultCategoryId ??
-        (db.rules.where((r) => !r.isArchived).isNotEmpty
-            ? db.rules.firstWhere((r) => !r.isArchived).id
-            : null);
-    if (category == null || db.getCategoryRuleById(category) == null) {
-      throw StateError('Требуется выбрать категорию нового плана.');
-    }
-    return db.addPlanningTask(PlanningTask(
+  CategoryRule _planCategory(ViktorAction action) {
+    return resolveViktorPlanCategory(
+      title: action.arguments['title'] as String,
+      identifyCategory: db.identifyCategory,
+      categoryById: db.getCategoryRuleById,
+      defaultCategoryId: db.defaultCategoryId,
+      rootCategories: db.rules,
+    );
+  }
+
+  String _planCategoryLabel(ViktorAction action) {
+    final category = _planCategory(action);
+    final path = db.getCategoryPath(category.id).trim();
+    return path.isNotEmpty ? path : category.name;
+  }
+
+  Future<({bool accepted, bool pendingSync, String clientPlanId})>
+      _createPlan(ViktorAction action, DateTime start) {
+    final category = _planCategory(action);
+    return db.addPlanningTaskWithReceipt(PlanningTask(
       id: 0, title: action.arguments['title'] as String,
-      categoryId: category,
+      categoryId: category.id,
       dateKey: ViktorDateScope.key(start),
       startTime: start,
       endDateTime: start.add(Duration(
           minutes: action.arguments['duration_minutes'] as int)),
     ));
+  }
+
+  String _creationReceipt(
+      ViktorAction action, ({bool accepted, bool pendingSync,
+      String clientPlanId}) result) {
+    final name = action.arguments['title'] as String;
+    if (result.pendingSync) {
+      return 'План «$name» создан локально и ожидает синхронизации '
+          'с PocketBase. Не отправляйте команду повторно.';
+    }
+    return 'План «$name» сохранён в PocketBase.';
   }
 
   Future<ViktorBulkPreview> _planBulk(ViktorAction action) async {
@@ -161,6 +184,7 @@ class ViktorExecutor {
             'на ${action.arguments['wall_day']}, '
             '${clock(placement.start)}–${clock(placement.end)} '
             '(${action.arguments['duration_minutes']} мин.).',
+        'Категория: ${_planCategoryLabel(action)}.',
         if (placement.shifted.isEmpty) 'Пересечений нет.',
         if (placement.shifted.isNotEmpty)
           'Перенести следующие планы, сохранив длительность:',
@@ -218,8 +242,9 @@ class ViktorExecutor {
                   'Попросите Виктора найти другой свободный интервал.');
             }
           }
-          lines.add('Добавить «${a['title']}» в ${a['start_time']} '
-              'на ${a['duration_minutes']} мин.');
+          lines.add('Добавить «${a['title']}» на ${a['wall_day']} '
+              'в ${a['start_time']} на ${a['duration_minutes']} мин. '
+              'Категория: ${_planCategoryLabel(action)}.');
         case 'update_plan_duration':
           lines.add('Изменить длительность плана '
               '${a['expected_duration_minutes']} → '
@@ -317,7 +342,7 @@ class ViktorExecutor {
             'Проверьте расписание перед повтором; встреча не создана.');
       }
       final created = await _createPlan(action, placement.start);
-      if (!created) {
+      if (!created.accepted) {
         if (patches.isNotEmpty) {
           final changedIds = placement.shifted
               .map((p) => p.recordIdForBackend).toSet();
@@ -341,9 +366,8 @@ class ViktorExecutor {
         throw StateError('Встреча не сохранилась. '
             'Ранее перенесённые планы восстановлены.');
       }
-      return 'Встреча «${action.arguments['title']}» создана. '
-          'Сдвинуто планов: ${placement.shifted.length}. '
-          'Проверьте синхронизацию.';
+      return '${_creationReceipt(action, created)} '
+          'Сдвинуто планов: ${placement.shifted.length}.';
     }
     if (batch.actions.length == 1 &&
         batch.actions.single.name == 'bulk_replan') {
@@ -408,9 +432,11 @@ class ViktorExecutor {
         case 'bulk_replan':
           break;
         case 'create_plan':
-          if (!await _createPlan(action, _planStart(action))) {
+          final created = await _createPlan(action, _planStart(action));
+          if (!created.accepted) {
             throw StateError('Не удалось добавить план.');
           }
+          receipts.add(_creationReceipt(action, created));
           done++;
         case 'start_record':
           if (db.canonicalPrimaryRunningBusinessId != null) {
