@@ -45,12 +45,13 @@ class ViktorAction {
       case 'create_plan':
         _onlyKeys(args, const {
           'title', 'wall_day', 'duration_minutes', 'start_time',
-          'conflict_policy',
+          'conflict_policy', 'timezone',
         });
         _title(args, 'title');
         _day(args, 'wall_day');
         _duration(args, 'duration_minutes');
         _clock(args, 'start_time');
+        if (args.containsKey('timezone')) _text(args, 'timezone', maxLength: 64);
         if (args.containsKey('conflict_policy') &&
             !const {'reject', 'shift'}.contains(args['conflict_policy'])) {
           throw const FormatException('Unknown plan conflict policy');
