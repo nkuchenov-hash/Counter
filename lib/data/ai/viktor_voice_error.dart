@@ -50,7 +50,13 @@ String viktorVoiceErrorText(Object error, {String stage = 'recognition'}) {
   }
   if (value.contains('invalid_speech_response') ||
       value.contains('invalid_speech_operation')) {
-    return 'Сервис распознавания вернул некорректный ответ.';
+    return 'SpeechKit вернул ответ, который LIFE OS не смог разобрать. '
+        'Ошибка формата ответа сервиса.';
+  }
+  if (value.contains('speech_request_failed') ||
+      value.contains('speech_missing_error_code')) {
+    return 'Сервер распознавания вернул ошибку без кода. '
+        'Это сбой интеграции SpeechKit, а не голосовой команды.';
   }
   if (value.contains('invalid_or_oversized_audio') ||
       value.contains('invalid_audio_duration')) {
@@ -70,6 +76,6 @@ String viktorVoiceErrorText(Object error, {String stage = 'recognition'}) {
     return 'Ошибка при записи с микрофона. Проверьте устройство и '
         'разрешения браузера.';
   }
-  return 'Ошибка обработки ответа распознавания речи. '
-      'Попробуйте повторить команду.';
+  return 'Непредвиденный сбой на этапе распознавания речи. '
+      'Команда не была отправлена Виктору.';
 }
