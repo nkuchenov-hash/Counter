@@ -63,6 +63,32 @@ void main() {
           initialTop - initialScroll + grabOffset + pointerDelta);
     });
 
+    test('auto-scroll preview resolution has independent rate from card paint', () {
+      final start = DateTime(2026, 10, 21, 12);
+      expect(planTimeShouldResolveAutoScrollTarget(null, start), isTrue);
+      expect(
+        planTimeShouldResolveAutoScrollTarget(
+          start,
+          start.add(const Duration(milliseconds: 16)),
+        ),
+        isFalse,
+      );
+      expect(
+        planTimeShouldResolveAutoScrollTarget(
+          start,
+          start.add(const Duration(milliseconds: 48)),
+        ),
+        isFalse,
+      );
+      expect(
+        planTimeShouldResolveAutoScrollTarget(
+          start,
+          start.add(const Duration(milliseconds: 64)),
+        ),
+        isTrue,
+      );
+    });
+
     test('drag threshold is positive', () {
       expect(planTimeViewDragMovementThresholdPx(), greaterThan(0));
     });
