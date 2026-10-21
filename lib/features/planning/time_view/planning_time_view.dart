@@ -660,6 +660,7 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     timelineFingerGrabOffsetCanvasPx = 0;
     timelineVerticalDragOriginScrollOffsetPx = 0;
     timelineRecomputeDragAfterAutoScroll = null;
+    timelineLastAutoScrollTargetResolveAt = null;
     timelineVerticalDragTask = null;
     timelineVerticalDragTimeLabel = null;
     timelineDragInsertTargetKey = null;
