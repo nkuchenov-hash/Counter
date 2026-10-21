@@ -164,9 +164,11 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         );
       }
       if (!mounted) return;
-      if (response.message.trim().isNotEmpty) _push(response.message.trim());
       final actions = response.actions;
       if (actions == null) {
+        if (response.message.trim().isNotEmpty) {
+          _push(response.message.trim());
+        }
         if (toolObservations.isNotEmpty) {
           _push(toolObservations.last);
         }
@@ -175,8 +177,16 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       final preview = await executor.describe(actions, widget.wallDay);
       if (!mounted) return;
       if (!actions.hasMutations) {
+        if (response.message.trim().isNotEmpty) {
+          _push(response.message.trim());
+        }
         _push(preview);
         return;
+      }
+      // Never display model prose claiming a creation/duration before the
+      // typed Brain action has actually run. The preview is authoritative.
+      if (actions.isSingleReversibleWrite) {
+        _push(preview);
       }
       // An explicit, unambiguous two-card swap is a reversible low-scope
       // schedule command. The Brain still validates current state and guards.
