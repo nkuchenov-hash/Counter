@@ -134,17 +134,36 @@ routerAdd("POST", "/api/viktor/transcribe-yandex/status", (e) => {
         try { entries.push(JSON.parse(line)); } catch (_) {}
       }
     }
-    const phrases = [];
+    // SpeechKit REST v3 may deliver finalRefinement.normalizedText as a
+    // separate streaming event. Refined text supersedes final for the same
+    // index; never concatenate both versions of the same spoken phrase.
+    const phrasesByIndex = {};
+    let sequential = 0;
     for (const entry of entries) {
       const event = entry && (entry.result || entry);
-      const finalized = event && (event.final ||
-        (event.finalRefinement && event.finalRefinement.normalizedText));
-      const alternatives = finalized && finalized.alternatives;
+      if (!event || typeof event !== "object") continue;
+      const refined = event.finalRefinement &&
+        event.finalRefinement.normalizedText;
+      const final = event.final;
+      const selected = refined || final;
+      const alternatives = selected && selected.alternatives;
       if (!Array.isArray(alternatives) || alternatives.length === 0) continue;
       const phrase = String(alternatives[0].text || "").trim();
-      if (phrase && phrases[phrases.length - 1] !== phrase) phrases.push(phrase);
+      if (!phrase) continue;
+      const rawIndex = refined
+        ? event.finalRefinement.finalIndex
+        : event.audioCursors && event.audioCursors.finalIndex;
+      const index = rawIndex !== undefined && rawIndex !== null &&
+          /^\\d+$/.test(String(rawIndex)) ? Number(rawIndex) : sequential++;
+      const current = phrasesByIndex[index];
+      if (!current || refined) {
+        phrasesByIndex[index] = {text: phrase, refined: Boolean(refined)};
+      }
     }
-    const transcript = phrases.join(" ").trim().slice(0, 4000);
+    const transcript = Object.keys(phrasesByIndex).map(Number)
+      .sort((a, b) => a - b)
+      .map(index => phrasesByIndex[index].text)
+      .join(" ").trim().slice(0, 4000);
     if (!transcript) return e.json(422, {error: "no_speech_detected"});
     return e.json(200, {transcript, provider: "yandex"});
   } catch (_) {
