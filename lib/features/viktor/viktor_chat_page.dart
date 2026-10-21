@@ -574,6 +574,10 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                         labelText: provider == 'gigachat'
                             ? 'Ключ авторизации GigaChat API'
                             : 'API-ключ модели',
+                        hintText: _cloudConnectionError == null &&
+                                _settings.cloudProviders.contains(provider)
+                            ? 'Ключ сохранён на сервере'
+                            : 'Введите ключ для подключения',
                         border: OutlineInputBorder(),
                       ),
                     ),
