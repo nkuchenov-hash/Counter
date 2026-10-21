@@ -67,14 +67,26 @@ class PlanningTimeViewCoordinator {
   TimeViewInsertionIntent? timelineStoredInsertionIntent;
   double timelineFingerDragDeltaPx = 0;
   double timelineFingerGrabOffsetCanvasPx = 0;
-  /// Scroll position when the pointer first grabbed the card.
-  double timelineVerticalDragOriginScrollOffsetPx = 0;
-  /// Called on every auto-scroll frame, even without new pointer movement.
-  /// Keeps the card and insertion preview attached to the stationary cursor.
-  VoidCallback? timelineRecomputeDragAfterAutoScroll;
-  /// The drop target may be recalculated less often than pointer painting
-  /// during edge auto-scroll; normal pointer movement always resolves at once.
-  DateTime? timelineLastAutoScrollTargetResolveAt;
+  // Only these offsets are new. The original gesture, layout and animation
+  // remain unchanged. The extra scroll since the last pointer event is
+  // translated on the lifted card alone, not on the day grid.
+  double timelineDragStartScrollOffsetPx = 0;
+  double timelineDragLastRenderedScrollOffsetPx = 0;
+  double timelineDragLastPointerDeltaPx = 0;
+
+  double get timelinePendingScrollCompensationPx =>
+      timelineVerticalDragPlanKey != null &&
+          hourGridScrollController.hasClients
+      ? hourGridScrollController.offset -
+          timelineDragLastRenderedScrollOffsetPx
+      : 0;
+
+  double get timelineEffectivePointerDeltaPx =>
+      timelineDragLastPointerDeltaPx +
+      (hourGridScrollController.hasClients
+          ? hourGridScrollController.offset - timelineDragStartScrollOffsetPx
+          : 0);
+
   int timelineVerticalDragSequenceId = 0;
   String? timelineResizePlanKey;
   TimelineResizeEdge? timelineResizeEdge;
