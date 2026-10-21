@@ -37,7 +37,8 @@ class ViktorAction {
       }
       args[entry.key as String] = entry.value;
     }
-    switch (name) {
+    try {
+      switch (name) {
       case 'list_day_plans':
         _onlyKeys(args, const {'wall_day'});
         _day(args, 'wall_day');
@@ -236,6 +237,9 @@ class ViktorAction {
       case 'stop_record':
         _onlyKeys(args, const {'record_id'});
         _recordId(args, 'record_id');
+      }
+    } on FormatException catch (error) {
+      throw FormatException('Tool $name: ${error.message}');
     }
     return ViktorAction._(name, args);
   }
@@ -294,11 +298,16 @@ class ViktorActionBatch {
       throw const FormatException('Expected 1–16 actions');
     }
     final parsed = <ViktorAction>[];
-    for (final item in items) {
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
       if (item is! Map) {
-        throw const FormatException('Each action must be an object');
+        throw FormatException('Action ${i + 1}: expected an object');
       }
-      parsed.add(ViktorAction.fromJson(Map<String, dynamic>.from(item)));
+      try {
+        parsed.add(ViktorAction.fromJson(Map<String, dynamic>.from(item)));
+      } on FormatException catch (error) {
+        throw FormatException('Action ${i + 1}: ${error.message}');
+      }
     }
     return ViktorActionBatch._(id, parsed);
   }
@@ -311,9 +320,25 @@ class ViktorActionBatch {
 }
 
 void _onlyKeys(Map<dynamic, dynamic> args, Set<String> allowed) {
-  if (args.keys.any((key) => key is! String || !allowed.contains(key))) {
-    throw const FormatException('Unexpected Viktor action field');
+  final invalid = args.keys.where(
+      (key) => key is! String || !allowed.contains(key)).toList();
+  if (invalid.isEmpty) return;
+  // Only field names are included in the repair hint, never argument values.
+  String safeField(dynamic key) {
+    if (key is String && key.length <= 48) {
+      final match = RegExp(r'[a-zA-Z_][a-zA-Z0-9_]*').firstMatch(key);
+      if (match != null && match.start == 0 && match.end == key.length) {
+        return key;
+      }
+    }
+    return '[invalid field name]';
   }
+  final rejected = invalid.take(4).map(safeField).join(', ');
+  final expected =
+      allowed.isEmpty ? '(none)' : (allowed.toList()..sort()).join(', ');
+  throw FormatException(
+      'Unexpected Viktor action field(s): ' + rejected +
+      '. Allowed fields: ' + expected);
 }
 
 String _text(Map<String, Object?> args, String key, {int maxLength = 160}) {
