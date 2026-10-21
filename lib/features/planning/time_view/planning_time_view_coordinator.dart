@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/plan_time_sequential_cascade.dart';
+import 'package:counter/features/planning/plan_time_gesture_contract.dart';
 import 'package:counter/features/planning/plan_time_view_layout.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/planning_sort_mode.dart';
@@ -82,10 +83,13 @@ class PlanningTimeViewCoordinator {
       : 0;
 
   double get timelineEffectivePointerDeltaPx =>
-      timelineDragLastPointerDeltaPx +
-      (hourGridScrollController.hasClients
-          ? hourGridScrollController.offset - timelineDragStartScrollOffsetPx
-          : 0);
+      planTimePointerAnchoredDeltaPx(
+        pointerDeltaPx: timelineDragLastPointerDeltaPx,
+        scrollStartOffsetPx: timelineDragStartScrollOffsetPx,
+        scrollCurrentOffsetPx: hourGridScrollController.hasClients
+            ? hourGridScrollController.offset
+            : timelineDragStartScrollOffsetPx,
+      );
 
   int timelineVerticalDragSequenceId = 0;
   String? timelineResizePlanKey;
