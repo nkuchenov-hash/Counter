@@ -1,3 +1,10 @@
+## [2026-10-21] — Viktor plan category and creation receipt parity (pending CI)
+
+- Agent-created plans now use the existing `identifyCategory(title)` keyword/subcategory resolver from ordinary Planning quick-add. It rejects archived/invalid matches and falls back to an active configured category rather than always using the default.
+- Plan preview shows the chosen category, exact date and duration from validated tool arguments. Model prose no longer claims writes or durations before Brain execution.
+- Added `addPlanningTaskWithReceipt` to distinguish remote-acknowledged writes from locally accepted pending synchronization; Viktor displays an explicit queued/synced result rather than treating them equally.
+- Dedicated category keyword and fallback regressions added to release tests. Actual user's RCC category data and PocketBase live BYOK end-to-end remain to be verified.
+
 ## [2026-10-21] — Viktor Yandex refusal diagnostics and prompt reduction (pending CI)
 
 - Split Yandex upstream `content_filter` from explicit model `refusal`, with precise Russian-language diagnostics. Neither is silently retried or circumvented.
