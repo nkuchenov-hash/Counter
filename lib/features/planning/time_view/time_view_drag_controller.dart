@@ -110,6 +110,11 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
       timelineVerticalDragDeltaPx = 0;
       timelineFingerDragDeltaPx = 0;
       timelineFingerGrabOffsetCanvasPx = fingerGrabOffsetCanvasPx;
+      timelineVerticalDragOriginScrollOffsetPx =
+          hourGridScrollController.hasClients
+              ? hourGridScrollController.offset
+              : 0;
+      timelineRecomputeDragAfterAutoScroll = null;
       timelineVerticalDragSequenceId =
           ++PlanningTimeViewCoordinator.timelineNextDragSequenceId;
       timelineVerticalDragOriginTopPx = originTopPx;
@@ -141,7 +146,30 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
     final grid = activeTimelineDurationGrid;
     if (grid == null) return;
 
-    timelineFingerDragDeltaPx = deltaPx;
+    // Scroll offset contributes to the card's canvas position. Without this
+    // compensation a scrolling timeline makes the card drift off the cursor.
+    final scrollNow = hourGridScrollController.hasClients
+        ? hourGridScrollController.offset
+        : timelineVerticalDragOriginScrollOffsetPx;
+    final effectiveDeltaPx = planTimePointerAnchoredDeltaPx(
+      pointerDeltaPx: deltaPx,
+      scrollStartOffsetPx: timelineVerticalDragOriginScrollOffsetPx,
+      scrollCurrentOffsetPx: scrollNow,
+    );
+    timelineFingerDragDeltaPx = effectiveDeltaPx;
+    timelineRecomputeDragAfterAutoScroll = () {
+      if (!host.mounted || timelineVerticalDragPlanKey == null) return;
+      updateTimelineVerticalDrag(
+        deltaPx: deltaPx,
+        globalDy: globalDy,
+        planWallDay: planWallDay,
+        rangeStart: rangeStart,
+        rangeEnd: rangeEnd,
+        canvasHeight: canvasHeight,
+        scheduledInRange: scheduledInRange,
+        planActualByPbId: planActualByPbId,
+      );
+    };
     final durMin = timelineVerticalDragDurationMin.toDouble();
     final maxTopPx = grid.yForMinutesFromRangeStart(
       math.max(0, grid.totalMinutes - durMin),
@@ -227,8 +255,10 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
     );
 
     host.notifySetState(() {
-      timelineVerticalDragDeltaPx =
-          pointerAnchoredTopPx - timelineVerticalDragOriginTopPx;
+      // Render the grabbed card at raw pointer geometry, never at the
+      // snapped/clamped drop geometry. Snapping affects the target, not the
+      // visual pointer lock or grab offset.
+      timelineVerticalDragDeltaPx = effectiveDeltaPx;
       timelineBulkDragPreviewTopPxByPlanId = {};
       timelineDragInsertTargetKey = insertKey;
       timelineDragInsertBefore = insertBefore;
