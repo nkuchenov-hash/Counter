@@ -2,6 +2,12 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor category parity and plan-create receipt (2026-10-21)
+
+- Viktor `create_plan` and priority insertion must use the **same title/keyword matcher** `DatabaseService.identifyCategory` that Planning's ordinary quick-add uses. Do not assign a default category first or introduce hard-coded RCC/product-specific mappings. Prefer the deepest active matched category; fall back to a validated configured category only when no valid match exists.
+- The preview for agent plan creation must show the validated date, time, duration and resolved category; the model's freeform prose is not an authoritative saved-state assertion. For mutation replies, show actual tool preview and receipt, not an unverified model statement about duration or success.
+- `addPlanningTask` returns true for a synchronously acknowledged PocketBase POST **or** a locally queued create. The agent must use the Brain's status-aware create receipt and explicitly distinguish `confirmed` from `pendingSync`. A queued plan must not be reported as remotely persisted. Tell the user not to repeat it, to avoid duplicates.
+
 ## Viktor provider refusal handling and compact agent tools (2026-10-21)
 
 - Separate the Yandex `finish_reason: content_filter` upstream-content-filter signal from a nonempty `message.refusal` model refusal. Do not retry either refusal or bypass them with modified prompts. Return only a fixed reason code, never provider response text or confidential data.
