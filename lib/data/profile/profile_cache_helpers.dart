@@ -84,10 +84,17 @@ class MorningStartPreference {
     // turning a previously disabled prompt back on.
     final scoped = prefs.getBool(_legacyKeyFor(profileId));
     final local = prefs.getBool(_legacyKeyFor(null));
-    final enabled = scoped == false || local == false
+    final legacyValues = [
+      for (final key in prefs.getKeys())
+        if (key.startsWith('lifeos.morning_start.') &&
+            key.endsWith('.enabled') &&
+            prefs.getBool(key) != null)
+          prefs.getBool(key)!,
+    ];
+    final enabled = legacyValues.contains(false)
         ? false
         : (scoped ?? local ?? true);
-    if (scoped != null || local != null) {
+    if (legacyValues.isNotEmpty) {
       final saved = await prefs.setBool(deviceKey, enabled);
       if (!saved) {
         throw StateError('Could not migrate morning check-in setting');
