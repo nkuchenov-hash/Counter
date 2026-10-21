@@ -25,8 +25,10 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_vault_audit
           chmod 600 ~/.ssh/lifeos_vault_audit
-          ssh-keyscan -T 8 -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          ssh -i ~/.ssh/lifeos_vault_audit -o BatchMode=yes -o ConnectTimeout=12 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+          user="${SSH_USER:-root}"
+          host="${SSH_HOST:-217.114.0.201}"
+          ssh-keyscan -T 8 -p "$SSH_PORT" -H "$host" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/lifeos_vault_audit -o BatchMode=yes -o ConnectTimeout=12 -p "$SSH_PORT" "$user@$host" \
             "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" <<'REMOTE'
           set -euo pipefail
           service_name="${POCKETBASE_SERVICE:-}"
@@ -37,6 +39,11 @@ jobs:
           if [[ -z "$app_dir" && -n "$service_name" ]]; then
             app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"
           fi
+          if [[ -z "$app_dir" ]]; then
+            pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+            if [[ -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          fi
+          test -n "$app_dir"
           echo "viktor_hook_present=$(test -f "$app_dir/pb_hooks/viktor.connection.pb.js" && echo yes || echo no)"
           echo "viktor_helper_present=$(test -f "$app_dir/pb_hooks/viktor_vault_helpers.js" && echo yes || echo no)"
           echo "viktor_migration_file_present=$(test -f "$app_dir/pb_migrations/1792533600_viktor_connections.js" && echo yes || echo no)"
