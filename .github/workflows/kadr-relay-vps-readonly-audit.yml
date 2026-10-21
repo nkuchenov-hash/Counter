@@ -73,5 +73,17 @@ jobs:
           done
           docker ps --format '{{.Names}}' 2>/dev/null | wc -l | awk '{print "docker_running_containers="$1}'
           echo 'LISTENER_AND_SERVICE_END'
+          echo 'RELAY_FEASIBILITY'
+          echo "listen_sockets_start"
+          ss -H -ltnp 2>/dev/null | grep -E '(:80 |:443 |:8443 |:8780 )' | sed -E 's/pid=[0-9]+/pid=REDACTED/g' || true
+          echo "listen_sockets_end"
+          for cmd in cloudflared certbot caddy openssl node curl; do
+            if command -v "$cmd" >/dev/null 2>&1; then echo "tool_${cmd}=present"; else echo "tool_${cmd}=absent"; fi
+          done
+          for svc in pocketbase pocketbase.service; do
+            echo "unit_${svc}=$(systemctl is-active "$svc" 2>/dev/null || true)"
+          done
+          ps -eo comm,rss --no-headers | awk '$1=="pocketbase" {sum+=$2;count++} END {printf "pocketbase_processes=%d pocketbase_rss_mib=%.0f\n",count,sum/1024}'
+          echo 'RELAY_FEASIBILITY_END'
           echo 'READ_ONLY_AUDIT_END'
           REMOTE
