@@ -93,6 +93,30 @@ void main() {
       );
     });
 
+    test('unknown field reports actionable allowed schema, not field values', () {
+      try {
+        ViktorActionBatch.fromJson(batch([
+          action('create_plan', {
+            'title': 'RCC Meeting',
+            'wall_day': '2026-10-24',
+            'start_time': '20:00',
+            'duration_minutes': 30,
+            'category_name': 'Private notes data',
+          }),
+        ]));
+        fail('Unknown argument must not pass the typed contract');
+      } on FormatException catch (error) {
+        final detail = error.message.toString();
+        expect(detail, contains('Action 1'));
+        expect(detail, contains('Tool create_plan'));
+        expect(detail, contains('category_name'));
+        expect(detail, contains('Allowed fields'));
+        expect(detail, contains('duration_minutes'));
+        expect(detail, isNot(contains('Private notes data')),
+            reason: 'Repair feedback cannot reveal argument values');
+      }
+    });
+
     test('rejects unknown fields, including embedded credentials', () {
       expect(
         () => ViktorActionBatch.fromJson(batch([
