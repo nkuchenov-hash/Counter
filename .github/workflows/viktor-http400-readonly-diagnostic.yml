@@ -1,0 +1,39 @@
+name: Read-only Viktor route diagnostics
+on:
+  push:
+    branches: [diag/viktor-http400-get-20261021]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe public authenticated routes WITHOUT credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          root='https://217-114-0-201.sslip.io'
+          for label in health viktor_get_no_auth viktor_post_no_auth viktor_get_invalid_auth; do
+            case "$label" in
+              health) endpoint='/api/health'; method='GET'; auth='' ;;
+              viktor_get_no_auth) endpoint='/api/viktor/connection'; method='GET'; auth='' ;;
+              viktor_post_no_auth) endpoint='/api/viktor/connection'; method='POST'; auth='' ;;
+              viktor_get_invalid_auth) endpoint='/api/viktor/connection'; method='GET'; auth='Bearer diagnostic-invalid-not-a-real-user-token' ;;
+            esac
+            headers=(-H 'Accept: application/json')
+            if [[ -n "$auth" ]]; then headers+=(-H "Authorization: $auth"); fi
+            if [[ "$method" == POST ]]; then headers+=(-H 'Content-Type: application/json'); fi
+            status=$(curl -sS --max-time 8 -o /tmp/viktor-response.json -w '%{http_code}' -X "$method" "${headers[@]}" "$root$endpoint" || true)
+            echo "$label=$status"
+            python3 - <<'PY'
+          import json
+          try:
+            obj = json.load(open('/tmp/viktor-response.json'))
+            print('error_code=' + str(obj.get('error','none'))[:80])
+            print('status=' + str(obj.get('status','none'))[:6])
+            print('message=' + str(obj.get('message','none'))[:110])
+          except Exception:
+            print('body=non_json_or_empty')
+          PY
+          done
