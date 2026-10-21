@@ -61,6 +61,56 @@ void main() {
       expect(result.actions.single.name, 'create_plan');
     });
 
+    test('accepts combined yesterday carryover + three timed meetings', () {
+      final proposal = ViktorActionBatch.fromJson(batch([
+        action('compose_day', {
+          'source_day': '2026-10-20',
+          'target_day': '2026-10-21',
+          'source_filter': 'Price Reporter',
+          'start_time': '09:00',
+          'timezone': 'New York',
+          'urgent_first': true,
+          'meetings': [
+            {'title': 'Price Reporter Case Study',
+             'start_time': '11:00', 'duration_minutes': 60},
+            {'title': 'MISSION IT Authorized Negotiator',
+             'start_time': '13:00', 'duration_minutes': 30},
+            {'title': 'LAREDO TS Weekly Call',
+             'start_time': '15:00', 'duration_minutes': 30},
+          ],
+        }),
+      ]));
+      expect(proposal.actions.single.name, 'compose_day');
+      expect(proposal.requiresPreview, true);
+      expect((proposal.actions.single.arguments['meetings'] as List).length, 3);
+    });
+
+    test('rejects invalid combined meeting times and extra fields', () {
+      final base = {
+        'source_day': '2026-10-20',
+        'target_day': '2026-10-21',
+        'source_filter': 'Price Reporter',
+        'start_time': '09:00',
+        'timezone': 'New York',
+        'urgent_first': true,
+        'meetings': [
+          {'title': 'A', 'start_time': '11:00', 'duration_minutes': 60},
+        ],
+      };
+      for (final wrong in [
+        {...base, 'meetings': [
+          {'title': 'A', 'start_time': '11:00', 'duration_minutes': 60},
+          {'title': 'B', 'start_time': '11:00', 'duration_minutes': 30},
+        ]},
+        {...base, 'source_day': '2026-10-21'},
+        {...base, 'urgent_first': 'yes'},
+        {...base, 'api_key': 'secret'},
+      ]) {
+        expect(() => ViktorActionBatch.fromJson(
+          batch([action('compose_day', wrong)])), throwsFormatException);
+      }
+    });
+
     test('accepts read-only day request', () {
       final result = ViktorActionBatch.fromJson(batch([
         action('list_day_plans', {'wall_day': '2026-10-17'}),
