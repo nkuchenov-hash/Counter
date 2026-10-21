@@ -113,6 +113,12 @@ const yandex = invoke({...base,
   yandex_folder_id: 'b1g9testfolder11',
 });
 assert.equal(yandex.status, 200);
+const compactYandexInstructions = JSON.parse(lastRequest.body).messages[0].content;
+assert.match(compactYandexInstructions, /create_plan/);
+assert.match(compactYandexInstructions, /bulk_replan/);
+assert.match(compactYandexInstructions, /EXACTLY two top-level keys/);
+assert.ok(compactYandexInstructions.length < 3000,
+  'Yandex should receive the compact general tool catalogue');
 assert.equal(lastRequest.url,
   'https://ai.api.cloud.yandex.net/v1/chat/completions');
 assert.equal(lastRequest.headers.Authorization, 'Api-Key ' + base.api_key);
@@ -257,8 +263,27 @@ const beforeRefusal = calls;
 nextModelReplies = [modelReply('', 'content_filter')];
 const refused = invoke(yandexRequest);
 assert.equal(refused.status, 502);
-assert.equal(refused.value.reason, 'model_refusal');
-assert.equal(calls - beforeRefusal, 1, 'Never retry a safety refusal');
+assert.equal(refused.value.reason, 'provider_content_filter');
+assert.equal(calls - beforeRefusal, 1, 'Never retry a provider content filter');
+nextModelReplies = [{statusCode: 200, raw: JSON.stringify({
+  choices: [{finish_reason: 'stop', message: {
+    content: '', refusal: 'I cannot comply'
+  }}]
+})}];
+const beforeExplicitRefusal = calls;
+const explicitRefusal = invoke(yandexRequest);
+assert.equal(explicitRefusal.status, 502);
+assert.equal(explicitRefusal.value.reason, 'explicit_model_refusal');
+assert.equal(calls - beforeExplicitRefusal, 1,
+  'Never attempt to bypass an explicit refusal');
+nextModelReplies = [{statusCode: 200, raw: JSON.stringify({
+  choices: [{finish_reason: 'stop', message: {
+    content: JSON.stringify(validEvent), refusal: null
+  }}]
+})}];
+const nullRefusal = invoke(yandexRequest);
+assert.equal(nullRefusal.status, 200,
+  'Null refusal marker must not block valid structured proposal');
 
 nextModelReplies = [modelReply([{type: 'text', text: JSON.stringify(validEvent)}])];
 const segmented = invoke(yandexRequest);
