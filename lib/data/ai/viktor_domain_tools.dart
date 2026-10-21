@@ -15,11 +15,13 @@ class ViktorDomainTools {
   static const names = <String>{
     'list_categories', 'create_category',
     'list_tags', 'create_tag', 'rename_tag',
+    'list_backlog_items', 'set_list_item_done', 'rename_list_item',
     'list_notes', 'create_note', 'edit_note',
     'list_paths', 'create_path', 'get_settings', 'change_setting',
   };
   static const reads = <String>{
-    'list_categories', 'list_tags', 'list_notes', 'list_paths', 'get_settings',
+    'list_categories', 'list_tags', 'list_backlog_items',
+    'list_notes', 'list_paths', 'get_settings',
   };
 
   CategoryRule? _category(String? rowId) {
@@ -48,6 +50,37 @@ class ViktorDomainTools {
       throw StateError('Заметка изменилась. Перечитайте её перед изменением.');
     }
     return found.single;
+  }
+
+  /// The same backlog collection serves Notes. Never mutate note documents,
+  /// scheduled plans or virtual recurrence through a list-item tool.
+  Future<PlanningTask> _listItem(String id, String expectedTitle,
+      {bool? expectedDone}) async {
+    final rows = await db.fetchBacklogPlans(
+        categoryId: null, includeCompleted: true);
+    final matching = rows.where((p) =>
+      p.pocketRecordId == id &&
+      p.startTime == null &&
+      (p.notesDeltaJson?.trim().isEmpty ?? true) &&
+      (p.rrule?.trim().isEmpty ?? true) &&
+      (p.recurrenceInstanceDateKey?.trim().isEmpty ?? true) &&
+      p.title.trim() == expectedTitle.trim() &&
+      (expectedDone == null || p.isDone == expectedDone)).toList();
+    if (matching.length != 1) {
+      throw StateError('Элемент списка изменился или недоступен. '
+          'Обновите список перед повтором.');
+    }
+    return matching.single;
+  }
+
+  Future<List<PlanningTask>> _listItems() async {
+    final rows = await db.fetchBacklogPlans(
+        categoryId: null, includeCompleted: true);
+    return rows.where((p) => p.pocketRecordId != null &&
+        p.startTime == null &&
+        (p.notesDeltaJson?.trim().isEmpty ?? true) &&
+        (p.rrule?.trim().isEmpty ?? true) &&
+        (p.recurrenceInstanceDateKey?.trim().isEmpty ?? true)).toList();
   }
 
   static String _safeSetting(String field, String value) {
@@ -87,6 +120,23 @@ class ViktorDomainTools {
             'Теги:\n' + found.take(60).map((t) =>
               t.name + ' [id=' + (t.pbRecordId ?? '') + ']')
                 .join('\n');
+      case 'list_backlog_items':
+        final items = await _listItems();
+        return items.isEmpty ? 'Список пуст.' :
+            'Элементы списка:\n' + items.take(60).map((p) =>
+              (p.isDone ? '[x] ' : '[ ] ') + p.title +
+              ' [id=' + (p.pocketRecordId ?? '') + ']').join('\n');
+      case 'set_list_item_done':
+        final item = await _listItem(
+          a['item_id'] as String, a['expected_title'] as String,
+          expectedDone: a['expected_is_done'] as bool);
+        return (a['is_done'] == true ? 'Завершить «' : 'Вернуть в работу «') +
+            item.title + '».';
+      case 'rename_list_item':
+        final item = await _listItem(
+          a['item_id'] as String, a['expected_title'] as String);
+        return 'Переименовать «' + item.title + '» в «' +
+            (a['title'] as String) + '».';
       case 'list_notes':
         final rows = await db.fetchBacklogPlans(
           categoryId: null, includeCompleted: true);
@@ -176,6 +226,23 @@ class ViktorDomainTools {
     final a = tool.arguments;
     if (reads.contains(tool.name)) return preview(tool);
     switch (tool.name) {
+      case 'set_list_item_done':
+        final item = await _listItem(
+          a['item_id'] as String, a['expected_title'] as String,
+          expectedDone: a['expected_is_done'] as bool);
+        final changed = await db.updatePlanningTask(
+          item.recordIdForBackend, planBusinessId: item.planRowId,
+          isDone: a['is_done'] as bool, suppressAppSnack: true);
+        if (!changed) throw StateError('Статус элемента не сохранился.');
+        return a['is_done'] == true ? 'Задача завершена.' : 'Задача возобновлена.';
+      case 'rename_list_item':
+        final item = await _listItem(
+          a['item_id'] as String, a['expected_title'] as String);
+        final changed = await db.updatePlanningTask(
+          item.recordIdForBackend, planBusinessId: item.planRowId,
+          title: a['title'] as String, suppressAppSnack: true);
+        if (!changed) throw StateError('Название элемента не сохранилось.');
+        return 'Элемент списка переименован.';
       case 'create_tag':
         final name = a['name'] as String;
         final domain = a['domain'] as String;
