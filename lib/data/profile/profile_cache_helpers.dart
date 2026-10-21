@@ -73,9 +73,9 @@ class MorningStartPreference {
 
   static Future<bool> isEnabled(String? profileId) async {
     final prefs = await SharedPreferences.getInstance();
-    // Reading from backing storage avoids a stale in-memory snapshot when
-    // profile hydration or another view touched preferences since app start.
-    await prefs.reload();
+    // SharedPreferences.getInstance() provides the persisted cache for this
+    // browser session. Do not force reload() on every preference read:
+    // web implementations may invalidate/recreate the snapshot mid-toggle.
     final stored = prefs.getBool(deviceKey);
     if (stored != null) return stored;
 
@@ -88,8 +88,8 @@ class MorningStartPreference {
       for (final key in prefs.getKeys())
         if (key.startsWith('lifeos.morning_start.') &&
             key.endsWith('.enabled') &&
-            prefs.getBool(key) != null)
-          prefs.getBool(key)!,
+            prefs.get(key) is bool)
+          prefs.get(key) as bool,
     ];
     final enabled = legacyValues.contains(false)
         ? false
@@ -109,10 +109,11 @@ class MorningStartPreference {
     if (!saved) {
       throw StateError('Could not persist morning check-in setting');
     }
-    // Do not claim the change was saved without confirming the backing store.
-    await prefs.reload();
+    // setBool already awaits the platform persistence operation. A second
+    // reload here could fail on web after a successful save and incorrectly
+    // roll back the switch. Use the same cache that setBool just updated.
     if (prefs.getBool(deviceKey) != enabled) {
-      throw StateError('Morning check-in setting failed readback');
+      throw StateError('Morning check-in setting failed cache readback');
     }
     changes.value++;
   }

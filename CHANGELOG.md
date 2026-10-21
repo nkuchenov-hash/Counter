@@ -1,3 +1,8 @@
+## 2026-10-21 — Morning toggle web save error hotfix [fix]
+
+- Remove the extra SharedPreferences reload after setting the morning check-in switch. Await the real write and read the updated cache directly, avoiding a web-only error/false rollback.
+- Make legacy preference migration ignore unrelated or malformed non-boolean keys; add a UI regression that switches the toggle OFF, unmounts Settings, and verifies it remains OFF when Settings remounts.
+
 ## 2026-10-21 — Morning check-in toggle survives web refresh [fix]
 
 - Store the optional morning prompt toggle under a stable local key instead of a profile id captured during login hydration, and verify persistent readback before reporting success.

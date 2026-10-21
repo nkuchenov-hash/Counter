@@ -1,6 +1,8 @@
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:counter/features/settings/timezone_settings.dart' as tz_settings;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
+import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
@@ -165,6 +167,39 @@ void main() {
     test('legacy offsetForLabel delegates to catalog offsets', () {
       expect(tz_settings.offsetForLabel('Moscow'), 3);
       expect(tz_settings.offsetForLabel('GMT+3'), 3);
+    });
+  });
+
+  group('morning_start_settings_widget', () {
+    setUp(() => SharedPreferences.setMockInitialValues({}));
+
+    testWidgets('switch can be turned off and remains off after remount', (tester) async {
+      Future<void> openSettings() async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(body: MorningStartSettingsSection()),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      await openSettings();
+      final switchFinder = find.byType(SwitchListTile);
+      expect(switchFinder, findsOneWidget);
+      expect(tester.widget<SwitchListTile>(switchFinder).value, isTrue);
+
+      await tester.tap(switchFinder);
+      await tester.pumpAndSettle();
+      expect(tester.widget<SwitchListTile>(switchFinder).value, isFalse);
+      expect(
+        (await SharedPreferences.getInstance())
+            .getBool(MorningStartPreference.deviceKey),
+        isFalse,
+      );
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await openSettings();
+      expect(tester.widget<SwitchListTile>(switchFinder).value, isFalse);
     });
   });
 
