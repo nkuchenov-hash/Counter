@@ -341,7 +341,7 @@ String _longText(Map<String, Object?> args, String key,
     {int maxLength = 8000}) {
   final value = args[key];
   if (value is! String || value.trim().isEmpty || value.length > maxLength ||
-      value.contains(RegExp(r'[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]'))) {
+      value.contains(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'))) {
     throw FormatException('Invalid $key');
   }
   return value;
