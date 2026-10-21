@@ -133,6 +133,7 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 | `database_service.dart` | Singleton root: shared state, streams, static helpers; `part` coordinator |
 | `ai/viktor_action_contract.dart` | AI action allowlist and schema validation, no direct writes |
 | `ai/viktor_date_scope.dart` | Model-independent user-intent date resolver for read/schedule tools; resolves bulk source and target days separately from selected UI date |
+| `ai/viktor_plan_category.dart` | Brain's existing title/keyword category recognition adapter for Viktor plan creation; safe active category fallback |
 | `ai/viktor_agent_capabilities.dart` | Model-independent capability registry, risk labels and approval policy for supported Viktor tools |
 | `ai/viktor_domain_tools.dart` | Scoped Brain-backed tool adapters for categories, tags, notes, Paths and safe profile settings; preview/read/execute |
 
