@@ -22,7 +22,7 @@ class ViktorVoiceGateway {
   }
 
   FormatException _failure(Map<String, dynamic> data) {
-    final code = (data['error'] ?? 'speech_request_failed').toString();
+    final code = (data['error'] ?? 'speech_missing_error_code').toString();
     final status = data['status'];
     if (status is int && status >= 400 && status <= 599) {
       return FormatException('$code (HTTP $status)');
