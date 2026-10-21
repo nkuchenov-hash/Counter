@@ -31293,7 +31293,7 @@ b4=f?new A.b5v(c6,c9,c3,d,d1,d3):c1
 b5=f?new A.b5w(c6,d1,d3,d2):c1
 b6=f?new A.b5x(c6,d1,d3,d4):c1
 b7=f?A.cC3(c6):c1
-b8=c5?0.9:1
+b8=c5?0.74:1
 b9=A.L.prototype.gd6.call(s,0)
 c0=s.f.p(0,c3)
 a3.push(A.c3i(new A.Q(B.ck,A.lV(new A.hz(A.ciy(a0,a4,g,f,new A.bU(B.ci,c1,c1,new A.aa(c1,a0,A.j5(s.bmm(b9,b,c0,c3,d0,c2,a0,!0,p,!1,c9.b.r),b8),c1),c1),a5,a6,p,new A.b5y(c6,c3,c9),a7,a8,b7,b6,b4,b5,b3,b2,a9,b1,b0,16),c1),B.l,c1),c1),B.e3,a2,a0,new A.bJ("time-view-card-position-"+c3,a1),j,i,n))
@@ -66269,7 +66269,7 @@ s=a.b
 r=s==null?null:B.b.k(s)
 return(r==null?"":r).length===0},
 caW(a){var s=B.b.k(a)
-return"APP_BUILD commit=8728a472 builtAt=2026-10-21T15:42:06Z"+(s.length!==0?" route="+s:"")},
+return"APP_BUILD commit=a5962c69 builtAt=2026-10-21T15:44:39Z"+(s.length!==0?" route="+s:"")},
 bO(a,b){var s,r=null,q=$.aGc().gam()
 if(q==null)return
 q.oa()
@@ -111169,7 +111169,7 @@ e=A.n(a2).ok.z
 if(e==null)e=a
 else{d=A.n(a2).ax
 c=d.rx
-e=e.aQ(c==null?d.k3:c)}return A.iF(a0,a,new A.Gm(A.b([new A.i6(q,a,o,a),new A.i6(n,a,new A.JR(!0,a),a),new A.i6("\u0412\u0438\u043a\u0442\u043e\u0440 \xb7 \u0418\u0418",a,m,a),new A.i6(l,a,k,a),new A.i6(j,a,i,a),new A.i6(h,a,B.Wq,a),new A.i6(g,a,A.v(f+" 8728a472 \xb7 2026-10-21T15:42:06Z",a,a,a,a,a,a,e,a,a,a,a),a)],p),a),a,a,!0)},
+e=e.aQ(c==null?d.k3:c)}return A.iF(a0,a,new A.Gm(A.b([new A.i6(q,a,o,a),new A.i6(n,a,new A.JR(!0,a),a),new A.i6("\u0412\u0438\u043a\u0442\u043e\u0440 \xb7 \u0418\u0418",a,m,a),new A.i6(l,a,k,a),new A.i6(j,a,i,a),new A.i6(h,a,B.Wq,a),new A.i6(g,a,A.v(f+" a5962c69 \xb7 2026-10-21T15:44:39Z",a,a,a,a,a,a,e,a,a,a,a),a)],p),a),a,a,!0)},
 aH2(a,b,c){var s,r,q,p,o,n=this,m=null,l=A.a5([B.E5,A.p(b,"settings_tab_account"),B.E6,A.p(b,"settings_tab_preferences"),B.xu,"\u0412\u0438\u043a\u0442\u043e\u0440 \xb7 \u0418\u0418",B.E7,A.p(b,"settings_tab_notifications"),B.E8,A.p(b,"settings_tab_appearance"),B.E9,A.p(b,"settings_tab_about")],t.OS,t.N),k=n.ax,j=A.c8(m,m,B.n,B.a9R,m,m,m,1,m,B.A,m,m,m,m)
 switch(k.a){case 0:s=A.p(b,"account_security")
 n.a.toString
@@ -111189,7 +111189,7 @@ q=A.n(a).ok.z
 if(q==null)q=m
 else{p=A.n(a).ax
 o=p.rx
-q=q.aQ(o==null?p.k3:o)}q=new A.i6(s,m,A.v(r+" 8728a472 \xb7 2026-10-21T15:42:06Z",m,m,m,m,m,m,q,m,m,m,m),m)
+q=q.aQ(o==null?p.k3:o)}q=new A.i6(s,m,A.v(r+" a5962c69 \xb7 2026-10-21T15:44:39Z",m,m,m,m,m,m,q,m,m,m,m),m)
 s=q
 break
 default:s=m}return new A.Gm(A.b([new A.a74(k,new A.bML(n),l,m),j,B.dy,s],t.p),m)},
