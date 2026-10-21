@@ -84,7 +84,9 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
   }
 
   if ((Array.isArray(body.day_plans) && body.day_plans.length > 60) ||
-      (Array.isArray(body.next_day_plans) && body.next_day_plans.length > 60)) {
+      (Array.isArray(body.next_day_plans) && body.next_day_plans.length > 60) ||
+      (Array.isArray(body.previous_day_plans) &&
+       body.previous_day_plans.length > 60)) {
     return e.json(413, {error: "day_context_too_large"});
   }
   const gigaScopes = {
@@ -113,7 +115,11 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
       duration_minutes: Number(p.duration_minutes) || null,
       start_time: p.start_time == null ? null : String(p.start_time).slice(0, 5),
       is_done: p.is_done === true,
-      recurrent: !!p.recurrent
+      recurrent: !!p.recurrent,
+      category_name: String(p.category_name || "").slice(0, 80),
+      tags: Array.isArray(p.tags)
+        ? p.tags.filter(t => typeof t === "string").slice(0, 10)
+          .map(t => t.slice(0, 64)) : []
     });
   }
   // The model sees chronological order rather than PocketBase insertion order.
@@ -124,6 +130,28 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     return left.localeCompare(right) || a.id.localeCompare(b.id);
   });
   const tomorrow = String(body.next_day || "");
+  const yesterday = String(body.previous_day || "");
+  const previousPlans = [];
+  for (const p of (Array.isArray(body.previous_day_plans)
+      ? body.previous_day_plans : [])) {
+    if (!p || typeof p !== "object" ||
+        !/^[a-z0-9]{15}$/.test(String(p.id || ""))) continue;
+    previousPlans.push({
+      id: String(p.id), title: String(p.title || "").slice(0, 160),
+      category_name: String(p.category_name || "").slice(0, 80),
+      tags: Array.isArray(p.tags)
+        ? p.tags.filter(t => typeof t === "string").slice(0, 10)
+          .map(t => t.slice(0, 64)) : [],
+      is_done: p.is_done === true,
+      start_time: p.start_time == null ? null :
+        String(p.start_time).slice(0, 5),
+      duration_minutes: Number(p.duration_minutes) || null,
+      recurrent: !!p.recurrent
+    });
+  }
+  previousPlans.sort((a,b) =>
+    (a.start_time || "99:99").localeCompare(b.start_time || "99:99") ||
+      a.id.localeCompare(b.id));
   const zone = String(body.profile_timezone || "profile").slice(0, 64);
   const tomorrowPlans = [];
   for (const p of (Array.isArray(body.next_day_plans) ? body.next_day_plans : [])) {
@@ -156,6 +184,12 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "swap_plan_positions {first_plan_id,second_plan_id,wall_day}; exchange two cards' chronological positions.",
     "start_record {title}; stop_record {record_id}.",
     "bulk_replan {operations:[{kind,status,source_day,target_day?,start_time?,timezone?}]}.",
+    "compose_day {source_day,target_day,source_filter,start_time,timezone,urgent_first,meetings:[{title,start_time,duration_minutes}]}.",
+    "IMPORTANT: when user wants to move incomplete plans from YESTERDAY into TODAY AND add scheduled meetings, propose EXACTLY ONE compose_day action. NEVER produce separate bulk_replan + create_plan actions for this intent.",
+    "compose_day source_day is previous_day, target_day is wall_day. source_filter is the exact category, tag or work-group name from the user (e.g. 'Price Reporter'). Use no guessed IDs.",
+    "start_time is requested start of moved tasks (e.g. 09:00). timezone is the user's stated timezone (e.g. 'New York'). Meetings have exact user-stated times and durations. urgent_first reflects explicit urgency request; actual priority is resolved from urgency tags, never invented.",
+    "The app reserves meetings first, fits carried tasks in available slots, re-checks both days and asks ONE approval. Conflicts are handled by the app; do not refuse or split this command just because it has multiple parts.",
+    "For this combined command do not list individual create_plan actions. If meeting title or ending time is genuinely ambiguous ask only the needed clarification with actions [].",
     "Use bulk_replan for set-based changes such as move ALL incomplete plans to another",
     "day or compact completed plans sequentially. This is one high-level action,",
     "not a list of individual card IDs. Allowed kind: move or compact.",
@@ -184,6 +218,8 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
   const userContext = {
     wall_day: day,
     next_day: tomorrow,
+    previous_day: yesterday,
+    previous_day_plans: previousPlans,
     profile_timezone: zone,
     day_plans: plans,
     next_day_plans: tomorrowPlans,
@@ -234,7 +270,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
           {role: "user", content: JSON.stringify(userContext)}
         ],
         temperature: 0,
-        max_tokens: 1300
+        max_tokens: 1800
       }),
       timeout: 35
     });
