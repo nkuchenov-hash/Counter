@@ -110,10 +110,67 @@ void main() {
     ])), throwsFormatException);
   });
 
+  test('Backlog list tools validate freshness and forbid arbitrary data', () {
+    final complete = action('set_list_item_done', {
+      'item_id': 'aaaaabbbbbccccc',
+      'expected_title': 'Проверить макет',
+      'expected_is_done': false,
+      'is_done': true,
+    });
+    expect(ViktorActionBatch.fromJson(batch([complete])).hasMutations, true);
+    expect(() => ViktorActionBatch.fromJson(batch([
+      action('set_list_item_done', {
+        ...Map<String, Object?>.from(complete['arguments'] as Map),
+        'expected_is_done': true,
+      }),
+    ])), throwsFormatException);
+    expect(() => ViktorActionBatch.fromJson(batch([
+      action('set_list_item_done', {
+        ...Map<String, Object?>.from(complete['arguments'] as Map),
+        'user_id': 'forbidden',
+      }),
+    ])), throwsFormatException);
+    expect(() => ViktorActionBatch.fromJson(batch([
+      action('rename_list_item', {
+        'item_id': 'aaaaabbbbbccccc',
+        'expected_title': 'Старое',
+        'title': 'Новое',
+      }),
+    ])), returnsNormally);
+  });
+
+  test('Only one reversible write qualifies for auto-apply', () {
+    final single = ViktorActionBatch.fromJson(batch([
+      action('create_tag', {'name': 'UI', 'domain': 'list'}),
+    ]));
+    expect(single.isSingleReversibleWrite, true);
+    final done = ViktorActionBatch.fromJson(batch([
+      action('set_list_item_done', {
+        'item_id': 'aaaaabbbbbccccc',
+        'expected_title': 'Проверить макет',
+        'expected_is_done': false, 'is_done': true,
+      }),
+    ]));
+    expect(done.isSingleReversibleWrite, true);
+    final rename = ViktorActionBatch.fromJson(batch([
+      action('rename_list_item', {
+        'item_id': 'aaaaabbbbbccccc',
+        'expected_title': 'Старое', 'title': 'Новое',
+      }),
+    ]));
+    expect(rename.isSingleReversibleWrite, false);
+    final multi = ViktorActionBatch.fromJson(batch([
+      action('create_tag', {'name': 'UI', 'domain': 'list'}),
+      action('create_tag', {'name': 'UX', 'domain': 'list'}),
+    ]));
+    expect(multi.isSingleReversibleWrite, false);
+  });
+
   test('Read-only queries never require mutation consent', () {
     final parsed = ViktorActionBatch.fromJson(batch([
       action('list_categories', {}),
       action('list_tags', {'domain': 'plan'}),
+      action('list_backlog_items', {}),
       action('list_notes', {}),
       action('list_paths', {}),
       action('get_settings', {}),
