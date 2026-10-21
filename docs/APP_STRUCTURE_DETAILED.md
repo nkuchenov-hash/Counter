@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `ef88d836` on 2026-10-21.**
+**Generated from input HEAD `37a210ee` on 2026-10-21.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -13659,8 +13659,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain helper for data/sync — Authenticated provider gateway client, session-only BYOK settings. Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What this is:** Brain helper for data/sync — Authenticated provider gateway client, session-only BYOK settings.
+- **Human purpose:** Brain helper for data/sync — Authenticated model-independent provider gateway and scoped per-account cloud BYOK connection, observation context for tools. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Authenticated model-independent provider gateway and scoped per-account cloud BYOK connection, observation context for tools.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
 - **Contents:** Dart helpers and types (`ViktorModelSettings`, `ViktorResponse`, `ViktorGateway`).
 - **Key code names:** `ViktorModelSettings`, `ViktorResponse`, `ViktorGateway`
@@ -13670,10 +13670,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** Authenticated provider gateway client, session-only BYOK settings
+- **Responsibilities:** Authenticated model-independent provider gateway and scoped per-account cloud BYOK connection, observation context for tools
 - **When to open:** When behavior tied to `viktor_gateway.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Authenticated provider gateway client, session-only BYOK settings
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Authenticated model-independent provider gateway and scoped per-account cloud BYOK connection, observation context for t
 
 RU:
 
