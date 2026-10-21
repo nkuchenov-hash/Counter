@@ -171,6 +171,9 @@ class ViktorExecutor {
         case 'list_tags':
         case 'create_tag':
         case 'rename_tag':
+        case 'list_backlog_items':
+        case 'set_list_item_done':
+        case 'rename_list_item':
         case 'list_notes':
         case 'create_note':
         case 'edit_note':
@@ -324,6 +327,9 @@ class ViktorExecutor {
         case 'list_tags':
         case 'create_tag':
         case 'rename_tag':
+        case 'list_backlog_items':
+        case 'set_list_item_done':
+        case 'rename_list_item':
         case 'list_notes':
         case 'create_note':
         case 'edit_note':

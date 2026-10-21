@@ -1,3 +1,10 @@
+## [2026-10-21] — Viktor list tools and bounded agent observations (PR; pending CI)
+
+- Added owner-scoped backlog item discovery, complete/reopen and rename tools, routed through existing Brain `fetchBacklogPlans` and `updatePlanningTask`; checks old title/status and rejects Notes, scheduled items and recurrence.
+- Viktor can make up to four distinct read-only observation passes with stable request ID and labeled results; repeated identical requests or a mixed read/write observation fail closed. The provider remains replaceable.
+- Single reversible actions skip redundant confirmation while retaining fresh preview validation. Consequential edits and multi-action batches still require explicit approval.
+- Updated agent contract tests, prompts and UX contract. Not full interface parity; Flutter/Android/Web CI and credential-backed E2E remain release gates.
+
 ## [2026-10-21] — Viktor general application-agent foundation (in validation)
 
 - Added a model-neutral capability catalog and validated tool proposals for Notes, Paths, Categories, Tags, safe Profile settings and existing plan/record operations.

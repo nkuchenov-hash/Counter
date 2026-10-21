@@ -9,6 +9,9 @@ This document defines how Life OS behaves when people interact with it. It is th
 - The agent must never guess PocketBase IDs. Catalogs are read from the signed-in user's Brain. Invalid, recurring, stale or ambiguous changes must fail safely. Preview and apply refresh the state before executing; a failed multi-domain write may have left earlier writes applied and must report partial success risk rather than claim atomicity.
 - Destructive actions, credential changes, admin fields, unrestricted API/SQL, file access and source-code modification are explicitly outside the public tool registry. Adding UI parity requires a reviewed handler with tests, not prompt-only permission.
 - Long/complex requests can be decomposed into several proposed tool operations, but unresolved dependencies (such as referencing IDs of items not yet created) must not be silently invented. User must see what will be changed.
+- Agent follow-up observations are read-only, bounded to four steps per user request, deduplicated by tool/argument signature, and labelled as untrusted application data. A proposal containing writes while requesting more context must fail without making changes. All steps share the same request ID.
+- A single *reversible* operation directly requested by the user may run without a redundant confirmation dialog, but always performs the usual Brain-backed state preview and freshness checks. Consequential changes and multi-action batches require approval. Destructive operations remain unavailable without a dedicated explicit-consent handler.
+- Backlog list tools now support reading, completion toggles and renaming **ordinary** unscheduled items through `updatePlanningTask`, with old-title/old-state checks. They must never silently modify a rich Note, recurring series or scheduled plan.
 
 ## Core Rules
 

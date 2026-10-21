@@ -281,6 +281,7 @@ class ViktorGateway {
     required ViktorModelSettings settings,
     List<String> selectedPlanIds = const [],
     List<String> toolObservations = const [],
+    String? requestId,
   }) async {
     final service = DatabaseService.instance;
     await service.ensurePocketBaseReady();
@@ -293,7 +294,7 @@ class ViktorGateway {
     final dayKey = '${wallDay.year.toString().padLeft(4, '0')}-'
         '${wallDay.month.toString().padLeft(2, '0')}-'
         '${wallDay.day.toString().padLeft(2, '0')}';
-    final reqId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
+    final reqId = requestId ?? 'viktor_${DateTime.now().microsecondsSinceEpoch}';
     final lastTwo = ViktorSchedulePlanner.resolveLastTwoSwap(input, plans);
     if (lastTwo != null) {
       final earlier = plans.singleWhere((p) => p.pocketRecordId == lastTwo[0]);
@@ -325,6 +326,8 @@ class ViktorGateway {
     final q = input.toLowerCase();
     final wantTags = RegExp(r'тег|метк|ярлык|tag|label',
         caseSensitive: false).hasMatch(q);
+    final wantLists = RegExp(r'спис|дела|чеклист|list|backlog|задач',
+        caseSensitive: false).hasMatch(q);
     final wantNotes = RegExp(r'замет|note|текст замет|конспект',
         caseSensitive: false).hasMatch(q);
     final wantPaths = RegExp(r'пути|путь|пут[ье]|path|этап|цель',
@@ -335,10 +338,11 @@ class ViktorGateway {
            ...await service.fetchTagsForCurrentUser(
             scope: TagCatalogScope.list)]
         : <Tag>[];
-    final notes = wantNotes
+    final backlog = (wantNotes || wantLists)
         ? await service.fetchBacklogPlans(
             categoryId: null, includeCompleted: true)
         : <PlanningTask>[];
+    final notes = wantNotes ? backlog : <PlanningTask>[];
     final paths = wantPaths
         ? (await PathRepository(database: service).loadActivePaths()).paths
         : <ProjectPathSnapshot>[];
@@ -361,7 +365,7 @@ class ViktorGateway {
       'wall_day': dayKey,
       'request_id': reqId,
       'ui_locale': currentLocale.value,
-      'tool_observations': toolObservations.take(2)
+      'tool_observations': toolObservations.take(4)
           .map((entry) => entry.length > 4500 ?
              entry.substring(0, 4500) : entry).toList(),
       'profile_timezone': service.settings.preferredTimeZone,
@@ -374,6 +378,20 @@ class ViktorGateway {
           'name': tag.name,
           'domain': tag.domain,
         }
+      ],
+      'backlog_catalog': [
+        if (wantLists)
+          for (final p in backlog.where((p) =>
+              p.pocketRecordId != null &&
+              p.startTime == null &&
+              (p.notesDeltaJson?.trim().isEmpty ?? true) &&
+              (p.rrule?.trim().isEmpty ?? true) &&
+              (p.recurrenceInstanceDateKey?.trim().isEmpty ?? true)).take(60))
+            {
+              'id': p.pocketRecordId,
+              'title': p.title,
+              'is_done': p.isDone,
+            }
       ],
       'notes_catalog': [
         for (final p in notes.where((p) =>
