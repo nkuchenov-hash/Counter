@@ -149,6 +149,25 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    test('new Planning subscriber gets optimistic cache as its first event', () async {
+      final task = _quickAddHarnessTask(title: 'Immediate planning snapshot')
+          .copyWith(
+            planRowId: 'p0-immediate-snapshot',
+            pocketRecordId: 'optimistic-p0-immediate-snapshot',
+            isSynced: false,
+          );
+      DatabaseService.instance.applyOptimisticPlanningTask(task);
+      addTearDown(() => DatabaseService.instance
+          .clearOptimisticPlanningForPlanRow(task.planRowIdForBackend));
+
+      // The stream must not wait for its PocketBase network pump to finish.
+      final first = await DatabaseService.instance
+          .planningStream(_harnessDay, listenToGlobalPlanningRefresh: false)
+          .first
+          .timeout(const Duration(milliseconds: 300));
+      expect(first.any((t) => t.title == task.title), isTrue);
+    });
+
     testWidgets('optimistic quick-add task renders in day list shell',
         (tester) async {
       tester.view.physicalSize = const Size(900, 1400);
