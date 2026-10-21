@@ -323,7 +323,9 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                     child: SizedBox(
                       height: resizeHeightPx,
                       child: Opacity(
-                        opacity: isDragging ? 0.74 : 1.0,
+                        // Keep the lifted card visually substantial like the original
+                        // fully opaque drag. A small transparency is sufficient.
+                        opacity: isDragging ? 0.90 : 1.0,
                         child: host.planCardRow(
                           context: host.context,
                           task: layout.task,
