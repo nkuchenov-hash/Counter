@@ -75,6 +75,41 @@ void main() {
     }
   });
 
+  test('Agent registry never exposes destructive server or development tools', () {
+    for (final forbidden in [
+      'run_sql', 'execute_code', 'edit_source', 'delete_account',
+      'set_admin', 'write_pocketbase', 'raw_http', 'delete_all',
+    ]) {
+      expect(ViktorAgentCapabilities.names.contains(forbidden), isFalse);
+      expect(() => ViktorActionBatch.fromJson(batch([
+        action(forbidden, {}),
+      ])), throwsFormatException);
+    }
+  });
+
+  test('A tag and Path cannot smuggle provider keys or arbitrary fields', () {
+    expect(() => ViktorActionBatch.fromJson(batch([
+      action('create_tag', {
+        'name': 'Редизайн',
+        'domain': 'plan',
+        'api_key': 'should-never-be-persisted',
+      }),
+    ])), throwsFormatException);
+    expect(() => ViktorActionBatch.fromJson(batch([
+      action('create_path', {
+        'name': 'Сайт',
+        'category_id': 'aaaaabbbbbccccc',
+        'goal': 'Обновить главную',
+        'stages': [
+          {'title': 'Этап', 'criteria': 'Готово', 'actions': [
+            {'text': 'Работа', 'result': 'Готово', 'minutes': 60,
+             'script': 'rm -rf'},
+          ]},
+        ],
+      }),
+    ])), throwsFormatException);
+  });
+
   test('Read-only queries never require mutation consent', () {
     final parsed = ViktorActionBatch.fromJson(batch([
       action('list_categories', {}),
