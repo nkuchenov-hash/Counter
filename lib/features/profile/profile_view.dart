@@ -566,28 +566,32 @@ class MorningStartSettingsSection extends StatefulWidget {
 
 class _MorningStartSettingsSectionState
     extends State<MorningStartSettingsSection> {
-  String? _profileId;
   bool _enabled = true;
   bool _loaded = false;
+  bool _loadFailed = false;
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    _profileId = DatabaseService.instance.currentProfileId;
     unawaited(_load());
   }
 
   Future<void> _load() async {
+    setState(() => _loadFailed = false);
     try {
-      final enabled = await MorningStartPreference.isEnabled(_profileId);
+      final enabled = await MorningStartPreference.isEnabled(
+        DatabaseService.instance.currentProfileId,
+      );
       if (!mounted) return;
       setState(() {
         _enabled = enabled;
         _loaded = true;
       });
     } catch (_) {
-      if (mounted) AppSnack.failed();
+      if (!mounted) return;
+      setState(() => _loadFailed = true);
+      AppSnack.failed();
     }
   }
 
@@ -599,7 +603,10 @@ class _MorningStartSettingsSectionState
       _saving = true;
     });
     try {
-      await MorningStartPreference.setEnabled(_profileId, enabled);
+      await MorningStartPreference.setEnabled(
+        DatabaseService.instance.currentProfileId,
+        enabled,
+      );
     } catch (_) {
       if (mounted) {
         setState(() => _enabled = previous);
@@ -613,6 +620,27 @@ class _MorningStartSettingsSectionState
   @override
   Widget build(BuildContext context) {
     final locale = currentLocale.value;
+    if (!_loaded) {
+      return ListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(t(locale, 'morning_prompt_toggle')),
+        subtitle: Text(
+          t(locale, 'morning_prompt_description'),
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        trailing: _loadFailed
+            ? IconButton(
+                tooltip: MaterialLocalizations.of(context).refreshIndicatorSemanticLabel,
+                onPressed: () => unawaited(_load()),
+                icon: const Icon(Icons.refresh),
+              )
+            : const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+      );
+    }
     return SwitchListTile.adaptive(
       contentPadding: EdgeInsets.zero,
       title: Text(t(locale, 'morning_prompt_toggle')),
@@ -621,9 +649,7 @@ class _MorningStartSettingsSectionState
         style: Theme.of(context).textTheme.bodyMedium,
       ),
       value: _enabled,
-      onChanged: _loaded && !_saving
-          ? (next) => unawaited(_save(next))
-          : null,
+      onChanged: !_saving ? (next) => unawaited(_save(next)) : null,
     );
   }
 }
