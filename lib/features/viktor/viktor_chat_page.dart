@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
@@ -116,24 +117,42 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       final lastTwoIds = ViktorSchedulePlanner.resolveLastTwoSwap(input, plans);
       final executor = ViktorExecutor(db);
       final toolObservations = <String>[];
+      final seenReads = <String>{};
+      // One stable identity for every reasoning step of this user command.
+      final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
       var response = await _gateway.propose(
         input: input,
         wallDay: widget.wallDay,
         plans: plans,
         settings: _settings,
         selectedPlanIds: widget.selectedPlanIds,
+        requestId: requestId,
       );
-      // Autonomous tool loop: read actual user-owned app data and let the
-      // model reason again. Two bounded observations maximum. Mutations
-      // always stop the loop and require one normal confirmation preview.
-      for (var step = 0; step < 2; step++) {
+      // Read-only tool iterations are bounded, deduplicated and never write.
+      // A model cannot bypass the final preview by returning mutations while
+      // continue=true. Tool output is explicitly labelled as observations.
+      for (var step = 0; response.needsMoreContext; step++) {
         if (!mounted) return;
+        if (step >= 4) {
+          throw StateError('Виктор достиг предела проверки данных. '
+              'Никакие изменения не выполнены.');
+        }
         final proposed = response.actions;
-        if (!response.needsMoreContext || proposed == null ||
-            proposed.hasMutations) break;
-        final observation = await executor.describe(
-          proposed, widget.wallDay);
-        toolObservations.add(observation);
+        if (proposed == null || proposed.hasMutations) {
+          throw StateError('Для дополнительной проверки допускаются '
+              'только операции чтения. Изменения не выполнены.');
+        }
+        final signature = jsonEncode(
+            proposed.actions.map((a) => a.toJson()).toList());
+        if (!seenReads.add(signature)) {
+          throw StateError('Виктор повторно запросил те же данные. '
+              'Изменения не выполнены.');
+        }
+        final observation = await executor.describe(proposed, widget.wallDay);
+        toolObservations.add(jsonEncode({
+          'tools': proposed.actions.map((a) => a.toJson()).toList(),
+          'result': observation,
+        }));
         response = await _gateway.propose(
           input: input,
           wallDay: widget.wallDay,
@@ -141,6 +160,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
           settings: _settings,
           selectedPlanIds: widget.selectedPlanIds,
           toolObservations: toolObservations,
+          requestId: requestId,
         );
       }
       if (!mounted) return;
@@ -185,7 +205,9 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
           firstId != secondId &&
           (groundedByPosition || matchedSelection ||
               (titleSpoken(firstId) && titleSpoken(secondId)));
-      final approved = isUnambiguousSwap
+      // One explicitly requested reversible operation needs no redundant
+      // modal. Consequential edits and mixed batches retain confirmation.
+      final approved = isUnambiguousSwap || actions.isSingleReversibleWrite
           ? true : await _confirm(actions, preview);
       if (!mounted) return;
       if (!approved) {
