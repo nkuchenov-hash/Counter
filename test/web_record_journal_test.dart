@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:counter/data/local_sync/record_mutation_outbox.dart';
 import 'package:counter/data/local_sync/web_record_journal.dart';
+import 'package:counter/data/database_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -68,4 +69,40 @@ void main() {
     expect(await WebRecordJournal.writeDraft(draftKey, ''), isTrue);
     expect(await WebRecordJournal.readDraft(draftKey), isNull);
   });
+  test('morning check-in OFF persists in IndexedDB without localStorage writes', () async {
+    final key = MorningStartPreference.deviceKey;
+    await WebRecordJournal.writePreferenceBool(key, null);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+
+    expect(await MorningStartPreference.isEnabled(null), isTrue);
+    await MorningStartPreference.setEnabled(null, false);
+    expect(await WebRecordJournal.readPreferenceBool(key), isFalse);
+    expect(await MorningStartPreference.isEnabled(null), isFalse);
+    // Simulate fresh browser session with a new SharedPreferences instance.
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    expect(await MorningStartPreference.isEnabled('another-account'), isFalse);
+    await MorningStartPreference.setEnabled(null, true);
+    expect(await WebRecordJournal.readPreferenceBool(key), isTrue);
+    await WebRecordJournal.writePreferenceBool(key, null);
+  });
+
+  test('morning prompt migrates legacy OFF then no longer depends on localStorage', () async {
+    final key = MorningStartPreference.deviceKey;
+    await WebRecordJournal.writePreferenceBool(key, null);
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'lifeos.morning_start.old-profile.enabled': false,
+    });
+    expect(await MorningStartPreference.isEnabled('new-profile'), isFalse);
+    expect(await WebRecordJournal.readPreferenceBool(key), isFalse);
+
+    // A stale or malformed browser cache cannot turn a persisted OFF back ON.
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'lifeos.morning_start.enabled.v2': 'corrupted-not-bool',
+    });
+    expect(await MorningStartPreference.isEnabled(null), isFalse);
+    await MorningStartPreference.setEnabled(null, true);
+    expect(await MorningStartPreference.isEnabled(null), isTrue);
+    await WebRecordJournal.writePreferenceBool(key, null);
+  });
+
 }
