@@ -269,14 +269,13 @@ jobs:
           PY
           REMOTE
 
+      # Keep production audit evidence in the successful workflow run,
+      # NOT as a new main commit after the validated SHA. Rewriting main
+      # here invalidated the exact-sha server-before-web release gate.
       - name: Publish sanitized verification
-        shell: bash
-        run: |
-          cp /tmp/sleep-cloud-result.txt _tmp_sleep_cloud_result.txt
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add _tmp_sleep_cloud_result.txt
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Record sanitized sleep cloud verification'
-          git pull --rebase origin main
-          git push origin HEAD:main
+        uses: actions/upload-artifact@v4
+        with:
+          name: sleep-cloud-verification
+          path: /tmp/sleep-cloud-result.txt
+          if-no-files-found: error
+          retention-days: 14
