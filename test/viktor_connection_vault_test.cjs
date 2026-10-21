@@ -100,6 +100,14 @@ assert.equal(connected.payload.connections[0].provider, 'yandex');
 assert.equal(connected.payload.connections[0].folder_id, config.folder_id);
 assert.ok(!JSON.stringify(connected).includes(config.api_key),
   'Connection status must never return credential');
+const encrypted = rows[0].getString('payload_enc');
+rows[0].set('payload_enc', 'unreadable-payload');
+const corrupted = call('GET', first);
+assert.equal(corrupted.status, 503,
+  'A decrypt failure must be reported, never disguised as a missing key');
+assert.equal(corrupted.payload.error, 'vault_connection_unreadable');
+assert.ok(!JSON.stringify(corrupted).includes(config.api_key));
+rows[0].set('payload_enc', encrypted);
 assert.equal(call('GET', second).payload.connections.length, 0,
   'Another user must not list the connection');
 assert.equal(call('POST', first, {
