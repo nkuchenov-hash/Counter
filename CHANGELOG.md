@@ -1,3 +1,11 @@
+## [2026-10-21] — Tactile drag restoration and cache-first warm reload
+
+- Restored bounded Time View pointer drag geometry. Auto-scroll keeps the lifted card under the original grab point but no longer reruns full insertion/cascade calculations on every scroll frame (64-ms preview cadence).
+- Adjusted lifted card opacity to 90% for the original solid, tactile appearance. Kept the compact time chip.
+- Removed unconditional browser cache deletion and service worker unregistration on each reload. Flutter assets remain revisioned by release SHA.
+- Warm startup initializes PocketBase without a blocking health probe, uses the local cached session, hydrates the category tree from scoped local storage, and starts server auth/catalog refresh in the background.
+- Regression coverage added for pointer/auto-scroll preview cadence; live timing still needs verification.
+
 ## [2026-10-21] — Viktor typed tool contract repair (pending CI)
 
 - Exposed actionable schema errors: action index, tool name, rejected field names, and allowed names, without exposing parameter values. The existing one-turn model retry can now correct the actual validation error instead of repeating a generic `Unexpected Viktor action field`.
@@ -7,7 +15,7 @@
 ## [2026-10-21] — Time View cursor anchor and compact time feedback
 
 - Fixed Time View scheduled card dragging through edge auto-scroll by compensating for the change in scroll offset since pointer pickup. Every scroll-ticker frame recomputes drag and insertion preview even when the pointer is stationary; the card is rendered at raw pointer position, while snapping is confined to the drop target.
-- Dragged card uses 74% opacity; the full-width dark time stripe has been replaced by a compact neutral time chip with a 16px label.
+- Dragged card uses 90% opacity after tactile-feel review; the full-width dark time stripe has been replaced by a compact neutral time chip with a 16px label.
 - Added scroll-offset/pointer anchoring regressions in `test/plan_time_drag_gesture_contract_test.dart`. Web deployment and real-device drag interactions remain verification gates.
 
 ## [2026-10-21] — Viktor same-day priority insertion (pending CI)
