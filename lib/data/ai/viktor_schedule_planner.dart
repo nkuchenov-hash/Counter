@@ -19,6 +19,115 @@ class ViktorSchedulePreview {
   }
 }
 
+/// A safe insertion proposal based on saved user-owned day plans.
+/// Separates placement policy from model language and PocketBase writes.
+class ViktorInsertionPreview {
+  const ViktorInsertionPreview({
+    required this.start,
+    required this.end,
+    required this.shifted,
+    required this.before,
+  });
+  final DateTime start;
+  final DateTime end;
+  final List<PlanningTask> shifted;
+  final List<PlanningTask> before;
+
+  /// Covers unchanged as well as moved rows: a new constraint invalidates
+  /// consent even if it doesn't itself need moving.
+  String get signature => ViktorBulkPlanner.snapshot(before, const []);
+}
+
+class ViktorPlanInsertionPlanner {
+  const ViktorPlanInsertionPlanner();
+
+  ViktorInsertionPreview calculate({
+    required DateTime day,
+    required List<PlanningTask> plans,
+    required DateTime start,
+    required int durationMinutes,
+    required bool shiftConflicts,
+    required bool Function(PlanningTask) fixedTime,
+  }) {
+    if (durationMinutes < 10 || durationMinutes > 1440) {
+      throw StateError('Длительность должна быть от 10 до 1440 минут.');
+    }
+    final end = start.add(Duration(minutes: durationMinutes));
+    bool sameDay(DateTime date) =>
+        date.year == day.year && date.month == day.month &&
+        date.day == day.day;
+    if (!sameDay(start) || !sameDay(end)) {
+      throw StateError('Встреча должна полностью помещаться в выбранный день.');
+    }
+    final ordered = plans.where((p) =>
+        p.startTime != null && p.endDateTime != null).toList()
+      ..sort((a, b) {
+        final clock = a.startTime!.compareTo(b.startTime!);
+        if (clock != 0) return clock;
+        final order = a.order.compareTo(b.order);
+        return order != 0 ? order :
+            a.recordIdForBackend.compareTo(b.recordIdForBackend);
+      });
+    if (ordered.length > 100) {
+      throw StateError('Слишком много планов для безопасного пересчёта.');
+    }
+    final seen = <String>{};
+    for (final p in ordered) {
+      if (!seen.add(p.recordIdForBackend)) {
+        throw StateError('Обнаружен дубликат плана. Обновите расписание.');
+      }
+      if (!sameDay(p.startTime!) || !sameDay(p.endDateTime!) ||
+          !p.endDateTime!.isAfter(p.startTime!)) {
+        throw StateError('В расписании есть некорректный интервал.');
+      }
+    }
+
+    var cursor = end;
+    var cascading = false;
+    final shifted = <PlanningTask>[];
+    for (final p in ordered) {
+      final oldStart = p.startTime!;
+      final oldEnd = p.endDateTime!;
+      // Do not rewrite unrelated existing conflicts. A cascade starts only
+      // when a task actually intersects the new appointment, and stops at
+      // the first sufficiently large gap.
+      final intersectsNew = oldStart.isBefore(end) && oldEnd.isAfter(start);
+      if (!intersectsNew && !cascading) continue;
+      final proposedStart = oldStart.isBefore(cursor) ? cursor : oldStart;
+      if (proposedStart != oldStart) {
+        if (!shiftConflicts) {
+          throw StateError('Время занято планом «${p.title}». '
+              'Попросите Виктора сдвинуть гибкие планы.');
+        }
+        if (fixedTime(p) || p.isDone || !p.isSynced ||
+            p.pocketRecordId == null ||
+            (p.rrule ?? '').isNotEmpty ||
+            (p.recurrenceInstanceDateKey ?? '').isNotEmpty ||
+            p.recordIdForBackend.startsWith('virt-') ||
+            p.recordIdForBackend.startsWith('optimistic-')) {
+          throw StateError('«${p.title}» закреплён, завершён '
+              'или повторяется. Автоматически перемещать нельзя.');
+        }
+        final shiftedEnd = proposedStart.add(oldEnd.difference(oldStart));
+        if (!sameDay(shiftedEnd)) {
+          throw StateError('После вставки план «${p.title}» '
+              'выходит за конец дня.');
+        }
+        shifted.add(p.copyWith(
+          startTime: proposedStart, endDateTime: shiftedEnd));
+        cursor = shiftedEnd;
+        cascading = true;
+      } else {
+        // A real free slot absorbs the cascade; later pre-existing
+        // overlaps are outside the affected portion of the schedule.
+        cascading = false;
+      }
+    }
+    return ViktorInsertionPreview(
+      start: start, end: end, shifted: shifted, before: plans);
+  }
+}
+
 class ViktorSchedulePlanner {
   const ViktorSchedulePlanner();
 

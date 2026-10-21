@@ -1,3 +1,10 @@
+## [2026-10-21] — Viktor same-day priority insertion (pending CI)
+
+- Added `create_plan.conflict_policy = shift|reject`: reusable deterministic planner inserts priority blocks and cascades flexible saved plans preserving each duration/order; blocks completed/fixed/recurring/virtual/unsynced tasks and day overflow.
+- Consequential priority insertion requires consent, same-day fingerprint revalidation and canonical Brain bulk updates followed by plan creation. Creation failure attempts rollback of shifted plans; non-atomic errors are surfaced.
+- Updated provider prompt to distinguish creating a priority plan from `bulk_replan` and propose a clearly disclosed default duration when unspecified. Gateway retries one rejected typed model proposal with validation feedback before failing closed.
+- Added dedicated regression tests and Android CI gate. No user plans were changed by development; authenticated provider E2E required before claiming complete coverage.
+
 ## [2026-10-21] — P0 Planning quick-add: first-frame local feedback
 
 - Planning quick-add now places the scheduled task in `_optimisticTasks` and clears the text field synchronously. The PocketBase create starts in a post-frame callback, so a slow server cannot delay first paint or block the next entry.

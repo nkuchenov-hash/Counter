@@ -24,7 +24,8 @@ abstract final class ViktorAgentCapabilities {
     ViktorToolCapability('list_day_plans', 'planning',
         'Show plans for a specific day', ViktorToolRisk.read),
     ViktorToolCapability('create_plan', 'planning',
-        'Create a timed plan', ViktorToolRisk.reversible),
+        'Create a timed plan; optional shift policy cascades flexible plans '
+        'after a priority block', ViktorToolRisk.reversible),
     ViktorToolCapability('update_plan_duration', 'planning',
         'Change a plan duration with expected-value check',
         ViktorToolRisk.consequential),
