@@ -20,8 +20,9 @@ bool shouldPersistViktorLocalPreferences({
   required bool hasCloudConnection,
 }) => !isWeb || !hasCloudConnection;
 
-/// Model selection is local preference. API keys are intentionally only kept
-/// in process memory: they are NOT written to SharedPreferences or PocketBase.
+/// Model and folder selection come from the encrypted, account-scoped vault
+/// whenever connected. Optional local device preferences are best-effort.
+/// API keys are never stored in SharedPreferences or exposed by vault GET.
 class ViktorModelSettings {
   ViktorModelSettings._();
   static final ViktorModelSettings instance = ViktorModelSettings._();
