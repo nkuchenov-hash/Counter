@@ -54,7 +54,7 @@ class ViktorDomainTools {
     if (field == 'preferred_timezone') {
       final match = catalogEntryForStoredTimezone(value);
       if (match == null) throw StateError('Неизвестный часовой пояс.');
-      return match.storedValue;
+      return match.profileValue;
     }
     if (field == 'primary_language' &&
         !const {'ru', 'en', 'de'}.contains(value)) {
