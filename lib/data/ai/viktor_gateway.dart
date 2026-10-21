@@ -292,7 +292,7 @@ List<dynamic> normalizeViktorCompoundActions({
   var filter = filters.isNotEmpty ? filters.first.trim() : '';
   if (filter.isEmpty) {
     final match = RegExp(
-      r'план[а-яё]*\\s+(.+?)\\s+со\\s+вчерашн',
+      r'план[а-яё]*\s+(.+?)\s+со\s+вчерашн',
       caseSensitive: false).firstMatch(input);
     if (match != null) filter = match.group(1)!.trim();
   }
