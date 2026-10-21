@@ -1,0 +1,70 @@
+name: KADR isolated relay resource canary
+on:
+  push:
+    branches:
+      - audit/kadr-relay-capacity-20261020
+    paths:
+      - '.github/workflows/kadr-relay-isolated-canary.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+    steps:
+      - name: Exercise isolated Node container without changing LIFE OS
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY"
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/kadr_canary && chmod 600 ~/.ssh/kadr_canary
+          host="${SSH_HOST:-217.114.0.201}"
+          user="${SSH_USER:-root}"
+          ssh-keyscan -T 8 -p "$SSH_PORT" -H "$host" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/kadr_canary -o BatchMode=yes -o ConnectTimeout=12 -p "$SSH_PORT" "$user@$host" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          echo 'KADR_ISOLATION_TEST_START'
+          lifeos() { curl -fsS -o /dev/null --max-time 9 'https://217-114-0-201.sslip.io/api/health'; }
+          before_avail=$(awk '/^MemAvailable:/ {print int($2/1024)}' /proc/meminfo)
+          disk_avail=$(df -Pm / | awk 'NR==2 {print $4}')
+          echo "ram_available_before_mib=$before_avail"
+          echo "disk_available_before_mib=$disk_avail"
+          [ "$before_avail" -ge 400 ] && [ "$disk_avail" -ge 1800 ] || { echo 'ABORT_RESOURCE_GUARD'; exit 20; }
+          lifeos || { echo 'ABORT_LIFEOS_UNHEALTHY'; exit 21; }
+          echo 'life_os_before=healthy'
+          if [ "$(docker ps -aq -f name=^/kadr-relay-canary$ | wc -l)" -gt 0 ]; then
+             echo 'ABORT_EXISTING_CANARY'; exit 22
+          fi
+          if ss -ltn | grep -q '127.0.0.1:8780'; then echo 'ABORT_8780_OCCUPIED'; exit 23; fi
+          cleanup() { docker rm -f kadr-relay-canary >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          docker run -d --rm --name kadr-relay-canary \
+            --memory=128m --memory-swap=128m --cpus=0.20 --pids-limit=64 \
+            --read-only --cap-drop ALL --security-opt no-new-privileges \
+            --restart=no --publish 127.0.0.1:8780:8780 \
+            node:20-alpine node -e 'require("http").createServer((q,r)=>{r.setHeader("Content-Type","application/json");r.end(JSON.stringify({service:"kadr-isolation-canary",ok:true}))}).listen(8780,"0.0.0.0")' >/dev/null
+          ready=no
+          for attempt in $(seq 1 12); do
+             if curl -fsS --max-time 2 http://127.0.0.1:8780 | grep -q 'kadr-isolation-canary'; then ready=yes; break; fi
+             sleep 1
+          done
+          echo "canary_ready=$ready"
+          [ "$ready" = yes ]
+          memory_bytes=$(docker stats --no-stream --format '{{.MemUsage}}' kadr-relay-canary | head -1)
+          echo "container_ram_usage=$memory_bytes"
+          after_avail=$(awk '/^MemAvailable:/ {print int($2/1024)}' /proc/meminfo)
+          echo "ram_available_during_mib=$after_avail"
+          lifeos && echo 'life_os_during=healthy' || { echo 'life_os_during=unhealthy'; exit 24; }
+          cleanup
+          trap - EXIT
+          if ss -ltn | grep -q '127.0.0.1:8780'; then echo 'canary_removed=no'; exit 25; fi
+          echo 'canary_removed=yes'
+          lifeos && echo 'life_os_after=healthy' || { echo 'life_os_after=unhealthy'; exit 26; }
+          echo 'KADR_ISOLATION_TEST_END'
+          REMOTE
