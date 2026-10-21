@@ -182,9 +182,59 @@ void main() {
       expect(await MorningStartPreference.isEnabled('profile-1'), isTrue);
     });
 
-    test('preference is isolated per profile', () async {
+    test('disabled value survives profile hydration and identity changes', () async {
+      // Settings can mount with a null profile before auth hydration finishes.
+      await MorningStartPreference.setEnabled(null, false);
+      expect(await MorningStartPreference.isEnabled('profile-1'), isFalse);
+      expect(await MorningStartPreference.isEnabled(null), isFalse);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool(MorningStartPreference.deviceKey), isFalse);
+    });
+
+    test('persists across simulated browser reload', () async {
       await MorningStartPreference.setEnabled('profile-1', false);
-      expect(await MorningStartPreference.isEnabled('profile-2'), isTrue);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload();
+      final saved = prefs.getBool(MorningStartPreference.deviceKey);
+      expect(saved, isFalse);
+
+      // A new Flutter instance has a freshly populated preference cache.
+      SharedPreferences.setMockInitialValues({
+        MorningStartPreference.deviceKey: saved!,
+      });
+      expect(await MorningStartPreference.isEnabled(null), isFalse);
+      expect(await MorningStartPreference.isEnabled('profile-2'), isFalse);
+    });
+
+    test('migrates a disabled setting from the old profile-scoped key', () async {
+      SharedPreferences.setMockInitialValues({
+        'lifeos.morning_start.profile-1.enabled': false,
+      });
+      expect(await MorningStartPreference.isEnabled('profile-1'), isFalse);
+      expect(
+        (await SharedPreferences.getInstance())
+            .getBool(MorningStartPreference.deviceKey),
+        isFalse,
+      );
+    });
+
+    test('migrates disabled value when former profile id differs at reload', () async {
+      SharedPreferences.setMockInitialValues({
+        'lifeos.morning_start.early-session-profile.enabled': false,
+      });
+      expect(await MorningStartPreference.isEnabled('resolved-user-id'), isFalse);
+      expect(
+        (await SharedPreferences.getInstance())
+            .getBool(MorningStartPreference.deviceKey),
+        isFalse,
+      );
+    });
+
+    test('migrates disabled local preference even after profile hydration', () async {
+      SharedPreferences.setMockInitialValues({
+        'lifeos.morning_start.local.enabled': false,
+      });
+      expect(await MorningStartPreference.isEnabled('profile-1'), isFalse);
     });
   });
 }
