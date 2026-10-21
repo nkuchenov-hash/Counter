@@ -28,7 +28,13 @@ const app = {
   findRecordsByFilter(table, filter, order, limit, offset, params) {
     assert.equal(table, 'viktor_connections');
     assert.ok(params.owner);
-    return rows.filter(x => x.getString('user_id') === params.owner).reverse();
+    // Production's vault table contains id, user_id, provider, model,
+    // payload_enc and NO "updated" or "created" column. Sorting on a
+    // nonexistent column was the actual cause of vault_unavailable on GET.
+    assert.equal(order, 'provider',
+      'Vault GET must sort on a column declared by its migration');
+    return rows.filter(x => x.getString('user_id') === params.owner)
+      .sort((a, b) => a.getString('provider').localeCompare(b.getString('provider')));
   },
   save(record) {
     if (!rows.includes(record)) rows.push(record);
@@ -38,6 +44,13 @@ const app = {
     if (ix >= 0) rows.splice(ix, 1);
   }
 };
+const migrationSource = fs.readFileSync(
+  'pb_migrations/1792533600_viktor_connections.js', 'utf8'
+);
+assert.match(migrationSource, /name:\s*"provider"/,
+  'Sorting relies on a declared provider field');
+assert.doesNotMatch(migrationSource, /name:\s*"updated"/,
+  'Production schema intentionally has no updated field');
 const sandbox = {
   Record,
   Buffer,

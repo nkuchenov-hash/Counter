@@ -14,7 +14,9 @@ routerAdd("GET", "/api/viktor/connection", (e) => {
   try {
     records = $app.findRecordsByFilter(
       "viktor_connections",
-      "user_id = {:owner}", "-updated", 20, 0, {owner: owner}
+      // The vault schema has no auto-created "updated" column.
+      // Sort by its indexed, explicitly declared provider field instead.
+      "user_id = {:owner}", "provider", 20, 0, {owner: owner}
     );
   } catch (_) {
     return e.json(503, {error: "vault_unavailable"});
