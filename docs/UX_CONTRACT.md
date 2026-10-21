@@ -2,6 +2,13 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor read observations and streaming speech response (2026-10-21)
+
+- Read-only queries (e.g. "Покажи мой план AGE Solutions – ADD SIN на пятницу") must return the Brain-verified first list-day result directly, with an exact-title match when available. A repeated model request for the same tool and parameters is not a user-facing error: reuse the previously validated observation instead of throwing or repeatedly invoking the model.
+- Requests that also mutate state must continue the normal bounded read / proposal / fresh-preview / apply workflow. Never skip conflict checks for writes.
+- SpeechKit REST v3 `GetRecognition` produces **adjacent JSON frames even when no newline separates them**. Decode bounded complete JSON frames, preserving quoted strings and nested objects. Prefer `finalRefinement` when present and deduplicate by final index; reject malformed frames safely without exposing raw model/provider speech, keys or audio.
+- Distinguish provider errors without structured error codes from microphone/capture errors. No claims about the user's actual microphone or cloud account are warranted until real authenticated validation.
+
 ## Viktor plan idempotency, timezone and SpeechKit v3 voice (2026-10-21)
 
 - Prior to evaluating any ordinary or priority `create_plan` collision, look up plans on the intended **profile-wall** calendar day. If a saved or pending same-day plan has the same normalized meaningful title, report that it already exists; never create a duplicate or reject it because a different plan occupies the requested slot. Check again before any write.
