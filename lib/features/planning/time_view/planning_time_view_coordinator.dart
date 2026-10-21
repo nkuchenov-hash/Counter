@@ -67,6 +67,11 @@ class PlanningTimeViewCoordinator {
   TimeViewInsertionIntent? timelineStoredInsertionIntent;
   double timelineFingerDragDeltaPx = 0;
   double timelineFingerGrabOffsetCanvasPx = 0;
+  /// Scroll position when the pointer first grabbed the card.
+  double timelineVerticalDragOriginScrollOffsetPx = 0;
+  /// Called on every auto-scroll frame, even without new pointer movement.
+  /// Keeps the card and insertion preview attached to the stationary cursor.
+  VoidCallback? timelineRecomputeDragAfterAutoScroll;
   int timelineVerticalDragSequenceId = 0;
   String? timelineResizePlanKey;
   TimelineResizeEdge? timelineResizeEdge;
