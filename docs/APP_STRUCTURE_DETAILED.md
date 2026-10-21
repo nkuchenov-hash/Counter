@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `c7317a51` on 2026-10-21.**
+**Generated from input HEAD `97b2ad73` on 2026-10-21.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 920 — each appears **exactly once** below.
+**Tracked files:** 923 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,8 +27,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 182 |
-| `test` | 124 |
-| `Brain/data` | 99 |
+| `test` | 125 |
+| `Brain/data` | 101 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
 | `developer tool` | 63 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 494 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 239 |
+| `PROVEN_REQUIRED` | 496 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 240 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 42 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 837 |
+| `HIGH` | 840 |
 | `MEDIUM` | 83 |
 
 ---
@@ -13513,7 +13513,7 @@ EN:
 - **Contents:** Dart helpers and types (`ViktorAction`, `ViktorActionBatch`).
 - **Key code names:** `ViktorAction`, `ViktorActionBatch`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_schedule_planner.dart`, `lib/features/viktor/viktor_chat_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_domain_tools.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_schedule_planner.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13530,13 +13530,89 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `viktor_action_contract`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_schedule_planner.dart`, `lib/features/viktor/viktor_chat_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_domain_tools.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_schedule_planner.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** Brain/data
 - **Обязанности:** Поддерживает операции данных в `viktor_action_contract`.
 - **Когда открывать:** Когда ломается поведение, связанное с `viktor_action_contract.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/ai/viktor_agent_capabilities.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — viktor agent capabilities. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — viktor agent capabilities.
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`ViktorToolRisk`, `ViktorToolCapability`, `ViktorAgentCapabilities`).
+- **Key code names:** `ViktorToolRisk`, `ViktorToolCapability`, `ViktorAgentCapabilities`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_action_contract.dart`, `lib/data/ai/viktor_gateway.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** viktor agent capabilities
+- **When to open:** When behavior tied to `viktor_agent_capabilities.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor agent capabilities
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — viktor_agent_capabilities. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — viktor_agent_capabilities.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `viktor_agent_capabilities`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_action_contract.dart`, `lib/data/ai/viktor_gateway.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `viktor_agent_capabilities`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_agent_capabilities.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/ai/viktor_domain_tools.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — viktor domain tools. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — viktor domain tools.
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`ViktorDomainTools`).
+- **Key code names:** `ViktorDomainTools`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** viktor domain tools
+- **When to open:** When behavior tied to `viktor_domain_tools.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor domain tools
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — viktor_domain_tools. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — viktor_domain_tools.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `viktor_domain_tools`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `viktor_domain_tools`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_domain_tools.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
@@ -14310,7 +14386,7 @@ EN:
 - **Contents:** Shared streams, caches, and `part` declarations for records, plans, categories, profile.
 - **Key code names:** `_BuildNode`, `_OptimisticEndPatch`, `LegacyIdResolutionException`, `AuthenticatedUserIdRequiredException`, `AiBackendException`, `_DatabaseServiceLifecycleObserver`, `_HighlanderRollbackToken`, `DatabaseService`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/ai/viktor_domain_tools.dart`, `lib/data/ai/viktor_executor.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14327,7 +14403,7 @@ RU:
 - **Зачем:** Один singleton держит правила PocketBase для всех вкладок.
 - **Содержимое:** Потоки, кэш, объявления `part` для records/plans/categories/profile.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/ai/viktor_domain_tools.dart`, `lib/data/ai/viktor_executor.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -15183,7 +15259,7 @@ EN:
 - **Contents:** Dart helpers and types (`PathRepository`).
 - **Key code names:** `PathRepository`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/plans/path_planner_bridge.dart`, `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_edit_sheet.dart`, `lib/features/paths/widgets/path_stage_card.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_domain_tools.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/plans/path_planner_bridge.dart`, `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -15200,7 +15276,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `path_repository`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/plans/path_planner_bridge.dart`, `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_edit_sheet.dart`, `lib/features/paths/widgets/path_stage_card.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_domain_tools.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/plans/path_planner_bridge.dart`, `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_edit_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -25321,7 +25397,7 @@ EN:
 - **Contents:** Time helper or injectable clock hook (`ProfileTimezoneCatalogEntry`).
 - **Key code names:** `ProfileTimezoneCatalogEntry`
 - **Repository role:** shared time
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/database_service.dart`, `lib/features/settings/timezone_settings.dart`, `lib/shared/time/wall_clock.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/ai/viktor_domain_tools.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/database_service.dart`, `lib/features/settings/timezone_settings.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -25338,7 +25414,7 @@ RU:
 - **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
 - **Содержимое:** Time helper или injectable clock hook (`ProfileTimezoneCatalogEntry`).
 - **Роль в репозитории:** shared time
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/database_service.dart`, `lib/features/settings/timezone_settings.dart`, `lib/shared/time/wall_clock.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/data/ai/viktor_domain_tools.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/database_service.dart`, `lib/features/settings/timezone_settings.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -37731,6 +37807,44 @@ RU:
 - **Когда открывать:** Падение CI или правка кода около `viktor_connection_vault`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Набор `test/`; production-субъект около `viktor_connection_vault`.
+
+
+### `test/viktor_general_agent_contract_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `viktor_general_agent_contract_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `viktor_general_agent_contract_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/viktor_general_agent_contract_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `viktor_general_agent_contract_test` scenario.
+- **When to open:** CI failure or changing code near `viktor_general_agent_contract`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `viktor_general_agent_contract`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `viktor_general_agent_contract` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `viktor_general_agent_contract` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `viktor_general_agent_contract`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/viktor_general_agent_contract_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `viktor_general_agent_contract`.
+- **Когда открывать:** Падение CI или правка кода рядом с `viktor_general_agent_contract`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
 
 
 ### `test/viktor_pocketbase_hook_test.cjs`
