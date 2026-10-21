@@ -130,30 +130,47 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                 ),
               ),
             ),
+          // Compact label next to the dragged card; never a full-width plate.
           if (isInteracting && (interactionLabel ?? '').isNotEmpty)
             Positioned(
-              top: (topPx - 22).clamp(0, canvasHeight - 20),
-              left: laneLeft + horizontalPad,
-              width: math.max(0, laneWidth - horizontalPad * 2),
-              child: Material(
-                elevation: 1,
-                borderRadius: BorderRadius.circular(6),
-                color: scheme.primary.withValues(alpha: 0.92),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
+              top: math.max(0, topPx - 36),
+              right: laneRight + horizontalPad + 4,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: scheme.outlineVariant.withValues(alpha: 0.65),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: scheme.shadow.withValues(alpha: 0.08),
+                        blurRadius: 5,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    interactionLabel!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(host.context).textTheme.labelSmall
-                        ?.copyWith(
-                          color: scheme.onPrimary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11,
-                        ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 5,
+                    ),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 185),
+                      child: Text(
+                        interactionLabel!,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(host.context).textTheme.bodyMedium
+                            ?.copyWith(
+                              color: scheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              height: 1.15,
+                            ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -305,7 +322,9 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                     alignment: Alignment.topCenter,
                     child: SizedBox(
                       height: resizeHeightPx,
-                      child: host.planCardRow(
+                      child: Opacity(
+                        opacity: isDragging ? 0.74 : 1.0,
+                        child: host.planCardRow(
                         context: host.context,
                         task: layout.task,
                         key: planKey,
@@ -317,6 +336,7 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                         timelineScheduleConflict: false,
                         timelineTimeLabel: layout.projection?.plannedTimeLabel,
                         timelineBlockHeightPx: resizeHeightPx,
+                        ),
                       ),
                     ),
                   ),
