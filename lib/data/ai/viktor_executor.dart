@@ -2,6 +2,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'viktor_action_contract.dart';
 import 'viktor_schedule_planner.dart';
+import 'viktor_day_composer.dart';
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -13,7 +14,69 @@ class ViktorExecutor {
 
   final ViktorSchedulePlanner _planner = const ViktorSchedulePlanner();
   final ViktorBulkPlanner _bulk = const ViktorBulkPlanner();
+  final ViktorDayComposer _composer = const ViktorDayComposer();
   String? _bulkSignature;
+  String? _composeSignature;
+
+  Future<ViktorComposedDay> _planCompose(
+      ViktorAction action, DateTime selectedDay) async {
+    final args = action.arguments;
+    final sourceDay = args['source_day'] as String;
+    final targetDay = args['target_day'] as String;
+    if (targetDay != _key(selectedDay) ||
+        sourceDay == targetDay) {
+      throw StateError('Целевой день должен совпадать с выбранным днём.');
+    }
+    final source = await db.getPlanningTasksForWallDate(
+        DateTime.parse(sourceDay));
+    final target = await db.getPlanningTasksForWallDate(selectedDay);
+    final filter = (args['source_filter'] as String).trim().toLowerCase();
+    final categoryIds = db.rules.where((r) =>
+        !r.isArchived && r.name.trim().toLowerCase() == filter)
+        .map((r) => r.id).toSet();
+    bool matches(PlanningTask plan) =>
+      categoryIds.contains(plan.categoryId) ||
+      plan.tags.any((tag) => tag.name.trim().toLowerCase() == filter) ||
+      plan.title.toLowerCase().contains(filter);
+    bool urgent(PlanningTask plan) =>
+      plan.tags.any((tag) => RegExp(
+        r'срочн|urgent|asap|приоритет|priority|важно',
+        caseSensitive: false).hasMatch(tag.name)) ||
+      RegExp(r'^(!|срочно\b|urgent\b|asap\b)',
+        caseSensitive: false).hasMatch(plan.title.trim());
+    return _composer.calculate(
+      action: action,
+      source: source,
+      target: target,
+      sourceMatches: matches,
+      urgent: urgent,
+      fixedTime: _fixed,
+      wallTime: _composeWallTime,
+    );
+  }
+
+  DateTime _composeWallTime(String date, String time, String zone) {
+    final parts = date.split('-').map(int.parse).toList();
+    final clock = time.split(':').map(int.parse).toList();
+    final requested = zone.trim();
+    if (requested.isEmpty || requested == 'profile' ||
+        profileTimezoneValuesMatch(requested, db.settings.preferredTimeZone)) {
+      return DateTime(parts[0], parts[1], parts[2], clock[0], clock[1]);
+    }
+    final entry = catalogEntryForStoredTimezone(requested);
+    if (entry == null) {
+      throw StateError('Неизвестный часовой пояс: $requested');
+    }
+    final zoned = tz.TZDateTime(tz.getLocation(entry.ianaId),
+        parts[0], parts[1], parts[2], clock[0], clock[1]);
+    if (zoned.year != parts[0] || zoned.month != parts[1] ||
+        zoned.day != parts[2] || zoned.hour != clock[0] ||
+        zoned.minute != clock[1]) {
+      throw StateError('Время не существует из-за перевода часов.');
+    }
+    return db.applyUserOffset(zoned.toUtc());
+  }
+
 
   Future<ViktorBulkPreview> _planBulk(ViktorAction action, DateTime day) async {
     final operations = action.arguments['operations'] as List;
@@ -96,6 +159,14 @@ class ViktorExecutor {
 
   Future<String> describe(ViktorActionBatch batch, DateTime day) async {
     _checkScope(batch, day);
+    if (batch.actions.any((a) => a.name == 'compose_day')) {
+      if (batch.actions.length != 1) {
+        throw StateError('Составление дня должно быть одним действием.');
+      }
+      final preview = await _planCompose(batch.actions.single, day);
+      _composeSignature = preview.signature;
+      return preview.describe();
+    }
     if (batch.actions.any((a) => a.name == 'bulk_replan')) {
       if (batch.actions.length != 1) {
         throw StateError('Групповая операция должна выполняться отдельно.');
@@ -185,9 +256,69 @@ class ViktorExecutor {
     if (fresh != approvedPreview ||
         (batch.actions.length == 1 &&
          batch.actions.single.name == 'bulk_replan' &&
-         approvedSignature != _bulkSignature)) {
+         approvedSignature != _bulkSignature) ||
+        (batch.actions.length == 1 &&
+         batch.actions.single.name == 'compose_day' &&
+         _composeSignature == null)) {
       throw StateError('Расписание изменилось после подтверждения. '
           'Проверьте новый вариант.');
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'compose_day') {
+      final preview = await _planCompose(batch.actions.single, day);
+      if (_composeSignature == null ||
+          preview.signature != _composeSignature) {
+        throw StateError('Исходные планы изменились после подтверждения.');
+      }
+      final patches = <PlanningBulkPatch>[
+        for (final m in preview.moves)
+          PlanningBulkPatch(
+            planRowId: m.plan.recordIdForBackend,
+            planBusinessId: m.plan.planRowId,
+            startTimeDisplay: m.start,
+            endDateTimeDisplay: m.end,
+            initialDateKey: db.planningAuditAnchorDateKey(m.plan),
+            isPostponed: db.planningShouldMarkPostponed(
+              anchorKey: db.planningAuditAnchorDateKey(m.plan),
+              newScheduleKey: m.day,
+            ),
+          ),
+      ];
+      if (patches.isNotEmpty) {
+        final ok = await db.bulkUpdatePlans(
+            patches, suppressAppSnack: true);
+        if (!ok) {
+          throw StateError('Перенос завершился не полностью. '
+              'Проверьте оба дня, прежде чем повторять.');
+        }
+      }
+      final category = preview.moves.isNotEmpty
+          ? preview.moves.first.plan.categoryId
+          : db.defaultCategoryId;
+      if (category == null || db.getCategoryRuleById(category) == null) {
+        throw StateError('Нет категории для новых встреч. '
+            'Перенос мог сохраниться; проверьте расписание.');
+      }
+      var created = 0;
+      for (final meeting in preview.meetings.where(
+          (item) => !item.alreadyExists)) {
+        final ok = await db.addPlanningTask(PlanningTask(
+          id: 0,
+          categoryId: category,
+          title: meeting.title,
+          dateKey: _key(day),
+          startTime: meeting.start,
+          endDateTime: meeting.end,
+        ));
+        if (!ok) {
+          throw StateError('Не удалось сохранить встречу '
+              '«${meeting.title}». Часть изменений уже могла сохраниться. '
+              'Проверьте расписание перед повтором.');
+        }
+        created++;
+      }
+      return 'Перенесено планов: ${preview.moves.length}; '
+          'добавлено встреч: $created. Проверьте синхронизацию.';
     }
     if (batch.actions.length == 1 &&
         batch.actions.single.name == 'bulk_replan') {
@@ -248,6 +379,7 @@ class ViktorExecutor {
         case 'move_plan_after':
         case 'swap_plan_positions':
         case 'bulk_replan':
+        case 'compose_day':
           break;
         case 'create_plan':
           final category = db.defaultCategoryId ??
