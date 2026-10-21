@@ -20,6 +20,7 @@ class ViktorAction {
     'move_plan_after',
     'swap_plan_positions',
     'bulk_replan',
+    'compose_day',
     'start_record',
     'stop_record',
   };
@@ -124,6 +125,43 @@ class ViktorAction {
             _text(operation, 'timezone', maxLength: 64);
           }
         }
+      case 'compose_day':
+        // One confirmed user intent: carry incomplete tasks forward and
+        // reserve newly requested meetings before calculating free slots.
+        _onlyKeys(args, const {
+          'source_day', 'target_day', 'source_filter', 'start_time',
+          'timezone', 'urgent_first', 'meetings',
+        });
+        final source = _day(args, 'source_day');
+        final target = _day(args, 'target_day');
+        if (source == target) {
+          throw const FormatException('Source and target must differ');
+        }
+        _text(args, 'source_filter', maxLength: 80);
+        _clock(args, 'start_time');
+        _text(args, 'timezone', maxLength: 64);
+        if (args['urgent_first'] is! bool) {
+          throw const FormatException('Invalid urgent_first');
+        }
+        final meetings = args['meetings'];
+        if (meetings is! List || meetings.isEmpty || meetings.length > 8) {
+          throw const FormatException('Expected 1–8 meetings');
+        }
+        final slots = <String>{};
+        for (final raw in meetings) {
+          if (raw is! Map) {
+            throw const FormatException('Invalid meeting');
+          }
+          final meeting = Map<String, Object?>.from(raw);
+          _onlyKeys(meeting,
+              const {'title', 'start_time', 'duration_minutes'});
+          _title(meeting, 'title');
+          final clock = _clock(meeting, 'start_time');
+          _duration(meeting, 'duration_minutes');
+          if (!slots.add(clock)) {
+            throw const FormatException('Meeting start times must be unique');
+          }
+        }
       case 'start_record':
         _onlyKeys(args, const {'title', 'category_id'});
         _title(args, 'title');
@@ -155,7 +193,8 @@ class ViktorActionBatch {
   /// cascade scheduling. The executor can still require additional approval.
   bool get requiresPreview => actions.where((a) => a.isMutation).length > 1 ||
       actions.any((a) =>
-          a.name == 'move_plan_after' || a.name == 'bulk_replan');
+          a.name == 'move_plan_after' || a.name == 'bulk_replan' ||
+          a.name == 'compose_day');
 
   factory ViktorActionBatch.fromJson(Map<String, dynamic> raw) {
     _onlyKeys(raw, const {'version', 'request_id', 'actions'});
