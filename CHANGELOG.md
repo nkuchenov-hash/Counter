@@ -1,3 +1,10 @@
+## [2026-10-21] — Viktor cross-day agent scheduling (pending CI)
+
+- Removed the UI-selected-day restriction for schedule actions. Added reusable `ViktorDateScope` to resolve explicit plan/tool dates, multi-day bulk source/target, and date validation.
+- `bulk_replan` now loads real user-owned plans for the specified source/target dates regardless of the open screen; `list_day_plans` fetches requested day; create and position/swap previews use their intent date.
+- Profile-timezone today/yesterday/tomorrow supplied to model separately from selected calendar day. Updated model-neutral tool prompt; added cross-day regression with status filtering and 09:00 New York placement.
+- Source/target collisions, immutable recurrence and fixed time safeguards, freshness preview and approval remain enforced. Requires live credential-backed verification; not complete UI action parity.
+
 ## [2026-10-21] — Viktor list tools and bounded agent observations (PR; pending CI)
 
 - Added owner-scoped backlog item discovery, complete/reopen and rename tools, routed through existing Brain `fetchBacklogPlans` and `updatePlanningTask`; checks old title/status and rejects Notes, scheduled items and recurrence.
