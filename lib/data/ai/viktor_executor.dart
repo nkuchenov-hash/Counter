@@ -3,6 +3,7 @@ import 'package:counter/data/models.dart';
 import 'viktor_action_contract.dart';
 import 'viktor_schedule_planner.dart';
 import 'viktor_domain_tools.dart';
+import 'viktor_date_scope.dart';
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -17,19 +18,15 @@ class ViktorExecutor {
   late final ViktorDomainTools _domain = ViktorDomainTools(db);
   String? _bulkSignature;
 
-  Future<ViktorBulkPreview> _planBulk(ViktorAction action, DateTime day) async {
-    final operations = action.arguments['operations'] as List;
-    final targetDays = <String>{
-      for (final raw in operations)
-        if ((raw as Map)['kind'] == 'move') raw['target_day'] as String,
-    };
-    if (targetDays.length > 1) {
-      throw StateError('Несколько целевых дней: разделите запрос.');
-    }
-    final dest = targetDays.isEmpty ? null : targetDays.single;
-    final source = await db.getPlanningTasksForWallDate(day);
-    final target = dest == null ? <PlanningTask>[] :
-      await db.getPlanningTasksForWallDate(DateTime.parse(dest));
+  Future<ViktorBulkPreview> _planBulk(ViktorAction action) async {
+    // Read the actual source and destination day identified by the user.
+    // The day visible in the calendar is not an execution constraint.
+    final scope = ViktorDateScope.bulkDays(action);
+    final source = await db.getPlanningTasksForWallDate(
+        ViktorDateScope.parseDay(scope.sourceDay));
+    final target = scope.targetDay == null ? <PlanningTask>[] :
+      await db.getPlanningTasksForWallDate(
+          ViktorDateScope.parseDay(scope.targetDay!));
     DateTime wallTime(String date, String time, String zone) {
       final parts = date.split('-').map(int.parse).toList();
       final clock = time.split(':').map(int.parse).toList();
@@ -53,7 +50,8 @@ class ViktorExecutor {
     }
     return _bulk.calculate(
       action: action, source: source, target: target,
-      sourceDay: _key(day), targetDay: dest, wallTime: wallTime,
+      sourceDay: scope.sourceDay, targetDay: scope.targetDay,
+      wallTime: wallTime,
       fixedTime: _fixed,
     );
   }
@@ -85,10 +83,7 @@ class ViktorExecutor {
       throw StateError('Не более 12 изменений за один шаг.');
     }
     for (final a in batch.actions) {
-      final selected = a.arguments['wall_day'];
-      if (selected != null && selected != _key(day)) {
-        throw StateError('ИИ предложил изменение другого дня.');
-      }
+      // Validated action dates may differ from the visible calendar date.
       if (a.name == 'start_record' &&
           a.arguments.containsKey('category_id')) {
         throw StateError('Категорию записи требуется выбрать в приложении.');
@@ -107,26 +102,30 @@ class ViktorExecutor {
       if (batch.actions.length != 1) {
         throw StateError('Групповая операция должна выполняться отдельно.');
       }
-      final preview = await _planBulk(batch.actions.single, day);
+      final preview = await _planBulk(batch.actions.single);
       _bulkSignature = preview.signature;
       return preview.describe();
     }
-    final plans = await db.getPlanningTasksForWallDate(day);
+    final scheduleDay = ViktorDateScope.scheduleDay(batch, day);
+    final plans = await db.getPlanningTasksForWallDate(scheduleDay);
     final lines = <String>[];
     for (final action in batch.actions) {
       final a = action.arguments;
       switch (action.name) {
         case 'list_day_plans':
-          final sorted = [...plans]..sort((a, b) =>
+          final requestedDay = a['wall_day'] as String;
+          final dayPlans = await db.getPlanningTasksForWallDate(
+              ViktorDateScope.parseDay(requestedDay));
+          final sorted = [...dayPlans]..sort((a, b) =>
               (a.startTime ?? DateTime(2099)).compareTo(
                   b.startTime ?? DateTime(2099)));
-          if (sorted.isEmpty) lines.add('На этот день планов нет.');
+          if (sorted.isEmpty) lines.add('На $requestedDay планов нет.');
           for (final p in sorted) {
             final t = p.startTime;
             final clock = t == null ? '—' :
                 '${t.hour.toString().padLeft(2, '0')}:'
                 '${t.minute.toString().padLeft(2, '0')}';
-            lines.add('$clock  ${p.title}');
+            lines.add('$requestedDay $clock  ${p.title}');
           }
         case 'create_plan':
           final parts = (a['wall_day'] as String).split('-').map(int.parse).toList();
@@ -134,11 +133,13 @@ class ViktorExecutor {
               .split(':').map(int.parse).toList();
           final start = DateTime(parts[0], parts[1], parts[2], clock[0], clock[1]);
           final end = start.add(Duration(minutes: a['duration_minutes'] as int));
-          if (end.year != day.year || end.month != day.month ||
-              end.day != day.day) {
-            throw StateError('Новый план должен завершиться в выбранный день.');
+          if (end.year != parts[0] || end.month != parts[1] ||
+              end.day != parts[2]) {
+            throw StateError('Новый план должен завершиться в запрошенный день.');
           }
-          for (final old in plans) {
+          final destinationPlans = await db.getPlanningTasksForWallDate(
+              ViktorDateScope.parseDay(a['wall_day'] as String));
+          for (final old in destinationPlans) {
             if (old.startTime != null && old.endDateTime != null &&
                 old.startTime!.isBefore(end) &&
                 old.endDateTime!.isAfter(start)) {
@@ -184,7 +185,7 @@ class ViktorExecutor {
           lines.add(await _domain.preview(action));
       }
     }
-    final preview = _schedule(batch, day, plans);
+    final preview = _schedule(batch, scheduleDay, plans);
     if (preview.changed.isNotEmpty) {
       lines.add('');
       lines.add('Итоговое расписание:');
@@ -220,7 +221,7 @@ class ViktorExecutor {
     }
     if (batch.actions.length == 1 &&
         batch.actions.single.name == 'bulk_replan') {
-      final result = await _planBulk(batch.actions.single, day);
+      final result = await _planBulk(batch.actions.single);
       if (result.signature != _bulkSignature) {
         throw StateError('Планы изменились после подтверждения.');
       }
@@ -248,8 +249,9 @@ class ViktorExecutor {
       return 'Изменено планов: ${result.moves.length}. '
           'Проверьте синхронизацию.';
     }
-    final plans = await db.getPlanningTasksForWallDate(day);
-    final preview = _schedule(batch, day, plans);
+    final scheduleDay = ViktorDateScope.scheduleDay(batch, day);
+    final plans = await db.getPlanningTasksForWallDate(scheduleDay);
+    final preview = _schedule(batch, scheduleDay, plans);
     final patches = <PlanningBulkPatch>[
       for (final p in preview.changed)
         PlanningBulkPatch(
