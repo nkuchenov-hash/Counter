@@ -118,7 +118,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       final executor = ViktorExecutor(db);
       final toolObservations = <String>[];
       final seenReads = <String>{};
-      // One stable identity for every reasoning step of this user command.
       final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
       var response = await _gateway.propose(
         input: input,
@@ -128,9 +127,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         selectedPlanIds: widget.selectedPlanIds,
         requestId: requestId,
       );
-      // Read-only tool iterations are bounded, deduplicated and never write.
-      // A model cannot bypass the final preview by returning mutations while
-      // continue=true. Tool output is explicitly labelled as observations.
       for (var step = 0; response.needsMoreContext; step++) {
         if (!mounted) return;
         if (step >= 4) {
@@ -183,14 +179,9 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         _push(preview);
         return;
       }
-      // Never display model prose claiming a creation/duration before the
-      // typed Brain action has actually run. The preview is authoritative.
       if (actions.isSingleReversibleWrite) {
         _push(preview);
       }
-      // An explicit, unambiguous two-card swap is a reversible low-scope
-      // schedule command. The Brain still validates current state and guards.
-      // Other mutations retain their mandatory explicit approval dialog.
       final swapArgs = actions.actions.length == 1 &&
               actions.actions.single.name == 'swap_plan_positions'
           ? actions.actions.single.arguments
@@ -207,16 +198,12 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         final title = matching.single.title.toLowerCase().trim();
         return title.length >= 3 && input.toLowerCase().contains(title);
       }
-      // Zero extra taps only when the two referents are grounded in an
-      // explicit two-item selection or BOTH names in this request.
       final groundedByPosition = lastTwoIds != null &&
           firstId == lastTwoIds[0] && secondId == lastTwoIds[1];
       final isUnambiguousSwap = swapArgs != null &&
           firstId != secondId &&
           (groundedByPosition || matchedSelection ||
               (titleSpoken(firstId) && titleSpoken(secondId)));
-      // One explicitly requested reversible operation needs no redundant
-      // modal. Consequential edits and mixed batches retain confirmation.
       final approved = isUnambiguousSwap || actions.isSingleReversibleWrite
           ? true : await _confirm(actions, preview);
       if (!mounted) return;
