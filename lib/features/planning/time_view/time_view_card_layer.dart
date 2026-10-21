@@ -130,12 +130,21 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                 ),
               ),
             ),
-          // Compact label next to the dragged card; never a full-width plate.
           if (isInteracting && (interactionLabel ?? '').isNotEmpty)
             Positioned(
               top: math.max(0.0, topPx - 36.0),
               right: laneRight + horizontalPad + 4,
-              child: IgnorePointer(
+              child: AnimatedBuilder(
+                animation: isPrimaryDraggedCard
+                    ? hourGridScrollController
+                    : const AlwaysStoppedAnimation<int>(0),
+                builder: (context, child) => isPrimaryDraggedCard
+                    ? Transform.translate(
+                        offset: Offset(0, timelinePendingScrollCompensationPx),
+                        child: child,
+                      )
+                    : child!,
+                child: IgnorePointer(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: scheme.surfaceContainerHighest,
@@ -173,6 +182,7 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                     ),
                   ),
                 ),
+                ),
               ),
             ),
           if (isInteracting)
@@ -203,7 +213,17 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
               ),
               child: ClipRect(
                 child: RepaintBoundary(
-                  child: TimelinePlanInteractionBlock(
+                  child: AnimatedBuilder(
+                    animation: isPrimaryDraggedCard
+                        ? hourGridScrollController
+                        : const AlwaysStoppedAnimation<int>(0),
+                    builder: (context, child) => isPrimaryDraggedCard
+                        ? Transform.translate(
+                            offset: Offset(0, timelinePendingScrollCompensationPx),
+                            child: child,
+                          )
+                        : child!,
+                    child: TimelinePlanInteractionBlock(
                   canMove: canMove,
                   canResize: canResize,
                   bulkSelectMode: host.planSelectMode,
@@ -325,22 +345,23 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                       child: Opacity(
                         opacity: isDragging ? 0.74 : 1.0,
                         child: host.planCardRow(
-                          context: host.context,
-                          task: layout.task,
-                          key: planKey,
-                          displayDone: displayDone,
-                          isSelected: host.selectedPlanKeys.contains(planKey),
-                          planActualByPbId: planActualByPbId,
-                          timelineEmbedded: true,
-                          timelineInteracting: isInteracting,
-                          timelineScheduleConflict: false,
-                          timelineTimeLabel: layout.projection?.plannedTimeLabel,
-                          timelineBlockHeightPx: resizeHeightPx,
+                        context: host.context,
+                        task: layout.task,
+                        key: planKey,
+                        displayDone: displayDone,
+                        isSelected: host.selectedPlanKeys.contains(planKey),
+                        planActualByPbId: planActualByPbId,
+                        timelineEmbedded: true,
+                        timelineInteracting: isInteracting,
+                        timelineScheduleConflict: false,
+                        timelineTimeLabel: layout.projection?.plannedTimeLabel,
+                        timelineBlockHeightPx: resizeHeightPx,
                         ),
                       ),
                     ),
                   ),
-                  ),
+                  ), // AnimatedBuilder: only picked-up card tracks scroll
+                  ), // RepaintBoundary
                 ),
               ),
             ),
@@ -431,6 +452,10 @@ extension PlanningTimeViewRecurringInteractionController
       cancelTimelineVerticalDrag();
       return;
     }
+    if (timelinePendingScrollCompensationPx.abs() > 0.001) {
+      timelineStoredInsertionIntent = null;
+    }
+    timelineFingerDragDeltaPx = timelineEffectivePointerDeltaPx;
     final durationMinutes = timelineVerticalDragDurationMin;
     final maxTopPx = grid.yForMinutesFromRangeStart(
       math.max(0, grid.totalMinutes - durationMinutes),
