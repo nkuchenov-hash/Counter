@@ -1,3 +1,9 @@
+## [2026-10-21] — Viktor typed tool contract repair (pending CI)
+
+- Exposed actionable schema errors: action index, tool name, rejected field names, and allowed names, without exposing parameter values. The existing one-turn model retry can now correct the actual validation error instead of repeating a generic `Unexpected Viktor action field`.
+- Enabled YandexGPT `response_format=json_schema` for a constrained proposal/action envelope. Server-side tool name allowlist intersects the client's advertised capabilities; the local Brain-backed typed contract remains the only authority for execution.
+- Added generic `create_plan` example for ordinary dated events, and Node/Dart regression tests verifying schema, safety and repair context. No user data changed by development; live BYOK account test remains a release gate.
+
 ## [2026-10-21] — Viktor same-day priority insertion (pending CI)
 
 - Added `create_plan.conflict_policy = shift|reject`: reusable deterministic planner inserts priority blocks and cascades flexible saved plans preserving each duration/order; blocks completed/fixed/recurring/virtual/unsynced tasks and day overflow.
