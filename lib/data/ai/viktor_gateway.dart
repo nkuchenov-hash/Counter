@@ -10,6 +10,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'viktor_action_contract.dart';
+import 'viktor_agent_capabilities.dart';
+import 'package:counter/data/paths/path_repository.dart';
 import 'viktor_schedule_planner.dart';
 
 /// A cloud-connected web client must not write optional prefs into the
@@ -311,12 +313,85 @@ class ViktorGateway {
     // obstacles. Never ask the user to find backend row IDs.
     final nextDayPlans = await service.getPlanningTasksForWallDate(nextDay);
     final activeId = service.canonicalPrimaryRunningBusinessId;
+    // Domain metadata is supplied from the same Brain visible to the UI.
+    // Only send the relevant catalogs, never the provider key as context.
+    final q = input.toLowerCase();
+    final wantTags = RegExp(r'тег|метк|ярлык|tag|label',
+        caseSensitive: false).hasMatch(q);
+    final wantNotes = RegExp(r'замет|note|текст замет|конспект',
+        caseSensitive: false).hasMatch(q);
+    final wantPaths = RegExp(r'пути|путь|пут[ье]|path|этап|цель',
+        caseSensitive: false).hasMatch(q);
+    final allTags = wantTags
+        ? [...await service.fetchTagsForCurrentUser(
+            scope: TagCatalogScope.plan),
+           ...await service.fetchTagsForCurrentUser(
+            scope: TagCatalogScope.list)]
+        : <Tag>[];
+    final notes = wantNotes
+        ? await service.fetchBacklogPlans(
+            categoryId: null, includeCompleted: true)
+        : <PlanningTask>[];
+    final paths = wantPaths
+        ? (await PathRepository(database: service).loadActivePaths()).paths
+        : <ProjectPathSnapshot>[];
+    final categoryRows = <Map<String, Object?>>[];
+    void addCategory(CategoryRule rule) {
+      if (!rule.isArchived && categoryRows.length < 80) {
+        categoryRows.add({
+          'id': rule.backendRowId,
+          'name': rule.name,
+          'default_plan_time': rule.defaultPlanTime,
+        });
+      }
+      for (final child in rule.children ?? <CategoryRule>[]) {
+        addCategory(child);
+      }
+    }
+    for (final category in service.rules) { addCategory(category); }
     final data = <String, Object?>{
       'text': input,
       'wall_day': dayKey,
       'request_id': reqId,
       'ui_locale': currentLocale.value,
       'profile_timezone': service.settings.preferredTimeZone,
+      'available_tools': ViktorAgentCapabilities.tools
+          .map((tool) => tool.name).toList(growable: false),
+      'categories': categoryRows,
+      'tags_catalog': [
+        for (final tag in allTags.take(80)) {
+          'id': tag.pbRecordId,
+          'name': tag.name,
+          'domain': tag.domain,
+        }
+      ],
+      'notes_catalog': [
+        for (final p in notes.where((p) =>
+            p.startTime == null && (p.notesDeltaJson ?? '').isNotEmpty).take(60))
+          {
+            'id': p.pocketRecordId,
+            'title': p.title,
+            'text_preview': (p.notesPlain ?? '').length > 1000
+                ? (p.notesPlain ?? '').substring(0, 1000)
+                : p.notesPlain,
+          }
+      ],
+      'paths_catalog': [
+        for (final path in paths.take(30)) {
+          'id': path.pathId,
+          'name': path.name,
+          'goal': path.goal.length > 250
+              ? path.goal.substring(0, 250) : path.goal,
+          'stages': path.stages.length,
+        }
+      ],
+      'current_profile_settings': {
+        'theme_mode': service.settings.themeMode,
+        'preferred_timezone': service.settings.preferredTimeZone,
+        'primary_language': service.settings.primaryLanguage,
+        'list_completion_behavior': service.settings.listCompletionBehavior,
+        'display_name': service.settings.displayName,
+      },
       'next_day': '${nextDay.year.toString().padLeft(4, '0')}-'
           '${nextDay.month.toString().padLeft(2, '0')}-'
           '${nextDay.day.toString().padLeft(2, '0')}',
