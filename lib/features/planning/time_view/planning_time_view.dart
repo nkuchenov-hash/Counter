@@ -150,13 +150,8 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     }
     final c = hourGridScrollController;
     final deltaPx = v * dtSeconds;
-    final prior = c.offset;
-    final next = (prior + deltaPx).clamp(0.0, c.position.maxScrollExtent);
-    if ((next - prior).abs() < 0.001) return;
+    final next = (c.offset + deltaPx).clamp(0.0, c.position.maxScrollExtent);
     c.jumpTo(next.toDouble());
-    // The pointer may be stationary for many animation frames. Recompute
-    // drag + drop preview from the new scroll offset on EVERY scroll tick.
-    timelineRecomputeDragAfterAutoScroll?.call();
   }
 
   void ensureHourGridEdgeTickerRunning() {
@@ -658,9 +653,9 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     timelineVerticalDragDeltaPx = 0;
     timelineFingerDragDeltaPx = 0;
     timelineFingerGrabOffsetCanvasPx = 0;
-    timelineVerticalDragOriginScrollOffsetPx = 0;
-    timelineRecomputeDragAfterAutoScroll = null;
-    timelineLastAutoScrollTargetResolveAt = null;
+    timelineDragStartScrollOffsetPx = 0;
+    timelineDragLastRenderedScrollOffsetPx = 0;
+    timelineDragLastPointerDeltaPx = 0;
     timelineVerticalDragTask = null;
     timelineVerticalDragTimeLabel = null;
     timelineDragInsertTargetKey = null;
