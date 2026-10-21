@@ -35,29 +35,15 @@ double planTimeViewDragMovementThresholdPx() {
 bool planTimeViewUsesImmediatePointerDrag(double viewportWidth) =>
     !shellUsesCompactPhoneLayout(viewportWidth);
 
-/// Pointer-anchored movement in scrollable Time View canvas coordinates.
-///
-/// A card drawn inside a scrolling canvas moves on screen by
-/// [pointerDeltaPx] + scrollDelta - scrollDelta = pointerDeltaPx.
-/// Never use pointer delta alone: auto-scrolling would pull it away from
-/// the cursor while the pointer is stationary.
+/// Convert pointer movement into scrolling canvas coordinates.
+/// When the viewport scrolls, the card's canvas Y must gain exactly the
+/// same number of pixels to keep the original grab point under the cursor.
 double planTimePointerAnchoredDeltaPx({
   required double pointerDeltaPx,
   required double scrollStartOffsetPx,
   required double scrollCurrentOffsetPx,
 }) =>
-    pointerDeltaPx + (scrollCurrentOffsetPx - scrollStartOffsetPx);
-
-/// Full insertion/cascade resolution is not a 60fps animation concern.
-/// During auto-scroll the picked-up card paints every frame, while the
-/// neighboring plans' heavy preview is refreshed at a bounded cadence.
-bool planTimeShouldResolveAutoScrollTarget(
-  DateTime? lastResolution,
-  DateTime now, {
-  Duration minimumInterval = const Duration(milliseconds: 64),
-}) =>
-    lastResolution == null ||
-    now.difference(lastResolution) >= minimumInterval;
+    pointerDeltaPx + scrollCurrentOffsetPx - scrollStartOffsetPx;
 
 /// TIME_VIEW_TAP_NO_TIME_MUTATION — movement below threshold is a tap, not a drag commit.
 bool planTimeViewMovementBelowDragThreshold(
