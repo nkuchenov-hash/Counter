@@ -2,6 +2,14 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor intent-based date scope (2026-10-21)
+
+- The active Planning/Calendar tab day is contextual only; it MUST NOT block tools addressed to other days. Agent data reads and schedule mutations execute against the explicit tool date, with fresh data loaded for that date through the Brain.
+- Relative **today/yesterday/tomorrow** are resolved from `DatabaseService.getProjectedToday()` using the signed-in profile timezone, not the device timezone or selected UI date. This profile-relative date context is sent to the provider independent of the displayed day.
+- `list_day_plans` fetches its requested `wall_day`. `bulk_replan` obtains its source/target days from validated `operations`, reads each real day, previews affected rows, checks recurrences/fixed-time guards/collisions, and compares a fresh source+destination snapshot immediately before writing.
+- For safety, one `bulk_replan` batch targets a single source day and at most one destination day. Multiple independent sources require separate approved operations; do not silently use the currently displayed day.
+- An explicit time zone for a bulk move is converted through the existing profile wall-time projection. If the requested time is invalid or intersects a protected task, reject before writing.
+
 ## Viktor agent tool execution (2026-10-21)
 
 - Viktor is an application agent, not an editor of source code. User voice or text is mapped to allowlisted tool proposals that call the exact same Brain/repository functions used by the UI. Model providers are interchangeable and cannot write arbitrary PocketBase rows or change code.
