@@ -1,3 +1,9 @@
+## 2026-10-21 — Morning check-in toggle survives web refresh [fix]
+
+- Store the optional morning prompt toggle under a stable local key instead of a profile id captured during login hydration, and verify persistent readback before reporting success.
+- Migrate existing disabled profile-scoped preferences (including the former local fallback). The setting remains device-local and independent from sleep records/synchronization.
+- Render a loading indicator rather than briefly showing ON until persisted data has loaded; test reload, late profile hydration and migrations.
+
 ## 2026-10-20 — Viktor Russian model candidates + two-card voice swap [PR, not deployed]
 
 - Add Sber GigaChat and YandexGPT AI Studio BYOK model adapters and an explicit account-scope/folder-ID UI; provider URLs and scope values are allowlisted.
