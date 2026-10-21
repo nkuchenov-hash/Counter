@@ -119,6 +119,7 @@ class ViktorAction {
           }
         }
       case 'list_categories':
+      case 'list_backlog_items':
       case 'list_notes':
       case 'list_paths':
       case 'get_settings':
@@ -128,6 +129,21 @@ class ViktorAction {
         if (!const {'plan', 'list'}.contains(args['domain'])) {
           throw const FormatException('Tag domain must be plan or list');
         }
+      case 'set_list_item_done':
+        _onlyKeys(args, const {
+          'item_id', 'expected_title', 'expected_is_done', 'is_done',
+        });
+        _id(args, 'item_id');
+        _title(args, 'expected_title');
+        if (args['expected_is_done'] is! bool || args['is_done'] is! bool ||
+            args['expected_is_done'] == args['is_done']) {
+          throw const FormatException('Invalid list item completion change');
+        }
+      case 'rename_list_item':
+        _onlyKeys(args, const {'item_id', 'expected_title', 'title'});
+        _id(args, 'item_id');
+        _title(args, 'expected_title');
+        _title(args, 'title');
       case 'create_tag':
         _onlyKeys(args, const {'name', 'domain'});
         _title(args, 'name');
@@ -232,6 +248,14 @@ class ViktorActionBatch {
   final List<ViktorAction> actions;
 
   bool get hasMutations => actions.any((a) => a.isMutation);
+
+  /// A single reversible change may be applied without an extra confirmation
+  /// dialog, but only after the normal fresh-state preview and Brain validation.
+  /// Consequential changes and mixed batches never qualify.
+  bool get isSingleReversibleWrite =>
+      actions.length == 1 &&
+      ViktorAgentCapabilities.byName[actions.single.name]?.risk ==
+          ViktorToolRisk.reversible;
 
   /// Previews are mandatory for multi-step edits and operations which may
   /// cascade scheduling. The executor can still require additional approval.
