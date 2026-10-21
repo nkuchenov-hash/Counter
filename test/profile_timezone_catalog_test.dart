@@ -218,6 +218,18 @@ void main() {
       );
     });
 
+    test('migrates disabled value when former profile id differs at reload', () async {
+      SharedPreferences.setMockInitialValues({
+        'lifeos.morning_start.early-session-profile.enabled': false,
+      });
+      expect(await MorningStartPreference.isEnabled('resolved-user-id'), isFalse);
+      expect(
+        (await SharedPreferences.getInstance())
+            .getBool(MorningStartPreference.deviceKey),
+        isFalse,
+      );
+    });
+
     test('migrates disabled local preference even after profile hydration', () async {
       SharedPreferences.setMockInitialValues({
         'lifeos.morning_start.local.enabled': false,
