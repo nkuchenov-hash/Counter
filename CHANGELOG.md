@@ -1,3 +1,10 @@
+## [2026-10-21] — P0 Planning quick-add: first-frame local feedback
+
+- Planning quick-add now places the scheduled task in `_optimisticTasks` and clears the text field synchronously. The PocketBase create starts in a post-frame callback, so a slow server cannot delay first paint or block the next entry.
+- Planning stream now subscribes before its first cache emit (previously lost on a broadcast hub) and offers an immediate-local refresh bypass for new plans while keeping network/alarm/disk effects debounced.
+- Optimistic tasks are reconciled by client plan ID instead of title/date, so identical new task titles cannot hide pending cards.
+- Added a regression test for a cache-first Planning stream. Cross-platform build and live timing verification remain release gates.
+
 ## [2026-10-21] — Viktor cross-day agent scheduling (pending CI)
 
 - Removed the UI-selected-day restriction for schedule actions. Added reusable `ViktorDateScope` to resolve explicit plan/tool dates, multi-day bulk source/target, and date validation.
