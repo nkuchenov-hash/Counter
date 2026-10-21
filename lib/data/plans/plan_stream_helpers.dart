@@ -179,6 +179,7 @@ extension PlanStreamRefreshExtension on DatabaseService {
   void notifyPlanningRefresh({
     bool scheduleNetworkRefresh = true,
     bool pumpNetworkNow = false,
+    bool immediateLocal = false,
   }) {
     if (pumpNetworkNow) {
       _planningRefreshWantsNetworkPump = true;
@@ -188,14 +189,22 @@ extension PlanStreamRefreshExtension on DatabaseService {
     // stream poke within the 100 ms interaction budget instead of rebuilding
     // the whole Planning surface for every keyboard event.
     _planningLocalRefreshDebounceTimer?.cancel();
-    _planningLocalRefreshDebounceTimer = Timer(
-      const Duration(milliseconds: 50),
-      () {
-        if (!_planningRefreshController.isClosed) {
-          _planningRefreshController.add(null);
-        }
-      },
-    );
+    if (immediateLocal) {
+      // Create/start/stop must never wait for a trailing debounce. Broadcast
+      // the optimistic cache change immediately; network remains deferred.
+      if (!_planningRefreshController.isClosed) {
+        _planningRefreshController.add(null);
+      }
+    } else {
+      _planningLocalRefreshDebounceTimer = Timer(
+        const Duration(milliseconds: 50),
+        () {
+          if (!_planningRefreshController.isClosed) {
+            _planningRefreshController.add(null);
+          }
+        },
+      );
+    }
 
     // Alarm rescheduling, warm-snapshot projection and disk persistence are
     // expensive on web. While Notes owns an active editor they are deferred;
@@ -272,11 +281,17 @@ extension PlanStreamRefreshExtension on DatabaseService {
       ),
     );
     return Stream.multi((controller) {
-      hub.acquire(this);
+      // Attach BEFORE acquire; acquire emits the initial cache synchronously.
+      // Previous order dropped that event on broadcast streams, making a new
+      // subscriber wait for the later server fetch before displaying plans.
       final sub = hub.controller.stream.listen(
         controller.add,
         onError: controller.addError,
       );
+      hub.acquire(this);
+      if (hub.refCount > 1) {
+        hub.emitCachedPlans(this);
+      }
       if (_allPlansUserCache.isEmpty) {
         unawaited(() async {
           final offline = await _loadPlanningTasksDayCache(targetDayStr);
