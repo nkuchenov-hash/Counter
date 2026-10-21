@@ -84,8 +84,10 @@ routerAdd("POST", "/api/viktor/connection", (e) => {
   const body = e.requestInfo().body || {};
   const provider = String(body.provider || "");
   const model = String(body.model || "");
-  if (!viktorVaultModels[provider] ||
-      viktorVaultModels[provider].indexOf(model) < 0) {
+  if (!viktorVaultModels[provider]) {
+    return e.json(400, {error: "unsupported_provider"});
+  }
+  if (viktorVaultModels[provider].indexOf(model) < 0) {
     return e.json(400, {error: "unsupported_model"});
   }
   const apiKey = String(body.api_key || "").trim();
@@ -93,12 +95,21 @@ routerAdd("POST", "/api/viktor/connection", (e) => {
   const folderId = String(body.folder_id || "").trim();
   const speechProvider = String(body.speech_provider || "");
   const gigaScope = String(body.gigachat_scope || "pers");
-  if (apiKey.length > 512 || speechKey.length > 512 ||
-      (apiKey.length > 0 && apiKey.length < 12) ||
-      (speechKey.length > 0 && speechKey.length < 12) ||
-      (speechProvider && !["groq", "openai", "gemini"].includes(speechProvider)) ||
-      !["pers", "b2b", "corp"].includes(gigaScope)) {
-    return e.json(400, {error: "invalid_connection"});
+  // Return a stable, field-specific error code. Never echo secret values.
+  if (apiKey.length > 2048 || speechKey.length > 2048) {
+    return e.json(400, {error: "api_key_too_long"});
+  }
+  if (apiKey.length > 0 && apiKey.length < 12) {
+    return e.json(400, {error: "api_key_too_short"});
+  }
+  if (speechKey.length > 0 && speechKey.length < 12) {
+    return e.json(400, {error: "speech_api_key_too_short"});
+  }
+  if (speechProvider && !["groq", "openai", "gemini"].includes(speechProvider)) {
+    return e.json(400, {error: "unsupported_speech_provider"});
+  }
+  if (!["pers", "b2b", "corp"].includes(gigaScope)) {
+    return e.json(400, {error: "invalid_gigachat_scope"});
   }
   let record = viktorVaultFind(owner, provider);
   let previous = {};
@@ -111,11 +122,21 @@ routerAdd("POST", "/api/viktor/connection", (e) => {
   }
   const effectiveKey = apiKey || String(previous.api_key || "");
   const effectiveFolder = folderId || String(previous.folder_id || "");
-  if (effectiveKey.length < 12 || effectiveKey.length > 512 ||
-      (provider === "yandex" &&
-       !/^[a-zA-Z0-9_-]{10,64}$/.test(effectiveFolder))) {
-    return e.json(400, {error: provider === "yandex"
-      ? "api_key_or_folder_required" : "api_key_required"});
+  if (!effectiveKey) {
+    return e.json(400, {error: "api_key_required"});
+  }
+  if (effectiveKey.length < 12) {
+    return e.json(400, {error: "api_key_too_short"});
+  }
+  if (effectiveKey.length > 2048) {
+    return e.json(400, {error: "api_key_too_long"});
+  }
+  if (provider === "yandex" && !effectiveFolder) {
+    return e.json(400, {error: "yandex_folder_id_required"});
+  }
+  if (provider === "yandex" &&
+      !/^[a-zA-Z0-9_-]{10,64}$/.test(effectiveFolder)) {
+    return e.json(400, {error: "invalid_yandex_folder_id"});
   }
   const payload = {
     api_key: effectiveKey,

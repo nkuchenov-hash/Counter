@@ -389,6 +389,41 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     }
   }
 
+  String _cloudSaveErrorText(Object error) {
+    final value = error.toString().replaceAll('FormatException: ', '');
+    if (value.contains('api_key_required')) {
+      return 'Введите API-ключ. На сервере пока нет сохранённого ключа '
+          'для этого поставщика.';
+    }
+    if (value.contains('api_key_too_short')) {
+      return 'API-ключ слишком короткий. Проверьте, что скопирован целиком.';
+    }
+    if (value.contains('api_key_too_long')) {
+      return 'API-ключ превышает допустимую длину.';
+    }
+    if (value.contains('yandex_folder_id_required')) {
+      return 'Введите ID каталога Yandex Cloud (не название default).';
+    }
+    if (value.contains('invalid_yandex_folder_id')) {
+      return 'ID каталога Yandex Cloud неверного формата.';
+    }
+    if (value.contains('unsupported_model')) {
+      return 'Выбранная модель не поддерживается сервером LIFE OS.';
+    }
+    if (value.contains('HTTP 400')) {
+      return 'Сервер PocketBase отклонил запрос (HTTP 400), '
+          'но не вернул код ошибки. Подключение НЕ сохранено.';
+    }
+    if (value.contains('vault_unconfigured') ||
+        value.contains('vault_unavailable') ||
+        value.contains('vault_save_failed') ||
+        value.contains('vault_connection_unreadable')) {
+      return 'Ошибка защищённого хранилища PocketBase: $value. '
+          'Не вводите новый ключ, пока проблема не исправлена.';
+    }
+    return 'Не удалось подтвердить сохранение: $value';
+  }
+
   Future<void> _openSettings() async {
     if (!_settingsReady) await _loadSettings();
     // Refresh actual server status every time settings are opened, including
@@ -409,6 +444,8 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     var gigachatScope = _settings.gigachatScope;
     var speechProvider = _settings.speechProvider;
     final speechKeyCtrl = TextEditingController(text: _settings.sessionSpeechApiKey);
+    var savingConnection = false;
+    String? saveError;
     final saved = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -628,47 +665,82 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
             ),
           ),
           actions: [
-            AppButton.ghost(label: 'Отмена',
-              onPressed: () => Navigator.pop(dialogContext, false)),
-            AppButton.primary(label: 'Сохранить',
-              onPressed: () => Navigator.pop(dialogContext, true)),
+            if (saveError != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  saveError!,
+                  style: const TextStyle(fontSize: 16, color: Colors.red),
+                ),
+              ),
+            AppButton.ghost(
+              label: 'Отмена',
+              onPressed: savingConnection
+                  ? null : () => Navigator.pop(dialogContext, false),
+            ),
+            AppButton.primary(
+              label: 'Сохранить',
+              loading: savingConnection,
+              onPressed: savingConnection ? null : () async {
+                // Never close the dialog while the server has not accepted
+                // and verified the connection. The user keeps typed keys
+                // for correcting validation errors without starting over.
+                if (keyCtrl.text.trim().isEmpty &&
+                    !_settings.cloudProviders.contains(provider)) {
+                  updateDialog(() => saveError =
+                      'Введите API-ключ: серверное подключение ещё не создано.');
+                  return;
+                }
+                if (provider == 'yandex' &&
+                    folderCtrl.text.trim().isEmpty &&
+                    !_settings.cloudProviders.contains(provider)) {
+                  updateDialog(() => saveError =
+                      'Введите ID каталога Yandex Cloud.');
+                  return;
+                }
+                updateDialog(() {
+                  savingConnection = true;
+                  saveError = null;
+                });
+                _settings.mode = mode;
+                _settings.provider = provider;
+                _settings.model = model;
+                if (keyCtrl.text.trim().isNotEmpty) {
+                  _settings.sessionApiKey = keyCtrl.text.trim();
+                }
+                if (folderCtrl.text.trim().isNotEmpty) {
+                  _settings.yandexFolderId = folderCtrl.text.trim();
+                }
+                _settings.gigachatScope = gigachatScope;
+                _settings.speechProvider = speechProvider;
+                if (speechKeyCtrl.text.trim().isNotEmpty) {
+                  _settings.sessionSpeechApiKey = speechKeyCtrl.text.trim();
+                }
+                try {
+                  await _settings.saveCloudConnection();
+                  await _settings.save();
+                  _cloudConnectionError = null;
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop(true);
+                  }
+                } catch (error) {
+                  if (dialogContext.mounted) {
+                    updateDialog(() => saveError = _cloudSaveErrorText(error));
+                  }
+                } finally {
+                  if (dialogContext.mounted) {
+                    updateDialog(() => savingConnection = false);
+                  }
+                }
+              },
+            ),
           ],
         ),
       ),
     );
-    if (saved == true) {
-      _settings.mode = mode;
-      _settings.provider = provider;
-      _settings.model = model;
-      if (keyCtrl.text.trim().isNotEmpty) {
-        _settings.sessionApiKey = keyCtrl.text.trim();
-      }
-      if (folderCtrl.text.trim().isNotEmpty) {
-        _settings.yandexFolderId = folderCtrl.text.trim();
-      }
-      _settings.gigachatScope = gigachatScope;
-      _settings.speechProvider = speechProvider;
-      if (speechKeyCtrl.text.trim().isNotEmpty) {
-        _settings.sessionSpeechApiKey = speechKeyCtrl.text.trim();
-      }
-      try {
-        await _settings.saveCloudConnection();
-        await _settings.save();
-        _cloudConnectionError = null;
-        if (mounted) _push(
-          'Подключение проверено: API-ключ сохранён на сервере '
-          'и доступен на других устройствах LIFE OS.',
-        );
-      } catch (error) {
-        _cloudConnectionError = error.toString()
-            .replaceAll('FormatException: ', '');
-        if (mounted) _push(
-          'Подключение НЕ подтверждено сервером. '
-          'После Ctrl + F5 ключ может быть недоступен. '
-          '$_cloudConnectionError',
-        );
-      }
-      if (mounted) setState(() {});
+    if (saved == true && mounted) {
+      _push('Подключение проверено: сохранено на сервере LIFE OS.');
+      setState(() {});
     }
     keyCtrl.dispose();
     folderCtrl.dispose();
