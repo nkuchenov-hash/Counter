@@ -15,9 +15,10 @@ class ViktorReadAnswer {
     // Compound requests like "show and move" still require the model's
     // normal multi-step read -> preview -> write workflow.
     return !RegExp(
-      r'(?:\b(?:create|add|move|delete|edit|change|reschedule|update|'
-      r'rename|remove|start|stop)\b|'
-      r'добав|созда|перенес|перемест|удал|измен|переимен|сдвин|запуст|останов)',
+      r'(?:\b(?:and|then)\s+(?:create|add|move|delete|edit|change|'
+      r'reschedule|update|rename|remove|start|stop)\b|'
+      r'(?:^|\s)и\s+(?:добав|созда|перенес|перемест|удал|измен|'
+      r'переимен|сдвин|запуст|останов))',
       caseSensitive: false,
     ).hasMatch(text);
   }
