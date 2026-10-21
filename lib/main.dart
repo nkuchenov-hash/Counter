@@ -190,7 +190,9 @@ Future<void> _mainAsync() async {
   try {
     await StartupLog.stageAsync(
       'pocketbaseReady',
-      () => DatabaseService.instance.ensurePocketBaseReady(),
+      () => DatabaseService.instance.ensurePocketBaseReady(
+          verifyReachability: false,
+        ),
       blocksFirstFrame: true,
     );
   } catch (_) {}
@@ -222,7 +224,7 @@ Future<void> _mainAsync() async {
     bootProfileId = await StartupLog.stageAsync(
       'authRestore',
       () async {
-        final id = await AuthBridge.checkSession();
+        final id = await AuthBridge.checkSession(verifyWithServer: false);
         if (id != null && id.isNotEmpty) {
           DatabaseService.instance.currentProfileId = id;
         }
@@ -248,7 +250,7 @@ Future<void> _mainAsync() async {
   if (kIsWeb) {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
-        final id = await AuthBridge.checkSession();
+        final id = await AuthBridge.checkSession(verifyWithServer: false);
         if (id == null || id.isEmpty) {
           clearOAuthParams();
         }
@@ -403,7 +405,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
         _profileHydrationMessage = null;
       });
     }
-    final id = await AuthBridge.checkSession();
+    final id = await AuthBridge.checkSession(verifyWithServer: false);
     if (id == null || id.isEmpty) {
       if (!mounted) return;
       setState(() {
