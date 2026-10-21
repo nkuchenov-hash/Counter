@@ -200,7 +200,7 @@ void main() {
 
       // A new Flutter instance has a freshly populated preference cache.
       SharedPreferences.setMockInitialValues({
-        MorningStartPreference.deviceKey: saved,
+        MorningStartPreference.deviceKey: saved!,
       });
       expect(await MorningStartPreference.isEnabled(null), isFalse);
       expect(await MorningStartPreference.isEnabled('profile-2'), isFalse);
