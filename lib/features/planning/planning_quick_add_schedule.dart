@@ -76,38 +76,63 @@ extension PlanningQuickAddScheduling on _PlanningPageState {
         .profileDisplayWallsFromAutoSchedule(schedule);
     final scheduledDateKey = _planWallDateKey(plannedWalls.startWall);
     final rolledOver = scheduledDateKey.compareTo(taskDateKey) > 0;
-    var nextOrder = _nextPlanOrderForQuickAdd();
+    final nextOrder = _nextPlanOrderForQuickAdd();
     final clientPlanId = DatabaseService.newClientUuid();
     if (_planQuickAddInFlight) return;
     _planQuickAddInFlight = true;
-    unawaited(() async {
-      try {
-        final ok = await DatabaseService.instance.addPlanningTask(
-          DatabaseService.instance.planningTaskWithAutoSchedule(
-            PlanningTask(
-              id: 0,
-              title: title,
-              categoryId: categoryId,
-              isDone: false,
-              dateKey: scheduledDateKey,
-              initialDateKey: taskDateKey,
-              isPostponed: rolledOver,
-              order: nextOrder,
-              checklist: const [],
-              parentPlanId: null,
-              tags: tagsForCreate,
-              isSynced: false,
-            ),
-            schedule,
-          ),
-          clientPlanId: clientPlanId,
-        );
-        if (!mounted) return;
-        if (ok) {
-          _textController.clear();
-          setState(() {
-            _quickAddTags.clearCreationSelectedTags();
-          });
+
+    // The local card is the first commit, not the result of a PocketBase
+    // request or of the Planning stream's debounced refresh.
+    final localPlan = DatabaseService.instance.planningTaskWithAutoSchedule(
+      PlanningTask(
+        id: 0,
+        title: title,
+        categoryId: categoryId,
+        isDone: false,
+        dateKey: scheduledDateKey,
+        initialDateKey: taskDateKey,
+        isPostponed: rolledOver,
+        order: nextOrder,
+        checklist: const [],
+        parentPlanId: null,
+        tags: tagsForCreate,
+        isSynced: false,
+      ),
+      schedule,
+    );
+    final localOptimistic = localPlan.copyWith(
+      planRowId: clientPlanId,
+      pocketRecordId: 'optimistic-$clientPlanId',
+      isSynced: false,
+    );
+
+    // setState happens on the input gesture, BEFORE any network, outbox or
+    // refresh work. Clear the input now so rapid consecutive creates work.
+    setState(() {
+      _optimisticTasks.add(localOptimistic);
+      _textController.clear();
+      _quickAddTags.clearCreationSelectedTags();
+    });
+    _planQuickAddInFlight = false;
+
+    // Never let synchronous Brain cache processing/PocketBase work delay the
+    // first Flutter paint of the optimistic card (web and native alike).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(() async {
+        try {
+          final ok = await DatabaseService.instance.addPlanningTask(
+            localPlan,
+            clientPlanId: clientPlanId,
+          );
+          if (!ok) {
+            if (!mounted) return;
+            setState(() => _optimisticTasks.removeWhere(
+              (t) => t.planRowId == clientPlanId,
+            ));
+            AppSnack.failed();
+            return;
+          }
+          if (!mounted) return;
           if (rolledOver) {
             AppSnack.show(
               t(currentLocale.value, 'plan_auto_schedule_moved_to')
@@ -115,31 +140,21 @@ extension PlanningQuickAddScheduling on _PlanningPageState {
             );
           } else {
             _maybeShowPlanScheduleOverloadWarning(
-              dayPlans: [
-                ...existingDay,
-                PlanningTask(
-                  id: 0,
-                  title: title,
-                  categoryId: categoryId,
-                  isDone: false,
-                  dateKey: scheduledDateKey,
-                  order: nextOrder,
-                  startTime: plannedWalls.startWall,
-                  endDateTime: plannedWalls.endWall,
-                  tags: tagsForCreate,
-                ),
-              ],
+              dayPlans: [...existingDay, localOptimistic],
             );
           }
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('PLAN_ADD_UI: $e');
+          }
+          if (!mounted) return;
+          setState(() => _optimisticTasks.removeWhere(
+            (t) => t.planRowId == clientPlanId,
+          ));
+          AppSnack.failed();
         }
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('PLAN_ADD_UI: $e');
-        }
-      } finally {
-        _planQuickAddInFlight = false;
-      }
-    }());
+      }());
+    });
   }
 
   /// Smart Plan: append AI-parsed tasks sequentially on [widget.selectedDateString].
