@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/pb_config.dart';
@@ -84,15 +86,28 @@ class ViktorModelSettings {
     _loaded = true;
   }
 
-  Future<void> save() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('viktor_mode', mode);
-    await prefs.setString('viktor_provider', provider);
-    await prefs.setString('viktor_model', model);
-    await prefs.setString('viktor_speech_provider', speechProvider);
-    await prefs.setString('viktor_yandex_folder_id', yandexFolderId);
-    await prefs.setString('viktor_gigachat_scope', gigachatScope);
-    // Deliberately never persist the raw provider credential.
+  /// Browser SharedPreferences writes into a small localStorage quota.
+  /// Once the server confirms the connection, its account-scoped metadata
+  /// is authoritative and no browser-local copy of these settings is needed.
+  /// Never turn a successful server save into a failed UI state just because
+  /// unrelated localStorage data has filled the browser quota.
+  Future<bool> save() async {
+    if (kIsWeb && cloudProviders.contains(provider)) return true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('viktor_mode', mode);
+      await prefs.setString('viktor_provider', provider);
+      await prefs.setString('viktor_model', model);
+      await prefs.setString('viktor_speech_provider', speechProvider);
+      await prefs.setString('viktor_yandex_folder_id', yandexFolderId);
+      await prefs.setString('viktor_gigachat_scope', gigachatScope);
+      // Deliberately never persist the raw provider credential.
+      return true;
+    } catch (_) {
+      // Optional device-only convenience preferences may be unavailable.
+      // Server BYOK state is unaffected, and the caller can distinguish it.
+      return false;
+    }
   }
 
 
