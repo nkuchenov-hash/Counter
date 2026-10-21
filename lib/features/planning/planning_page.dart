@@ -113,6 +113,7 @@ class _PlanningPageState extends State<PlanningPage>
   final Set<String> _selectedPlanKeys = {};
   final List<PlanningTask> _optimisticTasks = [];
   bool _planQuickAddInFlight = false;
+  int _planQuickAddCreateGeneration = 0;
 
   /// Last server list for this day from [planningStream] (avoids `nextPlanningOrderForDate` network on quick-add).
   List<PlanningTask> _latestPlanningDayTasks = const [];
