@@ -12,6 +12,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'viktor_action_contract.dart';
 import 'viktor_schedule_planner.dart';
 
+/// A cloud-connected web client must not write optional prefs into the
+/// browser's small and possibly full localStorage. The encrypted account
+/// connection and model choice come from PocketBase.
+bool shouldPersistViktorLocalPreferences({
+  required bool isWeb,
+  required bool hasCloudConnection,
+}) => !isWeb || !hasCloudConnection;
+
 /// Model selection is local preference. API keys are intentionally only kept
 /// in process memory: they are NOT written to SharedPreferences or PocketBase.
 class ViktorModelSettings {
@@ -92,7 +100,10 @@ class ViktorModelSettings {
   /// Never turn a successful server save into a failed UI state just because
   /// unrelated localStorage data has filled the browser quota.
   Future<bool> save() async {
-    if (kIsWeb && cloudProviders.contains(provider)) return true;
+    if (!shouldPersistViktorLocalPreferences(
+      isWeb: kIsWeb,
+      hasCloudConnection: cloudProviders.contains(provider),
+    )) return true;
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('viktor_mode', mode);
