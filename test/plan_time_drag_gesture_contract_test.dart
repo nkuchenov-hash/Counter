@@ -63,30 +63,27 @@ void main() {
           initialTop - initialScroll + grabOffset + pointerDelta);
     });
 
-    test('auto-scroll preview resolution has independent rate from card paint', () {
-      final start = DateTime(2026, 10, 21, 12);
-      expect(planTimeShouldResolveAutoScrollTarget(null, start), isTrue);
-      expect(
-        planTimeShouldResolveAutoScrollTarget(
-          start,
-          start.add(const Duration(milliseconds: 16)),
-        ),
-        isFalse,
+    test('unhandled scroll frames translate the lifted card only', () {
+      const originalCardCanvasTop = 420.0;
+      const pointerMove = 72.0;
+      const scrollAtPickup = 150.0;
+      const scrollAtLastPointerUpdate = 260.0;
+      const scrollNow = 490.0;
+      const grabOffset = 18.0;
+      // This is the existing gesture position as of the last pointer event.
+      final lastCanvasDelta = planTimePointerAnchoredDeltaPx(
+        pointerDeltaPx: pointerMove,
+        scrollStartOffsetPx: scrollAtPickup,
+        scrollCurrentOffsetPx: scrollAtLastPointerUpdate,
       );
-      expect(
-        planTimeShouldResolveAutoScrollTarget(
-          start,
-          start.add(const Duration(milliseconds: 48)),
-        ),
-        isFalse,
-      );
-      expect(
-        planTimeShouldResolveAutoScrollTarget(
-          start,
-          start.add(const Duration(milliseconds: 64)),
-        ),
-        isTrue,
-      );
+      // The scroll-only transform must apply only the UNRENDERED delta;
+      // do not restart the original drag animation or double-apply scroll.
+      final unrenderedScroll = scrollNow - scrollAtLastPointerUpdate;
+      final cardScreenGrabY = originalCardCanvasTop + lastCanvasDelta +
+          unrenderedScroll - scrollNow + grabOffset;
+      final cursorGrabY = originalCardCanvasTop - scrollAtPickup +
+          pointerMove + grabOffset;
+      expect(cardScreenGrabY, cursorGrabY);
     });
 
     test('drag threshold is positive', () {
