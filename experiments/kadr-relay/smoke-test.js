@@ -49,6 +49,33 @@ async function main(){
      'Content-Length':'1'
   },Buffer.from('a'));
   if(offline.status!==503 && offline.status!==200)throw Error('unexpected offline status');
+  // New Windows advertises ack=1. A 200 is allowed only after it explicitly
+  // acknowledges successful ingestion into the local screenshot pipeline.
+  const ackSid=crypto.randomBytes(18).toString('base64url');
+  const ackToken=crypto.randomBytes(32).toString('base64url');
+  const ackWs=new WebSocket('wss://'+host+'/v1/session/'+ackSid+
+      '/ws?role=pc&ack=1&token='+ackToken,{handshakeTimeout:10000});
+  await new Promise((resolve,reject)=>{ackWs.once('open',resolve);ackWs.once('error',reject)});
+  ackWs.on('message',(data,binary)=>{
+    if(!binary)return;
+    const len=(data[1]<<8)|data[2];
+    const head=JSON.parse(data.subarray(3,3+len).toString());
+    if(head.type==='upload'&&head.uploadId) {
+      ackWs.send(JSON.stringify({type:'upload_ack',uploadId:head.uploadId,ok:true}));
+    }
+  });
+  const ackPayload=Buffer.from('opaque-ack-validation-data');
+  const ackResponse=await request('POST','/v1/session/'+ackSid+'/upload',{
+    'Authorization':'Bearer '+ackToken,
+    'X-KADR-Enc':'aes-256-gcm',
+    'X-KADR-File-Name':'verified.png',
+    'Content-Length':String(ackPayload.length)
+  },ackPayload);
+  if (ackResponse.status!==200 || JSON.parse(ackResponse.body).confirmedSaved!==true) {
+    throw Error('authenticated durable receipt not honored');
+  }
+  ackWs.close();
+  console.log('relay_windows_durable_ack=PASS');
   console.log('relay_health=200');
   console.log('relay_wrong_token=401');
   console.log('relay_ws_encrypted_frame=verified');
