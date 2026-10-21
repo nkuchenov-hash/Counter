@@ -56,6 +56,47 @@ function viktorYandexSpeechAuth(e, withAudio) {
   return {key, folder, encoded, language};
 }
 
+// SpeechKit REST v3 returns adjacent JSON objects without guaranteed line
+// separators. Decode an entire bounded response, never model/provider prose.
+function viktorYandexSpeechFrames(raw) {
+  if (typeof raw !== "string" || raw.length > 3000000) return [];
+  try {
+    const decoded = JSON.parse(raw);
+    return Array.isArray(decoded) ? decoded.slice(0, 200) : [decoded];
+  } catch (_) {}
+  const frames = [];
+  let start = -1, depth = 0, inString = false, escaped = false;
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i];
+    if (depth === 0) {
+      if (/\s/.test(ch)) continue;
+      if (ch !== "{") return [];
+      start = i;
+      depth = 1;
+      inString = false;
+      escaped = false;
+      continue;
+    }
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        try { frames.push(JSON.parse(raw.slice(start, i + 1))); }
+        catch (_) { return []; }
+        if (frames.length > 200) return [];
+      }
+    }
+  }
+  return depth === 0 ? frames : [];
+}
+
 routerAdd("POST", "/api/viktor/transcribe-yandex", (e) => {
   const request = viktorYandexSpeechAuth(e, true);
   if (request.error) return e.json(request.status, {error: request.error});
@@ -126,15 +167,9 @@ routerAdd("POST", "/api/viktor/transcribe-yandex/status", (e) => {
     if (recognized.statusCode < 200 || recognized.statusCode >= 300) {
       return e.json(502, {error: "speech_provider_rejected", status: recognized.statusCode});
     }
-    let entries = [];
-    try {
-      const data = JSON.parse(recognized.raw);
-      entries = Array.isArray(data) ? data : [data];
-    } catch (_) {
-      for (const line of String(recognized.raw || "").split(/\r?\n/)) {
-        if (!line.trim()) continue;
-        try { entries.push(JSON.parse(line)); } catch (_) {}
-      }
+    const entries = viktorYandexSpeechFrames(String(recognized.raw || ""));
+    if (entries.length === 0) {
+      return e.json(502, {error: "invalid_speech_response", stage: "result_stream"});
     }
     // SpeechKit REST v3 may deliver finalRefinement.normalizedText as a
     // separate streaming event. Refined text supersedes final for the same
