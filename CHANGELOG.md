@@ -2,7 +2,7 @@
 
 - Replaced separate date/time controls in `bulk_planning_edit_sheet.dart` with a unified **Start of sequence** Omni-Picker and an explicit date-only mode. Choosing a date and 20:00 now retains both values.
 - Updated `planning_bulk_edit_actions.dart` to compare final task wall schedules instead of treating "same day" as "no changes"; unchanged plans are not PATCHed. Preserves ordered, gap-free starts and task durations.
-- Corrected RU/EN sheet labels, explanatory hints, and canonical `AppButton` action. Added regression tests in `test/bulk_planning_datetime_test.dart`.
+- Corrected RU/EN sheet labels, explanatory hints, and canonical `AppButton` action. Added regression tests in `test/plan_time_bulk_drag_test.dart`.
 - Web release and live account verification are required before declaring a production fix.
 
 ## [2026-10-21] — Viktor list tools and bounded agent observations (PR; pending CI)
