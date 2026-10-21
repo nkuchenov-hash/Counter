@@ -1,3 +1,11 @@
+## [2026-10-21] — Viktor repeated read-loop and SpeechKit response repair (pending CI)
+
+- Read-only plan queries now return their first Brain-validated observation; repeated tool calls reuse observations rather than surfacing `Виктор повторно запросил те же данные`.
+- Exact-title matches are highlighted from the returned plan list for "show my plan..." queries without any hard-coded AGE Solutions business logic.
+- SpeechKit REST v3 parser handles adjacent JSON response frames without newline delimiters, as documented by Yandex; unit coverage includes refined/final text without duplication.
+- Improve missing-error-code SpeechKit diagnostics, while avoiding disclosure of raw response content.
+- Live user's SpeechKit and production read-query validation still pending; simulated CI tests alone cannot establish end-to-end success.
+
 ## [2026-10-21] — Viktor duplicate-safe plan entry, NY timezone and voice correction (pending CI)
 
 - Check existing same-day plan titles before announcing collisions or creating a duplicate. Present exact conflicting intervals for genuinely new meetings; never silently override existing tasks.

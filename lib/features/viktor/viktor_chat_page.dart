@@ -10,6 +10,7 @@ import 'package:counter/data/ai/viktor_schedule_planner.dart';
 import 'package:counter/data/ai/viktor_voice_gateway.dart';
 import 'package:counter/data/ai/viktor_voice_recorder.dart';
 import 'package:counter/data/ai/viktor_voice_error.dart';
+import 'package:counter/data/ai/viktor_read_answer.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
@@ -119,6 +120,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       final executor = ViktorExecutor(db);
       final toolObservations = <String>[];
       final seenReads = <String>{};
+      String? latestReadAnswer;
       final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
       var response = await _gateway.propose(
         input: input,
@@ -142,10 +144,17 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         final signature = jsonEncode(
             proposed.actions.map((a) => a.toJson()).toList());
         if (!seenReads.add(signature)) {
-          throw StateError('Виктор повторно запросил те же данные. '
-              'Изменения не выполнены.');
+          // The earlier read succeeded: don't turn a valid result into an
+          // error merely because the provider requested it twice.
+          _push(latestReadAnswer ?? 'Данные уже получены, изменений нет.');
+          return;
         }
         final observation = await executor.describe(proposed, widget.wallDay);
+        latestReadAnswer = ViktorReadAnswer.format(input, observation);
+        if (ViktorReadAnswer.isReadOnlyRequest(input)) {
+          _push(latestReadAnswer);
+          return;
+        }
         toolObservations.add(jsonEncode({
           'tools': proposed.actions.map((a) => a.toJson()).toList(),
           'result': observation,
@@ -166,8 +175,8 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         if (response.message.trim().isNotEmpty) {
           _push(response.message.trim());
         }
-        if (toolObservations.isNotEmpty) {
-          _push(toolObservations.last);
+        if (latestReadAnswer != null) {
+          _push(latestReadAnswer);
         }
         return;
       }
@@ -177,7 +186,10 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         if (response.message.trim().isNotEmpty) {
           _push(response.message.trim());
         }
-        _push(preview);
+        final onlyDayReads = actions.actions.every(
+            (action) => action.name == 'list_day_plans');
+        _push(onlyDayReads
+            ? ViktorReadAnswer.format(input, preview) : preview);
         return;
       }
       if (actions.isSingleReversibleWrite) {

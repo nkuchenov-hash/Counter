@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `874d4428` on 2026-10-21.**
+**Generated from input HEAD `c113498e` on 2026-10-21.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 932 — each appears **exactly once** below.
+**Tracked files:** 934 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,8 +27,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 182 |
-| `test` | 129 |
-| `Brain/data` | 106 |
+| `test` | 130 |
+| `Brain/data` | 107 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
 | `developer tool` | 63 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 501 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 244 |
+| `PROVEN_REQUIRED` | 502 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 245 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 42 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 849 |
+| `HIGH` | 851 |
 | `MEDIUM` | 83 |
 
 ---
@@ -13839,6 +13839,44 @@ RU:
 - **Владелец / слой:** Brain/data
 - **Обязанности:** Поддерживает операции данных в `viktor_plan_timezone`.
 - **Когда открывать:** Когда ломается поведение, связанное с `viktor_plan_timezone.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/ai/viktor_read_answer.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — Reuse Brain read-only observations without repeated-model-read loops and select exact matching plan titles. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Reuse Brain read-only observations without repeated-model-read loops and select exact matching plan titles.
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`ViktorReadAnswer`).
+- **Key code names:** `ViktorReadAnswer`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/viktor/viktor_chat_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** Reuse Brain read-only observations without repeated-model-read loops and select exact matching plan titles
+- **When to open:** When behavior tied to `viktor_read_answer.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Reuse Brain read-only observations without repeated-model-read loops and select exact matching plan titles
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — viktor_read_answer. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — viktor_read_answer.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `viktor_read_answer`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/features/viktor/viktor_chat_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `viktor_read_answer`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_read_answer.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
@@ -38219,6 +38257,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `viktor_priority_insertion`.
 - **Когда открывать:** Падение CI или правка кода рядом с `viktor_priority_insertion`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/viktor_read_answer_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `viktor_read_answer_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `viktor_read_answer_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/viktor_read_answer_test.dart` / CI when enabled. (2) Namesake production subject: `lib/data/ai/viktor_read_answer.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `viktor_read_answer_test` scenario.
+- **When to open:** CI failure or changing code near `viktor_read_answer`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `viktor_read_answer`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `viktor_read_answer` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `viktor_read_answer` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `viktor_read_answer`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/viktor_read_answer_test.dart`. (2) Парный production-файл: `lib/data/ai/viktor_read_answer.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `viktor_read_answer`.
+- **Когда открывать:** Падение CI или правка кода рядом с `viktor_read_answer`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
