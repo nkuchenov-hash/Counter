@@ -283,6 +283,8 @@ class ViktorGateway {
     List<String> selectedPlanIds = const [],
     List<String> toolObservations = const [],
     String? requestId,
+    String? proposalFeedback,
+    bool allowRepair = true,
   }) async {
     final service = DatabaseService.instance;
     await service.ensurePocketBaseReady();
@@ -372,6 +374,7 @@ class ViktorGateway {
       'tomorrow_day': ViktorDateScope.key(tomorrow),
       'request_id': reqId,
       'ui_locale': currentLocale.value,
+      if (proposalFeedback != null) 'proposal_feedback': proposalFeedback,
       'tool_observations': toolObservations.take(4)
           .map((entry) => entry.length > 4500 ?
              entry.substring(0, 4500) : entry).toList(),
@@ -498,11 +501,29 @@ class ViktorGateway {
     }
     final raw = map['actions'];
     if (raw is! List) throw const FormatException('Invalid action list.');
-    final actions = raw.isEmpty ? null : ViktorActionBatch.fromJson({
-      'version': map['version'],
-      'request_id': map['request_id'],
-      'actions': raw,
-    });
+    ViktorActionBatch? actions;
+    try {
+      actions = raw.isEmpty ? null : ViktorActionBatch.fromJson({
+        'version': map['version'],
+        'request_id': map['request_id'],
+        'actions': raw,
+      });
+    } on FormatException catch (error) {
+      // Model output is untrusted. Give the model one schema correction turn
+      // rather than asking the user to repair the model's mistake.
+      if (!allowRepair) rethrow;
+      return propose(
+        input: input,
+        wallDay: wallDay,
+        plans: plans,
+        settings: settings,
+        selectedPlanIds: selectedPlanIds,
+        toolObservations: toolObservations,
+        requestId: reqId,
+        proposalFeedback: error.message.toString(),
+        allowRepair: false,
+      );
+    }
     return ViktorResponse(message: (map['message'] ?? '').toString(),
         actions: actions,
         needsMoreContext: map['continue'] == true);

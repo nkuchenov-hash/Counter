@@ -44,11 +44,16 @@ class ViktorAction {
       case 'create_plan':
         _onlyKeys(args, const {
           'title', 'wall_day', 'duration_minutes', 'start_time',
+          'conflict_policy',
         });
         _title(args, 'title');
         _day(args, 'wall_day');
         _duration(args, 'duration_minutes');
         _clock(args, 'start_time');
+        if (args.containsKey('conflict_policy') &&
+            !const {'reject', 'shift'}.contains(args['conflict_policy'])) {
+          throw const FormatException('Unknown plan conflict policy');
+        }
       case 'update_plan_duration':
         _onlyKeys(args, const {
           'plan_id', 'expected_duration_minutes', 'duration_minutes',
@@ -256,6 +261,8 @@ class ViktorActionBatch {
   /// Consequential changes and mixed batches never qualify.
   bool get isSingleReversibleWrite =>
       actions.length == 1 &&
+      !(actions.single.name == 'create_plan' &&
+        actions.single.arguments['conflict_policy'] == 'shift') &&
       ViktorAgentCapabilities.byName[actions.single.name]?.risk ==
           ViktorToolRisk.reversible;
 
@@ -265,6 +272,8 @@ class ViktorActionBatch {
       actions.where((a) => a.isMutation).length > 1 ||
       actions.any((a) =>
           a.name == 'move_plan_after' || a.name == 'bulk_replan' ||
+          (a.name == 'create_plan' &&
+           a.arguments['conflict_policy'] == 'shift') ||
           (ViktorAgentCapabilities.byName[a.name]?.requiresApproval == true &&
            !const {
              'create_plan', 'update_plan_duration', 'swap_plan_positions',

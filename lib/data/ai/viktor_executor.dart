@@ -15,8 +15,53 @@ class ViktorExecutor {
 
   final ViktorSchedulePlanner _planner = const ViktorSchedulePlanner();
   final ViktorBulkPlanner _bulk = const ViktorBulkPlanner();
+  final ViktorPlanInsertionPlanner _insertion = const ViktorPlanInsertionPlanner();
   late final ViktorDomainTools _domain = ViktorDomainTools(db);
   String? _bulkSignature;
+  String? _insertionSignature;
+
+  bool _isPriorityInsertion(ViktorAction a) =>
+      a.name == 'create_plan' && a.arguments['conflict_policy'] == 'shift';
+
+  DateTime _planStart(ViktorAction action) {
+    final day = ViktorDateScope.parseDay(action.arguments['wall_day'] as String);
+    final clock = (action.arguments['start_time'] as String)
+        .split(':').map(int.parse).toList();
+    return DateTime(day.year, day.month, day.day, clock[0], clock[1]);
+  }
+
+  Future<ViktorInsertionPreview> _planInsertion(ViktorAction action) async {
+    final start = _planStart(action);
+    final wallDay = ViktorDateScope.parseDay(
+        action.arguments['wall_day'] as String);
+    final plans = await db.getPlanningTasksForWallDate(wallDay);
+    return _insertion.calculate(
+      day: wallDay,
+      plans: plans,
+      start: start,
+      durationMinutes: action.arguments['duration_minutes'] as int,
+      shiftConflicts: true,
+      fixedTime: _fixed,
+    );
+  }
+
+  Future<bool> _createPlan(ViktorAction action, DateTime start) async {
+    final category = db.defaultCategoryId ??
+        (db.rules.where((r) => !r.isArchived).isNotEmpty
+            ? db.rules.firstWhere((r) => !r.isArchived).id
+            : null);
+    if (category == null || db.getCategoryRuleById(category) == null) {
+      throw StateError('Требуется выбрать категорию нового плана.');
+    }
+    return db.addPlanningTask(PlanningTask(
+      id: 0, title: action.arguments['title'] as String,
+      categoryId: category,
+      dateKey: ViktorDateScope.key(start),
+      startTime: start,
+      endDateTime: start.add(Duration(
+          minutes: action.arguments['duration_minutes'] as int)),
+    ));
+  }
 
   Future<ViktorBulkPreview> _planBulk(ViktorAction action) async {
     // Read the actual source and destination day identified by the user.
@@ -82,6 +127,11 @@ class ViktorExecutor {
     if (mutations.length > 12) {
       throw StateError('Не более 12 изменений за один шаг.');
     }
+    if (batch.actions.any(_isPriorityInsertion) &&
+        batch.actions.length != 1) {
+      throw StateError('Приоритетная вставка с пересчётом расписания '
+          'выполняется одной защищённой операцией.');
+    }
     for (final a in batch.actions) {
       // Validated action dates may differ from the visible calendar date.
       if (a.name == 'start_record' &&
@@ -98,6 +148,27 @@ class ViktorExecutor {
 
   Future<String> describe(ViktorActionBatch batch, DateTime day) async {
     _checkScope(batch, day);
+    if (batch.actions.length == 1 &&
+        _isPriorityInsertion(batch.actions.single)) {
+      final action = batch.actions.single;
+      final placement = await _planInsertion(action);
+      _insertionSignature = placement.signature;
+      String clock(DateTime t) =>
+          '${t.hour.toString().padLeft(2, '0')}:'
+          '${t.minute.toString().padLeft(2, '0')}';
+      return [
+        'Создать приоритетный план «${action.arguments['title']}» '
+            'на ${action.arguments['wall_day']}, '
+            '${clock(placement.start)}–${clock(placement.end)} '
+            '(${action.arguments['duration_minutes']} мин.).',
+        if (placement.shifted.isEmpty) 'Пересечений нет.',
+        if (placement.shifted.isNotEmpty)
+          'Перенести следующие планы, сохранив длительность:',
+        for (final p in placement.shifted)
+          '«${p.title}» → ${clock(p.startTime!)}–${clock(p.endDateTime!)}',
+        'Подтвердите изменение расписания.',
+      ].join('\n');
+    }
     if (batch.actions.any((a) => a.name == 'bulk_replan')) {
       if (batch.actions.length != 1) {
         throw StateError('Групповая операция должна выполняться отдельно.');
@@ -211,13 +282,68 @@ class ViktorExecutor {
     required String approvedPreview,
   }) async {
     final approvedSignature = _bulkSignature;
+    final approvedInsertionSignature = _insertionSignature;
     final fresh = await describe(batch, day);
     if (fresh != approvedPreview ||
         (batch.actions.length == 1 &&
          batch.actions.single.name == 'bulk_replan' &&
-         approvedSignature != _bulkSignature)) {
+         approvedSignature != _bulkSignature) ||
+        (batch.actions.length == 1 &&
+         _isPriorityInsertion(batch.actions.single) &&
+         approvedInsertionSignature != _insertionSignature)) {
       throw StateError('Расписание изменилось после подтверждения. '
           'Проверьте новый вариант.');
+    }
+    if (batch.actions.length == 1 &&
+        _isPriorityInsertion(batch.actions.single)) {
+      final action = batch.actions.single;
+      final placement = await _planInsertion(action);
+      if (placement.signature != _insertionSignature) {
+        throw StateError('Планы изменились до сохранения. '
+            'Запросите новый предварительный просмотр.');
+      }
+      final patches = <PlanningBulkPatch>[
+        for (final p in placement.shifted)
+          PlanningBulkPatch(
+            planRowId: p.recordIdForBackend,
+            planBusinessId: p.planRowId,
+            startTimeDisplay: p.startTime,
+            endDateTimeDisplay: p.endDateTime,
+          ),
+      ];
+      if (patches.isNotEmpty &&
+          !await db.bulkUpdatePlans(patches, suppressAppSnack: true)) {
+        throw StateError('Сдвиг планов сохранён не полностью. '
+            'Проверьте расписание перед повтором; встреча не создана.');
+      }
+      final created = await _createPlan(action, placement.start);
+      if (!created) {
+        if (patches.isNotEmpty) {
+          final changedIds = placement.shifted
+              .map((p) => p.recordIdForBackend).toSet();
+          final rollback = <PlanningBulkPatch>[
+            for (final old in placement.before)
+              if (changedIds.contains(old.recordIdForBackend))
+                PlanningBulkPatch(
+                  planRowId: old.recordIdForBackend,
+                  planBusinessId: old.planRowId,
+                  startTimeDisplay: old.startTime,
+                  endDateTimeDisplay: old.endDateTime,
+                ),
+          ];
+          final restored = await db.bulkUpdatePlans(
+              rollback, suppressAppSnack: true);
+          if (!restored) {
+            throw StateError('Создание встречи не удалось, а откат '
+                'перенесённых планов неполный. Проверьте расписание.');
+          }
+        }
+        throw StateError('Встреча не сохранилась. '
+            'Ранее перенесённые планы восстановлены.');
+      }
+      return 'Встреча «${action.arguments['title']}» создана. '
+          'Сдвинуто планов: ${placement.shifted.length}. '
+          'Проверьте синхронизацию.';
     }
     if (batch.actions.length == 1 &&
         batch.actions.single.name == 'bulk_replan') {
@@ -282,26 +408,9 @@ class ViktorExecutor {
         case 'bulk_replan':
           break;
         case 'create_plan':
-          final category = db.defaultCategoryId ??
-              (db.rules.where((r) => !r.isArchived).isNotEmpty
-                  ? db.rules.firstWhere((r) => !r.isArchived).id
-                  : null);
-          if (category == null || db.getCategoryRuleById(category) == null) {
-            throw StateError('Требуется выбрать категорию нового плана.');
+          if (!await _createPlan(action, _planStart(action))) {
+            throw StateError('Не удалось добавить план.');
           }
-          final date = a['wall_day'] as String;
-          final parts = date.split('-').map(int.parse).toList();
-          final clock = (a['start_time'] as String)
-              .split(':').map(int.parse).toList();
-          final start = DateTime(
-              parts[0], parts[1], parts[2], clock[0], clock[1]);
-          final ok = await db.addPlanningTask(PlanningTask(
-            id: 0, title: a['title'] as String, categoryId: category,
-            dateKey: date, startTime: start,
-            endDateTime: start.add(
-                Duration(minutes: a['duration_minutes'] as int)),
-          ));
-          if (!ok) throw StateError('Не удалось добавить план.');
           done++;
         case 'start_record':
           if (db.canonicalPrimaryRunningBusinessId != null) {

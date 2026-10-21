@@ -2,6 +2,13 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor conflict-aware plan creation (2026-10-21)
+
+- A priority meeting that should displace other same-day plans uses the generic `create_plan` action with `conflict_policy: 'shift'`. The agent must never misuse `bulk_replan` (which moves existing items) to create new plans. `conflict_policy: 'reject'` remains the safe default.
+- Brain-backed placement calculates a single deterministic proposed insertion and the resulting cascade, preserving existing flexible-plan durations and chronological order. It must refuse shifting completed, pinned, recurring, virtual or unsynced tasks and reject shifts that run beyond midnight. Other, non-overlapping plans remain unchanged.
+- Because the shift may alter several saved plans, `create_plan + shift` always shows the exact requested meeting start/end and displaced plans for explicit confirmation. After approval, the executor reloads the day and compares its full schedule fingerprint before any mutation. The multi-row update is not atomic; partial failures must be disclosed and creation failures attempt compensating reversal.
+- If the LLM proposes an invalid typed action, the model gateway may request **at most one** corrected proposal using the validation failure as feedback; the client must still validate the corrected proposal locally. A second invalid proposal fails safely.
+
 ## Viktor intent-based date scope (2026-10-21)
 
 - The active Planning/Calendar tab day is contextual only; it MUST NOT block tools addressed to other days. Agent data reads and schedule mutations execute against the explicit tool date, with fresh data loaded for that date through the Brain.

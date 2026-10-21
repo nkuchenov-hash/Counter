@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `e25a41a5` on 2026-10-21.**
+**Generated from input HEAD `afd9c452` on 2026-10-21.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 925 — each appears **exactly once** below.
+**Tracked files:** 926 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 182 |
-| `test` | 126 |
+| `test` | 127 |
 | `Brain/data` | 102 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 497 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 241 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 242 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 42 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 842 |
+| `HIGH` | 843 |
 | `MEDIUM` | 83 |
 
 ---
@@ -13738,8 +13738,8 @@ EN:
 - **Human purpose:** Brain helper for data/sync — Pure plan order/time previews with collision protection. Shared PocketBase/auth/parse logic used by multiple tabs.
 - **What this is:** Brain helper for data/sync — Pure plan order/time previews with collision protection.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **Contents:** Dart helpers and types (`ViktorSchedulePreview`, `ViktorSchedulePlanner`, `ViktorBulkMove`, `ViktorBulkPreview`, `ViktorBulkPlanner`).
-- **Key code names:** `ViktorSchedulePreview`, `ViktorSchedulePlanner`, `ViktorBulkMove`, `ViktorBulkPreview`, `ViktorBulkPlanner`
+- **Contents:** Dart helpers and types (`ViktorSchedulePreview`, `ViktorInsertionPreview`, `ViktorPlanInsertionPlanner`, `ViktorSchedulePlanner`).
+- **Key code names:** `ViktorSchedulePreview`, `ViktorInsertionPreview`, `ViktorPlanInsertionPlanner`, `ViktorSchedulePlanner`
 - **Repository role:** Brain/data
 - **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -37958,6 +37958,44 @@ RU:
 - **Когда открывать:** Падение CI или правка кода около `viktor_pocketbase_hook`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Набор `test/`; production-субъект около `viktor_pocketbase_hook`.
+
+
+### `test/viktor_priority_insertion_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `viktor_priority_insertion_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `viktor_priority_insertion_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/viktor_priority_insertion_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `viktor_priority_insertion_test` scenario.
+- **When to open:** CI failure or changing code near `viktor_priority_insertion`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `viktor_priority_insertion`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `viktor_priority_insertion` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `viktor_priority_insertion` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `viktor_priority_insertion`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/viktor_priority_insertion_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `viktor_priority_insertion`.
+- **Когда открывать:** Падение CI или правка кода рядом с `viktor_priority_insertion`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
 
 
 ### `test/viktor_schedule_planner_test.dart`
