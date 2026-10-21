@@ -148,6 +148,15 @@ This document defines how Life OS behaves when people interact with it. It is th
 - **Draft/review/active separation:** future AI or user restructuring happens on a draft/review revision. Planner consumes only the explicitly active/published Path revision.
 - **AI proposal safety:** AI suggestions remain proposals until validated/applied through app-owned tools. Publish, delete, and bulk schedule changes must remain auditable and reversible.
 
+## Planning bulk schedule edit (2026-10-21)
+
+- For scheduled Planning selection, one **Start of sequence** Omni-Picker sets the complete profile-wall **date and time**. The feature must never discard the time when opened through a date-related control.
+- **Move date only** is a separate, explicitly selected mode with a date-only picker. It preserves each selected task's original clock time and duration.
+- A chosen start time means the **first** selected task begins at that time. Remaining tasks follow in visible/source order, sequentially without gaps; preserve each task duration (or existing tag-duration fallback), including rollover after midnight.
+- Compare each final wall date/start/end against the original plan. Do not infer "no changes" from matching calendar days, and do not patch tasks whose schedule is unchanged.
+- Existing destination plans are displaced only on actual conflicts. Use the established Brain optimistic state and profile-timezone → UTC persistence path; never interpret these edits in the browser/phone timezone.
+- Applying is unavailable until the user makes an explicit picker choice. Invalid/non-persisted selections must not silently produce a partial write.
+
 ## Selection / Bulk Mode
 
 - Bulk mode must have a clear entry and exit.
