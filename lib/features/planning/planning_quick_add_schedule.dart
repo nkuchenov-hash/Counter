@@ -23,6 +23,30 @@ extension PlanningQuickAddScheduling on _PlanningPageState {
     AppSnack.warning(t(currentLocale.value, 'plan_schedule_overload_warning'));
   }
 
+  /// Roll back only this failed creation; never overwrite the next draft.
+  void _rollbackFailedQuickAdd({
+    required String clientPlanId,
+    required String rawInput,
+    required String dateKey,
+    required List<Tag> tags,
+  }) {
+    if (!mounted) return;
+    setState(() {
+      _optimisticTasks.removeWhere((t) => t.planRowId == clientPlanId);
+      if (widget.selectedDateString == dateKey &&
+          _textController.text.trim().isEmpty) {
+        _textController.value = TextEditingValue(
+          text: rawInput,
+          selection: TextSelection.collapsed(offset: rawInput.length),
+        );
+        if (_quickAddTags.creationSelectedTags.isEmpty) {
+          _quickAddTags.creationSelectedTags = List<Tag>.from(tags);
+        }
+      }
+    });
+    AppSnack.failed();
+  }
+
   Future<void> _addTaskImpl() async {
     final taskDateKey = widget.selectedDateString;
     final raw = _textController.text;
@@ -125,11 +149,12 @@ extension PlanningQuickAddScheduling on _PlanningPageState {
             clientPlanId: clientPlanId,
           );
           if (!ok) {
-            if (!mounted) return;
-            setState(() => _optimisticTasks.removeWhere(
-              (t) => t.planRowId == clientPlanId,
-            ));
-            AppSnack.failed();
+            _rollbackFailedQuickAdd(
+              clientPlanId: clientPlanId,
+              rawInput: raw,
+              dateKey: taskDateKey,
+              tags: tagsForCreate,
+            );
             return;
           }
           if (!mounted) return;
@@ -147,11 +172,12 @@ extension PlanningQuickAddScheduling on _PlanningPageState {
           if (kDebugMode) {
             debugPrint('PLAN_ADD_UI: $e');
           }
-          if (!mounted) return;
-          setState(() => _optimisticTasks.removeWhere(
-            (t) => t.planRowId == clientPlanId,
-          ));
-          AppSnack.failed();
+          _rollbackFailedQuickAdd(
+            clientPlanId: clientPlanId,
+            rawInput: raw,
+            dateKey: taskDateKey,
+            tags: tagsForCreate,
+          );
         }
       }());
     });
