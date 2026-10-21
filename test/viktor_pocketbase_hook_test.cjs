@@ -117,6 +117,17 @@ assert.equal(lastRequest.headers.Authorization, 'Api-Key ' + base.api_key);
 assert.equal(lastRequest.headers['OpenAI-Project'], 'b1g9testfolder11');
 assert.equal(JSON.parse(lastRequest.body).model,
   'gpt://b1g9testfolder11/yandexgpt/rc');
+const yandexBody = JSON.parse(lastRequest.body);
+assert.equal(yandexBody.response_format.type, 'json_schema',
+  'Yandex should return a schema-governed proposal');
+const yandexSchema = yandexBody.response_format.json_schema.schema;
+assert.equal(yandexSchema.properties.actions.items.additionalProperties, false,
+  'No invented wrapper fields may be generated');
+assert.deepEqual(yandexSchema.properties.actions.items.required,
+  ['name', 'arguments']);
+assert.equal(yandexSchema.additionalProperties, false);
+assert.equal(JSON.parse(lastRequest.body).messages[0].content.includes(
+  'EXACTLY two top-level keys'), true);
 assert.equal(invoke({...base, provider: 'yandex',
   model: 'yandexgpt/rc', yandex_folder_id: ''}).status, 400);
 
@@ -140,6 +151,19 @@ assert.equal(selected.status, 200);
 const modelContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
 assert.deepEqual(modelContext.selected_plan_ids, ['aaaaabbbbbccccc']);
 
+
+const cappedSchema = invoke({...base,
+  provider: 'yandex',
+  model: 'yandexgpt/rc',
+  yandex_folder_id: 'b1g9testfolder11',
+  available_tools: ['create_plan', 'list_day_plans', 'delete_all_data',
+                    3, 'create_plan'],
+});
+assert.equal(cappedSchema.status, 200);
+assert.deepEqual(JSON.parse(lastRequest.body).response_format.json_schema
+  .schema.properties.actions.items.properties.name.enum,
+  ['create_plan', 'list_day_plans', 'delete_all_data'],
+  'Advertised names constrain generation, but local contract still owns rights');
 
 const bulk = invoke({...base,
   next_day: '2026-10-21',
