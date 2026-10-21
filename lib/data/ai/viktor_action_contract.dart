@@ -325,9 +325,11 @@ void _onlyKeys(Map<dynamic, dynamic> args, Set<String> allowed) {
   if (invalid.isEmpty) return;
   // Only field names are included in the repair hint, never argument values.
   String safeField(dynamic key) {
-    if (key is String && key.length <= 48 &&
-        RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*').hasMatch(key)) {
-      return key;
+    if (key is String && key.length <= 48) {
+      final match = RegExp(r'[a-zA-Z_][a-zA-Z0-9_]*').firstMatch(key);
+      if (match != null && match.start == 0 && match.end == key.length) {
+        return key;
+      }
     }
     return '[invalid field name]';
   }
