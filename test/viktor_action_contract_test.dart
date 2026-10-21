@@ -117,6 +117,30 @@ void main() {
       }
     });
 
+    test('rejects wrong action wrapper with exact safe repair guidance', () {
+      try {
+        ViktorActionBatch.fromJson(batch([
+          {
+            'name': 'create_plan',
+            'arguments': {
+              'title': 'Meeting',
+              'wall_day': '2026-10-24',
+              'start_time': '20:00',
+              'duration_minutes': 30,
+            },
+            'date': '2026-10-24',
+          }
+        ]));
+        fail('No action wrapper fields may bypass validation');
+      } on FormatException catch (error) {
+        final detail = error.message.toString();
+        expect(detail, contains('Action 1'));
+        expect(detail, contains('date'));
+        expect(detail, contains('arguments'));
+        expect(detail, contains('name'));
+      }
+    });
+
     test('rejects unknown fields, including embedded credentials', () {
       expect(
         () => ViktorActionBatch.fromJson(batch([
