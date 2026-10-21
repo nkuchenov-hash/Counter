@@ -139,7 +139,9 @@ jobs:
           $SUDO systemctl daemon-reload
           $SUDO systemctl restart "$service_name"
 
-          for attempt in {1..20}; do
+          # PocketBase can take several minutes to bind its HTTPS port after
+          # a migration/restart. Do not falsely mark a good deployment failed.
+          for attempt in {1..120}; do
             health="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
             route="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/sleep-sync/status || true)"
             viktor="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 -X POST \
@@ -159,6 +161,7 @@ jobs:
                   "$viktor_vault_get" == "401" && "$viktor_vault_save" == "401" ]]; then exit 0; fi
             sleep 2
           done
+          echo "PocketBase failed startup check after 4 minutes (health=$health, viktor_vault_get=$viktor_vault_get, viktor_vault_save=$viktor_vault_save)" >&2
           exit 1
           REMOTE
 
