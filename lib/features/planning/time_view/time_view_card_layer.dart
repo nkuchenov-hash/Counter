@@ -362,6 +362,7 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                       ),
                     ),
                   ),
+                  ), // TimelinePlanInteractionBlock
                   ), // RepaintBoundary
                 ), // ClipRect
               ), // AnimatedBuilder: only the lifted card tracks scroll
