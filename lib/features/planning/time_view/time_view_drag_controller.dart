@@ -190,8 +190,7 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
     if (fromAutoScroll) {
       final now = DateTime.now();
       final previous = timelineLastAutoScrollTargetResolveAt;
-      if (previous != null &&
-          now.difference(previous) < const Duration(milliseconds: 64)) {
+      if (!planTimeShouldResolveAutoScrollTarget(previous, now)) {
         host.notifySetState(() {
           timelineVerticalDragDeltaPx =
               pointerAnchoredTopPx - timelineVerticalDragOriginTopPx;
