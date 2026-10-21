@@ -1,3 +1,10 @@
+## [2026-10-21] — Bulk Planning date/time editing: unified picker and schedule-diff guard
+
+- Replaced separate date/time controls in `bulk_planning_edit_sheet.dart` with a unified **Start of sequence** Omni-Picker and an explicit date-only mode. Choosing a date and 20:00 now retains both values.
+- Updated `planning_bulk_edit_actions.dart` to compare final task wall schedules instead of treating "same day" as "no changes"; unchanged plans are not PATCHed. Preserves ordered, gap-free starts and task durations.
+- Corrected RU/EN sheet labels, explanatory hints, and canonical `AppButton` action. Added regression tests in `test/bulk_planning_datetime_test.dart`.
+- Web release and live account verification are required before declaring a production fix.
+
 ## [2026-10-21] — Viktor list tools and bounded agent observations (PR; pending CI)
 
 - Added owner-scoped backlog item discovery, complete/reopen and rename tools, routed through existing Brain `fetchBacklogPlans` and `updatePlanningTask`; checks old title/status and rejects Notes, scheduled items and recurrence.
