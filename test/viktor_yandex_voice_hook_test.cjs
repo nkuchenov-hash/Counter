@@ -51,7 +51,7 @@ const sandbox = {
               final: {alternatives: [{text: 'позвонить AGE Solutions'}]}}}),
             JSON.stringify({result: {
               finalRefinement: {finalIndex: '0', normalizedText: {
-                alternatives: [{text: 'Позвонить AGE Solutions'}]}}}),
+                alternatives: [{text: 'Позвонить AGE Solutions'}]}}}}),
             JSON.stringify({result: {
               audioCursors: {finalIndex: '1'},
               final: {alternatives: [{text: 'в пятницу в 12:00 NY'}]}}})
