@@ -257,6 +257,74 @@ class ViktorModelSettings {
   }
 }
 
+/// Backwards-compatible adapter for models that emit the old illegal
+/// bulk_replan + individual create_plan actions for ONE calendar request.
+/// Only combines a narrowly identified yesterday->today carryover; never
+/// fabricates task IDs, category filters or unmentioned meeting times.
+List<dynamic> normalizeViktorCompoundActions({
+  required List<dynamic> actions,
+  required String input,
+  required String previousDay,
+  required String targetDay,
+  required List<String> knownFilters,
+}) {
+  if (actions.length < 2) return actions;
+  final bulk = actions.where((a) =>
+      a is Map && a['name'] == 'bulk_replan').toList();
+  final creates = actions.where((a) =>
+      a is Map && a['name'] == 'create_plan').toList();
+  if (bulk.length != 1 || creates.isEmpty ||
+      bulk.length + creates.length != actions.length) return actions;
+  final args = bulk.single['arguments'];
+  if (args is! Map || args['operations'] is! List) return actions;
+  final ops = args['operations'] as List;
+  if (ops.length != 1 || ops.single is! Map) return actions;
+  final op = ops.single as Map;
+  if (op['kind'] != 'move' || op['status'] != 'incomplete' ||
+      op['source_day'] != previousDay ||
+      op['target_day'] != targetDay ||
+      op['start_time'] is! String) return actions;
+  final lower = input.toLowerCase();
+  final filters = knownFilters.where(
+      (s) => s.trim().length >= 3 &&
+          lower.contains(s.trim().toLowerCase())).toList()
+    ..sort((a, b) => b.length.compareTo(a.length));
+  var filter = filters.isNotEmpty ? filters.first.trim() : '';
+  if (filter.isEmpty) {
+    final match = RegExp(
+      r'план[а-яё]*\\s+(.+?)\\s+со\\s+вчерашн',
+      caseSensitive: false).firstMatch(input);
+    if (match != null) filter = match.group(1)!.trim();
+  }
+  if (filter.isEmpty || filter.length > 80) return actions;
+  final meetings = <Map<String, Object?>>[];
+  for (final create in creates) {
+    if (create is! Map || create['arguments'] is! Map) return actions;
+    final a = create['arguments'] as Map;
+    if (a['wall_day'] != targetDay ||
+        a['title'] is! String ||
+        a['start_time'] is! String ||
+        a['duration_minutes'] is! int) return actions;
+    meetings.add({
+      'title': a['title'],
+      'start_time': a['start_time'],
+      'duration_minutes': a['duration_minutes'],
+    });
+  }
+  return [
+    {'name': 'compose_day', 'arguments': {
+      'source_day': previousDay,
+      'target_day': targetDay,
+      'source_filter': filter,
+      'start_time': op['start_time'],
+      'timezone': op['timezone'] is String ? op['timezone'] : 'profile',
+      'urgent_first': RegExp(r'срочн|urgent|priority', caseSensitive: false)
+          .hasMatch(input),
+      'meetings': meetings,
+    }},
+  ];
+}
+
 class ViktorResponse {
   ViktorResponse({required this.message, required this.actions});
   final String message;
@@ -421,10 +489,21 @@ class ViktorGateway {
     }
     final raw = map['actions'];
     if (raw is! List) throw const FormatException('Invalid action list.');
-    final actions = raw.isEmpty ? null : ViktorActionBatch.fromJson({
+    final resolved = normalizeViktorCompoundActions(
+      actions: raw,
+      input: input,
+      previousDay: previousDayKey,
+      targetDay: dayKey,
+      knownFilters: [
+        for (final rule in service.rules) rule.name,
+        for (final plan in previousDayPlans)
+          for (final tag in plan.tags) tag.name,
+      ],
+    );
+    final actions = resolved.isEmpty ? null : ViktorActionBatch.fromJson({
       'version': map['version'],
       'request_id': map['request_id'],
-      'actions': raw,
+      'actions': resolved,
     });
     return ViktorResponse(message: (map['message'] ?? '').toString(),
         actions: actions);
