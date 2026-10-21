@@ -186,6 +186,14 @@ This document defines how Life OS behaves when people interact with it. It is th
 - Rollback is reserved for non-retriable failures; ordinary offline/network failures use queues where available.
 - Do not introduce full refetch fan-out after a small mutation unless unavoidable.
 
+## P0: immediate Planning create across Web, Android and desktop (2026-10-21)
+
+- Submitting a valid new plan synchronously stages a locally identified task in the visible Planning page before any awaited work, PocketBase request, network refresh, outbox storage or heavy projection. It must appear on the Time graph/list on the first subsequent Flutter frame.
+- Clear the entry field on local commit, so a second new plan can be entered without waiting for the first POST. Non-retriable failures must visibly restore/remove the optimistic card without silently losing the action; retriable network failures are retained in the outbox.
+- A new Planning stream subscriber receives the current cache+optimistic overlay **as its first event**, not after a network response. Attach a listener before synchronous hub emissions.
+- Local create notifications must not be delayed by a trailing debounce that can be extended by repeated refreshes; expensive network, alarm, snapshot and disk work remains background/debounced.
+- Pending creates reconcile by stable client business ID. Identical titles/date do not mean identical plans. This rule applies to all supported platforms and to existing loaded screens.
+
 ## Performance & Responsiveness Contract
 
 Performance, responsiveness, and stability are **P0 correctness**, not polish. See `docs/ARCHITECTURE.md` § **PERFORMANCE_KILL_SWITCH_LAW**.
