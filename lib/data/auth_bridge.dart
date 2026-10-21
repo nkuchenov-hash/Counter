@@ -76,9 +76,13 @@ class AuthBridge {
 
   /// Valid session: [PocketBase.authStore] only (no stale secure-storage fallback).
   /// All auth I/O uses [PbCollections.profiles], never `users`.
-  static Future<String?> checkSession() async {
+  static Future<String?> checkSession({bool verifyWithServer = true}) async {
     try {
-      await DatabaseService.instance.ensurePocketBaseReady();
+      // A valid cached JWT permits showing this account's local, scoped
+      // data immediately; foreground refresh checks revocation afterward.
+      await DatabaseService.instance.ensurePocketBaseReady(
+        verifyReachability: verifyWithServer,
+      );
       final pb = DatabaseService.instance.pocketBase;
       if (!pb.authStore.isValid || pb.authStore.record == null) {
         try {
@@ -92,7 +96,7 @@ class AuthBridge {
       // persisted token with PocketBase before treating protected list results
       // as authoritative; an invalid token otherwise looks like a valid empty
       // account because list rules return HTTP 200 with zero visible rows.
-      try {
+      if (verifyWithServer) try {
         await pb
   .collection(PbCollections.profiles)
   .authRefresh()
