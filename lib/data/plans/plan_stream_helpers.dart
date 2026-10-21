@@ -62,7 +62,8 @@ final class _PlanningDayStreamHub {
   }
 
   void _bind(DatabaseService db) {
-    _emitFromCache(db);
+    // _pump emits the cache synchronously before its first await. Do not emit
+    // twice and rebuild the whole Time graph twice on stream subscription.
     unawaited(_pump(db, network: true));
     if (!listenGlobal) return;
     _pokeSub = _planningRefreshController.stream.listen((_) {
@@ -290,7 +291,8 @@ extension PlanStreamRefreshExtension on DatabaseService {
       );
       hub.acquire(this);
       if (hub.refCount > 1) {
-        hub.emitCachedPlans(this);
+        // Replay to this subscriber only, without rebuilding existing listeners.
+        controller.add(planningDayTasksSnapshot(selectedDate));
       }
       if (_allPlansUserCache.isEmpty) {
         unawaited(() async {
