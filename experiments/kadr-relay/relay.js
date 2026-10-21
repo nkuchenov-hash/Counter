@@ -33,7 +33,7 @@ function validSession(sid, token, allowPcCreate=false) {
     s = null;
   }
   if (!s && allowPcCreate && sessions.size < MAX_SESSIONS) {
-    s={id:sid,token,peers:new Map(),expires:Date.now()+SESSION_TTL,activeUploads:0};
+    s={id:sid,token,peers:new Map(),pendingAcks:new Map(),expires:Date.now()+SESSION_TTL,activeUploads:0};
     sessions.set(sid,s);
   }
   if (!s || !fixedEqual(s.token,token)) return null;
@@ -80,18 +80,52 @@ async function handleUpload(req,res,sid) {
     }
     const safeName = String(req.headers['x-kadr-file-name'] || 'screenshot.png')
       .replace(/[^a-zA-Z0-9_.-]/g,'_').slice(0,120);
+    const supportsAck = pc.kadrAckV1 === true;
+    const uploadId = crypto.randomBytes(16).toString('base64url');
     const header=Buffer.from(JSON.stringify({
       type:'upload', fileName:safeName, contentType:'application/octet-stream',
-      enc:'aes-256-gcm', size:len
+      enc:'aes-256-gcm', size:len,
+      ...(supportsAck ? {uploadId} : {})
     }));
     const frame=Buffer.concat([Buffer.from([1,header.length>>8,header.length&255]),header,...chunks]);
+    let acknowledged;
+    if (supportsAck) {
+      acknowledged = new Promise(resolve=>{
+        const timer=setTimeout(()=>{
+          s.pendingAcks.delete(uploadId);
+          resolve(false);
+        },18000);
+        s.pendingAcks.set(uploadId,{
+          ws:pc,
+          resolve:(ok)=>{
+            clearTimeout(timer);
+            s.pendingAcks.delete(uploadId);
+            resolve(ok === true);
+          }
+        });
+      });
+    }
     const sent = await new Promise(resolve=>{
       if (pc.readyState!==WebSocket.OPEN || pc.bufferedAmount>MAX_UPLOAD) return resolve(false);
       pc.send(frame,{binary:true},err=>resolve(!err));
     });
-    // Current KADR Windows protocol has no durable-save ACK.
-    // '200' only establishes delivery to its WebSocket stack; harden before public use.
-    json(res,sent?200:503,{ok:sent,path:'relay',confirmedSaved:false});
+    if (!sent) {
+      if (supportsAck) s.pendingAcks.get(uploadId)?.resolve(false);
+      json(res,503,{ok:false,error:'desktop_disconnected'});
+      return;
+    }
+    if (!supportsAck) {
+      // Legacy Windows remains compatible but is never reported as durably saved.
+      json(res,200,{ok:true,path:'relay',confirmedSaved:false});
+      return;
+    }
+    const saved = await acknowledged;
+    // HTTP 200 now means the desktop capture pipeline accepted the file.
+    // No receipt or a negative receipt leaves the original item on Android.
+    json(res,saved?200:503,{
+      ok:saved,path:'relay',confirmedSaved:saved,
+      ...(!saved ? {error:'desktop_save_not_confirmed'} : {})
+    });
   } catch (e) {
     json(res,503,{ok:false,error:'transfer_interrupted'});
   } finally {inFlight--;s.activeUploads--;}
@@ -106,7 +140,7 @@ const server=https.createServer(tls,(req,res)=>{
   let url;
   try {url=new URL(req.url,'https://localhost');} catch {return json(res,400,{ok:false});}
   if(req.method==='GET' && url.pathname==='/health') {
-    return json(res,200,{service:'kadr-relay',ok:true,protocolVersion:3,persistentSessions:true});
+    return json(res,200,{service:'kadr-relay',ok:true,protocolVersion:3,persistentSessions:true,durableAckSupported:true});
   }
   const match=url.pathname.match(/^\/v1\/session\/([A-Za-z0-9_-]+)\/upload$/);
   if(req.method==='POST' && match) {void handleUpload(req,res,match[1]);return;}
@@ -126,6 +160,7 @@ server.on('upgrade',(req,socket,head)=>{
     const s=validSession(m[1],token,role==='pc');
     if(!s) {socket.destroy();return;}
     wss.handleUpgrade(req,socket,head,ws=>{
+      ws.kadrAckV1 = role === 'pc' && url.searchParams.get('ack') === '1';
       const previous=s.peers.get(role);
       if(previous) previous.close(4003,'replaced');
       s.peers.set(role,ws);
@@ -135,8 +170,22 @@ server.on('upgrade',(req,socket,head)=>{
         peer.send(JSON.stringify({type:'peer_joined',role}));
         ws.send(JSON.stringify({type:'peer_joined',role:role==='pc'?'phone':'pc'}));
       }
-      ws.on('message',()=>{s.expires=Date.now()+SESSION_TTL;});
+      ws.on('message',(data,isBinary)=>{
+        s.expires=Date.now()+SESSION_TTL;
+        if (isBinary || role!=='pc' || !ws.kadrAckV1) return;
+        try {
+          const msg=JSON.parse(data.toString());
+          if (msg.type!=='upload_ack' || typeof msg.uploadId!=='string') return;
+          const pending=s.pendingAcks.get(msg.uploadId);
+          if (pending && pending.ws===ws) pending.resolve(msg.ok===true);
+        } catch (_) {}
+      });
       ws.on('close',()=>{
+        if(role==='pc') {
+          for (const pending of s.pendingAcks.values()) {
+            if(pending.ws===ws) pending.resolve(false);
+          }
+        }
         if(s.peers.get(role)===ws) {
           s.peers.delete(role);
           const other=s.peers.get(role==='pc'?'phone':'pc');
