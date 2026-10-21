@@ -1,0 +1,115 @@
+name: Upgrade isolated KADR relay with durable delivery receipt
+on:
+  push:
+    branches: [experiment/kadr-relay-personal-20261021]
+    paths: ['.github/workflows/upgrade-kadr-personal-relay-ack.yml']
+permissions:
+  contents: read
+concurrency:
+  group: personal-kadr-relay-upgrade
+  cancel-in-progress: false
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Node syntax and image build on CI, not VPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check experiments/kadr-relay/relay.js
+          node --check experiments/kadr-relay/smoke-test.js
+          docker build -t kadr-relay-personal:receipt-v2 experiments/kadr-relay
+          docker save kadr-relay-personal:receipt-v2 | gzip -1 > /tmp/kadr-relay-receipt-v2.tar.gz
+          test -s /tmp/kadr-relay-receipt-v2.tar.gz
+      - name: Preflight isolated VPS without changing LIFE OS
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/kadr_cloud_upgrade
+          chmod 600 ~/.ssh/kadr_cloud_upgrade
+          host="${SSH_HOST:-217.114.0.201}"
+          user="${SSH_USER:-root}"
+          ssh-keyscan -T 8 -p "$SSH_PORT" -H "$host" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/kadr_cloud_upgrade -p "$SSH_PORT" -o BatchMode=yes "$user@$host" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          ram=$(awk '/^MemAvailable:/ {print int($2/1024)}' /proc/meminfo)
+          disk=$(df -Pm / | awk 'NR==2 {print $4}')
+          echo "ram_available_mib=$ram disk_available_mib=$disk"
+          [ "$ram" -ge 350 ] && [ "$disk" -ge 1200 ] || exit 20
+          curl -fsS --max-time 8 https://217-114-0-201.sslip.io/api/health >/dev/null
+          echo 'life_os_preflight=healthy'
+          test "$(docker inspect --format '{{.State.Running}}' kadr-relay-personal)" = true
+          echo 'kadr_old_container=running'
+          REMOTE
+      - name: Upgrade only KADR Docker container with rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          host="${SSH_HOST:-217.114.0.201}"
+          user="${SSH_USER:-root}"
+          destination="$user@$host"
+          remote() { ssh -i ~/.ssh/kadr_cloud_upgrade -o BatchMode=yes -p "$SSH_PORT" "$destination" "$@"; }
+          scp -i ~/.ssh/kadr_cloud_upgrade -P "$SSH_PORT" /tmp/kadr-relay-receipt-v2.tar.gz "$destination:/tmp/kadr-relay-receipt-v2.tar.gz"
+          remote 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          docker load -i /tmp/kadr-relay-receipt-v2.tar.gz >/dev/null
+          rm -f /tmp/kadr-relay-receipt-v2.tar.gz
+          oldImage=$(docker inspect --format '{{.Image}}' kadr-relay-personal)
+          docker tag "$oldImage" kadr-relay-personal:rollback-v1
+          echo 'previous_kadr_container_tagged_for_rollback=yes'
+          REMOTE
+          successful=0
+          runContainer() {
+            local image="$1"
+            remote "bash -s" <<REMOTE
+          set -euo pipefail
+          fullchain=\$(readlink -f /etc/letsencrypt/live/217-114-0-201.sslip.io/fullchain.pem)
+          privatekey=\$(readlink -f /etc/letsencrypt/live/217-114-0-201.sslip.io/privkey.pem)
+          docker rm -f kadr-relay-personal >/dev/null 2>&1 || true
+          docker run -d --name kadr-relay-personal --restart unless-stopped \
+            --memory 128m --memory-swap 128m --cpus 0.25 --pids-limit 64 \
+            --read-only --tmpfs /tmp:rw,nosuid,size=8m \
+            --cap-drop ALL --cap-add SETUID --cap-add SETGID --security-opt no-new-privileges \
+            --log-opt max-size=2m --log-opt max-file=2 \
+            -p 0.0.0.0:8443:8443 \
+            -v "\$fullchain":/tls/fullchain.pem:ro \
+            -v "\$privatekey":/tls/privkey.pem:ro \
+            $image >/dev/null
+          REMOTE
+          }
+          restore() {
+            if [ "$successful" != 1 ]; then
+              echo 'rollback_requested=yes'
+              runContainer kadr-relay-personal:rollback-v1 || true
+              remote 'curl -fsS --max-time 8 https://217-114-0-201.sslip.io/api/health >/dev/null && echo life_os_after_rollback=healthy' || true
+            fi
+          }
+          trap restore EXIT
+          runContainer kadr-relay-personal:receipt-v2
+          for n in $(seq 1 15); do
+            if curl -fsS --connect-timeout 2 --max-time 5 https://217-114-0-201.sslip.io:8443/health | grep -q '"durableAckSupported":true'; then
+              echo 'new_relay_health=PASS'
+              break
+            fi
+            [ "$n" != 15 ] || exit 42
+            sleep 1
+          done
+          npm install --no-fund --no-audit --prefix experiments/kadr-relay --no-save ws@8.18.3
+          node experiments/kadr-relay/smoke-test.js
+          remote 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          curl -fsS --max-time 8 https://217-114-0-201.sslip.io/api/health >/dev/null
+          echo 'life_os_postupgrade=healthy'
+          docker inspect --format 'relay_running={{.State.Running}} relay_oom_killed={{.State.OOMKilled}}' kadr-relay-personal
+          docker stats --no-stream --format 'relay_ram_usage={{.MemUsage}}' kadr-relay-personal
+          REMOTE
+          successful=1
+          echo 'KADR_DURABLE_RECEIPT_RELAY_READY'
