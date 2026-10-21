@@ -1,3 +1,9 @@
+## [2026-10-21] — Viktor typed tool contract repair (pending CI)
+
+- Exposed actionable schema errors: action index, tool name, rejected field names, and allowed names, without exposing parameter values. The existing one-turn model retry can now correct the actual validation error instead of repeating a generic `Unexpected Viktor action field`.
+- Enabled YandexGPT `response_format=json_schema` for a constrained proposal/action envelope. Server-side tool name allowlist intersects the client's advertised capabilities; the local Brain-backed typed contract remains the only authority for execution.
+- Added generic `create_plan` example for ordinary dated events, and Node/Dart regression tests verifying schema, safety and repair context. No user data changed by development; live BYOK account test remains a release gate.
+
 ## [2026-10-21] — Time View cursor anchor and compact time feedback
 
 - Fixed Time View scheduled card dragging through edge auto-scroll by compensating for the change in scroll offset since pointer pickup. Every scroll-ticker frame recomputes drag and insertion preview even when the pointer is stationary; the card is rendered at raw pointer position, while snapping is confined to the drop target.

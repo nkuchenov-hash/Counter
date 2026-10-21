@@ -2,6 +2,13 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor model/tool contract and validation repair (2026-10-21)
+
+- Model prose is not an executable command. YandexGPT Chat Completions must request schema-governed JSON proposals with exactly `message`, `actions`, `continue` at the envelope, and each action has only `name` and `arguments`. Tool names are constrained by a server-side allowlist intersected with the client-advertised capabilities.
+- Executable tool authority remains in the typed Flutter contract and authenticated Brain, **not** in a model schema, prompt, or client-advertised tool list. Each tool argument map is validated again before any preview or write. Provider implementations without structured JSON still rely on typed validation.
+- On a rejected argument field the validator returns action index, tool name, offending **field name only**, and allowed names. Argument values (including note content and credentials) must never enter validation diagnostics. The model gets one bounded correction turn with this precise feedback; the corrected action is validated anew. Never silently remove unknown arguments or execute an unvalidated proposal.
+- The model should resolve requested weekdays against profile-date context and propose a normal `create_plan` for new events. An omitted duration may use the explicitly disclosed default proposal, not an undisclosed mutation.
+
 ## Viktor conflict-aware plan creation (2026-10-21)
 
 - A priority meeting that should displace other same-day plans uses the generic `create_plan` action with `conflict_policy: 'shift'`. The agent must never misuse `bulk_replan` (which moves existing items) to create new plans. `conflict_policy: 'reject'` remains the safe default.
