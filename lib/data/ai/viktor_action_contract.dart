@@ -323,10 +323,21 @@ void _onlyKeys(Map<dynamic, dynamic> args, Set<String> allowed) {
   final invalid = args.keys.where(
       (key) => key is! String || !allowed.contains(key)).toList();
   if (invalid.isEmpty) return;
-  // Return only field names, never arbitrary values such as tokens or note
-  // content. Non-identifiers are redacted because they may be user input.
+  // Only field names are included in the repair hint, never argument values.
   String safeField(dynamic key) {
-    if (key is String && RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]{0,47}
+    if (key is String && key.length <= 48 &&
+        RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*').hasMatch(key)) {
+      return key;
+    }
+    return '[invalid field name]';
+  }
+  final rejected = invalid.take(4).map(safeField).join(', ');
+  final expected =
+      allowed.isEmpty ? '(none)' : (allowed.toList()..sort()).join(', ');
+  throw FormatException(
+      'Unexpected Viktor action field(s): ' + rejected +
+      '. Allowed fields: ' + expected);
+}
 
 String _text(Map<String, Object?> args, String key, {int maxLength = 160}) {
   final value = args[key];
