@@ -214,7 +214,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "Do not invent tool argument fields. If a proposal_feedback field is present, correct ONLY the stated invalid fields using the given allowed field names; retain the user's intent.",
     "Example for ANY requested new dated event (derive the date from the user's request): {\"name\":\"create_plan\",\"arguments\":{\"title\":\"Meeting\",\"wall_day\":\"YYYY-MM-DD\",\"start_time\":\"20:00\",\"duration_minutes\":30}}. Never add unlisted fields such as category_name, category_id, date, time or duration to create_plan.",
     "Each action: {name: ..., arguments: {...}}. Allowed names:",
-    "list_day_plans {wall_day}; create_plan {title,wall_day,duration_minutes,start_time,conflict_policy?:'reject'|'shift'};",
+    "list_day_plans {wall_day}; create_plan {title,wall_day,duration_minutes,start_time,timezone?,conflict_policy?:'reject'|'shift'};",
     "update_plan_duration {plan_id,expected_duration_minutes,duration_minutes,wall_day?};",
     "move_plan_after {plan_id,after_plan_id,wall_day};",
     "swap_plan_positions {first_plan_id,second_plan_id,wall_day}; exchange two cards' chronological positions.",
@@ -336,7 +336,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
   // Permissions and state validation are always enforced by LIFE OS itself.
   const toolSpecifications = [
     ["list_day_plans", "list_day_plans {wall_day}"],
-    ["create_plan", "create_plan {title,wall_day,start_time,duration_minutes,conflict_policy?}"],
+    ["create_plan", "create_plan {title,wall_day,start_time,duration_minutes,timezone?,conflict_policy?}"],
     ["update_plan_duration", "update_plan_duration {plan_id,expected_duration_minutes,duration_minutes,wall_day?}"],
     ["move_plan_after", "move_plan_after {plan_id,after_plan_id,wall_day}"],
     ["swap_plan_positions", "swap_plan_positions {first_plan_id,second_plan_id,wall_day}"],
@@ -368,8 +368,8 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "Allowed tools with exact argument fields:",
     ...toolSpecifications.filter(spec => usableToolNames.has(spec[0]))
       .map(spec => spec[1]),
-    "Use profile-timezone today_day/yesterday_day/tomorrow_day to resolve relative dates; wall_day is the calendar tab, not an execution limit. Resolve named weekdays against today_day.",
-    "To create any timed appointment use create_plan (a missing duration may be proposed as 30 minutes, clearly noted). For a priority appointment shifting other flexible same-day plans use conflict_policy:'shift'; otherwise omit it.",
+    "Use profile-timezone today_day/yesterday_day/tomorrow_day to resolve relative dates; wall_day is the requested date, not a restriction to the visible calendar tab. Resolve named weekdays against today_day.",
+    "To create any timed appointment use create_plan (a missing duration may be proposed as 30 minutes, clearly noted). When a user explicitly says NY/New York, use timezone:'America/New_York' and preserve the requested local start_time/date; otherwise omit timezone for profile clock. For a priority appointment shifting flexible same-day plans use conflict_policy:'shift'; otherwise omit it.",
     "bulk_replan moves/compacts existing sets, not new plans. Never move between identical source_day and target_day. Time HH:mm, date YYYY-MM-DD.",
     "Use IDs only from context. Do not invent data. If current data is insufficient, propose read tools only and continue:true; after observations propose writes with continue:false.",
     "Write actions must be explicitly requested by the user. The app performs validation, fresh-state preview, confirmation when necessary and saving. Never claim an action has already succeeded.",

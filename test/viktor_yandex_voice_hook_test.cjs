@@ -44,8 +44,21 @@ const sandbox = {
       if (request.url.includes('getRecognition')) {
         assert.ok(request.url.endsWith('getRecognition?operation_id=recognition12345'),
           'SpeechKit REST v3 requires operation_id (per official Yandex docs)');
+        if (resultMode === 'stream') {
+          return {statusCode: 200, raw: [
+            JSON.stringify({result: {
+              audioCursors: {finalIndex: '0'},
+              final: {alternatives: [{text: 'позвонить AGE Solutions'}]}}}),
+            JSON.stringify({result: {
+              finalRefinement: {finalIndex: '0', normalizedText: {
+                alternatives: [{text: 'Позвонить AGE Solutions'}]}}}}),
+            JSON.stringify({result: {
+              audioCursors: {finalIndex: '1'},
+              final: {alternatives: [{text: 'в пятницу в 12:00 NY'}]}}})
+          ].join('\n')};
+        }
         const result = resultMode === 'refinement'
-          ? {finalRefinement: {normalizedText: {
+          ? {finalRefinement: {finalIndex: '0', normalizedText: {
               alternatives: [{text: 'Включи запись'}]}}}
           : {final: {alternatives: [{text: 'Поменяй эти две карточки местами'}]}};
         return {statusCode: 200, raw: JSON.stringify({result})};
@@ -102,7 +115,7 @@ assert.equal(payload.content, base.audio_base64);
 assert.equal(payload.recognitionModel.audioFormat.containerAudio.containerAudioType, 'WAV');
 assert.deepEqual(
   JSON.parse(JSON.stringify(payload.recognitionModel.languageRestriction.languageCode)),
-  ['ru-RU']
+  ['ru-RU', 'en-US']
 );
 const polling = {...base, operation_id: started.data.operation_id};
 assert.equal(invoke(status, polling, false).statusCode, 401);
@@ -117,7 +130,13 @@ resultMode = 'refinement';
 const normalized = invoke(status, polling);
 assert.equal(normalized.statusCode, 200);
 assert.equal(normalized.data.transcript, 'Включи запись');
-assert.equal(outbound.length, 6, 'Both Yandex result formats were requested');
+resultMode = 'stream';
+const streaming = invoke(status, polling);
+assert.equal(streaming.statusCode, 200);
+assert.equal(streaming.data.transcript,
+  'Позвонить AGE Solutions в пятницу в 12:00 NY',
+  'Use finalRefinement for each chunk once, without duplicate final text');
+assert.equal(outbound.length, 8, 'Both Yandex result formats were requested');
 vaultKey = '0123456789abcdef0123456789abcdef';
 const cloudStarted = invoke(start, {
   ...base,
@@ -126,7 +145,7 @@ const cloudStarted = invoke(start, {
 });
 assert.equal(cloudStarted.statusCode, 202,
   'SpeechKit must use server-stored key without device secret');
-assert.equal(outbound[6].headers.Authorization,
+assert.equal(outbound[8].headers.Authorization,
   'Api-Key yandex-server-stored-key');
-assert.equal(outbound[6].headers['x-folder-id'], 'b1g9testfolder11');
+assert.equal(outbound[8].headers['x-folder-id'], 'b1g9testfolder11');
 process.stdout.write('Viktor Yandex one-key SpeechKit contract: PASS\\n');

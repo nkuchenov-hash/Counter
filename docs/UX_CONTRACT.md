@@ -2,6 +2,15 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor plan idempotency, timezone and SpeechKit v3 voice (2026-10-21)
+
+- Prior to evaluating any ordinary or priority `create_plan` collision, look up plans on the intended **profile-wall** calendar day. If a saved or pending same-day plan has the same normalized meaningful title, report that it already exists; never create a duplicate or reject it because a different plan occupies the requested slot. Check again before any write.
+- Explicit user clock zones such as NY/New York use the canonical catalog `America/New_York` and DST-aware conversion to the profile-wall planner clock. Omitted zones use the profile timezone. Never treat a named NY time as the device or profile's local clock automatically.
+- For genuinely new plans, retain strict interval collision checks. On conflict, include both requested profile-wall interval and existing plan's profile-wall interval, not only the conflicting title.
+- SpeechKit REST v3 results can include `final.alternatives` and separate `finalRefinement.normalizedText.alternatives`. Use the refined text for a matching `finalIndex`, never duplicate the same utterance. Dictation supports mixed RU/EN titles independently of UI locale.
+- Voice failure text distinguishes microphone/capture from recognition/server errors. No original provider exception text, audio or credentials should be exposed in UI or log.
+- Regression tests must cover an already existing AGE Solutions call even when FALCON has an overlapping interval, NY 12:00 DST conversion, provider streaming refinements, and capture-vs-provider failure categories.
+
 ## Viktor category parity and plan-create receipt (2026-10-21)
 
 - Viktor `create_plan` and priority insertion must use the **same title/keyword matcher** `DatabaseService.identifyCategory` that Planning's ordinary quick-add uses. Do not assign a default category first or introduce hard-coded RCC/product-specific mappings. Prefer the deepest active matched category; fall back to a validated configured category only when no valid match exists.

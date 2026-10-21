@@ -5,6 +5,8 @@ import 'viktor_schedule_planner.dart';
 import 'viktor_domain_tools.dart';
 import 'viktor_date_scope.dart';
 import 'viktor_plan_category.dart';
+import 'viktor_existing_plan.dart';
+import 'viktor_plan_timezone.dart';
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -24,17 +26,27 @@ class ViktorExecutor {
   bool _isPriorityInsertion(ViktorAction a) =>
       a.name == 'create_plan' && a.arguments['conflict_policy'] == 'shift';
 
-  DateTime _planStart(ViktorAction action) {
-    final day = ViktorDateScope.parseDay(action.arguments['wall_day'] as String);
-    final clock = (action.arguments['start_time'] as String)
-        .split(':').map(int.parse).toList();
-    return DateTime(day.year, day.month, day.day, clock[0], clock[1]);
+  DateTime _planStart(ViktorAction action) => viktorPlanStartInProfileWall(
+    wallDay: action.arguments['wall_day'] as String,
+    startTime: action.arguments['start_time'] as String,
+    timezone: action.arguments['timezone'] as String?,
+    profileTimezone: db.settings.preferredTimeZone,
+    toProfileWall: db.applyUserOffset,
+  );
+
+  Future<PlanningTask?> _existingPlan(ViktorAction action) async {
+    final start = _planStart(action);
+    final plans = await db.getPlanningTasksForWallDate(start);
+    return ViktorExistingPlan.find(
+      title: action.arguments['title'] as String,
+      start: start,
+      plans: plans,
+    );
   }
 
   Future<ViktorInsertionPreview> _planInsertion(ViktorAction action) async {
     final start = _planStart(action);
-    final wallDay = ViktorDateScope.parseDay(
-        action.arguments['wall_day'] as String);
+    final wallDay = DateTime(start.year, start.month, start.day);
     final plans = await db.getPlanningTasksForWallDate(wallDay);
     return _insertion.calculate(
       day: wallDay,
@@ -174,6 +186,11 @@ class ViktorExecutor {
     if (batch.actions.length == 1 &&
         _isPriorityInsertion(batch.actions.single)) {
       final action = batch.actions.single;
+      final existing = await _existingPlan(action);
+      if (existing != null) {
+        _insertionSignature = 'existing:${existing.recordIdForBackend}';
+        return ViktorExistingPlan.describe(existing);
+      }
       final placement = await _planInsertion(action);
       _insertionSignature = placement.signature;
       String clock(DateTime t) =>
@@ -223,27 +240,37 @@ class ViktorExecutor {
             lines.add('$requestedDay $clock  ${p.title}');
           }
         case 'create_plan':
-          final parts = (a['wall_day'] as String).split('-').map(int.parse).toList();
-          final clock = (a['start_time'] as String)
-              .split(':').map(int.parse).toList();
-          final start = DateTime(parts[0], parts[1], parts[2], clock[0], clock[1]);
+          final start = _planStart(action);
           final end = start.add(Duration(minutes: a['duration_minutes'] as int));
-          if (end.year != parts[0] || end.month != parts[1] ||
-              end.day != parts[2]) {
-            throw StateError('Новый план должен завершиться в запрошенный день.');
+          final existing = await _existingPlan(action);
+          if (existing != null) {
+            lines.add(ViktorExistingPlan.describe(existing));
+            continue;
           }
-          final destinationPlans = await db.getPlanningTasksForWallDate(
-              ViktorDateScope.parseDay(a['wall_day'] as String));
+          if (end.year != start.year || end.month != start.month ||
+              end.day != start.day) {
+            throw StateError('Новый план должен завершиться в один '
+                'календарный день часового пояса профиля.');
+          }
+          final destinationPlans = await db.getPlanningTasksForWallDate(start);
           for (final old in destinationPlans) {
             if (old.startTime != null && old.endDateTime != null &&
                 old.startTime!.isBefore(end) &&
                 old.endDateTime!.isAfter(start)) {
-              throw StateError('Новое время пересекается с «${old.title}». '
-                  'Попросите Виктора найти другой свободный интервал.');
+              String clock(DateTime t) =>
+                  '${t.hour.toString().padLeft(2, '0')}:'
+                  '${t.minute.toString().padLeft(2, '0')}';
+              throw StateError('Интервал ${clock(start)}–${clock(end)} '
+                  'по времени профиля пересекается с «${old.title}» '
+                  '(${clock(old.startTime!)}–${clock(old.endDateTime!)}). '
+                  'Другой план не изменён.');
             }
           }
+          final zone = (a['timezone'] as String?)?.trim();
           lines.add('Добавить «${a['title']}» на ${a['wall_day']} '
-              'в ${a['start_time']} на ${a['duration_minutes']} мин. '
+              'в ${a['start_time']}'
+              '${zone == null || zone.isEmpty ? '' : ' ($zone)'} '
+              'на ${a['duration_minutes']} мин. '
               'Категория: ${_planCategoryLabel(action)}.');
         case 'update_plan_duration':
           lines.add('Изменить длительность плана '
@@ -322,6 +349,8 @@ class ViktorExecutor {
     if (batch.actions.length == 1 &&
         _isPriorityInsertion(batch.actions.single)) {
       final action = batch.actions.single;
+      final existing = await _existingPlan(action);
+      if (existing != null) return ViktorExistingPlan.describe(existing);
       final placement = await _planInsertion(action);
       if (placement.signature != _insertionSignature) {
         throw StateError('Планы изменились до сохранения. '
@@ -432,6 +461,11 @@ class ViktorExecutor {
         case 'bulk_replan':
           break;
         case 'create_plan':
+          final existing = await _existingPlan(action);
+          if (existing != null) {
+            receipts.add(ViktorExistingPlan.describe(existing));
+            continue;
+          }
           final created = await _createPlan(action, _planStart(action));
           if (!created.accepted) {
             throw StateError('Не удалось добавить план.');

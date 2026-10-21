@@ -1,3 +1,11 @@
+## [2026-10-21] — Viktor duplicate-safe plan entry, NY timezone and voice correction (pending CI)
+
+- Check existing same-day plan titles before announcing collisions or creating a duplicate. Present exact conflicting intervals for genuinely new meetings; never silently override existing tasks.
+- Interpret `create_plan.timezone` with DST-aware shared timezone catalog, including NY/New York, and translate to the profile-wall calendar.
+- Fix Yandex SpeechKit v3 `finalRefinement.normalizedText` recognition parsing, deduplicate refined/final chunks, and allow mixed Russian/English command speech.
+- Replace anonymous voice failure with capture-stage or recognition-stage diagnostics. Added regression tests for AGE Solutions/FALCON duplicate, NY conversion, mixed voice output and error handling.
+- Remote authenticated E2E with this user's specific plans and microphone still required before claiming verified production behavior.
+
 ## [2026-10-21] — Viktor plan category and creation receipt parity (pending CI)
 
 - Agent-created plans now use the existing `identifyCategory(title)` keyword/subcategory resolver from ordinary Planning quick-add. It rejects archived/invalid matches and falls back to an active configured category rather than always using the default.
