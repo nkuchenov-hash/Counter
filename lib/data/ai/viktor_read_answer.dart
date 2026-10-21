@@ -8,7 +8,7 @@ class ViktorReadAnswer {
     final text = input.toLowerCase().trim();
     final startsWithRead = RegExp(
       r'^(?:покажи|покажите|найди|найдите|расскажи|какие|какой|что у меня|'
-      r'выведи|перечисли|show|find|list|display|what are|what is)\b',
+      r'выведи|перечисли|show|find|list|display|what are|what is)(?:\s|$)',
       unicode: true,
     ).hasMatch(text);
     if (!startsWithRead) return false;
