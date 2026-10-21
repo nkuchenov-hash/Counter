@@ -186,7 +186,10 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         if (response.message.trim().isNotEmpty) {
           _push(response.message.trim());
         }
-        _push(preview);
+        final onlyDayReads = actions.actions.every(
+            (action) => action.name == 'list_day_plans');
+        _push(onlyDayReads
+            ? ViktorReadAnswer.format(input, preview) : preview);
         return;
       }
       if (actions.isSingleReversibleWrite) {
