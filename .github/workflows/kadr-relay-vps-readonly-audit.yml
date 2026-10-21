@@ -16,12 +16,14 @@ jobs:
       SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
       SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
       SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      KADR_PRIVATE_REPO_TOKEN: ${{ secrets.KADR_PRIVATE_REPO_TOKEN }}
     steps:
       - name: Inspect VPS resources and listeners without changing anything
         shell: bash
         run: |
           set -euo pipefail
           test -n "$SSH_PRIVATE_KEY"
+          if [ -n "$KADR_PRIVATE_REPO_TOKEN" ]; then echo 'kadr_private_checkout_credential=available'; else echo 'kadr_private_checkout_credential=missing'; fi
           user="${SSH_USER:-root}"
           host="${SSH_HOST:-217.114.0.201}"
           mkdir -p ~/.ssh
@@ -85,5 +87,16 @@ jobs:
           done
           ps -eo comm,rss --no-headers | awk '$1=="pocketbase" {sum+=$2;count++} END {printf "pocketbase_processes=%d pocketbase_rss_mib=%.0f\n",count,sum/1024}'
           echo 'RELAY_FEASIBILITY_END'
+          echo 'TLS_CHALLENGE_FEASIBILITY'
+          wd=$(systemctl show pocketbase.service -p WorkingDirectory --value 2>/dev/null || true)
+          if [ -n "$wd" ] && [ -d "$wd" ]; then
+            echo 'pocketbase_workdir_valid=yes'
+            if [ -d "$wd/pb_public" ]; then echo 'pocketbase_webroot_present=yes'; else echo 'pocketbase_webroot_present=no'; fi
+          else echo 'pocketbase_workdir_valid=no'; fi
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 8 'http://relay.217-114-0-201.sslip.io/.well-known/acme-challenge/kadr-unique-nonexistent' 2>/dev/null || true)
+          echo "relay_host_http_challenge_probe=${code:-000}"
+          resolved=$(getent ahostsv4 relay.217-114-0-201.sslip.io | awk 'NR==1 {print $1}' || true)
+          if [ "$resolved" = '217.114.0.201' ]; then echo 'relay_dns_resolves_to_vps=yes'; else echo 'relay_dns_resolves_to_vps=no'; fi
+          echo 'TLS_CHALLENGE_FEASIBILITY_END'
           echo 'READ_ONLY_AUDIT_END'
           REMOTE
