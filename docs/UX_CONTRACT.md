@@ -23,7 +23,7 @@ This document defines how Life OS behaves when people interact with it. It is th
 ## Morning Start prompt (Timeline)
 
 - The existing "Start the day" sleep check-in is enabled by default. Settings → Preferences → Start of day provides an explicit on/off switch (also available on mobile Settings).
-- The switch persists in device-local SharedPreferences under a stable device key, independent of the transient profile id at Settings creation. It survives page refreshes and application restarts; it is shared by accounts using that one device, but not synchronized across devices. Legacy profile-scoped disabled settings are migrated. The UI must not display an enabled switch before the saved value has loaded.
+- On web, the morning check-in switch persists in the app's existing IndexedDB journal (separate from SharedPreferences/localStorage, which can be full of cached app data); Android/Windows use device-local SharedPreferences. Use one stable device key, independent of profile hydration. The setting survives browser reloads and restarts, applies to that device only, and does not synchronize across devices. Migrate legacy disabled values from old SharedPreferences keys when readable, without making IndexedDB persistence depend on their availability. The UI must not display a default ON switch before loading.
 - When disabled, Timeline's morning gate must never open the check-in automatically. Enabling it restores the existing one-per-day, wake-window and done/dismissed rules.
 - This visibility preference does not disable sleep synchronization, delete sleep records, or alter the existing first-activity start flow.
 

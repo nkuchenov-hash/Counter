@@ -72,48 +72,75 @@ class MorningStartPreference {
   }
 
   static Future<bool> isEnabled(String? profileId) async {
+    if (kIsWeb) {
+      final durable = await WebRecordJournal.readPreferenceBool(deviceKey);
+      if (durable != null) return durable;
+
+      // Migration is best-effort: exhausted/corrupted SharedPreferences must
+      // never disable the UI or prevent a new IndexedDB preference from saving.
+      final legacy = await _readLegacyValue(profileId);
+      if (legacy != null) {
+        await WebRecordJournal.writePreferenceBool(deviceKey, legacy);
+        return legacy;
+      }
+      return true;
+    }
     final prefs = await SharedPreferences.getInstance();
-    // SharedPreferences.getInstance() provides the persisted cache for this
-    // browser session. Do not force reload() on every preference read:
-    // web implementations may invalidate/recreate the snapshot mid-toggle.
     final stored = prefs.getBool(deviceKey);
     if (stored != null) return stored;
-
-    // Upgrade settings from builds which stored them under the transient
-    // profile ID. Migrate a disabled value first rather than accidentally
-    // turning a previously disabled prompt back on.
-    final scoped = prefs.getBool(_legacyKeyFor(profileId));
-    final local = prefs.getBool(_legacyKeyFor(null));
-    final legacyValues = [
-      for (final key in prefs.getKeys())
-        if (key.startsWith('lifeos.morning_start.') &&
-            key.endsWith('.enabled') &&
-            prefs.get(key) is bool)
-          prefs.get(key) as bool,
-    ];
-    final enabled = legacyValues.contains(false)
-        ? false
-        : (scoped ?? local ?? true);
-    if (legacyValues.isNotEmpty) {
-      final saved = await prefs.setBool(deviceKey, enabled);
-      if (!saved) {
-        throw StateError('Could not migrate morning check-in setting');
+    final legacy = await _readLegacyValue(profileId);
+    if (legacy != null) {
+      if (!await prefs.setBool(deviceKey, legacy)) {
+        throw StateError('Could not migrate morning prompt preference');
       }
+      return legacy;
     }
-    return enabled;
+    return true;
+  }
+
+  static Future<bool?> _readLegacyValue(String? profileId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Existing v2 value may be present from earlier builds. Never overwrite
+      // an explicit disabled setting with a default true.
+      final v2 = prefs.get(deviceKey);
+      if (v2 is bool) return v2;
+      final legacy = <bool>[];
+      for (final key in prefs.getKeys()) {
+        if (key.startsWith('lifeos.morning_start.') &&
+            key.endsWith('.enabled')) {
+          final value = prefs.get(key);
+          if (value is bool) legacy.add(value);
+        }
+      }
+      if (legacy.contains(false)) return false;
+      if (legacy.isNotEmpty) return true;
+      final scoped = prefs.get(_legacyKeyFor(profileId));
+      if (scoped is bool) return scoped;
+    } catch (_) {
+      // It is unsafe to depend on localStorage during a browser storage error.
+      // The IndexedDB preference remains fully usable without legacy migration.
+    }
+    return null;
   }
 
   static Future<void> setEnabled(String? profileId, bool enabled) async {
+    if (kIsWeb) {
+      // Browser storage can fill localStorage with larger cached app data.
+      // Save this small setting in the app's existing IndexedDB journal.
+      await WebRecordJournal.writePreferenceBool(deviceKey, enabled);
+      if (await WebRecordJournal.readPreferenceBool(deviceKey) != enabled) {
+        throw StateError('Browser morning prompt preference verification failed');
+      }
+      changes.value++;
+      return;
+    }
     final prefs = await SharedPreferences.getInstance();
-    final saved = await prefs.setBool(deviceKey, enabled);
-    if (!saved) {
+    if (!await prefs.setBool(deviceKey, enabled)) {
       throw StateError('Could not persist morning check-in setting');
     }
-    // setBool already awaits the platform persistence operation. A second
-    // reload here could fail on web after a successful save and incorrectly
-    // roll back the switch. Use the same cache that setBool just updated.
     if (prefs.getBool(deviceKey) != enabled) {
-      throw StateError('Morning check-in setting failed cache readback');
+      throw StateError('Morning check-in preference readback failed');
     }
     changes.value++;
   }
