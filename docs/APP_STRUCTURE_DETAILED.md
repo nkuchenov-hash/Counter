@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `c21d3757` on 2026-10-21.**
+**Generated from input HEAD `a4353bc2` on 2026-10-21.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 919 — each appears **exactly once** below.
+**Tracked files:** 920 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 182 |
-| `test` | 123 |
+| `test` | 124 |
 | `Brain/data` | 99 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 494 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 238 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 239 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 42 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 836 |
+| `HIGH` | 837 |
 | `MEDIUM` | 83 |
 
 ---
@@ -37618,6 +37618,44 @@ RU:
 - **Когда открывать:** Падение CI или правка кода около `viktor_audio_transcribe_hook`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Набор `test/`; production-субъект около `viktor_audio_transcribe_hook`.
+
+
+### `test/viktor_browser_quota_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `viktor_browser_quota_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `viktor_browser_quota_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/viktor_browser_quota_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `viktor_browser_quota_test` scenario.
+- **When to open:** CI failure or changing code near `viktor_browser_quota`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `viktor_browser_quota`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `viktor_browser_quota` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `viktor_browser_quota` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `viktor_browser_quota`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/viktor_browser_quota_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `viktor_browser_quota`.
+- **Когда открывать:** Падение CI или правка кода рядом с `viktor_browser_quota`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
 
 
 ### `test/viktor_chat_layout_test.dart`
