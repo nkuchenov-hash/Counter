@@ -270,13 +270,24 @@ const Map<String, String> kRuL10n = {
   'plan_bulk_shift_applied': 'Время обновлено.',
   'plan_bulk_edit': 'Изменить',
   'plan_bulk_edit_sheet_title': 'Изменить задачи (%s)',
+  'plan_bulk_edit_block_start': 'Начало последовательности',
+  'plan_bulk_edit_date_only_start': 'Новая дата',
+  'plan_bulk_edit_pick_start': 'Выбрать дату и время',
+  'plan_bulk_edit_pick_date': 'Выбрать дату',
+  'plan_bulk_edit_date_only_mode': 'Перенести только дату, сохранив время задач',
+  'plan_bulk_edit_sequential_hint':
+      'Задачи пойдут подряд в выбранном порядке: первая начнётся в указанное время, остальные — без промежутков. Длительность сохранится.',
+  'plan_bulk_edit_date_only_hint':
+      'Изменится только дата. Время начала и длительность задач сохранятся.',
+  'plan_bulk_edit_timezone_hint':
+      'Время указывается в часовом поясе профиля.',
   'plan_bulk_edit_date_label': 'Дата',
   'plan_bulk_edit_new_start_label': 'Установить время',
   'plan_bulk_edit_set_time_label': 'Установить время',
   'plan_bulk_edit_time_not_set': 'Без сдвига — меняется только дата',
   'plan_bulk_edit_time_reset': 'Сбросить время',
   'plan_bulk_edit_time_hint':
-      'У всех выбранных задач будет одно и то же время начала на выбранную дату. Если у задачи были начало и конец, сохраняется исходная длительность.',
+      'Задачи начинаются последовательно от выбранного времени без промежутков. Их длительность сохраняется.',
   'plan_bulk_edit_shift_section': 'Установить время',
   'plan_bulk_edit_shift_hint':
       'Сдвигает начало и конец на одно значение (без времени — от 09:00).',
