@@ -5,6 +5,52 @@ import 'package:counter/data/paths/path_repository.dart';
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'viktor_action_contract.dart';
 
+/// Change a single numbered nonempty line, preserving all other note blocks,
+/// existing media, metadata and unchanged formatting.
+class ViktorNoteLinePatch {
+  static NoteDocument apply(NoteDocument document, {
+    required int lineNumber,
+    required String expectedText,
+    required String replacement,
+  }) {
+    var seen = 0;
+    for (var blockIndex = 0; blockIndex < document.blocks.length; blockIndex++) {
+      final block = document.blocks[blockIndex];
+      if (!block.type.isTextual) continue;
+      final source = block.effectiveText;
+      var offset = 0;
+      for (final line in source.split('\n')) {
+        if (line.trim().isNotEmpty) {
+          seen++;
+          if (seen == lineNumber) {
+            if (line != expectedText) {
+              throw StateError('Строка изменилась после прочтения. '
+                  'Повторно откройте заметку.');
+            }
+            if (block.runs.length > 1) {
+              throw StateError('Внутри строки сложное форматирование. '
+                  'Автоматическая замена без потерь недоступна.');
+            }
+            final revised = source.replaceRange(
+                offset, offset + line.length, replacement);
+            final updatedBlock = block.copyWith(
+              text: revised,
+              runs: block.runs.length == 1
+                  ? [block.runs.single.copyWith(text: revised)]
+                  : const <NoteTextRun>[],
+            );
+            final blocks = [...document.blocks];
+            blocks[blockIndex] = updatedBlock;
+            return document.copyWith(blocks: blocks);
+          }
+        }
+        offset += line.length + 1;
+      }
+    }
+    throw StateError('Указанная строка не найдена в заметке.');
+  }
+}
+
 /// Brain-backed, owner-scoped app tools. No direct PocketBase writes or
 /// arbitrary code evaluation by the model.
 class ViktorDomainTools {
@@ -16,7 +62,7 @@ class ViktorDomainTools {
     'list_categories', 'create_category',
     'list_tags', 'create_tag', 'rename_tag',
     'list_backlog_items', 'set_list_item_done', 'rename_list_item',
-    'list_notes', 'search_notes', 'read_note', 'create_note', 'edit_note',
+    'list_notes', 'search_notes', 'read_note', 'create_note', 'edit_note', 'edit_note_line',
     'list_paths', 'create_path', 'get_settings', 'change_setting',
   };
   static const reads = <String>{
@@ -273,6 +319,23 @@ class ViktorDomainTools {
         }
         return 'Создать заметку «' + (a['title'] as String) +
             '» с текстом:\n' + (a['text'] as String);
+      case 'edit_note_line':
+        final note = await _note(
+          a['note_id'] as String, a['expected_title'] as String);
+        final edited = ViktorNoteLinePatch.apply(
+          db.parseNoteDocument(note),
+          lineNumber: a['line_number'] as int,
+          expectedText: a['expected_text'] as String,
+          replacement: a['text'] as String,
+        );
+        // The proposed preview carries a fingerprint of the WHOLE original
+        // document. The executor re-evaluates it before applying the write.
+        final originalVersion = (note.notesDeltaJson ?? '').hashCode
+            .toUnsigned(32).toRadixString(16);
+        return 'Заменить строку ${a['line_number']} в заметке «${note.title}» '
+            '(версия $originalVersion): «${a['expected_text']}» → '
+            '«${a['text']}». Остальной текст и вложения сохраняются. '
+            'Блоков: ${edited.blocks.length}.';
       case 'edit_note':
         final note = await _note(
           a['note_id'] as String, a['expected_title'] as String);
@@ -376,6 +439,21 @@ class ViktorDomainTools {
           notesPlain: text, notesDeltaJson: doc.encode()));
         if (!ok) throw StateError('Заметка не сохранена.');
         return 'Заметка создана.';
+      case 'edit_note_line':
+        final note = await _note(a['note_id'] as String,
+            a['expected_title'] as String);
+        final edited = ViktorNoteLinePatch.apply(db.parseNoteDocument(note),
+          lineNumber: a['line_number'] as int,
+          expectedText: a['expected_text'] as String,
+          replacement: a['text'] as String);
+        final ok = await db.updatePlanningTask(note.recordIdForBackend,
+          planBusinessId: note.planRowId,
+          notesPlain: edited.toPlainText(),
+          notesDeltaJson: edited.encode(),
+          suppressAppSnack: true);
+        if (!ok) throw StateError('Правка строки не сохранилась.');
+        return 'Строка ${a['line_number']} обновлена; остальные блоки '
+            'и вложения сохранены.';
       case 'edit_note':
         final note = await _note(a['note_id'] as String,
             a['expected_title'] as String);
