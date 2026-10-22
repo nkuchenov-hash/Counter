@@ -67,6 +67,29 @@ jobs:
         if: steps.freshness.outputs.fresh == 'true'
         run: flutter pub get
 
+      - name: Guard fast and recoverable LIFE OS web startup
+        if: steps.freshness.outputs.fresh == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path('web/index.html').read_text(encoding='utf-8')
+          entry = Path('lib/main.dart').read_text(encoding='utf-8')
+          deploy = Path('.github/workflows/deploy.yml').read_text(encoding='utf-8')
+          auth = Path('lib/data/auth_bridge.dart').read_text(encoding='utf-8')
+          assert 'apis.google.com/js/api.js" async' in html, 'Blocking Google API script'
+          assert 'caches.delete(' not in html, 'Unconditional browser cache purge'
+          assert 'lifeosBootstrapFailed' in html, 'Missing HTML bootstrap recovery'
+          assert '--no-web-resources-cdn' in deploy, 'Renderer depends on Google CDN'
+          before_app = entry.split('runApp(const DateTimeTrackerApp())', 1)[0]
+          assert 'AuthBridge.checkSession(' not in before_app, 'Blocking pre-first-frame auth'
+          assert 'ensurePocketBaseReady(' not in before_app, 'Blocking pre-first-frame database'
+          assert 'class _SlowStartupScreen' in entry, 'Infinite Flutter login spinner'
+          assert 'if (!kIsWeb)' in auth and 'await _storage.write(key: _profileIdKey, value: id);' in auth, 'Blocking web secure storage'
+          print('LIFE OS web startup invariants passed')
+          PY
+
       - name: Build LIFE OS web
         if: steps.freshness.outputs.fresh == 'true'
         run: |
