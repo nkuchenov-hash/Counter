@@ -22,6 +22,11 @@ routerAdd("POST", "/api/viktor/schedule/commit", function(e) {
   function sameMoment(a, b) {
     return Math.abs(epoch(a) - epoch(b)) < 1000;
   }
+  // `updated` is a concurrency token: a second edit within 1s must not
+  // pass stale-preview validation. Stored times can tolerate subsecond drift.
+  function sameRevision(a, b) {
+    return epoch(a) === epoch(b);
+  }
   const seen = new Set();
   const proposed = [];
   try {
@@ -78,7 +83,7 @@ routerAdd("POST", "/api/viktor/schedule/commit", function(e) {
         }
         if (p.getString("title") !== item.raw.expected_title ||
             p.getBool("is_done") !== item.raw.expected_is_done ||
-            !sameMoment(p.getString("updated"), item.raw.expected_updated) ||
+            !sameRevision(p.getString("updated"), item.raw.expected_updated) ||
             !sameMoment(p.getString("start_time"), item.raw.expected_start) ||
             !sameMoment(p.getString("end_time"), item.raw.expected_end)) {
           throw new Error("stale_plan");
