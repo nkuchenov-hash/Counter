@@ -171,7 +171,7 @@ class ViktorDomainTools {
     final found = rows.where((p) =>
       p.pocketRecordId == rowId &&
       p.startTime == null &&
-      (p.notesDeltaJson ?? '').isNotEmpty &&
+      p.hasNotes &&
       p.title.trim() == expectedTitle.trim()).toList();
     if (found.length != 1) {
       throw StateError('Заметка изменилась. Перечитайте её перед изменением.');
