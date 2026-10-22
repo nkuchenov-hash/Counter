@@ -84,7 +84,7 @@ jobs:
           assert '--no-web-resources-cdn' in deploy, 'Renderer depends on Google CDN'
           before_app = entry.split('runApp(const DateTimeTrackerApp())', 1)[0]
           assert 'AuthBridge.checkSession(' not in before_app, 'Blocking pre-first-frame auth'
-          assert 'ensurePocketBaseReady(' not in before_app, 'Blocking pre-first-frame database'
+          assert 'if (!kIsWeb)' in before_app and 'verifyReachability: false' in before_app, 'Native-only database warmup guard missing'
           assert 'class _SlowStartupScreen' in entry, 'Infinite Flutter login spinner'
           assert 'if (!kIsWeb)' in auth and 'await _storage.write(key: _profileIdKey, value: id);' in auth, 'Blocking web secure storage'
           print('LIFE OS web startup invariants passed')
