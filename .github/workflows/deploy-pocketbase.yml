@@ -65,37 +65,43 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - name: Check deployed SpeechKit routes without user credentials
+      - name: Diagnose deployed anonymous SpeechKit routes
         shell: bash
         run: |
           set -euo pipefail
-          for path in transcribe-yandex transcribe-yandex/status; do
+          failed=0
+          for path in transcribe transcribe-yandex transcribe-yandex/status; do
             output="$(mktemp)"
             code="$(curl -sS --max-time 8 --retry 2 -o "$output" -w '%{http_code}' \
               -X POST -H 'Content-Type: application/json' --data '{}' \
               "https://217-114-0-201.sslip.io/api/viktor/$path")"
-            if [[ "$code" != "401" ]]; then
-              # This request is anonymous. Print only bounded error metadata,
-              # never raw response bodies or authenticated transcription.
-              diagnosis="$(python3 - "$output" <<'PY'
-          import json, re, sys
+            # Anonymous JSON request. Show only bounded structural diagnostics.
+            diagnosis="$(python3 - "$output" <<'PY'
+          import json, os, re, sys
+          path=sys.argv[1]
+          size=os.path.getsize(path)
           try:
-              payload = json.load(open(sys.argv[1], encoding='utf-8'))
-              if not isinstance(payload, dict): raise ValueError()
-              fields = (payload.get('code'), payload.get('status'),
-                        payload.get('error'), payload.get('message'))
-              print(' '.join(str(x)[:100] for x in fields
-                             if isinstance(x, (str, int)) and
-                             re.fullmatch(r'[\\w\\s.:/-]{1,100}', str(x))))
+              payload=json.load(open(path,encoding='utf-8'))
+              if not isinstance(payload,dict): raise ValueError()
+              keys=','.join(sorted(str(k)[:30] for k in payload.keys()))
+              fields=(payload.get('code'),payload.get('status'),
+                      payload.get('error'),payload.get('message'))
+              safe=' '.join(str(x)[:100] for x in fields
+                  if isinstance(x,(str,int)) and
+                     re.fullmatch(r'[\\w\\s.:/-]{1,100}',str(x)))
+              print(f'bytes={size} keys={keys} fields={safe}')
           except Exception:
-              print('unstructured-response')
+              print(f'bytes={size} non-json')
           PY
               )"
-              echo "Yandex speech route $path returned HTTP $code, metadata: $diagnosis (expected 401)" >&2
-              exit 1
-            fi
+            echo "Anonymous route $path: HTTP $code, $diagnosis"
+            if [[ "$code" != "401" ]]; then failed=1; fi
             rm -f "$output"
           done
+          if [[ "$failed" != "0" ]]; then
+            echo 'SpeechKit anonymous route contract mismatch; release blocked.' >&2
+            exit 1
+          fi
 
   deploy:
     if: github.event_name != 'pull_request' && needs.validate.outputs.server_changed == 'true'
