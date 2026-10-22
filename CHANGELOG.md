@@ -1,7 +1,7 @@
 ## [2026-10-22] — P0: fast warm reload and recoverable web startup
 
 - Made the external Google API script asynchronous; a slow or unreachable `apis.google.com` can no longer stop HTML parsing and Flutter bootstrap.
-- Enabled `--no-web-resources-cdn` for Flutter Web and added build checks that the CanvasKit JavaScript/WASM assets ship with LIFE OS, avoiding required `gstatic.com` runtime access.
+- Enabled `--no-web-resources-cdn` and **explicitly override the generated Flutter loader** to use `canvasKitBaseUrl:"canvaskit/"`. Inspection of the previous deployed bootstrap showed that merely bundling CanvasKit did not stop fallback to `gstatic.com`. CI now checks the deployed bootstrap itself and the local CanvasKit JavaScript/WASM assets.
 - Removed redundant pre-`runApp` browser PocketBase initialization and secure session restore, and skipped repeated web secure-storage writes during valid cached-session checks. Kept native initialization unchanged.
 - When device settings are absent, hydrate from the locally persisted, valid signed-in PocketBase profile record before background server reconciliation; first-time logins without trusted local profile data still require server settings.
 - Added an 8-second recoverable Flutter startup screen and a 12-second HTML entrypoint failure state with retry; neither signs the user out or purges local data.
