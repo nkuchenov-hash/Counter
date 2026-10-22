@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `684f422c` on 2026-10-22.**
+**Generated from input HEAD `53aab1b9` on 2026-10-22.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 940 — each appears **exactly once** below.
+**Tracked files:** 941 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -28,7 +28,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | :--- | ---: |
 | `production UI` | 182 |
 | `test` | 131 |
-| `Brain/data` | 108 |
+| `Brain/data` | 109 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
 | `developer tool` | 63 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 505 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 247 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 248 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
 | `HISTORICAL_RECORD` | 17 |
@@ -69,7 +69,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Confidence | Count |
 | :--- | ---: |
 | `HIGH` | 857 |
-| `MEDIUM` | 83 |
+| `MEDIUM` | 84 |
 
 ---
 
@@ -13956,6 +13956,44 @@ RU:
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
 
+### `lib/data/ai/viktor_record_note_tools.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — viktor record note tools. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — viktor record note tools.
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`ViktorRecordNoteTools`).
+- **Key code names:** `ViktorRecordNoteTools`
+- **Repository role:** Brain/data
+- **Evidence of use:** Tracked Dart source; structural role inferred from path (no importer found in this scan).
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or future wiring; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** Brain/data
+- **Responsibilities:** viktor record note tools
+- **When to open:** When behavior tied to `viktor_record_note_tools.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** May break tooling or future wiring; verify before delete.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor record note tools
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — viktor_record_note_tools. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — viktor_record_note_tools.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `viktor_record_note_tools`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Отслеживаемый Dart; роль по пути (в этом скане импортеров не найдено).
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `viktor_record_note_tools`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_record_note_tools.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
 ### `lib/data/ai/viktor_schedule_planner.dart`
 
 EN:
@@ -15635,7 +15673,7 @@ EN:
 - **Contents:** Dart helpers and types (`PbAppApiRoutes`, `PbCollections`, `PbOauthProviderNames`).
 - **Key code names:** `PbAppApiRoutes`, `PbCollections`, `PbOauthProviderNames`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_voice_gateway.dart`, `lib/data/auth_bridge.dart`, `lib/data/calendar_integrations/calendar_integration_service.dart`, `lib/data/database_service.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_record_note_tools.dart`, `lib/data/ai/viktor_voice_gateway.dart`, `lib/data/auth_bridge.dart`, `lib/data/calendar_integrations/calendar_integration_service.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -15652,7 +15690,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `pb_config`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_voice_gateway.dart`, `lib/data/auth_bridge.dart`, `lib/data/calendar_integrations/calendar_integration_service.dart`, `lib/data/database_service.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_record_note_tools.dart`, `lib/data/ai/viktor_voice_gateway.dart`, `lib/data/auth_bridge.dart`, `lib/data/calendar_integrations/calendar_integration_service.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
