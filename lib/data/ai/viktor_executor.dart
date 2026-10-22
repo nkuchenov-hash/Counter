@@ -7,6 +7,7 @@ import 'viktor_date_scope.dart';
 import 'viktor_plan_category.dart';
 import 'viktor_existing_plan.dart';
 import 'viktor_plan_timezone.dart';
+import 'viktor_atomic_bulk_gateway.dart';
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -444,29 +445,12 @@ class ViktorExecutor {
       if (result.signature != _bulkSignature) {
         throw StateError('Планы изменились после подтверждения.');
       }
-      final patches = <PlanningBulkPatch>[
-        for (final m in result.moves)
-          PlanningBulkPatch(
-            planRowId: m.plan.recordIdForBackend,
-            planBusinessId: m.plan.planRowId,
-            startTimeDisplay: m.start,
-            endDateTimeDisplay: m.end,
-            initialDateKey: m.kind == 'move'
-              ? db.planningAuditAnchorDateKey(m.plan) : null,
-            isPostponed: m.kind == 'move'
-              ? db.planningShouldMarkPostponed(
-                  anchorKey: db.planningAuditAnchorDateKey(m.plan),
-                  newScheduleKey: m.day,
-                ) : null,
-          ),
-      ];
-      final ok = await db.bulkUpdatePlans(patches, suppressAppSnack: true);
-      if (!ok) {
-        throw StateError('Не все изменения сохранены. Проверьте оба дня '
-            'перед повторной попыткой.');
-      }
-      return 'Изменено планов: ${result.moves.length}. '
-          'Проверьте синхронизацию.';
+      // One atomic server transaction and independent post-commit read.
+      // NEVER fall back to a sequence of per-plan PATCH calls.
+      return ViktorAtomicBulkGateway(db).commit(
+        approved: result,
+        requestId: batch.requestId,
+      );
     }
     final scheduleDay = ViktorDateScope.scheduleDay(batch, day);
     final plans = await db.getPlanningTasksForWallDate(scheduleDay);
