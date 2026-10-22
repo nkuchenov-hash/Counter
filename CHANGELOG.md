@@ -1,3 +1,10 @@
+## [2026-10-22] — Viktor bulk clock and redundant read repair (pending deployment)
+
+- Fix status-filtered `bulk_replan` proposals rejected for unambiguous `start_time` spellings such as `9:00`, `9 утра`, `09:00:00`, or `09:00 NY`. Normalize to strict `HH:mm` and an explicit New York timezone where present; reject ambiguous, missing, conflicting or invalid times.
+- When the model accidentally emits `list_day_plans` for only the source/target days together with exactly one `bulk_replan`, normalize to the protected single bulk action. Do not silently drop unrelated reads or additional writes.
+- Strengthen Yandex instructions to emit a single bulk action with canonical clock/timezone fields. Preserve Brain fresh-state loading, conflict rejection and explicit approval before writes.
+- Add contract tests for exact 21-to-22 October user scenario, negative cases and serialization. No live user's plans have been changed or tested.
+
 ## [2026-10-22] — Viktor read-to-write bulk handoff (pending production verification)
 
 - Fix provider `continue:true` with a valid mutation: the app no longer rejects it as an invalid read-only observation. Final `bulk_replan` proceeds to Brain's independent two-day preview and confirmation.
