@@ -151,6 +151,12 @@ class ViktorExecutor {
     // Multi-row schedule recalculation and record timers still require an
     // isolated operation: their writes are not atomic with other domains.
     final mutations = batch.actions.where((a) => a.isMutation).toList();
+    if (batch.actions.any((a) => a.name == 'bulk_replan') &&
+        batch.actions.any((a) => a.name != 'bulk_replan' &&
+            a.name != 'list_day_plans')) {
+      throw StateError('Групповой перенос нельзя объединять с другими '
+          'изменениями. Планы не изменены.');
+    }
     if (mutations.length > 1 &&
         mutations.any((a) =>
             !ViktorDomainTools.names.contains(a.name) &&
@@ -211,12 +217,33 @@ class ViktorExecutor {
       ].join('\n');
     }
     if (batch.actions.any((a) => a.name == 'bulk_replan')) {
-      if (batch.actions.length != 1) {
-        throw StateError('Групповая операция должна выполняться отдельно.');
-      }
-      final preview = await _planBulk(batch.actions.single);
+      final bulk = batch.actions.singleWhere(
+          (action) => action.name == 'bulk_replan');
+      final preview = await _planBulk(bulk);
       _bulkSignature = preview.signature;
-      return preview.describe();
+      final readLines = <String>[];
+      for (final read in batch.actions.where(
+          (action) => action.name == 'list_day_plans')) {
+        final requestedDay = read.arguments['wall_day'] as String;
+        final readPlans = await db.getPlanningTasksForWallDate(
+            ViktorDateScope.parseDay(requestedDay));
+        final ordered = [...readPlans]..sort((a, b) =>
+            (a.startTime ?? DateTime(2099)).compareTo(
+                b.startTime ?? DateTime(2099)));
+        if (ordered.isEmpty) readLines.add('На $requestedDay планов нет.');
+        for (final plan in ordered) {
+          final t = plan.startTime;
+          final clock = t == null ? '—' :
+              '${t.hour.toString().padLeft(2, '0')}:'
+              '${t.minute.toString().padLeft(2, '0')}';
+          readLines.add('$requestedDay $clock  ${plan.title}');
+        }
+      }
+      return [
+        if (readLines.isNotEmpty) ...readLines,
+        if (readLines.isNotEmpty) '',
+        preview.describe(),
+      ].join('\n');
     }
     final scheduleDay = ViktorDateScope.scheduleDay(batch, day);
     final plans = await db.getPlanningTasksForWallDate(scheduleDay);
@@ -337,8 +364,7 @@ class ViktorExecutor {
     final approvedInsertionSignature = _insertionSignature;
     final fresh = await describe(batch, day);
     if (fresh != approvedPreview ||
-        (batch.actions.length == 1 &&
-         batch.actions.single.name == 'bulk_replan' &&
+        (batch.actions.any((a) => a.name == 'bulk_replan') &&
          approvedSignature != _bulkSignature) ||
         (batch.actions.length == 1 &&
          _isPriorityInsertion(batch.actions.single) &&
@@ -398,9 +424,10 @@ class ViktorExecutor {
       return '${_creationReceipt(action, created)} '
           'Сдвинуто планов: ${placement.shifted.length}.';
     }
-    if (batch.actions.length == 1 &&
-        batch.actions.single.name == 'bulk_replan') {
-      final result = await _planBulk(batch.actions.single);
+    if (batch.actions.any((a) => a.name == 'bulk_replan')) {
+      final bulk = batch.actions.singleWhere(
+          (action) => action.name == 'bulk_replan');
+      final result = await _planBulk(bulk);
       if (result.signature != _bulkSignature) {
         throw StateError('Планы изменились после подтверждения.');
       }

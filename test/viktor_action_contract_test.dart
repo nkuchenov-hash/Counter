@@ -395,6 +395,62 @@ void main() {
       expect(multipleBulk.actions.length, 2);
     });
 
+
+    test('bulk accepts explicit morning clock variants without guessing', () {
+      for (final raw in ['9', '09:00', '9.00', '9 утра', 'в 9 утра',
+                         '09:00 NY', '9 часов по нью-йорку']) {
+        final parsed = ViktorAction.fromJson(action('bulk_replan', {
+          'operations': [
+            {'kind': 'move', 'status': 'incomplete',
+             'source_day': '2026-10-21', 'target_day': '2026-10-22',
+             'start_time': raw}
+          ],
+        }));
+        final op = ((parsed.arguments['operations'] as List).single as Map);
+        expect(op['start_time'], '09:00', reason: raw);
+      }
+      for (final unsafe in ['утром', 'после завтрака', '32', '9:70']) {
+        expect(() => ViktorAction.fromJson(action('bulk_replan', {
+          'operations': [
+            {'kind': 'move', 'status': 'incomplete',
+             'source_day': '2026-10-21', 'target_day': '2026-10-22',
+             'start_time': unsafe}
+          ],
+        })), throwsFormatException, reason: unsafe);
+      }
+    });
+
+    test('strips extra date reads from a bulk proposal, but not edits', () {
+      final bulk = action('bulk_replan', {'operations': [
+        {'kind': 'move', 'status': 'incomplete',
+         'source_day': '2026-10-21', 'target_day': '2026-10-22',
+         'start_time': '09:00'},
+      ]});
+      final parsed = ViktorActionBatch.fromJson(batch([
+        action('list_day_plans', {'wall_day': '2026-10-20'}),
+        action('list_day_plans', {'wall_day': '2026-10-21'}),
+        bulk,
+      ]));
+      expect(parsed.actions.length, 2,
+        reason: 'An unrelated day read must stay visible in the preview');
+      expect(parsed.actions.first.name, 'list_day_plans');
+      expect(parsed.actions.first.arguments['wall_day'], '2026-10-20');
+      expect(parsed.actions.last.name, 'bulk_replan');
+      final mixed = ViktorActionBatch.fromJson(batch([
+        action('create_tag', {'name': 'Example', 'domain': 'plan'}),
+        bulk,
+      ]));
+      expect(mixed.actions.length, 2,
+        reason: 'Never silently remove unrelated writes');
+      final relevantOnly = ViktorActionBatch.fromJson(batch([
+        action('list_day_plans', {'wall_day': '2026-10-21'}),
+        bulk,
+        action('list_day_plans', {'wall_day': '2026-10-22'}),
+      ]));
+      expect(relevantOnly.actions.length, 1,
+          reason: 'Brain independently reloads the actual source and target');
+      expect(relevantOnly.actions.single.name, 'bulk_replan');
+    });
     test('rejects oversized, empty and unsupported batches', () {
       expect(() => ViktorActionBatch.fromJson(batch([])),
           throwsFormatException);

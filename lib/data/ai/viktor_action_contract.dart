@@ -335,15 +335,20 @@ class ViktorActionBatch {
       final bulk = bulkActions.single;
       final dates = <String>{};
       for (final item in bulk.arguments['operations'] as List) {
-        final op = item as Map;
-        dates.add(op['source_day'] as String);
-        if (op['kind'] == 'move') dates.add(op['target_day'] as String);
+        final operation = item as Map;
+        dates.add(operation['source_day'] as String);
+        if (operation['kind'] == 'move') {
+          dates.add(operation['target_day'] as String);
+        }
       }
-      final extras = parsed.where((action) => action != bulk);
-      if (extras.every((action) =>
-          action.name == 'list_day_plans' &&
-          dates.contains(action.arguments['wall_day']))) {
-        return ViktorActionBatch._(id, [bulk]);
+      final extras = parsed.where((action) => action != bulk).toList();
+      if (extras.every((action) => action.name == 'list_day_plans')) {
+        // Reads of source/target are redundant: Brain reloads them for
+        // preview/apply. Preserve unrelated reads that the user may have
+        // explicitly requested, and let the executor display them safely.
+        final independentReads = extras.where((action) =>
+            !dates.contains(action.arguments['wall_day'])).toList();
+        return ViktorActionBatch._(id, [...independentReads, bulk]);
       }
     }
     return ViktorActionBatch._(id, parsed);
@@ -437,7 +442,10 @@ String _bulkClock(Map<String, Object?> operation, String key) {
   if (raw is! String || raw.isEmpty || raw.length > 48) {
     throw FormatException('Invalid $key');
   }
-  var text = raw.trim().toLowerCase();
+  var text = raw.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+  // Normalize explicit clock notations only. Unclear times still fail.
+  text = text.replaceFirst(RegExp(r'^в\s+'), '');
+  text = text.replaceAll('a.m.', 'am').replaceAll('p.m.', 'pm');
   final ny = RegExp(
     r'\s*(?:\(?\s*(?:по\s+)?(?:ny|new york|нью[\s-]?йорку|нью[\s-]?йорк)\s*\)?)$',
     caseSensitive: false,
@@ -452,8 +460,9 @@ String _bulkClock(Map<String, Object?> operation, String key) {
     operation['timezone'] = 'America/New_York';
     text = text.substring(0, ny.start).trim();
   }
+  text = text.replaceFirst(RegExp(r'\s+(?:часов|часа|час)$'), '');
   final parsed = RegExp(
-    r'^(\d{1,2})(?::(\d{2}))?(?::00)?(?:\s*(am|pm|утра|вечера))?$',
+    r'^(\d{1,2})(?:(?::|\.)(\d{1,2}))?(?::00)?(?:\s*(am|pm|утра|вечера))?$',
   ).firstMatch(text);
   if (parsed == null) throw FormatException('Invalid $key');
   var hour = int.parse(parsed.group(1)!);
