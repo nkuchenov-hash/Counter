@@ -4,6 +4,7 @@
 - When the model accidentally emits `list_day_plans` for only the source/target days together with exactly one `bulk_replan`, normalize to the protected single bulk action. Do not silently drop unrelated reads or additional writes.
 - Strengthen Yandex instructions to emit a single bulk action with canonical clock/timezone fields. Preserve Brain fresh-state loading, conflict rejection and explicit approval before writes.
 - Add contract tests for exact 21-to-22 October user scenario, negative cases and serialization. No live user's plans have been changed or tested.
+- A trailing explicit `отмена` / `cancel` (including repeated dictation) cancels the entire pending command locally, before any model or write action.
 
 ## [2026-10-22] — Viktor read-to-write bulk handoff (pending production verification)
 
