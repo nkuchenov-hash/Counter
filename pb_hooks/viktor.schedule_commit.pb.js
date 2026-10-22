@@ -35,7 +35,8 @@ routerAdd("POST", "/api/viktor/schedule/commit", function(e) {
         "start_time", "end_time", "initial_date_key", "is_postponed"]);
       if (keys.some(k => !allowed.has(k))) throw new Error("invalid_patch_field");
       if (typeof raw.id !== "string" || !/^[a-zA-Z0-9]{15}$/.test(raw.id) ||
-          !seen.add(raw.id)) throw new Error("duplicate_or_invalid_id");
+          seen.has(raw.id)) throw new Error("duplicate_or_invalid_id");
+      seen.add(raw.id);
       if (typeof raw.expected_title !== "string" ||
           typeof raw.expected_is_done !== "boolean") {
         throw new Error("missing_original_fields");
