@@ -144,6 +144,37 @@ class ViktorAction {
         }
         // All downstream preview/Brain paths receive one canonical form.
         args['operations'] = canonicalOperations;
+      case 'search_notes':
+        _onlyKeys(args, const {'query', 'year', 'month', 'limit'});
+        if (args.containsKey('query')) {
+          _text(args, 'query', maxLength: 160);
+        }
+        if (args.containsKey('year')) {
+          final year = args['year'];
+          if (year is! int || year < 1970 || year > 2100) {
+            throw const FormatException('Invalid note search year');
+          }
+        }
+        if (args.containsKey('month')) {
+          final month = args['month'];
+          if (!args.containsKey('year') ||
+              month is! int || month < 1 || month > 12) {
+            throw const FormatException('Invalid note search month');
+          }
+        }
+        if (args.containsKey('limit')) {
+          final limit = args['limit'];
+          if (limit is! int || limit < 1 || limit > 30) {
+            throw const FormatException('Invalid note search limit');
+          }
+        }
+        if ((args['query'] as String? ?? '').trim().isEmpty &&
+            !args.containsKey('year')) {
+          throw const FormatException('Note search requires text or year');
+        }
+      case 'read_note':
+        _onlyKeys(args, const {'note_id'});
+        _id(args, 'note_id');
       case 'list_categories':
       case 'list_backlog_items':
       case 'list_notes':
