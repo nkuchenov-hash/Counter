@@ -67,12 +67,33 @@ const sandbox = {
     }
   }
 };
-vm.runInNewContext(
-  fs.readFileSync('pb_hooks/viktor.transcribe_yandex.pb.js', 'utf8'),
-  sandbox, {timeout: 3000}
-);
-const start = routes['/api/viktor/transcribe-yandex'];
-const status = routes['/api/viktor/transcribe-yandex/status'];
+// PocketBase runs every route handler in a fresh isolated VM. Rehydrate the
+// captured function source without the top-level declarations so that helpers
+// must be explicitly required inside the callback.
+const hookSource = fs.readFileSync('pb_hooks/viktor.transcribe_yandex.pb.js', 'utf8');
+assert.doesNotMatch(hookSource, /^function viktorYandexSpeechAuth/m);
+assert.doesNotMatch(hookSource, /^function viktorYandexSpeechFrames/m);
+vm.runInNewContext(hookSource, sandbox, {timeout: 3000});
+function isolatedHandler(handler) {
+  const host = {
+    ...sandbox,
+    __hooks: 'pb_hooks',
+    // Requiring CommonJS modules in the callback is the PocketBase-supported
+    // way to share reusable logic across isolated route contexts.
+    require(name) {
+      assert.equal(name, 'pb_hooks/viktor_yandex_speech_helpers.js');
+      const module = {exports: {}};
+      const helperSource = fs.readFileSync(name, 'utf8');
+      vm.runInNewContext(helperSource, {...sandbox, module, Buffer},
+        {timeout: 3000});
+      return module.exports;
+    }
+  };
+  return vm.runInNewContext('(' + handler.toString() + ')', host,
+    {timeout: 3000});
+}
+const start = isolatedHandler(routes['/api/viktor/transcribe-yandex']);
+const status = isolatedHandler(routes['/api/viktor/transcribe-yandex/status']);
 assert.equal(typeof start, 'function');
 assert.equal(typeof status, 'function');
 
