@@ -484,7 +484,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     }
     return 'Не удалось подтвердить сохранение: $value';
   }
-
   Future<void> _openSettings() async {
     if (!_settingsReady) await _loadSettings();
     try {
@@ -809,7 +808,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     folderCtrl.dispose();
     speechKeyCtrl.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
