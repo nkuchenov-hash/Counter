@@ -36,6 +36,18 @@ void main() {
       needsMoreContext: true, hasActions: false, hasMutations: false), isFalse);
   });
 
+  test('Poem question searches then reads instead of stopping at titles', () {
+    expect(ViktorReadAnswer.isDirectDayListResult(
+      input: 'Найди стихотворение января 2023, какая третья строка?',
+      toolNames: ['search_notes']), isFalse);
+    expect(ViktorReadAnswer.isDirectDayListResult(
+      input: 'Какие сегодня планы',
+      toolNames: ['list_day_plans']), isTrue);
+    expect(ViktorReadAnswer.isDirectDayListResult(
+      input: 'Найди старую заметку',
+      toolNames: ['search_notes', 'read_note']), isFalse);
+  });
+
   test('A simple read request ends after first successful observation', () {
     expect(ViktorReadAnswer.isReadOnlyRequest(
       'Покажи мой план AGE Solutions – ADD SIN на пятницу'), isTrue);
