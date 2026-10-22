@@ -5,6 +5,7 @@
 - Confirmed live failure: both Yandex PocketBase routes answered anonymous requests with HTTP 400 `{data,message,status}` instead of the hook's expected HTTP 401, while the non-Yandex transcription route correctly returned 401.
 - Root cause: PocketBase route callbacks run in isolated JavaScript contexts; top-level `viktorYandexSpeechAuth`/`viktorYandexSpeechFrames` were invisible inside callbacks. Extracted pure helpers to CommonJS and `require` them inside each route callback.
 - The Yandex hook test now rehydrates each route in its own clean VM; production post-deploy smoke verifies both routes return HTTP 401 unauthenticated. Prior pre-deploy PR smoke exposed the defect but cannot be an acceptance gate before deployment.
+- Root-cause acceptance requires BOTH isolated-handler tests and authenticated on-account microphone transcription. HTTP 401 endpoint smoke alone does not establish functioning Yandex STT.
 - This patch does not claim a live authenticated SpeechKit transcription or user-schedule success. Await CI and on-account verification.
 
 ## [2026-10-22] — P0: fast warm reload and recoverable web startup
