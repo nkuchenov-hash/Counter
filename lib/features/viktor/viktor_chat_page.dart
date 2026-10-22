@@ -211,8 +211,9 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         // search_notes -> read_note -> grounded answer. Do not prematurely
         // terminate multi-step retrieval just because the user's intent
         // is read-only. Direct day listing is the only legacy fast path.
-        if (ViktorReadAnswer.isReadOnlyRequest(input) &&
-            proposed.actions.every((a) => a.name == 'list_day_plans')) {
+        if (ViktorReadAnswer.isDirectDayListResult(
+            input: input,
+            toolNames: proposed.actions.map((a) => a.name).toList())) {
           _push(latestReadAnswer);
           return;
         }
