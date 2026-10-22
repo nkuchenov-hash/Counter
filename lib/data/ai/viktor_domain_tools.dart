@@ -16,12 +16,12 @@ class ViktorDomainTools {
     'list_categories', 'create_category',
     'list_tags', 'create_tag', 'rename_tag',
     'list_backlog_items', 'set_list_item_done', 'rename_list_item',
-    'list_notes', 'create_note', 'edit_note',
+    'list_notes', 'search_notes', 'read_note', 'create_note', 'edit_note',
     'list_paths', 'create_path', 'get_settings', 'change_setting',
   };
   static const reads = <String>{
     'list_categories', 'list_tags', 'list_backlog_items',
-    'list_notes', 'list_paths', 'get_settings',
+    'list_notes', 'search_notes', 'read_note', 'list_paths', 'get_settings',
   };
 
   CategoryRule? _category(String? rowId) {
@@ -37,6 +37,86 @@ class ViktorDomainTools {
       db.fetchTagsForCurrentUser(
         scope: domain == 'list' ? TagCatalogScope.list : TagCatalogScope.plan,
       );
+
+  Future<List<PlanningTask>> _searchableNotes() async {
+    // The same Brain-owned collection and owner filter as the Notes library.
+    // Hydrate system creation timestamps; never infer dates from title text.
+    await db.ensureNoteTimestampsHydrated();
+    final rows = await db.fetchBacklogPlans(
+        categoryId: null, includeCompleted: true);
+    return rows.where((p) => p.pocketRecordId != null &&
+        p.startTime == null && p.hasNotes).toList();
+  }
+
+  Future<String> _searchNotes(Map<String, Object?> args) async {
+    final search = (args['query'] as String? ?? '').toLowerCase().trim();
+    final year = args['year'] as int?;
+    final month = args['month'] as int?;
+    final limit = args['limit'] as int? ?? 20;
+    final notes = await _searchableNotes();
+    final found = notes.where((p) {
+      final created = p.createdAt?.toLocal();
+      if (year != null && (created == null || created.year != year)) {
+        return false;
+      }
+      if (month != null && created?.month != month) return false;
+      if (search.isEmpty) return true;
+      return p.title.toLowerCase().contains(search) ||
+          (p.notesPlain ?? '').toLowerCase().contains(search);
+    }).toList()
+      ..sort((a, b) => (b.createdAt ?? DateTime(0))
+          .compareTo(a.createdAt ?? DateTime(0)));
+    if (found.isEmpty) {
+      return 'Совпадений среди доступных заметок нет. '
+          'Дата определяется по дате создания, а не по заголовку. '
+          'Если документ находится в записи или другом разделе, '
+          'потребуется поиск по тому разделу.';
+    }
+    final result = found.take(limit).map((p) {
+      final created = p.createdAt?.toLocal().toIso8601String().substring(0, 10)
+          ?? 'неизвестно';
+      final summary = (p.notesPlain ?? '')
+          .replaceAll(RegExp(r'\\s+'), ' ').trim();
+      final snippet = summary.length > 170
+          ? '${summary.substring(0, 170)}…' : summary;
+      return 'id=${p.pocketRecordId}; создано=$created; '
+          'название=${p.title}; отрывок=$snippet';
+    }).join('\n');
+    final more = found.length > limit
+        ? '\nПоказаны первые $limit из ${found.length}; '
+          'уточните период или поисковую фразу.' : '';
+    return 'Найдено заметок: ${found.length}.\n$result$more';
+  }
+
+  Future<String> _readNote(String id) async {
+    final found = (await _searchableNotes())
+        .where((p) => p.pocketRecordId == id).toList();
+    if (found.length != 1) {
+      return 'Заметка не найдена или недоступна в текущем аккаунте.';
+    }
+    final note = found.single;
+    final blocks = db.parseNoteDocument(note).blocks;
+    final lines = <String>[];
+    for (final block in blocks) {
+      if (!block.type.isTextual) {
+        lines.add('[Вложение ${block.type.name}, не текст]');
+        continue;
+      }
+      for (final rawLine in block.effectiveText.split('\n')) {
+        if (rawLine.trim().isNotEmpty) {
+          lines.add('${lines.where((l) => l.startsWith('Строка ')).length + 1 == 0 ? '' : ''}'
+              'Строка ${lines.where((l) => l.startsWith('Строка ')).length + 1}: $rawLine');
+        }
+      }
+    }
+    final content = lines.join('\n');
+    final shown = content.length > 7500 ? content.substring(0, 7500) : content;
+    return 'Заметка «${note.title}», id=$id, '
+        'создана=${note.createdAt?.toLocal().toIso8601String() ?? 'неизвестно'}.'
+        '\nНумерация только непустых текстовых строк:\n$shown'
+        '${shown.length < content.length ? '\n[Текст обрезан; нельзя '
+           'уверенно отвечать о скрытых строках.]' : ''}';
+  }
 
   Future<PlanningTask> _note(String rowId, String expectedTitle) async {
     final rows = await db.fetchBacklogPlans(categoryId: null,
@@ -137,6 +217,10 @@ class ViktorDomainTools {
           a['item_id'] as String, a['expected_title'] as String);
         return 'Переименовать «' + item.title + '» в «' +
             (a['title'] as String) + '».';
+      case 'search_notes':
+        return _searchNotes(a);
+      case 'read_note':
+        return _readNote(a['note_id'] as String);
       case 'list_notes':
         final rows = await db.fetchBacklogPlans(
           categoryId: null, includeCompleted: true);
