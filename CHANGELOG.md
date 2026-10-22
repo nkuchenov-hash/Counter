@@ -1,10 +1,10 @@
-## [2026-10-22] — Viktor V2 groundwork: history, historical Notes and precise edits (NOT released)
+## [2026-10-22] — Viktor V2 agent groundwork (PR #337 — unmerged, NOT released)
 
-- Introduce owner-scoped `search_notes` (title/plain content, year, month) and `read_note` (numbered nonempty document lines) so Viktor can answer exact questions grounded in historic Notes.
-- Add `edit_note_line` with exact prior text match and media/metadata-preserving single-line edit; require normal Brain preview, fresh revalidation and consent.
-- Forward recent conversation turns for follow-up references and weekend **discussion only**. Context is bounded and currently in-memory; no cross-session assistant memory is claimed.
-- Document the full agent V2 release contract (global retrieval including Records, durable conversations, alternative weekend drafts and atomic multi-day commit, post-save verification) in `docs/VIKTOR_AGENT_V2.md`.
-- **No claim of a completed agent**: historic Record search, durable memory and reliable weekend draft commits remain outside this change. Do not publish or advertise full readiness without authenticated end-to-end acceptance.
+- Add owner-scoped, append-only `viktor_turns` for cross-session/cross-device conversation history. Client restores recent messages and persists turns without overwriting a second device's changes; provider receives at most 12 recent bounded turns, not credentials.
+- Add `search_notes`, `read_note`, `search_record_notes` and `read_record_note` so Viktor can locate dated historic texts in Notes **and** Records and quote exact numbered lines after reading a source.
+- Add `edit_note_line` with exact old-text checks, rich formatting/media preservation and normal Brain preview, freshness and consent. Editing text inside historic Record notes is not yet available.
+- Guard exact-line questions against prematurely stopping on search snippets, test owner isolation/schema and multi-turn context, document acceptance gates in `docs/VIKTOR_AGENT_V2.md`.
+- **NOT finished:** permanent semantic memory beyond the preserved history, versioned weekend draft choices and atomic multi-day itinerary commit, and real authenticated two-session smoke tests. No production release or full-readiness claim.
 
 ## [2026-10-22] — Viktor bulk move clock/read contract (pending production verification)
 
