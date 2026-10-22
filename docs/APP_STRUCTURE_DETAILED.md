@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `53aab1b9` on 2026-10-22.**
+**Generated from input HEAD `d19c5dbf` on 2026-10-22.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 505 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 248 |
+| `PROVEN_REQUIRED` | 506 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 247 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 857 |
-| `MEDIUM` | 84 |
+| `HIGH` | 858 |
+| `MEDIUM` | 83 |
 
 ---
 
@@ -13960,21 +13960,21 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain helper for data/sync — viktor record note tools. Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What this is:** Brain helper for data/sync — viktor record note tools.
+- **Human purpose:** Brain helper for data/sync — Owner-scoped historical Record note retrieval by actual creation date and content, never raw database writes. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Owner-scoped historical Record note retrieval by actual creation date and content, never raw database writes.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
 - **Contents:** Dart helpers and types (`ViktorRecordNoteTools`).
 - **Key code names:** `ViktorRecordNoteTools`
 - **Repository role:** Brain/data
-- **Evidence of use:** Tracked Dart source; structural role inferred from path (no importer found in this scan).
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** May break tooling or future wiring; verify before delete.
-- **Confidence:** MEDIUM
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_domain_tools.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** viktor record note tools
+- **Responsibilities:** Owner-scoped historical Record note retrieval by actual creation date and content, never raw database writes
 - **When to open:** When behavior tied to `viktor_record_note_tools.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** May break tooling or future wiring; verify before delete.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor record note tools
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Owner-scoped historical Record note retrieval by actual creation date and content, never raw database writes
 
 RU:
 
@@ -13983,10 +13983,10 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `viktor_record_note_tools`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Отслеживаемый Dart; роль по пути (в этом скане импортеров не найдено).
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
-- **Уверенность:** MEDIUM
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_domain_tools.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
 - **Владелец / слой:** Brain/data
 - **Обязанности:** Поддерживает операции данных в `viktor_record_note_tools`.
 - **Когда открывать:** Когда ломается поведение, связанное с `viktor_record_note_tools.dart`.
