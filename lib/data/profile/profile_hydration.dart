@@ -300,6 +300,29 @@ extension ProfileHydrationExtension on DatabaseService {
       unawaited(_fetchAndApplyProfileFromServer(afterCacheBoot: true));
       return;
     }
+    // The authenticated PocketBase record is already persisted locally.
+    // When a device-side settings cache is missing (old install, cleared
+    // preferences), use the exact signed-in profile record before waiting
+    // on the server. A mandatory network fetch would block the whole app for
+    // up to 15 seconds even though the user has valid local credentials.
+    final stored = _pocketBase?.authStore.record;
+    if (stored != null &&
+        stored.data['user_id']?.toString().trim().isNotEmpty == true &&
+        stored.data['preferred_timezone'] is String) {
+      try {
+        final data = Map<String, dynamic>.from(stored.data)
+          ..['id'] = stored.id;
+        _profilePbRecordId = stored.id;
+        _applyProfileFromPbMap(data);
+        // Network verification still runs after this cached first paint.
+        unawaited(_fetchAndApplyProfileFromServer(afterCacheBoot: true));
+        return;
+      } catch (e) {
+        DatabaseService._log('PROFILE_AUTH_CACHE_FALLBACK_FAILED: $e');
+      }
+    }
+    // First sign-in without any trusted local profile data must still fetch
+    // authoritative account settings before showing user-owned plans.
     await _fetchAndApplyProfileFromServer(afterCacheBoot: false);
     await _mirrorProfileSettingsToDeviceCache();
   }
