@@ -11,6 +11,7 @@ import 'package:counter/data/ai/viktor_voice_gateway.dart';
 import 'package:counter/data/ai/viktor_voice_recorder.dart';
 import 'package:counter/data/ai/viktor_voice_error.dart';
 import 'package:counter/data/ai/viktor_read_answer.dart';
+import 'package:counter/data/ai/viktor_conversation_store.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
@@ -28,17 +29,13 @@ class ViktorChatPage extends StatefulWidget {
   State<ViktorChatPage> createState() => _ViktorChatPageState();
 }
 
-class _ViktorMessage {
-  const _ViktorMessage(this.text, {this.mine = false});
-  final String text;
-  final bool mine;
-}
-
 class _ViktorChatPageState extends State<ViktorChatPage> {
   final _controller = TextEditingController();
   final _recorder = ViktorVoiceRecorder();
   final _voiceGateway = const ViktorVoiceGateway();
-  final _messages = <_ViktorMessage>[];
+  final _messages = <ViktorDialogueTurn>[];
+  final _dialogueStore = ViktorConversationStore(DatabaseService.instance);
+  bool _dialogueLoaded = false;
   final _settings = ViktorModelSettings.instance;
   final _gateway = const ViktorGateway();
   bool _busy = false;
@@ -56,8 +53,8 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     super.initState();
     _recorder.addListener(_onRecorderChanged);
     unawaited(_loadSettings());
-    _messages.add(const _ViktorMessage(
-      'Я Виктор. Могу работать с планами, записями, заметками, '
+    _messages.add(const ViktorDialogueTurn(role: 'assistant',
+      content: 'Я Виктор. Могу работать с планами, записями, заметками, '
       'тегами, категориями, Путями и настройками LIFE OS. '
       'Опишите результат, а не последовательность нажатий. '
       'Перед изменениями я покажу план для подтверждения.',
@@ -74,16 +71,27 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       await _settings.loadCloudConnection();
       if (mounted) setState(() {
         _cloudConnectionError = null;
-        _settingsReady = true;
       });
     } catch (error) {
       if (mounted) setState(() {
         _cloudConnectionError = error.toString().replaceAll(
           'FormatException: ', '',
         );
-        _settingsReady = true;
       });
     }
+    try {
+      final earlier = await _dialogueStore.load();
+      if (mounted) setState(() {
+        _messages.addAll(earlier);
+        _dialogueLoaded = true;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _messages.add(
+        const ViktorDialogueTurn(role: 'assistant',
+          content: 'История разговора временно недоступна. '
+              'Новые реплики пока не сохраняются на сервере.')));
+    }
+    if (mounted) setState(() => _settingsReady = true);
   }
 
   @override
@@ -96,7 +104,19 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
 
   void _push(String value, {bool mine = false}) {
     if (!mounted) return;
-    setState(() => _messages.add(_ViktorMessage(value, mine: mine)));
+    final turn = ViktorDialogueTurn(
+        role: mine ? 'user' : 'assistant', content: value);
+    setState(() => _messages.add(turn));
+    if (_dialogueLoaded) {
+      unawaited(_dialogueStore.append(turn).catchError((Object _) {
+        if (mounted && _dialogueLoaded) setState(() {
+          _dialogueLoaded = false;
+          _messages.add(const ViktorDialogueTurn(role: 'assistant',
+            content: 'Не удалось сохранить историю разговора '
+                'в PocketBase. Текущие реплики доступны до закрытия окна.'));
+        });
+      }));
+    }
   }
 
   Future<void> _send() async {
@@ -111,18 +131,8 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     if (_listening || _transcribing || _startingMic) return;
     if (!mounted) return;
     _controller.clear();
-    // Preserve the preceding dialogue for references such as "choose option
-    // two" or "change Saturday". Never include the current message twice,
-    // greetings, or unbounded history in the model context.
-    final previousTurns = _messages.skip(1)
-        .where((message) => message.text.trim().isNotEmpty)
-        .map((message) => <String, String>{
-          'role': message.mine ? 'user' : 'assistant',
-          'content': message.text,
-        }).toList();
-    final dialogContext = previousTurns.length > 12
-        ? previousTurns.sublist(previousTurns.length - 12)
-        : previousTurns;
+    final dialogContext = ViktorDialogueTurn.modelContext(
+        _messages.skip(1));
     _push(input, mine: true);
     // Trailing voice command cancellation overrides any earlier instruction.
     if (ViktorReadAnswer.isExplicitCancellation(input)) {
@@ -146,7 +156,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         settings: _settings,
         selectedPlanIds: widget.selectedPlanIds,
         requestId: requestId,
-            conversationHistory: dialogContext,
+        conversationHistory: dialogContext,
       );
       // Some models emit continue:true even alongside a final mutation.
       // Never reject an authorized proposal solely due to that flag:
@@ -880,7 +890,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                       final message = _messages[_messages.length - 1 -
                           (index - offset)];
                       return Align(
-                        alignment: message.mine ? Alignment.centerRight :
+                        alignment: message.isUser ? Alignment.centerRight :
                             Alignment.centerLeft,
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 12),
@@ -888,14 +898,14 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 13),
                           decoration: BoxDecoration(
-                            color: message.mine ? scheme.primaryContainer :
+                            color: message.isUser ? scheme.primaryContainer :
                                 scheme.surfaceContainerLow,
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: SelectableText(message.text,
+                          child: SelectableText(message.content,
                             style: TextStyle(
                               fontSize: 16, height: 1.45,
-                              color: message.mine ? scheme.onPrimaryContainer :
+                              color: message.isUser ? scheme.onPrimaryContainer :
                                   scheme.onSurface,
                             )),
                         ),
