@@ -110,6 +110,12 @@ const stale = moves.map(p => ({...p}));
 stale[1].expected_updated='2026-10-21T10:00:00.000Z';
 assert.equal(call(stale).status,409);
 assert.equal(data[one].start_time,t1, 'stale row must rollback entire batch');
+const sameSecondStale = moves.map(p => ({...p}));
+sameSecondStale[1].expected_updated='2026-10-22T17:00:00.500Z';
+assert.equal(call(sameSecondStale).status,409,
+  'a row updated 500ms after the preview must invalidate approval');
+assert.equal(data[one].start_time,t1,
+  'subsecond stale approval must not write any plan');
 data[blocker] = {...data[one],
   title:'Another appointment',
   start_time:'2026-10-21T09:30:00.000Z',
