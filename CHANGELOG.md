@@ -4,7 +4,8 @@
 - Add `search_notes`, `read_note`, `search_record_notes` and `read_record_note` so Viktor can locate dated historic texts in Notes **and** Records and quote exact numbered lines after reading a source.
 - Add `edit_note_line` with exact old-text checks, rich formatting/media preservation and normal Brain preview, freshness and consent. Editing text inside historic Record notes is not yet available.
 - Guard exact-line questions against prematurely stopping on search snippets, test owner isolation/schema and multi-turn context, document acceptance gates in `docs/VIKTOR_AGENT_V2.md`.
-- **NOT finished:** permanent semantic memory beyond the preserved history, versioned weekend draft choices and atomic multi-day itinerary commit, and real authenticated two-session smoke tests. No production release or full-readiness claim.
+- Bulk moves now use an owner-scoped all-or-none PocketBase transaction with server-side stale-row and collision guards, category/tag/title/keep selectors and priority ordering. Client independently rechecks saved times.
+- **NOT finished:** semantic memory beyond the chat history, durable weekend draft alternatives with new event creation, and authenticated real-account multi-day acceptance tests. No production release or full-readiness claim.
 
 ## [2026-10-22] — Viktor bulk move clock/read contract (pending production verification)
 
