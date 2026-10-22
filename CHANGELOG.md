@@ -6,6 +6,7 @@
 - When device settings are absent, hydrate from the locally persisted, valid signed-in PocketBase profile record before background server reconciliation; first-time logins without trusted local profile data still require server settings.
 - Added an 8-second recoverable Flutter startup screen and a 12-second HTML entrypoint failure state with retry; neither signs the user out or purges local data.
 - Added CI startup contract guards so these specific blocking startup patterns cannot silently re-enter the release.
+- Synchronized release and PocketBase prerequisite workflow definitions onto GitHub's actual default branch (`gh-pages`), not merely `main`; previous deploys loaded the stale default-branch workflow and overwrote the local CanvasKit configuration. This commit retriggers the corrected release pipeline.
 - Source and deployment validation is required; live warm/cold-start timing on the user's actual connection remains unmeasured.
 
 ## [2026-10-21] — Viktor repeated read-loop and SpeechKit response repair (pending CI)
