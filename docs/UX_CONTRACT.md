@@ -16,6 +16,7 @@ This document defines how Life OS behaves when people interact with it. It is th
 - Speech/model clocks for `bulk_replan` may be canonically normalized only when unambiguous, e.g. `9:00` to `09:00`, `9 утра` to `09:00`, or `09:00 NY` into `09:00` + `America/New_York`. Missing, conflicting, nonsensical times are errors; never infer absent clocks.
 - A validated batch with exactly one `bulk_replan` plus `list_day_plans` reads restricted to the operation's source/target dates is semantically one bulk operation because the Brain reloads those dates itself. Do not drop unrelated reads or a second mutation. Multi-operation `bulk_replan.operations` inside ONE action remains supported and consent-gated.
 - Recompute and verify target-day collisions and protected category rules; show the full preview; require explicit confirmation before saving. A model's narrative never authorizes a write.
+- A dictated explicit cancellation at the end of a request overrides preceding move instructions; report no changes and do not call the model.
 
 ## Viktor read-to-write handoff (2026-10-22)
 
