@@ -457,6 +457,210 @@ String _bulkClock(Map<String, Object?> operation, String key) {
     operation['timezone'] = 'America/New_York';
     text = text.substring(0, ny.start).trim();
   }
+  text = text.replaceFirst(RegExp(r'\s+(?:часов|часа|час)
+    r'^(\d{1,2})(?:(?::|\.)(\d{1,2}))?(?::00)?(?:\s*(am|pm|утра|вечера))?$',
+  ).firstMatch(text);
+  if (parsed == null) throw FormatException('Invalid $key');
+  var hour = int.parse(parsed.group(1)!);
+  final minute = int.parse(parsed.group(2) ?? '0');
+  final suffix = parsed.group(3);
+  if (minute > 59) throw FormatException('Invalid $key');
+  if (suffix == 'am' || suffix == 'pm') {
+    if (hour < 1 || hour > 12) throw FormatException('Invalid $key');
+    hour = hour % 12 + (suffix == 'pm' ? 12 : 0);
+  } else if (suffix == 'утра' || suffix == 'вечера') {
+    if (hour < 1 || hour > 11) throw FormatException('Invalid $key');
+    if (suffix == 'вечера') hour += 12;
+  }
+  if (hour > 23) throw FormatException('Invalid $key');
+  final canonical = '${hour.toString().padLeft(2, '0')}:'
+      '${minute.toString().padLeft(2, '0')}';
+  operation[key] = canonical;
+  return _clock(operation, key);
+}
+
+String _clock(Map<String, Object?> args, String key) {
+  final value = _text(args, key, maxLength: 5);
+  if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(value)) {
+    throw FormatException('Invalid wall clock: $key');
+  }
+  final p = value.split(':').map(int.parse).toList();
+  if (p[0] > 23 || p[1] > 59) {
+    throw FormatException('Invalid wall clock: $key');
+  }
+  return value;
+}
+
+String _longText(Map<String, Object?> args, String key,
+    {int maxLength = 8000}) {
+  final value = args[key];
+  if (value is! String || value.trim().isEmpty || value.length > maxLength ||
+      value.contains(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'))) {
+    throw FormatException('Invalid $key');
+  }
+  return value;
+}
+), '');
+  text = text.replaceAll('a.m.', 'am').replaceAll('p.m.', 'pm');
+  final ny = RegExp(
+    r'\s*(?:\(?\s*(?:по\s+)?(?:ny|new york|нью[\s-]?йорку|нью[\s-]?йорк)\s*\)?)$',
+    caseSensitive: false,
+  ).firstMatch(text);
+  if (ny != null) {
+    final specified = (operation['timezone'] as String?)?.trim();
+    if (specified != null && specified.isNotEmpty &&
+        !const {'NY', 'ny', 'New York', 'new york',
+                'America/New_York'}.contains(specified)) {
+      throw const FormatException('Conflicting bulk timezone');
+    }
+    operation['timezone'] = 'America/New_York';
+    text = text.substring(0, ny.start).trim();
+  }
+  final parsed = RegExp(
+    r'^(\d{1,2})(?::(\d{2}))?(?::00)?(?:\s*(am|pm|утра|вечера))?$',
+  ).firstMatch(text);
+  if (parsed == null) throw FormatException('Invalid $key');
+  var hour = int.parse(parsed.group(1)!);
+  final minute = int.parse(parsed.group(2) ?? '0');
+  final suffix = parsed.group(3);
+  if (minute > 59) throw FormatException('Invalid $key');
+  if (suffix == 'am' || suffix == 'pm') {
+    if (hour < 1 || hour > 12) throw FormatException('Invalid $key');
+    hour = hour % 12 + (suffix == 'pm' ? 12 : 0);
+  } else if (suffix == 'утра' || suffix == 'вечера') {
+    if (hour < 1 || hour > 11) throw FormatException('Invalid $key');
+    if (suffix == 'вечера') hour += 12;
+  }
+  if (hour > 23) throw FormatException('Invalid $key');
+  final canonical = '${hour.toString().padLeft(2, '0')}:'
+      '${minute.toString().padLeft(2, '0')}';
+  operation[key] = canonical;
+  return _clock(operation, key);
+}
+
+String _clock(Map<String, Object?> args, String key) {
+  final value = _text(args, key, maxLength: 5);
+  if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(value)) {
+    throw FormatException('Invalid wall clock: $key');
+  }
+  final p = value.split(':').map(int.parse).toList();
+  if (p[0] > 23 || p[1] > 59) {
+    throw FormatException('Invalid wall clock: $key');
+  }
+  return value;
+}
+
+String _longText(Map<String, Object?> args, String key,
+    {int maxLength = 8000}) {
+  final value = args[key];
+  if (value is! String || value.trim().isEmpty || value.length > maxLength ||
+      value.contains(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'))) {
+    throw FormatException('Invalid $key');
+  }
+  return value;
+}
+,
+  ).firstMatch(text);
+  if (parsed == null) throw FormatException('Invalid $key');
+  var hour = int.parse(parsed.group(1)!);
+  final minute = int.parse(parsed.group(2) ?? '0');
+  final suffix = parsed.group(3);
+  if (minute > 59) throw FormatException('Invalid $key');
+  if (suffix == 'am' || suffix == 'pm') {
+    if (hour < 1 || hour > 12) throw FormatException('Invalid $key');
+    hour = hour % 12 + (suffix == 'pm' ? 12 : 0);
+  } else if (suffix == 'утра' || suffix == 'вечера') {
+    if (hour < 1 || hour > 11) throw FormatException('Invalid $key');
+    if (suffix == 'вечера') hour += 12;
+  }
+  if (hour > 23) throw FormatException('Invalid $key');
+  final canonical = '${hour.toString().padLeft(2, '0')}:'
+      '${minute.toString().padLeft(2, '0')}';
+  operation[key] = canonical;
+  return _clock(operation, key);
+}
+
+String _clock(Map<String, Object?> args, String key) {
+  final value = _text(args, key, maxLength: 5);
+  if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(value)) {
+    throw FormatException('Invalid wall clock: $key');
+  }
+  final p = value.split(':').map(int.parse).toList();
+  if (p[0] > 23 || p[1] > 59) {
+    throw FormatException('Invalid wall clock: $key');
+  }
+  return value;
+}
+
+String _longText(Map<String, Object?> args, String key,
+    {int maxLength = 8000}) {
+  final value = args[key];
+  if (value is! String || value.trim().isEmpty || value.length > maxLength ||
+      value.contains(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'))) {
+    throw FormatException('Invalid $key');
+  }
+  return value;
+}
+), '');
+  text = text.replaceAll('a.m.', 'am').replaceAll('p.m.', 'pm');
+  final ny = RegExp(
+    r'\s*(?:\(?\s*(?:по\s+)?(?:ny|new york|нью[\s-]?йорку|нью[\s-]?йорк)\s*\)?)$',
+    caseSensitive: false,
+  ).firstMatch(text);
+  if (ny != null) {
+    final specified = (operation['timezone'] as String?)?.trim();
+    if (specified != null && specified.isNotEmpty &&
+        !const {'NY', 'ny', 'New York', 'new york',
+                'America/New_York'}.contains(specified)) {
+      throw const FormatException('Conflicting bulk timezone');
+    }
+    operation['timezone'] = 'America/New_York';
+    text = text.substring(0, ny.start).trim();
+  }
+  final parsed = RegExp(
+    r'^(\d{1,2})(?::(\d{2}))?(?::00)?(?:\s*(am|pm|утра|вечера))?$',
+  ).firstMatch(text);
+  if (parsed == null) throw FormatException('Invalid $key');
+  var hour = int.parse(parsed.group(1)!);
+  final minute = int.parse(parsed.group(2) ?? '0');
+  final suffix = parsed.group(3);
+  if (minute > 59) throw FormatException('Invalid $key');
+  if (suffix == 'am' || suffix == 'pm') {
+    if (hour < 1 || hour > 12) throw FormatException('Invalid $key');
+    hour = hour % 12 + (suffix == 'pm' ? 12 : 0);
+  } else if (suffix == 'утра' || suffix == 'вечера') {
+    if (hour < 1 || hour > 11) throw FormatException('Invalid $key');
+    if (suffix == 'вечера') hour += 12;
+  }
+  if (hour > 23) throw FormatException('Invalid $key');
+  final canonical = '${hour.toString().padLeft(2, '0')}:'
+      '${minute.toString().padLeft(2, '0')}';
+  operation[key] = canonical;
+  return _clock(operation, key);
+}
+
+String _clock(Map<String, Object?> args, String key) {
+  final value = _text(args, key, maxLength: 5);
+  if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(value)) {
+    throw FormatException('Invalid wall clock: $key');
+  }
+  final p = value.split(':').map(int.parse).toList();
+  if (p[0] > 23 || p[1] > 59) {
+    throw FormatException('Invalid wall clock: $key');
+  }
+  return value;
+}
+
+String _longText(Map<String, Object?> args, String key,
+    {int maxLength = 8000}) {
+  final value = args[key];
+  if (value is! String || value.trim().isEmpty || value.length > maxLength ||
+      value.contains(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'))) {
+    throw FormatException('Invalid $key');
+  }
+  return value;
+}
+), '');
   final parsed = RegExp(
     r'^(\d{1,2})(?:(?::|\.)(\d{1,2}))?(?::00)?(?:\s*(am|pm|утра|вечера))?$',
   ).firstMatch(text);
