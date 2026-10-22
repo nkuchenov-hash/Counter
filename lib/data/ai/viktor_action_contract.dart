@@ -441,7 +441,8 @@ String _bulkClock(Map<String, Object?> operation, String key) {
       .replaceAll(RegExp(r'\s+'), ' ');
   // Normalize only explicit clock expressions, not relative times.
   text = text.replaceFirst(RegExp(r'^в\s+'), '');
-  text = text.replaceFirst(RegExp(r'\s+(?:часов|часа|час)
+  text = text.replaceFirst(RegExp(r'\s+(?:часов|часа|час)$'), '');
+  text = text.replaceAll('a.m.', 'am').replaceAll('p.m.', 'pm');
   final ny = RegExp(
     r'\s*(?:\(?\s*(?:по\s+)?(?:ny|new york|нью[\s-]?йорку|нью[\s-]?йорк)\s*\)?)$',
     caseSensitive: false,
@@ -457,7 +458,7 @@ String _bulkClock(Map<String, Object?> operation, String key) {
     text = text.substring(0, ny.start).trim();
   }
   final parsed = RegExp(
-    r'^(\d{1,2})(?:(?::|\.)(\d{1,2}))?(?::00)?(?:\s*(am|pm|утра|вечера))?
+    r'^(\d{1,2})(?:(?::|\.)(\d{1,2}))?(?::00)?(?:\s*(am|pm|утра|вечера))?$',
   ).firstMatch(text);
   if (parsed == null) throw FormatException('Invalid $key');
   var hour = int.parse(parsed.group(1)!);
