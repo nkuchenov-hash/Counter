@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `55a68e2d` on 2026-10-22.**
+**Generated from input HEAD `12461e5a` on 2026-10-22.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 935 — each appears **exactly once** below.
+**Tracked files:** 936 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -33,7 +33,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `shared foundation` | 65 |
 | `developer tool` | 63 |
 | `platform resource` | 44 |
-| `governing documentation` | 42 |
+| `governing documentation` | 43 |
 | `Desktop Voice runtime` | 36 |
 | `test fixture` | 26 |
 | `PocketBase backend` | 23 |
@@ -60,7 +60,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `PROVEN_REQUIRED` | 503 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 245 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
-| `GOVERNING_DOCUMENTATION` | 42 |
+| `GOVERNING_DOCUMENTATION` | 43 |
 | `HISTORICAL_RECORD` | 17 |
 | `GENERATED_CANONICAL_OUTPUT` | 1 |
 
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 852 |
+| `HIGH` | 853 |
 | `MEDIUM` | 83 |
 
 ---
@@ -7043,6 +7043,43 @@ RU:
 - **Связано с:** `docs/ARCHITECTURE.md`, offline bar в `app_shell.dart`, `docs/DESIGN_SYSTEM.md`.
 
 
+### `docs/VIKTOR_AGENT_V2.md`
+
+EN:
+
+- **Human purpose:** Markdown document `VIKTOR_AGENT_V2.md` in `docs` — repo tooling or config. Tracked because `docs` needs `VIKTOR_AGENT_V2.md` for build, CI, or maintenance.
+- **What this is:** Markdown document `VIKTOR_AGENT_V2.md` in `docs` — repo tooling or config.
+- **Why needed:** Tracked because `docs` needs `VIKTOR_AGENT_V2.md` for build, CI, or maintenance.
+- **Contents:** Open `VIKTOR_AGENT_V2.md` when working on `docs` (see folder section above).
+- **Repository role:** governing documentation
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `CHANGELOG.md`.
+- **Necessity status:** GOVERNING_DOCUMENTATION
+- **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
+- **Confidence:** HIGH
+- **Owner / layer:** documentation
+- **Responsibilities:** Supports `docs` workflow for `VIKTOR_AGENT_V2.md`.
+- **When to open:** When build output or maintenance cites `VIKTOR_AGENT_V2.md`.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** Текстовая спецификация `VIKTOR_AGENT_V2.md` в разделе `docs`. Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Что это:** Текстовая спецификация `VIKTOR_AGENT_V2.md` в разделе `docs`.
+- **Зачем:** Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Содержимое:** Структурированный Markdown-текст по теме `VIKTOR_AGENT_V2.md` без runtime-логики приложения.
+- **Роль в репозитории:** governing documentation
+- **Доказательства использования:** Управляющая/операционная документация для людей и агентов (см. Project Knowledge / AGENTS).
+- **Статус необходимости:** GOVERNING_DOCUMENTATION
+- **Что будет, если удалить:** Пропадёт архитектурное/операционное правило.
+- **Уверенность:** HIGH
+- **Владелец / слой:** документация
+- **Обязанности:** Хранит актуальную документацию по назначению `VIKTOR_AGENT_V2.md`.
+- **Когда открывать:** When результат сборки or maintenance cites `VIKTOR_AGENT_V2.md`.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+
 ### `docs/VIKTOR_AI_ACTION_ENGINE.md`
 
 EN:
@@ -13510,8 +13547,8 @@ EN:
 - **Human purpose:** Brain helper for data/sync — AI action allowlist and schema validation, no direct writes. Shared PocketBase/auth/parse logic used by multiple tabs.
 - **What this is:** Brain helper for data/sync — AI action allowlist and schema validation, no direct writes.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **Contents:** Dart helpers and types (`ViktorAction`, `ViktorActionBatch`).
-- **Key code names:** `ViktorAction`, `ViktorActionBatch`
+- **Contents:** Dart helpers and types (`ViktorAction`).
+- **Key code names:** `ViktorAction`
 - **Repository role:** Brain/data
 - **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_date_scope.dart`, `lib/data/ai/viktor_domain_tools.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_schedule_planner.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -13624,8 +13661,8 @@ EN:
 - **Human purpose:** Brain helper for data/sync — Scoped Brain-backed tool adapters for categories, tags, notes, Paths and safe profile settings. Shared PocketBase/auth/parse logic used by multiple tabs.
 - **What this is:** Brain helper for data/sync — Scoped Brain-backed tool adapters for categories, tags, notes, Paths and safe profile settings.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **Contents:** Dart helpers and types (`ViktorDomainTools`).
-- **Key code names:** `ViktorDomainTools`
+- **Contents:** Dart helpers and types (`ViktorNoteLinePatch`, `ViktorDomainTools`).
+- **Key code names:** `ViktorNoteLinePatch`, `ViktorDomainTools`
 - **Repository role:** Brain/data
 - **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`.
 - **Necessity status:** PROVEN_REQUIRED
