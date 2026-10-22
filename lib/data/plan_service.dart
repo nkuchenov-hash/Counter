@@ -169,18 +169,6 @@ extension PlanServiceExtension on DatabaseService {
 
   /// Next `order` for a new plan on this wall day (for optimistic + POST).
   /// Plans for a wall day (same source as Planning tab). For UI manual `source_plan_id` linking.
-  /// The Brain's profile-wall conversion used by Viktor atomic commits.
-  /// Never infer UTC with the device timezone in AI adapters.
-  DateTime viktorProfileWallToUtc(DateTime wall) =>
-      _profileUtcFromWall(wall);
-
-  /// Refresh canonical planning cache after a server transaction, then
-  /// notify existing Time View/Calendar subscribers on all platforms.
-  Future<void> viktorRefreshPlansAfterCommit() async {
-    await _fetchAllPlanningTasksForCurrentUser();
-    notifyPlanningRefresh(scheduleNetworkRefresh: false);
-  }
-
   Future<List<PlanningTask>> getPlanningTasksForWallDate(DateTime wallDay) =>
       _fetchPlanningTasksForDate(wallDay);
 
