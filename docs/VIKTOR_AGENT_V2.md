@@ -30,6 +30,7 @@ Concrete acceptance scenarios:
 
 ## Architecture and boundaries
 
+- **Dialogue implementation:** append-only `viktor_turns` PocketBase collection with authenticated owner rules and conversation_id=`main`; recent messages restore on restart and are available on other devices. This preserves messages but does not constitute semantic or long-term AI memory. Failed sync must be visible and must not cause silent data loss.
 - **Dialogue:** authenticated owner-scoped conversations persist across app
   restarts and devices (future `viktor_conversations` / `viktor_turns`).
   The short in-memory dialogue context alone is NOT durable memory.
