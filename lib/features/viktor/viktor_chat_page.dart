@@ -130,23 +130,60 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         selectedPlanIds: widget.selectedPlanIds,
         requestId: requestId,
       );
+      // Some models emit continue:true even alongside a final mutation.
+      // Never reject an authorized proposal solely due to that flag:
+      // the ordinary Brain preview and user consent still govern writes.
+      var repairedEmptyRead = false;
       for (var step = 0; response.needsMoreContext; step++) {
         if (!mounted) return;
         if (step >= 4) {
           throw StateError('Виктор достиг предела проверки данных. '
               'Никакие изменения не выполнены.');
         }
-        final proposed = response.actions;
-        if (proposed == null || proposed.hasMutations) {
-          throw StateError('Для дополнительной проверки допускаются '
-              'только операции чтения. Изменения не выполнены.');
+        if (ViktorReadAnswer.hasEmptyReadContinuation(
+          needsMoreContext: response.needsMoreContext,
+          hasActions: response.actions != null,
+        )) {
+          if (repairedEmptyRead) {
+            throw StateError('Виктор повторно запросил данные без указания '
+                'операции чтения. Планы не изменены.');
+          }
+          repairedEmptyRead = true;
+          // One bounded proposal repair: the model can now return a valid
+          // final bulk_replan or an actual read; neither is auto-applied.
+          response = await _gateway.propose(
+            input: input,
+            wallDay: widget.wallDay,
+            plans: plans,
+            settings: _settings,
+            selectedPlanIds: widget.selectedPlanIds,
+            toolObservations: toolObservations,
+            requestId: requestId,
+            proposalFeedback: 'continue:true requires at least one read tool. '
+                'For bulk_replan propose a final write with continue:false '
+                'because Brain loads source and destination day records.',
+            allowRepair: false,
+          );
+          continue;
         }
+        if (!ViktorReadAnswer.shouldContinueReading(
+          needsMoreContext: response.needsMoreContext,
+          hasActions: response.actions != null,
+          hasMutations: response.actions?.hasMutations ?? false,
+        )) break;
+        final proposed = response.actions!;
         final signature = jsonEncode(
             proposed.actions.map((a) => a.toJson()).toList());
         if (!seenReads.add(signature)) {
-          // The earlier read succeeded: don't turn a valid result into an
-          // error merely because the provider requested it twice.
-          _push(latestReadAnswer ?? 'Данные уже получены, изменений нет.');
+          // Showing a list is a valid outcome for a read request, but NEVER
+          // claim that a write request was handled merely because a read
+          // succeeded. The user can retry without unintended changes.
+          if (ViktorReadAnswer.isReadOnlyRequest(input)) {
+            _push(latestReadAnswer ?? 'Данные уже получены, изменений нет.');
+          } else {
+            _push('Виктор повторно запросил уже полученные данные, но не '
+                'предложил изменения. Планы не изменены.');
+          }
           return;
         }
         final observation = await executor.describe(proposed, widget.wallDay);
@@ -171,6 +208,10 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       }
       if (!mounted) return;
       final actions = response.actions;
+      if (response.needsMoreContext && actions == null) {
+        throw StateError('Виктор запросил дополнительные данные, '
+            'но не указал операцию чтения. Планы не изменены.');
+      }
       if (actions == null) {
         if (response.message.trim().isNotEmpty) {
           _push(response.message.trim());

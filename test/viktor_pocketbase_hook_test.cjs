@@ -116,6 +116,10 @@ assert.equal(yandex.status, 200);
 const compactYandexInstructions = JSON.parse(lastRequest.body).messages[0].content;
 assert.match(compactYandexInstructions, /create_plan/);
 assert.match(compactYandexInstructions, /bulk_replan/);
+assert.match(compactYandexInstructions, /continue:true ONLY for read-only tools/,
+  'Model is told that reads may continue but mutations must finalize');
+assert.match(compactYandexInstructions, /skip list_day_plans/,
+  'Status-filtered bulk replans use Brain-owned fresh data directly');
 assert.match(compactYandexInstructions, /EXACTLY two top-level keys/);
 assert.ok(compactYandexInstructions.length < 3000,
   'Yandex should receive the compact general tool catalogue');
