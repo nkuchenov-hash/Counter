@@ -188,9 +188,16 @@ Future<void> _mainAsync() async {
   } else {
     appWearHost = false;
   }
-  // The authenticated root owns PocketBase client bootstrap. Do not wait for
-  // browser storage or network-related services before Flutter's first frame.
-  // Non-web desktop hooks initialize their own client lazily.
+  // Browser: render Flutter before touching browser storage or network.
+  // Desktop/Android keep their original local DB client preinitialization to
+  // preserve platform/plugin startup contracts; no health network wait.
+  if (!kIsWeb) {
+    try {
+      await DatabaseService.instance.ensurePocketBaseReady(
+        verifyReachability: false,
+      );
+    } catch (_) {}
+  }
   _wireDesktopSttCloudBackend();
   _wireDesktopVoiceBrainHooks();
   final bootLocale =
