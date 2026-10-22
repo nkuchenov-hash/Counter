@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `be897409` on 2026-10-22.**
+**Generated from input HEAD `5ccb77cd` on 2026-10-22.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -38155,7 +38155,7 @@ EN:
 - **Why needed:** Prevents regressions when related production code changes.
 - **Contents:** Test cases (symbols: test groups).
 - **Repository role:** test fixture
-- **Evidence of use:** Read/referenced by: `.github/workflows/deploy-pocketbase.yml`.
+- **Evidence of use:** Read/referenced by: `.github/workflows/deploy-pocketbase.yml`, `CHANGELOG.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
 - **Confidence:** HIGH
@@ -38172,7 +38172,7 @@ RU:
 - **Зачем:** Ловит регрессии при правках связанного production-кода.
 - **Содержимое:** Тест-кейсы (символы: test groups).
 - **Роль в репозитории:** test fixture
-- **Доказательства использования:** Читается/упоминается: `.github/workflows/deploy-pocketbase.yml`.
+- **Доказательства использования:** Читается/упоминается: `.github/workflows/deploy-pocketbase.yml`, `CHANGELOG.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
 - **Уверенность:** HIGH
