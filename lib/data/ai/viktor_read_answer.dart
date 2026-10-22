@@ -28,6 +28,16 @@ class ViktorReadAnswer {
           r'(?:[\s,!.?;:]+(?:отмена|cancel))*[\s,!.?;:]*$',
           caseSensitive: false).hasMatch(input.trim());
 
+  /// A read-only user question may still require multiple tools (search
+  /// documents, then read the exact source). Only direct day listing is a
+  /// complete observation without another model turn.
+  static bool isDirectDayListResult({
+    required String input,
+    required List<String> toolNames,
+  }) => isReadOnlyRequest(input) &&
+      toolNames.isNotEmpty &&
+      toolNames.every((tool) => tool == 'list_day_plans');
+
   static bool isReadOnlyRequest(String input) {
     final text = input.toLowerCase().trim();
     final startsWithRead = RegExp(
