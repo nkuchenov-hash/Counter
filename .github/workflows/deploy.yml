@@ -67,14 +67,47 @@ jobs:
         if: steps.freshness.outputs.fresh == 'true'
         run: flutter pub get
 
+      - name: Guard fast and recoverable LIFE OS web startup
+        if: steps.freshness.outputs.fresh == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path('web/index.html').read_text(encoding='utf-8')
+          entry = Path('lib/main.dart').read_text(encoding='utf-8')
+          deploy = Path('.github/workflows/deploy.yml').read_text(encoding='utf-8')
+          auth = Path('lib/data/auth_bridge.dart').read_text(encoding='utf-8')
+          assert 'apis.google.com/js/api.js" async' in html, 'Blocking Google API script'
+          assert 'caches.delete(' not in html, 'Unconditional browser cache purge'
+          assert 'lifeosBootstrapFailed' in html, 'Missing HTML bootstrap recovery'
+          assert '--no-web-resources-cdn' in deploy, 'Renderer depends on Google CDN'
+          before_app = entry.split('runApp(const DateTimeTrackerApp())', 1)[0]
+          assert 'AuthBridge.checkSession(' not in before_app, 'Blocking pre-first-frame auth'
+          assert 'if (!kIsWeb)' in before_app and 'verifyReachability: false' in before_app, 'Native-only database warmup guard missing'
+          assert 'class _SlowStartupScreen' in entry, 'Infinite Flutter login spinner'
+          assert 'if (!kIsWeb)' in auth and 'await _storage.write(key: _profileIdKey, value: id);' in auth, 'Blocking web secure storage'
+          print('LIFE OS web startup invariants passed')
+          PY
+
       - name: Build LIFE OS web
         if: steps.freshness.outputs.fresh == 'true'
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
           BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
+          flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none --no-web-resources-cdn \
             --dart-define=GIT_COMMIT="$SHORT_SHA" \
             --dart-define=BUILD_TIME="$BUILD_TIME"
+
+      - name: Verify bundled Flutter web renderer
+        if: steps.freshness.outputs.fresh == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Google CDN failures must never block LIFE OS rendering.
+          test -d build/web/canvaskit
+          test -n "$(find build/web/canvaskit -type f -name '*.wasm' -print -quit)"
+          test -n "$(find build/web/canvaskit -type f -name '*.js' -print -quit)"
 
       - name: Version Flutter web entrypoint
         if: steps.freshness.outputs.fresh == 'true'
@@ -94,14 +127,18 @@ jobs:
           needle = '"mainJsPath":"main.dart.js"'
           if needle not in bootstrap_text:
               raise SystemExit('Flutter bootstrap mainJsPath marker not found')
-          bootstrap.write_text(
-              bootstrap_text.replace(
-                  needle,
-                  f'"mainJsPath":"main.dart.js?v={sha}"',
-                  1,
-              ),
-              encoding='utf-8',
-          )
+          # The Flutter --no-web-resources-cdn flag places CanvasKit locally,
+          # but some Flutter loader releases STILL default to gstatic.com when
+          # _flutter.buildConfig.useLocalCanvasKit is missing. Explicitly pass
+          # a local base URL to the deployed loader; never trust the flag alone.
+          local_loader = '_flutter.loader.load({config:{canvasKitBaseUrl:"canvaskit/"}});'
+          loader_marker = '_flutter.loader.load();'
+          if loader_marker not in bootstrap_text:
+              raise SystemExit('Flutter bootstrap loader call marker not found')
+          bootstrap_text = bootstrap_text.replace(
+              needle, f'"mainJsPath":"main.dart.js?v={sha}"', 1,
+          ).replace(loader_marker, local_loader, 1)
+          bootstrap.write_text(bootstrap_text, encoding='utf-8')
 
           index_text = index.read_text(encoding='utf-8')
           bootstrap_tag = 'src="flutter_bootstrap.js"'
@@ -119,6 +156,8 @@ jobs:
           Path('build/web/lifeos-build.txt').write_text(sha + '\n', encoding='utf-8')
           PY
           grep -Fq "main.dart.js?v=$FULL_SHA" build/web/flutter_bootstrap.js
+          grep -Fq 'canvasKitBaseUrl:"canvaskit/"' build/web/flutter_bootstrap.js
+          ! grep -Fq '_flutter.loader.load();' build/web/flutter_bootstrap.js
           grep -Fq "flutter_bootstrap.js?v=$FULL_SHA" build/web/index.html
           test "$(tr -d '\r\n' < build/web/lifeos-build.txt)" = "$FULL_SHA"
 
