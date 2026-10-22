@@ -1,3 +1,9 @@
+## [2026-10-22] — Viktor bulk move clock/read contract (pending production verification)
+
+- Accept explicitly stated clock variations (9, 9.00, 9 утра, 09:00 NY, 9 часов по Нью-Йорку) in a bulk move, normalize to HH:mm and refuse ambiguous times.
+- Strip redundant `list_day_plans` observations from a single `bulk_replan` proposal, even if the read inspected another date; never discard unrelated write actions.
+- Preserve fresh Brain preview, conflict detection and confirmation before any schedule mutation. Real-account move has not yet been verified.
+
 ## [2026-10-22] — Viktor bulk clock and redundant read repair (pending deployment)
 
 - Fix status-filtered `bulk_replan` proposals rejected for unambiguous `start_time` spellings such as `9:00`, `9 утра`, `09:00:00`, or `09:00 NY`. Normalize to strict `HH:mm` and an explicit New York timezone where present; reject ambiguous, missing, conflicting or invalid times.
