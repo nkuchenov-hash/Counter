@@ -618,6 +618,7 @@ People is an on-demand Settings feature. External address books stay in a hidden
 | `records.interval_sanitize.pb.js` | Enforces non-overlapping primary `records` intervals per `user_id` |
 | `auth.request_password_reset.pb.js` | Password-reset request hook |
 | `viktor.transcribe_yandex.pb.js` | Authenticated Yandex SpeechKit v3 async recognition start/status (BYOK) |
+| `viktor_yandex_speech_helpers.js` | Pure auth and adjacent JSON stream parsing loaded through `require` inside isolated Yandex SpeechKit route callbacks |
 
 Copy `pb_hooks/` beside the PocketBase executable on the server. Client Brain code does not import these; behavior is documented in `docs/POCKETBASE_MANIFEST.md`.
 
