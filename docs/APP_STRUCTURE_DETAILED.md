@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `69c3a35f` on 2026-10-22.**
+**Generated from input HEAD `29931c39` on 2026-10-22.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 936 — each appears **exactly once** below.
+**Tracked files:** 938 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -28,7 +28,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | :--- | ---: |
 | `production UI` | 182 |
 | `test` | 130 |
-| `Brain/data` | 107 |
+| `Brain/data` | 108 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
 | `developer tool` | 63 |
@@ -37,8 +37,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | `Desktop Voice runtime` | 36 |
 | `test fixture` | 26 |
 | `PocketBase backend` | 23 |
+| `PocketBase migration` | 20 |
 | `shared Voice system` | 20 |
-| `PocketBase migration` | 19 |
 | `historical engineering record` | 17 |
 | `localization` | 13 |
 | `installer` | 12 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 503 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 245 |
+| `PROVEN_REQUIRED` | 504 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 246 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 853 |
-| `MEDIUM` | 83 |
+| `HIGH` | 854 |
+| `MEDIUM` | 84 |
 
 ---
 
@@ -13616,6 +13616,44 @@ RU:
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
 
+### `lib/data/ai/viktor_conversation_store.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — viktor conversation store. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — viktor conversation store.
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`ViktorDialogueTurn`, `ViktorConversationStore`).
+- **Key code names:** `ViktorDialogueTurn`, `ViktorConversationStore`
+- **Repository role:** Brain/data
+- **Evidence of use:** Tracked Dart source; structural role inferred from path (no importer found in this scan).
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or future wiring; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** Brain/data
+- **Responsibilities:** viktor conversation store
+- **When to open:** When behavior tied to `viktor_conversation_store.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** May break tooling or future wiring; verify before delete.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor conversation store
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — viktor_conversation_store. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — viktor_conversation_store.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `viktor_conversation_store`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Отслеживаемый Dart; роль по пути (в этом скане импортеров не найдено).
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `viktor_conversation_store`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_conversation_store.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
 ### `lib/data/ai/viktor_date_scope.dart`
 
 EN:
@@ -14648,7 +14686,7 @@ EN:
 - **Contents:** Shared streams, caches, and `part` declarations for records, plans, categories, profile.
 - **Key code names:** `_BuildNode`, `_OptimisticEndPatch`, `LegacyIdResolutionException`, `AuthenticatedUserIdRequiredException`, `AiBackendException`, `_DatabaseServiceLifecycleObserver`, `_HighlanderRollbackToken`, `DatabaseService`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/ai/viktor_domain_tools.dart`, `lib/data/ai/viktor_executor.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/ai/viktor_conversation_store.dart`, `lib/data/ai/viktor_domain_tools.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14665,7 +14703,7 @@ RU:
 - **Зачем:** Один singleton держит правила PocketBase для всех вкладок.
 - **Содержимое:** Потоки, кэш, объявления `part` для records/plans/categories/profile.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/ai/viktor_domain_tools.dart`, `lib/data/ai/viktor_executor.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/ai/viktor_conversation_store.dart`, `lib/data/ai/viktor_domain_tools.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -30989,6 +31027,43 @@ RU:
 - **Владелец / слой:** миграции PocketBase
 - **Обязанности:** Реализует JavaScript-часть сценария `1792533600_viktor_connections.js` в своём каталоге.
 - **Когда открывать:** When результат сборки or maintenance cites `1792533600_viktor_connections.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+
+### `pb_migrations/1792710000_viktor_turns.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `1792710000_viktor_turns.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1792710000_viktor_turns.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1792710000_viktor_turns.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1792710000_viktor_turns.js` for build, CI, or maintenance.
+- **Contents:** Open `1792710000_viktor_turns.js` when working on `pb_migrations` (see folder section above).
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Supports `pb_migrations` workflow for `1792710000_viktor_turns.js`.
+- **When to open:** When build output or maintenance cites `1792710000_viktor_turns.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `1792710000_viktor_turns.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1792710000_viktor_turns.js`.
+- **Что это:** `1792710000_viktor_turns.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1792710000_viktor_turns.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1792710000_viktor_turns.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Реализует JavaScript-часть сценария `1792710000_viktor_turns.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1792710000_viktor_turns.js`.
 - **Можно удалить?** Нет — конфигурация/инструмент репозитория.
 - **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
