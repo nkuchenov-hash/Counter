@@ -333,10 +333,22 @@ class ViktorActionBatch {
         parsed.where((action) => action.name == 'bulk_replan').toList();
     if (bulkActions.length == 1 && parsed.length > 1) {
       final bulk = bulkActions.single;
-      final extras = parsed.where((action) => action != bulk);
-      // Read actions are observations; the Brain reloads source/target days.
+      final dates = <String>{};
+      for (final item in bulk.arguments['operations'] as List) {
+        final operation = item as Map;
+        dates.add(operation['source_day'] as String);
+        if (operation['kind'] == 'move') {
+          dates.add(operation['target_day'] as String);
+        }
+      }
+      final extras = parsed.where((action) => action != bulk).toList();
       if (extras.every((action) => action.name == 'list_day_plans')) {
-        return ViktorActionBatch._(id, [bulk]);
+        // Reads of source/target are redundant: Brain reloads them for
+        // preview/apply. Preserve unrelated reads that the user may have
+        // explicitly requested, and let the executor display them safely.
+        final independentReads = extras.where((action) =>
+            !dates.contains(action.arguments['wall_day'])).toList();
+        return ViktorActionBatch._(id, [...independentReads, bulk]);
       }
     }
     return ViktorActionBatch._(id, parsed);
