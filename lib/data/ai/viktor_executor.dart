@@ -99,14 +99,17 @@ class ViktorExecutor {
   }
 
   Future<ViktorBulkPreview> _planBulk(ViktorAction action) async {
-    // Read the actual source and destination day identified by the user.
-    // The day visible in the calendar is not an execution constraint.
-    final scope = ViktorDateScope.bulkDays(action);
-    final source = await db.getPlanningTasksForWallDate(
-        ViktorDateScope.parseDay(scope.sourceDay));
-    final target = scope.targetDay == null ? <PlanningTask>[] :
-      await db.getPlanningTasksForWallDate(
-          ViktorDateScope.parseDay(scope.targetDay!));
+    final operations = action.arguments['operations'] as List;
+    final dates = <String>{
+      for (final raw in operations) (raw as Map)['source_day'] as String,
+      for (final raw in operations)
+        if ((raw as Map)['kind'] == 'move') raw['target_day'] as String,
+    };
+    final allDays = <String, List<PlanningTask>>{};
+    for (final date in dates.toList()..sort()) {
+      allDays[date] = await db.getPlanningTasksForWallDate(
+          ViktorDateScope.parseDay(date));
+    }
     DateTime wallTime(String date, String time, String zone) {
       final parts = date.split('-').map(int.parse).toList();
       final clock = time.split(':').map(int.parse).toList();
@@ -128,11 +131,16 @@ class ViktorExecutor {
       }
       return db.applyUserOffset(zoned.toUtc());
     }
+    final firstSource = (operations.first as Map)['source_day'] as String;
     return _bulk.calculate(
-      action: action, source: source, target: target,
-      sourceDay: scope.sourceDay, targetDay: scope.targetDay,
-      wallTime: wallTime,
-      fixedTime: _fixed,
+      action: action, source: allDays[firstSource]!, target: const [],
+      sourceDay: firstSource, targetDay: null, allDays: allDays,
+      wallTime: wallTime, fixedTime: _fixed,
+      categoryName: (plan) {
+        final path = db.getCategoryPath(plan.categoryId).trim();
+        return path.isNotEmpty ? path :
+            (db.getCategoryRuleById(plan.categoryId)?.name ?? '');
+      },
     );
   }
 

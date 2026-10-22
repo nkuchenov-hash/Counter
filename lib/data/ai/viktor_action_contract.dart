@@ -87,8 +87,8 @@ class ViktorAction {
         // resulting wall times before any write.
         _onlyKeys(args, const {'operations'});
         final raw = args['operations'];
-        if (raw is! List || raw.isEmpty || raw.length > 3) {
-          throw const FormatException('Expected 1–3 bulk planning operations');
+        if (raw is! List || raw.isEmpty || raw.length > 8) {
+          throw const FormatException('Expected 1–8 bulk planning operations');
         }
         final seen = <String>{};
         final canonicalOperations = <Map<String, Object?>>[];
@@ -99,7 +99,8 @@ class ViktorAction {
           final operation = Map<String, Object?>.from(item);
           _onlyKeys(operation, const {
             'kind', 'status', 'source_day', 'target_day',
-            'start_time', 'timezone',
+            'start_time', 'timezone', 'category_name', 'tag_name',
+            'title_contains', 'priority', 'max_count',
           });
           final kind = _text(operation, 'kind', maxLength: 16);
           if (!const {'move', 'compact'}.contains(kind)) {
@@ -123,7 +124,11 @@ class ViktorAction {
           };
           operation['status'] = status;
           final source = _day(operation, 'source_day');
-          if (!seen.add('$source|$status')) {
+          final selector = '$source|$status|' +
+              (operation['category_name'] ?? '').toString() + '|' +
+              (operation['tag_name'] ?? '').toString() + '|' +
+              (operation['title_contains'] ?? '').toString();
+          if (!seen.add(selector)) {
             throw const FormatException('Overlapping bulk plan filters');
           }
           if (kind == 'move') {
@@ -139,6 +144,27 @@ class ViktorAction {
           }
           if (operation.containsKey('timezone')) {
             _text(operation, 'timezone', maxLength: 64);
+          }
+          for (final field in const ['category_name', 'tag_name',
+              'title_contains']) {
+            if (operation.containsKey(field)) {
+              _text(operation, field, maxLength: 160);
+              if ((operation[field] as String).trim().isEmpty) {
+                throw FormatException('Empty filter: $field');
+              }
+            }
+          }
+          if (operation.containsKey('priority')) {
+            final n = operation['priority'];
+            if (n is! int || n < 1 || n > 100) {
+              throw const FormatException('Invalid bulk priority');
+            }
+          }
+          if (operation.containsKey('max_count')) {
+            final n = operation['max_count'];
+            if (n is! int || n < 1 || n > 100) {
+              throw const FormatException('Invalid bulk max_count');
+            }
           }
           canonicalOperations.add(operation);
         }
