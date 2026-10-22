@@ -132,7 +132,12 @@ class AuthBridge {
         } catch (_) {}
         return null;
       }
-      await _storage.write(key: _profileIdKey, value: id);
+      // The signed-in PocketBase authStore is authoritative. Re-writing
+      // the same profile id through web crypto/secure storage on EVERY page
+      // refresh can delay startup and offers no additional validation.
+      if (!kIsWeb) {
+        await _storage.write(key: _profileIdKey, value: id);
+      }
       return id;
     } catch (_) {
       return null;
