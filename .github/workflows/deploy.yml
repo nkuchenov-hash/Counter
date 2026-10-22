@@ -72,9 +72,19 @@ jobs:
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
           BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
+          flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none --no-web-resources-cdn \
             --dart-define=GIT_COMMIT="$SHORT_SHA" \
             --dart-define=BUILD_TIME="$BUILD_TIME"
+
+      - name: Verify bundled Flutter web renderer
+        if: steps.freshness.outputs.fresh == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Google CDN failures must never block LIFE OS rendering.
+          test -d build/web/canvaskit
+          find build/web/canvaskit -type f -name '*.wasm' | grep -q .
+          find build/web/canvaskit -type f -name '*.js' | grep -q .
 
       - name: Version Flutter web entrypoint
         if: steps.freshness.outputs.fresh == 'true'
