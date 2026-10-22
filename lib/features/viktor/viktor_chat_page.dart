@@ -207,7 +207,12 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         }
         final observation = await executor.describe(proposed, widget.wallDay);
         latestReadAnswer = ViktorReadAnswer.format(input, observation);
-        if (ViktorReadAnswer.isReadOnlyRequest(input)) {
+        // An answer such as "third line of a January 2023 poem" needs
+        // search_notes -> read_note -> grounded answer. Do not prematurely
+        // terminate multi-step retrieval just because the user's intent
+        // is read-only. Direct day listing is the only legacy fast path.
+        if (ViktorReadAnswer.isReadOnlyRequest(input) &&
+            proposed.actions.every((a) => a.name == 'list_day_plans')) {
           _push(latestReadAnswer);
           return;
         }
