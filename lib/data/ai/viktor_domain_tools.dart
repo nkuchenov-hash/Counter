@@ -76,7 +76,7 @@ class ViktorDomainTools {
       final created = p.createdAt?.toLocal().toIso8601String().substring(0, 10)
           ?? 'неизвестно';
       final summary = (p.notesPlain ?? '')
-          .replaceAll(RegExp(r'\\s+'), ' ').trim();
+          .replaceAll(RegExp(r'\s+'), ' ').trim();
       final snippet = summary.length > 170
           ? '${summary.substring(0, 170)}…' : summary;
       return 'id=${p.pocketRecordId}; создано=$created; '
@@ -97,6 +97,7 @@ class ViktorDomainTools {
     final note = found.single;
     final blocks = db.parseNoteDocument(note).blocks;
     final lines = <String>[];
+    var textLine = 0;
     for (final block in blocks) {
       if (!block.type.isTextual) {
         lines.add('[Вложение ${block.type.name}, не текст]');
@@ -104,8 +105,8 @@ class ViktorDomainTools {
       }
       for (final rawLine in block.effectiveText.split('\n')) {
         if (rawLine.trim().isNotEmpty) {
-          lines.add('${lines.where((l) => l.startsWith('Строка ')).length + 1 == 0 ? '' : ''}'
-              'Строка ${lines.where((l) => l.startsWith('Строка ')).length + 1}: $rawLine');
+          textLine++;
+          lines.add('Строка $textLine: $rawLine');
         }
       }
     }
