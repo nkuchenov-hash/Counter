@@ -60,6 +60,25 @@ jobs:
           echo "server_changed=$changed" >> "$GITHUB_OUTPUT"
           echo "PocketBase bundle changed: $changed"
 
+  yandex-route-smoke:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check deployed SpeechKit routes without user credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in transcribe-yandex transcribe-yandex/status; do
+            code="$(curl -sS --max-time 8 --retry 2 -o /dev/null -w '%{http_code}' \
+              -X POST -H 'Content-Type: application/json' --data '{}' \
+              "https://217-114-0-201.sslip.io/api/viktor/$path")"
+            if [[ "$code" != "401" ]]; then
+              echo "Yandex speech route $path rejected smoke check (HTTP $code; expected 401)" >&2
+              exit 1
+            fi
+          done
+
   deploy:
     if: github.event_name != 'pull_request' && needs.validate.outputs.server_changed == 'true'
     needs: validate
