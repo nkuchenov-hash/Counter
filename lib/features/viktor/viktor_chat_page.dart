@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/ai/viktor_action_contract.dart';
@@ -16,7 +15,6 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-
 /// Single LIFE OS assistant entry point. Replaces the old record-only mic FAB.
 /// No overlay over the planner, no extra button beside bottom navigation.
 class ViktorChatPage extends StatefulWidget {
@@ -24,11 +22,9 @@ class ViktorChatPage extends StatefulWidget {
     this.selectedPlanIds = const <String>[]});
   final DateTime wallDay;
   final List<String> selectedPlanIds;
-
   @override
   State<ViktorChatPage> createState() => _ViktorChatPageState();
 }
-
 class _ViktorChatPageState extends State<ViktorChatPage> {
   final _controller = TextEditingController();
   final _recorder = ViktorVoiceRecorder();
@@ -47,7 +43,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
   String? _voiceNotice;
   bool _settingsReady = false;
   String? _cloudConnectionError;
-
   @override
   void initState() {
     super.initState();
@@ -60,7 +55,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       'Перед изменениями я покажу план для подтверждения.',
     ));
   }
-
   Future<void> _loadSettings() async {
     try {
       await _settings.load();
@@ -93,7 +87,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     }
     if (mounted) setState(() => _settingsReady = true);
   }
-
   @override
   void dispose() {
     _recorder.removeListener(_onRecorderChanged);
@@ -101,7 +94,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     _controller.dispose();
     super.dispose();
   }
-
   void _push(String value, {bool mine = false}) {
     if (!mounted) return;
     final turn = ViktorDialogueTurn(
@@ -118,7 +110,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       }));
     }
   }
-
   Future<void> _send() async {
     if (_busy) return;
     final input = _controller.text.trim();
@@ -134,7 +125,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     final dialogContext = ViktorDialogueTurn.modelContext(
         _messages.skip(1));
     _push(input, mine: true);
-    // Trailing voice command cancellation overrides any earlier instruction.
     if (ViktorReadAnswer.isExplicitCancellation(input)) {
       _push('Команда отменена. Изменения не выполнялись.');
       return;
@@ -158,9 +148,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         requestId: requestId,
         conversationHistory: dialogContext,
       );
-      // Some models emit continue:true even alongside a final mutation.
-      // Never reject an authorized proposal solely due to that flag:
-      // the ordinary Brain preview and user consent still govern writes.
       var repairedEmptyRead = false;
       for (var step = 0; response.needsMoreContext; step++) {
         if (!mounted) return;
@@ -177,8 +164,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                 'операции чтения. Планы не изменены.');
           }
           repairedEmptyRead = true;
-          // One bounded proposal repair: the model can now return a valid
-          // final bulk_replan or an actual read; neither is auto-applied.
           response = await _gateway.propose(
             input: input,
             wallDay: widget.wallDay,
@@ -217,10 +202,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         }
         final observation = await executor.describe(proposed, widget.wallDay);
         latestReadAnswer = ViktorReadAnswer.format(input, observation);
-        // An answer such as "third line of a January 2023 poem" needs
-        // search_notes -> read_note -> grounded answer. Do not prematurely
-        // terminate multi-step retrieval just because the user's intent
-        // is read-only. Direct day listing is the only legacy fast path.
         if (ViktorReadAnswer.isDirectDayListResult(
             input: input,
             toolNames: proposed.actions.map((a) => a.name).toList())) {
@@ -315,7 +296,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       if (mounted) setState(() => _busy = false);
     }
   }
-
   Future<bool> _confirm(ViktorActionBatch batch, String preview) async {
     final answer = await showDialog<bool>(
       context: context,
@@ -341,11 +321,8 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     );
     return answer == true;
   }
-
   void _onRecorderChanged() {
     if (!mounted) return;
-    // Simple end-of-utterance detection. The stop button remains available,
-    // so failure to detect silence never blocks manual completion.
     if (_recorder.isRecording && !_startingMic && !_transcribing &&
         _recorder.capturedBytes > 16000) {
       final now = DateTime.now();
@@ -377,7 +354,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       unawaited(_finishRecording());
     }
   }
-
   Future<void> _finishRecording() async {
     var shouldSubmit = false;
     var captured = false;
@@ -425,7 +401,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       }
     }
   }
-
   Future<void> _toggleMic() async {
     if (_busy || _startingMic || _transcribing) return;
     if (_recorder.isRecording) {
@@ -472,7 +447,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       if (mounted) setState(() => _startingMic = false);
     }
   }
-
   String _cloudSaveErrorText(Object error) {
     final value = error.toString().replaceAll('FormatException: ', '');
     if (value.contains('api_key_required')) {
@@ -510,8 +484,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
 
   Future<void> _openSettings() async {
     if (!_settingsReady) await _loadSettings();
-    // Refresh actual server status every time settings are opened, including
-    // after account auth becomes available later than the first page render.
     try {
       await _settings.loadCloudConnection();
       _cloudConnectionError = null;
@@ -535,7 +507,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, updateDialog) => AlertDialog(
-          // Long errors must not change the dialog's width on desktop.
           constraints: const BoxConstraints(maxWidth: 560),
           insetPadding: const EdgeInsets.symmetric(
             horizontal: 16, vertical: 24),
@@ -749,8 +720,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                       'подписки и серверного учёта лимитов.',
                       style: TextStyle(fontSize: 16),
                     ),
-                  // Error belongs inside the bounded scrollable content,
-                  // not in AlertDialog.actions (which uses intrinsic width).
                   if (saveError != null) ...[
                     const SizedBox(height: 16),
                     Text(saveError!, style: const TextStyle(
@@ -805,8 +774,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                   _settings.sessionSpeechApiKey = speechKeyCtrl.text.trim();
                 }
                 try {
-                  // Successful encrypted cloud save is authoritative. A full
-                  // browser localStorage must not turn it into a false error.
                   await _settings.saveCloudConnection();
                   localPreferencesSaved = await _settings.save();
                   _cloudConnectionError = null;
