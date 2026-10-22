@@ -70,13 +70,31 @@ jobs:
         run: |
           set -euo pipefail
           for path in transcribe-yandex transcribe-yandex/status; do
-            code="$(curl -sS --max-time 8 --retry 2 -o /dev/null -w '%{http_code}' \
+            output="$(mktemp)"
+            code="$(curl -sS --max-time 8 --retry 2 -o "$output" -w '%{http_code}' \
               -X POST -H 'Content-Type: application/json' --data '{}' \
               "https://217-114-0-201.sslip.io/api/viktor/$path")"
             if [[ "$code" != "401" ]]; then
-              echo "Yandex speech route $path rejected smoke check (HTTP $code; expected 401)" >&2
+              # This request is anonymous. Print only bounded error metadata,
+              # never raw response bodies or authenticated transcription.
+              diagnosis="$(python3 - "$output" <<'PY'
+          import json, re, sys
+          try:
+              payload = json.load(open(sys.argv[1], encoding='utf-8'))
+              if not isinstance(payload, dict): raise ValueError()
+              fields = (payload.get('code'), payload.get('status'),
+                        payload.get('error'), payload.get('message'))
+              print(' '.join(str(x)[:100] for x in fields
+                             if isinstance(x, (str, int)) and
+                             re.fullmatch(r'[\\w\\s.:/-]{1,100}', str(x))))
+          except Exception:
+              print('unstructured-response')
+          PY
+              )"
+              echo "Yandex speech route $path returned HTTP $code, metadata: $diagnosis (expected 401)" >&2
               exit 1
             fi
+            rm -f "$output"
           done
 
   deploy:
