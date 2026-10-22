@@ -34,6 +34,7 @@ This file is the **single source of truth** for how this app talks to **PocketBa
 
 | Collection | Relation | Target | Role | App usage |
 | :--- | :--- | :--- | :--- | :--- |
+| **viktor_turns** | `user_id` | `profiles.id` | **Owner** | Immutable, per-message chat history. Only the authenticated owner may list/view/create/delete; updates forbidden. No provider keys. |
 | **records** | `user_id` | `profiles.id` | **Owner** | Mandatory on create; must equal current auth id for rules. |
 | **records** | `category_id` / `category_link` | `categories.id` | **Category** | Both relation fields; payload uses **15-char** `categories.id` in **each** (never business slug). Expand `category_link` for UI. |
 | **records** | `source_plan_id` | `plans.id` | **Plan vs fact** | Optional. **Many records** may point to **one plan** (iterations). Omit/clear (`null`) for legacy or unlinked rows. |
