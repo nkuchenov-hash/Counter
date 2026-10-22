@@ -11,6 +11,12 @@ This document defines how Life OS behaves when people interact with it. It is th
 - Browser cache data is never cleared automatically on reload. Build assets remain revisioned; test ordinary reload, restricted Google networks, offline cached startup and delayed PocketBase independently.
 - The deployment pipeline rejects synchronous Google API scripts, pre-frame network/auth checks on web, CDN-only CanvasKit, and removal of recovery affordances. An inaccessible hosting origin itself still requires hosting/network mitigation.
 
+## Viktor status-filtered bulk proposal robustness (2026-10-22)
+
+- A single bulk schedule mutation owns the fresh source and target-day reads; any attached `list_day_plans` proposal actions are redundant and are removed before preview, even if the model examined another day. Other mutation actions must remain intact and must never be applied as part of the bulk operation.
+- Only explicit, unambiguous clock notations may be normalized to HH:mm (including morning phrasing and optional New York annotation); unsafe or ambiguous times must remain rejected. Do not guess a time from unrelated context.
+- All bulk changes require preview, user consent, fresh-state revalidation and conflict/protected-plan safeguards.
+
 ## Viktor bulk clock and read-only observation normalization (2026-10-22)
 
 - Speech/model clocks for `bulk_replan` may be canonically normalized only when unambiguous, e.g. `9:00` to `09:00`, `9 утра` to `09:00`, or `09:00 NY` into `09:00` + `America/New_York`. Missing, conflicting, nonsensical times are errors; never infer absent clocks.
