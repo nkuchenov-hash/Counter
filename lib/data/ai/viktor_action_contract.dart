@@ -223,6 +223,21 @@ class ViktorAction {
         _title(args, 'title');
         _longText(args, 'text', maxLength: 8000);
         if (args.containsKey('category_id')) _id(args, 'category_id');
+      case 'edit_note_line':
+        _onlyKeys(args, const {
+          'note_id', 'expected_title', 'line_number', 'expected_text', 'text',
+        });
+        _id(args, 'note_id');
+        _title(args, 'expected_title');
+        final lineNumber = args['line_number'];
+        if (lineNumber is! int || lineNumber < 1 || lineNumber > 10000) {
+          throw const FormatException('Invalid note line_number');
+        }
+        _longText(args, 'expected_text', maxLength: 2000);
+        _longText(args, 'text', maxLength: 2000);
+        if ((args['text'] as String).contains('\n')) {
+          throw const FormatException('Line replacement must not add lines');
+        }
       case 'edit_note':
         _onlyKeys(args, const {'note_id', 'expected_title', 'text'});
         _id(args, 'note_id');
