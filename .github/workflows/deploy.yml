@@ -127,14 +127,18 @@ jobs:
           needle = '"mainJsPath":"main.dart.js"'
           if needle not in bootstrap_text:
               raise SystemExit('Flutter bootstrap mainJsPath marker not found')
-          bootstrap.write_text(
-              bootstrap_text.replace(
-                  needle,
-                  f'"mainJsPath":"main.dart.js?v={sha}"',
-                  1,
-              ),
-              encoding='utf-8',
-          )
+          # The Flutter --no-web-resources-cdn flag places CanvasKit locally,
+          # but some Flutter loader releases STILL default to gstatic.com when
+          # _flutter.buildConfig.useLocalCanvasKit is missing. Explicitly pass
+          # a local base URL to the deployed loader; never trust the flag alone.
+          local_loader = '_flutter.loader.load({config:{canvasKitBaseUrl:"canvaskit/"}});'
+          loader_marker = '_flutter.loader.load();'
+          if loader_marker not in bootstrap_text:
+              raise SystemExit('Flutter bootstrap loader call marker not found')
+          bootstrap_text = bootstrap_text.replace(
+              needle, f'"mainJsPath":"main.dart.js?v={sha}"', 1,
+          ).replace(loader_marker, local_loader, 1)
+          bootstrap.write_text(bootstrap_text, encoding='utf-8')
 
           index_text = index.read_text(encoding='utf-8')
           bootstrap_tag = 'src="flutter_bootstrap.js"'
@@ -152,6 +156,8 @@ jobs:
           Path('build/web/lifeos-build.txt').write_text(sha + '\n', encoding='utf-8')
           PY
           grep -Fq "main.dart.js?v=$FULL_SHA" build/web/flutter_bootstrap.js
+          grep -Fq 'canvasKitBaseUrl:"canvaskit/"' build/web/flutter_bootstrap.js
+          ! grep -Fq '_flutter.loader.load();' build/web/flutter_bootstrap.js
           grep -Fq "flutter_bootstrap.js?v=$FULL_SHA" build/web/index.html
           test "$(tr -d '\r\n' < build/web/lifeos-build.txt)" = "$FULL_SHA"
 
