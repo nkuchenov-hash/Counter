@@ -11,6 +11,13 @@ This document defines how Life OS behaves when people interact with it. It is th
 - Browser cache data is never cleared automatically on reload. Build assets remain revisioned; test ordinary reload, restricted Google networks, offline cached startup and delayed PocketBase independently.
 - The deployment pipeline rejects synchronous Google API scripts, pre-frame network/auth checks on web, CDN-only CanvasKit, and removal of recovery affordances. An inaccessible hosting origin itself still requires hosting/network mitigation.
 
+## Viktor bulk status and SpeechKit route diagnostics (2026-10-22)
+
+- Model-emitted completion synonyms may normalize to exactly `complete`, `incomplete`, or `all` only when unequivocal. Ambiguous status remains a validation error; Brain previews the affected owned rows and retains confirmation and no-duplicate/no-conflict guards.
+- Voice transport must report its real HTTP status and whether submit or poll failed when a proxy or PocketBase returns JSON without `error`. Do not confuse generic server failures with SpeechKit provider decisions or expose upstream body, transcript or keys.
+- Production server deploy must smoke-test both unauthenticated Yandex start and poll endpoints for HTTP 401; no synthetic hook tests or server startup smoke alone prove authenticated audio works.
+- PocketBase JS route callbacks run in isolated contexts. Any shared Yandex SpeechKit auth/stream-frame helper must load through `require(`\${__hooks}/...`)` **inside** its callback. Tests must execute route functions in separate VM contexts rather than sharing script-global declarations.
+
 ## Viktor read observations and streaming speech response (2026-10-21)
 
 - Read-only queries (e.g. "Покажи мой план AGE Solutions – ADD SIN на пятницу") must return the Brain-verified first list-day result directly, with an exact-title match when available. A repeated model request for the same tool and parameters is not a user-facing error: reuse the previously validated observation instead of throwing or repeatedly invoking the model.

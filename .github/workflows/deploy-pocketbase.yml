@@ -150,6 +150,12 @@ jobs:
             viktor_audio="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 -X POST \
               -H 'Content-Type: application/json' \
               --data '{}' https://217-114-0-201.sslip.io/api/viktor/transcribe || true)"
+            viktor_yandex_start="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 -X POST \
+              -H 'Content-Type: application/json' \
+              --data '{}' https://217-114-0-201.sslip.io/api/viktor/transcribe-yandex || true)"
+            viktor_yandex_poll="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 -X POST \
+              -H 'Content-Type: application/json' \
+              --data '{}' https://217-114-0-201.sslip.io/api/viktor/transcribe-yandex/status || true)"
             viktor_vault_get="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 \
               https://217-114-0-201.sslip.io/api/viktor/connection || true)"
             viktor_vault_save="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 -X POST \
@@ -158,6 +164,7 @@ jobs:
             if [[ "$health" == "200" &&
                   ( "$route" == "401" || "$route" == "403" ) &&
                   "$viktor" == "401" && "$viktor_audio" == "401" &&
+                  "$viktor_yandex_start" == "401" && "$viktor_yandex_poll" == "401" &&
                   "$viktor_vault_get" == "401" && "$viktor_vault_save" == "401" ]]; then exit 0; fi
             sleep 2
           done

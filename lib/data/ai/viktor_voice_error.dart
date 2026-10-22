@@ -53,6 +53,23 @@ String viktorVoiceErrorText(Object error, {String stage = 'recognition'}) {
     return 'SpeechKit вернул ответ, который LIFE OS не смог разобрать. '
         'Ошибка формата ответа сервиса.';
   }
+  if (value.contains('speech_route_missing')) {
+    return 'Маршрут SpeechKit отсутствует на сервере LIFE OS (HTTP 404). '
+        'Требуется проверить развёртывание PocketBase.';
+  }
+  if (value.contains('speech_auth_failed')) {
+    return 'PocketBase отклонил запрос распознавания (HTTP 401/403). '
+        'Проверьте авторизацию LIFE OS.';
+  }
+  if (value.contains('speech_backend_failed') ||
+      value.contains('speech_unstructured_error')) {
+    final http = RegExp(r'http (\d{3})').firstMatch(value)?.group(1);
+    final step = value.contains('stage poll')
+        ? 'получения результата' : 'отправки аудио';
+    return 'Ошибка сервера LIFE OS при $step'
+        '${http == null ? '' : ' (HTTP $http)'}. '
+        'Данные об ошибке не соответствуют формату API.';
+  }
   if (value.contains('speech_request_failed') ||
       value.contains('speech_missing_error_code')) {
     return 'Сервер распознавания вернул ошибку без кода. '

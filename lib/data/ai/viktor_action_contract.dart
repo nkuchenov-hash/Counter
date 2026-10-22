@@ -91,6 +91,7 @@ class ViktorAction {
           throw const FormatException('Expected 1–3 bulk planning operations');
         }
         final seen = <String>{};
+        final canonicalOperations = <Map<String, Object?>>[];
         for (final item in raw) {
           if (item is! Map) {
             throw const FormatException('Invalid bulk planning operation');
@@ -104,10 +105,23 @@ class ViktorAction {
           if (!const {'move', 'compact'}.contains(kind)) {
             throw const FormatException('Invalid bulk operation kind');
           }
-          final status = _text(operation, 'status', maxLength: 16);
-          if (!const {'complete', 'incomplete', 'all'}.contains(status)) {
-            throw const FormatException('Invalid bulk status filter');
-          }
+          // A model may use conventional completion labels instead of the
+          // wire contract. Normalize only explicit, unambiguous synonyms;
+          // never guess a status or change what an operation will select.
+          final rawStatus = _text(operation, 'status', maxLength: 24)
+              .toLowerCase().trim().replaceAll('-', '_')
+              .replaceAll(' ', '_');
+          final status = switch (rawStatus) {
+            'complete' || 'completed' || 'done' || 'finished' ||
+                'выполненные' => 'complete',
+            'incomplete' || 'unfinished' || 'undone' ||
+                'not_done' || 'not_completed' || 'невыполненные' =>
+              'incomplete',
+            'all' || 'все' => 'all',
+            _ => throw const FormatException(
+              'Invalid bulk status filter: use complete/incomplete/all'),
+          };
+          operation['status'] = status;
           final source = _day(operation, 'source_day');
           if (!seen.add('$source|$status')) {
             throw const FormatException('Overlapping bulk plan filters');
@@ -126,7 +140,10 @@ class ViktorAction {
           if (operation.containsKey('timezone')) {
             _text(operation, 'timezone', maxLength: 64);
           }
+          canonicalOperations.add(operation);
         }
+        // All downstream preview/Brain paths receive one canonical form.
+        args['operations'] = canonicalOperations;
       case 'list_categories':
       case 'list_backlog_items':
       case 'list_notes':
