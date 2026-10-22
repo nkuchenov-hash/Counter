@@ -11,6 +11,13 @@ This document defines how Life OS behaves when people interact with it. It is th
 - Browser cache data is never cleared automatically on reload. Build assets remain revisioned; test ordinary reload, restricted Google networks, offline cached startup and delayed PocketBase independently.
 - The deployment pipeline rejects synchronous Google API scripts, pre-frame network/auth checks on web, CDN-only CanvasKit, and removal of recovery affordances. An inaccessible hosting origin itself still requires hosting/network mitigation.
 
+## Viktor read-to-write handoff (2026-10-22)
+
+- Treat a model's `continue:true` as an instruction for **read-only observations only**. If a validated mutation is already proposed, skip the read loop and proceed through the ordinary Brain fresh-state preview, explicit bulk confirmation and conflict checks. Never execute a mutation as a read operation or silently drop a write because the model set `continue:true`.
+- `bulk_replan` uses Brain-owned fresh source/destination data; do not require `list_day_plans` before a status-filtered bulk mutation. Keep source/target day, completion status, requested IANA timezone and existing task durations grounded in the user's intent.
+- A duplicate read is an acceptable final response to a genuine read-only query; for a mutation request, say that no change was proposed or applied rather than presenting a read result as a successful edit.
+- Regression coverage must exercise both `continue:true` + list/read (continue) and `continue:true` + validated mutation (final preview), including a status-filtered previous-day-to-today move. Actual user data is never mutated by a smoke test.
+
 ## Viktor bulk status and SpeechKit route diagnostics (2026-10-22)
 
 - Model-emitted completion synonyms may normalize to exactly `complete`, `incomplete`, or `all` only when unequivocal. Ambiguous status remains a validation error; Brain previews the affected owned rows and retains confirmation and no-duplicate/no-conflict guards.
