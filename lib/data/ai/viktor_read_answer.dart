@@ -14,6 +14,13 @@ class ViktorReadAnswer {
     required bool hasMutations,
   }) => needsMoreContext && hasActions && !hasMutations;
 
+  /// A model can mistakenly request another turn without providing a read.
+  /// Correct that once rather than asking the user to retry a safe command.
+  static bool hasEmptyReadContinuation({
+    required bool needsMoreContext,
+    required bool hasActions,
+  }) => needsMoreContext && !hasActions;
+
   static bool isReadOnlyRequest(String input) {
     final text = input.toLowerCase().trim();
     final startsWithRead = RegExp(
