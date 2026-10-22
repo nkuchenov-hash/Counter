@@ -131,11 +131,11 @@ class ViktorAction {
             if (source == target) {
               throw const FormatException('Move target must differ from source');
             }
-            _clock(operation, 'start_time');
+            _bulkClock(operation, 'start_time');
           } else if (operation.containsKey('target_day')) {
             throw const FormatException('Compaction is always same-day');
           } else if (operation.containsKey('start_time')) {
-            _clock(operation, 'start_time');
+            _bulkClock(operation, 'start_time');
           }
           if (operation.containsKey('timezone')) {
             _text(operation, 'timezone', maxLength: 64);
@@ -327,6 +327,25 @@ class ViktorActionBatch {
         throw FormatException('Action ${i + 1}: ${error.message}');
       }
     }
+    // Brain reloads both affected dates for bulk_replan. Same-day list
+    // reads included in the same proposal are redundant, never mutations.
+    final bulkActions =
+        parsed.where((action) => action.name == 'bulk_replan').toList();
+    if (bulkActions.length == 1 && parsed.length > 1) {
+      final bulk = bulkActions.single;
+      final dates = <String>{};
+      for (final item in bulk.arguments['operations'] as List) {
+        final op = item as Map;
+        dates.add(op['source_day'] as String);
+        if (op['kind'] == 'move') dates.add(op['target_day'] as String);
+      }
+      final extras = parsed.where((action) => action != bulk);
+      if (extras.every((action) =>
+          action.name == 'list_day_plans' &&
+          dates.contains(action.arguments['wall_day']))) {
+        return ViktorActionBatch._(id, [bulk]);
+      }
+    }
     return ViktorActionBatch._(id, parsed);
   }
 
@@ -409,6 +428,50 @@ String _day(Map<String, Object?> args, String key) {
     throw FormatException('Invalid calendar day: $key');
   }
   return value;
+}
+
+/// Normalize only unambiguous model clock variants. Never invent a missing
+/// time or overwrite a conflicting timezone.
+String _bulkClock(Map<String, Object?> operation, String key) {
+  final raw = operation[key];
+  if (raw is! String || raw.isEmpty || raw.length > 48) {
+    throw FormatException('Invalid $key');
+  }
+  var text = raw.trim().toLowerCase();
+  final ny = RegExp(
+    r'\s*(?:\(?\s*(?:по\s+)?(?:ny|new york|нью[\s-]?йорку|нью[\s-]?йорк)\s*\)?)$',
+    caseSensitive: false,
+  ).firstMatch(text);
+  if (ny != null) {
+    final specified = (operation['timezone'] as String?)?.trim();
+    if (specified != null && specified.isNotEmpty &&
+        !const {'NY', 'ny', 'New York', 'new york',
+                'America/New_York'}.contains(specified)) {
+      throw const FormatException('Conflicting bulk timezone');
+    }
+    operation['timezone'] = 'America/New_York';
+    text = text.substring(0, ny.start).trim();
+  }
+  final parsed = RegExp(
+    r'^(\d{1,2})(?::(\d{2}))?(?::00)?(?:\s*(am|pm|утра|вечера))?$',
+  ).firstMatch(text);
+  if (parsed == null) throw FormatException('Invalid $key');
+  var hour = int.parse(parsed.group(1)!);
+  final minute = int.parse(parsed.group(2) ?? '0');
+  final suffix = parsed.group(3);
+  if (minute > 59) throw FormatException('Invalid $key');
+  if (suffix == 'am' || suffix == 'pm') {
+    if (hour < 1 || hour > 12) throw FormatException('Invalid $key');
+    hour = hour % 12 + (suffix == 'pm' ? 12 : 0);
+  } else if (suffix == 'утра' || suffix == 'вечера') {
+    if (hour < 1 || hour > 11) throw FormatException('Invalid $key');
+    if (suffix == 'вечера') hour += 12;
+  }
+  if (hour > 23) throw FormatException('Invalid $key');
+  final canonical = '${hour.toString().padLeft(2, '0')}:'
+      '${minute.toString().padLeft(2, '0')}';
+  operation[key] = canonical;
+  return _clock(operation, key);
 }
 
 String _clock(Map<String, Object?> args, String key) {

@@ -112,6 +112,11 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     if (!mounted) return;
     _controller.clear();
     _push(input, mine: true);
+    // Trailing voice command cancellation overrides any earlier instruction.
+    if (ViktorReadAnswer.isExplicitCancellation(input)) {
+      _push('Команда отменена. Изменения не выполнялись.');
+      return;
+    }
     setState(() => _busy = true);
     try {
       final db = DatabaseService.instance;

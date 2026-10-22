@@ -2,6 +2,18 @@ import 'package:counter/data/ai/viktor_read_answer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('Explicit trailing voice cancellation blocks an earlier mutation', () {
+    expect(ViktorReadAnswer.isExplicitCancellation(
+      'перенеси все планы за 21 октября на 22 октября отмена отмена'), isTrue);
+    expect(ViktorReadAnswer.isExplicitCancellation('отмена'), isTrue);
+    expect(ViktorReadAnswer.isExplicitCancellation(
+      'Move all pending plans cancel'), isTrue);
+    expect(ViktorReadAnswer.isExplicitCancellation(
+      'Перенеси все планы на сегодня в 9 утра'), isFalse);
+    expect(ViktorReadAnswer.isExplicitCancellation(
+      'Покажи план с названием Отмена проекта завтра'), isFalse);
+  });
+
   test('Empty continue:true asks for one bounded repair, never mutates', () {
     expect(ViktorReadAnswer.hasEmptyReadContinuation(
       needsMoreContext: true, hasActions: false), isTrue);

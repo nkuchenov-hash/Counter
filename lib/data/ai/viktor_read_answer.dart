@@ -21,6 +21,13 @@ class ViktorReadAnswer {
     required bool hasActions,
   }) => needsMoreContext && !hasActions;
 
+  /// Voice dictation can contain a trailing explicit cancellation after an
+  /// earlier instruction. It must never be sent to the model as a mutation.
+  static bool isExplicitCancellation(String input) =>
+      RegExp(r'(?:^|[\s,!.?;:])(?:отмена|cancel)'
+          r'(?:[\s,!.?;:]+(?:отмена|cancel))*[\s,!.?;:]*$',
+          caseSensitive: false).hasMatch(input.trim());
+
   static bool isReadOnlyRequest(String input) {
     final text = input.toLowerCase().trim();
     final startsWithRead = RegExp(
