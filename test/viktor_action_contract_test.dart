@@ -431,14 +431,25 @@ void main() {
         action('list_day_plans', {'wall_day': '2026-10-21'}),
         bulk,
       ]));
-      expect(parsed.actions.length, 1);
-      expect(parsed.actions.single.name, 'bulk_replan');
+      expect(parsed.actions.length, 2,
+        reason: 'An unrelated day read must stay visible in the preview');
+      expect(parsed.actions.first.name, 'list_day_plans');
+      expect(parsed.actions.first.arguments['wall_day'], '2026-10-20');
+      expect(parsed.actions.last.name, 'bulk_replan');
       final mixed = ViktorActionBatch.fromJson(batch([
         action('create_tag', {'name': 'Example', 'domain': 'plan'}),
         bulk,
       ]));
       expect(mixed.actions.length, 2,
         reason: 'Never silently remove unrelated writes');
+      final relevantOnly = ViktorActionBatch.fromJson(batch([
+        action('list_day_plans', {'wall_day': '2026-10-21'}),
+        bulk,
+        action('list_day_plans', {'wall_day': '2026-10-22'}),
+      ]));
+      expect(relevantOnly.actions.length, 1,
+          reason: 'Brain independently reloads the actual source and target');
+      expect(relevantOnly.actions.single.name, 'bulk_replan');
     });
     test('rejects oversized, empty and unsupported batches', () {
       expect(() => ViktorActionBatch.fromJson(batch([])),
