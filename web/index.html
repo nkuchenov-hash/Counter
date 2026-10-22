@@ -52,7 +52,9 @@
   </style>
 
   <!-- Google Sign-In Web Client ID. Add authorized redirect URI in Google Cloud Console: https://nkuchenov-hash.github.io/Counter/ -->
-  <script src="https://apis.google.com/js/api.js"></script>
+  <!-- Never block the Flutter bootstrap on an external Google endpoint.
+       Google auth scripts may be unavailable or slow on some networks. -->
+  <script src="https://apis.google.com/js/api.js" async></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <meta name="google-signin-client_id" content="647328834111-9v6vqhi9p1bl1fg6cbc1huvdcvmc89tr.apps.googleusercontent.com">
 
@@ -72,6 +74,40 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
-  <script src="flutter_bootstrap.js" async></script>
+  <!-- If the app entrypoint cannot load at all, display a recoverable
+       status rather than an indefinitely blank page. Flutter owns the UI
+       once its view exists; this never covers an already mounted app. -->
+  <script>
+    (function () {
+      var statusShown = false;
+      function showBootFailure() {
+        if (statusShown ||
+            document.querySelector('flutter-view, flt-glass-pane')) return;
+        statusShown = true;
+        var panel = document.createElement('div');
+        panel.id = 'lifeos-boot-recovery';
+        panel.style.cssText =
+          'position:fixed;inset:0;display:flex;align-items:center;' +
+          'justify-content:center;background:#FAFAF8;color:#111;' +
+          'font:16px/1.5 Arial,sans-serif;padding:24px;z-index:9999;';
+        panel.innerHTML =
+          '<div style="max-width:400px;text-align:center">' +
+          '<h1 style="font-size:24px;margin:0 0 12px">LIFE OS</h1>' +
+          '<p>Приложение не удалось загрузить. Проверьте подключение к сайту.</p>' +
+          '<button id="lifeos-retry" style="cursor:pointer;font:inherit;' +
+          'background:#111;color:#fff;border:0;border-radius:8px;' +
+          'padding:12px 20px">Повторить загрузку</button>' +
+          '</div>';
+        document.body.appendChild(panel);
+        document.getElementById('lifeos-retry').onclick = function () {
+          window.location.reload();
+        };
+      }
+      window.lifeosBootstrapFailed = showBootFailure;
+      window.setTimeout(showBootFailure, 12000);
+    })();
+  </script>
+  <script src="flutter_bootstrap.js" async
+          onerror="window.lifeosBootstrapFailed && window.lifeosBootstrapFailed()"></script>
 </body>
 </html>
