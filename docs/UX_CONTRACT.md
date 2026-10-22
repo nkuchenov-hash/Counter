@@ -16,6 +16,7 @@ This document defines how Life OS behaves when people interact with it. It is th
 - Model-emitted completion synonyms may normalize to exactly `complete`, `incomplete`, or `all` only when unequivocal. Ambiguous status remains a validation error; Brain previews the affected owned rows and retains confirmation and no-duplicate/no-conflict guards.
 - Voice transport must report its real HTTP status and whether submit or poll failed when a proxy or PocketBase returns JSON without `error`. Do not confuse generic server failures with SpeechKit provider decisions or expose upstream body, transcript or keys.
 - Production server deploy must smoke-test both unauthenticated Yandex start and poll endpoints for HTTP 401; no synthetic hook tests or server startup smoke alone prove authenticated audio works.
+- PocketBase JS route callbacks run in isolated contexts. Any shared Yandex SpeechKit auth/stream-frame helper must load through `require(`\${__hooks}/...`)` **inside** its callback. Tests must execute route functions in separate VM contexts rather than sharing script-global declarations.
 
 ## Viktor read observations and streaming speech response (2026-10-21)
 
