@@ -238,7 +238,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "list_categories {}, create_category {name,parent_category_id?};",
     "list_tags {domain:'plan'|'list'}, create_tag {name,domain}, rename_tag {tag_id,expected_name,name};",
     "list_backlog_items {}, set_list_item_done {item_id,expected_title,expected_is_done,is_done}, rename_list_item {item_id,expected_title,title};",
-    "list_notes {}, search_notes {query?,year?,month?,limit?}, read_note {note_id}, create_note {title,text,category_id?}, edit_note {note_id,expected_title,text};",
+    "list_notes {}, search_notes {query?,year?,month?,limit?}, read_note {note_id}, create_note {title,text,category_id?}, edit_note {note_id,expected_title,text}, edit_note_line {note_id,expected_title,line_number,expected_text,text};",
     "list_paths {}, create_path {name,category_id,goal,stages:[{title,criteria,actions:[{text,result,minutes}]}]};",
     "get_settings {}, change_setting {field,value}. Allowed fields: theme_mode, preferred_timezone, primary_language, list_completion_behavior, display_name.",
     "For create_path, use 1–16 stages, 1–24 actions per stage, each action 10–480 minutes, clear completion criteria, and a real category ID.",
@@ -317,7 +317,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "start_record", "stop_record", "list_categories", "create_category",
     "list_tags", "create_tag", "rename_tag", "list_backlog_items",
     "set_list_item_done", "rename_list_item", "list_notes", "search_notes", "read_note", "create_note",
-    "edit_note", "list_paths", "create_path", "get_settings",
+    "edit_note", "edit_note_line", "list_paths", "create_path", "get_settings",
     "change_setting"
   ]);
   const names = Array.isArray(body.available_tools)
@@ -371,6 +371,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     ["read_note", "read_note {note_id}"],
     ["create_note", "create_note {title,text,category_id?}"],
     ["edit_note", "edit_note {note_id,expected_title,text}"],
+    ["edit_note_line", "edit_note_line {note_id,expected_title,line_number,expected_text,text}"],
     ["list_paths", "list_paths {}"],
     ["create_path", "create_path {name,category_id,goal,stages:[{title,criteria,actions:[{text,result,minutes}]}]}"],
     ["get_settings", "get_settings {}"],
