@@ -182,8 +182,10 @@ jobs:
               break
             fi
             rm -rf "$SDK_ROOT/ndk/$NDK_VERSION"
-            if yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" "ndk;$NDK_VERSION" && \
-                [[ -f "$SDK_ROOT/ndk/$NDK_VERSION/source.properties" ]]; then
+            # yes may exit with SIGPIPE after sdkmanager succeeds, so
+            # verify the installed payload instead of the pipeline status.
+            yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" "ndk;$NDK_VERSION" || true
+            if [[ -f "$SDK_ROOT/ndk/$NDK_VERSION/source.properties" ]]; then
               echo "Installed NDK $NDK_VERSION."
               break
             fi
