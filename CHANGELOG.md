@@ -3,6 +3,7 @@
 - Fix provider `continue:true` with a valid mutation: the app no longer rejects it as an invalid read-only observation. Final `bulk_replan` proceeds to Brain's independent two-day preview and confirmation.
 - Yandex compact and general AI instructions explicitly restrict `continue:true` to reads. Bulk status-based replanning uses fresh Brain state without unnecessary read tool loops.
 - Do not silently return a list as if a requested edit succeeded when the model repeats a read without proposing changes.
+- When the model sends `continue:true` with no tools, request one bounded schema correction; never treat it as a read result or silently execute a write.
 - Added read/write transition unit regression and PocketBase instruction checks. Live account preview, user consent and actual schedule result are still not verified.
 
 ## [2026-10-22] — Viktor bulk status and SpeechKit backend diagnostics (proposed, not deployed)
