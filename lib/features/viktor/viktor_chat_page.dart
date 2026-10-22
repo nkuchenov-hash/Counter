@@ -111,6 +111,18 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     if (_listening || _transcribing || _startingMic) return;
     if (!mounted) return;
     _controller.clear();
+    // Preserve the preceding dialogue for references such as "choose option
+    // two" or "change Saturday". Never include the current message twice,
+    // greetings, or unbounded history in the model context.
+    final previousTurns = _messages.skip(1)
+        .where((message) => message.text.trim().isNotEmpty)
+        .map((message) => <String, String>{
+          'role': message.mine ? 'user' : 'assistant',
+          'content': message.text,
+        }).toList();
+    final dialogContext = previousTurns.length > 12
+        ? previousTurns.sublist(previousTurns.length - 12)
+        : previousTurns;
     _push(input, mine: true);
     // Trailing voice command cancellation overrides any earlier instruction.
     if (ViktorReadAnswer.isExplicitCancellation(input)) {
@@ -134,6 +146,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         settings: _settings,
         selectedPlanIds: widget.selectedPlanIds,
         requestId: requestId,
+            conversationHistory: dialogContext,
       );
       // Some models emit continue:true even alongside a final mutation.
       // Never reject an authorized proposal solely due to that flag:
@@ -164,6 +177,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
             selectedPlanIds: widget.selectedPlanIds,
             toolObservations: toolObservations,
             requestId: requestId,
+            conversationHistory: dialogContext,
             proposalFeedback: 'continue:true requires at least one read tool. '
                 'For bulk_replan propose a final write with continue:false '
                 'because Brain loads source and destination day records.',
@@ -209,6 +223,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
           selectedPlanIds: widget.selectedPlanIds,
           toolObservations: toolObservations,
           requestId: requestId,
+            conversationHistory: dialogContext,
         );
       }
       if (!mounted) return;
