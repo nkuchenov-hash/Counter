@@ -16,6 +16,7 @@ This document defines how Life OS behaves when people interact with it. It is th
 - Treat a model's `continue:true` as an instruction for **read-only observations only**. If a validated mutation is already proposed, skip the read loop and proceed through the ordinary Brain fresh-state preview, explicit bulk confirmation and conflict checks. Never execute a mutation as a read operation or silently drop a write because the model set `continue:true`.
 - `bulk_replan` uses Brain-owned fresh source/destination data; do not require `list_day_plans` before a status-filtered bulk mutation. Keep source/target day, completion status, requested IANA timezone and existing task durations grounded in the user's intent.
 - A duplicate read is an acceptable final response to a genuine read-only query; for a mutation request, say that no change was proposed or applied rather than presenting a read result as a successful edit.
+- `continue:true` with zero actions permits one bounded proposal repair, not a new user-facing failure or unlimited AI retry.
 - Regression coverage must exercise both `continue:true` + list/read (continue) and `continue:true` + validated mutation (final preview), including a status-filtered previous-day-to-today move. Actual user data is never mutated by a smoke test.
 
 ## Viktor bulk status and SpeechKit route diagnostics (2026-10-22)
