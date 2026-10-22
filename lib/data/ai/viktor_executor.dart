@@ -327,6 +327,8 @@ class ViktorExecutor {
         case 'rename_list_item':
         case 'list_notes':
         case 'search_notes':
+        case 'search_record_notes':
+        case 'read_record_note':
         case 'read_note':
         case 'create_note':
         case 'edit_note':
@@ -533,6 +535,8 @@ class ViktorExecutor {
         case 'rename_list_item':
         case 'list_notes':
         case 'search_notes':
+        case 'search_record_notes':
+        case 'read_record_note':
         case 'read_note':
         case 'create_note':
         case 'edit_note':

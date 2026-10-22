@@ -4,6 +4,7 @@ import 'package:counter/data/models.dart';
 import 'package:counter/data/paths/path_repository.dart';
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'viktor_action_contract.dart';
+import 'viktor_record_note_tools.dart';
 
 /// Change a single numbered nonempty line, preserving all other note blocks,
 /// existing media, metadata and unchanged formatting.
@@ -57,17 +58,20 @@ class ViktorDomainTools {
   ViktorDomainTools(this.db);
   final DatabaseService db;
   late final PathRepository _paths = PathRepository(database: db);
+  late final ViktorRecordNoteTools _recordNotes = ViktorRecordNoteTools(db);
 
   static const names = <String>{
     'list_categories', 'create_category',
     'list_tags', 'create_tag', 'rename_tag',
     'list_backlog_items', 'set_list_item_done', 'rename_list_item',
-    'list_notes', 'search_notes', 'read_note', 'create_note', 'edit_note', 'edit_note_line',
+    'list_notes', 'search_notes', 'read_note', 'search_record_notes',
+    'read_record_note', 'create_note', 'edit_note', 'edit_note_line',
     'list_paths', 'create_path', 'get_settings', 'change_setting',
   };
   static const reads = <String>{
     'list_categories', 'list_tags', 'list_backlog_items',
-    'list_notes', 'search_notes', 'read_note', 'list_paths', 'get_settings',
+    'list_notes', 'search_notes', 'read_note',
+    'search_record_notes', 'read_record_note', 'list_paths', 'get_settings',
   };
 
   CategoryRule? _category(String? rowId) {
@@ -264,6 +268,14 @@ class ViktorDomainTools {
           a['item_id'] as String, a['expected_title'] as String);
         return 'Переименовать «' + item.title + '» в «' +
             (a['title'] as String) + '».';
+      case 'search_record_notes':
+        return _recordNotes.search(
+          query: a['query'] as String? ?? '',
+          year: a['year'] as int?, month: a['month'] as int?,
+          limit: a['limit'] as int? ?? 20,
+        );
+      case 'read_record_note':
+        return _recordNotes.read(a['record_id'] as String);
       case 'search_notes':
         return _searchNotes(a);
       case 'read_note':

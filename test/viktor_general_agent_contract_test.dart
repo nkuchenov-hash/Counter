@@ -11,6 +11,13 @@ Map<String, dynamic> batch(List<Map<String, dynamic>> actions) =>
 
 void main() {
   test('Historical notes search and exact read are safe read-only tools', () {
+    expect(ViktorActionBatch.fromJson(batch([
+      action('search_record_notes', {'year': 2023, 'month': 1}),
+      action('read_record_note', {'record_id': 'aaaaabbbbbccccc'}),
+    ])).hasMutations, false);
+    expect(() => ViktorActionBatch.fromJson(batch([
+      action('search_record_notes', {'month': 1}),
+    ])), throwsFormatException);
     for (final actionData in [
       action('search_notes', {'year': 2023, 'month': 1}),
       action('search_notes', {'query': 'стихотворение', 'limit': 15}),

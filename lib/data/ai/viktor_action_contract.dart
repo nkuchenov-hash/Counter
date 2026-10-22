@@ -145,6 +145,7 @@ class ViktorAction {
         // All downstream preview/Brain paths receive one canonical form.
         args['operations'] = canonicalOperations;
       case 'search_notes':
+      case 'search_record_notes':
         _onlyKeys(args, const {'query', 'year', 'month', 'limit'});
         if (args.containsKey('query')) {
           _text(args, 'query', maxLength: 160);
@@ -175,6 +176,9 @@ class ViktorAction {
       case 'read_note':
         _onlyKeys(args, const {'note_id'});
         _id(args, 'note_id');
+      case 'read_record_note':
+        _onlyKeys(args, const {'record_id'});
+        _id(args, 'record_id');
       case 'list_categories':
       case 'list_backlog_items':
       case 'list_notes':

@@ -60,6 +60,7 @@ Concrete acceptance scenarios:
 
 ## Incremental code in this branch
 
+- Read-only `search_record_notes` and `read_record_note` search historic Records and read numbered text. Historic Record line edits are not yet implemented.
 - Read-only `search_notes` with text and creation year/month filters; result
   snippets, source record ID and creation date. `read_note` returns numbered
   nonempty lines from the canonical NoteDocument. This does **not** yet cover
