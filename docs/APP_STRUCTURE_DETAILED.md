@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `ec2876f5` on 2026-10-22.**
+**Generated from input HEAD `3186029d` on 2026-10-22.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 860 |
-| `MEDIUM` | 84 |
+| `HIGH` | 861 |
+| `MEDIUM` | 83 |
 
 ---
 
@@ -13620,8 +13620,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain helper for data/sync — viktor atomic bulk gateway. Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What this is:** Brain helper for data/sync — viktor atomic bulk gateway.
+- **Human purpose:** Brain helper for data/sync — Brain-owned authenticated atomic bulk schedule gateway and post-save verification. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Brain-owned authenticated atomic bulk schedule gateway and post-save verification.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
 - **Contents:** Dart helpers and types (`ViktorAtomicBulkGateway`).
 - **Key code names:** `ViktorAtomicBulkGateway`
@@ -13631,10 +13631,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** viktor atomic bulk gateway
+- **Responsibilities:** Brain-owned authenticated atomic bulk schedule gateway and post-save verification
 - **When to open:** When behavior tied to `viktor_atomic_bulk_gateway.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor atomic bulk gateway
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Brain-owned authenticated atomic bulk schedule gateway and post-save verification
 
 RU:
 
@@ -38155,10 +38155,10 @@ EN:
 - **Why needed:** Prevents regressions when related production code changes.
 - **Contents:** Test cases (symbols: test groups).
 - **Repository role:** test fixture
-- **Evidence of use:** Tracked under `test/fixtures/`; retained as STT/Notes diagnostic or golden sample (see neighboring test files).
+- **Evidence of use:** Read/referenced by: `.github/workflows/deploy-pocketbase.yml`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
-- **Confidence:** MEDIUM
+- **Confidence:** HIGH
 - **Owner / layer:** tests
 - **Responsibilities:** Assert expected behavior for `viktor_atomic_schedule_hook_test` scenario.
 - **When to open:** CI failure or changing code near `viktor_atomic_schedule_hook`.
@@ -38172,10 +38172,10 @@ RU:
 - **Зачем:** Ловит регрессии при правках связанного production-кода.
 - **Содержимое:** Тест-кейсы (символы: test groups).
 - **Роль в репозитории:** test fixture
-- **Доказательства использования:** Файл в `test/fixtures/`; образец для STT/Notes тестов (см. соседние test-файлы).
+- **Доказательства использования:** Читается/упоминается: `.github/workflows/deploy-pocketbase.yml`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
-- **Уверенность:** MEDIUM
+- **Уверенность:** HIGH
 - **Владелец / слой:** тесты
 - **Обязанности:** Проверяет ожидаемое поведение сценария `viktor_atomic_schedule_hook_test`.
 - **Когда открывать:** Падение CI или правка кода около `viktor_atomic_schedule_hook`.
