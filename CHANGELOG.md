@@ -1,3 +1,9 @@
+## [2026-10-22] — Viktor guarded schedule commit correctness (PR #337; not released)
+
+- Reject duplicate PocketBase plan IDs before atomic schedule commit; `Set.add()` does not return a success boolean, so the old duplicate guard was ineffective.
+- Require exact millisecond `updated` revision match on commit, rejecting another device's edit even within one second of preview approval; preserve existing timestamp comparison tolerance for schedule fields.
+- Expand `viktor_atomic_schedule_hook_test.cjs` with duplicate-ID, malformed-ID and subsecond stale-approval rollback regressions; JavaScript handler test passed locally, but GitHub CI and authenticated production tests remain blocked/pending.
+
 ## [2026-10-22] — Viktor V2 agent groundwork (PR #337 — unmerged, NOT released)
 
 - Add owner-scoped, append-only `viktor_turns` for cross-session/cross-device conversation history. Client restores recent messages and persists turns without overwriting a second device's changes; provider receives at most 12 recent bounded turns, not credentials.
