@@ -106,8 +106,8 @@ jobs:
           set -euo pipefail
           # Google CDN failures must never block LIFE OS rendering.
           test -d build/web/canvaskit
-          find build/web/canvaskit -type f -name '*.wasm' | grep -q .
-          find build/web/canvaskit -type f -name '*.js' | grep -q .
+          test -n "$(find build/web/canvaskit -type f -name '*.wasm' -print -quit)"
+          test -n "$(find build/web/canvaskit -type f -name '*.js' -print -quit)"
 
       - name: Version Flutter web entrypoint
         if: steps.freshness.outputs.fresh == 'true'
