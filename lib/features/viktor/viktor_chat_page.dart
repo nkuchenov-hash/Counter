@@ -149,7 +149,14 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         conversationHistory: dialogContext,
       );
       var repairedEmptyRead = false;
-      for (var step = 0; response.needsMoreContext; step++) {
+      for (var step = 0;
+          response.needsMoreContext ||
+              ViktorReadAnswer.requiresDocumentRead(
+                input: input,
+                actions: response.actions?.actions.map((a) => a.name)
+                    .toList() ?? const <String>[],
+              );
+          step++) {
         if (!mounted) return;
         if (step >= 4) {
           throw StateError('Виктор достиг предела проверки данных. '
