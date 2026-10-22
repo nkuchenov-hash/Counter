@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `f8600ee6` on 2026-10-22.**
+**Generated from input HEAD `0f44a22c` on 2026-10-22.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 938 — each appears **exactly once** below.
+**Tracked files:** 939 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 182 |
-| `test` | 130 |
+| `test` | 131 |
 | `Brain/data` | 108 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 505 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 245 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 246 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 855 |
+| `HIGH` | 856 |
 | `MEDIUM` | 83 |
 
 ---
@@ -13620,8 +13620,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain helper for data/sync — viktor conversation store. Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What this is:** Brain helper for data/sync — viktor conversation store.
+- **Human purpose:** Brain helper for data/sync — Owner-scoped immutable PocketBase conversation turns and bounded model dialogue context. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Owner-scoped immutable PocketBase conversation turns and bounded model dialogue context.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
 - **Contents:** Dart helpers and types (`ViktorDialogueTurn`, `ViktorConversationStore`).
 - **Key code names:** `ViktorDialogueTurn`, `ViktorConversationStore`
@@ -13631,10 +13631,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** viktor conversation store
+- **Responsibilities:** Owner-scoped immutable PocketBase conversation turns and bounded model dialogue context; no provider secrets
 - **When to open:** When behavior tied to `viktor_conversation_store.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor conversation store
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Owner-scoped immutable PocketBase conversation turns and bounded model dialogue context
 
 RU:
 
@@ -38181,6 +38181,44 @@ RU:
 - **Когда открывать:** Падение CI или правка кода около `viktor_connection_vault`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Набор `test/`; production-субъект около `viktor_connection_vault`.
+
+
+### `test/viktor_conversation_store_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `viktor_conversation_store_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `viktor_conversation_store_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/viktor_conversation_store_test.dart` / CI when enabled. (2) Namesake production subject: `lib/data/ai/viktor_conversation_store.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `viktor_conversation_store_test` scenario.
+- **When to open:** CI failure or changing code near `viktor_conversation_store`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `viktor_conversation_store`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `viktor_conversation_store` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `viktor_conversation_store` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `viktor_conversation_store`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/viktor_conversation_store_test.dart`. (2) Парный production-файл: `lib/data/ai/viktor_conversation_store.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `viktor_conversation_store`.
+- **Когда открывать:** Падение CI или правка кода рядом с `viktor_conversation_store`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
 
 
 ### `test/viktor_existing_plan_voice_timezone_test.dart`
