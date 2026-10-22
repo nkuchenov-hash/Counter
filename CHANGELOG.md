@@ -1,3 +1,10 @@
+## [2026-10-22] — Viktor bulk status and SpeechKit backend diagnostics (proposed, not deployed)
+
+- Normalize explicit `bulk_replan` completion status synonyms from AI output to the canonical `complete`/`incomplete`/`all` contract, while rejecting ambiguous statuses and preserving Brain-controlled, consent-gated edits.
+- Fix generic PocketBase/HTTP speech error diagnostics: retain real HTTP status and submit/poll stage without disclosing server response content or credentials.
+- Extend release server smoke checks to Yandex SpeechKit start/poll routes (401 unauthenticated), and add regression coverage.
+- This patch does not claim a live authenticated SpeechKit transcription or user-schedule success. Await CI and on-account verification.
+
 ## [2026-10-22] — P0: fast warm reload and recoverable web startup
 
 - Made the external Google API script asynchronous; a slow or unreachable `apis.google.com` can no longer stop HTML parsing and Flutter bootstrap.

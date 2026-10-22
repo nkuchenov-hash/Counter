@@ -21,13 +21,30 @@ class ViktorVoiceGateway {
     throw const FormatException('invalid_speech_response');
   }
 
-  FormatException _failure(Map<String, dynamic> data) {
-    final code = (data['error'] ?? 'speech_missing_error_code').toString();
-    final status = data['status'];
-    if (status is int && status >= 400 && status <= 599) {
-      return FormatException('$code (HTTP $status)');
+  FormatException _failure(Map<String, dynamic> data,
+      {required int httpStatus, required String stage}) {
+    // PocketBase and reverse proxies can return {code, message} instead of
+    // our hook's {error}. Never misreport that as a SpeechKit provider error.
+    // Preserve HTTP status and request stage without echoing remote messages.
+    final code = data['error'];
+    final providerStatus = data['status'];
+    if (code is String && code.trim().isNotEmpty) {
+      final status = providerStatus is int &&
+              providerStatus >= 400 && providerStatus <= 599
+          ? providerStatus : httpStatus;
+      return FormatException('$code (HTTP $status, stage $stage)');
     }
-    return FormatException(code);
+    if (httpStatus == 404) {
+      return FormatException('speech_route_missing (HTTP 404, stage $stage)');
+    }
+    if (httpStatus == 401 || httpStatus == 403) {
+      return FormatException('speech_auth_failed (HTTP $httpStatus, stage $stage)');
+    }
+    if (httpStatus >= 500) {
+      return FormatException('speech_backend_failed (HTTP $httpStatus, stage $stage)');
+    }
+    return FormatException(
+        'speech_unstructured_error (HTTP $httpStatus, stage $stage)');
   }
 
   Future<String> transcribe({
@@ -102,7 +119,7 @@ class ViktorVoiceGateway {
         final state = _payload(check);
         if (check.statusCode == 202) continue;
         if (check.statusCode != 200) {
-          throw _failure(state);
+          throw _failure(state, httpStatus: check.statusCode, stage: 'poll');
         }
         final transcript = (state['transcript'] ?? '').toString().trim();
         if (transcript.isEmpty) throw const FormatException('no_speech_detected');
@@ -111,7 +128,7 @@ class ViktorVoiceGateway {
       throw const FormatException('speech_recognition_timeout');
     }
     if (response.statusCode != 200) {
-      throw _failure(payload);
+      throw _failure(payload, httpStatus: response.statusCode, stage: 'submit');
     }
     final transcript = (payload['transcript'] ?? '').toString().trim();
     if (transcript.isEmpty) throw const FormatException('no_speech_detected');

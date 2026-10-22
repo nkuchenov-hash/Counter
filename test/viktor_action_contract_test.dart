@@ -252,6 +252,50 @@ void main() {
       }
     });
 
+
+    test('normalizes explicit bulk completion synonyms, still rejects unknown', () {
+      for (final alias in ['completed', 'done', 'finished', 'выполненные']) {
+        final parsed = ViktorAction.fromJson(action('bulk_replan', {
+          'operations': [
+            {'kind': 'compact', 'status': alias, 'source_day': '2026-10-21'}
+          ],
+        }));
+        final ops = parsed.arguments['operations'] as List;
+        expect((ops.single as Map)['status'], 'complete');
+      }
+      for (final alias in ['not_done', 'not_completed', 'unfinished',
+                           'undone', 'невыполненные']) {
+        final parsed = ViktorAction.fromJson(action('bulk_replan', {
+          'operations': [
+            {'kind': 'move', 'status': alias,
+             'source_day': '2026-10-21', 'target_day': '2026-10-22',
+             'start_time': '09:00', 'timezone': 'New York'}
+          ],
+        }));
+        final ops = parsed.arguments['operations'] as List;
+        expect((ops.single as Map)['status'], 'incomplete');
+      }
+      for (final ambiguous in ['pending', 'active', 'unverified', '']) {
+        expect(() => ViktorAction.fromJson(action('bulk_replan', {
+          'operations': [
+            {'kind': 'compact', 'status': ambiguous, 'source_day': '2026-10-21'}
+          ],
+        })), throwsFormatException);
+      }
+      final combined = ViktorAction.fromJson(action('bulk_replan', {
+        'operations': [
+          {'kind': 'move', 'status': 'unfinished',
+           'source_day': '2026-10-21', 'target_day': '2026-10-22',
+           'start_time': '09:00'},
+          {'kind': 'compact', 'status': 'completed',
+           'source_day': '2026-10-21'},
+        ],
+      }));
+      final ops = combined.arguments['operations'] as List;
+      expect((ops.first as Map)['status'], 'incomplete');
+      expect((ops.last as Map)['status'], 'complete');
+    });
+
     test('rejects oversized, empty and unsupported batches', () {
       expect(() => ViktorActionBatch.fromJson(batch([])),
           throwsFormatException);

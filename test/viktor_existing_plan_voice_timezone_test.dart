@@ -87,5 +87,14 @@ void main() {
       contains('авторизацию'));
     expect(viktorVoiceErrorText(Exception('secret=abcdef')),
       isNot(contains('abcdef')));
+    expect(viktorVoiceErrorText(const FormatException(
+        'speech_backend_failed (HTTP 502, stage poll)')),
+      allOf(contains('HTTP 502'), contains('получения результата')));
+    expect(viktorVoiceErrorText(const FormatException(
+        'speech_route_missing (HTTP 404, stage submit)')),
+      contains('Маршрут SpeechKit отсутствует'));
+    expect(viktorVoiceErrorText(const FormatException(
+        'speech_unstructured_error (HTTP 400, stage submit)')),
+      contains('HTTP 400'));
   });
 }
