@@ -326,8 +326,11 @@ class ViktorExecutor {
         case 'set_list_item_done':
         case 'rename_list_item':
         case 'list_notes':
+        case 'search_notes':
+        case 'read_note':
         case 'create_note':
         case 'edit_note':
+        case 'edit_note_line':
         case 'list_paths':
         case 'create_path':
         case 'get_settings':
@@ -529,8 +532,11 @@ class ViktorExecutor {
         case 'set_list_item_done':
         case 'rename_list_item':
         case 'list_notes':
+        case 'search_notes':
+        case 'read_note':
         case 'create_note':
         case 'edit_note':
+        case 'edit_note_line':
         case 'list_paths':
         case 'create_path':
         case 'get_settings':
