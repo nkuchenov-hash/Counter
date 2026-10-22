@@ -327,10 +327,8 @@ class ViktorActionBatch {
         throw FormatException('Action ${i + 1}: ${error.message}');
       }
     }
-    // A model sometimes returns list_day_plans followed by bulk_replan.
-    // The Brain already reloads and checks the fresh source/target days for
-    // this mutation; same-day reads are redundant, not a second write.
-    // Never discard unrelated reads or independent mutations.
+    // Brain reloads both affected dates for bulk_replan. Same-day list
+    // reads included in the same proposal are redundant, never mutations.
     final bulkActions =
         parsed.where((action) => action.name == 'bulk_replan').toList();
     if (bulkActions.length == 1 && parsed.length > 1) {
@@ -432,40 +430,16 @@ String _day(Map<String, Object?> args, String key) {
   return value;
 }
 
-/// Normalize only unambiguous clock spellings emitted by small models for
-/// bulk schedule moves. Never guess a missing clock, reinterpret a free-form
-/// sentence or silently overwrite a conflicting timezone.
+/// Normalize only unambiguous model clock variants. Never invent a missing
+/// time or overwrite a conflicting timezone.
 String _bulkClock(Map<String, Object?> operation, String key) {
   final raw = operation[key];
   if (raw is! String || raw.isEmpty || raw.length > 48) {
     throw FormatException('Invalid $key');
   }
   var text = raw.trim().toLowerCase();
-  // Accept a timezone explicitly attached to the clock (09:00 NY) only
-  // when it cannot conflict with a separately supplied timezone.
   final ny = RegExp(
-    r'\\s*(?:\\(?\\s*(?:ny|new york|нью[\\s-]?йорку|нью[\\s-]?йорк)\\s*\\)?)
-  final value = _text(args, key, maxLength: 5);
-  if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(value)) {
-    throw FormatException('Invalid wall clock: $key');
-  }
-  final p = value.split(':').map(int.parse).toList();
-  if (p[0] > 23 || p[1] > 59) {
-    throw FormatException('Invalid wall clock: $key');
-  }
-  return value;
-}
-
-String _longText(Map<String, Object?> args, String key,
-    {int maxLength = 8000}) {
-  final value = args[key];
-  if (value is! String || value.trim().isEmpty || value.length > maxLength ||
-      value.contains(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'))) {
-    throw FormatException('Invalid $key');
-  }
-  return value;
-}
-,
+    r'\s*(?:\(?\s*(?:по\s+)?(?:ny|new york|нью[\s-]?йорку|нью[\s-]?йорк)\s*\)?)$',
     caseSensitive: false,
   ).firstMatch(text);
   if (ny != null) {
@@ -479,28 +453,7 @@ String _longText(Map<String, Object?> args, String key,
     text = text.substring(0, ny.start).trim();
   }
   final parsed = RegExp(
-    r'^(\\d{1,2})(?::(\\d{2}))?(?::00)?(?:\\s*(am|pm|утра|вечера))?
-  final value = _text(args, key, maxLength: 5);
-  if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(value)) {
-    throw FormatException('Invalid wall clock: $key');
-  }
-  final p = value.split(':').map(int.parse).toList();
-  if (p[0] > 23 || p[1] > 59) {
-    throw FormatException('Invalid wall clock: $key');
-  }
-  return value;
-}
-
-String _longText(Map<String, Object?> args, String key,
-    {int maxLength = 8000}) {
-  final value = args[key];
-  if (value is! String || value.trim().isEmpty || value.length > maxLength ||
-      value.contains(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'))) {
-    throw FormatException('Invalid $key');
-  }
-  return value;
-}
-,
+    r'^(\d{1,2})(?::(\d{2}))?(?::00)?(?:\s*(am|pm|утра|вечера))?$',
   ).firstMatch(text);
   if (parsed == null) throw FormatException('Invalid $key');
   var hour = int.parse(parsed.group(1)!);
@@ -511,7 +464,6 @@ String _longText(Map<String, Object?> args, String key,
     if (hour < 1 || hour > 12) throw FormatException('Invalid $key');
     hour = hour % 12 + (suffix == 'pm' ? 12 : 0);
   } else if (suffix == 'утра' || suffix == 'вечера') {
-    // 12 утра/вечера is ambiguous in ordinary Russian speech.
     if (hour < 1 || hour > 11) throw FormatException('Invalid $key');
     if (suffix == 'вечера') hour += 12;
   }
