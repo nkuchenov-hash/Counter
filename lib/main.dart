@@ -35,6 +35,7 @@ import 'package:counter/core/url_strategy_stub.dart'
     as url_strategy;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
@@ -377,8 +378,52 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
   bool _handlingSessionInvalid = false;
   bool _profileHydrationFailed = false;
   String? _profileHydrationMessage;
+  bool _startupIsSlow = false;
+  bool _bootstrapRunning = false;
+  Timer? _bootstrapWatchdog;
 
+  /// Never show an unbounded spinner during a slow or stalled restore.
+  /// The startup continues in the background; this status is removed
+  /// automatically if cached profile/data hydration succeeds.
   Future<void> _postAuthBootstrap({String? failureMessageKey}) async {
+    if (_bootstrapRunning) return;
+    _bootstrapRunning = true;
+    _bootstrapWatchdog?.cancel();
+    _startupIsSlow = false;
+    _bootstrapWatchdog = Timer(const Duration(seconds: 8), () {
+      if (!mounted || _checked) return;
+      setState(() => _startupIsSlow = true);
+    });
+    try {
+      await _postAuthBootstrapBody(failureMessageKey: failureMessageKey);
+    } catch (e, st) {
+      // A plugin/decoding exception must resolve the loading state, too.
+      debugPrint('LIFE_OS_BOOT_FAILED: $e\\n$st');
+      if (!mounted) return;
+      setState(() {
+        _profileHydrationFailed = true;
+        _profileHydrationMessage = 'Ошибка запуска приложения: $e';
+        _profileId = DatabaseService.instance.currentProfileId;
+        _checked = true;
+      });
+    } finally {
+      _bootstrapWatchdog?.cancel();
+      _bootstrapRunning = false;
+    }
+  }
+
+  Future<void> _retryStalledBootstrap() async {
+    // A stalled async storage operation may still be modifying global state.
+    // Reload the browser to start a clean, single restore, rather than
+    // launch a second overlapping initialization against the same caches.
+    if (kIsWeb) {
+      await launchUrl(Uri.base, webOnlyWindowName: '_self');
+    } else if (!_bootstrapRunning) {
+      await _postAuthBootstrap();
+    }
+  }
+
+  Future<void> _postAuthBootstrapBody({String? failureMessageKey}) async {
     if (mounted) {
       setState(() {
         _checked = false;
@@ -505,6 +550,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
 
   @override
   void dispose() {
+    _bootstrapWatchdog?.cancel();
     DatabaseService.instance.offlineSync.removeListener(
       _handleOfflineSyncChanged,
     );
@@ -521,7 +567,13 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_checked) return const _LoadingScreen();
+    if (!_checked) {
+      return _startupIsSlow
+          ? _SlowStartupScreen(
+              onRetry: () => unawaited(_retryStalledBootstrap()),
+            )
+          : const _LoadingScreen();
+    }
     if (_profileHydrationFailed && _profileId != null && _profileId!.isNotEmpty) {
       return _ProfileHydrationErrorScreen(
         message: _profileHydrationMessage,
@@ -547,6 +599,54 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
       onSignedIn: () async {
         await _postAuthBootstrap(failureMessageKey: 'auth_session_expired');
       },
+    );
+  }
+}
+
+/// Visible, recoverable state if the cached web session or local database
+/// stalls during startup. No cache deletion and no sign-out are performed.
+class _SlowStartupScreen extends StatelessWidget {
+  const _SlowStartupScreen({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const AppLoading(size: AppLoadingSize.medium),
+                  const SizedBox(height: 24),
+                  Text(
+                    'LIFE OS загружается слишком долго',
+                    style: Theme.of(context).textTheme.titleLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Восстановление данных задержалось. Сохранённые '
+                    'данные не удаляются. Можно повторить загрузку.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton(
+                    onPressed: onRetry,
+                    child: const Text('Повторить загрузку'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
