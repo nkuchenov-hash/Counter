@@ -104,10 +104,22 @@
         };
       }
       window.lifeosBootstrapFailed = showBootFailure;
+      function removeBootFailure() {
+        var panel = document.getElementById('lifeos-boot-recovery');
+        if (panel) panel.remove();
+      }
+      window.addEventListener('flutter-first-frame', removeBootFailure);
+      // If the engine attaches after the timeout, never leave the failure
+      // panel on top of an otherwise usable Flutter application.
+      new MutationObserver(function () {
+        if (document.querySelector('flutter-view, flt-glass-pane')) {
+          removeBootFailure();
+        }
+      }).observe(document.body, {childList: true, subtree: true});
       window.setTimeout(showBootFailure, 12000);
     })();
   </script>
-  <script src="flutter_bootstrap.js?v=8fa0da978a9a3265cd5ae1e8c39f2c0eb238070c" async
+  <script src="flutter_bootstrap.js?v=613f586ca10b081c099db5288436878960978641" async
           onerror="window.lifeosBootstrapFailed && window.lifeosBootstrapFailed()"></script>
 </body>
 </html>
