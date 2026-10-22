@@ -457,7 +457,8 @@ String _bulkClock(Map<String, Object?> operation, String key) {
     operation['timezone'] = 'America/New_York';
     text = text.substring(0, ny.start).trim();
   }
-  text = text.replaceFirst(RegExp(r'\s+(?:часов|часа|час)
+  text = text.replaceFirst(RegExp(r'\s+(?:часов|часа|час)$'), '');
+  final parsed = RegExp(
     r'^(\d{1,2})(?:(?::|\.)(\d{1,2}))?(?::00)?(?:\s*(am|pm|утра|вечера))?$',
   ).firstMatch(text);
   if (parsed == null) throw FormatException('Invalid $key');
