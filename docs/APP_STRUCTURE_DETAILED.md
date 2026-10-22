@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `29931c39` on 2026-10-22.**
+**Generated from input HEAD `f8600ee6` on 2026-10-22.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 504 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 246 |
+| `PROVEN_REQUIRED` | 505 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 245 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 854 |
-| `MEDIUM` | 84 |
+| `HIGH` | 855 |
+| `MEDIUM` | 83 |
 
 ---
 
@@ -13626,14 +13626,14 @@ EN:
 - **Contents:** Dart helpers and types (`ViktorDialogueTurn`, `ViktorConversationStore`).
 - **Key code names:** `ViktorDialogueTurn`, `ViktorConversationStore`
 - **Repository role:** Brain/data
-- **Evidence of use:** Tracked Dart source; structural role inferred from path (no importer found in this scan).
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** May break tooling or future wiring; verify before delete.
-- **Confidence:** MEDIUM
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/viktor/viktor_chat_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
 - **Owner / layer:** Brain/data
 - **Responsibilities:** viktor conversation store
 - **When to open:** When behavior tied to `viktor_conversation_store.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** May break tooling or future wiring; verify before delete.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
 - **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor conversation store
 
 RU:
@@ -13643,10 +13643,10 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `viktor_conversation_store`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Отслеживаемый Dart; роль по пути (в этом скане импортеров не найдено).
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
-- **Уверенность:** MEDIUM
+- **Доказательства использования:** Импортируется production Dart: `lib/features/viktor/viktor_chat_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
 - **Владелец / слой:** Brain/data
 - **Обязанности:** Поддерживает операции данных в `viktor_conversation_store`.
 - **Когда открывать:** Когда ломается поведение, связанное с `viktor_conversation_store.dart`.
@@ -23927,8 +23927,8 @@ EN:
 - **Human purpose:** `viktor_chat_page.dart` on viktor area — Full-screen AI chat with text, mic and provider settings. Users see `viktor_chat_page.dart` when using viktor area.
 - **What this is:** `viktor_chat_page.dart` on viktor area — Full-screen AI chat with text, mic and provider settings.
 - **Why needed:** Users see `viktor_chat_page.dart` when using viktor area.
-- **Contents:** Primary symbols: `ViktorChatPage`, `_ViktorMessage`, `_ViktorChatPageState`.
-- **Key code names:** `ViktorChatPage`, `_ViktorMessage`, `_ViktorChatPageState`
+- **Contents:** Primary symbols: `ViktorChatPage`, `_ViktorChatPageState`.
+- **Key code names:** `ViktorChatPage`, `_ViktorChatPageState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/planning_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
