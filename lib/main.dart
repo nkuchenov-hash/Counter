@@ -187,15 +187,9 @@ Future<void> _mainAsync() async {
   } else {
     appWearHost = false;
   }
-  try {
-    await StartupLog.stageAsync(
-      'pocketbaseReady',
-      () => DatabaseService.instance.ensurePocketBaseReady(
-          verifyReachability: false,
-        ),
-      blocksFirstFrame: true,
-    );
-  } catch (_) {}
+  // The authenticated root owns PocketBase client bootstrap. Do not wait for
+  // browser storage or network-related services before Flutter's first frame.
+  // Non-web desktop hooks initialize their own client lazily.
   _wireDesktopSttCloudBackend();
   _wireDesktopVoiceBrainHooks();
   final bootLocale =
@@ -219,20 +213,8 @@ Future<void> _mainAsync() async {
   try {
     tz_data.initializeTimeZones();
   } catch (_) {}
-  String? bootProfileId;
-  try {
-    bootProfileId = await StartupLog.stageAsync(
-      'authRestore',
-      () async {
-        final id = await AuthBridge.checkSession(verifyWithServer: false);
-        if (id != null && id.isNotEmpty) {
-          DatabaseService.instance.currentProfileId = id;
-        }
-        return id;
-      },
-      blocksFirstFrame: true,
-    );
-  } catch (_) {}
+  // Session restore runs exactly once in RootAuthWrapper. Repeating a
+  // secure-storage write before runApp used to delay even the first frame.
   url_strategy.usePathUrlStrategy();
   if (kIsWeb) {
     // ignore: avoid_print
