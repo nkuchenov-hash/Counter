@@ -296,6 +296,105 @@ void main() {
       expect((ops.last as Map)['status'], 'complete');
     });
 
+
+    test('Bulk move accepts unambiguous hour, AM/PM, NY and seconds formats', () {
+      for (final example in <(String, String, String?)>[
+        ('9:00', '09:00', null),
+        ('9', '09:00', null),
+        ('09:00:00', '09:00', null),
+        ('9 am', '09:00', null),
+        ('9 утра', '09:00', null),
+        ('9:00 pm', '21:00', null),
+        ('12:00 AM', '00:00', null),
+        ('09:00 NY', '09:00', 'America/New_York'),
+        ('9:00 по Нью-Йорку', '09:00', 'America/New_York'),
+      ]) {
+        final result = ViktorAction.fromJson(action('bulk_replan', {
+          'operations': [
+            {
+              'kind': 'move', 'status': 'incomplete',
+              'source_day': '2026-10-21',
+              'target_day': '2026-10-22',
+              'start_time': example.$1,
+            }
+          ]
+        }));
+        final op = (result.arguments['operations'] as List).single as Map;
+        expect(op['start_time'], example.$2);
+        if (example.$3 != null) expect(op['timezone'], example.$3);
+      }
+    });
+
+    test('Bulk move rejects missing, ambiguous and invalid start times', () {
+      for (final bad in [
+        null, '', 'morning', 'nine', '9-ish', '24:00', '12:70',
+        '12:00:17', '12 утра', '09:00 NY then 10',
+      ]) {
+        expect(() => ViktorAction.fromJson(action('bulk_replan', {
+          'operations': [
+            {
+              'kind': 'move', 'status': 'incomplete',
+              'source_day': '2026-10-21',
+              'target_day': '2026-10-22',
+              if (bad != null) 'start_time': bad,
+            }
+          ]
+        })), throwsFormatException);
+      }
+      expect(() => ViktorAction.fromJson(action('bulk_replan', {
+        'operations': [{
+          'kind': 'move', 'status': 'incomplete',
+          'source_day': '2026-10-21', 'target_day': '2026-10-22',
+          'start_time': '09:00 NY', 'timezone': 'Europe/Moscow',
+        }]
+      })), throwsFormatException);
+    });
+
+    test('One bulk move absorbs only redundant source/target day reads', () {
+      final normalized = ViktorActionBatch.fromJson(batch([
+        action('list_day_plans', {'wall_day': '2026-10-21'}),
+        action('bulk_replan', {
+          'operations': [{
+            'kind': 'move', 'status': 'incomplete',
+            'source_day': '2026-10-21',
+            'target_day': '2026-10-22',
+            'start_time': '9 утра', 'timezone': 'America/New_York',
+          }]
+        }),
+        action('list_day_plans', {'wall_day': '2026-10-22'}),
+      ]));
+      expect(normalized.actions.length, 1);
+      expect(normalized.actions.single.name, 'bulk_replan');
+      expect(normalized.requiresPreview, isTrue);
+      expect(normalized.isSingleReversibleWrite, isFalse);
+      final restored = ViktorActionBatch.fromJson(
+        Map<String, dynamic>.from(normalized.toJson()));
+      expect(restored.actions.length, 1);
+    });
+
+    test('Unrelated reads and multiple mutations never vanish from a batch', () {
+      final bulk = action('bulk_replan', {
+        'operations': [{
+          'kind': 'move', 'status': 'incomplete',
+          'source_day': '2026-10-21', 'target_day': '2026-10-22',
+          'start_time': '09:00',
+        }]
+      });
+      final unrelated = ViktorActionBatch.fromJson(batch([
+        action('list_day_plans', {'wall_day': '2026-10-23'}), bulk,
+      ]));
+      expect(unrelated.actions.length, 2);
+      final extraWrite = ViktorActionBatch.fromJson(batch([
+        bulk, action('create_plan', {
+          'title': 'Unexpected', 'wall_day': '2026-10-22',
+          'duration_minutes': 30, 'start_time': '15:00',
+        }),
+      ]));
+      expect(extraWrite.actions.length, 2);
+      final multipleBulk = ViktorActionBatch.fromJson(batch([bulk, bulk]));
+      expect(multipleBulk.actions.length, 2);
+    });
+
     test('rejects oversized, empty and unsupported batches', () {
       expect(() => ViktorActionBatch.fromJson(batch([])),
           throwsFormatException);
