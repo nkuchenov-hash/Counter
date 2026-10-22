@@ -4,6 +4,16 @@
 class ViktorReadAnswer {
   const ViktorReadAnswer._();
 
+  /// A provider's continue flag is advisory, not a command to reject a
+  /// valid write. After a read, a mutation proposal is a FINAL proposal and
+  /// still goes through the usual Brain preview, confirmation and fresh write.
+  /// Only a read-only proposal can request another observation.
+  static bool shouldContinueReading({
+    required bool needsMoreContext,
+    required bool hasActions,
+    required bool hasMutations,
+  }) => needsMoreContext && hasActions && !hasMutations;
+
   static bool isReadOnlyRequest(String input) {
     final text = input.toLowerCase().trim();
     final startsWithRead = RegExp(
