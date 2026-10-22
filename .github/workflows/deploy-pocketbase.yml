@@ -38,6 +38,10 @@ jobs:
           mapfile -d '' files < <(find pb_hooks pb_migrations -type f -name '*.js' -print0 | sort -z)
           (( ${#files[@]} > 0 ))
           for file in "${files[@]}"; do node --check "$file"; done
+          node test/viktor_pocketbase_hook_test.cjs
+          node test/viktor_audio_transcribe_hook_test.cjs
+          node test/viktor_yandex_voice_hook_test.cjs
+          node test/viktor_connection_vault_test.cjs
 
       - name: Detect PocketBase bundle changes
         id: changes
@@ -114,9 +118,20 @@ jobs:
           grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=' "$fit_env"
           grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=' "$fit_env"
 
+          # Generate the server-held AES key ONCE. Never rotate on deploy.
+          # Keep it outside git and SQLite, with root-only file permissions.
+          vault_dir="/etc/lifeos"
+          vault_env="$vault_dir/viktor-vault.env"
+          $SUDO install -d -m 700 "$vault_dir"
+          if ! $SUDO test -f "$vault_env"; then
+            printf 'VIKTOR_VAULT_KEY=%s\n' "$(openssl rand -hex 16)" | $SUDO tee "$vault_env" >/dev/null
+            $SUDO chmod 600 "$vault_env"
+          fi
+          $SUDO grep -Eq '^VIKTOR_VAULT_KEY=[0-9a-f]{32}$' "$vault_env"
+
           override_dir="/etc/systemd/system/${service_name}.d"
           $SUDO mkdir -p "$override_dir"
-          printf '[Service]\nEnvironmentFile=%s\n' "$fit_env" | $SUDO tee "$override_dir/lifeos-google-fit.conf" >/dev/null
+          printf '[Service]\nEnvironmentFile=%s\nEnvironmentFile=%s\n' "$fit_env" "$vault_env" | $SUDO tee "$override_dir/lifeos-google-fit.conf" >/dev/null
 
           $SUDO mkdir -p "$app_dir/pb_hooks" "$app_dir/pb_migrations"
           $SUDO tar -xzf "$ARCHIVE" -C "$app_dir" pb_hooks pb_migrations
@@ -124,16 +139,33 @@ jobs:
           $SUDO systemctl daemon-reload
           $SUDO systemctl restart "$service_name"
 
-          for attempt in {1..20}; do
+          # PocketBase can take several minutes to bind its HTTPS port after
+          # a migration/restart. Do not falsely mark a good deployment failed.
+          for attempt in {1..120}; do
             health="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
             route="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/sleep-sync/status || true)"
-            if [[ "$health" == "200" && ( "$route" == "401" || "$route" == "403" ) ]]; then exit 0; fi
+            viktor="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 -X POST \
+              -H 'Content-Type: application/json' \
+              --data '{}' https://217-114-0-201.sslip.io/api/viktor/propose || true)"
+            viktor_audio="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 -X POST \
+              -H 'Content-Type: application/json' \
+              --data '{}' https://217-114-0-201.sslip.io/api/viktor/transcribe || true)"
+            viktor_vault_get="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 \
+              https://217-114-0-201.sslip.io/api/viktor/connection || true)"
+            viktor_vault_save="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 -X POST \
+              -H 'Content-Type: application/json' \
+              --data '{}' https://217-114-0-201.sslip.io/api/viktor/connection || true)"
+            if [[ "$health" == "200" &&
+                  ( "$route" == "401" || "$route" == "403" ) &&
+                  "$viktor" == "401" && "$viktor_audio" == "401" &&
+                  "$viktor_vault_get" == "401" && "$viktor_vault_save" == "401" ]]; then exit 0; fi
             sleep 2
           done
+          echo "PocketBase failed startup check after 4 minutes (health=$health, viktor_vault_get=$viktor_vault_get, viktor_vault_save=$viktor_vault_save)" >&2
           exit 1
           REMOTE
 
-      - name: Verify recent cloud sleep and ETNIKA Path in production
+      - name: Verify Xiaomi sleep and ETNIKA Path in production
         shell: bash
         run: |
           set -euo pipefail
@@ -167,28 +199,31 @@ jobs:
           python3 - "$app_dir/pb_data/data.db" <<'PY'
           import json, sqlite3, sys
           con=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True); con.row_factory=sqlite3.Row
-          r=con.execute("SELECT enabled,status,last_error,last_sync_at,last_session_count,last_imported_count,length(coalesce(refresh_token_enc,'')) token_len FROM sleep_sync_connections WHERE provider='google_fit' LIMIT 1").fetchone()
+          r=con.execute("SELECT user_id,enabled,status,last_error,last_sync_at,last_session_count,last_imported_count FROM sleep_sync_connections WHERE provider='xiaomi' LIMIT 1").fetchone()
           def error_class(v):
               s=(v or '').lower()
               if not s:return 'none'
-              if 'google_health_scope_required' in s:return 'authorization_required'
-              if 'invalid_grant' in s:return 'invalid_grant'
-              if '403' in s or 'scope' in s or 'permission' in s:return 'permission'
-              if '401' in s:return 'auth'
+              if 'token' in s or 'authorization' in s or '401' in s:return 'auth'
+              if '403' in s or 'permission' in s:return 'permission'
               return 'other'
-          print('connection='+str(bool(r)).lower())
+          print('xiaomi_connection='+str(bool(r)).lower())
           if r:
-              print('enabled='+str(bool(r['enabled'])).lower())
-              print('token='+str(r['token_len']>0).lower())
-              print('status='+str(r['status']))
-              print('error='+error_class(r['last_error']))
-              print('synced='+str(bool(r['last_sync_at'])).lower())
-              print('sessions='+str(r['last_session_count'] or 0))
-              print('imported='+str(r['last_imported_count'] or 0))
-          n=con.execute("SELECT count(*) FROM records WHERE (title='Sleep' OR title='Сон') AND julianday(end_time) >= julianday('now','-36 hours')").fetchone()[0]
-          latest=con.execute("SELECT date(max(end_time)) FROM records WHERE title='Sleep' OR title='Сон'").fetchone()[0]
-          print('sleep_last_36h='+str(n))
-          print('latest_sleep_day='+str(latest or 'none'))
+              print('xiaomi_enabled='+str(bool(r['enabled'])).lower())
+              print('xiaomi_status='+str(r['status']))
+              print('xiaomi_error='+error_class(r['last_error']))
+              print('xiaomi_synced='+str(bool(r['last_sync_at'])).lower())
+              print('xiaomi_sessions='+str(r['last_session_count'] or 0))
+              print('xiaomi_imported='+str(r['last_imported_count'] or 0))
+              legacy=con.execute("SELECT count(*) FROM sleep_sync_connections WHERE user_id=? AND provider IN ('google_fit','google_health') AND enabled=1",(r['user_id'],)).fetchone()[0]
+              print('legacy_sleep_providers_enabled='+str(legacy))
+          n=con.execute("SELECT count(*) FROM records WHERE sleep_source='xiaomi' OR external_source='xiaomi'").fetchone()[0]
+          recent=con.execute("SELECT count(*) FROM records WHERE (sleep_source='xiaomi' OR external_source='xiaomi') AND julianday(end_time) >= julianday('now','-36 hours')").fetchone()[0]
+          latest=con.execute("SELECT date(max(end_time)) FROM records WHERE sleep_source='xiaomi' OR external_source='xiaomi'").fetchone()[0]
+          aug27=con.execute("SELECT count(*) FROM records WHERE (sleep_source='xiaomi' OR external_source='xiaomi') AND date(end_time)='2026-08-27'").fetchone()[0]
+          print('xiaomi_record_count='+str(n))
+          print('xiaomi_sleep_last_36h='+str(recent))
+          print('xiaomi_latest_sleep_day='+str(latest or 'none'))
+          print('xiaomi_has_2026_08_27='+str(aug27>0).lower())
 
           cats=con.execute("SELECT id,user_id,name,parent_id,is_archived FROM categories").fetchall()
           roots={row['id']:row for row in cats if (row['name'] or '').strip().casefold()=='этника' and not bool(row['is_archived'])}
@@ -234,14 +269,13 @@ jobs:
           PY
           REMOTE
 
+      # Keep production audit evidence in the successful workflow run,
+      # NOT as a new main commit after the validated SHA. Rewriting main
+      # here invalidated the exact-sha server-before-web release gate.
       - name: Publish sanitized verification
-        shell: bash
-        run: |
-          cp /tmp/sleep-cloud-result.txt _tmp_sleep_cloud_result.txt
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add _tmp_sleep_cloud_result.txt
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Record sanitized sleep cloud verification'
-          git pull --rebase origin main
-          git push origin HEAD:main
+        uses: actions/upload-artifact@v4
+        with:
+          name: sleep-cloud-verification
+          path: /tmp/sleep-cloud-result.txt
+          if-no-files-found: error
+          retention-days: 14
