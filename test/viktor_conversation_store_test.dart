@@ -39,7 +39,8 @@ void main() {
 
   test('Long previous turns are bounded before sending to provider', () {
     final context = ViktorDialogueTurn.modelContext([
-      ViktorDialogueTurn(role: 'user', content: 'x' * 3000),
+      ViktorDialogueTurn(role: 'user',
+          content: List.filled(3000, 'x').join()),
     ]);
     expect(context.single['content']!.length, 1200);
   });
