@@ -333,12 +333,6 @@ class ViktorActionBatch {
         parsed.where((action) => action.name == 'bulk_replan').toList();
     if (bulkActions.length == 1 && parsed.length > 1) {
       final bulk = bulkActions.single;
-      final dates = <String>{};
-      for (final item in bulk.arguments['operations'] as List) {
-        final op = item as Map;
-        dates.add(op['source_day'] as String);
-        if (op['kind'] == 'move') dates.add(op['target_day'] as String);
-      }
       final extras = parsed.where((action) => action != bulk);
       // Read actions are observations; the Brain reloads source/target days.
       if (extras.every((action) => action.name == 'list_day_plans')) {
