@@ -333,4 +333,26 @@ void main() {
     ), throwsStateError);
   });
 
+  test('explicit keep category on Tuesday excludes it from broad move', () {
+    final keep = task(a, 'Keep gym', 540, 600);
+    final other = task(b, 'Move report', 600, 660);
+    final group = proposal([{'name': 'bulk_replan', 'arguments': {
+      'operations': [
+        {'kind':'move','status':'all','source_day':'2026-10-17',
+         'target_day':'2026-10-18','start_time':'09:00'},
+        {'kind':'keep','status':'all','source_day':'2026-10-17',
+         'category_name':'Exercise'}
+      ],
+    }}]).actions.single;
+    final preview = const ViktorBulkPlanner().calculate(
+      action: group, source:[keep,other],target:[],
+      sourceDay:'2026-10-17',targetDay:'2026-10-18',
+      wallTime: (_, _, _) => DateTime(2026,10,18,9),
+      fixedTime: (_) => false,
+      categoryName: (p) => p.pocketRecordId == a ? 'Exercise' : 'Work',
+    );
+    expect(preview.moves.map((m) => m.plan.pocketRecordId).toList(), [b]);
+    expect(preview.moves.single.day, '2026-10-18');
+  });
+
 }

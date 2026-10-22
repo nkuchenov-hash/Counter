@@ -44,7 +44,7 @@ Concrete acceptance scenarios:
   more context must never silently discard a valid action. Repair must be
   typed, not a string-parsing pile of exceptions.
 - **Criteria-based multi-day grouping (in progress):** bulk_replan can now
-  select by status, category name, tag name, title substring, maximum count and
+  select by status, category name, tag name, title substring, explicit keep exclusions, maximum count and
   priority, and load several source/target dates in one preview. The engine
   keeps unrelated tasks unchanged, refuses overlap, pinned/recurring plans,
   and recomputes on approval. It is NOT transactional across rows yet.

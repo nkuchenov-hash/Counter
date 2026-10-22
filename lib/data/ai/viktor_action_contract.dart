@@ -103,7 +103,7 @@ class ViktorAction {
             'title_contains', 'priority', 'max_count',
           });
           final kind = _text(operation, 'kind', maxLength: 16);
-          if (!const {'move', 'compact'}.contains(kind)) {
+          if (!const {'move', 'compact', 'keep'}.contains(kind)) {
             throw const FormatException('Invalid bulk operation kind');
           }
           // A model may use conventional completion labels instead of the
@@ -138,7 +138,11 @@ class ViktorAction {
             }
             _bulkClock(operation, 'start_time');
           } else if (operation.containsKey('target_day')) {
-            throw const FormatException('Compaction is always same-day');
+            throw const FormatException('Only moves specify target_day');
+          } else if (kind == 'keep' &&
+              (operation.containsKey('start_time') ||
+               operation.containsKey('timezone'))) {
+            throw const FormatException('Keep must not change schedule time');
           } else if (operation.containsKey('start_time')) {
             _bulkClock(operation, 'start_time');
           }

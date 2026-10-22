@@ -446,6 +446,40 @@ class ViktorBulkPlanner {
       });
     String norm(String s) => s.trim().toLowerCase()
         .replaceAll(RegExp(r'\s+'), ' ');
+    bool matches(PlanningTask task, Map<String, dynamic> op) {
+      final status = op['status'] as String;
+      if (!(status == 'all' ||
+          (status == 'complete' && task.isDone) ||
+          (status == 'incomplete' && !task.isDone))) return false;
+      final cat = norm(op['category_name'] as String? ?? '');
+      final tag = norm(op['tag_name'] as String? ?? '');
+      final title = norm(op['title_contains'] as String? ?? '');
+      if (cat.isNotEmpty) {
+        final full = norm(categoryName?.call(task) ??
+            task.categoryId.toString());
+        if (cat != full && cat != full.split('/').last.trim()) return false;
+      }
+      if (tag.isNotEmpty &&
+          !task.tags.any((t) => norm(t.name) == tag)) return false;
+      if (title.isNotEmpty && !norm(task.title).contains(title)) return false;
+      return true;
+    }
+    // User's explicit "leave these on Tuesday" exclusions are resolved
+    // BEFORE broad move selectors, regardless of operation order.
+    final retained = <String>{};
+    for (final keep in orderedOps.where((op) => op['kind'] == 'keep')) {
+      final day = keep['source_day'] as String;
+      final rows = days[day];
+      if (rows == null) throw StateError('Не загружен день ' + day);
+      final matchesToKeep = sorted(rows.where((row) => matches(row, keep)));
+      if (matchesToKeep.isEmpty) {
+        throw StateError('Планы для оставления на ' + day + ' не найдены.');
+      }
+      final count = keep['max_count'] as int?;
+      final selected = count == null ? matchesToKeep :
+          matchesToKeep.take(count);
+      retained.addAll(selected.map((row) => row.recordIdForBackend));
+    }
     for (final kind in const ['move', 'compact']) {
       for (final raw in orderedOps) {
         final op = Map<String, dynamic>.from(raw as Map);
@@ -454,23 +488,9 @@ class ViktorBulkPlanner {
         if (!days.containsKey(actualSourceDay)) {
           throw StateError('Не загружен исходный день ' + actualSourceDay);
         }
-        final status = op['status'] as String;
-        final cat = norm(op['category_name'] as String? ?? '');
-        final tag = norm(op['tag_name'] as String? ?? '');
-        final title = norm(op['title_contains'] as String? ?? '');
-        final matching = sorted(days[actualSourceDay]!.where((p) {
-          if (!(status == 'all' ||
-              (status == 'complete' && p.isDone) ||
-              (status == 'incomplete' && !p.isDone))) return false;
-          if (cat.isNotEmpty) {
-            final full = norm(categoryName?.call(p) ?? p.categoryId.toString());
-            if (cat != full && cat != full.split('/').last.trim()) return false;
-          }
-          if (tag.isNotEmpty &&
-              !p.tags.any((t) => norm(t.name) == tag)) return false;
-          if (title.isNotEmpty && !norm(p.title).contains(title)) return false;
-          return true;
-        }));
+        final matching = sorted(days[actualSourceDay]!.where((task) =>
+            !retained.contains(task.recordIdForBackend) &&
+            matches(task, op)));
         final maxCount = op['max_count'] as int?;
         final chosen = maxCount == null ? matching :
             matching.take(maxCount).toList();
