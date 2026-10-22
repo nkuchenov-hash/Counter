@@ -133,18 +133,44 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       // Some models emit continue:true even alongside a final mutation.
       // Never reject an authorized proposal solely due to that flag:
       // the ordinary Brain preview and user consent still govern writes.
-      for (var step = 0;
-          ViktorReadAnswer.shouldContinueReading(
-            needsMoreContext: response.needsMoreContext,
-            hasActions: response.actions != null,
-            hasMutations: response.actions?.hasMutations ?? false,
-          );
-          step++) {
+      var repairedEmptyRead = false;
+      for (var step = 0; response.needsMoreContext; step++) {
         if (!mounted) return;
         if (step >= 4) {
           throw StateError('Виктор достиг предела проверки данных. '
               'Никакие изменения не выполнены.');
         }
+        if (ViktorReadAnswer.hasEmptyReadContinuation(
+          needsMoreContext: response.needsMoreContext,
+          hasActions: response.actions != null,
+        )) {
+          if (repairedEmptyRead) {
+            throw StateError('Виктор повторно запросил данные без указания '
+                'операции чтения. Планы не изменены.');
+          }
+          repairedEmptyRead = true;
+          // One bounded proposal repair: the model can now return a valid
+          // final bulk_replan or an actual read; neither is auto-applied.
+          response = await _gateway.propose(
+            input: input,
+            wallDay: widget.wallDay,
+            plans: plans,
+            settings: _settings,
+            selectedPlanIds: widget.selectedPlanIds,
+            toolObservations: toolObservations,
+            requestId: requestId,
+            proposalFeedback: 'continue:true requires at least one read tool. '
+                'For bulk_replan propose a final write with continue:false '
+                'because Brain loads source and destination day records.',
+            allowRepair: false,
+          );
+          continue;
+        }
+        if (!ViktorReadAnswer.shouldContinueReading(
+          needsMoreContext: response.needsMoreContext,
+          hasActions: response.actions != null,
+          hasMutations: response.actions?.hasMutations ?? false,
+        )) break;
         final proposed = response.actions!;
         final signature = jsonEncode(
             proposed.actions.map((a) => a.toJson()).toList());
