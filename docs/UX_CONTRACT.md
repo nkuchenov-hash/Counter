@@ -2,6 +2,15 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## P0 web startup must never block on external services (2026-10-22)
+
+- Flutter must render its initial frame without awaiting Google OAuth scripts, a PocketBase health probe, an auth-refresh round trip, or unnecessary secure-storage writes.
+- The web build must bundle CanvasKit and validate its local JavaScript/WASM files. Runtime rendering must not require access to `www.gstatic.com` or other Google CDNs.
+- A valid user-scoped cached profile and category/planning snapshots open first, while server verification, realtime bridges and synchronization run after the shell; a revoked session must still close on confirmed server rejection.
+- A stalled Dart profile/data restore must show a recoverable, data-preserving screen within 8 seconds rather than an indefinite spinner. If the Flutter entrypoint fails to mount within 12 seconds, HTML presents retry and removes that panel when Flutter becomes available.
+- Browser cache data is never cleared automatically on reload. Build assets remain revisioned; test ordinary reload, restricted Google networks, offline cached startup and delayed PocketBase independently.
+- The deployment pipeline rejects synchronous Google API scripts, pre-frame network/auth checks on web, CDN-only CanvasKit, and removal of recovery affordances. An inaccessible hosting origin itself still requires hosting/network mitigation.
+
 ## Viktor read observations and streaming speech response (2026-10-21)
 
 - Read-only queries (e.g. "Покажи мой план AGE Solutions – ADD SIN на пятницу") must return the Brain-verified first list-day result directly, with an exact-title match when available. A repeated model request for the same tool and parameters is not a user-facing error: reuse the previously validated observation instead of throwing or repeatedly invoking the model.
