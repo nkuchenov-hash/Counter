@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `c113498e` on 2026-10-21.**
+**Generated from input HEAD `5afcd244` on 2026-10-22.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -5165,7 +5165,7 @@ EN:
 - **Why needed:** Tracked because `.` needs `_tmp_sleep_cloud_result.txt` for build, CI, or maintenance.
 - **Contents:** Open `_tmp_sleep_cloud_result.txt` when working on `.` (see folder section above).
 - **Repository role:** developer tool
-- **Evidence of use:** Referenced by: `.github/workflows/deploy-pocketbase.yml`.
+- **Evidence of use:** Tracked repository file `_tmp_sleep_cloud_result.txt` retained for tooling/config.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** May break tooling or configuration; verify before delete.
 - **Confidence:** MEDIUM
@@ -5182,7 +5182,7 @@ RU:
 - **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `.` для `_tmp_sleep_cloud_result.txt`.
 - **Содержимое:** Данные или код `_tmp_sleep_cloud_result.txt`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Упоминается в: `.github/workflows/deploy-pocketbase.yml`.
+- **Доказательства использования:** Отслеживаемый файл `_tmp_sleep_cloud_result.txt` для tooling/config.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
 - **Уверенность:** MEDIUM
@@ -38756,7 +38756,7 @@ EN:
 - **Why needed:** Browser needs an HTML entry with base href for GitHub Pages `/Counter/`.
 - **Contents:** Script tags bootstrapping `flutter.js`, base href.
 - **Repository role:** platform build
-- **Evidence of use:** (1) Tracked Flutter platform file under `web/` (individual role: `index.html` for that platform project). (2) Also referenced by: `docs/NOTES_EDITOR_CONTRACT.md`, `docs/website/POSITIONING_V1.md`, `docs/website/WEBSITE_CLAIMS_REVIEW.md`.
+- **Evidence of use:** (1) Tracked Flutter platform file under `web/` (individual role: `index.html` for that platform project). (2) Also referenced by: `.github/workflows/deploy.yml`, `docs/NOTES_EDITOR_CONTRACT.md`, `docs/website/POSITIONING_V1.md`.
 - **Necessity status:** REQUIRED_BY_PLATFORM_CONVENTION
 - **Deletion consequence:** Unavailable or broken platform build for that OS target.
 - **Confidence:** HIGH
