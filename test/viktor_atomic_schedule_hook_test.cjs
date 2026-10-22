@@ -98,6 +98,12 @@ function call(patches = moves, userId = owner) {
 }
 assert.equal(call(moves, null).status, 401);
 assert.equal(call([{...moves[0], unexpected:'danger'}]).status,400);
+assert.equal(call([moves[0], {...moves[0]}]).status,400,
+  'duplicate plan IDs must be rejected at validation before transaction');
+assert.equal(data[one].start_time,t1,
+  'duplicate plan validation must not change any plan');
+assert.equal(call([moves[0], {...moves[0], id:'invalid'}]).status,400,
+  'malformed plan IDs must be rejected before transaction');
 assert.equal(call(moves, other).status,409);
 assert.equal(data[one].start_time,t1, 'owner mismatch must not write');
 const stale = moves.map(p => ({...p}));
