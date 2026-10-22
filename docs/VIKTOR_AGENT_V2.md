@@ -47,7 +47,9 @@ Concrete acceptance scenarios:
   select by status, category name, tag name, title substring, explicit keep exclusions, maximum count and
   priority, and load several source/target dates in one preview. The engine
   keeps unrelated tasks unchanged, refuses overlap, pinned/recurring plans,
-  and recomputes on approval. It is NOT transactional across rows yet.
+  and recomputes on approval. The server now applies existing-plan moves in one
+  transaction with fresh source validation and post-save client verification.
+  Real-account production acceptance is still pending.
 - **Weekend drafts:** versioned owner-scoped `viktor_drafts` with candidate
   itineraries, selection, changes, current source revisions and explicit
   save/cancel state. A draft is not a saved event. Composite two-day plan
