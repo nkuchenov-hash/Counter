@@ -457,7 +457,10 @@ class ViktorBulkPlanner {
       if (cat.isNotEmpty) {
         final full = norm(categoryName?.call(task) ??
             task.categoryId.toString());
-        if (cat != full && cat != full.split('/').last.trim()) return false;
+        if (cat != full && cat !=
+            full.split(RegExp(r'\s*(?:/|>|→|›)\s*')).last.trim()) {
+          return false;
+        }
       }
       if (tag.isNotEmpty &&
           !task.tags.any((t) => norm(t.name) == tag)) return false;
