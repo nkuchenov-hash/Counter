@@ -396,6 +396,32 @@ void main() {
     });
 
 
+    test('bulk selectors validate category, tag and numerical priority', () {
+      final valid = ViktorAction.fromJson(action('bulk_replan', {
+        'operations': [
+          {'kind': 'move', 'status': 'all', 'source_day': '2026-10-20',
+           'target_day': '2026-10-21', 'start_time': '09:00',
+           'category_name': 'Work', 'tag_name': 'urgent', 'priority': 1,
+           'max_count': 3},
+          {'kind': 'move', 'status': 'all', 'source_day': '2026-10-20',
+           'target_day': '2026-10-22', 'start_time': '09:00',
+           'category_name': 'Leisure', 'priority': 2},
+        ],
+      }));
+      expect((valid.arguments['operations'] as List).length, 2);
+      for (final invalid in [
+        {'category_name': ''}, {'priority': 0},
+        {'priority': 101}, {'max_count': 200},
+      ]) {
+        expect(() => ViktorAction.fromJson(action('bulk_replan', {
+          'operations': [
+            {'kind':'move','status':'all','source_day':'2026-10-20',
+             'target_day':'2026-10-21','start_time':'09:00',...invalid}
+          ],
+        })), throwsFormatException);
+      }
+    });
+
     test('bulk accepts explicit morning clock variants without guessing', () {
       for (final raw in ['9', '09:00', '9.00', '9 утра', 'в 9 утра',
                          '09:00 NY', '9 часов по нью-йорку']) {

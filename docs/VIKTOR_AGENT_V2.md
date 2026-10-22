@@ -43,6 +43,11 @@ Concrete acceptance scenarios:
   execute -> independently re-read result). A provider response requesting
   more context must never silently discard a valid action. Repair must be
   typed, not a string-parsing pile of exceptions.
+- **Criteria-based multi-day grouping (in progress):** bulk_replan can now
+  select by status, category name, tag name, title substring, maximum count and
+  priority, and load several source/target dates in one preview. The engine
+  keeps unrelated tasks unchanged, refuses overlap, pinned/recurring plans,
+  and recomputes on approval. It is NOT transactional across rows yet.
 - **Weekend drafts:** versioned owner-scoped `viktor_drafts` with candidate
   itineraries, selection, changes, current source revisions and explicit
   save/cancel state. A draft is not a saved event. Composite two-day plan

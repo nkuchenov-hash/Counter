@@ -381,7 +381,7 @@ class ViktorBulkPlanner {
 
   static String snapshot(List<PlanningTask> source, List<PlanningTask> target) {
     final rows = [
-      for (final p in days.values.expand((rows) => rows))
+      for (final p in [...source, ...target])
         '${p.recordIdForBackend}|${p.dateKey}|${p.isDone}|'
         '${p.startTime?.toIso8601String()}|${p.endDateTime?.toIso8601String()}|'
         '${p.rrule}|${p.recurrenceInstanceDateKey}|${p.updatedAt?.toIso8601String()}|'
@@ -508,7 +508,7 @@ class ViktorBulkPlanner {
     }
     final changed = moves.map((m) => m.plan.pocketRecordId).toSet();
     final intervals = <({String day, DateTime start, DateTime end, String title, bool changed})>[
-      for (final p in [...source, ...target])
+      for (final p in days.values.expand((rows) => rows))
         if (!changed.contains(p.pocketRecordId) &&
             p.startTime != null && p.endDateTime != null)
           (day: key(p.startTime!), start: p.startTime!,
