@@ -104,6 +104,18 @@
         };
       }
       window.lifeosBootstrapFailed = showBootFailure;
+      function removeBootFailure() {
+        var panel = document.getElementById('lifeos-boot-recovery');
+        if (panel) panel.remove();
+      }
+      window.addEventListener('flutter-first-frame', removeBootFailure);
+      // If the engine attaches after the timeout, never leave the failure
+      // panel on top of an otherwise usable Flutter application.
+      new MutationObserver(function () {
+        if (document.querySelector('flutter-view, flt-glass-pane')) {
+          removeBootFailure();
+        }
+      }).observe(document.body, {childList: true, subtree: true});
       window.setTimeout(showBootFailure, 12000);
     })();
   </script>
