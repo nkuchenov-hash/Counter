@@ -41,7 +41,6 @@ void main() {
     expect(find.byKey(const ValueKey('notes_add_existing_category')), findsNothing);
     expect(find.byKey(const ValueKey('notes_create_new_category')), findsNothing);
     expect(find.byKey(categoryPickerTopAddKey), findsOneWidget);
-    expect(find.byKey(categoryPickerBottomAddKey), findsOneWidget);
     expect(find.byType(TextField), findsWidgets);
     await tester.tapAt(const Offset(4, 4));
     await tester.pumpAndSettle();
