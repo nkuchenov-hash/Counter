@@ -157,4 +157,37 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Viktor field ignores global white input fill and hides desktop scrollbars',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1440, 800);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData(
+        platform: TargetPlatform.windows,
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+        ),
+      ),
+      home: ViktorChatPage(wallDay: DateTime(2026, 10, 24)),
+    ));
+    await tester.pump();
+
+    final field = tester.widget<TextField>(
+      find.byKey(const Key('viktor_composer_input')));
+    // This explicit override prevents a white rectangle being painted
+    // inside the capsule by the app-level InputDecorationTheme.
+    expect(field.decoration?.filled, isFalse);
+    expect(field.decoration?.fillColor, Colors.transparent);
+    expect(field.decoration?.border, InputBorder.none);
+
+    expect(find.byKey(const Key('viktor_chat_scroll_configuration')),
+      findsOneWidget);
+    expect(find.byType(Scrollbar), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
 }
