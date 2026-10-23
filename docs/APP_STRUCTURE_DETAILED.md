@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `cabf6938` on 2026-10-23.**
+**Generated from input HEAD `80a397d4` on 2026-10-23.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 945 — each appears **exactly once** below.
+**Tracked files:** 946 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,7 +26,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 182 |
+| `production UI` | 183 |
 | `test` | 131 |
 | `Brain/data` | 110 |
 | `platform build` | 83 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 508 |
+| `PROVEN_REQUIRED` | 509 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 249 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 862 |
+| `HIGH` | 863 |
 | `MEDIUM` | 83 |
 
 ---
@@ -24000,8 +24000,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `viktor_chat_page.dart` on viktor area — Full-screen AI chat with text, mic and provider settings. Users see `viktor_chat_page.dart` when using viktor area.
-- **What this is:** `viktor_chat_page.dart` on viktor area — Full-screen AI chat with text, mic and provider settings.
+- **Human purpose:** `viktor_chat_page.dart` on viktor area — Full-screen AI chat with text and mic. Users see `viktor_chat_page.dart` when using viktor area.
+- **What this is:** `viktor_chat_page.dart` on viktor area — Full-screen AI chat with text and mic.
 - **Why needed:** Users see `viktor_chat_page.dart` when using viktor area.
 - **Contents:** Primary symbols: `ViktorChatPage`, `_ViktorChatPageState`.
 - **Key code names:** `ViktorChatPage`, `_ViktorChatPageState`
@@ -24011,10 +24011,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** repository root
-- **Responsibilities:** Full-screen AI chat with text, mic and provider settings
+- **Responsibilities:** Full-screen AI chat with text and mic
 - **When to open:** When behavior tied to `viktor_chat_page.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Full-screen AI chat with text, mic and provider settings
+- **Connected to:** APP_STRUCTURE role: Full-screen AI chat with text and mic
 
 RU:
 
@@ -24030,6 +24030,44 @@ RU:
 - **Владелец / слой:** корень репозитория
 - **Обязанности:** Отвечает за видимый UI, собранный в `viktor_chat_page.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `viktor_chat_page.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/viktor/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/viktor/viktor_dialogue_ui_state.dart`
+
+EN:
+
+- **Human purpose:** `viktor_dialogue_ui_state.dart` on viktor area — Full-screen AI chat with text and mic. Users see `viktor_dialogue_ui_state.dart` when using viktor area.
+- **What this is:** `viktor_dialogue_ui_state.dart` on viktor area — Full-screen AI chat with text and mic.
+- **Why needed:** Users see `viktor_dialogue_ui_state.dart` when using viktor area.
+- **Contents:** Primary symbols: `_ViktorDialogueUiState`.
+- **Key code names:** `_ViktorDialogueUiState`
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/features/viktor/viktor_chat_page.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/features/viktor/viktor_chat_page.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** repository root
+- **Responsibilities:** Full-screen AI chat with text and mic
+- **When to open:** When behavior tied to `viktor_dialogue_ui_state.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Brain/library compile failure in `lib/features/viktor/viktor_chat_page.dart` and broken related UI/data ops.
+- **Connected to:** APP_STRUCTURE role: Full-screen AI chat with text and mic
+
+RU:
+
+- **Зачем файл человеку:** `viktor_dialogue_ui_state.dart` на viktor — Поддерживает поведение `viktor_dialogue_ui_state` в этой feature-зоне.. Пользователь видит UI из `viktor_dialogue_ui_state.dart` на viktor.
+- **Что это:** `viktor_dialogue_ui_state.dart` на viktor — Поддерживает поведение `viktor_dialogue_ui_state` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `viktor_dialogue_ui_state.dart` на viktor.
+- **Содержимое:** Dart-модуль `viktor_dialogue_ui_state.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/features/viktor/viktor_chat_page.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/features/viktor/viktor_chat_page.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Поддерживает поведение `viktor_dialogue_ui_state` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_dialogue_ui_state.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/viktor/`, `docs/APP_STRUCTURE.md`
 
