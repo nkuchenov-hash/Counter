@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:counter/core/tag_contrast.dart' show kTagYellowGold;
 
 // LIFE OS semantic color families. Shared by every category screen and by
 // the tag creation palette; persisted custom colors always remain authoritative.
@@ -160,7 +161,7 @@ int categoryNordicChildColorValue(int? parentColorValue, int siblingIndex) {
 List<String> get kLifeTagColorPresets => List<String>.unmodifiable([
   for (final family in kCategoryPickerMaterialColors)
     _categoryColorHex(
-      family == kNordicFood ? const Color(0xFFF6C500) : family[500]!,
+      family == kNordicFood ? kTagYellowGold : family[500]!,
     ),
 ]);
 
