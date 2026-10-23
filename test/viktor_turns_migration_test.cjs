@@ -45,6 +45,33 @@ assert.equal(stored.fields.find(f => f.name === 'user_id').collectionId,
 assert.deepEqual([...stored.fields.find(f => f.name === 'role').values],
   ['user', 'assistant']);
 assert.equal(stored.fields.find(f => f.name === 'body').max, 6000);
+const created = stored.fields.find(f => f.name === 'created');
+assert.ok(created, 'Created column must be explicitly declared before indexing');
+assert.equal(created.type, 'autodate');
+assert.equal(created.onCreate, true);
+
+// Reproduce the outage: JS syntax passes while SQL index creation fails when
+// an index references a missing field. The collection save mock must enforce it.
+function validateIndexColumns(collection) {
+  const fields = new Set(['id', ...collection.fields.map(field => field.name)]);
+  for (const index of collection.indexes) {
+    const match = index.match(/\\bON\\s+([a-z_][a-z_0-9]*)\\s*\\(([^)]+)\\)/i);
+    assert.ok(match, 'Unable to parse index: ' + index);
+    assert.equal(match[1], collection.name);
+    for (const column of match[2].split(',').map(c => c.trim())) {
+      assert.ok(fields.has(column),
+        'Index references missing column: ' + column);
+    }
+  }
+}
+validateIndexColumns(stored);
+assert.throws(
+  () => validateIndexColumns({
+    ...stored,
+    fields: stored.fields.filter(f => f.name !== 'created'),
+  }),
+  /Index references missing column: created/,
+  'Guard must catch the exact 2026-10-23 production failure');
 assert.ok(stored.indexes.some(x => x.includes('UNIQUE INDEX')));
 const initial = stored;
 up(app);
