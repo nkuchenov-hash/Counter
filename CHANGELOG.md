@@ -3,6 +3,7 @@
 - Prevent planning an entire Saturday from failing with an internal mixed-schedule/timer error: YandexGPT and other providers now present multi-activity itineraries as conversational drafts with no writes.
 - Even if a model returns multiple `create_plan` actions or improperly mixes a plan with a record timer, show a dated, chronological read-only draft with overlap warnings; never perform partial database writes or start/stop records.
 - Pending conversation turns automatically retry owner-scoped encrypted PocketBase synchronization every 20 seconds while Viktor is open, without duplicate concurrent flushes, and cancel retries on exit or success.
+- Failed dictated requests can be resent from the conversation without repeating the recording; stale 'executing' voice status is cleared when requests finish.
 - Bulk creation of several new plans in one transaction remains outside this fix; drafts cannot be mistaken for saved plans.
 
 ## [2026-10-23] — PocketBase migration outage repair and deployment safeguards
