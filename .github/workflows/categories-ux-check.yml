@@ -25,7 +25,7 @@ jobs:
       - name: Prepare local environment placeholder
         run: |
           mkdir -p lib/core/env
-          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = \x27\x27;' '}' > lib/core/env/env.dart
+          echo "abstract final class Env { static const String placeholder = ''; }" > lib/core/env/env.dart
       - run: flutter pub get
       - name: Static analysis
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
