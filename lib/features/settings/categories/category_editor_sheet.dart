@@ -264,15 +264,15 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
       {bool rounded = true}) {
     final outline = Theme.of(context).colorScheme.onSurface;
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: 5, bottom: 5),
       child: InkWell(
         onTap: tap,
         customBorder: rounded
             ? const CircleBorder()
             : RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
         child: Container(
-          width: 34,
-          height: 34,
+          width: 27,
+          height: 27,
           decoration: BoxDecoration(
             color: color,
             shape: rounded ? BoxShape.circle : BoxShape.rectangle,
@@ -358,38 +358,64 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     );
   }
 
+  /// HTML-parity picker: a real bounded three-row icon panel, never an
+  /// unbounded shrink-wrap GridView inside the editor scroll view.
   Widget _iconPanel(bool desktop) {
+    final scheme = Theme.of(context).colorScheme;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(t(currentLocale.value, 'category_choose_icon'),
-            style: Theme.of(context).textTheme.titleSmall),
+        Text(
+          t(currentLocale.value, 'category_choose_icon'),
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
         const SizedBox(height: 8),
-        LayoutBuilder(builder: (context, constraints) {
-          final columns = desktop ? 5 : 4;
-          final count = columns * 3;
-          return GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: count,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              mainAxisSpacing: 7,
-              crossAxisSpacing: 7,
-              mainAxisExtent: 38,
-            ),
-            itemBuilder: (context, index) {
-              if (index == count - 1) {
-                return OutlinedButton(
-                  onPressed: () => unawaited(_showIconGallery()),
-                  style: OutlinedButton.styleFrom(padding: EdgeInsets.zero),
-                  child: const Icon(Icons.more_horiz_rounded, size: 22),
-                );
-              }
-              return _iconTile(kCategoryIconChoices[index]);
-            },
-          );
-        }),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = desktop ? 5 : 4;
+            const gap = 6.0;
+            const tileHeight = 34.0;
+            final tileWidth =
+                (constraints.maxWidth - gap * (columns - 1)) / columns;
+            final visibleCount = columns * 3 - 1;
+            final visibleIcons = kCategoryIconChoices
+                .take(visibleCount)
+                .toList(growable: false);
+            return SizedBox(
+              key: const Key('category_icon_grid'),
+              height: tileHeight * 3 + gap * 2,
+              child: Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  for (final icon in visibleIcons)
+                    SizedBox(
+                      width: tileWidth,
+                      height: tileHeight,
+                      child: _iconTile(icon),
+                    ),
+                  SizedBox(
+                    width: tileWidth,
+                    height: tileHeight,
+                    child: OutlinedButton(
+                      key: const Key('category_more_icons'),
+                      onPressed: () => unawaited(_showIconGallery()),
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        side: BorderSide(color: scheme.outlineVariant),
+                      ),
+                      child: const Icon(Icons.more_horiz_rounded, size: 20),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ],
     );
   }
@@ -552,57 +578,101 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
-                  LayoutBuilder(builder: (context, constraints) {
-                    final desktopPicker = constraints.maxWidth >= 540;
-                    final colors = Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(t(locale, 'category_color'),
-                            style: Theme.of(context).textTheme.titleSmall),
-                        const SizedBox(height: 8),
-                        Wrap(spacing: 4, runSpacing: 8,
-                          children: [
-                            ...kCategoryPickerMaterialColors.map((color) =>
-                              _compactSwatch(color, _selectedPrimary == color, () {
-                                setState(() {
-                                  _selectedPrimary = color;
-                                  _selectedShadeValue = categoryColorAtDepth(color, route.length - 1);
-                                  _selectedColorValue = _selectedShadeValue;
-                                });
-                              })),
-                            IconButton.outlined(
-                              onPressed: () => setState(() => _showShades = !_showShades),
-                              tooltip: t(locale, 'category_color_shades'),
-                              icon: Icon(_showShades ? Icons.remove : Icons.add),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Approved HTML: two equal-width sections for color
+                      // and icon choices at every breakpoint.
+                      final wide = constraints.maxWidth >= 540;
+                      final gap = wide ? 20.0 : 12.0;
+                      final colors = Column(
+                        key: const Key('category_color_column'),
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            t(locale, 'category_color'),
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 0,
+                            runSpacing: 2,
+                            children: [
+                              for (final color in kCategoryPickerMaterialColors)
+                                _compactSwatch(
+                                  color,
+                                  _selectedPrimary == color,
+                                  () {
+                                    setState(() {
+                                      _selectedPrimary = color;
+                                      _selectedShadeValue = categoryColorAtDepth(
+                                        color, route.length - 1,
+                                      );
+                                      _selectedColorValue = _selectedShadeValue;
+                                    });
+                                  },
+                                ),
+                              SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 28,
+                                    minHeight: 28,
+                                  ),
+                                  onPressed: () => setState(
+                                    () => _showShades = !_showShades,
+                                  ),
+                                  tooltip: t(locale, 'category_color_shades'),
+                                  icon: Icon(
+                                    _showShades
+                                        ? Icons.remove_circle_outline
+                                        : Icons.add_circle_outline,
+                                    size: 24,
+                                    color: scheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (_showShades) ...[
+                            const SizedBox(height: 9),
+                            Wrap(
+                              spacing: 0,
+                              runSpacing: 2,
+                              children: [
+                                for (final tone in kCategorySelectableTones)
+                                  _compactSwatch(
+                                    _selectedPrimary![tone]!,
+                                    _selectedShadeValue ==
+                                        _selectedPrimary![tone]!.toARGB32(),
+                                    () {
+                                      setState(() {
+                                        _selectedShadeValue =
+                                            _selectedPrimary![tone]!.toARGB32();
+                                        _selectedColorValue =
+                                            _selectedShadeValue;
+                                      });
+                                    },
+                                    rounded: false,
+                                  ),
+                              ],
                             ),
                           ],
-                        ),
-                        if (_showShades) ...[
-                          const SizedBox(height: 10),
-                          Wrap(spacing: 4, runSpacing: 8,
-                            children: kCategorySelectableTones.map((tone) {
-                                final c = _selectedPrimary![tone]!;
-                                final v = c.toARGB32();
-                                return _compactSwatch(c, _selectedShadeValue == v, () {
-                                  setState(() {
-                                    _selectedShadeValue = v;
-                                    _selectedColorValue = v;
-                                  });
-                                }, rounded: false);
-                              }).toList(),
-                          ),
                         ],
-                      ],
-                    );
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: colors),
-                        SizedBox(width: desktopPicker ? 24 : 14),
-                        Expanded(child: _iconPanel(desktopPicker)),
-                      ],
-                    );
-                  }),
+                      );
+                      return Row(
+                        key: const Key('category_appearance_columns'),
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: colors),
+                          SizedBox(width: gap),
+                          Expanded(child: _iconPanel(wide)),
+                        ],
+                      );
+                    },
+                  ),
                   const SizedBox(height: 16),
                   _advancedFields(langs, locale),
                 ],

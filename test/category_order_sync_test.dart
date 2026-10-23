@@ -1,11 +1,62 @@
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/settings/categories/category_list_view.dart';
+import 'package:counter/features/settings/categories/category_editor_sheet.dart';
 import 'package:counter/features/settings/categories/category_row_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  for (final width in <double>[390, 900]) {
+    testWidgets('category editor appearance follows approved equal columns at $width',
+        (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = Size(width, 780);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final category = CategoryRule(id: 101, name: 'Work');
+      db.debugActivateRecordBrainTestHarness(
+        userId: 'category-appearance-layout',
+        categories: [category],
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: width,
+            height: 780,
+            child: CategoryEditorSheet(
+              category: category,
+              inline: true,
+              onSaved: () {},
+              onCancel: () {},
+            ),
+          ),
+        ),
+      ));
+      await tester.pump();
+
+      final appearance = find.byKey(const Key('category_appearance_columns'));
+      final leftColumn = find.byKey(const Key('category_color_column'));
+      final iconGrid = find.byKey(const Key('category_icon_grid'));
+      final moreIcons = find.byKey(const Key('category_more_icons'));
+      expect(appearance, findsOneWidget);
+      expect(leftColumn, findsOneWidget);
+      expect(iconGrid, findsOneWidget);
+      expect(moreIcons, findsOneWidget);
+      final rowRect = tester.getRect(appearance);
+      final colorRect = tester.getRect(leftColumn);
+      final iconRect = tester.getRect(iconGrid);
+      expect(colorRect.right, lessThan(iconRect.left));
+      expect((colorRect.width - iconRect.width).abs(), lessThan(1.5));
+      expect(rowRect.height, lessThan(180),
+          reason: 'Picker must not leave empty grid space between sections.');
+      expect(iconRect.height, closeTo(114, 0.1));
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+
   final db = DatabaseService.instance;
 
   tearDown(() {
