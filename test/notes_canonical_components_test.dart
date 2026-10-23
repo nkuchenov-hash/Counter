@@ -33,7 +33,7 @@ void main() {
               pinned: false,
               onTogglePinned: () {},
               onDelete: () {},
-              content: const ListView(children: [Text('Block one')]),
+              content: ListView(children: const [Text('Block one')]),
               toolbar: const SizedBox(width: 300, height: 48),
             ),
           ),
