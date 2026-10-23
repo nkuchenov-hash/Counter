@@ -1,3 +1,9 @@
+## [2026-10-23] — Viktor chat inset and scrollbar visual parity
+
+- Removed white rectangular background inherited by the composer TextField from the app-wide InputDecorationTheme; the rounded chat capsule is now the only painted input surface.
+- Disabled Viktor-local automatic Flutter desktop scrollbars while preserving standard scrolling. Added a Windows-theme regression test with a deliberately white global input background.
+- No changes to PocketBase, assistant reasoning, voice recording or plan actions.
+
 ## [2026-10-23] — Viktor compact ChatGPT-style composer
 
 - Refined `lib/features/viktor/viktor_composer.dart` after direct screenshot comparison: replaced the always-two-row, wide input with a centered compact inline editor + mic + send surface, width capped at 660 logical px. Multiline content still grows and scrolls without changing Viktor's voice or command processing.
