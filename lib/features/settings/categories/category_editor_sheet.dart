@@ -126,6 +126,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     // Stage synchronously into the canonical Brain, without waiting for
     // PocketBase or reloading the category catalog. The offline queue owns
     // retries. Only local-device persistence failures merit a user warning.
+    final messenger = ScaffoldMessenger.of(context);
     final staged = db.stageCategoryDelta(id, <String, dynamic>{
       if (primaryChanged) 'name': primaryNew,
       ...delta,
