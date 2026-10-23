@@ -139,7 +139,7 @@ class NotesLibraryProductionShell extends StatelessWidget {
               adapter: headerAdapter,
               onNewNote: newNote,
             ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           SizedBox(height: NotesFolderTabStrip.height, child: tabs),
           Expanded(
             child: NotesFolderPane(
@@ -850,7 +850,7 @@ class _HtmlNotesHeader extends StatelessWidget {
           ),
         ] else
           ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 54),
+            constraints: const BoxConstraints(minHeight: 48),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -861,7 +861,7 @@ class _HtmlNotesHeader extends StatelessWidget {
                     softWrap: false,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: wide ? 30 : 24,
+                      fontSize: wide ? 27 : 24,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.5,
                       height: 1.15,
@@ -1182,6 +1182,7 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
             ? Icons.folder_outlined
             : IconData(rule.iconCodePoint!, fontFamily: 'MaterialIcons'),
         paper: notesFolderPaper(context, id),
+        accent: rule.colorOrDefault,
       ));
     }
     return NotesFolderTabStrip(
