@@ -810,7 +810,10 @@ class _ViktorChatPageState extends State<ViktorChatPage>
             child: Column(
               children: [
                 Expanded(
-                  child: ListView.builder(
+                  child: ScrollConfiguration(
+                    behavior: ScrollConfiguration.of(context)
+                        .copyWith(scrollbars: false),
+                    child: ListView.builder(
                     reverse: true,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 20),
@@ -832,12 +835,29 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                       final offset = _busy ? 1 : 0;
                       final message = _messages[_messages.length - 1 -
                           (index - offset)];
-                      return ViktorChatMessageTile(
-                        key: ValueKey('viktor-message-${_messages.length - 1 - (index - offset)}'),
-                        text: message.content,
-                        isUser: message.isUser,
+                      return Align(
+                        alignment: message.isUser ? Alignment.centerRight :
+                            Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          constraints: const BoxConstraints(maxWidth: 610),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 13),
+                          decoration: BoxDecoration(
+                            color: message.isUser ? scheme.primaryContainer :
+                                scheme.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: SelectableText(message.content,
+                            style: TextStyle(
+                              fontSize: 16, height: 1.45,
+                              color: message.isUser ? scheme.onPrimaryContainer :
+                                  scheme.onSurface,
+                            )),
+                        ),
                       );
                     },
+                    ),
                   ),
                 ),
                 if (_historyNotice != null)
@@ -929,58 +949,6 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                   ),
                 _buildComposer(scheme),
               ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-
-/// ChatGPT-like dialogue presentation: neutral user bubbles, assistant text
-/// directly on the conversation canvas. All turns remain selectable.
-class ViktorChatMessageTile extends StatelessWidget {
-  const ViktorChatMessageTile({
-    super.key,
-    required this.text,
-    required this.isUser,
-  });
-
-  final String text;
-  final bool isUser;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: isUser ? 560 : 690),
-        child: Padding(
-          padding: EdgeInsets.only(
-            top: isUser ? 7 : 5,
-            bottom: isUser ? 12 : 10,
-          ),
-          child: DecoratedBox(
-            key: Key(isUser ? 'viktor_user_bubble' : 'viktor_assistant_plain'),
-            decoration: BoxDecoration(
-              color: isUser ? scheme.surfaceContainerLow : Colors.transparent,
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: isUser ? 18 : 6,
-                vertical: isUser ? 11 : 4,
-              ),
-              child: SelectableText(
-                text,
-                style: TextStyle(
-                  fontSize: 16,
-                  height: 1.48,
-                  color: scheme.onSurface,
-                ),
-              ),
             ),
           ),
         ),
