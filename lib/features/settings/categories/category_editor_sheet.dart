@@ -264,15 +264,15 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
       {bool rounded = true}) {
     final outline = Theme.of(context).colorScheme.onSurface;
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: 5, bottom: 5),
       child: InkWell(
         onTap: tap,
         customBorder: rounded
             ? const CircleBorder()
             : RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
         child: Container(
-          width: 34,
-          height: 34,
+          width: 27,
+          height: 27,
           decoration: BoxDecoration(
             color: color,
             shape: rounded ? BoxShape.circle : BoxShape.rectangle,
@@ -358,38 +358,64 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     );
   }
 
+  /// HTML-parity picker: a real bounded three-row icon panel, never an
+  /// unbounded shrink-wrap GridView inside the editor scroll view.
   Widget _iconPanel(bool desktop) {
+    final scheme = Theme.of(context).colorScheme;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(t(currentLocale.value, 'category_choose_icon'),
-            style: Theme.of(context).textTheme.titleSmall),
+        Text(
+          t(currentLocale.value, 'category_choose_icon'),
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
         const SizedBox(height: 8),
-        LayoutBuilder(builder: (context, constraints) {
-          final columns = desktop ? 5 : 4;
-          final count = columns * 3;
-          return GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: count,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              mainAxisSpacing: 7,
-              crossAxisSpacing: 7,
-              mainAxisExtent: 38,
-            ),
-            itemBuilder: (context, index) {
-              if (index == count - 1) {
-                return OutlinedButton(
-                  onPressed: () => unawaited(_showIconGallery()),
-                  style: OutlinedButton.styleFrom(padding: EdgeInsets.zero),
-                  child: const Icon(Icons.more_horiz_rounded, size: 22),
-                );
-              }
-              return _iconTile(kCategoryIconChoices[index]);
-            },
-          );
-        }),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = desktop ? 5 : 4;
+            const gap = 6.0;
+            const tileHeight = 34.0;
+            final tileWidth =
+                (constraints.maxWidth - gap * (columns - 1)) / columns;
+            final visibleCount = columns * 3 - 1;
+            final visibleIcons = kCategoryIconChoices
+                .take(visibleCount)
+                .toList(growable: false);
+            return SizedBox(
+              key: const Key('category_icon_grid'),
+              height: tileHeight * 3 + gap * 2,
+              child: Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  for (final icon in visibleIcons)
+                    SizedBox(
+                      width: tileWidth,
+                      height: tileHeight,
+                      child: _iconTile(icon),
+                    ),
+                  SizedBox(
+                    width: tileWidth,
+                    height: tileHeight,
+                    child: OutlinedButton(
+                      key: const Key('category_more_icons'),
+                      onPressed: () => unawaited(_showIconGallery()),
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        side: BorderSide(color: scheme.outlineVariant),
+                      ),
+                      child: const Icon(Icons.more_horiz_rounded, size: 20),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ],
     );
   }
