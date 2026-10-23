@@ -671,10 +671,18 @@ class _CategoriesPageState extends State<CategoriesPage> {
                 )
               : visible.isEmpty
                   ? Center(child: Text(t(loc, 'category_search_empty')))
-                  : AppReorderableList(
+                  : Listener(
+                      onPointerMove: (event) =>
+                          _trackCategoryDrop(event.position, visible),
+                      onPointerUp: (event) =>
+                          _trackCategoryDrop(event.position, visible),
+                      child: AppReorderableList(
                       padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
                       spacing: 4,
                       itemCount: visible.length,
+                      onReorderStart: (index) =>
+                          _beginCategoryDrag(index, visible),
+                      onReorderEnd: (_) => _finishCategoryDrag(),
                       itemKeyBuilder: (index) =>
                           ValueKey('category-tree-${visible[index].rule.id}'),
                       dragLabelBuilder: (index) =>
@@ -686,6 +694,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                           unawaited(_onReorder(oldIndex, newIndex, visible)),
                       itemBuilder: (context, index, _) =>
                           _row(context, visible[index], index, wide),
+                      ),
                     ),
         ),
       ],
