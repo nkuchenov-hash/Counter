@@ -448,8 +448,8 @@ The web microphone MUST capture actual audio through `record`, not browser `Spee
 - Desktop Categories uses a two-pane tree/inline editor; mobile uses a single tree and a bounded near-full-screen editor with a sticky Save action.
 - Category tree drag uses the canonical `AppReorderableList` + `AppHoldToReorderListener` (300 ms), matching Plans and Notes. No feature-specific drag handles or buttons.
 - Drag between visible sibling groups changes the parent through `updateCategoryParent`; within a group it calls `applyLocalCategorySiblingOrder` and debounced `persistCategorySiblingOrder`. Invalid self/descendant moves are rejected *before* the optimistic mutation.
-- Expanded branches reveal drop locations in child sibling groups. For a collapsed/empty parent, use the editor's explicit Parent category selector.
+- Expanded branches expose child-sibling insertion locations to the canonical hold-to-reorder gesture. A parent selector is not part of the edit form; inserting into an empty branch still needs a dedicated tree drop affordance before claiming complete drag coverage.
 - Reorder/move updates the local category tree immediately, offers Undo, and reports failed server persistence. Search expands only matching paths without rewriting data.
-- Editor shows name, parent, color and icon first; translations, keywords, default-category and destructive actions are in Advanced. Scroll content is bounded by the viewport and Save remains accessible.
+- Editor shows the icon preview, name and side-by-side color/icon palettes first, with a three-row icon grid and More gallery. Translations, keywords and management actions are in Advanced; keywords have an explicit Add button. The footer always provides Cancel and Save. The row three-dot menu includes confirmed Delete. Editor content is viewport-bounded and writes finish before closing.
 
 ---
