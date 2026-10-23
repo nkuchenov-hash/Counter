@@ -123,67 +123,22 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
       return;
     }
 
-    setState(() => _saving = true);
-    final messenger = ScaffoldMessenger.of(context);
-    if (colorChanged || iconChanged) {
-      db.updateNestedCategory(
-        id,
-        colorValue: colorChanged ? _selectedColorValue : null,
-        iconCodePoint: iconChanged ? _iconCodePoint : null,
-      );
-    }
-    try {
-      if (primaryChanged) {
-        final renamed = await db.updateCategory(id, primaryNew)
-            .timeout(const Duration(seconds: 12));
-        if (!renamed.ok) throw StateError(renamed.errorDetail ?? 'Rename failed');
-      }
-      if (delta.isNotEmpty) {
-        // Appearance-only changes are already in the local category tree and
-        // need no blocking second full-catalog download after server ACK.
-        final appearanceOnly = !namesChanged && !keywordsChanged;
-        final result = await db.patchCategoryDelta(
-          id,
-          delta,
-          refreshAfterPatch: !appearanceOnly,
-        ).timeout(const Duration(seconds: 12));
-        if (!result.ok) {
-          throw StateError(result.errorDetail ?? 'Category patch failed');
-        }
-      }
-      if (!mounted) return;
-      widget.onSaved();
-      if (!widget.inline) {
-        Navigator.of(context).pop();
-      } else {
-        messenger.showSnackBar(SnackBar(
-          content: Text(currentLocale.value == 'ru'
-              ? 'Изменения сохранены'
-              : 'Changes saved'),
-          duration: const Duration(seconds: 2),
-        ));
-      }
-    } catch (error) {
-      // Never show a successful save when the server did not acknowledge it.
-      // Restore the prior in-memory appearance on failure; keep the editor
-      // open so the user can retry without losing the selected color.
-      final current = db.getCategoryRuleById(id);
-      if (current != null) {
-        if (colorChanged) current.colorValue = beforeColor;
-        if (iconChanged) current.iconCodePoint = beforeIcon;
-        db.updateNestedCategory(id);
-      }
-      if (mounted) {
-        messenger.showSnackBar(SnackBar(
-          content: Text(currentLocale.value == 'ru'
-              ? 'Сохранение не подтверждено сервером. Проверьте подключение и повторите.'
-              : 'Server did not confirm the save. Check the connection and retry.'),
-          duration: const Duration(seconds: 5),
-        ));
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
+    // Stage synchronously into the canonical Brain, without waiting for
+    // PocketBase or reloading the category catalog. The offline queue owns
+    // retries. Only local-device persistence failures merit a user warning.
+    final staged = db.stageCategoryDelta(id, <String, dynamic>{
+      if (primaryChanged) 'name': primaryNew,
+      ...delta,
+    });
+    widget.onSaved();
+    if (!widget.inline && mounted) Navigator.of(context).pop();
+    unawaited(staged.catchError((Object error, StackTrace stack) {
+      messenger.showSnackBar(SnackBar(
+        content: Text(currentLocale.value == 'ru'
+            ? 'Не удалось сохранить изменение на устройстве. Повторите действие.'
+            : 'Could not save the edit on this device. Retry the action.'),
+      ));
+    }));
   }
 
   bool _sameStrings(Map<String, String> a, Map<String, String> b) =>
