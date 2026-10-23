@@ -476,14 +476,13 @@ class _CategoriesPageState extends State<CategoriesPage> {
     final hasChildren = (r.children ?? <CategoryRule>[]).isNotEmpty;
     final tint = r.colorOrDefault;
     final loc = currentLocale.value;
-    return AppHoldToReorderListener(
-      index: index,
-      child: Material(
+    final dropPosition = _dropTargetCategoryId == r.id ? _dropPosition : null;
+    final tile = Material(
         key: _rowAnchors.putIfAbsent(r.id, () => GlobalKey()),
-        color: _dropInsideCategoryId == r.id
-            ? tint.withValues(alpha: 0.19)
+        color: dropPosition == CategoryDropPosition.inside
+            ? tint.withValues(alpha: 0.15)
             : (selected ? tint.withValues(alpha: 0.07) : scheme.surface),
-        elevation: _dropInsideCategoryId == r.id ? 2 : 0,
+        elevation: 0,
         shadowColor: tint,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
@@ -585,6 +584,87 @@ class _CategoriesPageState extends State<CategoriesPage> {
               ),
             ),
           ),
+        ),
+    );
+    return DragTarget<int>(
+      key: ValueKey('category-drop-target-${r.id}'),
+      onWillAcceptWithDetails: (details) =>
+          _canDropOn(details.data, r.id),
+      onMove: (details) =>
+          _hoverDrop(details.data, r.id, details.offset),
+      onLeave: (_) => _leaveDrop(r.id),
+      onAcceptWithDetails: (details) =>
+          _acceptDrop(details.data, r.id, details.offset),
+      builder: (context, accepted, rejected) => LongPressDraggable<int>(
+        key: ValueKey('category-drag-source-${r.id}'),
+        data: r.id,
+        delay: const Duration(milliseconds: 300),
+        maxSimultaneousDrags: _moving ? 0 : 1,
+        onDragStarted: () => _startCategoryDrag(r.id),
+        onDragEnd: (_) => _endCategoryDrag(),
+        feedback: Material(
+          color: scheme.surface,
+          elevation: 8,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: 260,
+            height: 54,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: tint, width: 2),
+            ),
+            child: Row(children: [
+              Icon(categoryManagerIconFor(r), color: tint),
+              const SizedBox(width: 12),
+              Expanded(child: Text(
+                categoryTileLabel(r),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyLarge,
+              )),
+            ]),
+          ),
+        ),
+        child: Stack(
+          children: [
+            Opacity(
+              opacity: _draggedCategoryId == r.id ? .35 : 1,
+              child: tile,
+            ),
+            if (dropPosition != null)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: dropPosition == CategoryDropPosition.inside
+                      ? DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: tint, width: 2.5),
+                          ),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 60),
+                              child: Icon(Icons.subdirectory_arrow_right_rounded,
+                                  color: tint),
+                            ),
+                          ),
+                        )
+                      : Align(
+                          alignment: dropPosition == CategoryDropPosition.before
+                              ? Alignment.topCenter
+                              : Alignment.bottomCenter,
+                          child: Container(
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: tint,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                        ),
+                ),
+              ),
+          ],
         ),
       ),
     );
