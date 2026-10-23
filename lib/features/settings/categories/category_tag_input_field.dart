@@ -42,12 +42,13 @@ class _TagInputFieldState extends State<TagInputField> {
   }
 
   void _onTextChanged() {
+    if (mounted) setState(() {});
     final text = _controller.text;
     if (text.isEmpty) return;
     final last = text.length - 1;
     if (last < 0) return;
     final ch = text[last];
-    if (ch == ' ' || ch == ',') {
+    if (ch == ',') {
       final before = text.substring(0, last).trim().toLowerCase();
       _controller.removeListener(_onTextChanged);
       _controller.text = '';
