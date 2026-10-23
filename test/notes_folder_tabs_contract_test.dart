@@ -237,7 +237,7 @@ void main() {
     expect(tester.getSize(find.byKey(const ValueKey('notes-tab-add'))).height, 35);
   });
 
-  testWidgets('physical folder tabs have layered elevation and edge contrast',
+  testWidgets('active folder spine paints above its neighbors with subtle elevation',
       (tester) async {
     final controller = ScrollController();
     addTearDown(controller.dispose);
@@ -252,7 +252,7 @@ void main() {
               NotesFolderTabData(id: 2, label: 'Second',
                   icon: Icons.folder, paper: Color(0xFFF6E7DA)),
             ],
-            selectedId: 1,
+            selectedId: 2,
             scrollController: controller,
             allLabel: 'Все', allPaper: const Color(0xFFF2F4F7),
             onSelect: (_) {}, onAdd: () {},
@@ -271,13 +271,14 @@ void main() {
     expect(tabMaterial(1).elevation, lessThan(0.5));
     expect(tabMaterial(2).elevation, lessThan(0.5));
     expect(tabMaterial(1).shadowColor!.a, lessThan(0.10));
-    // Selection must never move a folder out of its physical z-order.
+    // Keep saved tab indices, but always paint the selected folder LAST.
+    // It must be hit-tested and drawn above the adjacent shoulder.
     final stack = tester.widget<Stack>(
       find.byKey(const ValueKey('notes-layered-tab-stack')),
     );
     expect(
       stack.children.map((child) => (child as Positioned).child.key).toList(),
-      [const ValueKey('notes-tab-2'), const ValueKey('notes-tab-1')],
+      [const ValueKey('notes-tab-1'), const ValueKey('notes-tab-2')],
     );
     final addTab = find.byKey(const ValueKey('notes-tab-add'));
     final addMaterial = tester.widget<Material>(
@@ -291,6 +292,94 @@ void main() {
         as LinearGradient;
     expect(gradient.colors.last, const Color(0xFF111827));
     expect(tester.getRect(addTab).right, 480);
+  });
+
+  testWidgets('selected middle folder paints last without changing saved order',
+      (tester) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    const items = [
+      NotesFolderTabData(id: 1, label: 'First', icon: Icons.folder,
+          paper: Color(0xFFE8EFF8)),
+      NotesFolderTabData(id: 2, label: 'Museums', icon: Icons.museum,
+          paper: Color(0xFFE8EFF8)),
+      NotesFolderTabData(id: 3, label: 'Last', icon: Icons.folder,
+          paper: Color(0xFFE8EFF8)),
+    ];
+
+    Future<void> mount(int selected) => tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: SizedBox(width: 690,
+        child: NotesFolderTabStrip(
+          tabs: items, selectedId: selected, scrollController: controller,
+          allLabel: 'All', allPaper: const Color(0xFFF2F4F7),
+          onSelect: (_) {}, onAdd: () {},
+        ),
+      )),
+    ));
+    List<Key?> paintOrder() {
+      final stack = tester.widget<Stack>(
+        find.byKey(const ValueKey('notes-layered-tab-stack')),
+      );
+      return stack.children.map((child) => (child as Positioned).child.key)
+          .toList();
+    }
+
+    await mount(2);
+    expect(paintOrder(), [
+      const ValueKey('notes-tab-3'),
+      const ValueKey('notes-tab-1'),
+      const ValueKey('notes-tab-2'),
+    ]);
+    await mount(3);
+    expect(paintOrder(), [
+      const ValueKey('notes-tab-2'),
+      const ValueKey('notes-tab-1'),
+      const ValueKey('notes-tab-3'),
+    ]);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('every folder tab, including fixed All and Add, responds to hover',
+      (tester) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: SizedBox(width: 650,
+        child: NotesFolderTabStrip(
+          tabs: const [
+            NotesFolderTabData(id: 1, label: 'Projects',
+                icon: Icons.folder, paper: Color(0xFFE5EEF6)),
+            NotesFolderTabData(id: 2, label: 'Museums',
+                icon: Icons.museum, paper: Color(0xFFE5EEF6)),
+          ],
+          selectedId: 2, scrollController: controller,
+          allLabel: 'Все', allPaper: const Color(0xFFF2F4F7),
+          onSelect: (_) {}, onAdd: () {},
+        ),
+      )),
+    ));
+
+    double tabElevation(Key key) => tester.widget<Material>(
+      find.descendant(of: find.byKey(key),
+          matching: find.byType(Material)).first,
+    ).elevation;
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: const Offset(5, 180));
+    for (final key in <Key>[
+      const ValueKey('notes-tab-all'),
+      const ValueKey('notes-tab-1'),
+      const ValueKey('notes-tab-2'),
+      const ValueKey('notes-tab-add'),
+    ]) {
+      final before = tabElevation(key);
+      await mouse.moveTo(tester.getCenter(find.byKey(key)));
+      await tester.pumpAndSettle();
+      expect(tabElevation(key), greaterThan(before),
+          reason: 'Hover is missing for $key');
+    }
+    await mouse.removePointer();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('one-line title does not reserve three text rows before body',

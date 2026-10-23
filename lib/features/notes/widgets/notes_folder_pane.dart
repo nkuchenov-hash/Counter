@@ -163,8 +163,8 @@ class NotesFolderTabStrip extends StatelessWidget {
       onLongPress: onManage,
     );
 
-    // An index folder has a fixed physical order: each preceding spine
-    // overlaps the next one. Selection changes the tint, not z-order.
+    // Keep the underlying order stable; the selected folder paints above
+    // its neighbors instead of disappearing under the previous spine.
     final textScaler = MediaQuery.textScalerOf(context);
     final widths = [
       for (final tab in tabs) tabWidth(tab.label, textScaler: textScaler),
@@ -227,10 +227,13 @@ class NotesFolderTabStrip extends StatelessWidget {
                         key: const ValueKey('notes-layered-tab-stack'),
                         clipBehavior: Clip.none,
                         children: [
-                          // Paint right-to-left: the previous tab physically
-                          // covers the next tab's leftmost 15px at ALL times.
+                          // Inactive folders preserve right-to-left overlap.
+                          // Paint the active tab LAST so both its shoulders
+                          // cover neighboring spines without reordering data.
                           for (var i = tabs.length - 1; i >= 0; i--)
-                            categoryAt(i),
+                            if (tabs[i].id != selectedId) categoryAt(i),
+                          for (var i = 0; i < tabs.length; i++)
+                            if (tabs[i].id == selectedId) categoryAt(i),
                         ],
                       ),
                     ),
@@ -345,7 +348,8 @@ class NotesPhysicalFolderShape extends ShapeBorder {
   ShapeBorder scale(double t) => this;
 }
 
-class _PhysicalNotesTab extends StatelessWidget {
+/// A real hover state is available on every tab: All, categories and Add.
+class _PhysicalNotesTab extends StatefulWidget {
   const _PhysicalNotesTab({
     super.key,
     required this.label,
@@ -370,77 +374,105 @@ class _PhysicalNotesTab extends StatelessWidget {
   final bool compact;
 
   @override
+  State<_PhysicalNotesTab> createState() => _PhysicalNotesTabState();
+}
+
+class _PhysicalNotesTabState extends State<_PhysicalNotesTab> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final accentColor = accent ?? scheme.onSurfaceVariant;
-    final fill = compact
-        ? paper
-        : (selected ? paper
-            : Color.lerp(paper, accentColor, dark ? 0.22 : 0.17)!);
-    // Fine bevel at the top, same paper at the selected spine's bottom.
-    final topFill = compact
+    final accentColor = widget.accent ?? scheme.onSurfaceVariant;
+    final baseFill = widget.compact
+        ? widget.paper
+        : (widget.selected
+            ? widget.paper
+            : Color.lerp(
+                widget.paper, accentColor, dark ? 0.22 : 0.17,
+              )!);
+    // All tab types respond to hover, including the selected and fixed tabs.
+    // Keep the selected color anchored to the folder paper when idle.
+    final fill = _hovered
+        ? Color.lerp(baseFill, dark ? Colors.white : scheme.onSurface,
+            dark ? 0.12 : 0.075)!
+        : baseFill;
+    final topFill = widget.compact
         ? fill
         : Color.lerp(fill, Colors.white, dark ? 0.04 : 0.07)!;
     final foreground = ThemeData.estimateBrightnessForColor(fill) ==
             Brightness.dark
         ? Colors.white
         : const Color(0xFF202630);
-    return SizedBox(
-      width: width,
-      height: selected ? NotesFolderTabStrip.height : NotesFolderTabStrip.height - 3,
-      child: Material(
-        color: Colors.transparent,
-        elevation: selected ? 0.35 : 0.15,
-        shadowColor: Colors.black.withValues(alpha: dark ? 0.10 : 0.05),
-        shape: const NotesPhysicalFolderShape(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: onLongPress,
-          customBorder: const NotesPhysicalFolderShape(),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 260),
-            curve: Curves.easeInOutCubic,
-            alignment: Alignment.centerLeft,
-            padding: EdgeInsets.only(
-              left: compact ? 11 : 10,
-              right: compact ? 14 : 23,
-            ),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [topFill, fill],
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) {
+        if (!_hovered) setState(() => _hovered = true);
+      },
+      onExit: (_) {
+        if (_hovered) setState(() => _hovered = false);
+      },
+      child: SizedBox(
+        width: widget.width,
+        height: widget.selected
+            ? NotesFolderTabStrip.height
+            : NotesFolderTabStrip.height - (_hovered ? 1 : 3),
+        child: Material(
+          color: Colors.transparent,
+          elevation: _hovered ? 0.42 : (widget.selected ? 0.35 : 0.15),
+          shadowColor: Colors.black.withValues(alpha: dark ? 0.10 : 0.05),
+          shape: const NotesPhysicalFolderShape(),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: widget.onTap,
+            onLongPress: widget.onLongPress,
+            customBorder: const NotesPhysicalFolderShape(),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.centerLeft,
+              padding: EdgeInsets.only(
+                left: widget.compact ? 11 : 10,
+                right: widget.compact ? 14 : 23,
               ),
-            ),
-            child: compact
-                ? Icon(icon, color: foreground, size: 21)
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(icon, size: 16, color: foreground.withValues(alpha: 0.82)),
-                      const SizedBox(width: 7),
-                      Expanded(
-                        child: Tooltip(
-                          message: label,
-                          waitDuration: const Duration(milliseconds: 450),
-                          child: Text(
-                            label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            softWrap: false,
-                            style: NotesFolderTabStrip.labelStyle.copyWith(
-                              fontWeight: selected
-                                  ? FontWeight.w600
-                                  : FontWeight.w500,
-                              color: foreground,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [topFill, fill],
+                ),
+              ),
+              child: widget.compact
+                  ? Icon(widget.icon, color: foreground, size: 21)
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(widget.icon, size: 16,
+                            color: foreground.withValues(alpha: 0.82)),
+                        const SizedBox(width: 7),
+                        Expanded(
+                          child: Tooltip(
+                            message: widget.label,
+                            waitDuration: const Duration(milliseconds: 450),
+                            child: Text(
+                              widget.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: false,
+                              style: NotesFolderTabStrip.labelStyle.copyWith(
+                                fontWeight: widget.selected
+                                    ? FontWeight.w600
+                                    : FontWeight.w500,
+                                color: foreground,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+            ),
           ),
         ),
       ),
