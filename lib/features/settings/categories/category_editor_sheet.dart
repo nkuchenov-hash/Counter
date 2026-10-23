@@ -104,7 +104,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
       if (newNames.isNotEmpty) 'localized_names': newNames,
       if (primaryNew != widget.category.name.trim()) ...{
         'name': primaryNew,
-        'normalized_id': primaryNew.toLowerCase().replaceAll(RegExp(r'\\s+'), ''),
+        'normalized_id': primaryNew.toLowerCase().replaceAll(RegExp(r'\s+'), ''),
       },
       if (_selectedColorValue != null &&
           _selectedColorValue != widget.category.colorValue)
