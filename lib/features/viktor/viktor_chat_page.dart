@@ -16,6 +16,7 @@ import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 part 'viktor_dialogue_ui_state.dart';
 /// Single LIFE OS assistant entry point. Replaces the old record-only mic FAB.
@@ -62,6 +63,16 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     _controller.dispose();
     super.dispose();
   }
+  // Hardware Enter sends the message; Shift+Enter keeps native multiline input.
+  // Mobile soft keyboards retain a newline key and the visible Send button.
+  void _sendFromKeyboard() {
+    if (_busy || _listening || _transcribing || _startingMic ||
+        !_settingsReady || _controller.text.trim().isEmpty) {
+      return;
+    }
+    unawaited(_send());
+  }
+
   Future<void> _send() async {
     if (_busy) return;
     final input = _resolveRepeatCommand(_controller.text.trim());
@@ -931,58 +942,89 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                       ),
                     ),
                   ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: scheme.surface,
-                    border: Border(top: BorderSide(
-                      color: scheme.outlineVariant.withValues(alpha: 0.5))),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        AppIconButton(
-                          icon: _listening ? Icons.stop_circle_outlined :
-                            Icons.mic_none_rounded,
-                          tooltip: _listening ? 'Остановить диктовку' :
-                            'Продиктовать Виктору',
-                          onPressed: _busy || _startingMic || _transcribing ? null : _toggleMic,
-                          selected: _listening,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _controller,
-                            enabled: !_busy && !_startingMic && !_transcribing,
-                            minLines: 1,
-                            maxLines: 4,
-                            textCapitalization: TextCapitalization.sentences,
-                            style: const TextStyle(fontSize: 16),
-                            decoration: InputDecoration(
-                              hintText: _listening ? 'Идёт запись — нажмите стоп' :
-                                'Что сделать в LIFE OS?',
-                              filled: true,
-                              fillColor: scheme.surfaceContainerLow,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide: BorderSide.none,
+                // Chat-style composer: growing text area and actions in one
+                // rounded surface, rather than a fixed-height single row.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                  child: Material(
+                    color: scheme.surfaceContainerLow,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      side: BorderSide(
+                        color: scheme.outlineVariant.withValues(alpha: 0.55),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CallbackShortcuts(
+                            bindings: <ShortcutActivator, VoidCallback>{
+                              const SingleActivator(LogicalKeyboardKey.enter):
+                                  _sendFromKeyboard,
+                              const SingleActivator(LogicalKeyboardKey.numpadEnter):
+                                  _sendFromKeyboard,
+                            },
+                            child: TextField(
+                              key: const Key('viktor_composer_input'),
+                              controller: _controller,
+                              enabled: !_busy && !_startingMic && !_transcribing,
+                              keyboardType: TextInputType.multiline,
+                              textInputAction: TextInputAction.newline,
+                              minLines: 1,
+                              maxLines: 8,
+                              textCapitalization: TextCapitalization.sentences,
+                              style: TextStyle(fontSize: 16, height: 1.45,
+                                color: scheme.onSurface),
+                              decoration: InputDecoration(
+                                hintText: _listening
+                                    ? 'Идёт запись — нажмите стоп'
+                                    : 'Спросите Виктора или поручите задачу',
+                                hintStyle: TextStyle(fontSize: 16,
+                                  color: scheme.onSurfaceVariant),
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 9),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 12),
                             ),
-                            onSubmitted: (_) => unawaited(_send()),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        AppIconButton(
-                          icon: Icons.arrow_upward_rounded,
-                          tooltip: 'Отправить Виктору',
-                          onPressed: _busy || _listening || _transcribing || _startingMic || !_settingsReady ? null :
-                            () => unawaited(_send()),
-                          variant: AppIconButtonVariant.filled,
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              AppIconButton(
+                                icon: _listening ? Icons.stop_circle_outlined
+                                    : Icons.mic_none_rounded,
+                                tooltip: _listening ? 'Остановить диктовку'
+                                    : 'Продиктовать Виктору',
+                                onPressed: _busy || _startingMic || _transcribing
+                                    ? null : _toggleMic,
+                                selected: _listening,
+                                size: AppIconButtonSize.s,
+                                variant: AppIconButtonVariant.subtle,
+                              ),
+                              const Spacer(),
+                              ValueListenableBuilder<TextEditingValue>(
+                                valueListenable: _controller,
+                                builder: (context, value, _) => AppIconButton(
+                                  icon: Icons.arrow_upward_rounded,
+                                  tooltip: 'Отправить Виктору',
+                                  onPressed: _busy || _listening ||
+                                          _transcribing || _startingMic ||
+                                          !_settingsReady ||
+                                          value.text.trim().isEmpty
+                                      ? null : () => unawaited(_send()),
+                                  variant: AppIconButtonVariant.filled,
+                                  size: AppIconButtonSize.s,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
