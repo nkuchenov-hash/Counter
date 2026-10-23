@@ -1,3 +1,9 @@
+## [2026-10-23] — Viktor V2 release integration (candidate; not deployed)
+
+- Integrated the current `main` Notes folder fixes without discarding Viktor's model/dialogue changes.
+- Restored generated source-document parity for the newly added encrypted conversation outbox contract test.
+- Release candidate requires completed GitHub CI and real-account functional validation before a production merge.
+
 ## [2026-10-23] — Viktor dialogue retry after transient sync failure (PR #337; not released)
 
 - Keep unsent chat turns in an owner-scoped encrypted local outbox, restore them after reopening the app and retry them in order; avoid disabling all subsequent writes after a transient failure.
