@@ -77,13 +77,18 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       final earlier = await _dialogueStore.load();
       if (mounted) setState(() {
         _messages.addAll(earlier);
-        _dialogueLoaded = true;
+        _dialogueLoaded = _dialogueStore.pendingCount == 0;
+        if (!_dialogueLoaded) {
+          _messages.add(const ViktorDialogueTurn(role: 'assistant',
+            content: 'Часть истории сохранена на устройстве и ожидает '
+                'отправки на сервер. Виктор повторит синхронизацию.'));
+        }
       });
     } catch (_) {
       if (mounted) setState(() => _messages.add(
         const ViktorDialogueTurn(role: 'assistant',
-          content: 'История разговора временно недоступна. '
-              'Новые реплики пока не сохраняются на сервере.')));
+          content: 'Историю разговора не удалось загрузить. '
+              'Проверьте подключение и локальное хранилище.')));
     }
     if (mounted) setState(() => _settingsReady = true);
   }
@@ -97,7 +102,8 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
   Future<void> _persistTurn(ViktorDialogueTurn turn) async {
     try {
       await _dialogueStore.append(turn);
-      if (mounted && !_dialogueLoaded) {
+      if (mounted && !_dialogueLoaded &&
+          _dialogueStore.pendingCount == 0) {
         setState(() {
           _dialogueLoaded = true;
           _messages.add(const ViktorDialogueTurn(role: 'assistant',
@@ -110,9 +116,10 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         setState(() {
           _dialogueLoaded = false;
           _messages.add(const ViktorDialogueTurn(role: 'assistant',
-            content: 'Сохранение истории временно недоступно. '
-                'Виктор повторит отправку реплик при следующем сообщении. '
-                'Не закрывайте окно, пока синхронизация не восстановится.'));
+            content: 'История пока не синхронизирована с сервером. '
+                'Виктор повторит отправку при следующем сообщении. '
+                'Если защищённое хранилище устройства недоступно, '
+                'несохранённые реплики могут пропасть.'));
         });
       }
     }
