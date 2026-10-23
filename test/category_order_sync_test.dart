@@ -37,7 +37,7 @@ void main() {
         ),
       ));
 
-      const targetKey = ValueKey('category-drop-target-110');
+      const targetKey = ValueKey('category-drag-source-110');
       const sourceKey = ValueKey('category-drag-source-120');
       final target = find.byKey(targetKey);
       final source = find.byKey(sourceKey);
