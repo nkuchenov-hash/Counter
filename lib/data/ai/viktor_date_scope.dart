@@ -34,8 +34,8 @@ class ViktorDateScope {
       }
       const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
           'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-      final ru = RegExp(r'([0-9]{1,2})\\s+(' + months.join('|') +
-          r')\\s+(20[0-9]{2})', caseSensitive: false).firstMatch(text);
+      final ru = RegExp(r'([0-9]{1,2})\s+(' + months.join('|') +
+          r')\s+(20[0-9]{2})', caseSensitive: false).firstMatch(text);
       if (ru == null) return null;
       final date = DateTime(int.parse(ru.group(3)!),
           months.indexOf(ru.group(2)!.toLowerCase()) + 1,
