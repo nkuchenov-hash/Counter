@@ -462,6 +462,8 @@ const Map<String, String> kRuL10n = {
   'category_reorder': 'Изменить порядок категории',
   'category_move_invalid': 'Нельзя переместить категорию в саму себя или в свою подкатегорию.',
   'category_color_shades': 'Оттенки цвета',
+  'category_moved': 'Категория перемещена',
+  'clear': 'Очистить',
   'category_advanced': 'Дополнительные настройки',
   'categories_title': 'Категории',
   'category_edit_mode': 'Режим редактирования',
