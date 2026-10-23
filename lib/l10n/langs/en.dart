@@ -109,8 +109,7 @@ const Map<String, String> kEnL10n = {
   'empty_planning_subtitle':
       'Add plans with the field above, or use the microphone button when you are on this tab.',
   'empty_categories_title': 'Start by organizing your life.',
-  'empty_categories_subtitle':
-      'Create your first category (e.g. Work, Health).',
+  'empty_categories_subtitle': 'Create your first category (e.g. Work, Health).',
   'empty_action_focus_search': 'Focus search',
   'empty_action_focus_planning_field': 'Focus add task field',
   'language_english': 'English',
@@ -119,8 +118,7 @@ const Map<String, String> kEnL10n = {
   'sign_in_again': 'Sign In Again',
   'language_label': 'Language',
   'add_active_language': 'Add language',
-  'all_supported_languages_active':
-      'All supported languages are already active.',
+  'all_supported_languages_active': 'All supported languages are already active.',
   'time_zone': 'Time zone',
   'change_timezone': 'Change timezone',
   'timezone_current': 'Current',
@@ -264,8 +262,7 @@ const Map<String, String> kEnL10n = {
   'plan_time_shift_plus_15m': '+15 minutes',
   'plan_time_shift_plus_30m': '+30 minutes',
   'plan_time_shift_plus_1h': '+1 hour',
-  'plan_bulk_shift_no_timed_tasks':
-      'No selected tasks with a start time to shift.',
+  'plan_bulk_shift_no_timed_tasks': 'No selected tasks with a start time to shift.',
   'plan_bulk_shift_applied': 'Times updated.',
   'plan_bulk_edit': 'Edit',
   'plan_bulk_edit_sheet_title': 'Edit %s tasks',
@@ -278,8 +275,7 @@ const Map<String, String> kEnL10n = {
       'Tasks run consecutively in the selected order. The first starts at the chosen time, with no gaps between tasks. Durations are preserved.',
   'plan_bulk_edit_date_only_hint':
       'Only the date changes. Each task keeps its start time and duration.',
-  'plan_bulk_edit_timezone_hint':
-      'Time is interpreted in the profile time zone.',
+  'plan_bulk_edit_timezone_hint': 'Time is interpreted in the profile time zone.',
   'plan_bulk_edit_date_label': 'Date',
   'plan_bulk_edit_new_start_label': 'Set time',
   'plan_bulk_edit_set_time_label': 'Set time',
@@ -337,8 +333,7 @@ const Map<String, String> kEnL10n = {
   'plan_quick_add_no_tags': 'No tags. Add in settings.',
   'planning_tags_hint': 'Tags appear on tasks after you attach them here.',
   'plan_save_failed': 'Could not save plan. Try again.',
-  'plan_reorder_failed':
-      'Could not save plan order. Check connection and retry.',
+  'plan_reorder_failed': 'Could not save plan order. Check connection and retry.',
   'smart_plan': 'Smart Plan',
   'smart_plan_tooltip': 'Generate tasks from a description',
   'smart_plan_sheet_title': 'Smart Plan',
@@ -495,8 +490,7 @@ const Map<String, String> kEnL10n = {
   'category_picker_create_named': 'Create "%s"',
   'category_name_required': 'Category name required',
   'category_create_failed': 'Could not create category',
-  'category_create_requires_connection':
-      'Category creation requires connection',
+  'category_create_requires_connection': 'Category creation requires connection',
   'calendar': 'Calendar',
   'calendar_year_view': 'Year',
   'calendar_month_view': 'Month',
@@ -595,11 +589,9 @@ const Map<String, String> kEnL10n = {
   'desktop_voice_transcript': 'Transcript',
   'desktop_voice_category_path': 'Category path',
   'desktop_voice_record_title': 'Record title',
-  'desktop_voice_no_price_reporter':
-      'Price Reporter category not found in tree',
+  'desktop_voice_no_price_reporter': 'Price Reporter category not found in tree',
   'desktop_voice_preparing': 'Local speech engine (diagnostics only)',
-  'desktop_voice_listening_stop_hint':
-      'Listening… tap Finish when done speaking',
+  'desktop_voice_listening_stop_hint': 'Listening… tap Finish when done speaking',
   'desktop_voice_finish_speaking': 'Finish speaking',
   'desktop_voice_processing': 'Processing speech…',
   'desktop_voice_action': 'Action',
@@ -683,8 +675,7 @@ const Map<String, String> kEnL10n = {
   'desktop_voice_open_log_folder': 'Open log folder',
   'desktop_voice_open_wav_folder': 'Open latest WAV folder',
   'desktop_voice_clear_logs': 'Clear logs',
-  'desktop_voice_acceptance_planning':
-      'Run acceptance: Price Reporter Planning',
+  'desktop_voice_acceptance_planning': 'Run acceptance: Price Reporter Planning',
   'desktop_voice_acceptance_age_mod':
       'Run acceptance: Price Reporter AGE SOLUTIONS ADD MOD',
   'desktop_voice_hotkey_register_error': 'Hotkey registration failed: %s',
@@ -824,8 +815,7 @@ const Map<String, String> kEnL10n = {
   'auth_enter_password': 'Enter a password.',
   'auth_confirm_password': 'Confirm your password.',
   'auth_oauth_failed': 'Sign-in with this provider failed.',
-  'auth_oauth_not_configured':
-      'This sign-in method is not enabled on the server.',
+  'auth_oauth_not_configured': 'This sign-in method is not enabled on the server.',
   'auth_login_cancelled': 'Login cancelled.',
   'auth_session_expired': 'Your session expired. Please sign in again.',
   'auth_too_many_attempts': 'Too many attempts. Try again later.',
@@ -1028,8 +1018,7 @@ const Map<String, String> kEnL10n = {
   'notes_audio_transcribing': 'Transcribing…',
   'notes_audio_transcript_title': 'Transcript',
   'notes_audio_transcript_ready': 'Transcript ready',
-  'notes_audio_transcript_error':
-      'Transcript failed. Audio is still available.',
+  'notes_audio_transcript_error': 'Transcript failed. Audio is still available.',
   'notes_audio_transcript_empty': 'No transcript yet.',
   'notes_audio_copy_transcript': 'Copy transcript',
   'notes_audio_retry_transcript': 'Retry transcription',
