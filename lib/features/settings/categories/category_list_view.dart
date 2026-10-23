@@ -589,6 +589,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                                     ),
                                     category: selected,
                                     inline: true,
+                                    onCancel: () => setState(() => _selectedId = null),
                                     onSaved: () =>
                                         unawaited(_notifyChanged()),
                                     onCategoryDeleted: () =>
