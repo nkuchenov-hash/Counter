@@ -434,3 +434,14 @@ Shell header, More, Planning Smart and Profile open the same Viktor chat; no ove
 ## Viktor recorded dictation and feedback (2026-10-20)
 
 The web microphone MUST capture actual audio through `record`, not browser `SpeechRecognition`. On start, show record duration, current sampled volume and captured byte count; microphone stays a stop control. After stop, show a transcription progress indicator, then place recognized words as **editable** text in the existing composer; do not automatically submit or execute model actions. A silent/too-short recording, no microphone permission, rejected provider key or unavailable service MUST show a visible inline error, not produce a fake listening/success state or repeated chat bubbles. Audio (up to 60 seconds) is sent to the selected transcription provider via authenticated PocketBase, using BYOK; never store credentials or recordings. On Android and Windows the same capture/submit UX replaces silent speech service behavior.
+
+## Category manager (desktop and mobile)
+
+- Desktop Categories uses a two-pane tree/inline editor; mobile uses a single tree and a bounded near-full-screen editor with a sticky Save action.
+- Category tree drag uses the canonical `AppReorderableList` + `AppHoldToReorderListener` (300 ms), matching Plans and Notes. No feature-specific drag handles or buttons.
+- Drag between visible sibling groups changes the parent through `updateCategoryParent`; within a group it calls `applyLocalCategorySiblingOrder` and debounced `persistCategorySiblingOrder`. Invalid self/descendant moves are rejected *before* the optimistic mutation.
+- Expanded branches reveal drop locations in child sibling groups. For a collapsed/empty parent, use the editor's explicit Parent category selector.
+- Reorder/move updates the local category tree immediately, offers Undo, and reports failed server persistence. Search expands only matching paths without rewriting data.
+- Editor shows name, parent, color and icon first; translations, keywords, default-category and destructive actions are in Advanced. Scroll content is bounded by the viewport and Save remains accessible.
+
+---
