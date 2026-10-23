@@ -554,7 +554,6 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
               ),
             ),
           ),
-          Divider(height: 1, color: scheme.outlineVariant),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
             child: AppButton.primary(
