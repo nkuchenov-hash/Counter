@@ -395,10 +395,11 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
   }
 
   Widget _advancedFields(List<String> langs, String locale) {
-    final scheme = Theme.of(context).colorScheme;
     return ExpansionTile(
       initiallyExpanded: false,
       tilePadding: EdgeInsets.zero,
+      shape: const RoundedRectangleBorder(side: BorderSide.none),
+      collapsedShape: const RoundedRectangleBorder(side: BorderSide.none),
       title: Text(t(locale, 'category_advanced')),
       children: [
         TextField(
@@ -447,23 +448,6 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
           icon: Icons.check_circle_outline,
           onPressed: _setAsDefault,
         ),
-        const SizedBox(height: 14),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            t(locale, 'delete_subcategories_warning'),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        AppButton.danger(
-          label: t(locale, 'delete_category'),
-          icon: Icons.delete_outline_rounded,
-          onPressed: _confirmDelete,
-        ),
-        const SizedBox(height: 12),
       ],
     );
   }
