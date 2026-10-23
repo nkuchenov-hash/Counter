@@ -119,8 +119,10 @@ class NotesFolderTabStrip extends StatelessWidget {
     )..layout();
     final contentWidth = painter.width;
     painter.dispose();
-    // Leading 10px + 16px icon + 7px spacing + 23px trailing shoulder.
-    return (contentWidth + 56).clamp(90.0, 360.0).toDouble();
+    // 56px for icon + padding + shoulder; an extra 10px prevents narrow
+    // fallback fonts / fractional glyph rounding from cutting the last letter.
+    // The maximum is only a safety bound for exceptionally long titles.
+    return (contentWidth + 66).clamp(90.0, 460.0).toDouble();
   }
 
   void _scrollWheel(PointerSignalEvent event) {
