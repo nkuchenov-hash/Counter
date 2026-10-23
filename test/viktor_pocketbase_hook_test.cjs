@@ -193,6 +193,8 @@ nextModelReplies.push({statusCode: 200, raw: JSON.stringify({choices: [
   })}}
 ]})});
 const longReply = invoke({...base,
+  provider:'yandex', model:'yandexgpt/rc',
+  yandex_folder_id:'b1g9testfolder11',
   text:'Распланируй субботу с дорогой и остановками',
   conversation_history:[
     {role:'user',content:'Распланируй субботу, 24 октября 2026. '.repeat(55)}
