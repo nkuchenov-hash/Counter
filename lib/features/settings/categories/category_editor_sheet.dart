@@ -561,7 +561,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
               children: [
                 AppButton.secondary(
                   label: t(locale, 'cancel'),
-                  onPressed: () => Navigator.of(context).maybePop(),
+                  onPressed: _saving ? null : (widget.inline ? widget.onCancel : () => Navigator.of(context).pop()),
                 ),
                 const SizedBox(width: 10),
                 AppButton.primary(
