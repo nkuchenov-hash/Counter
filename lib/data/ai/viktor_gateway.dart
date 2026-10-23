@@ -8,7 +8,6 @@ import 'package:counter/data/pb_config.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:timezone/timezone.dart' as tz;
 
 import 'viktor_action_contract.dart';
 import 'viktor_read_answer.dart';
@@ -336,7 +335,6 @@ class ViktorGateway {
         input: input, history: conversationHistory);
     final reproject = requestedZone != null &&
         requestedZone != service.settings.preferredTimeZone;
-    final location = reproject ? tz.getLocation(requestedZone) : null;
     final previousDay = DateTime(
         wallDay.year, wallDay.month, wallDay.day - 1);
     final prevDayPlans = reproject
@@ -348,7 +346,8 @@ class ViktorGateway {
     DateTime? shownStart(PlanningTask plan) => !reproject
         ? plan.startTime
         : plan.startUtcInstant == null ? null :
-            tz.TZDateTime.from(plan.startUtcInstant!.toUtc(), location!);
+            ViktorDateScope.projectUtcInstant(
+                plan.startUtcInstant!, requestedZone!);
     final targetDayKey = ViktorDateScope.key(wallDay);
     final nextDayKey = ViktorDateScope.key(nextDay);
     List<PlanningTask> forRequestedDay(String dateKey) {
