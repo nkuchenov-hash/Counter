@@ -130,6 +130,8 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
   const yesterdayDay = safeDate(body.yesterday_day);
   const tomorrowDay = safeDate(body.tomorrow_day);
   const zone = String(body.profile_timezone || "profile").slice(0, 64);
+  const savedClockZone =
+    String(body.existing_plan_clock_timezone || zone).slice(0, 64);
   const tomorrowPlans = [];
   for (const p of (Array.isArray(body.next_day_plans) ? body.next_day_plans : [])) {
     if (!p || typeof p !== "object" ||
@@ -315,9 +317,10 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     profile_timezone: zone,
     schedule_timezone: conversationZone || zone,
     schedule_timezone_source: conversationZone ? "user_conversation" : "profile",
-    // Existing plan clock labels arrive projected in profile timezone, while
-    // requested event times may be wall-clock in a different user zone.
-    existing_plan_clock_timezone: zone,
+    // The client projects UTC plan instants into this zone before presenting
+    // them, even if the owner's persistent profile uses another zone.
+    existing_plan_clock_timezone: savedClockZone,
+    saved_plan_clock_uncertain: body.saved_plan_clock_uncertain === true,
     day_plans: plans,
     next_day_plans: tomorrowPlans,
     selected_plan_ids: selectedIds,
