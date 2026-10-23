@@ -95,7 +95,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('floating Notes formatting toolbar has no rectangular panel', (tester) async {
+  testWidgets('Notes toolbar is a readable capsule, not a full-width dock', (tester) async {
     await tester.pumpWidget(
       _host(
         NotesEditorToolbar(
@@ -117,11 +117,66 @@ void main() {
         ),
       ),
     );
-    final dock = find.byKey(const ValueKey('notes-transparent-format-toolbar'));
-    expect(dock, findsOneWidget);
-    expect(find.descendant(of: dock, matching: find.byType(BackdropFilter)), findsNothing);
-    expect(find.descendant(of: dock, matching: find.byType(DecoratedBox)), findsNothing);
+
+    final toolbar = find.byKey(const ValueKey('notes-floating-glass-toolbar'));
+    final pill = find.byKey(const ValueKey('notes-floating-glass-pill'));
+    expect(toolbar, findsOneWidget);
+    expect(pill, findsOneWidget);
+    expect(tester.getSize(toolbar), const Size(350, 48));
+    expect(
+      find.descendant(of: toolbar, matching: find.byType(BackdropFilter)),
+      findsOneWidget,
+    );
+
+    final surface = tester.widget<DecoratedBox>(pill).decoration as BoxDecoration;
+    expect(surface.borderRadius, BorderRadius.circular(24));
+    expect(surface.color, isNotNull);
+    expect(surface.color!.a, inInclusiveRange(0.90, 0.97));
+    expect(surface.border, isNotNull);
+    expect(
+      find.ancestor(of: pill, matching: find.byType(ClipRRect)),
+      findsWidgets,
+    );
+
+    // The shadow belongs to the floating pill, never a stretching footer.
+    final outer = find.ancestor(
+      of: pill,
+      matching: find.byType(DecoratedBox),
+    );
+    expect(
+      tester.widgetList<DecoratedBox>(outer).any(
+        (box) => (box.decoration as BoxDecoration).boxShadow?.isNotEmpty == true,
+      ),
+      isTrue,
+    );
     expect(find.byKey(const ValueKey('notes-toolbar-heading')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('dark Notes editor preserves an opaque-enough glass pill', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData.dark(),
+        home: Scaffold(
+          body: NotesEditorToolbar(
+            actions: [
+              NotesToolbarAction(
+                tool: NotesToolbarTool.text,
+                icon: Icons.text_fields,
+                tooltip: 'Text',
+                onPressed: () {},
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    final pill = tester.widget<DecoratedBox>(
+      find.byKey(const ValueKey('notes-floating-glass-pill')),
+    );
+    final decoration = pill.decoration as BoxDecoration;
+    expect(decoration.color!.a, inInclusiveRange(0.90, 0.95));
+    expect(find.byType(BackdropFilter), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
