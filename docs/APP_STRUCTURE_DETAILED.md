@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `2324b06e` on 2026-10-23.**
+**Generated from input HEAD `8abf5512` on 2026-10-23.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 948 — each appears **exactly once** below.
+**Tracked files:** 950 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,8 +27,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 184 |
-| `test` | 131 |
-| `Brain/data` | 110 |
+| `test` | 132 |
+| `Brain/data` | 111 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
 | `developer tool` | 63 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 511 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 249 |
+| `PROVEN_REQUIRED` | 512 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 250 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 865 |
+| `HIGH` | 867 |
 | `MEDIUM` | 83 |
 
 ---
@@ -15015,6 +15015,44 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `sleep_foreground_reconcile_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/local_sync/category_mutation_outbox.dart`
+
+EN:
+
+- **Human purpose:** Focused brain module for offline sync: owner-scoped durable category field patch queue. Maintains offline sync consistency between PocketBase and the UI cache.
+- **What this is:** Focused brain module for offline sync: owner-scoped durable category field patch queue.
+- **Why needed:** Maintains offline sync consistency between PocketBase and the UI cache.
+- **Contents:** Dart helpers and extensions (`CategoryMutationOutbox`).
+- **Key code names:** `CategoryMutationOutbox`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/local_sync/offline_sync_state.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** Owner-scoped durable category field PATCH queue
+- **When to open:** When behavior tied to `category_mutation_outbox.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; Offline banner in shell, reconnect flush; APP_STRUCTURE role: Owner-scoped durable category field PATCH queue
+
+RU:
+
+- **Зачем файл человеку:** Сфокусированный модуль данных для offline sync — файл `category_mutation_outbox`. Держит offline sync согласованным с PocketBase и экранами.
+- **Что это:** Сфокусированный модуль данных для offline sync — файл `category_mutation_outbox`.
+- **Зачем:** Держит offline sync согласованным с PocketBase и экранами.
+- **Содержимое:** Dart-код (`CategoryMutationOutbox`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/local_sync/offline_sync_state.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Реализует назначение `category_mutation_outbox.dart` для области `lib/data/local_sync`.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_mutation_outbox.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`; Offline banner в shell, flush при reconnect
 
 
 ### `lib/data/local_sync/offline_sync_state.dart`
@@ -33298,6 +33336,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `category_catalog_resilience_contract`.
 - **Когда открывать:** Падение CI или правка кода рядом с `category_catalog_resilience_contract`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/category_mutation_outbox_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `category_mutation_outbox_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `category_mutation_outbox_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/category_mutation_outbox_test.dart` / CI when enabled. (2) Namesake production subject: `lib/data/local_sync/category_mutation_outbox.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `category_mutation_outbox_test` scenario.
+- **When to open:** CI failure or changing code near `category_mutation_outbox`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `category_mutation_outbox`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `category_mutation_outbox` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `category_mutation_outbox` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `category_mutation_outbox`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/category_mutation_outbox_test.dart`. (2) Парный production-файл: `lib/data/local_sync/category_mutation_outbox.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `category_mutation_outbox`.
+- **Когда открывать:** Падение CI или правка кода рядом с `category_mutation_outbox`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
