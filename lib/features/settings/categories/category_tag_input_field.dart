@@ -107,11 +107,19 @@ class _TagInputFieldState extends State<TagInputField> {
         const SizedBox(height: 8),
         TextField(
           controller: _controller,
-          decoration:
-              widget.decoration ??
-              InputDecoration(
-                labelText: t(currentLocale.value, 'add_keyword_hint'),
+          decoration: (widget.decoration ??
+              InputDecoration(labelText: t(currentLocale.value, 'add_keyword_hint')))
+              .copyWith(
+            suffixIcon: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+              child: FilledButton.icon(
+                onPressed: _controller.text.trim().isEmpty ? null : _commitCurrent,
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: Text(t(currentLocale.value, 'add')),
               ),
+            ),
+            suffixIconConstraints: const BoxConstraints(minWidth: 108),
+          ),
           textCapitalization: TextCapitalization.sentences,
           onChanged: (_) => setState(() {}),
 
