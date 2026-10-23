@@ -4,6 +4,7 @@ import 'package:counter/features/notes/widgets/notes_library_production_shell.da
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'notes/fixtures/notes_glm_library_parity_fixture.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
