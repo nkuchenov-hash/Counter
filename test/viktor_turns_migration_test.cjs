@@ -55,7 +55,7 @@ assert.equal(created.onCreate, true);
 function validateIndexColumns(collection) {
   const fields = new Set(['id', ...collection.fields.map(field => field.name)]);
   for (const index of collection.indexes) {
-    const match = index.match(/\\bON\\s+([a-z_][a-z_0-9]*)\\s*\\(([^)]+)\\)/i);
+    const match = index.match(/\bON\s+([a-z_][a-z_0-9]*)\s*\(([^)]+)\)/i);
     assert.ok(match, 'Unable to parse index: ' + index);
     assert.equal(match[1], collection.name);
     for (const column of match[2].split(',').map(c => c.trim())) {
