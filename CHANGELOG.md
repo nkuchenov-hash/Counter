@@ -1,3 +1,10 @@
+## [2026-10-23] — Viktor dialogue retry after transient sync failure (PR #337; not released)
+
+- Retain unsent chat turns in an in-memory queue and retry them in order on subsequent messages, instead of disabling all future history writes after one failure.
+- Use stable owner-scoped `client_turn_id` values and read-back verification after ambiguous server/network errors to avoid duplicate history entries.
+- Show failed/recovered sync state in Viktor chat. Pending messages are still lost if the chat closes while offline; a durable encrypted outbox and full release acceptance remain outstanding.
+- JS server-side contract tests passed in a V8 harness. Flutter compilation and web/Android release builds were not run, and the PR remains unmerged.
+
 ## [2026-10-22] — Viktor guarded schedule commit correctness (PR #337; not released)
 
 - Reject duplicate PocketBase plan IDs before atomic schedule commit; `Set.add()` does not return a success boolean, so the old duplicate guard was ineffective.
