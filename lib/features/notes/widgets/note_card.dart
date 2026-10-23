@@ -592,7 +592,9 @@ class _StatusMeta extends StatelessWidget {
     final created = data.task.createdAt;
     // No vague "Recently", and never relabel updatedAt as a creation date.
     // The Notes library hydrates missing createdAt values from persistence.
-    final dateText = created == null ? '—' : _noteCreatedDate(created);
+    final dateText = created == null
+        ? '—'
+        : _noteCreatedDate(created, fullYear: true);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
