@@ -77,6 +77,7 @@ class NotesToolbarButton extends StatelessWidget {
           child: InkWell(
             key: ValueKey('notes-toolbar-${tool.name}'),
             onTap: enabled ? onPressed : null,
+            hoverColor: NotesFigmaTokens.textPrimary(context).withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(
               NotesFigmaTokens.toolbarButtonRadius,
             ),
@@ -335,6 +336,8 @@ class _NotesCompactToolbarMenu extends StatelessWidget {
 ///
 /// It is deliberately content-width and 48 px high. Parent screens must pin it
 /// over scroll content; it must never be used as a stretching bottom bar.
+/// Floating formatting buttons over the editor's feathered bottom blur.
+/// No separate pill/panel surface: the scrolling document remains visible.
 class NotesEditorToolbar extends StatelessWidget {
   const NotesEditorToolbar({super.key, required this.actions});
 
@@ -348,84 +351,46 @@ class NotesEditorToolbar extends StatelessWidget {
       math.max(0.0, viewportWidth - 40),
     );
     return SizedBox(
+      key: const ValueKey('notes-transparent-format-toolbar'),
       width: width,
       height: NotesFigmaTokens.toolbarHeight,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(
-            NotesFigmaTokens.toolbarRadius,
-          ),
-          boxShadow: [NotesFigmaTokens.toolbarShadow],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(
-            NotesFigmaTokens.toolbarRadius,
-          ),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(
-              sigmaX: 18,
-              sigmaY: 18,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 320;
+          final row = Row(
+            mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
+            mainAxisAlignment: compact
+                ? MainAxisAlignment.start
+                : MainAxisAlignment.spaceBetween,
+            children: [
+              for (final action in actions)
+                if (action.menuItems.isEmpty)
+                  NotesToolbarButton(
+                    tool: action.tool,
+                    icon: action.icon,
+                    tooltip: action.tooltip,
+                    onPressed: action.onPressed,
+                    selected: action.selected,
+                    enabled: action.enabled,
+                  )
+                else
+                  _NotesToolbarMenuButton(action: action),
+            ],
+          );
+          final padded = Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: NotesFigmaTokens.toolbarHorizontalPadding,
+              vertical: NotesFigmaTokens.toolbarVerticalPadding,
             ),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface.withValues(
-                  alpha: Theme.of(context).brightness == Brightness.dark
-                      ? 0.30
-                      : 0.18,
-                ),
-                borderRadius: BorderRadius.circular(
-                  NotesFigmaTokens.toolbarRadius,
-                ),
-                border: Border.all(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.08),
-                ),
-              ),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final compact = constraints.maxWidth < 320;
-                  final row = Row(
-                    mainAxisSize: compact
-                        ? MainAxisSize.min
-                        : MainAxisSize.max,
-                    mainAxisAlignment: compact
-                        ? MainAxisAlignment.start
-                        : MainAxisAlignment.spaceBetween,
-                    children: [
-                      for (final action in actions)
-                        if (action.menuItems.isEmpty)
-                          NotesToolbarButton(
-                            tool: action.tool,
-                            icon: action.icon,
-                            tooltip: action.tooltip,
-                            onPressed: action.onPressed,
-                            selected: action.selected,
-                            enabled: action.enabled,
-                          )
-                        else
-                          _NotesToolbarMenuButton(action: action),
-                    ],
-                  );
-                  final padded = Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: NotesFigmaTokens.toolbarHorizontalPadding,
-                      vertical: NotesFigmaTokens.toolbarVerticalPadding,
-                    ),
-                    child: row,
-                  );
-                  return compact
-                      ? SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: padded,
-                        )
-                      : padded;
-                },
-              ),
-            ),
-          ),
-        ),
+            child: row,
+          );
+          return compact
+              ? SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: padded,
+                )
+              : padded;
+        },
       ),
     );
   }
