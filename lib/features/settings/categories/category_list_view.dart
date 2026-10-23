@@ -14,6 +14,7 @@ import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 export 'package:counter/features/settings/categories/category_editor_sheet.dart'
     show CategoryEditorSheet;
@@ -53,6 +54,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
   StreamSubscription<List<CategoryRule>>? _categoriesSubscription;
   int? _selectedId;
   bool _moving = false;
+  final Map<int, GlobalKey> _rowAnchors = <int, GlobalKey>{};
+  int? _draggedCategoryId;
+  int? _dropInsideCategoryId;
+  bool _nestDropHandled = false;
 
   @override
   void initState() {
@@ -235,12 +240,23 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
   void _select(CategoryRule r, bool wide) {
     if (!wide) {
-      _editOnPhone(r);
+      if ((r.children ?? <CategoryRule>[]).isNotEmpty) {
+        setState(() {
+          _selectedId = r.id;
+          if (!_expanded.remove(r.id)) _expanded.add(r.id);
+        });
+      } else {
+        _editOnPhone(r);
+      }
       return;
     }
     setState(() {
-      _selectedId = r.id;
-      _expanded.add(r.id);
+      if (_selectedId == r.id && _expanded.contains(r.id)) {
+        _expanded.remove(r.id);
+      } else {
+        _selectedId = r.id;
+        _expanded.add(r.id);
+      }
     });
   }
 
