@@ -2,6 +2,31 @@ import 'package:counter/data/ai/viktor_conversation_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+
+  test('Repeated promises do not evict the last real itinerary from context', () {
+    const oldDraft = '2026-10-24\n'
+        '08:00–08:30 Зарядка\n'
+        '17:00–18:00 Фейлор-бар\n'
+        '20:00–21:00 RCC';
+    final messages = <ViktorDialogueTurn>[
+      const ViktorDialogueTurn(role: 'user',
+          content: 'Распланируй мою субботу'),
+      const ViktorDialogueTurn(role: 'assistant', content: oldDraft),
+      for (var i = 0; i < 11; i++) ...[
+        const ViktorDialogueTurn(role: 'user',
+            content: 'Время по Москве надо'),
+        const ViktorDialogueTurn(role: 'assistant',
+            content: 'Сейчас проверю расписание'),
+      ],
+    ];
+    final context = ViktorDialogueTurn.modelContext(messages);
+    expect(context.length, 12);
+    expect(context.first['role'], 'assistant');
+    expect(context.first['content'], contains('20:00–21:00 RCC'));
+    expect(context.last['content'], 'Сейчас проверю расписание');
+  });
+
+
   test('Conversation history keeps dialogue order and at most 12 turns', () {
     final turns = <ViktorDialogueTurn>[
       for (var i = 0; i < 18; i++)
