@@ -1,3 +1,9 @@
+## [2026-10-23] — Viktor send circle optical inset
+
+- Corrected oversized Send control: previous filled circular wrapper painted the entire canonical icon button's padded touch surface and nearly met the top/right/bottom capsule edges.
+- Replaced the nested filled action wrapper with a 34px circular surface inside a separate 44px tappable/accessible InkWell. Matched capsule padding and optical spacing: 15px painted margins on three sides at idle.
+- Added widget regressions for exact circle and tap dimensions, vertical centering and optical margins across desktop/mobile widths. No AI or persistence changes.
+
 ## [2026-10-23] — Viktor dialogue completion and composer geometry
 
 - Fixed repetitive timezone-correction conversations: an explicit Moscow correction of a past uncommitted timetable restores the full assistant draft and corrects its erroneous New York zone label without converting intended wall-clock hours or saving any plans.
