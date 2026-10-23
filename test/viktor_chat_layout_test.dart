@@ -95,4 +95,66 @@ void main() {
   });
 
 
+  // The empty composer must match the compact, inline ChatGPT layout:
+  // no separate white editor rectangle stacked above a toolbar.
+  for (final width in <double>[320, 390, 768, 1440]) {
+    testWidgets('Viktor empty composer is compact and inline at $width',
+        (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = Size(width, 640);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(MaterialApp(
+        home: ViktorChatPage(wallDay: DateTime(2026, 10, 24)),
+      ));
+      await tester.pump();
+
+      final surface = tester.getRect(
+        find.byKey(const Key('viktor_composer_surface')));
+      final editor = tester.getRect(
+        find.byKey(const Key('viktor_composer_input')));
+      final mic = tester.getRect(
+        find.byTooltip('Продиктовать Виктору'));
+      final send = tester.getRect(
+        find.byTooltip('Отправить Виктору'));
+
+      expect(surface.height, lessThan(80));
+      expect(surface.width, lessThanOrEqualTo(661));
+      expect(surface.left, greaterThanOrEqualTo(0));
+      expect(surface.right, lessThanOrEqualTo(width));
+      expect(editor.right, lessThanOrEqualTo(mic.left));
+      expect(mic.right, lessThanOrEqualTo(send.left));
+      expect((mic.center.dy - send.center.dy).abs(), lessThan(2));
+      // They occupy the same horizontal strip rather than two stacked rows.
+      expect(editor.bottom, greaterThan(mic.top));
+      expect(editor.top, lessThan(send.bottom));
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('Viktor expands long drafts without a permanent second row',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 640);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(
+      home: ViktorChatPage(wallDay: DateTime(2026, 10, 24)),
+    ));
+    await tester.pump();
+
+    final surfaceFinder = find.byKey(const Key('viktor_composer_surface'));
+    final initialHeight = tester.getSize(surfaceFinder).height;
+    final field = tester.widget<TextField>(
+      find.byKey(const Key('viktor_composer_input')));
+    field.controller!.text = List.filled(40, 'Большое сообщение').join('\n');
+    await tester.pump();
+
+    expect(tester.getSize(surfaceFinder).height,
+      greaterThan(initialHeight));
+    expect(tester.getSize(surfaceFinder).height, lessThan(275));
+    expect(tester.takeException(), isNull);
+  });
+
 }

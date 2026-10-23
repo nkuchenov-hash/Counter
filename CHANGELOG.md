@@ -1,3 +1,8 @@
+## [2026-10-23] — Viktor compact ChatGPT-style composer
+
+- Refined `lib/features/viktor/viktor_composer.dart` after direct screenshot comparison: replaced the always-two-row, wide input with a centered compact inline editor + mic + send surface, width capped at 660 logical px. Multiline content still grows and scrolls without changing Viktor's voice or command processing.
+- Strengthened `test/viktor_chat_layout_test.dart` with compactness, inline alignment and responsive width regression tests for phone/desktop plus long pasted messages. No changes to PocketBase, AI logic, or plan writes.
+
 ## [2026-10-23] — Viktor natural-language timezone and itinerary follow-ups
 
 - Removed example-city bias from AI prompts; a user-named timezone takes precedence over the profile setting and local event times stay wall-clock unless a real conversion is requested.
