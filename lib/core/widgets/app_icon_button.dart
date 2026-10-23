@@ -39,6 +39,8 @@ class AppIconButton extends StatelessWidget {
     this.size = AppIconButtonSize.m,
     this.selected = false,
     this.loading = false,
+    this.circular = false,
+    this.highContrast = false,
   });
 
   final IconData icon;
@@ -54,6 +56,10 @@ class AppIconButton extends StatelessWidget {
   final AppIconButtonSize size;
   final bool selected;
   final bool loading;
+  /// Round action surface, used by chat composer controls.
+  final bool circular;
+  /// High-contrast filled action; other global variants are unchanged.
+  final bool highContrast;
 
   double get _iconSize => switch (size) {
     AppIconButtonSize.s => 18,
@@ -87,7 +93,8 @@ class AppIconButton extends StatelessWidget {
       }
       return switch (variant) {
         AppIconButtonVariant.standard || AppIconButtonVariant.subtle => null,
-        AppIconButtonVariant.filled => scheme.secondaryContainer,
+        AppIconButtonVariant.filled =>
+            highContrast ? scheme.onSurface : scheme.secondaryContainer,
         AppIconButtonVariant.danger => null,
       };
     }
@@ -107,7 +114,8 @@ class AppIconButton extends StatelessWidget {
         AppIconButtonVariant.subtle => scheme.onSurfaceVariant.withValues(
           alpha: 0.82,
         ),
-        AppIconButtonVariant.filled => scheme.onSecondaryContainer,
+        AppIconButtonVariant.filled =>
+            highContrast ? scheme.surface : scheme.onSecondaryContainer,
         AppIconButtonVariant.danger => scheme.error,
       };
     }
@@ -134,7 +142,8 @@ class AppIconButton extends StatelessWidget {
       padding: const WidgetStatePropertyAll(EdgeInsets.zero),
       tapTargetSize: MaterialTapTargetSize.padded,
       shape: WidgetStatePropertyAll(
-        RoundedRectangleBorder(borderRadius: radius),
+        circular ? const CircleBorder() :
+            RoundedRectangleBorder(borderRadius: radius),
       ),
     );
   }
