@@ -154,8 +154,8 @@ class NotesFolderTabStrip extends StatelessWidget {
       key: const ValueKey('notes-tab-add'),
       label: '',
       icon: Icons.add_rounded,
-      paper: dark ? const Color(0xFF34373D) : const Color(0xFFF0F2F5),
-      accent: const Color(0xFF748092),
+      paper: const Color(0xFF111827),
+      accent: Colors.white,
       selected: false,
       width: 46,
       compact: true,
@@ -163,8 +163,8 @@ class NotesFolderTabStrip extends StatelessWidget {
       onLongPress: onManage,
     );
 
-    // Selected tab is painted last so its leading edge stays in front of
-    // neighboring folder tabs, matching the real overlapping folder silhouette.
+    // An index folder has a fixed physical order: each preceding spine
+    // overlaps the next one. Selection changes the tint, not z-order.
     final textScaler = MediaQuery.textScalerOf(context);
     final widths = [
       for (final tab in tabs) tabWidth(tab.label, textScaler: textScaler),
@@ -177,7 +177,6 @@ class NotesFolderTabStrip extends StatelessWidget {
     }
     if (tabs.isNotEmpty) trackWidth += _overlap;
 
-    final selectedIndex = tabs.indexWhere((tab) => tab.id == selectedId);
     Widget categoryAt(int index) {
       final tab = tabs[index];
       return Positioned(
@@ -225,11 +224,13 @@ class NotesFolderTabStrip extends StatelessWidget {
                       height: height,
                       width: trackWidth,
                       child: Stack(
+                        key: const ValueKey('notes-layered-tab-stack'),
                         clipBehavior: Clip.none,
                         children: [
-                          for (var i = 0; i < tabs.length; i++)
-                            if (i != selectedIndex) categoryAt(i),
-                          if (selectedIndex >= 0) categoryAt(selectedIndex),
+                          // Paint right-to-left: the previous tab physically
+                          // covers the next tab's leftmost 15px at ALL times.
+                          for (var i = tabs.length - 1; i >= 0; i--)
+                            categoryAt(i),
                         ],
                       ),
                     ),
@@ -241,7 +242,18 @@ class NotesFolderTabStrip extends StatelessWidget {
           Semantics(
             label: 'Add folder',
             button: true,
-            child: addTab,
+            child: SizedBox(
+              width: 34,
+              height: height,
+              child: OverflowBox(
+                minWidth: 46,
+                maxWidth: 46,
+                alignment: Alignment.centerRight,
+                // The fixed + tab is the ONE exception to the normal folder
+                // z-order: painted last and overlapping the scrolling rail.
+                child: addTab,
+              ),
+            ),
           ),
         ],
       ),
@@ -285,31 +297,45 @@ class NotesPhysicalFolderShape extends ShapeBorder {
 
   @override
   void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
-    // Highlights on the raised lip, plus a restrained contact shadow where
-    // the right shoulder tucks under the next index divider.
-    final width = rect.width;
-    final slope = (width * 0.14).clamp(14.0, 21.0).toDouble();
-    final outer = getOuterPath(rect, textDirection: textDirection);
+    final slope = (rect.width * 0.14).clamp(14.0, 21.0).toDouble();
+    // Physical paper catches light on the TOP edge only. Do not shadow the
+    // top-right hook: that previously formed an ugly dark corner on every tab.
+    final upperEdge = Path()
+      ..moveTo(rect.left + 1, rect.top + 9)
+      ..quadraticBezierTo(
+        rect.left + 1, rect.top + 1,
+        rect.left + 10, rect.top + 1,
+      )
+      ..lineTo(rect.right - slope - 5, rect.top + 1);
     canvas.drawPath(
-      outer,
+      upperEdge,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.85
-        ..color = const Color(0x7AFFFFFF),
+        ..strokeWidth = 1.1
+        ..color = const Color(0xAFFFFFFF),
     );
-    final shoulder = Path()
-      ..moveTo(rect.right - slope - 5, rect.top + 1)
-      ..cubicTo(
-        rect.right - slope + 4, rect.top + 2,
-        rect.right - slope + 9, rect.top + 14,
+    // Fine contact seam STARTS BELOW the upper corner; the preceding folder
+    // overlaps this tab and casts a little paper-edge shade down the curve.
+    final trailingEdge = Path()
+      ..moveTo(rect.right - slope + 8, rect.top + 11)
+      ..quadraticBezierTo(
+        rect.right - 6, rect.bottom - 5,
         rect.right - 1, rect.bottom - 1,
       );
     canvas.drawPath(
-      shoulder,
+      trailingEdge,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2
-        ..color = const Color(0x380D233E),
+        ..strokeWidth = 2.0
+        ..color = const Color(0x220E2034)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.4),
+    );
+    canvas.drawPath(
+      trailingEdge,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8
+        ..color = const Color(0x260E2034),
     );
   }
 
@@ -351,8 +377,9 @@ class _PhysicalNotesTab extends StatelessWidget {
         : (selected ? paper
             : Color.lerp(paper, accentColor, dark ? 0.22 : 0.17)!);
     // Fine bevel at the top, same paper at the selected spine's bottom.
-    final topFill = compact ? fill
-        : Color.lerp(fill, accentColor, selected ? 0.17 : 0.08)!;
+    final topFill = compact
+        ? fill
+        : Color.lerp(fill, Colors.white, dark ? 0.04 : 0.07)!;
     final foreground = ThemeData.estimateBrightnessForColor(fill) ==
             Brightness.dark
         ? Colors.white
@@ -362,8 +389,8 @@ class _PhysicalNotesTab extends StatelessWidget {
       height: selected ? NotesFolderTabStrip.height : NotesFolderTabStrip.height - 3,
       child: Material(
         color: Colors.transparent,
-        elevation: selected ? 3.0 : 1.8,
-        shadowColor: Colors.black.withValues(alpha: dark ? 0.28 : 0.22),
+        elevation: selected ? 0.35 : 0.15,
+        shadowColor: Colors.black.withValues(alpha: dark ? 0.10 : 0.05),
         shape: const NotesPhysicalFolderShape(),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
