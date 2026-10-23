@@ -98,6 +98,31 @@ extension CategoryCacheExtension on DatabaseService {
       );
     }
   }
+  Future<void> _restoreCategoryPendingEdits() async {
+    final owner = (currentProfileId ?? _userIdForWhere ?? '').trim();
+    if (owner.isNotEmpty) {
+      try {
+        final prefs = _prefs ?? await SharedPreferences.getInstance();
+        final pending = await CategoryMutationOutbox.load(prefs, owner);
+        for (final row in pending) {
+          final id = (row['categoryId'] as num).toInt();
+          final delta = Map<String, dynamic>.from(row['fields'] as Map);
+          _optimisticCategoryEdits[id] = {
+            ...?_optimisticCategoryEdits[id],
+            ...delta,
+          };
+        }
+      } catch (e) {
+        // A corrupt journal must not erase or falsify the current UI state.
+        DatabaseService._log('CATEGORY_OUTBOX_RESTORE: $e');
+      }
+    }
+    for (final e in _optimisticCategoryEdits.entries) {
+      final category = getCategoryRuleById(e.key);
+      if (category != null) _applyOptimisticCategoryFields(category, e.value);
+    }
+  }
+
   Set<String> _categoryCacheOwnerAliases() {
     final aliases = <String>{};
 
@@ -380,6 +405,7 @@ extension CategoryCacheExtension on DatabaseService {
           _rules = built.$1;
         }
       }
+      await _restoreCategoryPendingEdits();
       _categoryController.add(List.from(_rules));
     } catch (e) {
       DatabaseService._log('CATEGORY_LOCAL_BOOT: $e');
@@ -459,8 +485,11 @@ extension CategoryCacheExtension on DatabaseService {
           ? (<CategoryRule>[], <List<CategoryRule>>[])
           : _buildCategoryTreeFromFlat(flat);
       _rules = built.$1;
+      // Pending and confirmed local optimistic edits must beat stale GETs.
+      await _restoreCategoryPendingEdits();
       _categoryController.add(List.from(_rules));
-      unawaited(_migrateExistingCategoryColorsToNordicOnce());
+      // Never auto-recolor a user's existing category hierarchy on refresh.
+      // The old Nordic mass migration violated explicit user overrides.
       for (final g in built.$2) {
         unawaited(
           _persistCategoryOrdersBulkForce(g, contextLabel: 'nullOrderInit'),
