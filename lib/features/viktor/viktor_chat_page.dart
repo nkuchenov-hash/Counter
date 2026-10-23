@@ -832,28 +832,11 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                       final offset = _busy ? 1 : 0;
                       final message = _messages[_messages.length - 1 -
                           (index - offset)];
-                      return Align(
-                        alignment: message.isUser ? Alignment.centerRight :
-                            Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          constraints: const BoxConstraints(maxWidth: 610),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 13),
-                          decoration: BoxDecoration(
-                            color: message.isUser ? scheme.primaryContainer :
-                                scheme.surfaceContainerLow,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: SelectableText(message.content,
-                            style: TextStyle(
-                              fontSize: 16, height: 1.45,
-                              color: message.isUser ? scheme.onPrimaryContainer :
-                                  scheme.onSurface,
-                            )),
-                        ),
-                      );
-                    },
+                      return ViktorChatMessageTile(
+                        key: ValueKey('viktor-message-${_messages.length - 1 - (index - offset)}'),
+                        text: message.content,
+                        isUser: message.isUser,
+                      );                    },
                   ),
                 ),
                 if (_historyNotice != null)
