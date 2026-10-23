@@ -502,8 +502,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    t(locale, 'edit_category_tag')
-                        .replaceFirst('%s', widget.category.name),
+                    widget.category.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleLarge,
@@ -518,6 +517,8 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
               ],
             ),
           ),
+          Text(pathLabel, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall),
           Divider(height: 1, color: scheme.outlineVariant),
           Expanded(
             child: SingleChildScrollView(
