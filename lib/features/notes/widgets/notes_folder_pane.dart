@@ -346,8 +346,9 @@ class _PhysicalNotesTab extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Material(
-            color: Colors.transparent,
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
             elevation: selected ? 2.3 : 1.2,
             shadowColor: Colors.black.withValues(alpha: dark ? 0.27 : 0.17),
             shape: const NotesPhysicalFolderShape(),
@@ -398,6 +399,7 @@ class _PhysicalNotesTab extends StatelessWidget {
                       ),
                     ],
                   ),
+          ),
           ),
           ),
           ),
