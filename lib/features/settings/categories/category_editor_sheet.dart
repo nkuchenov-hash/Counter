@@ -99,9 +99,22 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
           .where((s) => s.isNotEmpty).toList();
       if (parts.isNotEmpty) keywords[entry.key] = parts;
     }
+    final currentKeywords = widget.category.keywords ?? <String, List<String>>{};
+    final keywordsChanged = keywords.length != currentKeywords.length ||
+        keywords.entries.any((entry) {
+          final old = currentKeywords[entry.key];
+          return old == null ||
+              old.length != entry.value.length ||
+              List.generate(old.length, (i) => old[i])
+                  .asMap().entries.any((e) => e.value != entry.value[e.key]);
+        });
+    final currentNames = widget.category.localizedNames ?? <String, String>{};
+    final namesChanged = newNames.isNotEmpty &&
+        (newNames.length != currentNames.length ||
+            newNames.entries.any((e) => currentNames[e.key] != e.value));
     final delta = <String, dynamic>{
-      'keywords': keywords,
-      if (newNames.isNotEmpty) 'localized_names': newNames,
+      if (keywordsChanged) 'keywords': keywords,
+      if (namesChanged) 'localized_names': newNames,
       if (primaryNew != widget.category.name.trim()) ...{
         'name': primaryNew,
         'normalized_id': primaryNew.toLowerCase().replaceAll(RegExp(r'\s+'), ''),
