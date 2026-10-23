@@ -3,6 +3,47 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
 
+  test('Long itinerary, original errands and Moscow choice survive retries', () {
+    final original = 'Распланируй субботу, 24 октября 2026: '
+        'купить тыквы на Сенной, доставить в Фейлор-бар, '
+        'отвезти машину домой, вернуться к RCC. ' +
+        List.filled(50, 'дорога, время и последовательность').join('; ');
+    final draft = '2026-10-24\n'
+        '10:00–10:30 зарядка\n'
+        '13:00–14:00 тыквы на Сенной\n'
+        '20:00–21:00 встреча RCC\n' +
+        List.filled(75, 'Учесть транспорт между остановками').join('; ');
+    final turns = <ViktorDialogueTurn>[
+      ViktorDialogueTurn(role: 'user', content: original),
+      ViktorDialogueTurn(role: 'assistant', content: draft),
+      const ViktorDialogueTurn(role: 'user', content: 'Время по Москве надо'),
+      for (var i = 0; i < 15; i++) ...[
+        const ViktorDialogueTurn(role: 'user',
+            content: 'Почему New York? Где тыквы в плане?'),
+        const ViktorDialogueTurn(role: 'assistant',
+            content: 'Не удалось выполнить запрос'),
+      ],
+    ];
+    final context = ViktorDialogueTurn.modelContext(turns);
+    expect(context.length, 12);
+    expect(context.any((turn) =>
+        turn['role'] == 'user' && turn['content']!.contains('на Сенной')),
+        isTrue);
+    expect(context.any((turn) =>
+        turn['role'] == 'user' && turn['content'] == 'Время по Москве надо'),
+        isTrue);
+    expect(context.any((turn) =>
+        turn['role'] == 'assistant' && turn['content']!.contains('13:00–14:00')),
+        isTrue);
+    expect(context.first['content']!.length, greaterThan(1200));
+    expect(context.any((turn) =>
+        turn['role'] == 'assistant' && turn['content']!.length > 1200),
+        isTrue);
+    expect(context.last['content'], 'Не удалось выполнить запрос');
+  });
+
+
+
   test('Repeated promises do not evict the last real itinerary from context', () {
     const oldDraft = '2026-10-24\n'
         '08:00–08:30 Зарядка\n'

@@ -61,6 +61,57 @@ class ViktorReadAnswer {
       RegExp(r'\b\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}')
           .allMatches(message).length >= 3;
 
+  /// Only positive USER choices establish a dialogue-level clock zone.
+  /// Mentioning "New York" in a complaint is NOT choosing New York.
+  static String? requestedScheduleTimezone({
+    required String input,
+    required Iterable<Map<String, String>> history,
+  }) {
+    String? parse(String text) {
+      final q = text.toLowerCase();
+      if (RegExp(r'по\s+москв|время.{0,24}москв|мск\b|europe/moscow')
+          .hasMatch(q)) return 'Europe/Moscow';
+      if (RegExp(r'по\s+нью[- ]йорк|время.{0,24}new york|america/new_york')
+          .hasMatch(q)) return 'America/New_York';
+      if (RegExp(r'по\s+берлин|время.{0,24}берлин|europe/berlin')
+          .hasMatch(q)) return 'Europe/Berlin';
+      return null;
+    }
+    final latest = parse(input);
+    if (latest != null) return latest;
+    for (final turn in history.toList().reversed) {
+      if (turn['role'] != 'user') continue;
+      final zone = parse(turn['content'] ?? '');
+      if (zone != null) return zone;
+    }
+    return null;
+  }
+
+  /// Do not accept a timetable with the wrong label as a completed answer.
+  /// This is a validation error, NOT an instruction to shift clock hours.
+  static bool mismatchedScheduleTimezone({
+    required String message,
+    required String input,
+    required Iterable<Map<String, String>> history,
+  }) {
+    final expected = requestedScheduleTimezone(input: input, history: history);
+    if (expected == null) return false;
+    final entries = RegExp(
+      r'\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}\s*\(([^)]{2,40})\)',
+      caseSensitive: false,
+    ).allMatches(message);
+    for (final entry in entries) {
+      final zone = (entry[1] ?? '').toLowerCase();
+      if (RegExp(r'new york|нью[- ]йорк|america/new_york')
+          .hasMatch(zone) && expected != 'America/New_York') return true;
+      if (RegExp(r'москв|мск|europe/moscow')
+          .hasMatch(zone) && expected != 'Europe/Moscow') return true;
+      if (RegExp(r'берлин|berlin|europe/berlin')
+          .hasMatch(zone) && expected != 'Europe/Berlin') return true;
+    }
+    return false;
+  }
+
   /// A conversation about revising an UNSAVED itinerary is a request for
   /// another draft, not an authorization to move already-saved plans.
   /// "Confirm/save/apply" remains an explicit separate user operation.
@@ -77,7 +128,9 @@ class ViktorReadAnswer {
     return RegExp(
       r'скоррект|подкоррект|передела|поменя|сдвин|пересостав|'
       r'встан|просну|подъ[её]м|вместо\s+\d|начн[её]м|'
-      r'перенеси.*(?:время|начало)|revise|adjust|draft|later|earlier|wake',
+      r'перенеси.*(?:время|начало)|почему|не\s+учт|пропуст|забыл|'
+      r'где\s+.+|не\s+продуман|обнови\s+план|добав|'
+      r'revise|adjust|draft|later|earlier|wake',
       caseSensitive: false,
     ).hasMatch(q);
   }

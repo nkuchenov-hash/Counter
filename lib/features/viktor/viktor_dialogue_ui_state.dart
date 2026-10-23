@@ -25,13 +25,14 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     if (!ViktorReadAnswer.isDraftRevision(input: input, history: history)) {
       return null;
     }
-    final draft = ViktorReadAnswer.lastTimedDraft(history)!;
-    return 'The user is REVISING this UNSAVED draft, not requesting a write: '
-        '$draft\n'
-        'Provide a complete revised timetable in the assistant message. '
-        'Consider the new wake-up time, shift affected morning events and '
-        'check chronological constraints. DO NOT propose bulk_replan or '
-        'any mutation; use actions:[], continue:false. No saved plans change.';
+    return 'REVISION OF UNSAVED ITINERARY, NOT A DATABASE COMMAND. '
+        'The original request and detailed timetable are in conversation_history. '
+        'Preserve EVERY original stop and newly corrected constraint. '
+        'Include travel legs, realistic buffers, named places, fixed meeting '
+        'times and sleep on the next date. Use schedule_timezone from the '
+        'user conversation, NOT the profile if these differ. '
+        'Return the FULL revised timetable with actions:[], continue:false. '
+        'No read tools, no bulk_replan, no writes or promises to check later.';
   }
 
   /// Reject a provider's "I will check..." as an itinerary result.
@@ -43,6 +44,7 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     List<String> observations,
     String requestId,
     List<Map<String, String>> history,
+    DateTime intentDay,
   ) async {
     final draftRevision = ViktorReadAnswer.isDraftRevision(
         input: input, history: history);
@@ -51,25 +53,33 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
           caseSensitive: false,
         ).hasMatch(input) ||
         ViktorReadAnswer.lastTimedDraft(history) != null;
-    final unsafeDraftWrite = draftRevision &&
-        (response.actions?.hasMutations ?? false);
+    final unsafeDraftWrite = draftRevision && response.actions != null;
     final incompleteDraft = draftRevision &&
-        !ViktorReadAnswer.hasTimedItinerary(response.message);
+        (response.needsMoreContext ||
+         !ViktorReadAnswer.hasTimedItinerary(response.message));
+    final wrongTimezone = ViktorReadAnswer.mismatchedScheduleTimezone(
+        message: response.message, input: input, history: history);
     if (!isSchedule || (!unsafeDraftWrite && !incompleteDraft &&
-        (response.actions != null ||
+        !wrongTimezone && (response.actions != null ||
          !ViktorReadAnswer.isUnfinishedScheduleReply(response.message)))) {
       return response;
     }
     final repaired = await _gateway.propose(
       input: input,
-      wallDay: widget.wallDay,
+      wallDay: intentDay,
       plans: plans,
       settings: _settings,
       selectedPlanIds: widget.selectedPlanIds,
       toolObservations: observations,
       requestId: requestId,
       conversationHistory: history,
-      proposalFeedback: unsafeDraftWrite
+      proposalFeedback: wrongTimezone
+          ? 'WRONG TIMEZONE: this dialogue explicitly requests a different '
+            'clock zone. Use schedule_timezone, not profile_timezone. '
+            'Keep the intended LOCAL hours (do not convert from an invented '
+            'source). Produce complete corrected timetable, actions:[], '
+            'continue:false.'
+          : unsafeDraftWrite
           ? 'The user corrected an UNAPPROVED draft, but you proposed a '
             'database mutation. That is not authorized. Reconstruct the '
             'entire revised timetable in message with actions:[], '
@@ -83,10 +93,14 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
             'Never claim you saved plans.',
       allowRepair: false,
     );
+    if (ViktorReadAnswer.mismatchedScheduleTimezone(
+        message: repaired.message, input: input, history: history)) {
+      return null; // Never present a New York-labelled Moscow timetable.
+    }
     if (draftRevision &&
-        ((repaired.actions?.hasMutations ?? false) ||
+        (repaired.actions != null || repaired.needsMoreContext ||
          !ViktorReadAnswer.hasTimedItinerary(repaired.message))) {
-      return null; // No write or empty/status-only answer for a draft.
+      return null; // No reads, writes, or status-only replies for a draft.
     }
     return repaired.actions == null &&
             ViktorReadAnswer.isUnfinishedScheduleReply(repaired.message)
@@ -98,10 +112,11 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
   /// not another database query. One bounded provider retry; no writes here.
   Future<ViktorResponse> _completeRepeatedRead(
       String input, List<PlanningTask> plans, List<String> observations,
-      String requestId, List<Map<String, String>> history) =>
+      String requestId, List<Map<String, String>> history,
+      DateTime intentDay) =>
     _gateway.propose(
       input: input,
-      wallDay: widget.wallDay,
+      wallDay: intentDay,
       plans: plans,
       settings: _settings,
       selectedPlanIds: widget.selectedPlanIds,

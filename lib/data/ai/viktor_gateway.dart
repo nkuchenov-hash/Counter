@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'viktor_action_contract.dart';
+import 'viktor_read_answer.dart';
 import 'viktor_date_scope.dart';
 import 'viktor_agent_capabilities.dart';
 import 'package:counter/data/paths/path_repository.dart';
@@ -327,6 +328,40 @@ class ViktorGateway {
     // The provider receives actual completion state and destination-day
     // obstacles. Never ask the user to find backend row IDs.
     final nextDayPlans = await service.getPlanningTasksForWallDate(nextDay);
+    // Client-side UTC instant projection prevents saved NY-profile clock
+    // labels from being mistaken for the user-requested Moscow wall clock.
+    // This is read-only, scoped to this chat turn, and never changes profile.
+    final requestedZone = ViktorReadAnswer.requestedScheduleTimezone(
+        input: input, history: conversationHistory);
+    final reproject = requestedZone != null &&
+        requestedZone != service.settings.preferredTimeZone;
+    final previousDay = DateTime(
+        wallDay.year, wallDay.month, wallDay.day - 1);
+    final prevDayPlans = reproject
+        ? await service.getPlanningTasksForWallDate(previousDay)
+        : <PlanningTask>[];
+    final allCandidates = reproject
+        ? <PlanningTask>[...prevDayPlans, ...plans, ...nextDayPlans]
+        : <PlanningTask>[];
+    DateTime? shownStart(PlanningTask plan) => !reproject
+        ? plan.startTime
+        : plan.startUtcInstant == null ? null :
+            ViktorDateScope.projectUtcInstant(
+                plan.startUtcInstant!, requestedZone!);
+    final targetDayKey = ViktorDateScope.key(wallDay);
+    final nextDayKey = ViktorDateScope.key(nextDay);
+    List<PlanningTask> forRequestedDay(String dateKey) {
+      if (!reproject) return dateKey == targetDayKey ? plans : nextDayPlans;
+      final seen = <String>{};
+      return allCandidates.where((p) {
+        final start = shownStart(p);
+        final target = start == null ? p.dateKey : ViktorDateScope.key(start);
+        return target == dateKey &&
+            seen.add(p.recordIdForBackend + '|' + target);
+      }).take(60).toList();
+    }
+    final modelDayPlans = forRequestedDay(targetDayKey);
+    final modelNextDayPlans = forRequestedDay(nextDayKey);
     final activeId = service.canonicalPrimaryRunningBusinessId;
     // Domain metadata is supplied from the same Brain visible to the UI.
     // Only send the relevant catalogs, never the provider key as context.
@@ -383,11 +418,22 @@ class ViktorGateway {
       // already selected BYOK model. No credentials or hidden app state.
       'conversation_history': conversationHistory.take(12).map((turn) => {
         'role': turn['role'],
-        'content': (turn['content'] ?? '').length > 1200
-            ? turn['content']!.substring(0, 1200)
+        'content': (turn['content'] ?? '').length >
+                (RegExp(r'\b\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}')
+                  .allMatches(turn['content'] ?? '').length >= 3
+                  ? 6000 : turn['role'] == 'user' ? 3000 : 1200)
+            ? turn['content']!.substring(0,
+                RegExp(r'\b\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}')
+                    .allMatches(turn['content'] ?? '').length >= 3
+                    ? 6000 : turn['role'] == 'user' ? 3000 : 1200)
             : turn['content'],
       }).toList(),
       'profile_timezone': service.settings.preferredTimeZone,
+      'existing_plan_clock_timezone': reproject
+          ? requestedZone : service.settings.preferredTimeZone,
+      'saved_plan_clock_uncertain': reproject &&
+          allCandidates.any((p) =>
+              p.startTime != null && p.startUtcInstant == null),
       'available_tools': ViktorAgentCapabilities.tools
           .map((tool) => tool.name).toList(growable: false),
       'categories': categoryRows,
@@ -452,7 +498,7 @@ class ViktorGateway {
       'selected_plan_ids': selectedPlanIds.where(
         (id) => plans.any((p) => p.pocketRecordId == id)).toSet().toList(),
       'day_plans': [
-        for (final p in plans)
+        for (final p in modelDayPlans)
           if (p.pocketRecordId != null && p.pocketRecordId!.isNotEmpty)
             {
               'id': p.pocketRecordId,
@@ -462,24 +508,24 @@ class ViktorGateway {
               'duration_minutes': p.startTime != null && p.endDateTime != null
                   ? p.endDateTime!.difference(p.startTime!).inMinutes
                   : null,
-              'start_time': p.startTime == null
+              'start_time': shownStart(p) == null
                   ? null
-                  : '${p.startTime!.hour.toString().padLeft(2, '0')}:'
-                    '${p.startTime!.minute.toString().padLeft(2, '0')}',
+                  : '${shownStart(p)!.hour.toString().padLeft(2, '0')}:'
+                    '${shownStart(p)!.minute.toString().padLeft(2, '0')}',
               'recurrent': (p.rrule ?? '').isNotEmpty ||
                   (p.recurrenceInstanceDateKey ?? '').isNotEmpty,
             }
       ],
       'next_day_plans': [
-        for (final p in nextDayPlans)
+        for (final p in modelNextDayPlans)
           if (p.pocketRecordId != null && p.pocketRecordId!.isNotEmpty)
             {
               'id': p.pocketRecordId,
               'title': p.title,
               'is_done': p.isDone,
-              'start_time': p.startTime == null ? null :
-                  '${p.startTime!.hour.toString().padLeft(2, '0')}:'
-                  '${p.startTime!.minute.toString().padLeft(2, '0')}',
+              'start_time': shownStart(p) == null ? null :
+                  '${shownStart(p)!.hour.toString().padLeft(2, '0')}:'
+                  '${shownStart(p)!.minute.toString().padLeft(2, '0')}',
               'duration_minutes': p.startTime != null &&
                       p.endDateTime != null
                   ? p.endDateTime!.difference(p.startTime!).inMinutes

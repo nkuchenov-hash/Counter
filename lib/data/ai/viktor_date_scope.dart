@@ -1,3 +1,5 @@
+import 'package:timezone/timezone.dart' as tz;
+
 import 'viktor_action_contract.dart';
 
 /// Dates used by Viktor tools are explicit user-intent dates, not the
@@ -22,6 +24,45 @@ class ViktorDateScope {
       throw const FormatException('Invalid wall day');
     }
     return date;
+  }
+
+
+  /// Reproject a persisted UTC instant into the requested conversation
+  /// clock without editing the underlying PocketBase record.
+  static DateTime projectUtcInstant(DateTime instant, String ianaZone) =>
+      tz.TZDateTime.from(instant.toUtc(), tz.getLocation(ianaZone));
+
+  static DateTime itineraryDay(String input, DateTime displayed,
+      List<Map<String, String>> history, {bool revision = false}) {
+    DateTime? findDate(String text) {
+      final iso = RegExp(r'20[0-9]{2}-[0-9]{2}-[0-9]{2}').firstMatch(text);
+      if (iso != null) {
+        try { return parseDay(iso.group(0)!); } catch (_) { return null; }
+      }
+      const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+          'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+      final ru = RegExp(r'([0-9]{1,2})\s+(' + months.join('|') +
+          r')\s+(20[0-9]{2})', caseSensitive: false).firstMatch(text);
+      if (ru == null) return null;
+      final date = DateTime(int.parse(ru.group(3)!),
+          months.indexOf(ru.group(2)!.toLowerCase()) + 1,
+          int.parse(ru.group(1)!));
+      if (date.year != int.parse(ru.group(3)!) ||
+          date.day != int.parse(ru.group(1)!)) return null;
+      return date;
+    }
+    final explicit = findDate(input);
+    if (explicit != null) return explicit;
+    if (!revision) return displayed;
+    for (final turn in history) {
+      if (turn['role'] != 'user') continue;
+      final content = turn['content'] ?? '';
+      if (!RegExp('расплан|расписани|маршрут|суббот|itinerary|schedule',
+          caseSensitive: false).hasMatch(content)) continue;
+      final date = findDate(content);
+      if (date != null) return date;
+    }
+    return displayed;
   }
 
   static DateTime scheduleDay(

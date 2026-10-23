@@ -3,6 +3,40 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
 
+  test('Critiques about lost stops and New York remain read-only draft edits', () {
+    const draft = '2026-10-24\n'
+        '10:00–10:30 Зарядка\n'
+        '13:00–14:00 Купить тыквы\n'
+        '20:00–21:00 RCC';
+    final history = <Map<String, String>>[
+      {'role': 'user', 'content': 'Время по Москве надо'},
+      {'role': 'assistant', 'content': draft},
+    ];
+    for (final input in [
+      'Почему New York-то?',
+      'И где покупка тыкв на Сенной? План не продуман',
+      'Обнови план с дорогой',
+    ]) {
+      expect(ViktorReadAnswer.isDraftRevision(
+        input: input, history: history), isTrue);
+      expect(ViktorReadAnswer.requestedScheduleTimezone(
+        input: input, history: history), 'Europe/Moscow');
+    }
+    expect(ViktorReadAnswer.mismatchedScheduleTimezone(
+      input: 'Почему New York-то?', history: history,
+      message: '10:00–10:30 (New York) Зарядка\n'
+          '20:00–21:00 (New York) RCC'), isTrue);
+    expect(ViktorReadAnswer.mismatchedScheduleTimezone(
+      input: 'Почему New York-то?', history: history,
+      message: '10:00–10:30 (Москва, МСК) Зарядка\n'
+          '20:00–21:00 (Москва, МСК) RCC'), isFalse);
+    expect(ViktorReadAnswer.mismatchedScheduleTimezone(
+      input: 'Теперь по Нью-Йорку', history: history,
+      message: '10:00–10:30 (New York) Зарядка'), isFalse);
+  });
+
+
+
   test('A changed wake-up time revises an uncommitted timetable only', () {
     const draft = '2026-10-24\n'
         '08:00–08:30 Зарядка\n'

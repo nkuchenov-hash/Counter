@@ -10,6 +10,7 @@ import 'package:counter/data/ai/viktor_voice_gateway.dart';
 import 'package:counter/data/ai/viktor_voice_recorder.dart';
 import 'package:counter/data/ai/viktor_voice_error.dart';
 import 'package:counter/data/ai/viktor_read_answer.dart';
+import 'package:counter/data/ai/viktor_date_scope.dart';
 import 'package:counter/data/ai/viktor_conversation_store.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -81,6 +82,10 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     _controller.clear();
     final dialogContext = ViktorDialogueTurn.modelContext(
         _messages.skip(1));
+    final revisionOfDraft = ViktorReadAnswer.isDraftRevision(
+        input: input, history: dialogContext);
+    final intentDay = ViktorDateScope.itineraryDay(
+        input, widget.wallDay, dialogContext, revision: revisionOfDraft);
     _push(input, mine: true);
     if (ViktorReadAnswer.isExplicitCancellation(input)) {
       _push('Команда отменена. Изменения не выполнялись.');
@@ -90,7 +95,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     setState(() => _busy = true);
     try {
       final db = DatabaseService.instance;
-      final plans = await db.getPlanningTasksForWallDate(widget.wallDay);
+      final plans = await db.getPlanningTasksForWallDate(intentDay);
       final lastTwoIds = ViktorSchedulePlanner.resolveLastTwoSwap(input, plans);
       final executor = ViktorExecutor(db);
       final toolObservations = <String>[];
@@ -99,7 +104,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
       var response = await _gateway.propose(
         input: input,
-        wallDay: widget.wallDay,
+        wallDay: intentDay,
         plans: plans,
         settings: _settings,
         selectedPlanIds: widget.selectedPlanIds,
@@ -109,10 +114,10 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       );
       var repairedEmptyRead = false;
       var repairedRepeatedRead = false;
-      for (var step = 0; response.needsMoreContext ||
+      for (var step = 0; !revisionOfDraft && (response.needsMoreContext ||
           ViktorReadAnswer.requiresDocumentRead(input: input,
             actions: response.actions?.actions.map((a) => a.name).toList()
-                ?? const <String>[]); step++) {
+                ?? const <String>[])); step++) {
         if (!mounted) return;
         if (step >= 4) {
           throw StateError('Виктор достиг предела проверки данных. '
@@ -129,7 +134,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           repairedEmptyRead = true;
           response = await _gateway.propose(
             input: input,
-            wallDay: widget.wallDay,
+            wallDay: intentDay,
             plans: plans,
             settings: _settings,
             selectedPlanIds: widget.selectedPlanIds,
@@ -155,7 +160,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           // A repeated read is a model continuation failure, not a problem
           // for the user to solve. Repair from conversation + known results.
           response = await _completeRepeatedRead(input, plans,
-              toolObservations, requestId, dialogContext);
+              toolObservations, requestId, dialogContext, intentDay);
           repairedRepeatedRead = true;
           if (response.actions?.hasMutations == true) break;
           _push(response.message.trim().isNotEmpty
@@ -164,7 +169,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                   'данных не дала нового результата.');
           return;
         }
-        final observation = await executor.describe(proposed, widget.wallDay);
+        final observation = await executor.describe(proposed, intentDay);
         latestReadAnswer = ViktorReadAnswer.format(input, observation);
         if (ViktorReadAnswer.isDirectDayListResult(
             input: input,
@@ -178,7 +183,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         }));
         response = await _gateway.propose(
           input: input,
-          wallDay: widget.wallDay,
+          wallDay: intentDay,
           plans: plans,
           settings: _settings,
           selectedPlanIds: widget.selectedPlanIds,
@@ -189,10 +194,11 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       }
       if (!mounted) return;
       final completed = await _completeScheduleResponse(
-          input, response, plans, toolObservations, requestId, dialogContext);
+          input, response, plans, toolObservations, requestId, dialogContext,
+          intentDay);
       if (completed == null) {
-        _push('Виктор не сформировал расписание: модель дважды вернула '
-            'обещание вместо результата. Никакие планы не изменены.');
+        _push('Виктор не сформировал полный согласованный черновик '
+            'с нужным часовым поясом. Планы не изменены.');
         return;
       }
       response = completed;
@@ -218,7 +224,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         if (mounted) _push(draft);
         return;
       }
-      final preview = await executor.describe(actions, widget.wallDay);
+      final preview = await executor.describe(actions, intentDay);
       if (!mounted) return;
       if (!actions.hasMutations) {
         if (response.message.trim().isNotEmpty) {
@@ -263,7 +269,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         _push('Изменения отменены.');
         return;
       }
-      final result = await executor.apply(actions, widget.wallDay,
+      final result = await executor.apply(actions, intentDay,
         approvedPreview: preview);
       if (mounted) _push(result);
     } catch (error) {

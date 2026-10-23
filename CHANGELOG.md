@@ -1,3 +1,16 @@
+## [2026-10-23] — Viktor saved-plan clocks in requested timezone
+
+- Projected saved UTC plan instants into the dialogue's explicitly chosen IANA timezone, collecting neighboring profile days to avoid losing events near midnight. Model context distinguishes the projected plan clock from the persistent profile clock; unknown-source instants are flagged as uncertain.
+- Verified 13:00 New York = 20:00 Moscow on October 24, 2026, and overnight day rollover without changing saved plans.
+
+## [2026-10-23] — Viktor complete itinerary, sticky timezone and read loop
+
+- Raised provider reply limit from 1000 to 8000 characters and preserved up to 6000 characters of detailed previous assistant drafts and up to 3000 of substantive user briefs; pinned the original weekend request, latest timed draft and explicit timezone selection through repeated failed turns.
+- Carried forward the last explicitly chosen user timezone (e.g. Moscow) even when the profile is New York. Rejected responses that attach a conflicting timezone label to timed rows.
+- Resolved the explicit itinerary date independent of the open calendar tab so the correct saved-day plans are fetched; follow-up draft edits inherit the original day, not the next-day sleep date.
+- Draft critiques and edits skip unnecessary read-tool loops and require a full read-only revised timetable, with one bounded model correction and no unintended writes.
+- Added regression tests for Moscow versus New York, long plans, original errands, follow-up critique, date scopes and server reply lengths.
+
 ## [2026-10-23] — Viktor send visibility, inline errors, safe draft revisions
 
 - Increased send disc to 42px within a 48px hit target, maintaining equal 10px optical gaps from the capsule top, right and bottom.

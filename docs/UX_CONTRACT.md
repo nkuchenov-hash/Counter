@@ -2,6 +2,20 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor saved-plan clock projection (2026-10-23)
+
+- When the user explicitly selects a chat schedule timezone different from their profile's persistent timezone, calculate saved plan wall-clock labels from each stored `startUtcInstant` using the IANA timezone database. Fetch adjacent profile-wall days so plans crossing midnight are not omitted from the requested Moscow day. Never change stored UTC instants or account timezone.
+- Provide the model only the correctly reprojected day and following-day plan clocks, with `existing_plan_clock_timezone` indicating the projection zone. Missing UTC instants must be disclosed as uncertain rather than assigning a false local time.
+- Regression: a saved plan whose UTC start is 2026-10-24T17:00:00Z is 20:00 Moscow and 13:00 New York; a 2026-10-24T22:30:00Z start belongs to October 25 in Moscow.
+
+## Viktor itinerary completeness, date and zone (2026-10-23)
+
+- For a natural-language itinerary, read the user's **specified calendar date** rather than assuming the currently opened calendar tab; draft revisions inherit that date, not the date of after-midnight sleep.
+- Model context may pin the original multi-step user request, the latest detailed assistant timetable and a user-authored timezone correction. Preserve their longer text rather than trimming complete schedules at 1000/1200 characters.
+- The *last positive user instruction* about local clock time determines schedule timezone for the current dialogue, overriding profile timezone without changing profile settings. A complaint saying "Why New York?" is not a positive New York timezone selection. Saved plans projected in profile timezone must be distinguished from requested schedule clocks.
+- An unapproved draft revision is **read-only** and must contain a complete chronological timetable, including original errands, named locations, transport, fixed meetings, buffers and next-day sleep. Do not enter a read-tool continuation loop for such edits.
+- Reject mismatched timezone labels or incomplete draft results with one bounded repair attempt; if the provider cannot produce a correct draft, display a truthful failure and do not write plans. Never bypass a provider content filter.
+
 ## Viktor draft-edit and failure presentation (2026-10-23)
 
 - Unapproved itinerary corrections (including changed wake-up time) must yield a completed revised draft, never `bulk_replan` or other database changes; reject mutation/action-only and incomplete replies, with a single bounded repair attempt.
