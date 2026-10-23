@@ -560,7 +560,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                   ),
                   const SizedBox(height: 10),
                   SizedBox(
-                    height: 38,
+                    height: 39,
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       children: kCategoryPickerMaterialColors.map((color) {
