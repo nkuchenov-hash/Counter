@@ -40,3 +40,25 @@ IconData categoryManagerIconFor(CategoryRule rule) {
   if (name.contains('дела') || name.contains('tasks')) return Icons.checklist_rounded;
   return rule.iconOrDefault;
 }
+
+const List<IconData> kCategoryMoreIconChoices = <IconData>[
+  ...kCategoryIconChoices,
+  Icons.favorite_rounded, Icons.favorite_border_rounded,
+  Icons.bedtime_outlined, Icons.bed_rounded, Icons.clean_hands_outlined,
+  Icons.directions_walk_rounded, Icons.directions_run_rounded,
+  Icons.checklist_rounded, Icons.schedule_rounded, Icons.access_time_rounded,
+  Icons.account_balance_wallet_outlined, Icons.shopping_bag_outlined,
+  Icons.shopping_cart_outlined, Icons.laptop_mac_rounded,
+  Icons.desktop_windows_rounded, Icons.phone_iphone_rounded,
+  Icons.menu_book_outlined, Icons.auto_stories_rounded,
+  Icons.lightbulb_outline_rounded, Icons.psychology_outlined,
+  Icons.local_hospital_outlined, Icons.medical_services_outlined,
+  Icons.directions_bike_rounded, Icons.train_rounded,
+  Icons.nightlight_rounded, Icons.wb_sunny_outlined,
+  Icons.park_outlined, Icons.celebration_outlined,
+  Icons.movie_outlined, Icons.camera_alt_outlined, Icons.savings_outlined,
+  Icons.card_giftcard_outlined, Icons.groups_outlined,
+  Icons.person_outline_rounded, Icons.star_outline_rounded,
+  Icons.public_rounded, Icons.location_on_outlined,
+  Icons.key_rounded, Icons.settings_outlined,
+];
