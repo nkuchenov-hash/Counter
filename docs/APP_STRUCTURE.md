@@ -230,7 +230,7 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 | `cache/day_snapshot_window.dart` | Rolling warm day snapshots for date paging |
 | `cache/rendered_day_body_cache.dart` | Rendered day-body LRU cache |
 | `cache/render_snapshot.dart` | Render snapshot helpers for day strips |
-| `local_sync/record_mutation_outbox.dart` | Offline queue: record start/stop/update/delete |
+| `local_sync/category_mutation_outbox.dart` | Owner-scoped durable category edit journal; coalesced optimistic changes and revision-safe replay |\n| `local_sync/record_mutation_outbox.dart` | Offline queue: record start/stop/update/delete |
 | `local_sync/web_record_journal.dart` | Browser IndexedDB record mutation journal + recovery drafts; transactional migration from localStorage |
 | `local_sync/plan_mutation_outbox.dart` | Offline queue: plan/list create/update/delete |
 | `local_sync/offline_sync_state.dart` | Pending count, syncing, auth-paused UI state |
