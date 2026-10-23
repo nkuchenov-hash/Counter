@@ -2,6 +2,12 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor chat composer (2026-10-23)
+
+- Viktor uses a single rounded chat composer across web and mobile: a multiline text area that expands with the draft and scrolls internally once it reaches a viewport-relative height cap. Pasting large prompts must not shrink the conversation to zero or overflow narrow displays.
+- On desktop hardware keyboards, Enter sends and Shift+Enter inserts a newline; the mobile software keyboard inserts newlines and the explicit arrow sends. Voice recording controls remain visible below the editor.
+- Keep at least 16px input text, canonical LIFE OS surfaces and icon actions. The send arrow is disabled for blank drafts or while busy. Typing may update the arrow only, never rebuild the entire message history, synchronously touch the Brain or wait on PocketBase.
+
 ## P0 web startup must never block on external services (2026-10-22)
 
 - Flutter must render its initial frame without awaiting Google OAuth scripts, a PocketBase health probe, an auth-refresh round trip, or unnecessary secure-storage writes.
