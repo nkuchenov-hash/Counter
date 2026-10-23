@@ -836,7 +836,8 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                         key: ValueKey('viktor-message-${_messages.length - 1 - (index - offset)}'),
                         text: message.content,
                         isUser: message.isUser,
-                      );                    },
+                      );
+                    },
                   ),
                 ),
                 if (_historyNotice != null)
@@ -928,6 +929,58 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                   ),
                 _buildComposer(scheme),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+/// ChatGPT-like dialogue presentation: neutral user bubbles, assistant text
+/// directly on the conversation canvas. All turns remain selectable.
+class ViktorChatMessageTile extends StatelessWidget {
+  const ViktorChatMessageTile({
+    super.key,
+    required this.text,
+    required this.isUser,
+  });
+
+  final String text;
+  final bool isUser;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Align(
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: isUser ? 560 : 690),
+        child: Padding(
+          padding: EdgeInsets.only(
+            top: isUser ? 7 : 5,
+            bottom: isUser ? 12 : 10,
+          ),
+          child: DecoratedBox(
+            key: Key(isUser ? 'viktor_user_bubble' : 'viktor_assistant_plain'),
+            decoration: BoxDecoration(
+              color: isUser ? scheme.surfaceContainerLow : Colors.transparent,
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isUser ? 18 : 6,
+                vertical: isUser ? 11 : 4,
+              ),
+              child: SelectableText(
+                text,
+                style: TextStyle(
+                  fontSize: 16,
+                  height: 1.48,
+                  color: scheme.onSurface,
+                ),
+              ),
             ),
           ),
         ),
