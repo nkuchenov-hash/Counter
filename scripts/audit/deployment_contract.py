@@ -18,6 +18,7 @@ SLEEP_DOC = ROOT / "docs" / "SERVER_SLEEP_SYNC_DEPLOY.md"
 def main() -> int:
     pb = PB.read_text(encoding="utf-8")
     web = WEB.read_text(encoding="utf-8")
+    health_watch = (ROOT / ".github/workflows/pocketbase-health-watch.yml").read_text(encoding="utf-8")
     sleep_hook = SLEEP_HOOK.read_text(encoding="utf-8")
     xiaomi_runtime = XIAOMI_RUNTIME.read_text(encoding="utf-8")
     xiaomi_bridge = XIAOMI_BRIDGE.read_text(encoding="utf-8")
@@ -68,6 +69,19 @@ def main() -> int:
 
     if "cp .github/workflows/pocketbase-health-watch.yml build/web/.github/workflows/pocketbase-health-watch.yml" not in web:
         violations.append("HEALTH_MONITOR_DEFAULT_BRANCH_COPY_MISSING")
+
+    for token in (
+        "schedule:",
+        "api/health",
+        "actions/github-script@v7",
+        "issues.create(",
+        "issues.update(",
+        "PocketBase failed three health checks",
+    ):
+        if token not in health_watch:
+            violations.append(f"HEALTH_MONITOR_CONTRACT_MISSING {token}")
+    if "systemctl restart" in health_watch or "pb_data" in health_watch:
+        violations.append("HEALTH_MONITOR_MUTATING_PRODUCTION_FORBIDDEN")
 
     if "branches:\n      - main" in web or "branches: [main]" in web:
         violations.append("WEB_DEPLOY_DIRECT_MAIN_PUSH_FORBIDDEN")
