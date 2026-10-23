@@ -20,6 +20,10 @@ import 'package:flutter/services.dart';
 
 part 'viktor_dialogue_ui_state.dart';
 part 'viktor_composer.dart';
+
+// One content-grid width for message rows and the composer.
+const double kViktorChatContentMaxWidth = 840;
+
 /// Single LIFE OS assistant entry point. Replaces the old record-only mic FAB.
 /// No overlay over the planner, no extra button beside bottom navigation.
 class ViktorChatPage extends StatefulWidget {
@@ -213,7 +217,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       // response, with no actions. Never display this as completed work for
       // an itinerary or its continuation: one bounded self-repair attempt.
       final pendingSchedule = RegExp(
-            r'распланир|расписани|черновик|составь\\s+план|itinerary|schedule',
+            r'распланир|расписани|черновик|составь\s+план|itinerary|schedule',
             caseSensitive: false,
           ).hasMatch(input) ||
           ViktorReadAnswer.lastTimedDraft(dialogContext) != null;
@@ -930,7 +934,8 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                       }
                       return Center(
                         child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 760),
+                          key: const Key('viktor_message_content_column'),
+                          constraints: const BoxConstraints(maxWidth: kViktorChatContentMaxWidth),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16),
@@ -945,7 +950,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
             ),
             Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 760),
+                constraints: const BoxConstraints(maxWidth: kViktorChatContentMaxWidth),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
