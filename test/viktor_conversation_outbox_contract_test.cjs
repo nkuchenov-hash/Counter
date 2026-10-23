@@ -49,6 +49,16 @@ assert.match(ui, /label: 'Повторить'/,
 assert.match(ui, /String\? _historyNotice/,
   'Sync warnings must not pollute model conversation turns');
 
+const chatPage = fs.readFileSync(
+  'lib/features/viktor/viktor_chat_page.dart', 'utf8');
+const dialoguePart = fs.readFileSync(
+  'lib/features/viktor/viktor_dialogue_ui_state.dart', 'utf8');
+assert.match(chatPage, /part 'viktor_dialogue_ui_state\.dart';/,
+  'The extracted dialogue state must be part of the UI library');
+assert.match(dialoguePart, /part of 'viktor_chat_page\.dart';/);
+assert.ok(chatPage.split(/\r?\n/).length <= 1000,
+  'Viktor UI page must remain below the architecture size threshold');
+
 const max = Number(append.match(/substring\(0,\s*(\d+)\)/)?.[1]);
 const footer = '\n[Сообщение обрезано при сохранении]';
 assert.ok(Number.isInteger(max) && max + footer.length <= 6000,
