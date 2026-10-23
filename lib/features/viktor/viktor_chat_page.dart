@@ -985,7 +985,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                           ),
                         ),
                       ),
-                    
+
                     _buildComposer(scheme),
                   ],
                 ),
