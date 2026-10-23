@@ -57,8 +57,10 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     final incompleteDraft = draftRevision &&
         (response.needsMoreContext ||
          !ViktorReadAnswer.hasTimedItinerary(response.message));
+    final wrongTimezone = ViktorReadAnswer.mismatchedScheduleTimezone(
+        message: response.message, input: input, history: history);
     if (!isSchedule || (!unsafeDraftWrite && !incompleteDraft &&
-        (response.actions != null ||
+        !wrongTimezone && (response.actions != null ||
          !ViktorReadAnswer.isUnfinishedScheduleReply(response.message)))) {
       return response;
     }
@@ -71,7 +73,13 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
       toolObservations: observations,
       requestId: requestId,
       conversationHistory: history,
-      proposalFeedback: unsafeDraftWrite
+      proposalFeedback: wrongTimezone
+          ? 'WRONG TIMEZONE: this dialogue explicitly requests a different '
+            'clock zone. Use schedule_timezone, not profile_timezone. '
+            'Keep the intended LOCAL hours (do not convert from an invented '
+            'source). Produce complete corrected timetable, actions:[], '
+            'continue:false.'
+          : unsafeDraftWrite
           ? 'The user corrected an UNAPPROVED draft, but you proposed a '
             'database mutation. That is not authorized. Reconstruct the '
             'entire revised timetable in message with actions:[], '
@@ -85,6 +93,10 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
             'Never claim you saved plans.',
       allowRepair: false,
     );
+    if (ViktorReadAnswer.mismatchedScheduleTimezone(
+        message: repaired.message, input: input, history: history)) {
+      return null; // Never present a New York-labelled Moscow timetable.
+    }
     if (draftRevision &&
         (repaired.actions != null || repaired.needsMoreContext ||
          !ViktorReadAnswer.hasTimedItinerary(repaired.message))) {
