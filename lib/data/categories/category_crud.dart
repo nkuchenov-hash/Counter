@@ -480,6 +480,125 @@ extension CategoryCrudExtension on DatabaseService {
     }
   }
 
+  /// Project a pending edit onto a category tree. Replaces the changed node
+  /// so stream consumers receive a fresh category object rather than a mutation
+  /// hidden behind a shallow copy of the top-level list.
+  bool _applyCategoryFieldsToTree(
+    List<CategoryRule> roots,
+    String pocketBaseId,
+    Map<String, dynamic> fields,
+  ) {
+    for (var i = 0; i < roots.length; i++) {
+      final rule = roots[i];
+      if (rule.backendRowId == pocketBaseId) {
+        final namesRaw = fields['localized_names'];
+        final keywordsRaw = fields['keywords'];
+        final names = namesRaw is Map
+            ? <String, String>{
+                for (final entry in namesRaw.entries)
+                  entry.key.toString(): entry.value.toString(),
+              }
+            : null;
+        final keywords = keywordsRaw is Map
+            ? <String, List<String>>{
+                for (final entry in keywordsRaw.entries)
+                  entry.key.toString(): entry.value is List
+                      ? (entry.value as List).map((e) => e.toString()).toList()
+                      : <String>[],
+              }
+            : null;
+        final colorRaw = fields['color_value'];
+        final iconRaw = fields['icon_code_point'];
+        final orderRaw = fields['order'];
+        roots[i] = rule.copyWith(
+          name: fields['name']?.toString(),
+          colorValue: colorRaw is num ? colorRaw.toInt() : null,
+          iconCodePoint: iconRaw is num ? iconRaw.toInt() : null,
+          localizedNames: names,
+          keywords: keywords,
+          order: orderRaw is num ? orderRaw.toInt() : null,
+          isSynced: false,
+        );
+        return true;
+      }
+      final children = rule.children;
+      if (children != null &&
+          _applyCategoryFieldsToTree(children, pocketBaseId, fields)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _categoryServerRuleContainsDelta(
+    CategoryRule rule,
+    Map<String, dynamic> fields,
+  ) {
+    if (fields.containsKey('color_value') &&
+        rule.colorValue != fields['color_value']) return false;
+    if (fields.containsKey('icon_code_point') &&
+        rule.iconCodePoint != fields['icon_code_point']) return false;
+    if (fields.containsKey('name') &&
+        rule.name != fields['name']) return false;
+    if (fields.containsKey('localized_names') &&
+        jsonEncode(rule.localizedNames ?? <String, String>{}) !=
+            jsonEncode(fields['localized_names'])) return false;
+    if (fields.containsKey('keywords') &&
+        jsonEncode(rule.keywords ?? <String, List<String>>{}) !=
+            jsonEncode(fields['keywords'])) return false;
+    return true;
+  }
+
+  CategoryRule? _findCategoryByBackendId(
+    List<CategoryRule> roots, String pocketBaseId,
+  ) {
+    for (final r in roots) {
+      if (r.backendRowId == pocketBaseId) return r;
+      final child = _findCategoryByBackendId(
+        r.children ?? const <CategoryRule>[], pocketBaseId,
+      );
+      if (child != null) return child;
+    }
+    return null;
+  }
+
+  /// Reapply durable edits after every fetch/cache hydration. A server fetch
+  /// can have started before Save, so an in-memory overlay also stays active
+  /// until an actual server read confirms its fields.
+  Future<void> _overlayPendingCategoryFields(
+    List<CategoryRule> roots,
+  ) async {
+    final owner = (currentProfileId ?? '').trim();
+    if (owner.isEmpty) return;
+    final prefs = _prefs ?? await SharedPreferences.getInstance();
+    final queued = await CategoryMutationOutbox.load(prefs, owner);
+    final queuedIds = <String>{};
+    for (final item in queued) {
+      final id = (item['pocketBaseId'] ?? '').toString();
+      final fields = item['fields'];
+      if (id.isEmpty || fields is! Map) continue;
+      queuedIds.add(id);
+      final snapshot = Map<String, dynamic>.from(fields);
+      final newer = _categoryOptimisticDeltas[id];
+      _categoryOptimisticDeltas[id] = <String, dynamic>{
+        ...snapshot,
+        if (newer != null) ...newer,
+      };
+    }
+    for (final entry in _categoryOptimisticDeltas.entries.toList()) {
+      final rule = _findCategoryByBackendId(roots, entry.key);
+      if (rule == null) continue;
+      if (!queuedIds.contains(entry.key) &&
+          _categoryServerRuleContainsDelta(rule, entry.value)) {
+        _categoryOptimisticDeltas.remove(entry.key);
+        continue;
+      }
+      _applyCategoryFieldsToTree(roots, entry.key, entry.value);
+    }
+  }
+
+  /// Save is a local commit, never a PocketBase round-trip. Network retries
+  /// remain queued across offline periods and application restarts.
   Future<({bool ok, String? errorDetail})> patchCategoryDelta(
     int targetId,
     Map<String, dynamic> fields,
@@ -487,41 +606,113 @@ extension CategoryCrudExtension on DatabaseService {
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       return (ok: false, errorDetail: 'not_initialized');
     }
-    if (fields.isEmpty) {
-      return (ok: true, errorDetail: null);
-    }
+    if (fields.isEmpty) return (ok: true, errorDetail: null);
     final existing = getCategoryRuleById(targetId);
     if (existing == null) {
       return (ok: false, errorDetail: 'category_not_found');
     }
     final pbId = _categoryBackendRowIdStrict(existing);
-    if (pbId == null) {
+    if (pbId == null || !DatabaseService._isLikelyPocketBaseRowId(pbId)) {
       return (ok: false, errorDetail: 'missing_backend_row_id');
     }
-    final biz = _categoryStringPkForApi(existing);
-    final mergedFields = Map<String, dynamic>.from(fields);
-    if (!mergedFields.containsKey('order')) {
-      mergedFields['order'] = existing.order;
+    if (fields.containsKey('name') &&
+        siblingHasTag(getParentId(targetId), fields['name'].toString(),
+            excludeId: targetId)) {
+      return (ok: false, errorDetail: 'duplicate_name');
     }
+    final patch = <String, dynamic>{
+      ...fields,
+      'order': fields['order'] ?? existing.order,
+    };
+
+    // Every dependent UI reads the Brain's live stream, not a stale response.
+    final merged = <String, dynamic>{
+      ...?_categoryOptimisticDeltas[pbId],
+      ...patch,
+    };
+    _categoryOptimisticDeltas[pbId] = merged;
+    _applyCategoryFieldsToTree(_rules, pbId, patch);
+    _categoryController.add(List<CategoryRule>.from(_rules));
     try {
-      final prepared = _categoryPatchFieldsWithJsonLongText(<String, dynamic>{
-        'user_id': _pidForPbFilter,
-        if (biz != null && biz.isNotEmpty) 'category_id': biz,
-        ...mergedFields,
-      });
-      final merged = _nocoFieldsForPatch(prepared);
-      await ensurePocketBaseReady();
-      await _pb.collection(PbCollections.categories).update(pbId, body: merged);
-      await _loadRulesFromNoco();
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      await CategoryMutationOutbox.enqueue(
+        prefs,
+        owner: currentProfileId!,
+        pocketBaseId: pbId,
+        fields: patch,
+      );
+      offlineSync.categoryOutboxOwner = currentProfileId;
+      await offlineSync.refreshPendingCount();
+      // No await on network and no per-edit server-error snackbar.
+      unawaited(flushPendingCategoryMutations());
       return (ok: true, errorDetail: null);
-    } on ClientException catch (e) {
-      if (e.statusCode == 404) {
-        _emitCategorySyncNotice('category_sync_not_found');
-      }
-      return (ok: false, errorDetail: e.toString());
     } catch (e) {
-      DatabaseService._log('PATCH_CATEGORY_DELTA: $e');
-      return (ok: false, errorDetail: e.toString());
+      return (ok: false, errorDetail: 'local_queue_write_failed');
+    }
+  }
+
+  /// One background drainer for the category PATCH queue. Its revisioned ACK
+  /// cannot discard subsequent rapid edits while an older request is in flight.
+  Future<void> flushPendingCategoryMutations() async {
+    if (_categoryMutationFlushInFlight ||
+        !_isInitialized ||
+        _pbHttpBackoffActive ||
+        !_hasAuthenticatedUserId ||
+        offlineSync.isOffline ||
+        offlineSync.authPaused) return;
+    final owner = (currentProfileId ?? '').trim();
+    if (owner.isEmpty) return;
+    _categoryMutationFlushInFlight = true;
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final pending = await CategoryMutationOutbox.load(prefs, owner);
+      if (pending.isEmpty) return;
+      await ensurePocketBaseReady(verifyReachability: false);
+      if (!_pb.authStore.isValid) return;
+      for (final item in pending) {
+        if ((currentProfileId ?? '').trim() != owner) break;
+        final id = (item['pocketBaseId'] ?? '').toString();
+        final revision = (item['revision'] as num?)?.toInt() ?? 0;
+        final raw = item['fields'];
+        if (!DatabaseService._isLikelyPocketBaseRowId(id) ||
+            raw is! Map || revision == 0) continue;
+        final fields = _nocoFieldsForPatch(
+          _categoryPatchFieldsWithJsonLongText(
+            Map<String, dynamic>.from(raw),
+          ),
+        );
+        try {
+          await _pb.collection(PbCollections.categories).update(
+            id,
+            body: <String, dynamic>{
+              'user_id': _pidForPbFilter,
+              ...fields,
+            },
+          );
+          await CategoryMutationOutbox.acknowledge(
+            prefs,
+            owner: owner,
+            pocketBaseId: id,
+            revision: revision,
+          );
+        } on ClientException catch (e) {
+          if (e.statusCode == 401 || e.statusCode == 403) {
+            offlineSync.setAuthPaused(true);
+          } else if (e.statusCode == 400 || e.statusCode == 422) {
+            // A validation failure cannot be repaired by retrying blindly.
+            offlineSync.setLastError('Category changes need synchronization');
+          } else {
+            _maybeOpenPbCircuitFromListFailure(e, 'categoryPatch');
+          }
+          break;
+        } catch (e) {
+          _maybeOpenPbCircuitFromListFailure(e, 'categoryPatch');
+          break;
+        }
+      }
+    } finally {
+      _categoryMutationFlushInFlight = false;
+      await offlineSync.refreshPendingCount();
     }
   }
 
@@ -1117,6 +1308,7 @@ extension CategoryCrudExtension on DatabaseService {
     }
     if (colorValue != null) f.colorValue = colorValue;
     if (iconCodePoint != null) f.iconCodePoint = iconCodePoint;
+    _categoryController.add(List<CategoryRule>.from(_rules));
     return true;
   }
 }
