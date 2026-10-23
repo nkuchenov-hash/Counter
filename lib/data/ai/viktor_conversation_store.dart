@@ -69,8 +69,20 @@ class ViktorDialogueTurn {
       'content': turn.content.length > 1200
           ? turn.content.substring(0, 1200) : turn.content,
     }).toList();
-    return accepted.length <= maxTurns ? accepted
-        : accepted.sublist(accepted.length - maxTurns);
+    if (accepted.length <= maxTurns) return accepted;
+    final recent = accepted.sublist(accepted.length - maxTurns);
+    // Repeated short model acknowledgements must not erase the user's
+    // last substantive AI-produced timetable from model context. Pin one
+    // prior assistant draft while keeping the newest turns and approvals.
+    final previousDraftIndex = accepted.lastIndexWhere((turn) =>
+        turn['role'] == 'assistant' &&
+        RegExp(r'\b\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}')
+            .allMatches(turn['content'] ?? '').length >= 3);
+    if (previousDraftIndex >= 0 &&
+        previousDraftIndex < accepted.length - maxTurns) {
+      return [accepted[previousDraftIndex], ...recent.skip(1)];
+    }
+    return recent;
   }
 }
 
