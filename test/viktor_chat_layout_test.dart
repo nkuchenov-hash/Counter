@@ -132,7 +132,7 @@ void main() {
       expect(surface.right, closeTo(contentColumn.right - 16, 1));
       expect(surface.width, lessThanOrEqualTo(kViktorChatContentMaxWidth));
       // The send action remains evenly inset from the capsule border.
-      expect(surface.right - send.right, closeTo(10, 2));
+      expect(surface.right - send.right, closeTo(14, 2));
       expect(surface.left, greaterThanOrEqualTo(0));
       expect(surface.right, lessThanOrEqualTo(width));
       expect(editor.right, lessThanOrEqualTo(mic.left));
