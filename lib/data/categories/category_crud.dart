@@ -566,6 +566,27 @@ extension CategoryCrudExtension on DatabaseService {
 
   void _applyOptimisticCategoryFields(
       CategoryRule category, Map<String, dynamic> fields) {
+    // localizedNames is final on CategoryRule. Replace its node in the tree
+    // instead of illegally mutating the immutable field.
+    if (fields['localized_names'] is Map) {
+      final localized = Map<String, String>.from(
+          fields['localized_names'] as Map);
+      final updated = category.copyWith(localizedNames: localized);
+      bool replace(List<CategoryRule> rows) {
+        for (var i = 0; i < rows.length; i++) {
+          if (rows[i].id == category.id) {
+            rows[i] = updated;
+            return true;
+          }
+          if (rows[i].children != null && replace(rows[i].children!)) {
+            return true;
+          }
+        }
+        return false;
+      }
+      replace(_rules);
+      category = updated;
+    }
     if (fields.containsKey('name') && fields['name'] is String) {
       category.name = (fields['name'] as String);
     }
@@ -574,11 +595,6 @@ extension CategoryCrudExtension on DatabaseService {
     }
     if (fields.containsKey('icon_code_point')) {
       category.iconCodePoint = (fields['icon_code_point'] as num?)?.toInt();
-    }
-    if (fields.containsKey('localized_names') &&
-        fields['localized_names'] is Map) {
-      category.localizedNames = Map<String, String>.from(
-          fields['localized_names'] as Map);
     }
     if (fields.containsKey('keywords') && fields['keywords'] is Map) {
       category.keywords = (fields['keywords'] as Map).map(
