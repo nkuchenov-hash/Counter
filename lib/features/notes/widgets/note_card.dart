@@ -265,7 +265,7 @@ class _ListRow extends StatelessWidget {
         final compact = constraints.maxWidth <= 820;
         final mid = constraints.maxWidth <= 1180;
         final gap = mid ? 10.0 : 14.0;
-        final statusWidth = compact ? 80.0 : (mid ? 90.0 : 100.0);
+        final statusWidth = compact ? 128.0 : (mid ? 136.0 : 148.0);
 
         if (mobile) {
           return GestureDetector(
@@ -639,9 +639,9 @@ String noteCardPreview(NoteDocument document) {
     if (block.type == NoteBlockType.bulletedList) prefix = '• ';
     if (block.type == NoteBlockType.numberedList) {
       orderedIndex++;
-      prefix = '$' + '{orderedIndex}. ';
+      prefix = '${orderedIndex}. ';
     }
-    chunks.add('$' + '{prefix}$' + '{text}');
+    chunks.add('$prefix$text');
     if (chunks.length == 4) break;
   }
   return chunks.join('\n');
