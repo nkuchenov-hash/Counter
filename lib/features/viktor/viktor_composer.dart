@@ -9,7 +9,7 @@ extension _ViktorComposerUi on _ViktorChatPageState {
       child: Align(
         alignment: Alignment.bottomCenter,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
+          constraints: const BoxConstraints(maxWidth: kViktorChatContentMaxWidth),
           child: Material(
             key: const Key('viktor_composer_surface'),
             color: scheme.surfaceContainer,
@@ -23,7 +23,7 @@ extension _ViktorComposerUi on _ViktorChatPageState {
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+              padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
