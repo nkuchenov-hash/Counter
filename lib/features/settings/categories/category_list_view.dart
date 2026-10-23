@@ -660,22 +660,40 @@ class _CategoriesPageState extends State<CategoriesPage> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: TextField(
-            controller: _search,
-            decoration: InputDecoration(
-              isDense: true,
-              hintText: t(loc, 'category_search'),
-              prefixIcon: const Icon(Icons.search_rounded),
-              suffixIcon: _search.text.isEmpty
-                  ? null
-                  : IconButton(
-                      tooltip: t(loc, 'clear'),
-                      onPressed: _search.clear,
-                      icon: const Icon(Icons.close_rounded),
-                    ),
-              border: const OutlineInputBorder(),
-            ),
+          padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _search,
+                  decoration: InputDecoration(
+                    isDense: true,
+                    hintText: t(loc, 'category_search'),
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    suffixIcon: _search.text.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: t(loc, 'clear'),
+                            onPressed: _search.clear,
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: t(loc, _expanded.isEmpty && _search.text.isEmpty
+                    ? 'category_expand_all' : 'category_collapse_all'),
+                icon: Icon(
+                  _expanded.isEmpty && _search.text.isEmpty
+                      ? Icons.unfold_more_rounded
+                      : Icons.unfold_less_rounded,
+                ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                onPressed: _toggleAllCategories,
+              ),
+            ],
           ),
         ),
         Expanded(
