@@ -166,6 +166,45 @@ assert.equal(followupContext.conversation_history[1].content,
   '2026-10-24 20:00 New York RCC');
 
 
+
+const stickyZone = invoke({...base,
+  provider: 'yandex', model: 'yandexgpt/rc',
+  yandex_folder_id: 'b1g9testfolder11',
+  text: 'Почему New York-то?', profile_timezone: 'America/New_York',
+  conversation_history: [
+    {role:'user', content:'Время по Москве надо'},
+    {role:'assistant', content:'20:00–21:00 (Москва, МСК) RCC'},
+    {role:'user', content:'И где покупка тыкв?'},
+  ],
+});
+assert.equal(stickyZone.status, 200);
+const stickyContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
+assert.equal(stickyContext.schedule_timezone, 'Europe/Moscow');
+assert.equal(stickyContext.schedule_timezone_source, 'user_conversation');
+assert.equal(stickyContext.profile_timezone, 'America/New_York',
+  'Explicit chat zone must not silently alter profile');
+assert.equal(stickyContext.existing_plan_clock_timezone, 'America/New_York');
+
+const longDraft = '24 октября 2026\\n08:00–08:30 Зарядка\\n' +
+  Array.from({length: 90}, (_, i) => '13:00–13:10 Место и дорога ' + i).join('\\n');
+nextModelReplies.push({statusCode: 200, raw: JSON.stringify({choices: [
+  {message:{content: JSON.stringify({
+    message: longDraft, actions: [], continue: false
+  })}}
+]})});
+const longReply = invoke({...base,
+  text:'Распланируй субботу с дорогой и остановками',
+  conversation_history:[
+    {role:'user',content:'Распланируй субботу, 24 октября 2026. '.repeat(55)}
+  ],
+});
+assert.equal(longReply.status, 200);
+assert.equal(longReply.value.message, longDraft,
+  'Detailed timetables must not be truncated at the old 1000-char limit');
+const longContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
+assert.ok(longContext.conversation_history[0].content.length > 1200,
+  'Original multi-event request should reach the model beyond 1200 chars');
+
 assert.equal(lastRequest.url,
   'https://ai.api.cloud.yandex.net/v1/chat/completions');
 assert.equal(lastRequest.headers.Authorization, 'Api-Key ' + base.api_key);
