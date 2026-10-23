@@ -8,8 +8,10 @@ import 'package:counter/data/pb_config.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 import 'viktor_action_contract.dart';
+import 'viktor_read_answer.dart';
 import 'viktor_date_scope.dart';
 import 'viktor_agent_capabilities.dart';
 import 'package:counter/data/paths/path_repository.dart';
@@ -327,6 +329,40 @@ class ViktorGateway {
     // The provider receives actual completion state and destination-day
     // obstacles. Never ask the user to find backend row IDs.
     final nextDayPlans = await service.getPlanningTasksForWallDate(nextDay);
+    // Client-side UTC instant projection prevents saved NY-profile clock
+    // labels from being mistaken for the user-requested Moscow wall clock.
+    // This is read-only, scoped to this chat turn, and never changes profile.
+    final requestedZone = ViktorReadAnswer.requestedScheduleTimezone(
+        input: input, history: conversationHistory);
+    final reproject = requestedZone != null &&
+        requestedZone != service.settings.preferredTimeZone;
+    final location = reproject ? tz.getLocation(requestedZone) : null;
+    final previousDay = DateTime(
+        wallDay.year, wallDay.month, wallDay.day - 1);
+    final prevDayPlans = reproject
+        ? await service.getPlanningTasksForWallDate(previousDay)
+        : <PlanningTask>[];
+    final allCandidates = reproject
+        ? <PlanningTask>[...prevDayPlans, ...plans, ...nextDayPlans]
+        : <PlanningTask>[];
+    DateTime? shownStart(PlanningTask plan) => !reproject
+        ? plan.startTime
+        : plan.startUtcInstant == null ? null :
+            tz.TZDateTime.from(plan.startUtcInstant!.toUtc(), location!);
+    final targetDayKey = ViktorDateScope.key(wallDay);
+    final nextDayKey = ViktorDateScope.key(nextDay);
+    List<PlanningTask> forRequestedDay(String dateKey) {
+      if (!reproject) return dateKey == targetDayKey ? plans : nextDayPlans;
+      final seen = <String>{};
+      return allCandidates.where((p) {
+        final start = shownStart(p);
+        final target = start == null ? p.dateKey : ViktorDateScope.key(start);
+        return target == dateKey &&
+            seen.add(p.recordIdForBackend + '|' + target);
+      }).take(60).toList();
+    }
+    final modelDayPlans = forRequestedDay(targetDayKey);
+    final modelNextDayPlans = forRequestedDay(nextDayKey);
     final activeId = service.canonicalPrimaryRunningBusinessId;
     // Domain metadata is supplied from the same Brain visible to the UI.
     // Only send the relevant catalogs, never the provider key as context.
