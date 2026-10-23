@@ -1,4 +1,5 @@
 import 'package:counter/features/notes/widgets/notes_folder_pane.dart';
+import 'package:counter/data/models.dart';
 import 'package:flutter/gestures.dart';
 import 'package:counter/features/notes/widgets/notes_library_production_shell.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
@@ -236,6 +237,40 @@ void main() {
     expect(tester.getSize(find.byKey(const ValueKey('notes-tab-add'))).height, 35);
   });
 
+  testWidgets('physical folder tabs have layered elevation and edge contrast',
+      (tester) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 480,
+          child: NotesFolderTabStrip(
+            tabs: const [
+              NotesFolderTabData(id: 1, label: 'First',
+                  icon: Icons.folder, paper: Color(0xFFE3EAF2)),
+              NotesFolderTabData(id: 2, label: 'Second',
+                  icon: Icons.folder, paper: Color(0xFFF6E7DA)),
+            ],
+            selectedId: 1,
+            scrollController: controller,
+            allLabel: 'Все', allPaper: const Color(0xFFF2F4F7),
+            onSelect: (_) {}, onAdd: () {},
+          ),
+        ),
+      ),
+    ));
+    Material tabMaterial(int id) => tester.widget<Material>(
+      find.descendant(
+        of: find.byKey(ValueKey('notes-tab-$id')),
+        matching: find.byType(Material),
+      ).first,
+    );
+    expect(tabMaterial(1).elevation, greaterThan(tabMaterial(2).elevation));
+    expect(tabMaterial(2).elevation, greaterThan(1));
+    expect(tabMaterial(1).shadowColor!.a, greaterThan(0.10));
+  });
+
   testWidgets('note preview begins just under title, not halfway down card',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
@@ -257,11 +292,110 @@ void main() {
       ),
     ));
     final title = find.text('Broken links on the website');
-    final preview = find.textContaining('Audit footer links');
+    final preview = find.textContaining('☑ Homepage CTA');
     expect(title, findsOneWidget);
     expect(preview, findsOneWidget);
     final spacing = tester.getTopLeft(preview).dy - tester.getBottomLeft(title).dy;
     expect(spacing, inInclusiveRange(0, 22));
+  });
+
+  test('card preview reveals real checklist state and structural list markers', () {
+    final doc = NoteDocument(blocks: [
+      const NoteBlock(id: 'p', type: NoteBlockType.paragraph, text: 'Introduction'),
+      const NoteBlock(id: 'c1', type: NoteBlockType.checklist, text: 'First task', checked: true),
+      const NoteBlock(id: 'c2', type: NoteBlockType.checklist, text: 'Second task'),
+      const NoteBlock(id: 'c3', type: NoteBlockType.checklist, text: 'Third task'),
+    ]);
+    expect(noteCardPreview(doc), '☑ First task\n☐ Second task\n☐ Third task');
+    expect(
+      noteCardPreview(const NoteDocument(blocks: [
+        NoteBlock(id: 'b', type: NoteBlockType.bulletedList, text: 'Bullet'),
+        NoteBlock(id: 'n', type: NoteBlockType.numberedList, text: 'Number'),
+      ])),
+      '• Bullet\n1. Number',
+    );
+  });
+
+  testWidgets('note card displays creation date and checklist progress together',
+      (tester) async {
+    final doc = NoteDocument(blocks: const [
+      NoteBlock(id: 'c1', type: NoteBlockType.checklist,
+          text: 'Review', checked: true),
+      NoteBlock(id: 'c2', type: NoteBlockType.checklist, text: 'Approve'),
+    ]);
+    final task = PlanningTask(
+      id: 101,
+      title: 'Date and progress',
+      categoryId: 1,
+      dateKey: '',
+      createdAt: DateTime(2026, 10, 17),
+      updatedAt: DateTime(2026, 10, 23),
+    );
+    final card = NoteCardData(
+      task: task,
+      doc: doc,
+      stats: doc.computeStats(),
+      categoryName: 'Tasks',
+      categoryColor: const Color(0xFF668CC0),
+      categoryIconCodePoint: Icons.folder.codePoint,
+      pinned: false,
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 285,
+          height: 290,
+          child: NoteCard(
+            data: card,
+            view: NotesLibraryView.grid,
+            checkboxesOn: false,
+            onOpen: () {},
+            onTogglePin: () {},
+            onToggleDone: () {},
+            onLongPress: () {},
+            onOpenMenu: (_) {},
+          ),
+        ),
+      ),
+    ));
+    expect(find.text('1/2'), findsOneWidget);
+    expect(find.text('17.10.2026'), findsOneWidget);
+    expect(find.textContaining('☑ Review'), findsOneWidget);
+    final title = find.text('Date and progress');
+    final preview = find.textContaining('☑ Review');
+    final gap = tester.getTopLeft(preview).dy - tester.getBottomLeft(title).dy;
+    expect(gap, inInclusiveRange(0, 17));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('notes without checklist show actual creation date', (tester) async {
+    final doc = NoteDocument(blocks: const [
+      NoteBlock(id: 'p1', type: NoteBlockType.paragraph, text: 'Plain text'),
+    ]);
+    final data = NoteCardData(
+      task: PlanningTask(
+        id: 201, title: 'Ordinary note', categoryId: 1, dateKey: '',
+        createdAt: DateTime(2026, 8, 5),
+      ),
+      doc: doc, stats: doc.computeStats(), categoryName: 'Tasks',
+      categoryColor: const Color(0xFF668CC0),
+      categoryIconCodePoint: Icons.folder.codePoint, pinned: false,
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 285, height: 285,
+          child: NoteCard(
+            data: data, view: NotesLibraryView.grid,
+            checkboxesOn: false, onOpen: () {}, onTogglePin: () {},
+            onToggleDone: () {}, onLongPress: () {}, onOpenMenu: (_) {},
+          ),
+        ),
+      ),
+    ));
+    expect(find.text('05.08.2026'), findsOneWidget);
+    expect(find.text('1/2'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('folder paper animates and keeps an interior gap before notes',

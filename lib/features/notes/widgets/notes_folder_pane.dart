@@ -285,12 +285,31 @@ class NotesPhysicalFolderShape extends ShapeBorder {
 
   @override
   void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
+    // Highlights on the raised lip, plus a restrained contact shadow where
+    // the right shoulder tucks under the next index divider.
+    final width = rect.width;
+    final slope = (width * 0.14).clamp(14.0, 21.0).toDouble();
+    final outer = getOuterPath(rect, textDirection: textDirection);
     canvas.drawPath(
-      getOuterPath(rect, textDirection: textDirection),
+      outer,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.9
-        ..color = const Color(0x42FFFFFF),
+        ..strokeWidth = 0.85
+        ..color = const Color(0x7AFFFFFF),
+    );
+    final shoulder = Path()
+      ..moveTo(rect.right - slope - 5, rect.top + 1)
+      ..cubicTo(
+        rect.right - slope + 4, rect.top + 2,
+        rect.right - slope + 9, rect.top + 14,
+        rect.right - 1, rect.bottom - 1,
+      );
+    canvas.drawPath(
+      shoulder,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2
+        ..color = const Color(0x380D233E),
     );
   }
 
@@ -343,8 +362,8 @@ class _PhysicalNotesTab extends StatelessWidget {
       height: selected ? NotesFolderTabStrip.height : NotesFolderTabStrip.height - 3,
       child: Material(
         color: Colors.transparent,
-        elevation: selected ? 1.5 : 0.35,
-        shadowColor: Colors.black.withValues(alpha: dark ? 0.16 : 0.08),
+        elevation: selected ? 3.0 : 1.8,
+        shadowColor: Colors.black.withValues(alpha: dark ? 0.28 : 0.22),
         shape: const NotesPhysicalFolderShape(),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
