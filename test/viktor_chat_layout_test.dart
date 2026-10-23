@@ -148,7 +148,7 @@ void main() {
     final initialHeight = tester.getSize(surfaceFinder).height;
     final field = tester.widget<TextField>(
       find.byKey(const Key('viktor_composer_input')));
-    field.controller!.text = List.filled(40, 'Большое сообщение').join('\\n');
+    field.controller!.text = List.filled(40, 'Большое сообщение').join('\n');
     await tester.pump();
 
     expect(tester.getSize(surfaceFinder).height,
