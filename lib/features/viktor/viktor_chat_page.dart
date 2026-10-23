@@ -95,6 +95,20 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       _push('Команда отменена. Изменения не выполнялись.');
       return;
     }
+    // An explicit correction of a known wall-clock DRAFT does not need
+    // another provider round-trip or a fresh plan read. Do not reclassify
+    // a draft as saved plans or convert its intended local clock times.
+    final correctedDraft = ViktorReadAnswer.correctMislabeledMoscowDraft(
+      input: input,
+      history: _messages.skip(1).map((turn) => {
+        'role': turn.role,
+        'content': turn.content,
+      }),
+    );
+    if (correctedDraft != null) {
+      _push(correctedDraft);
+      return;
+    }
     setState(() => _busy = true);
     try {
       final db = DatabaseService.instance;
@@ -195,6 +209,43 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         );
       }
       if (!mounted) return;
+      // A provider sometimes returns "Сейчас проверю..." as a final
+      // response, with no actions. Never display this as completed work for
+      // an itinerary or its continuation: one bounded self-repair attempt.
+      final pendingSchedule = RegExp(
+            r'распланир|расписани|черновик|составь\\s+план|itinerary|schedule',
+            caseSensitive: false,
+          ).hasMatch(input) ||
+          ViktorReadAnswer.lastTimedDraft(dialogContext) != null;
+      if (pendingSchedule && response.actions == null &&
+          ViktorReadAnswer.isUnfinishedScheduleReply(response.message)) {
+        response = await _gateway.propose(
+          input: input,
+          wallDay: widget.wallDay,
+          plans: plans,
+          settings: _settings,
+          selectedPlanIds: widget.selectedPlanIds,
+          toolObservations: toolObservations,
+          requestId: requestId,
+          conversationHistory: dialogContext,
+          proposalFeedback: 'The previous response only promised to '
+              'check or compose the schedule. That is NOT an answer. '
+              'Return the complete requested timetable now with '
+              'specific date, clock ranges, existing constraints and '
+              'clear assumptions. If correcting a draft, preserve its '
+              'wall-clock hours in the user-specified timezone. '
+              'Do not claim to save anything. Reply with actions:[] '
+              'and continue:false if this is a draft.',
+          allowRepair: false,
+        );
+        if (response.actions == null &&
+            ViktorReadAnswer.isUnfinishedScheduleReply(response.message)) {
+          _push('Виктор не сформировал расписание: модель дважды '
+              'вернула обещание выполнить запрос вместо результата. '
+              'Никакие планы не изменены.');
+          return;
+        }
+      }
       final actions = response.actions;
       if (response.needsMoreContext && actions == null) {
         throw StateError('Виктор запросил дополнительные данные, '
