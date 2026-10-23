@@ -371,26 +371,32 @@ class NotesEditorToolbar extends StatelessWidget {
         child: ClipRRect(
           borderRadius: radius,
           child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: DecoratedBox(
               key: const ValueKey('notes-floating-glass-pill'),
               decoration: BoxDecoration(
-                // A visible but genuinely translucent frosted capsule. The
-                // brighter upper lip creates depth while blurred page text
-                // remains legible only as diffuse shapes behind the buttons.
+                // True glass: the document is visible through a lightly
+                // tinted material, not hidden under two near-opaque whites.
+                // The footer fade has a pill-sized aperture behind this glass
+                // so the local BackdropFilter samples real scrolling content.
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    scheme.surface.withValues(alpha: dark ? 0.82 : 0.84),
-                    scheme.surface.withValues(alpha: dark ? 0.69 : 0.72),
-                  ],
+                  colors: dark
+                      ? [
+                          scheme.surface.withValues(alpha: 0.52),
+                          scheme.surface.withValues(alpha: 0.35),
+                        ]
+                      : [
+                          const Color(0xFFEAF3FC).withValues(alpha: 0.48),
+                          const Color(0xFFF8FBFF).withValues(alpha: 0.32),
+                        ],
                 ),
                 borderRadius: radius,
                 border: Border.all(
                   color: dark
-                      ? Colors.white.withValues(alpha: 0.17)
-                      : scheme.onSurface.withValues(alpha: 0.10),
+                      ? Colors.white.withValues(alpha: 0.24)
+                      : const Color(0xFF778DA8).withValues(alpha: 0.23),
                   width: 0.8,
                 ),
               ),
