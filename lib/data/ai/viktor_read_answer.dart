@@ -55,6 +55,27 @@ class ViktorReadAnswer {
     return null;
   }
 
+  /// A conversation about revising an UNSAVED itinerary is a request for
+  /// another draft, not an authorization to move already-saved plans.
+  /// "Confirm/save/apply" remains an explicit separate user operation.
+  static bool isDraftRevision({
+    required String input,
+    required Iterable<Map<String, String>> history,
+  }) {
+    if (lastTimedDraft(history) == null) return false;
+    final q = input.toLowerCase().trim();
+    if (RegExp(r'(?:подтверждаю|сохрани|запиши\s+в|применяй|'
+        r'выполни\s+изменения|confirm|apply|save\b)').hasMatch(q)) {
+      return false;
+    }
+    return RegExp(
+      r'скоррект|подкоррект|передела|поменя|сдвин|пересостав|'
+      r'встан|просну|подъ[её]м|вместо\s+\d|начн[её]м|'
+      r'перенеси.*(?:время|начало)|revise|adjust|draft|later|earlier|wake',
+      caseSensitive: false,
+    ).hasMatch(q);
+  }
+
   /// A short explicit timezone correction to a previously proposed DRAFT
   /// changes the timezone LABEL of the wall-clock timetable, not its hours.
   /// No provider call or writes are needed to fix a mislabeled draft.
