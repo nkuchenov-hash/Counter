@@ -17,7 +17,6 @@ import 'package:counter/data/cache/rendered_day_body_cache.dart';
 import 'package:counter/data/category_fuzzy_match.dart';
 import 'package:counter/data/local_sync/offline_sync_state.dart';
 import 'package:counter/data/local_sync/web_record_journal.dart';
-import 'package:counter/data/local_sync/category_mutation_outbox.dart';
 import 'package:counter/data/local_sync/plan_mutation_outbox.dart';
 import 'package:counter/data/local_sync/record_mutation_outbox.dart';
 import 'package:counter/data/local_sync/sync_manager.dart';
