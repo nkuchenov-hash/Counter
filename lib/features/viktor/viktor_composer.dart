@@ -47,6 +47,11 @@ extension _ViktorComposerUi on _ViktorChatPageState {
                           color: scheme.onSurface,
                         ),
                         decoration: InputDecoration(
+                          // LIFE OS globally fills inputs with a contrasting
+                          // surface. In this single-surface chat composer that
+                          // becomes the white rectangular inset on web.
+                          filled: false,
+                          fillColor: Colors.transparent,
                           hintText: _listening
                               ? 'Идёт запись — нажмите стоп'
                               : 'Спросите Виктора…',
