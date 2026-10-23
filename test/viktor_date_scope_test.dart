@@ -1,7 +1,29 @@
 import 'package:counter/data/ai/viktor_date_scope.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:timezone/data/latest.dart' as tz_data;
 
 void main() {
+  setUpAll(tz_data.initializeTimeZones);
+
+  test('UTC plan instant projects to Moscow rather than NY clock', () {
+    final utc = DateTime.utc(2026, 10, 24, 17);
+    final moscow = ViktorDateScope.projectUtcInstant(utc, 'Europe/Moscow');
+    final newYork = ViktorDateScope.projectUtcInstant(
+        utc, 'America/New_York');
+    expect(ViktorDateScope.key(moscow), '2026-10-24');
+    expect(moscow.hour, 20);
+    expect(newYork.hour, 13);
+    expect(utc.hour, 17, reason: 'Source instant must remain unchanged');
+  });
+
+  test('Cross-midnight saved instants land on next Moscow date', () {
+    final utc = DateTime.utc(2026, 10, 24, 22, 30);
+    final local = ViktorDateScope.projectUtcInstant(utc, 'Europe/Moscow');
+    expect(ViktorDateScope.key(local), '2026-10-25');
+    expect(local.hour, 1);
+    expect(local.minute, 30);
+  });
+
   final history = <Map<String, String>>[
     {'role':'user', 'content':
       'Распланируй мою субботу, 24 октября 2026 года. '
