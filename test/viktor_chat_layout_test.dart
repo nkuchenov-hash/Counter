@@ -137,7 +137,7 @@ void main() {
       final colors = Theme.of(tester.element(
         find.byKey(const Key('viktor_composer_surface')))).colorScheme;
       expect(material.elevation, greaterThanOrEqualTo(4));
-      expect(material.color, colors.surfaceContainerLowest);
+      expect(material.color, colors.surfaceContainer);
       expect(material.color, isNot(colors.surface));
       final sendSurface = tester.widget<DecoratedBox>(
         find.byKey(const Key('viktor_send_button_surface')));
