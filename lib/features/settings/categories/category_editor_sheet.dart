@@ -573,26 +573,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                         Text(t(locale, 'category_color'),
                             style: Theme.of(context).textTheme.titleSmall),
                         const SizedBox(height: 8),
-                        Wrap(spacing: 4, runSpacing: 8,
-                          children: [
-                            ...kCategoryPickerMaterialColors.map((color) =>
-                              _compactSwatch(color, _selectedPrimary == color, () {
-                                setState(() {
-                                  _selectedPrimary = color;
-                                  _selectedShadeValue = categoryColorAtDepth(color, route.length - 1);
-                                  _selectedColorValue = _selectedShadeValue;
-                                });
-                              })),
-                            IconButton.outlined(
-                              onPressed: () => setState(() => _showShades = !_showShades),
-                              tooltip: t(locale, 'category_color_shades'),
-                              icon: Icon(_showShades ? Icons.remove : Icons.add),
-                            ),
-                          ],
-                        ),
-                        if (_showShades) ...[
-                          const SizedBox(height: 10),
-                          // One unbroken horizontal strip of base hues,
+                         // One unbroken horizontal strip of base hues,
                          // including grey. Narrow screens scroll, not wrap.
                          SizedBox(
                            height: 40,
