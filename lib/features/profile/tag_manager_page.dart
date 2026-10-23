@@ -118,15 +118,16 @@ class _TagManagerPageState extends State<TagManagerPage> {
                       children: [
                         // An existing legacy/custom tag retains its exact
                         // saved color, even when it is outside new presets.
-                        if (!kTagManagerPalette.contains(pickedColor))
+                        if (existing?.color != null &&
+                            !kTagManagerPalette.contains(existing!.color))
                           InkWell(
                             key: const ValueKey('tag-legacy-color-choice'),
-                            onTap: () => setD(() => pickedColor = pickedColor),
+                            onTap: () => setD(() => pickedColor = existing!.color!),
                             child: Container(
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: parseTagHexColor(pickedColor),
+                                color: parseTagHexColor(existing!.color),
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: Theme.of(ctx).colorScheme.primary,
