@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -50,10 +51,20 @@ Future<int?> createCategoryFromPickerSubmit({
   if (existingSibling != null) return existingSibling;
 
   final newIdFn = CategoryTreeSource.newLocalId;
+  final roots = CategoryTreeSource.getChildrenOf?.call(null) ??
+      const <CategoryRule>[];
+  final siblings = parentId == null
+      ? roots
+      : (CategoryTreeSource.getChildrenOf?.call(parentId) ??
+          const <CategoryRule>[]);
+  final parent = parentId == null ? null : _findPickerCategory(roots, parentId);
+  final colorValue = parentId == null
+      ? categoryNordicRootColorValue(siblings.length)
+      : categoryNordicChildColorValue(parent?.colorValue, siblings.length);
   final child = CategoryRule(
     id: newIdFn?.call() ?? DateTime.now().microsecondsSinceEpoch,
     name: trimmed,
-    colorValue: Colors.grey.toARGB32(),
+    colorValue: colorValue,
     iconCodePoint: Icons.folder_rounded.codePoint,
   );
 
@@ -78,6 +89,20 @@ Future<int?> createCategoryFromPickerSubmit({
   }());
 
   return createdId;
+}
+
+/// Find the exact parent within the wired category tree. This keeps
+/// category-creation color defaults identical in Notes, Lists and Planning.
+CategoryRule? _findPickerCategory(List<CategoryRule> nodes, int categoryId) {
+  for (final node in nodes) {
+    if (node.id == categoryId) return node;
+    final child = _findPickerCategory(
+      node.children ?? const <CategoryRule>[],
+      categoryId,
+    );
+    if (child != null) return child;
+  }
+  return null;
 }
 
 /// Compact create dialog stacked above an open category picker / edit sheet.
