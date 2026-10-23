@@ -65,6 +65,8 @@ extension _ViktorComposerUi on _ViktorChatPageState {
                           hintText: _listening
                               ? 'Идёт запись — нажмите стоп'
                               : 'Спросите Виктора…',
+                          // Hint must not wrap and inflate the idle bar on phones.
+                          hintMaxLines: 1,
                           hintStyle: TextStyle(
                             fontSize: 16,
                             color: scheme.onSurfaceVariant,
