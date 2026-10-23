@@ -348,7 +348,7 @@ void main() {
       ),
     ));
     final title = find.text('Broken links on the website');
-    final preview = find.textContaining('Audit footer links');
+    final preview = find.textContaining('☑ Homepage CTA');
     expect(title, findsOneWidget);
     expect(preview, findsOneWidget);
     final spacing = tester.getTopLeft(preview).dy - tester.getBottomLeft(title).dy;
