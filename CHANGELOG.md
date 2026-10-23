@@ -1,3 +1,10 @@
+## [2026-10-23] — Viktor natural-language timezone and itinerary follow-ups
+
+- Removed example-city bias from AI prompts; a user-named timezone takes precedence over the profile setting and local event times stay wall-clock unless a real conversion is requested.
+- Correcting an earlier itinerary uses the full earlier draft from conversation history, preserves fixed events, and puts after-midnight events on the following calendar day.
+- If an AI provider repeats an already-completed read instead of answering, Viktor makes one bounded model correction using the observations and existing dialogue. Any write proposed during this recovery requires explicit approval.
+- Added provider-contract regressions for timezone override and existing-conversation continuity. No PocketBase schema changes.
+
 ## [2026-10-23] — Viktor history persistence and replay regression
 
 - Fixed chat history becoming inaccessible when web encrypted local storage is unavailable or full: previously protected outbox writes blocked even healthy PocketBase remote writes. Now remote persistence is attempted in that case, while unsynced in-memory turns show an explicit durability warning.

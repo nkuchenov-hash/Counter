@@ -6,6 +6,32 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
   List<ViktorDialogueTurn> get _messages;
   TextEditingController get _controller;
   Future<void> _send();
+  ViktorGateway get _gateway;
+
+  /// Recover from a model repeatedly asking for a read that the executor
+  /// already completed. A conversational revision needs the prior draft,
+  /// not another database query. One bounded provider retry; no writes here.
+  Future<ViktorResponse> _completeRepeatedRead(
+      String input, List<PlanningTask> plans, List<String> observations,
+      String requestId, List<Map<String, String>> history) =>
+    _gateway.propose(
+      input: input,
+      wallDay: widget.wallDay,
+      plans: plans,
+      settings: _settings,
+      selectedPlanIds: widget.selectedPlanIds,
+      toolObservations: observations,
+      conversationHistory: history,
+      requestId: requestId,
+      proposalFeedback: 'You already received these tool results. '
+        'Do not request the same read again. Use conversation_history and '
+        'existing observations to answer the latest user correction now. '
+        'For a draft, return the full revised draft in message, actions:[], '
+        'continue:false. Respect explicitly requested time zone over '
+        'profile setting. Do not claim any plan was saved.',
+      allowRepair: false,
+    );
+
   final _dialogueStore = ViktorConversationStore(DatabaseService.instance);
   bool _dialogueLoaded = false;
   String? _historyNotice;

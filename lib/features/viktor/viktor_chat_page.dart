@@ -12,6 +12,7 @@ import 'package:counter/data/ai/viktor_voice_error.dart';
 import 'package:counter/data/ai/viktor_read_answer.dart';
 import 'package:counter/data/ai/viktor_conversation_store.dart';
 import 'package:counter/data/database_service.dart';
+import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -100,6 +101,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         conversationHistory: dialogContext,
       );
       var repairedEmptyRead = false;
+      var repairedRepeatedRead = false;
       for (var step = 0; response.needsMoreContext ||
           ViktorReadAnswer.requiresDocumentRead(input: input,
             actions: response.actions?.actions.map((a) => a.name).toList()
@@ -143,15 +145,16 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         final signature = jsonEncode(
             proposed.actions.map((a) => a.toJson()).toList());
         if (!seenReads.add(signature)) {
-          // Showing a list is a valid outcome for a read request, but NEVER
-          // claim that a write request was handled merely because a read
-          // succeeded. The user can retry without unintended changes.
-          if (ViktorReadAnswer.isReadOnlyRequest(input)) {
-            _push(latestReadAnswer ?? 'Данные уже получены, изменений нет.');
-          } else {
-            _push('Виктор повторно запросил уже полученные данные, но не '
-                'предложил изменения. Планы не изменены.');
-          }
+          // A repeated read is a model continuation failure, not a problem
+          // for the user to solve. Repair from conversation + known results.
+          response = await _completeRepeatedRead(input, plans,
+              toolObservations, requestId, dialogContext);
+          repairedRepeatedRead = true;
+          if (response.actions?.hasMutations == true) break;
+          _push(response.message.trim().isNotEmpty
+              ? response.message.trim()
+              : latestReadAnswer ?? 'Изменений нет. Повторная проверка '
+                  'данных не дала нового результата.');
           return;
         }
         final observation = await executor.describe(proposed, widget.wallDay);
@@ -237,7 +240,8 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           firstId != secondId &&
           (groundedByPosition || matchedSelection ||
               (titleSpoken(firstId) && titleSpoken(secondId)));
-      final approved = isUnambiguousSwap || actions.isSingleReversibleWrite
+      final approved = !repairedRepeatedRead &&
+              (isUnambiguousSwap || actions.isSingleReversibleWrite)
           ? true : await _confirm(actions, preview);
       if (!mounted) return;
       if (!approved) {

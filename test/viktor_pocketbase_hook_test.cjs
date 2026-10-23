@@ -142,6 +142,30 @@ assert.match(source, /For a request to plan MULTIPLE new activities/,
   'Other providers must receive the same read-only multi-event draft rule');
 assert.ok(compactYandexInstructions.length < 3000,
   'Yandex should receive the compact general tool catalogue');
+assert.match(compactYandexInstructions, /explicit timezone/);
+assert.match(compactYandexInstructions, /PREVIOUS assistant draft/);
+assert.match(compactYandexInstructions, /next calendar date/);
+assert.doesNotMatch(compactYandexInstructions, /New York/,
+  'The agent prompt must not bias local schedules toward an example city');
+assert.match(source, /Timezones: explicit timezone/,
+  'All other providers need the same timezone precedence contract');
+const timezoneCorrection = invoke({...base, provider: 'yandex',
+  model: 'yandexgpt/rc', yandex_folder_id: 'b1g9testfolder11',
+  text: 'нужны время по Москве', profile_timezone: 'America/New_York',
+  conversation_history: [
+    {role:'user', content:'Распланируй 24 октября: зарядка и RCC в 20:00'},
+    {role:'assistant', content:'2026-10-24 20:00 New York RCC'},
+  ],
+});
+assert.equal(timezoneCorrection.status, 200);
+const followupContext = JSON.parse(
+  JSON.parse(lastRequest.body).messages[1].content);
+assert.equal(followupContext.user_request, 'нужны время по Москве');
+assert.equal(followupContext.profile_timezone, 'America/New_York');
+assert.equal(followupContext.conversation_history[1].content,
+  '2026-10-24 20:00 New York RCC');
+
+
 assert.equal(lastRequest.url,
   'https://ai.api.cloud.yandex.net/v1/chat/completions');
 assert.equal(lastRequest.headers.Authorization, 'Api-Key ' + base.api_key);
