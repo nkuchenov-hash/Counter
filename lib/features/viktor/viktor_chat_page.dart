@@ -94,21 +94,38 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     _controller.dispose();
     super.dispose();
   }
+  Future<void> _persistTurn(ViktorDialogueTurn turn) async {
+    try {
+      await _dialogueStore.append(turn);
+      if (mounted && !_dialogueLoaded) {
+        setState(() {
+          _dialogueLoaded = true;
+          _messages.add(const ViktorDialogueTurn(role: 'assistant',
+            content: 'Соединение с историей Виктора восстановлено. '
+                'Ожидавшие отправки реплики синхронизированы.'));
+        });
+      }
+    } catch (_) {
+      if (mounted && _dialogueLoaded) {
+        setState(() {
+          _dialogueLoaded = false;
+          _messages.add(const ViktorDialogueTurn(role: 'assistant',
+            content: 'Сохранение истории временно недоступно. '
+                'Виктор повторит отправку реплик при следующем сообщении. '
+                'Не закрывайте окно, пока синхронизация не восстановится.'));
+        });
+      }
+    }
+  }
+
   void _push(String value, {bool mine = false}) {
     if (!mounted) return;
     final turn = ViktorDialogueTurn(
         role: mine ? 'user' : 'assistant', content: value);
     setState(() => _messages.add(turn));
-    if (_dialogueLoaded) {
-      unawaited(_dialogueStore.append(turn).catchError((Object _) {
-        if (mounted && _dialogueLoaded) setState(() {
-          _dialogueLoaded = false;
-          _messages.add(const ViktorDialogueTurn(role: 'assistant',
-            content: 'Не удалось сохранить историю разговора '
-                'в PocketBase. Текущие реплики доступны до закрытия окна.'));
-        });
-      }));
-    }
+    // Even if history loading or a previous write failed, try saving new
+    // turns. The store retries earlier pending turns first, preserving order.
+    unawaited(_persistTurn(turn));
   }
   Future<void> _send() async {
     if (_busy) return;
