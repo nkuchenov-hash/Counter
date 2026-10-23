@@ -3,13 +3,20 @@ part of 'viktor_chat_page.dart';
 // Composer has one visual surface and one compact row at rest. A multiline
 // draft expands only the editable text area while controls stay at its bottom.
 extension _ViktorComposerUi on _ViktorChatPageState {
+  // Hardware Enter sends; Shift+Enter remains a native newline.
+  void _sendFromKeyboard() {
+    if (_busy || _listening || _transcribing || _startingMic ||
+        !_settingsReady || _controller.text.trim().isEmpty) return;
+    unawaited(_send());
+  }
+
   Widget _buildComposer(ColorScheme scheme) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: Align(
         alignment: Alignment.bottomCenter,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
+          constraints: const BoxConstraints(maxWidth: kViktorChatContentMaxWidth),
           child: Material(
             key: const Key('viktor_composer_surface'),
             color: scheme.surfaceContainer,
@@ -23,7 +30,7 @@ extension _ViktorComposerUi on _ViktorChatPageState {
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+              padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [

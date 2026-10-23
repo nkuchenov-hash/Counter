@@ -1,3 +1,10 @@
+## [2026-10-23] — Viktor dialogue completion and composer geometry
+
+- Fixed repetitive timezone-correction conversations: an explicit Moscow correction of a past uncommitted timetable restores the full assistant draft and corrects its erroneous New York zone label without converting intended wall-clock hours or saving any plans.
+- Provider status-only replies such as "Сейчас проверю" are never displayed as finished itineraries: bounded repair or an explicit failure instead of a conversation loop. Relevant past detailed drafts remain within bounded conversation context after repeated incomplete turns.
+- Standardized a shared 840px message/composer grid with 16px matching column insets, a symmetric inner control row and 14px visible right inset for the Send circle.
+- Added unit and widget regression tests; no PocketBase schema, permission or automatic plan write changes.
+
 ## [2026-10-23] — Viktor composer contrast and alignment
 
 - Aligned the chat input with the full 760px conversation column instead of the previous 660px limit, with matched message gutters.

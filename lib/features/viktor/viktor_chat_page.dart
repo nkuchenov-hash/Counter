@@ -17,9 +17,10 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 part 'viktor_dialogue_ui_state.dart';
 part 'viktor_composer.dart';
+// One content-grid width for message rows and the composer.
+const double kViktorChatContentMaxWidth = 840;
 /// Single LIFE OS assistant entry point. Replaces the old record-only mic FAB.
 /// No overlay over the planner, no extra button beside bottom navigation.
 class ViktorChatPage extends StatefulWidget {
@@ -66,16 +67,6 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     _controller.dispose();
     super.dispose();
   }
-  // Hardware Enter sends the message; Shift+Enter keeps native multiline input.
-  // Mobile soft keyboards retain a newline key and the visible Send button.
-  void _sendFromKeyboard() {
-    if (_busy || _listening || _transcribing || _startingMic ||
-        !_settingsReady || _controller.text.trim().isEmpty) {
-      return;
-    }
-    unawaited(_send());
-  }
-
   Future<void> _send() async {
     if (_busy) return;
     final input = _resolveRepeatCommand(_controller.text.trim());
@@ -95,6 +86,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       _push('Команда отменена. Изменения не выполнялись.');
       return;
     }
+    if (_showCorrectedScheduleDraft(input)) return;
     setState(() => _busy = true);
     try {
       final db = DatabaseService.instance;
@@ -195,6 +187,14 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         );
       }
       if (!mounted) return;
+      final completed = await _completeScheduleResponse(
+          input, response, plans, toolObservations, requestId, dialogContext);
+      if (completed == null) {
+        _push('Виктор не сформировал расписание: модель дважды вернула '
+            'обещание вместо результата. Никакие планы не изменены.');
+        return;
+      }
+      response = completed;
       final actions = response.actions;
       if (response.needsMoreContext && actions == null) {
         throw StateError('Виктор запросил дополнительные данные, '
@@ -879,7 +879,8 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                       }
                       return Center(
                         child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 760),
+                          key: const Key('viktor_message_content_column'),
+                          constraints: const BoxConstraints(maxWidth: kViktorChatContentMaxWidth),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16),
@@ -894,7 +895,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
             ),
             Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 760),
+                constraints: const BoxConstraints(maxWidth: kViktorChatContentMaxWidth),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -985,7 +986,6 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                           ),
                         ),
                       ),
-
                     _buildComposer(scheme),
                   ],
                 ),

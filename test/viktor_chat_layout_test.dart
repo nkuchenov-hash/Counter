@@ -121,12 +121,18 @@ void main() {
         find.byTooltip('Отправить Виктору'));
 
       expect(surface.height, lessThan(80));
-      expect(surface.width, lessThanOrEqualTo(761));
-      if (width >= 760) {
-        // Both messages and composer share the same 760px content column
-        // and 16px horizontal gutters.
-        expect(surface.width, greaterThanOrEqualTo(720));
-      }
+      final contentColumn = tester.getRect(
+        find.byKey(const Key('viktor_message_content_column')).first);
+      expect(contentColumn.width,
+          closeTo(width < kViktorChatContentMaxWidth
+              ? width : kViktorChatContentMaxWidth, 1));
+      // Composer uses the SAME content grid as messages, with identical
+      // left and right 16px insets (no mysterious 660/760px mismatch).
+      expect(surface.left, closeTo(contentColumn.left + 16, 1));
+      expect(surface.right, closeTo(contentColumn.right - 16, 1));
+      expect(surface.width, lessThanOrEqualTo(kViktorChatContentMaxWidth));
+      // The send action remains evenly inset from the capsule border.
+      expect(surface.right - send.right, closeTo(14, 2));
       expect(surface.left, greaterThanOrEqualTo(0));
       expect(surface.right, lessThanOrEqualTo(width));
       expect(editor.right, lessThanOrEqualTo(mic.left));
@@ -220,10 +226,15 @@ void main() {
     expect(edgeScrollbar.trackVisibility, false);
     expect(edgeScrollbar.thickness, 3);
     expect(edgeScrollbar.interactive, false);
-    // Chat message text remains centered and does not fill the window.
+    // Chat content remains within the centered grid; the scrollbar does not
+    // move back to the content-column edge.
+    final content = tester.getRect(
+      find.byKey(const Key('viktor_message_content_column')).first);
+    expect(content.width, closeTo(kViktorChatContentMaxWidth, 1));
+    expect(content.center.dx, closeTo(720, 1));
     final intro = tester.getRect(find.textContaining('Я Виктор'));
-    expect(intro.width, lessThan(761));
-    expect(intro.center.dx, closeTo(720, 60));
+    expect(intro.left, greaterThanOrEqualTo(content.left));
+    expect(intro.right, lessThanOrEqualTo(content.right));
     expect(tester.takeException(), isNull);
   });
 
