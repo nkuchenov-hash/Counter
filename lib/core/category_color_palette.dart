@@ -62,11 +62,11 @@ const MaterialColor kNordicPeople = MaterialColor(0xFFD05C7D, <int, Color>{
   600: Color(0xFFB94C6B), 700: Color(0xFF9B405B), 800: Color(0xFF7F374D),
   900: Color(0xFF693040),
 });
-const MaterialColor kCategoryNeutral = MaterialColor(0xFF94A3B8, <int, Color>{
-  50: Color(0xFFF8FAFC), 100: Color(0xFFF1F5F9), 200: Color(0xFFE2E8F0),
-  300: Color(0xFFCBD5E1), 400: Color(0xFFA8B4C5), 500: Color(0xFF94A3B8),
-  600: Color(0xFF7C8CA3), 700: Color(0xFF64748B), 800: Color(0xFF4B5D73),
-  900: Color(0xFF334155),
+const MaterialColor kCategoryNeutral = MaterialColor(0xFF969696, <int, Color>{
+  50: Color(0xFFF9F9F9), 100: Color(0xFFF1F1F1), 200: Color(0xFFE2E2E2),
+  300: Color(0xFFCCCCCC), 400: Color(0xFFB0B0B0), 500: Color(0xFF969696),
+  600: Color(0xFF7A7A7A), 700: Color(0xFF606060), 800: Color(0xFF464646),
+  900: Color(0xFF303030),
 });
 
 /// Ordered for category creation and the appearance picker.
