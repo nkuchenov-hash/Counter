@@ -77,7 +77,9 @@ class ViktorReadAnswer {
     return RegExp(
       r'скоррект|подкоррект|передела|поменя|сдвин|пересостав|'
       r'встан|просну|подъ[её]м|вместо\s+\d|начн[её]м|'
-      r'перенеси.*(?:время|начало)|revise|adjust|draft|later|earlier|wake',
+      r'перенеси.*(?:время|начало)|почему|не\s+учт|пропуст|забыл|'
+      r'где\s+.+|не\s+продуман|обнови\s+план|добав|'
+      r'revise|adjust|draft|later|earlier|wake',
       caseSensitive: false,
     ).hasMatch(q);
   }
