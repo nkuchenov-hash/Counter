@@ -20,6 +20,20 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     return true;
   }
 
+  String? _draftRevisionFeedback(
+      String input, List<Map<String, String>> history) {
+    if (!ViktorReadAnswer.isDraftRevision(input: input, history: history)) {
+      return null;
+    }
+    final draft = ViktorReadAnswer.lastTimedDraft(history)!;
+    return 'The user is REVISING this UNSAVED draft, not requesting a write: '
+        '$draft\n'
+        'Provide a complete revised timetable in the assistant message. '
+        'Consider the new wake-up time, shift affected morning events and '
+        'check chronological constraints. DO NOT propose bulk_replan or '
+        'any mutation; use actions:[], continue:false. No saved plans change.';
+  }
+
   /// Reject a provider's "I will check..." as an itinerary result.
   /// A single repair turn is permitted, never an unbounded status loop.
   Future<ViktorResponse?> _completeScheduleResponse(
@@ -30,13 +44,18 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     String requestId,
     List<Map<String, String>> history,
   ) async {
-    final isSchedule = RegExp(
+    final draftRevision = ViktorReadAnswer.isDraftRevision(
+        input: input, history: history);
+    final isSchedule = draftRevision || RegExp(
           r'распланир|расписани|черновик|составь\s+план|itinerary|schedule',
           caseSensitive: false,
         ).hasMatch(input) ||
         ViktorReadAnswer.lastTimedDraft(history) != null;
-    if (!isSchedule || response.actions != null ||
-        !ViktorReadAnswer.isUnfinishedScheduleReply(response.message)) {
+    final unsafeDraftWrite = draftRevision &&
+        (response.actions?.hasMutations ?? false);
+    if (!isSchedule || (!unsafeDraftWrite &&
+        (response.actions != null ||
+         !ViktorReadAnswer.isUnfinishedScheduleReply(response.message)))) {
       return response;
     }
     final repaired = await _gateway.propose(
@@ -48,14 +67,22 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
       toolObservations: observations,
       requestId: requestId,
       conversationHistory: history,
-      proposalFeedback: 'The previous reply only promised future work. '
-          'It did not provide a timetable. Return the COMPLETE chronological '
-          'schedule now with dates, time ranges and explicit assumptions. '
-          'Keep user wall-clock times in the requested timezone. '
-          'An unapproved draft must have actions:[], continue:false. '
-          'Never claim you saved plans.',
+      proposalFeedback: unsafeDraftWrite
+          ? 'The user corrected an UNAPPROVED draft, but you proposed a '
+            'database mutation. That is not authorized. Reconstruct the '
+            'entire revised timetable in message with actions:[], '
+            'continue:false. Never call bulk_replan for a draft.'
+          : 'The previous reply only promised future work. '
+            'It did not provide a timetable. Return the COMPLETE chronological '
+            'schedule now with dates, time ranges and explicit assumptions. '
+            'Keep user wall-clock times in the requested timezone. '
+            'An unapproved draft must have actions:[], continue:false. '
+            'Never claim you saved plans.',
       allowRepair: false,
     );
+    if (draftRevision && (repaired.actions?.hasMutations ?? false)) {
+      return null; // Never execute an unconfirmed draft revision.
+    }
     return repaired.actions == null &&
             ViktorReadAnswer.isUnfinishedScheduleReply(repaired.message)
         ? null : repaired;
