@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:counter/data/ai/viktor_voice_recorder.dart';
 import 'package:counter/features/viktor/viktor_chat_page.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -94,6 +95,60 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+
+  testWidgets('Viktor assistant answers are plain text, user turns are neutral bubbles',
+      (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: Scaffold(
+        body: Column(
+          children: [
+            ViktorChatMessageTile(text: 'Первый ответ Виктора', isUser: false),
+            ViktorChatMessageTile(text: 'Время по Москве надо', isUser: true),
+            ViktorChatMessageTile(text: 'Второй ответ Виктора', isUser: false),
+          ],
+        ),
+      ),
+    ));
+    final assistantTiles = find.byKey(const Key('viktor_assistant_plain'));
+    final userTiles = find.byKey(const Key('viktor_user_bubble'));
+    expect(assistantTiles, findsNWidgets(2));
+    expect(userTiles, findsOneWidget);
+    for (final e in tester.widgetList<DecoratedBox>(assistantTiles)) {
+      expect((e.decoration as BoxDecoration).color, Colors.transparent);
+    }
+    final userBubble = tester.widget<DecoratedBox>(userTiles);
+    expect((userBubble.decoration as BoxDecoration).color,
+        Theme.of(tester.element(userTiles)).colorScheme.surfaceContainerLow);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Viktor composer uses one surface and a circular dark Send action',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 640);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData(
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true, fillColor: Color(0xFFFFFFFF),
+        ),
+      ),
+      home: ViktorChatPage(wallDay: DateTime(2026, 10, 24)),
+    ));
+    await tester.pump();
+    final field = tester.widget<TextField>(
+      find.byKey(const Key('viktor_composer_input')));
+    expect(field.decoration!.filled, false);
+    expect(field.decoration!.fillColor, Colors.transparent);
+    final icons = tester.widgetList<AppIconButton>(find.byType(AppIconButton));
+    expect(icons.any((icon) =>
+        icon.icon == Icons.arrow_upward_rounded &&
+        icon.circular && icon.highContrast), isTrue);
+    expect(icons.any((icon) =>
+        icon.icon == Icons.mic_none_rounded && icon.circular), isTrue);
+    expect(tester.takeException(), isNull);
+  });
 
   // The empty composer must match the compact, inline ChatGPT layout:
   // no separate white editor rectangle stacked above a toolbar.
