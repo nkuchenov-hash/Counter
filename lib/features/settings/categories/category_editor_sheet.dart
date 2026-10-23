@@ -34,7 +34,6 @@ class CategoryEditorSheet extends StatefulWidget {
 class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
   final Map<String, List<String>> _keywordsByLang = {};
   bool _saving = false;
-  bool _showShades = false;
   int? _selectedColorValue;
   MaterialColor? _selectedPrimary;
   int? _selectedShadeValue;
@@ -560,38 +559,34 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                         Text(t(locale, 'category_color'),
                             style: Theme.of(context).textTheme.titleSmall),
                         const SizedBox(height: 8),
-                        Wrap(spacing: 4, runSpacing: 8,
-                          children: [
-                            ...kCategoryPickerMaterialColors.map((color) =>
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: kCategoryPickerMaterialColors.map((color) =>
                               _compactSwatch(color, _selectedPrimary == color, () {
                                 setState(() {
                                   _selectedPrimary = color;
                                   _selectedShadeValue = categoryColorAtDepth(color, route.length - 1);
                                   _selectedColorValue = _selectedShadeValue;
                                 });
-                              })),
-                            IconButton.outlined(
-                              onPressed: () => setState(() => _showShades = !_showShades),
-                              tooltip: t(locale, 'category_color_shades'),
-                              icon: Icon(_showShades ? Icons.remove : Icons.add),
-                            ),
-                          ],
-                        ),
-                        if (_showShades) ...[
-                          const SizedBox(height: 10),
-                          Wrap(spacing: 4, runSpacing: 8,
-                            children: kCategorySelectableTones.map((tone) {
-                                final c = _selectedPrimary![tone]!;
-                                final v = c.toARGB32();
-                                return _compactSwatch(c, _selectedShadeValue == v, () {
-                                  setState(() {
-                                    _selectedShadeValue = v;
-                                    _selectedColorValue = v;
-                                  });
-                                }, rounded: false);
-                              }).toList(),
+                              })).toList(),
                           ),
-                        ],
+                        ),
+                        const SizedBox(height: 12),
+                        Divider(height: 1, color: scheme.outlineVariant),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: kCategorySelectableTones.map((tone) {
+                            final c = _selectedPrimary![tone]!;
+                            final v = c.toARGB32();
+                            return _compactSwatch(c, _selectedShadeValue == v, () {
+                              setState(() {
+                                _selectedShadeValue = v;
+                                _selectedColorValue = v;
+                              });
+                            }, rounded: false);
+                          }).toList(),
+                        ),
                       ],
                     );
                     return Row(
