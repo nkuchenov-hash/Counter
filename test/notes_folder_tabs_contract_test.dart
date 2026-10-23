@@ -266,9 +266,110 @@ void main() {
         matching: find.byType(Material),
       ).first,
     );
-    expect(tabMaterial(1).elevation, greaterThan(tabMaterial(2).elevation));
-    expect(tabMaterial(2).elevation, greaterThan(1));
-    expect(tabMaterial(1).shadowColor!.a, greaterThan(0.10));
+    // Low lift + painted contact seam. Old deep elevations were the source
+    // of the black upper-right hooks visible in the screenshot.
+    expect(tabMaterial(1).elevation, lessThan(0.5));
+    expect(tabMaterial(2).elevation, lessThan(0.5));
+    expect(tabMaterial(1).shadowColor!.a, lessThan(0.10));
+    // Selection must never move a folder out of its physical z-order.
+    final stack = tester.widget<Stack>(
+      find.byKey(const ValueKey('notes-layered-tab-stack')),
+    );
+    expect(
+      stack.children.map((child) => (child as Positioned).child.key).toList(),
+      [const ValueKey('notes-tab-2'), const ValueKey('notes-tab-1')],
+    );
+    final addTab = find.byKey(const ValueKey('notes-tab-add'));
+    final addMaterial = tester.widget<Material>(
+      find.descendant(of: addTab, matching: find.byType(Material)).first,
+    );
+    expect(addMaterial.elevation, lessThan(0.5));
+    final addPaint = tester.widget<AnimatedContainer>(
+      find.descendant(of: addTab, matching: find.byType(AnimatedContainer)),
+    );
+    final gradient = (addPaint.decoration! as BoxDecoration).gradient!
+        as LinearGradient;
+    expect(gradient.colors.last, const Color(0xFF111827));
+    expect(tester.getRect(addTab).right, 480);
+  });
+
+  testWidgets('one-line title does not reserve three text rows before body',
+      (tester) async {
+    const doc = NoteDocument(blocks: [
+      NoteBlock(id: 'one', type: NoteBlockType.numberedList,
+          text: 'Отпуск - PM (предварительно посмотреть кто не занят)'),
+      NoteBlock(id: 'two', type: NoteBlockType.numberedList, text: 'AI tools'),
+      NoteBlock(id: 'three', type: NoteBlockType.numberedList,
+          text: 'SDVOSB - Solution One IndustriED'),
+    ]);
+    final data = NoteCardData(
+      task: PlanningTask(
+        id: 1001, title: 'Mike call 11/09',
+        categoryId: 1, dateKey: '', createdAt: DateTime(2026, 9, 8),
+      ),
+      doc: doc,
+      stats: doc.computeStats(),
+      categoryName: 'Price Reporter',
+      categoryColor: const Color(0xFF6A93CA),
+      categoryIconCodePoint: Icons.folder.codePoint,
+      pinned: false,
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 280, height: 290,
+          child: NoteCard(
+            data: data, view: NotesLibraryView.grid,
+            checkboxesOn: false, onOpen: () {},
+            onTogglePin: () {}, onToggleDone: () {},
+            onLongPress: () {}, onOpenMenu: (_) {},
+          ),
+        ),
+      ),
+    ));
+    final title = find.text('Mike call 11/09');
+    final body = find.textContaining('1. Отпуск');
+    expect(title, findsOneWidget);
+    expect(body, findsOneWidget);
+    final gap = tester.getTopLeft(body).dy - tester.getBottomLeft(title).dy;
+    expect(gap, inInclusiveRange(0, 18),
+        reason: 'A single-line title must not reserve unused maxLines rows');
+    expect(find.text('08.09.2026'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('fixed black add tab visually crosses the scrolling rail', (tester) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 370,
+          child: NotesFolderTabStrip(
+            tabs: [
+              for (var id = 1; id <= 9; id++)
+                NotesFolderTabData(
+                  id: id, label: 'Category $id',
+                  icon: Icons.folder,
+                  paper: const Color(0xFFE5EEF6),
+                ),
+            ],
+            selectedId: 7, scrollController: controller,
+            allLabel: 'Все',
+            allPaper: const Color(0xFFF2F4F7),
+            onSelect: (_) {}, onAdd: () {},
+          ),
+        ),
+      ),
+    ));
+    controller.jumpTo(controller.position.maxScrollExtent);
+    await tester.pump();
+    final add = tester.getRect(find.byKey(const ValueKey('notes-tab-add')));
+    final scroller = tester.getRect(find.byKey(
+      const ValueKey('notes-category-scroller')));
+    expect(add.left, lessThan(scroller.right));
+    expect(add.right, 370);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('note preview begins just under title, not halfway down card',
