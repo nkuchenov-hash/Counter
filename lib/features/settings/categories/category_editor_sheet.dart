@@ -473,6 +473,12 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     final langs = DatabaseService.instance.settings.effectiveActiveLanguages;
     final locale = currentLocale.value;
     final scheme = Theme.of(context).colorScheme;
+    final route = DatabaseService.instance.categoryPathFromRootToLocalId(widget.category.id);
+    final pathLabel = route.length > 1
+        ? route.take(route.length - 1)
+            .map((id) => DatabaseService.instance.getCategoryRuleById(id)?.name ?? '')
+            .where((name) => name.isNotEmpty).join(' › ')
+        : t(locale, 'root_top_level');
     _selectedPrimary ??= categoryMaterialPrimaryForValue(_selectedColorValue);
     _selectedShadeValue ??=
         (_selectedColorValue != null &&
