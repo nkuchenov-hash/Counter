@@ -347,6 +347,8 @@ extension DbCoreExtension on DatabaseService {
       currentProfileId = null;
       _loadErrorMessage = null;
       _rules = [];
+      _categoryOptimisticDeltas.clear();
+      offlineSync.categoryOutboxOwner = null;
       _reservedCategorySlugsLower.clear();
       _categoryDialogUniverse = [];
       _tasksCache = [];
@@ -420,6 +422,7 @@ extension DbCoreExtension on DatabaseService {
       return false;
     }
     currentProfileId = trimmed;
+    offlineSync.categoryOutboxOwner = trimmed;
     try {
       _prefs = await SharedPreferences.getInstance();
       // Server health is checked by refreshForegroundData after the shell
@@ -773,6 +776,7 @@ extension DbCoreExtension on DatabaseService {
     }
     await flushPendingRecordMutations();
     await flushPendingPlanMutations();
+    await flushPendingCategoryMutations();
     await offlineSync.refreshPendingCount();
     offlineSync.reconcileStuckSyncingBanner(
       syncFlushInFlight: isSyncFlushInFlight,
