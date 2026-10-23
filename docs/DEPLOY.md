@@ -235,6 +235,10 @@ issue on confirmed recovery. `deploy.yml` publishes this workflow to the
 repository's default `gh-pages` branch so the scheduled trigger runs. GitHub
 issue notification delivery depends on repository notification settings.
 The workflow does not restart production automatically or modify the database.
+Because the Pages deployment action excludes `.github/` from its artifact sync,
+the Web workflow also performs an explicit, non-force Git update of the health
+watch file on the default `gh-pages` branch before publishing the web build.
+The default-branch workflow must not rely solely on the Pages artifact copy.
 
 Do not remove the preflight to speed up deployment. If a trial migration fails,
 stop that release, inspect the migration and test in an isolated environment.

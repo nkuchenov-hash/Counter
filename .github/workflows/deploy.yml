@@ -257,6 +257,30 @@ jobs:
 
           git worktree remove --force /tmp/counter-gh-pages
 
+      # JamesIves deliberately excludes .github from its rsync. GitHub Actions
+      # schedules must instead be committed to the repository default branch.
+      - name: Sync scheduled PocketBase monitor to default branch
+        if: steps.freshness.outputs.fresh == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin gh-pages:refs/remotes/origin/gh-pages
+          tmpdir="$(mktemp -d)"
+          rmdir "$tmpdir"
+          git worktree add --detach "$tmpdir" refs/remotes/origin/gh-pages
+          trap 'git worktree remove --force "$tmpdir" || true' EXIT
+          mkdir -p "$tmpdir/.github/workflows"
+          cp .github/workflows/pocketbase-health-watch.yml "$tmpdir/.github/workflows/pocketbase-health-watch.yml"
+          git -C "$tmpdir" config user.name "github-actions[bot]"
+          git -C "$tmpdir" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$tmpdir" add .github/workflows/pocketbase-health-watch.yml
+          if ! git -C "$tmpdir" diff --cached --quiet; then
+            git -C "$tmpdir" commit -m "Sync PocketBase health watch from validated main"
+            git -C "$tmpdir" push origin HEAD:gh-pages
+          fi
+          git worktree remove --force "$tmpdir"
+          trap - EXIT
+
       - name: Deploy to gh-pages
         if: steps.freshness.outputs.fresh == 'true'
         uses: JamesIves/github-pages-deploy-action@v4

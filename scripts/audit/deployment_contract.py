@@ -69,6 +69,8 @@ def main() -> int:
 
     if "cp .github/workflows/pocketbase-health-watch.yml build/web/.github/workflows/pocketbase-health-watch.yml" not in web:
         violations.append("HEALTH_MONITOR_DEFAULT_BRANCH_COPY_MISSING")
+    if "Sync scheduled PocketBase monitor to default branch" not in web or 'git -C "$tmpdir" push origin HEAD:gh-pages' not in web:
+        violations.append("HEALTH_MONITOR_DEFAULT_BRANCH_SYNC_MISSING")
 
     for token in (
         "schedule:",

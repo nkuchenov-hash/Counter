@@ -4,6 +4,7 @@
 - Strengthened `viktor_turns_migration_test.cjs`: verify every indexed column exists, including a negative reproduction of the missing-`created` failure.
 - Added an isolated SQLite snapshot + `pocketbase migrate up` preflight **before** any production deployment write or service restart; fail closed on migration errors or insufficient disk space.
 - Added scheduled HTTPS PocketBase health checks with deduplicated GitHub incident issues and automatic closure after recovery. Preserve the scheduled workflow in the default `gh-pages` branch.
+- Verified GitHub Pages excludes `.github` during artifact sync; installed the watch directly on `gh-pages` and added an explicit default-branch Git sync step to keep its schedule updated.
 - No Flutter, Android, PocketBase schema data or personal records edited by this patch.
 
 ## [2026-10-23] — Viktor V2 release integration (candidate; not deployed)
