@@ -122,6 +122,27 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     }
   }
 
+  Future<void> _retryHistorySync() async {
+    if (_dialogueStore.pendingCount == 0) return;
+    try {
+      await _dialogueStore.retryPending();
+      if (mounted && _dialogueStore.pendingCount == 0) {
+        setState(() {
+          _dialogueLoaded = true;
+          _historyNotice = null;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _dialogueLoaded = false;
+          _historyNotice = 'История пока не синхронизирована. '
+              'Локальные реплики сохранены для повторной отправки.';
+        });
+      }
+    }
+  }
+
   void _push(String value, {bool mine = false}) {
     if (!mounted) return;
     final turn = ViktorDialogueTurn(
@@ -917,6 +938,13 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                           style: TextStyle(fontSize: 16, height: 1.4,
                             color: scheme.onSurfaceVariant),
                         )),
+                        if (_dialogueStore.pendingCount > 0) ...[
+                          const SizedBox(width: 8),
+                          AppButton.ghost(
+                            label: 'Повторить',
+                            onPressed: () => unawaited(_retryHistorySync()),
+                          ),
+                        ],
                       ],
                     ),
                   ),
