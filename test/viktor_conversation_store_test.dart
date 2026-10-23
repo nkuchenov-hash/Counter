@@ -44,4 +44,42 @@ void main() {
     ]);
     expect(context.single['content']!.length, 1200);
   });
+
+  test('Repeat intent resolves actual earlier command, never its label', () {
+    expect(ViktorDialogueTurn.isRepeatCommand(
+        'Повторить последнюю команду'), isTrue);
+    expect(ViktorDialogueTurn.isRepeatCommand(
+        'повтори предыдущую просьбу'), isTrue);
+    expect(ViktorDialogueTurn.isRepeatCommand(
+        'Распланируй субботу'), isFalse);
+    final turns = [
+      const ViktorDialogueTurn(role: 'user',
+          content: 'Распланируй субботу: зарядка и ярмарка'),
+      const ViktorDialogueTurn(role: 'assistant',
+          content: 'Не удалось выполнить запрос'),
+      const ViktorDialogueTurn(role: 'user',
+          content: 'Повторить последнюю команду'),
+    ];
+    expect(ViktorDialogueTurn.lastRepeatableUserRequest(turns),
+        'Распланируй субботу: зарядка и ярмарка');
+    expect(ViktorDialogueTurn.lastRepeatableUserRequest([
+      const ViktorDialogueTurn(role: 'user',
+          content: 'Повторить последнюю команду'),
+    ]), isNull);
+  });
+
+  test('Restoring remote dialogue retains unmatched local unsaved turns', () {
+    final remote = [
+      const ViktorDialogueTurn(role: 'user', content: 'Старая команда'),
+      const ViktorDialogueTurn(role: 'assistant', content: 'Ответ'),
+    ];
+    final local = [
+      const ViktorDialogueTurn(role: 'assistant', content: 'Ответ'),
+      const ViktorDialogueTurn(role: 'user', content: 'Новая команда'),
+    ];
+    final result = ViktorDialogueTurn.reconcileVisible(remote, local);
+    expect(result.map((t) => t.content),
+        ['Старая команда', 'Ответ', 'Новая команда']);
+  });
+
 }

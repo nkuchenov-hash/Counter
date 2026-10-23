@@ -63,7 +63,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
   }
   Future<void> _send() async {
     if (_busy) return;
-    final input = _controller.text.trim();
+    final input = _resolveRepeatCommand(_controller.text.trim());
     if (input.isEmpty) return;
     if (!_settingsReady) return;
     if (_settings.mode == 'byok' && !_settings.modelConnected) {
@@ -872,11 +872,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: AppButton.ghost(
                       label: 'Повторить последнюю команду',
-                      onPressed: () {
-                        _controller.text = _messages.lastWhere(
-                            (m) => m.isUser).content;
-                        unawaited(_send());
-                      },
+                      onPressed: _retryLastCommand,
                     ),
                   ),
                 if (_listening || _transcribing || _startingMic)

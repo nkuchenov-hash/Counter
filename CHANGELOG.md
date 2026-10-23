@@ -1,3 +1,10 @@
+## [2026-10-23] — Viktor history persistence and replay regression
+
+- Fixed chat history becoming inaccessible when web encrypted local storage is unavailable or full: previously protected outbox writes blocked even healthy PocketBase remote writes. Now remote persistence is attempted in that case, while unsynced in-memory turns show an explicit durability warning.
+- Fixed history reload deadlock: when the local pending queue is empty but initial history fetch failed, Viktor retries reading the actual server history, not just resending pending rows. The reconciliation retains on-screen unsent turns without duplicating matching history.
+- Fixed "Повторить последнюю команду" being sent to the model as literal user intent. Retry resolves the last actual earlier user instruction, or clearly reports that the previous instruction cannot be recovered; no action is run from a missing instruction.
+- Added store/UI contract and Flutter regression tests. No PocketBase migration or destructive changes.
+
 ## [2026-10-23] — Viktor Saturday itinerary and dialogue retry safety
 
 - Prevent planning an entire Saturday from failing with an internal mixed-schedule/timer error: YandexGPT and other providers now present multi-activity itineraries as conversational drafts with no writes.
