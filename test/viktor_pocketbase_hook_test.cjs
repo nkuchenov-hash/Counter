@@ -142,7 +142,7 @@ assert.match(source, /For a request to plan MULTIPLE new activities/,
   'Other providers must receive the same read-only multi-event draft rule');
 assert.ok(compactYandexInstructions.length < 3000,
   'Yandex should receive the compact general tool catalogue');
-assert.match(compactYandexInstructions, /explicit timezone/);
+assert.match(compactYandexInstructions, /schedule_timezone/);
 assert.match(compactYandexInstructions, /PREVIOUS assistant draft/);
 assert.match(compactYandexInstructions, /next calendar date/);
 assert.doesNotMatch(compactYandexInstructions, /New York/,
