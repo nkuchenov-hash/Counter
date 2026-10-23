@@ -9,20 +9,23 @@ extension _ViktorComposerUi on _ViktorChatPageState {
       child: Align(
         alignment: Alignment.bottomCenter,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 660),
+          constraints: const BoxConstraints(maxWidth: 760),
           child: Material(
             key: const Key('viktor_composer_surface'),
-            color: scheme.surfaceContainerLow,
+            color: scheme.surfaceContainer,
+            elevation: 6,
+            shadowColor: scheme.shadow.withValues(alpha: 0.27),
+            surfaceTintColor: Colors.transparent,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(28),
               side: BorderSide(
-                color: scheme.outlineVariant.withValues(alpha: 0.5),
+                color: scheme.outlineVariant.withValues(alpha: 0.75),
               ),
             ),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: CallbackShortcuts(
@@ -65,7 +68,7 @@ extension _ViktorComposerUi on _ViktorChatPageState {
                           disabledBorder: InputBorder.none,
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 12,
+                            horizontal: 12, vertical: 11,
                           ),
                         ),
                       ),
@@ -88,17 +91,41 @@ extension _ViktorComposerUi on _ViktorChatPageState {
                   const SizedBox(width: 4),
                   ValueListenableBuilder<TextEditingValue>(
                     valueListenable: _controller,
-                    builder: (context, value, _) => AppIconButton(
-                      icon: Icons.arrow_upward_rounded,
-                      tooltip: 'Отправить Виктору',
-                      onPressed: _busy || _listening ||
-                              _transcribing || _startingMic ||
-                              !_settingsReady ||
-                              value.text.trim().isEmpty
-                          ? null : () => unawaited(_send()),
-                      variant: AppIconButtonVariant.filled,
-                      size: AppIconButtonSize.s,
-                    ),
+                    builder: (context, value, _) {
+                      final canSend = !_busy && !_listening &&
+                          !_transcribing && !_startingMic &&
+                          _settingsReady && value.text.trim().isNotEmpty;
+                      return DecoratedBox(
+                        key: const Key('viktor_send_button_surface'),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: canSend
+                              ? scheme.onSurface
+                              : scheme.onSurface.withValues(alpha: 0.10),
+                        ),
+                        child: ClipOval(
+                          child: Theme(
+                            // Keep the canonical action widget, but make
+                            // this single send control high-contrast.
+                            data: Theme.of(context).copyWith(
+                              colorScheme: scheme.copyWith(
+                                secondaryContainer: scheme.onSurface,
+                                onSecondaryContainer: scheme.surface,
+                              ),
+                            ),
+                            child: AppIconButton(
+                              icon: Icons.arrow_upward_rounded,
+                              tooltip: 'Отправить Виктору',
+                              onPressed: canSend
+                                  ? () => unawaited(_send())
+                                  : null,
+                              variant: AppIconButtonVariant.filled,
+                              size: AppIconButtonSize.s,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

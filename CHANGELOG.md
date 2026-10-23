@@ -1,3 +1,10 @@
+## [2026-10-23] — Viktor composer contrast and alignment
+
+- Aligned the chat input with the full 760px conversation column instead of the previous 660px limit, with matched message gutters.
+- Added elevated contrast, a visible soft shadow, and a subtle outline while keeping the TextField transparent (no rectangular inset).
+- Vertically centered text and microphone/send controls in the idle row. Added a high-contrast circular send action (including a visible neutral disabled state) using the canonical app icon button.
+- Extended tests for width, vertical baseline, shadow and circular action. No changes to AI action execution, voice, persistence or timezone behavior.
+
 ## [2026-10-23] — Viktor chat inset and scrollbar visual parity
 
 - Removed white rectangular background inherited by the composer TextField from the app-wide InputDecorationTheme; the rounded chat capsule is now the only painted input surface.

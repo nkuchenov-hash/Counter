@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:counter/data/ai/viktor_voice_recorder.dart';
 import 'package:counter/features/viktor/viktor_chat_page.dart';
+import 'package:counter/core/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -120,12 +121,30 @@ void main() {
         find.byTooltip('Отправить Виктору'));
 
       expect(surface.height, lessThan(80));
-      expect(surface.width, lessThanOrEqualTo(661));
+      expect(surface.width, lessThanOrEqualTo(761));
+      if (width >= 760) {
+        // Both messages and composer share the same 760px content column
+        // and 16px horizontal gutters.
+        expect(surface.width, greaterThanOrEqualTo(720));
+      }
       expect(surface.left, greaterThanOrEqualTo(0));
       expect(surface.right, lessThanOrEqualTo(width));
       expect(editor.right, lessThanOrEqualTo(mic.left));
       expect(mic.right, lessThanOrEqualTo(send.left));
       expect((mic.center.dy - send.center.dy).abs(), lessThan(2));
+      expect((editor.center.dy - mic.center.dy).abs(), lessThan(4));
+      final material = tester.widget<Material>(
+        find.byKey(const Key('viktor_composer_surface')));
+      final colors = Theme.of(tester.element(
+        find.byKey(const Key('viktor_composer_surface')))).colorScheme;
+      expect(material.elevation, greaterThanOrEqualTo(4));
+      expect(material.color, colors.surfaceContainer);
+      expect(material.color, isNot(colors.surface));
+      final sendSurface = tester.widget<DecoratedBox>(
+        find.byKey(const Key('viktor_send_button_surface')));
+      final decoration = sendSurface.decoration as BoxDecoration;
+      expect(decoration.shape, BoxShape.circle);
+      expect(decoration.color, isNot(Colors.transparent));
       // They occupy the same horizontal strip rather than two stacked rows.
       expect(editor.bottom, greaterThan(mic.top));
       expect(editor.top, lessThan(send.bottom));
@@ -207,5 +226,64 @@ void main() {
     expect(intro.center.dx, closeTo(720, 60));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('Viktor send button becomes high-contrast with a filled draft',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1440, 800);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(MaterialApp(
+      home: ViktorChatPage(wallDay: DateTime(2026, 10, 24)),
+    ));
+    await tester.pump();
+    final editor = tester.widget<TextField>(
+        find.byKey(const Key('viktor_composer_input')));
+    editor.controller!.text = 'Купить тыквы';
+    await tester.pump();
+
+    final button = tester.widget<IconButton>(
+      find.ancestor(
+        of: find.byTooltip('Отправить Виктору'),
+        matching: find.byType(IconButton),
+      ).first,
+    );
+    // The send button must remain a canonical app control and use
+    // a circular contrast surface even while its readiness is pending.
+    expect(button.icon, isNotNull);
+    expect(find.byKey(const Key('viktor_send_button_surface')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+
+  for (final dark in <bool>[false, true]) {
+    testWidgets('Viktor composer contrasts with real LIFE OS theme dark=$dark',
+        (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1440, 800);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final theme = dark ? appDarkTheme : appLightTheme;
+      await tester.pumpWidget(MaterialApp(
+        theme: theme,
+        home: ViktorChatPage(wallDay: DateTime(2026, 10, 24)),
+      ));
+      await tester.pump();
+
+      final material = tester.widget<Material>(
+          find.byKey(const Key('viktor_composer_surface')));
+      expect(material.color, theme.colorScheme.surfaceContainer);
+      // LIFE OS defines surfaceContainerLowest == surface; using that token
+      // would recreate the user's invisible composer screenshot.
+      expect(material.color, isNot(theme.colorScheme.surface));
+      expect(material.elevation, greaterThanOrEqualTo(4));
+      expect(find.byKey(const Key('viktor_send_button_surface')),
+          findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
 
 }

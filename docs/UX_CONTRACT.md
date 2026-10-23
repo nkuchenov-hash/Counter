@@ -2,6 +2,12 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor composer visual parity with chat column (2026-10-23)
+
+- The idle Viktor composer has the **same horizontal alignment and usable width** as the centered 760px conversation content column (16px content gutters); no narrower fixed 660px capsule. Keep a single rounded elevated surface with light/dark-appropriate fill, a visible soft shadow, a subtle border, and no nested TextField rectangle.
+- The one-line editor, microphone, and send control share a vertically centered baseline. The send control is a high-contrast circular action when enabled and a visibly filled neutral circle when disabled. The input text is >=16px and remains centered at rest.
+- Preserve keyboard shortcuts, voice behavior, eight-line auto-grow and the full-window edge scrollbar. Widget tests must assert width, elevation, surface fill, baseline and circular send shape at 320, 390, 768 and 1440 logical px.
+
 ## Viktor chat surface and scroll visual parity (2026-10-23)
 
 - Viktor's chat composer explicitly disables the app-level filled InputDecoration, including on focused, disabled, and desktop states; the input has no contrasting rectangular patch inside the single rounded composer surface. Do not rely on inherited `InputDecorationTheme` defaults.
