@@ -580,16 +580,10 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                   const SizedBox(height: 12),
                   LayoutBuilder(
                     builder: (context, constraints) {
-                      // Keep colors and icons alongside each other even in a
-                      // mobile editor. The color palette is a deliberately
-                      // narrow column, so it cannot swallow the icon picker.
-                      final wide = constraints.maxWidth >= 470;
-                      final colorWidth = constraints.maxWidth >= 680
-                          ? 190.0
-                          : wide
-                              ? 150.0
-                              : 116.0;
-                      final gap = wide ? 22.0 : 12.0;
+                      // Approved HTML: two equal-width sections for color
+                      // and icon choices at every breakpoint.
+                      final wide = constraints.maxWidth >= 540;
+                      final gap = wide ? 20.0 : 12.0;
                       final colors = Column(
                         key: const Key('category_color_column'),
                         mainAxisSize: MainAxisSize.min,
@@ -672,7 +666,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                         key: const Key('category_appearance_columns'),
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(width: colorWidth, child: colors),
+                          Expanded(child: colors),
                           SizedBox(width: gap),
                           Expanded(child: _iconPanel(wide)),
                         ],
