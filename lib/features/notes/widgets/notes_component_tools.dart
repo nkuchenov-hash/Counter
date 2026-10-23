@@ -371,19 +371,26 @@ class NotesEditorToolbar extends StatelessWidget {
         child: ClipRRect(
           borderRadius: radius,
           child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
             child: DecoratedBox(
               key: const ValueKey('notes-floating-glass-pill'),
               decoration: BoxDecoration(
-                // Keep a *visible* capsule even against dense note text.
-                // The very small remaining transparency and local blur retain
-                // the glass effect without letting letters compete with tools.
-                color: scheme.surface.withValues(
-                  alpha: dark ? 0.91 : 0.94,
+                // A visible but genuinely translucent frosted capsule. The
+                // brighter upper lip creates depth while blurred page text
+                // remains legible only as diffuse shapes behind the buttons.
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    scheme.surface.withValues(alpha: dark ? 0.82 : 0.84),
+                    scheme.surface.withValues(alpha: dark ? 0.69 : 0.72),
+                  ],
                 ),
                 borderRadius: radius,
                 border: Border.all(
-                  color: scheme.onSurface.withValues(alpha: dark ? 0.16 : 0.10),
+                  color: dark
+                      ? Colors.white.withValues(alpha: 0.17)
+                      : scheme.onSurface.withValues(alpha: 0.10),
                   width: 0.8,
                 ),
               ),

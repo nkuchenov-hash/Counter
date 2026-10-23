@@ -82,15 +82,21 @@ void main() {
     expect(tester.getSize(find.byKey(contentKey)).height, 310);
     final fade = find.byKey(const ValueKey('notes-feathered-bottom-fade'));
     expect(fade, findsOneWidget);
-    final glass = find.descendant(
-      of: fade,
-      matching: find.byType(ColoredBox),
-    );
+    final gradientBox = find.byKey(const ValueKey('notes-bottom-paper-gradient'));
+    expect(gradientBox, findsOneWidget);
+    final decoration =
+        tester.widget<DecoratedBox>(gradientBox).decoration as BoxDecoration;
+    final colors = (decoration.gradient! as LinearGradient).colors;
+    expect(colors.first.a, 0);
+    expect(colors.last.a, greaterThan(0.95));
+    expect(colors.last, isNot(Colors.transparent));
+    // Only the scroll content fades. The toolbar remains outside the mask.
     expect(
-      tester.widgetList<ColoredBox>(glass).every(
-        (box) => box.color == Colors.transparent,
+      find.ancestor(
+        of: gradientBox,
+        matching: find.byType(BackdropFilter),
       ),
-      isTrue,
+      findsWidgets,
     );
     expect(tester.takeException(), isNull);
   });
@@ -130,8 +136,11 @@ void main() {
 
     final surface = tester.widget<DecoratedBox>(pill).decoration as BoxDecoration;
     expect(surface.borderRadius, BorderRadius.circular(24));
-    expect(surface.color, isNotNull);
-    expect(surface.color!.a, inInclusiveRange(0.90, 0.97));
+    expect(surface.color, isNull);
+    final glassColors = (surface.gradient! as LinearGradient).colors;
+    expect(glassColors.first.a, inInclusiveRange(0.80, 0.86));
+    expect(glassColors.last.a, inInclusiveRange(0.68, 0.76));
+    expect(glassColors.first.a, greaterThan(glassColors.last.a));
     expect(surface.border, isNotNull);
     expect(
       find.ancestor(of: pill, matching: find.byType(ClipRRect)),
@@ -175,7 +184,9 @@ void main() {
       find.byKey(const ValueKey('notes-floating-glass-pill')),
     );
     final decoration = pill.decoration as BoxDecoration;
-    expect(decoration.color!.a, inInclusiveRange(0.90, 0.95));
+    final glassColors = (decoration.gradient! as LinearGradient).colors;
+    expect(glassColors.first.a, inInclusiveRange(0.79, 0.85));
+    expect(glassColors.last.a, inInclusiveRange(0.66, 0.73));
     expect(find.byType(BackdropFilter), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
