@@ -383,8 +383,14 @@ class ViktorGateway {
       // already selected BYOK model. No credentials or hidden app state.
       'conversation_history': conversationHistory.take(12).map((turn) => {
         'role': turn['role'],
-        'content': (turn['content'] ?? '').length > 1200
-            ? turn['content']!.substring(0, 1200)
+        'content': (turn['content'] ?? '').length >
+                (RegExp(r'\b\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}')
+                  .allMatches(turn['content'] ?? '').length >= 3
+                  ? 6000 : turn['role'] == 'user' ? 3000 : 1200)
+            ? turn['content']!.substring(0,
+                RegExp(r'\b\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}')
+                    .allMatches(turn['content'] ?? '').length >= 3
+                    ? 6000 : turn['role'] == 'user' ? 3000 : 1200)
             : turn['content'],
       }).toList(),
       'profile_timezone': service.settings.preferredTimeZone,
