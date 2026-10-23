@@ -107,12 +107,28 @@ List<int> categoryMaterialShadeValues(MaterialColor c) =>
     _categoryTones.map((tone) => c[tone]!.toARGB32()).toList(growable: false);
 
 MaterialColor categoryMaterialPrimaryForValue(int? v) {
-  if (v != null) {
-    for (final p in kCategoryPickerMaterialColors) {
-      if (categoryMaterialShadeValues(p).contains(v)) return p;
+  if (v == null) return kNordicWork;
+  for (final family in kCategoryPickerMaterialColors) {
+    if (categoryMaterialShadeValues(family).contains(v)) return family;
+  }
+
+  // An older custom color may not be a literal Nordic shade. Respect its
+  // semantic hue when a NEW child is created; never turn it blue by default.
+  final saved = HSLColor.fromColor(Color(v));
+  if (saved.saturation < 0.12) return kCategoryNeutral;
+  var closest = kNordicWork;
+  var bestDistance = double.infinity;
+  for (final family in kCategoryPickerMaterialColors) {
+    if (family == kCategoryNeutral) continue;
+    final candidate = HSLColor.fromColor(family[500]!);
+    final difference = (candidate.hue - saved.hue).abs();
+    final hueDistance = difference > 180 ? 360 - difference : difference;
+    if (hueDistance < bestDistance) {
+      bestDistance = hueDistance;
+      closest = family;
     }
   }
-  return kNordicWork;
+  return closest;
 }
 
 /// Root categories cycle through semantic families. Neutral is reserved for
