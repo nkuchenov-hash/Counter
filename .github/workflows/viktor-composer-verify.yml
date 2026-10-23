@@ -1,0 +1,33 @@
+name: Viktor Composer Widget Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'lib/features/viktor/**'
+      - 'test/viktor_chat_*'
+      - '.github/workflows/viktor-composer-verify.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'lib/features/viktor/**'
+      - 'test/viktor_chat_*'
+
+permissions:
+  contents: read
+
+jobs:
+  composer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Resolve packages
+        run: flutter pub get
+      - name: Flutter analysis
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Viktor composer and existing layout regressions
+        run: flutter test test/viktor_chat_composer_test.dart test/viktor_chat_layout_test.dart
