@@ -9,24 +9,16 @@ import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/core/tag_contrast.dart';
+import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 
-/// Preset hex colors for @DATA_MAP `tags.color` (stored as "#RRGGBB").
-const List<String> kTagManagerPalette = [
-  '#E53935',
-  '#FB8C00',
-  '#FDD835',
-  '#43A047',
-  '#1E88E5',
-  '#8E24AA',
-  '#9E9E9E',
-  '#000000',
-  '#6D4C41',
-  '#EC407A',
-];
+/// One semantic palette for the whole app. This only changes the color
+/// choices offered for NEW tags; stored tag.color and the special yellow-tag
+/// contrast/alpha behavior remain untouched, including legacy custom hexes.
+List<String> get kTagManagerPalette => kLifeTagColorPresets;
 
 class TagManagerPage extends StatefulWidget {
   const TagManagerPage({
@@ -124,6 +116,25 @@ class _TagManagerPageState extends State<TagManagerPage> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
+                        // An existing legacy/custom tag retains its exact
+                        // saved color, even when it is outside new presets.
+                        if (!kTagManagerPalette.contains(pickedColor))
+                          InkWell(
+                            key: const ValueKey('tag-legacy-color-choice'),
+                            onTap: () => setD(() => pickedColor = pickedColor),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: parseTagHexColor(pickedColor),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Theme.of(ctx).colorScheme.primary,
+                                  width: 3,
+                                ),
+                              ),
+                            ),
+                          ),
                         for (final c in kTagManagerPalette)
                           InkWell(
                             onTap: () => setD(() => pickedColor = c),
