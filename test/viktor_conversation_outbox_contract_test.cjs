@@ -69,6 +69,9 @@ assert.match(ui, /label: 'Повторить'/,
 assert.match(ui, /String\? _historyNotice/,
   'Sync warnings must not pollute model conversation turns');
 
+assert.match(ui, /_completeRepeatedRead/, 'Repeated reads should be corrected via conversation context');
+assert.match(ui, /time zone over/, 'Explicit user clock preferences must take precedence');
+
 const chatPage = fs.readFileSync(
   'lib/features/viktor/viktor_chat_page.dart', 'utf8');
 const dialoguePart = fs.readFileSync(
