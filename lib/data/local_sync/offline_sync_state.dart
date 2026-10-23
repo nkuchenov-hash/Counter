@@ -1,3 +1,4 @@
+import 'package:counter/data/local_sync/category_mutation_outbox.dart';
 import 'package:counter/data/local_sync/plan_mutation_outbox.dart';
 import 'package:counter/data/local_sync/record_mutation_outbox.dart';
 import 'package:flutter/foundation.dart';
@@ -8,10 +9,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// **Invariant:** red sync-error banner only when [hasBlockingSyncError] is true
 /// (pending work exists + [lastError]). Stale [lastError] with empty outbox is suppressed.
 class OfflineSyncController extends ChangeNotifier {
+  /// Set by the Brain after resolving the current profile.
+  String? categoryOutboxOwner;
   bool isOffline = false;
   int pendingCount = 0;
   int recordsOutboxCount = 0;
   int plansOutboxCount = 0;
+  int categoriesOutboxCount = 0;
   bool isSyncing = false;
   bool authPaused = false;
   String? lastError;
@@ -121,6 +125,7 @@ class OfflineSyncController extends ChangeNotifier {
     if (pendingCount == 0 &&
         recordsOutboxCount == 0 &&
         plansOutboxCount == 0 &&
+        categoriesOutboxCount == 0 &&
         isSyncing &&
         !syncFlushInFlight) {
       setSyncing(false);
@@ -203,7 +208,13 @@ class OfflineSyncController extends ChangeNotifier {
       final records = await RecordMutationOutbox.load(prefs);
       recordsOutboxCount = records.length;
       plansOutboxCount = plans.length;
-      final next = records.length + plans.length;
+      // Category queue is profile-scoped, unlike the legacy record/plan queues.
+      final owner = (categoryOutboxOwner ?? '').trim();
+      final categories = owner.isEmpty
+          ? <Map<String, dynamic>>[]
+          : await CategoryMutationOutbox.load(prefs, owner);
+      categoriesOutboxCount = categories.length;
+      final next = records.length + plans.length + categories.length;
       final countChanged = pendingCount != next;
       pendingCount = next;
       if (pendingCount == 0) {
