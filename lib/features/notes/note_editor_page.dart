@@ -1694,7 +1694,7 @@ AppButton.destructive(
     return ReorderableListView.builder(
       key: const ValueKey('notes-editor-content'),
       scrollController: _blockScrollController,
-      padding: EdgeInsets.zero,
+      padding: const EdgeInsets.only(bottom: 100),
       buildDefaultDragHandles: false,
       proxyDecorator: (child, _, __) => child,
       itemCount: _editor.visibleBlocks.length,
