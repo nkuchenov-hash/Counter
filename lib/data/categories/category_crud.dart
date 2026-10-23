@@ -593,7 +593,10 @@ extension CategoryCrudExtension on DatabaseService {
   /// Retry happens through the existing SyncManager boot/reconnect drain.
   /// This function has no user-facing network error reporting.
   Future<void> flushPendingCategoryMutations() async {
-    if (offlineSync.isOffline || offlineSync.authPaused) return;
+    if (_categoryMutationFlushInFlight ||
+        offlineSync.isOffline || offlineSync.authPaused) return;
+    _categoryMutationFlushInFlight = true;
+    try {
     final owner = (currentProfileId ?? _userIdForWhere ?? '').trim();
     if (owner.isEmpty || !_isInitialized) return;
     final prefs = _prefs ?? await SharedPreferences.getInstance();
@@ -628,6 +631,9 @@ extension CategoryCrudExtension on DatabaseService {
       }
     }
     await offlineSync.refreshPendingCount();
+    } finally {
+      _categoryMutationFlushInFlight = false;
+    }
   }
 
   /// After [updateNestedCategory] (or similar) mutates memory, push this row with one PATCH.
