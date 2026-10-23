@@ -469,7 +469,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
             categoryMaterialShadeValues(_selectedPrimary!)
                 .contains(_selectedColorValue))
         ? _selectedColorValue
-        : _selectedPrimary![500]!.toARGB32();
+        : categoryColorAtDepth(_selectedPrimary!, route.length - 1);
 
     // Both an inline desktop inspector and a bounded mobile sheet have
     // independently scrollable content and a visible Save footer.
@@ -566,7 +566,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                               _compactSwatch(color, _selectedPrimary == color, () {
                                 setState(() {
                                   _selectedPrimary = color;
-                                  _selectedShadeValue = color[500]!.toARGB32();
+                                  _selectedShadeValue = categoryColorAtDepth(color, route.length - 1);
                                   _selectedColorValue = _selectedShadeValue;
                                 });
                               })),
@@ -580,8 +580,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                         if (_showShades) ...[
                           const SizedBox(height: 10),
                           Wrap(spacing: 4, runSpacing: 8,
-                            children: <int>[50, 100, 200, 300, 400, 500, 600, 700, 800, 900]
-                              .map((tone) {
+                            children: kCategorySelectableTones.map((tone) {
                                 final c = _selectedPrimary![tone]!;
                                 final v = c.toARGB32();
                                 return _compactSwatch(c, _selectedShadeValue == v, () {
