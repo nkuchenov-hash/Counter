@@ -10,6 +10,7 @@ import 'package:counter/data/ai/viktor_voice_gateway.dart';
 import 'package:counter/data/ai/viktor_voice_recorder.dart';
 import 'package:counter/data/ai/viktor_voice_error.dart';
 import 'package:counter/data/ai/viktor_read_answer.dart';
+import 'package:counter/data/ai/viktor_date_scope.dart';
 import 'package:counter/data/ai/viktor_conversation_store.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
