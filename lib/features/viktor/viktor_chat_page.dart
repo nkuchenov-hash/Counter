@@ -805,6 +805,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       // ChatGPT-style interaction: wheel/touch/trackpad scrolling works,
       // without Flutter's thick always-visible desktop scrollbar.
       body: ScrollConfiguration(
+        key: const Key('viktor_chat_scroll_configuration'),
         behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
         child: SafeArea(
           top: false,
