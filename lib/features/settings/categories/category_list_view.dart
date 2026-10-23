@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
-import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/settings/categories/category_editor_sheet.dart';
@@ -31,9 +30,18 @@ class _CategoryTreeRow {
   final int depth;
 }
 
-/// Manage categories without opening a modal for every selection on desktop.
-/// Sibling and cross-parent drag use the same 300 ms hold/reorder surface as
-/// Planning and Notes. No category-specific drag button or recognizer.
+/// Stable categories drag model: the target does not move before drop.
+enum CategoryDropPosition { before, inside, after }
+
+CategoryDropPosition categoryDropPositionFor(double y, double height) {
+  if (height <= 0) return CategoryDropPosition.inside;
+  final fraction = y / height;
+  if (fraction < 0.22) return CategoryDropPosition.before;
+  if (fraction > 0.78) return CategoryDropPosition.after;
+  return CategoryDropPosition.inside;
+}
+
+/// Manage categories with stationary long-press drop targets.
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({
     super.key,
@@ -56,8 +64,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
   bool _moving = false;
   final Map<int, GlobalKey> _rowAnchors = <int, GlobalKey>{};
   int? _draggedCategoryId;
-  int? _dropInsideCategoryId;
-  bool _nestDropHandled = false;
+  int? _dropTargetCategoryId;
+  CategoryDropPosition? _dropPosition;
 
   @override
   void initState() {
@@ -283,222 +291,151 @@ class _CategoriesPageState extends State<CategoriesPage> {
     });
   }
 
-  void _beginCategoryDrag(int index, List<_CategoryTreeRow> rows) {
-    if (index < 0 || index >= rows.length) return;
+  void _startCategoryDrag(int sourceId) {
+    if (!mounted || _moving) return;
     setState(() {
-      _draggedCategoryId = rows[index].rule.id;
-      _dropInsideCategoryId = null;
-      _nestDropHandled = false;
+      _draggedCategoryId = sourceId;
+      _dropTargetCategoryId = null;
+      _dropPosition = null;
     });
   }
 
-  void _trackCategoryDrop(Offset globalPosition, List<_CategoryTreeRow> rows) {
-    final source = _draggedCategoryId;
-    if (source == null || _moving) return;
-    final invalidIds = DatabaseService.instance.getRecordIdsInSubtree(source);
-    int? targetId;
-    for (final item in rows) {
-      if (invalidIds.contains(item.rule.id)) continue;
-      final object = _rowAnchors[item.rule.id]?.currentContext?.findRenderObject();
-      if (object is! RenderBox || !object.hasSize) continue;
-      final point = object.globalToLocal(globalPosition);
-      final size = object.size;
-      if (point.dx < 0 || point.dx > size.width ||
-          point.dy < 0 || point.dy > size.height) continue;
-      // Middle 60% nests into the row. Its top/bottom 20% keeps the
-      // ordinary shared ReorderableListView before/after insertion.
-      if (point.dy >= size.height * 0.20 &&
-          point.dy <= size.height * 0.80) {
-        targetId = item.rule.id;
-      }
+  void _endCategoryDrag() {
+    if (!mounted) return;
+    if (_draggedCategoryId == null && _dropTargetCategoryId == null) return;
+    setState(() {
+      _draggedCategoryId = null;
+      _dropTargetCategoryId = null;
+      _dropPosition = null;
+    });
+  }
+
+  CategoryDropPosition? _positionForDrop(int targetId, Offset global) {
+    final object = _rowAnchors[targetId]?.currentContext?.findRenderObject();
+    if (object is! RenderBox || !object.hasSize) return null;
+    final local = object.globalToLocal(global);
+    if (local.dx < 0 || local.dx > object.size.width ||
+        local.dy < 0 || local.dy > object.size.height) return null;
+    return categoryDropPositionFor(local.dy, object.size.height);
+  }
+
+  bool _canDropOn(int sourceId, int targetId) {
+    if (_moving || sourceId == targetId) return false;
+    final db = DatabaseService.instance;
+    return db.getCategoryRuleById(sourceId) != null &&
+        db.getCategoryRuleById(targetId) != null &&
+        !db.getRecordIdsInSubtree(sourceId).contains(targetId);
+  }
+
+  // Read the real finger/mouse position against the original, stationary
+  // render boxes. No Flutter reorder placeholder or DragTarget event race.
+  void _trackDropPointer(int source, Offset global) {
+    if (!mounted || _moving) return;
+    int? target;
+    CategoryDropPosition? position;
+    for (final row in _visibleRows()) {
+      if (!_canDropOn(source, row.rule.id)) continue;
+      final candidate = _positionForDrop(row.rule.id, global);
+      if (candidate == null) continue;
+      target = row.rule.id;
+      position = candidate;
       break;
     }
-    if (targetId != _dropInsideCategoryId && mounted) {
-      setState(() => _dropInsideCategoryId = targetId);
-    }
-  }
-
-  void _finishCategoryDrag() {
-    final source = _draggedCategoryId;
-    final target = _dropInsideCategoryId;
-    if (!_nestDropHandled && source != null && target != null) {
-      _nestDropHandled = true;
-      unawaited(_nestCategory(source, target));
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      setState(() {
-        _draggedCategoryId = null;
-        _dropInsideCategoryId = null;
-      });
+    if (_dropTargetCategoryId == target && _dropPosition == position) return;
+    setState(() {
+      _dropTargetCategoryId = target;
+      _dropPosition = position;
     });
   }
 
-  Future<void> _nestCategory(int categoryId, int targetParentId) async {
-    if (_moving) return;
+  void _completeCategoryDrag(int source) {
+    final target = _dropTargetCategoryId;
+    final position = _dropPosition;
+    _endCategoryDrag();
+    if (target == null || position == null || !_canDropOn(source, target)) {
+      return;
+    }
+    unawaited(_commitDrop(source, target, position));
+  }
+
+  Future<void> _commitDrop(
+    int source,
+    int target,
+    CategoryDropPosition position,
+  ) async {
+    if (!_canDropOn(source, target)) return;
     final db = DatabaseService.instance;
-    if (db.getRecordIdsInSubtree(categoryId).contains(targetParentId)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(currentLocale.value, 'category_move_invalid'))),
-      );
+    final oldParent = db.getParentId(source);
+    final newParent = position == CategoryDropPosition.inside
+        ? target : db.getParentId(target);
+    if (newParent != null &&
+        db.getRecordIdsInSubtree(source).contains(newParent)) return;
+    if (oldParent == newParent && position == CategoryDropPosition.inside) {
+      setState(() => _expanded.add(target));
       return;
     }
-    final previousParent = db.getParentId(categoryId);
-    if (previousParent == targetParentId) {
-      setState(() => _expanded.add(targetParentId));
+
+    final previousOrder = db.getChildrenOf(oldParent).map((r) => r.id).toList();
+    final before = db.getChildrenOf(newParent);
+    if (oldParent == newParent) {
+      final ordered = List<CategoryRule>.from(before)
+        ..removeWhere((r) => r.id == source);
+      final index = ordered.indexWhere((r) => r.id == target);
+      if (index < 0) return;
+      ordered.insert(index + (position == CategoryDropPosition.after ? 1 : 0),
+          db.getCategoryRuleById(source)!);
+      if (ordered.map((r) => r.id).join(',') ==
+          before.map((r) => r.id).join(',')) return;
+      db.applyLocalCategorySiblingOrder(newParent, ordered);
+      _redraw();
+      unawaited(db.persistCategorySiblingOrder(
+        newParent, ordered, baselineBeforeReorder: before,
+      ));
+      _showDropUndo(source, oldParent, previousOrder);
       return;
     }
-    final previousOrder = db.getChildrenOf(previousParent)
-        .map((rule) => rule.id).toList();
+
     setState(() {
       _moving = true;
-      _expanded.add(targetParentId);
+      if (newParent != null) _expanded.add(newParent);
     });
-    final saved = await db.updateCategoryParent(categoryId, targetParentId);
+    // updateCategoryParent mutates the Brain cache synchronously, before I/O.
+    final moving = db.updateCategoryParent(source, newParent);
+    if (position != CategoryDropPosition.inside) {
+      final ordered = List<CategoryRule>.from(db.getChildrenOf(newParent))
+        ..removeWhere((r) => r.id == source);
+      final index = ordered.indexWhere((r) => r.id == target);
+      if (index >= 0) {
+        ordered.insert(index + (position == CategoryDropPosition.after ? 1 : 0),
+            db.getCategoryRuleById(source)!);
+        db.applyLocalCategorySiblingOrder(newParent, ordered);
+      }
+    }
+    final ok = await moving;
     if (!mounted) return;
     setState(() => _moving = false);
-    if (!saved) {
+    if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
-      );
+        SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))));
       return;
     }
     unawaited(widget.onChanged());
+    _showDropUndo(source, oldParent, previousOrder);
+  }
+
+  void _showDropUndo(int source, int? originalParent, List<int> order) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(t(currentLocale.value, 'category_moved')),
         action: SnackBarAction(
           label: t(currentLocale.value, 'undo'),
           onPressed: () => unawaited(
-            _undoParentMove(categoryId, previousParent, previousOrder),
+            _undoParentMove(source, originalParent, order),
           ),
         ),
       ),
     );
-  }
-
-  // AppReorderableList is also used in Paths and Planning. Its flat insertion
-  // index picks the receiving sibling group, including expanded child groups.
-  // The Brain retains ownership of the parent relation and order persistence.
-  Future<void> _onReorder(
-    int oldIndex,
-    int newIndex,
-    List<_CategoryTreeRow> visible,
-  ) async {
-    if (_moving || oldIndex < 0 || oldIndex >= visible.length) return;
-    final moved = visible[oldIndex];
-    // A center drop changes the parent, even when Flutter reports no
-    // positional reorder. The end callback is a fallback for that case.
-    if (_nestDropHandled && _draggedCategoryId == moved.rule.id) return;
-    final nestedTarget = _dropInsideCategoryId;
-    if (_draggedCategoryId == moved.rule.id && nestedTarget != null) {
-      _nestDropHandled = true;
-      await _nestCategory(moved.rule.id, nestedTarget);
-      return;
-    }
-    var targetIndex = newIndex > oldIndex ? newIndex - 1 : newIndex;
-    final remaining = List<_CategoryTreeRow>.of(visible)..removeAt(oldIndex);
-    targetIndex = targetIndex.clamp(0, remaining.length).toInt();
-    if (targetIndex == oldIndex) return;
-    final target = targetIndex < remaining.length
-        ? remaining[targetIndex]
-        : (remaining.isEmpty ? null : remaining.last);
-    // The end of the whole tree is a root-level drop, never an implicit
-    // move inside the final visible nested branch.
-    final destinationParent =
-        targetIndex == remaining.length ? null : target?.parentId;
-    final db = DatabaseService.instance;
-
-    // A category cannot be its own parent, nor be nested below a descendant.
-    final subtree = db.getRecordIdsInSubtree(moved.rule.id).toSet();
-    if (destinationParent == moved.rule.id ||
-        (destinationParent != null && subtree.contains(destinationParent))) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(t(currentLocale.value, 'category_move_invalid')),
-        ),
-      );
-      return;
-    }
-
-    final oldParent = db.getParentId(moved.rule.id);
-    final originalOrder = db.getChildrenOf(oldParent).map((r) => r.id).toList();
-    final before = db.getChildrenOf(destinationParent);
-    final siblings = List<CategoryRule>.from(before)
-      ..removeWhere((r) => r.id == moved.rule.id);
-    int insertAt;
-    if (targetIndex == remaining.length || target == null) {
-      insertAt = siblings.length;
-    } else {
-      final targetSiblingIndex =
-          siblings.indexWhere((r) => r.id == target.rule.id);
-      insertAt = targetSiblingIndex < 0
-          ? siblings.length
-          : targetSiblingIndex;
-    }
-    siblings.insert(insertAt, moved.rule);
-
-    if (oldParent == destinationParent) {
-      db.applyLocalCategorySiblingOrder(destinationParent, siblings);
-      _redraw();
-      unawaited(db.persistCategorySiblingOrder(
-        destinationParent,
-        siblings,
-        baselineBeforeReorder: before,
-      ));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(t(currentLocale.value, 'category_moved')),
-          action: SnackBarAction(
-            label: t(currentLocale.value, 'undo'),
-            onPressed: () {
-              db.applyLocalCategorySiblingOrder(destinationParent, before);
-              _redraw();
-              unawaited(db.persistCategorySiblingOrder(
-                destinationParent,
-                before,
-                baselineBeforeReorder: siblings,
-              ));
-            },
-          ),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _moving = true;
-      if (destinationParent != null) _expanded.add(destinationParent);
-    });
-    // The Brain applies the parent change synchronously to its optimistic
-    // cache before the first await; reordering the new siblings immediately
-    // also feeds its post-parent-move order persistence.
-    final moving = db.updateCategoryParent(moved.rule.id, destinationParent);
-    db.applyLocalCategorySiblingOrder(destinationParent, siblings);
-    _redraw();
-    final ok = await moving;
-    if (!mounted) return;
-    setState(() => _moving = false);
-    if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(t(currentLocale.value, 'category_moved')),
-          action: SnackBarAction(
-            label: t(currentLocale.value, 'undo'),
-            onPressed: () => unawaited(_undoParentMove(
-              moved.rule.id,
-              oldParent,
-              originalOrder,
-            )),
-          ),
-        ),
-      );
-    }
-    unawaited(widget.onChanged());
   }
 
   Future<void> _undoParentMove(
@@ -508,6 +445,24 @@ class _CategoriesPageState extends State<CategoriesPage> {
   ) async {
     if (_moving) return;
     final db = DatabaseService.instance;
+    // Undo of a sibling reorder must restore the persisted sibling order as
+    // well, not merely reassign an unchanged parent relation.
+    if (db.getParentId(categoryId) == previousParent) {
+      final before = List<CategoryRule>.from(db.getChildrenOf(previousParent));
+      final restored = List<CategoryRule>.from(before)
+        ..sort((a, b) {
+          final ai = originalOrder.indexOf(a.id);
+          final bi = originalOrder.indexOf(b.id);
+          return (ai < 0 ? originalOrder.length : ai)
+              .compareTo(bi < 0 ? originalOrder.length : bi);
+        });
+      db.applyLocalCategorySiblingOrder(previousParent, restored);
+      _redraw();
+      unawaited(db.persistCategorySiblingOrder(
+        previousParent, restored, baselineBeforeReorder: before,
+      ));
+      return;
+    }
     setState(() => _moving = true);
     final rollback = db.updateCategoryParent(categoryId, previousParent);
     final siblings = db.getChildrenOf(previousParent);
@@ -543,14 +498,13 @@ class _CategoriesPageState extends State<CategoriesPage> {
     final hasChildren = (r.children ?? <CategoryRule>[]).isNotEmpty;
     final tint = r.colorOrDefault;
     final loc = currentLocale.value;
-    return AppHoldToReorderListener(
-      index: index,
-      child: Material(
+    final dropPosition = _dropTargetCategoryId == r.id ? _dropPosition : null;
+    final tile = Material(
         key: _rowAnchors.putIfAbsent(r.id, () => GlobalKey()),
-        color: _dropInsideCategoryId == r.id
-            ? tint.withValues(alpha: 0.19)
+        color: dropPosition == CategoryDropPosition.inside
+            ? tint.withValues(alpha: 0.15)
             : (selected ? tint.withValues(alpha: 0.07) : scheme.surface),
-        elevation: _dropInsideCategoryId == r.id ? 2 : 0,
+        elevation: 0,
         shadowColor: tint,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
@@ -653,7 +607,80 @@ class _CategoriesPageState extends State<CategoriesPage> {
             ),
           ),
         ),
-      ),
+    );
+    return LongPressDraggable<int>(
+        key: ValueKey('category-drag-source-${r.id}'),
+        data: r.id,
+        delay: const Duration(milliseconds: 300),
+        maxSimultaneousDrags: _moving ? 0 : 1,
+        onDragStarted: () => _startCategoryDrag(r.id),
+        onDragUpdate: (details) =>
+            _trackDropPointer(r.id, details.globalPosition),
+        onDragEnd: (_) => _completeCategoryDrag(r.id),
+        feedback: Material(
+          color: scheme.surface,
+          elevation: 8,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: 260,
+            height: 54,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: tint, width: 2),
+            ),
+            child: Row(children: [
+              Icon(categoryManagerIconFor(r), color: tint),
+              const SizedBox(width: 12),
+              Expanded(child: Text(
+                categoryTileLabel(r),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyLarge,
+              )),
+            ]),
+          ),
+        ),
+        child: Stack(
+          children: [
+            Opacity(
+              opacity: _draggedCategoryId == r.id ? .35 : 1,
+              child: tile,
+            ),
+            if (dropPosition != null)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: dropPosition == CategoryDropPosition.inside
+                      ? DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: tint, width: 2.5),
+                          ),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 60),
+                              child: Icon(Icons.subdirectory_arrow_right_rounded,
+                                  color: tint),
+                            ),
+                          ),
+                        )
+                      : Align(
+                          alignment: dropPosition == CategoryDropPosition.before
+                              ? Alignment.topCenter
+                              : Alignment.bottomCenter,
+                          child: Container(
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: tint,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                        ),
+                ),
+              ),
+          ],
+        ),
     );
   }
 
@@ -712,30 +739,13 @@ class _CategoriesPageState extends State<CategoriesPage> {
                 )
               : visible.isEmpty
                   ? Center(child: Text(t(loc, 'category_search_empty')))
-                  : Listener(
-                      onPointerMove: (event) =>
-                          _trackCategoryDrop(event.position, visible),
-                      onPointerUp: (event) =>
-                          _trackCategoryDrop(event.position, visible),
-                      child: AppReorderableList(
+                  : ListView.separated(
+                      key: const ValueKey('category-stationary-tree'),
                       padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
-                      spacing: 4,
                       itemCount: visible.length,
-                      onReorderStart: (index) =>
-                          _beginCategoryDrag(index, visible),
-                      onReorderEnd: (_) => _finishCategoryDrag(),
-                      itemKeyBuilder: (index) =>
-                          ValueKey('category-tree-${visible[index].rule.id}'),
-                      dragLabelBuilder: (index) =>
-                          t(loc, 'category_reorder'),
-                      // Deliberately no drag affordance; holding the row
-                      // starts the same reorder gesture as Plans and Notes.
-                      dragHandleBuilder: (_, _) => const SizedBox.shrink(),
-                      onReorder: (oldIndex, newIndex) =>
-                          unawaited(_onReorder(oldIndex, newIndex, visible)),
-                      itemBuilder: (context, index, _) =>
+                      separatorBuilder: (_, _) => const SizedBox(height: 4),
+                      itemBuilder: (context, index) =>
                           _row(context, visible[index], index, wide),
-                      ),
                     ),
         ),
       ],

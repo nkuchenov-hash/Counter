@@ -12,6 +12,65 @@ void main() {
     db.debugResetRecordBrainTestHarness();
   });
 
+  group('stationary category drop geometry', () {
+    test('top / center / bottom are unambiguous and do not depend on list insertion', () {
+      expect(categoryDropPositionFor(0, 60), CategoryDropPosition.before);
+      expect(categoryDropPositionFor(10, 60), CategoryDropPosition.before);
+      expect(categoryDropPositionFor(30, 60), CategoryDropPosition.inside);
+      expect(categoryDropPositionFor(50, 60), CategoryDropPosition.after);
+      expect(categoryDropPositionFor(60, 60), CategoryDropPosition.after);
+    });
+
+    testWidgets('category nesting target stays in place while dragging', (
+      tester,
+    ) async {
+      final parent = CategoryRule(id: 110, name: 'Fixed target');
+      final moving = CategoryRule(id: 120, name: 'Moving category');
+      db.debugActivateRecordBrainTestHarness(
+        userId: 'categorydrag03',
+        categories: [parent, moving],
+      );
+      await tester.pumpWidget(MaterialApp(
+        home: CategoriesPage(
+          rules: [parent, moving],
+          onChanged: () async {},
+        ),
+      ));
+
+      const targetKey = ValueKey('category-drag-source-110');
+      const sourceKey = ValueKey('category-drag-source-120');
+      final target = find.byKey(targetKey);
+      final source = find.byKey(sourceKey);
+      final initialTarget = tester.getTopLeft(target);
+      final initialSource = tester.getTopLeft(source);
+      final gesture = await tester.startGesture(tester.getCenter(source));
+      await tester.pump(const Duration(milliseconds: 350));
+      // Ensure Flutter actually recognized the long press before we move.
+      expect(
+        find.descendant(
+          of: source,
+          matching: find.byWidgetPredicate(
+            (w) => w is Opacity && w.opacity < 0.5,
+          ),
+        ),
+        findsOneWidget,
+      );
+      await gesture.moveTo(tester.getCenter(target));
+      await tester.pump(const Duration(milliseconds: 30));
+      expect(find.byIcon(Icons.subdirectory_arrow_right_rounded),
+          findsOneWidget);
+      // Hover previews must not move either real row. Only the dragged
+      // floating feedback moves.
+      expect(tester.getTopLeft(target), initialTarget);
+      expect(tester.getTopLeft(source), initialSource);
+      expect(find.byKey(const ValueKey('category-stationary-tree')),
+          findsOneWidget);
+      await gesture.up();
+      await tester.pump();
+      expect(db.getParentId(120), 110);
+    });
+  });
+
   group('CategoryOrderSyncExtension', () {
     test('applyLocalCategorySiblingOrder assigns 0..n-1 for root and child siblings', () {
       final a = CategoryRule(id: 1, name: 'A', order: 5);
