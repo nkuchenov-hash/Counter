@@ -609,18 +609,12 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                         ],
                       ],
                     );
-                    if (!desktopPicker) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [colors, const SizedBox(height: 18), _iconPanel(false)],
-                      );
-                    }
                     return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(child: colors),
-                        const SizedBox(width: 24),
-                        Expanded(child: _iconPanel(true)),
+                        SizedBox(width: desktopPicker ? 24 : 14),
+                        Expanded(child: _iconPanel(desktopPicker)),
                       ],
                     );
                   }),
