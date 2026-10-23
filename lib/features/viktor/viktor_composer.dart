@@ -47,6 +47,9 @@ extension _ViktorComposerUi on _ViktorChatPageState {
                           color: scheme.onSurface,
                         ),
                         decoration: InputDecoration(
+                          // Composer itself owns the sole input surface.
+                          filled: false,
+                          fillColor: Colors.transparent,
                           hintText: _listening
                               ? 'Идёт запись — нажмите стоп'
                               : 'Спросите Виктора…',
@@ -68,6 +71,7 @@ extension _ViktorComposerUi on _ViktorChatPageState {
                   ),
                   const SizedBox(width: 2),
                   AppIconButton(
+                    circular: true,
                     icon: _listening
                         ? Icons.stop_circle_outlined
                         : Icons.mic_none_rounded,
@@ -84,6 +88,8 @@ extension _ViktorComposerUi on _ViktorChatPageState {
                   ValueListenableBuilder<TextEditingValue>(
                     valueListenable: _controller,
                     builder: (context, value, _) => AppIconButton(
+                      circular: true,
+                      highContrast: true,
                       icon: Icons.arrow_upward_rounded,
                       tooltip: 'Отправить Виктору',
                       onPressed: _busy || _listening ||
