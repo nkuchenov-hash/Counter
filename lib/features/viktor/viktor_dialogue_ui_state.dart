@@ -14,7 +14,8 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
 
   void _scheduleHistoryRetry() {
     if (_historyRetryTimer != null ||
-        (_dialogueLoaded && _dialogueStore.pendingCount == 0)) {
+        (_dialogueLoaded && _dialogueStore.pendingCount == 0 &&
+         !_dialogueStore.localOutboxUnreadable)) {
       return;
     }
     _historyRetryTimer = Timer.periodic(const Duration(seconds: 20), (_) {
@@ -58,9 +59,13 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
       if (mounted) setState(() {
         _messages.addAll(earlier);
         _dialogueLoaded = _dialogueStore.pendingCount == 0;
-        _historyNotice = _dialogueLoaded ? null :
-            'Некоторые реплики сохранены на устройстве и ожидают '
-            'синхронизации. Виктор повторит отправку.';
+        _historyNotice = !_dialogueLoaded
+            ? 'Некоторые реплики ожидают синхронизации с сервером.'
+            : _dialogueStore.localOutboxUnreadable
+                ? 'Серверная история загружена, но прежнюю локальную '
+                  'зашифрованную очередь пока не удалось прочитать. '
+                  'Повторяем проверку, не перезаписывая её.'
+                : null;
       });
       _scheduleHistoryRetry();
     } catch (_) {
@@ -77,7 +82,8 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     try {
       await _dialogueStore.append(turn);
       if (!mounted) return;
-      if (_dialogueLoaded && _dialogueStore.pendingCount == 0) {
+      if (_dialogueLoaded && _dialogueStore.pendingCount == 0 &&
+          !_dialogueStore.localOutboxUnreadable) {
         if (_historyNotice != null) {
           setState(() => _historyNotice = null);
         }
@@ -118,8 +124,13 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
           if (introduction != null) _messages.add(introduction);
           _messages.addAll(restored);
           _dialogueLoaded = _dialogueStore.pendingCount == 0;
-          _historyNotice = _dialogueLoaded ? null :
-              'Сообщения ожидают синхронизации.';
+          _historyNotice = !_dialogueLoaded
+              ? 'Сообщения ожидают синхронизации.'
+              : _dialogueStore.localOutboxUnreadable
+                  ? 'Серверная история доступна, но старая защищённая '
+                    'локальная очередь пока не читается. '
+                    'Она не будет перезаписана; проверка повторится.'
+                  : null;
         });
       }
     } catch (_) {
@@ -135,7 +146,8 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
       }
     } finally {
       _historyRetryInFlight = false;
-      if (_dialogueLoaded && _dialogueStore.pendingCount == 0) {
+      if (_dialogueLoaded && _dialogueStore.pendingCount == 0 &&
+          !_dialogueStore.localOutboxUnreadable) {
         _stopHistoryRetry();
       } else {
         _scheduleHistoryRetry();
