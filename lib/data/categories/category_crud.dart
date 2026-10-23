@@ -551,7 +551,18 @@ extension CategoryCrudExtension on DatabaseService {
       return false;
     }
 
+    // Prevent a cycle before touching the local tree or PocketBase.
+    // A failed drag must never orphan the dragged subtree.
+    if (categoryId == -1 || getCategoryRuleById(categoryId) == null) {
+      return false;
+    }
     final oldParentId = getParentId(categoryId);
+    if (oldParentId == newParentId) return true;
+    if (newParentId != null &&
+        (getCategoryRuleById(newParentId) == null ||
+            getRecordIdsInSubtree(categoryId).contains(newParentId))) {
+      return false;
+    }
     if (!_moveCategoryInRules(categoryId, newParentId)) return false;
 
     void renumberLocal(int? parentKey) {

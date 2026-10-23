@@ -318,7 +318,7 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 
 - The white Notes editing canvas in the desktop master/detail layout is a distinct 20px-rounded paper surface on **all four corners**, with category-tinted folder paper visible at its perimeter. Do not place a full-width opaque white wrapper behind it.
 - The top editor navigation row has at least 20px internal top spacing in embedded mode. Back, undo and overflow are ghost controls: transparent at rest, readable icons, and a soft circular hover/tap highlight only.
-- The bottom formatting toolbar floats as independent controls with **no opaque, tinted, outlined, or rectangular backplate**. Selected tool feedback remains visible; other buttons use transparent backgrounds at rest.
+- The formatting controls float inside **one compact, clearly visible frosted-glass pill** (350×48px, 24px corners): lightly translucent surface (~94% light / ~91% dark), local 18px backdrop blur, fine outline and restrained shadow. The pill must remain distinct and readable when body text scrolls behind it. The *full-width lower dock* has no solid rectangular backplate. Selected buttons retain their own active highlight; others remain transparent inside the pill.
 - Scrolling blocks continue beneath the bottom dock. A full-width feathered alpha mask reveals backdrop blur progressively only toward the lower edge. Never reserve a separate empty horizontal band beneath the document, and never place a colored rectangle underneath the formatting buttons.
 - The document scroll view provides its own end padding so the final block can still be read and edited above the floating tools. The same components apply on mobile, wide embedded editor and inline note editing without changing persistence or text selection behavior.
 
@@ -442,3 +442,14 @@ Shell header, More, Planning Smart and Profile open the same Viktor chat; no ove
 ## Viktor recorded dictation and feedback (2026-10-20)
 
 The web microphone MUST capture actual audio through `record`, not browser `SpeechRecognition`. On start, show record duration, current sampled volume and captured byte count; microphone stays a stop control. After stop, show a transcription progress indicator, then place recognized words as **editable** text in the existing composer; do not automatically submit or execute model actions. A silent/too-short recording, no microphone permission, rejected provider key or unavailable service MUST show a visible inline error, not produce a fake listening/success state or repeated chat bubbles. Audio (up to 60 seconds) is sent to the selected transcription provider via authenticated PocketBase, using BYOK; never store credentials or recordings. On Android and Windows the same capture/submit UX replaces silent speech service behavior.
+
+## Category manager (desktop and mobile)
+
+- Desktop Categories uses a two-pane tree/inline editor; mobile uses a single tree and a bounded near-full-screen editor with a sticky Save action.
+- Category tree drag uses the canonical `AppReorderableList` + `AppHoldToReorderListener` (300 ms), matching Plans and Notes. No feature-specific drag handles or buttons.
+- Drag between visible sibling groups changes the parent through `updateCategoryParent`; within a group it calls `applyLocalCategorySiblingOrder` and debounced `persistCategorySiblingOrder`. Invalid self/descendant moves are rejected *before* the optimistic mutation.
+- Expanded branches reveal drop locations in child sibling groups. For a collapsed/empty parent, use the editor's explicit Parent category selector.
+- Reorder/move updates the local category tree immediately, offers Undo, and reports failed server persistence. Search expands only matching paths without rewriting data.
+- Editor shows name, parent, color and icon first; translations, keywords, default-category and destructive actions are in Advanced. Scroll content is bounded by the viewport and Save remains accessible.
+
+---
