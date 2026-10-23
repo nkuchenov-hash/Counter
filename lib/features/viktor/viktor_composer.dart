@@ -30,7 +30,7 @@ extension _ViktorComposerUi on _ViktorChatPageState {
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -102,32 +102,51 @@ extension _ViktorComposerUi on _ViktorChatPageState {
                       final canSend = !_busy && !_listening &&
                           !_transcribing && !_startingMic &&
                           _settingsReady && value.text.trim().isNotEmpty;
-                      return DecoratedBox(
-                        key: const Key('viktor_send_button_surface'),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: canSend
-                              ? scheme.onSurface
-                              : scheme.onSurface.withValues(alpha: 0.10),
-                        ),
-                        child: ClipOval(
-                          child: Theme(
-                            // Keep the canonical action widget, but make
-                            // this single send control high-contrast.
-                            data: Theme.of(context).copyWith(
-                              colorScheme: scheme.copyWith(
-                                secondaryContainer: scheme.onSurface,
-                                onSecondaryContainer: scheme.surface,
+                      // The 44px touch target is intentionally larger than
+                      // the visible 34px circle. Never paint the whole touch
+                      // target as a giant disc near the capsule edges.
+                      return Tooltip(
+                        message: 'Отправить Виктору',
+                        child: Semantics(
+                          button: true,
+                          enabled: canSend,
+                          label: 'Отправить Виктору',
+                          child: SizedBox.square(
+                            key: const Key('viktor_send_touch_target'),
+                            dimension: 44,
+                            child: Material(
+                              type: MaterialType.transparency,
+                              child: InkWell(
+                                key: const Key('viktor_send_tap'),
+                                onTap: canSend
+                                    ? () => unawaited(_send())
+                                    : null,
+                                customBorder: const CircleBorder(),
+                                child: Center(
+                                  child: SizedBox.square(
+                                    dimension: 34,
+                                    child: DecoratedBox(
+                                      key: const Key('viktor_send_button_surface'),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: canSend
+                                            ? scheme.onSurface
+                                            : scheme.onSurface
+                                                .withValues(alpha: 0.10),
+                                      ),
+                                      child: Center(
+                                        child: Icon(
+                                          Icons.arrow_upward_rounded,
+                                          size: 19,
+                                          color: canSend
+                                              ? scheme.surface
+                                              : scheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                            child: AppIconButton(
-                              icon: Icons.arrow_upward_rounded,
-                              tooltip: 'Отправить Виктору',
-                              onPressed: canSend
-                                  ? () => unawaited(_send())
-                                  : null,
-                              variant: AppIconButtonVariant.filled,
-                              size: AppIconButtonSize.s,
                             ),
                           ),
                         ),
