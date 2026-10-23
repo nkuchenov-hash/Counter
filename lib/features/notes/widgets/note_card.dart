@@ -184,18 +184,24 @@ class _GridCard extends StatelessWidget {
             ),
             const SizedBox(height: 7),
             Expanded(
-              child: Opacity(
-                opacity: isDone ? 0.60 : 1,
-                child: ClipRect(
-                  child: _LifeSelectableText(
-                    preview.isEmpty ? t(loc, 'notes_library_no_text') : preview,
-                    onTap: onOpen,
-                    maxLines: 4,
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.4,
-                      color: scheme.onSurfaceVariant,
-                      fontStyle: preview.isEmpty ? FontStyle.italic : null,
+              // Keep preview at its natural height, TOP-aligned beneath the
+              // title. Editable/SelectableText can otherwise expand inside
+              // the available flex space and visually center the first line.
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Opacity(
+                  opacity: isDone ? 0.60 : 1,
+                  child: ClipRect(
+                    child: _LifeSelectableText(
+                      preview.isEmpty ? t(loc, 'notes_library_no_text') : preview,
+                      onTap: onOpen,
+                      maxLines: 4,
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.4,
+                        color: scheme.onSurfaceVariant,
+                        fontStyle: preview.isEmpty ? FontStyle.italic : null,
+                      ),
                     ),
                   ),
                 ),
