@@ -44,6 +44,7 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     List<String> observations,
     String requestId,
     List<Map<String, String>> history,
+    DateTime intentDay,
   ) async {
     final draftRevision = ViktorReadAnswer.isDraftRevision(
         input: input, history: history);
@@ -63,7 +64,7 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     }
     final repaired = await _gateway.propose(
       input: input,
-      wallDay: widget.wallDay,
+      wallDay: intentDay,
       plans: plans,
       settings: _settings,
       selectedPlanIds: widget.selectedPlanIds,
@@ -99,10 +100,11 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
   /// not another database query. One bounded provider retry; no writes here.
   Future<ViktorResponse> _completeRepeatedRead(
       String input, List<PlanningTask> plans, List<String> observations,
-      String requestId, List<Map<String, String>> history) =>
+      String requestId, List<Map<String, String>> history,
+      DateTime intentDay) =>
     _gateway.propose(
       input: input,
-      wallDay: widget.wallDay,
+      wallDay: intentDay,
       plans: plans,
       settings: _settings,
       selectedPlanIds: widget.selectedPlanIds,
