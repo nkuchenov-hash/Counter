@@ -332,12 +332,11 @@ class _NotesCompactToolbarMenu extends StatelessWidget {
   }
 }
 
-/// Figma `Notes/Formatting Toolbar` (604:8938).
+/// Compact floating Notes formatting pill (Figma 604:8938).
 ///
-/// It is deliberately content-width and 48 px high. Parent screens must pin it
-/// over scroll content; it must never be used as a stretching bottom bar.
-/// Floating formatting buttons over the editor's feathered bottom blur.
-/// No separate pill/panel surface: the scrolling document remains visible.
+/// The bottom-edge blur belongs to NotesBottomGlassFade, not this component.
+/// This capsule alone supplies the translucent contrast needed to keep icons
+/// legible when document text scrolls underneath.
 class NotesEditorToolbar extends StatelessWidget {
   const NotesEditorToolbar({super.key, required this.actions});
 
@@ -350,47 +349,87 @@ class NotesEditorToolbar extends StatelessWidget {
       NotesFigmaTokens.toolbarWidth,
       math.max(0.0, viewportWidth - 40),
     );
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final radius = BorderRadius.circular(NotesFigmaTokens.toolbarRadius);
+
     return SizedBox(
-      key: const ValueKey('notes-transparent-format-toolbar'),
+      key: const ValueKey('notes-floating-glass-toolbar'),
       width: width,
       height: NotesFigmaTokens.toolbarHeight,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact = constraints.maxWidth < 320;
-          final row = Row(
-            mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
-            mainAxisAlignment: compact
-                ? MainAxisAlignment.start
-                : MainAxisAlignment.spaceBetween,
-            children: [
-              for (final action in actions)
-                if (action.menuItems.isEmpty)
-                  NotesToolbarButton(
-                    tool: action.tool,
-                    icon: action.icon,
-                    tooltip: action.tooltip,
-                    onPressed: action.onPressed,
-                    selected: action.selected,
-                    enabled: action.enabled,
-                  )
-                else
-                  _NotesToolbarMenuButton(action: action),
-            ],
-          );
-          final padded = Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: NotesFigmaTokens.toolbarHorizontalPadding,
-              vertical: NotesFigmaTokens.toolbarVerticalPadding,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: dark ? 0.22 : 0.11),
+              blurRadius: 20,
+              offset: const Offset(0, 6),
             ),
-            child: row,
-          );
-          return compact
-              ? SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: padded,
-                )
-              : padded;
-        },
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: radius,
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: DecoratedBox(
+              key: const ValueKey('notes-floating-glass-pill'),
+              decoration: BoxDecoration(
+                // Keep a *visible* capsule even against dense note text.
+                // The very small remaining transparency and local blur retain
+                // the glass effect without letting letters compete with tools.
+                color: scheme.surface.withValues(
+                  alpha: dark ? 0.91 : 0.94,
+                ),
+                borderRadius: radius,
+                border: Border.all(
+                  color: scheme.onSurface.withValues(alpha: dark ? 0.16 : 0.10),
+                  width: 0.8,
+                ),
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 320;
+                  final row = Row(
+                    mainAxisSize: compact
+                        ? MainAxisSize.min
+                        : MainAxisSize.max,
+                    mainAxisAlignment: compact
+                        ? MainAxisAlignment.start
+                        : MainAxisAlignment.spaceBetween,
+                    children: [
+                      for (final action in actions)
+                        if (action.menuItems.isEmpty)
+                          NotesToolbarButton(
+                            tool: action.tool,
+                            icon: action.icon,
+                            tooltip: action.tooltip,
+                            onPressed: action.onPressed,
+                            selected: action.selected,
+                            enabled: action.enabled,
+                          )
+                        else
+                          _NotesToolbarMenuButton(action: action),
+                    ],
+                  );
+                  final padded = Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: NotesFigmaTokens.toolbarHorizontalPadding,
+                      vertical: NotesFigmaTokens.toolbarVerticalPadding,
+                    ),
+                    child: row,
+                  );
+                  return compact
+                      ? SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: padded,
+                        )
+                      : padded;
+                },
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
