@@ -533,6 +533,103 @@ extension CategoryCrudExtension on DatabaseService {
     }
   }
 
+  /// Zero-network-wait category editing: update every visible category view
+  /// synchronously, then durably stage a coalesced mutation for background
+  /// PocketBase replay. Ordinary network failures NEVER undo local color/name.
+  Future<void> stageCategoryDelta(
+    int categoryId, Map<String, dynamic> fields,
+  ) async {
+    if (fields.isEmpty) return;
+    final existing = getCategoryRuleById(categoryId);
+    if (existing == null) throw StateError('Category no longer exists');
+    final rowId = _categoryBackendRowIdStrict(existing);
+    final owner = (currentProfileId ?? _userIdForWhere ?? '').trim();
+    if (owner.isEmpty || rowId == null) {
+      throw StateError('Category edit cannot yet be journaled for this profile');
+    }
+    final prior = _optimisticCategoryEdits[categoryId] ??
+        <String, dynamic>{};
+    _optimisticCategoryEdits[categoryId] = {...prior, ...fields};
+    _applyOptimisticCategoryFields(existing, fields);
+    _categoryController.add(List<CategoryRule>.from(_rules));
+    // The UI changes before any asynchronous disk or network work.
+    final prefs = _prefs ?? await SharedPreferences.getInstance();
+    await CategoryMutationOutbox.enqueue(
+      prefs, owner, categoryId: categoryId,
+      pocketBaseId: rowId, fields: fields,
+    );
+    await offlineSync.refreshPendingCount();
+    // A background drain may fail indefinitely when offline; the journal and
+    // UI remain intact and SyncManager retries on reconnect/foreground.
+    unawaited(flushPendingCategoryMutations());
+  }
+
+  void _applyOptimisticCategoryFields(
+      CategoryRule category, Map<String, dynamic> fields) {
+    if (fields.containsKey('name') && fields['name'] is String) {
+      category.name = (fields['name'] as String);
+    }
+    if (fields.containsKey('color_value')) {
+      category.colorValue = (fields['color_value'] as num?)?.toInt();
+    }
+    if (fields.containsKey('icon_code_point')) {
+      category.iconCodePoint = (fields['icon_code_point'] as num?)?.toInt();
+    }
+    if (fields.containsKey('localized_names') &&
+        fields['localized_names'] is Map) {
+      category.localizedNames = Map<String, String>.from(
+          fields['localized_names'] as Map);
+    }
+    if (fields.containsKey('keywords') && fields['keywords'] is Map) {
+      category.keywords = (fields['keywords'] as Map).map(
+        (key, value) => MapEntry(
+          key.toString(),
+          (value as List).map((x) => x.toString()).toList(),
+        ),
+      );
+    }
+  }
+
+  /// Retry happens through the existing SyncManager boot/reconnect drain.
+  /// This function has no user-facing network error reporting.
+  Future<void> flushPendingCategoryMutations() async {
+    if (offlineSync.isOffline || offlineSync.authPaused) return;
+    final owner = (currentProfileId ?? _userIdForWhere ?? '').trim();
+    if (owner.isEmpty || !_isInitialized) return;
+    final prefs = _prefs ?? await SharedPreferences.getInstance();
+    final pending = await CategoryMutationOutbox.load(prefs, owner);
+    for (final entry in pending) {
+      if (offlineSync.isOffline || offlineSync.authPaused) break;
+      final categoryId = (entry['categoryId'] as num).toInt();
+      final pbId = (entry['pocketBaseId'] ?? '').toString();
+      if (pbId.isEmpty) continue;
+      final delta = Map<String, dynamic>.from(entry['fields'] as Map);
+      final category = getCategoryRuleById(categoryId);
+      final biz = category == null ? null : _categoryStringPkForApi(category);
+      try {
+        await ensurePocketBaseReady();
+        final fields = _categoryPatchFieldsWithJsonLongText(<String, dynamic>{
+          'user_id': _pidForPbFilter,
+          if (biz != null && biz.isNotEmpty) 'category_id': biz,
+          ...delta,
+        });
+        await _pb.collection(PbCollections.categories)
+            .update(pbId, body: _nocoFieldsForPatch(fields))
+            .timeout(const Duration(seconds: 10));
+        await CategoryMutationOutbox.acknowledge(
+          prefs, owner,
+          categoryId: categoryId,
+          revision: (entry['revision'] as num).toInt(),
+        );
+      } catch (_) {
+        // Offline, rejected connection, or expired auth: retain the exact
+        // journal entry; never roll back a user's visible local edit.
+        break;
+      }
+    }
+    await offlineSync.refreshPendingCount();
+  }
+
   /// After [updateNestedCategory] (or similar) mutates memory, push this row with one PATCH.
   Future<({bool ok, String? errorDetail})> saveCategoryRowToServer(
     int targetId,
