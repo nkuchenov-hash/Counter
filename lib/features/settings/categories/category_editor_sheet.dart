@@ -553,7 +553,6 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  _buildParentPicker(context),
                   const SizedBox(height: 18),
                   Text(
                     t(locale, 'category_section_appearance'),
