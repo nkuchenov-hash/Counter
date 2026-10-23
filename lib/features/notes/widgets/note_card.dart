@@ -183,15 +183,16 @@ class _GridCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 7),
-            Expanded(
-              // Keep preview at its natural height, TOP-aligned beneath the
-              // title. Editable/SelectableText can otherwise expand inside
-              // the available flex space and visually center the first line.
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Opacity(
-                  opacity: isDone ? 0.60 : 1,
-                  child: ClipRect(
+            Flexible(
+              fit: FlexFit.loose,
+              // Only the text takes height; remaining space belongs BELOW
+              // the preview. This avoids a huge gap under short titles.
+              child: ClipRect(
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  heightFactor: 1,
+                  child: Opacity(
+                    opacity: isDone ? 0.60 : 1,
                     child: _LifeSelectableText(
                       preview.isEmpty ? t(loc, 'notes_library_no_text') : preview,
                       onTap: onOpen,
@@ -207,6 +208,7 @@ class _GridCard extends StatelessWidget {
                 ),
               ),
             ),
+            const Spacer(),
             const SizedBox(height: 6),
             SizedBox(
               height: 20,
@@ -271,7 +273,7 @@ class _ListRow extends StatelessWidget {
         final compact = constraints.maxWidth <= 820;
         final mid = constraints.maxWidth <= 1180;
         final gap = mid ? 10.0 : 14.0;
-        final statusWidth = compact ? 80.0 : (mid ? 90.0 : 100.0);
+        final statusWidth = compact ? 98.0 : (mid ? 113.0 : 124.0);
 
         if (mobile) {
           return GestureDetector(
@@ -586,14 +588,17 @@ class _StatusMeta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final loc = currentLocale.value;
     final color = notesGlmMetaColor(context);
-    if (data.stats.hasChecklist) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.format_list_bulleted_rounded, size: 13, color: color),
-          const SizedBox(width: 5),
+    final created = data.task.createdAt;
+    // No vague "Recently", and never relabel updatedAt as a creation date.
+    // The Notes library hydrates missing createdAt values from persistence.
+    final dateText = created == null ? '—' : _noteCreatedDate(created);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (data.stats.hasChecklist) ...[
+          Icon(Icons.checklist_rounded, size: 13, color: color),
+          const SizedBox(width: 3),
           Text(
             '${data.stats.checklistChecked}/${data.stats.checklistTotal}',
             style: TextStyle(
@@ -602,63 +607,54 @@ class _StatusMeta extends StatelessWidget {
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
+          const SizedBox(width: 8),
         ],
-      );
-    }
-    return Text(
-      data.task.isDone
-          ? _doneLabel(loc)
-          : _recentLabel(loc, data.task.updatedAt ?? data.task.createdAt),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(fontSize: 11, color: color),
+        Tooltip(
+          message: created == null
+              ? 'Дата создания недоступна'
+              : _noteCreatedDate(created, fullYear: true),
+          child: Text(
+            dateText,
+            maxLines: 1,
+            style: TextStyle(
+              fontSize: 11,
+              color: color,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
+/// Date of creation, not "recently" and not the last-edit timestamp.
+String _noteCreatedDate(DateTime date, {bool fullYear = false}) {
+  final day = date.day.toString().padLeft(2, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  final year = fullYear
+      ? date.year.toString()
+      : (date.year % 100).toString().padLeft(2, '0');
+  return '$day.$month.$year';
+}
+
+/// Preview only visible document content; keep checklist structure/state.
 String _plainPreview(NoteCardData data) {
   final chunks = <String>[];
+  var number = 0;
   for (final block in data.doc.blocks) {
-    final text = block.text.trim();
+    final text = block.effectiveText.trim();
     if (text.isEmpty) continue;
-    chunks.add(text);
+    final line = switch (block.type) {
+      NoteBlockType.checklist => '${block.checked ? '☑' : '☐'} $text',
+      NoteBlockType.bulletedList => '• $text',
+      NoteBlockType.numberedList => '${++number}. $text',
+      _ => text,
+    };
+    chunks.add(line);
     if (chunks.length == 4) break;
   }
   return chunks.join('\n');
-}
-
-String _doneLabel(String locale) {
-  switch (locale) {
-    case 'ru':
-      return 'Выполнено';
-    case 'de':
-      return 'Erledigt';
-    case 'fr':
-      return 'Terminé';
-    case 'es':
-      return 'Hecho';
-    case 'it':
-      return 'Fatto';
-    default:
-      return 'Done';
-  }
-}
-
-String _recentLabel(String locale, DateTime? dt) {
-  switch (locale) {
-    case 'ru':
-      return 'Недавно';
-    case 'de':
-      return 'Kürzlich';
-    case 'fr':
-      return 'Récent';
-    case 'es':
-      return 'Reciente';
-    case 'it':
-      return 'Recente';
-    default:
-      return 'Recent';
-  }
 }
 
 class _NoteCardMenuButton extends StatefulWidget {
