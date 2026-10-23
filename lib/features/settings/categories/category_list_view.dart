@@ -327,29 +327,34 @@ class _CategoriesPageState extends State<CategoriesPage> {
         !db.getRecordIdsInSubtree(sourceId).contains(targetId);
   }
 
-  void _hoverDrop(int source, int target, Offset global) {
-    if (!_canDropOn(source, target)) return;
-    final position = _positionForDrop(target, global);
-    if (!mounted ||
-        (_dropTargetCategoryId == target && _dropPosition == position)) return;
+  // Read the real finger/mouse position against the original, stationary
+  // render boxes. No Flutter reorder placeholder or DragTarget event race.
+  void _trackDropPointer(int source, Offset global) {
+    if (!mounted || _moving) return;
+    int? target;
+    CategoryDropPosition? position;
+    for (final row in _visibleRows()) {
+      if (!_canDropOn(source, row.rule.id)) continue;
+      final candidate = _positionForDrop(row.rule.id, global);
+      if (candidate == null) continue;
+      target = row.rule.id;
+      position = candidate;
+      break;
+    }
+    if (_dropTargetCategoryId == target && _dropPosition == position) return;
     setState(() {
-      _dropTargetCategoryId = position == null ? null : target;
+      _dropTargetCategoryId = target;
       _dropPosition = position;
     });
   }
 
-  void _leaveDrop(int target) {
-    if (!mounted || _dropTargetCategoryId != target) return;
-    setState(() {
-      _dropTargetCategoryId = null;
-      _dropPosition = null;
-    });
-  }
-
-  void _acceptDrop(int source, int target, Offset global) {
-    final position = _positionForDrop(target, global) ?? _dropPosition;
+  void _completeCategoryDrag(int source) {
+    final target = _dropTargetCategoryId;
+    final position = _dropPosition;
     _endCategoryDrag();
-    if (position == null || !_canDropOn(source, target)) return;
+    if (target == null || position == null || !_canDropOn(source, target)) {
+      return;
+    }
     unawaited(_commitDrop(source, target, position));
   }
 
@@ -585,22 +590,15 @@ class _CategoriesPageState extends State<CategoriesPage> {
           ),
         ),
     );
-    return DragTarget<int>(
-      key: ValueKey('category-drop-target-${r.id}'),
-      onWillAcceptWithDetails: (details) =>
-          _canDropOn(details.data, r.id),
-      onMove: (details) =>
-          _hoverDrop(details.data, r.id, details.offset),
-      onLeave: (_) => _leaveDrop(r.id),
-      onAcceptWithDetails: (details) =>
-          _acceptDrop(details.data, r.id, details.offset),
-      builder: (context, accepted, rejected) => LongPressDraggable<int>(
+    return LongPressDraggable<int>(
         key: ValueKey('category-drag-source-${r.id}'),
         data: r.id,
         delay: const Duration(milliseconds: 300),
         maxSimultaneousDrags: _moving ? 0 : 1,
         onDragStarted: () => _startCategoryDrag(r.id),
-        onDragEnd: (_) => _endCategoryDrag(),
+        onDragUpdate: (details) =>
+            _trackDropPointer(r.id, details.globalPosition),
+        onDragEnd: (_) => _completeCategoryDrag(r.id),
         feedback: Material(
           color: scheme.surface,
           elevation: 8,
@@ -665,7 +663,6 @@ class _CategoriesPageState extends State<CategoriesPage> {
               ),
           ],
         ),
-      ),
     );
   }
 
