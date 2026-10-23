@@ -232,6 +232,25 @@ class _CategoriesPageState extends State<CategoriesPage> {
     );
   }
 
+  void _toggleAllCategories() {
+    setState(() {
+      if (_expanded.isNotEmpty || _search.text.trim().isNotEmpty) {
+        _expanded.clear();
+        if (_search.text.isNotEmpty) _search.clear();
+      } else {
+        void visit(List<CategoryRule> rows) {
+          for (final rule in rows) {
+            if ((rule.children ?? <CategoryRule>[]).isNotEmpty) {
+              _expanded.add(rule.id);
+              visit(rule.children!);
+            }
+          }
+        }
+        visit(DatabaseService.instance.getChildrenOf(null));
+      }
+    });
+  }
+
   void _toggle(int id) {
     setState(() {
       if (!_expanded.remove(id)) _expanded.add(id);
