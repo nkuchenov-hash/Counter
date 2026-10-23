@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/data/database_service.dart';
@@ -40,40 +41,28 @@ class _CategoryAppearanceSheetState extends State<CategoryAppearanceSheet> {
 
   MaterialColor _primaryForValue(int? v) => categoryMaterialPrimaryForValue(v);
 
-  Future<void> _apply() async {
+  void _apply() {
     if (_busy) return;
-    setState(() => _busy = true);
+    final db = DatabaseService.instance;
     final messenger = ScaffoldMessenger.of(context);
-    final id = widget.category.id;
-    final cv = _colorValue ?? 0;
-    DatabaseService.instance.updateNestedCategory(
-      id,
-      colorValue: cv,
-      iconCodePoint: _iconCodePoint,
+    final staged = db.stageCategoryDelta(
+      widget.category.id,
+      <String, dynamic>{
+        'color_value': _colorValue ?? 0,
+        'icon_code_point': _iconCodePoint,
+      },
     );
-    if (mounted) {
-      widget.onSaved();
-      Navigator.of(context).pop();
-    }
-    try {
-      final patch = await DatabaseService.instance.patchCategoryDelta(
-        id,
-        <String, dynamic>{'color_value': cv, 'icon_code_point': _iconCodePoint},
-      );
-      if (!patch.ok && mounted) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
+    // The local state is already updated by stageCategoryDelta before its
+    // first await. Never wait for network status to dismiss the appearance UI.
+    widget.onSaved();
+    Navigator.of(context).pop();
+    unawaited(staged.catchError((Object _, StackTrace __) {
+      messenger.showSnackBar(SnackBar(
+        content: Text(currentLocale.value == 'ru'
+            ? 'Не удалось сохранить изменение на устройстве.'
+            : 'Could not save the edit on this device.'),
+      ));
+    }));
   }
 
   @override
