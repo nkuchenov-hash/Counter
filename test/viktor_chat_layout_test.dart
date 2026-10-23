@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:counter/data/ai/viktor_voice_recorder.dart';
 import 'package:counter/features/viktor/viktor_chat_page.dart';
+import 'package:counter/core/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -254,6 +255,35 @@ void main() {
     expect(find.byKey(const Key('viktor_send_button_surface')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+
+  for (final dark in <bool>[false, true]) {
+    testWidgets('Viktor composer contrasts with real LIFE OS theme dark=$dark',
+        (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1440, 800);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final theme = dark ? appDarkTheme : appLightTheme;
+      await tester.pumpWidget(MaterialApp(
+        theme: theme,
+        home: ViktorChatPage(wallDay: DateTime(2026, 10, 24)),
+      ));
+      await tester.pump();
+
+      final material = tester.widget<Material>(
+          find.byKey(const Key('viktor_composer_surface')));
+      expect(material.color, theme.colorScheme.surfaceContainer);
+      // LIFE OS defines surfaceContainerLowest == surface; using that token
+      // would recreate the user's invisible composer screenshot.
+      expect(material.color, isNot(theme.colorScheme.surface));
+      expect(material.elevation, greaterThanOrEqualTo(4));
+      expect(find.byKey(const Key('viktor_send_button_surface')),
+          findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
 
 }
