@@ -12,7 +12,7 @@ extension _ViktorComposerUi on _ViktorChatPageState {
           constraints: const BoxConstraints(maxWidth: 760),
           child: Material(
             key: const Key('viktor_composer_surface'),
-            color: scheme.surfaceContainerLowest,
+            color: scheme.surfaceContainer,
             elevation: 6,
             shadowColor: scheme.shadow.withValues(alpha: 0.27),
             surfaceTintColor: Colors.transparent,
