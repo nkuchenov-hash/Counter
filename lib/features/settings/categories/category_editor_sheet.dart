@@ -34,7 +34,6 @@ class CategoryEditorSheet extends StatefulWidget {
 class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
   final Map<String, List<String>> _keywordsByLang = {};
   bool _saving = false;
-  bool _showShades = false;
   int? _selectedColorValue;
   MaterialColor? _selectedPrimary;
   int? _selectedShadeValue;
@@ -72,77 +71,135 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
 
   Future<void> _save() async {
     if (_saving) return;
-    if (_primaryNameController.text.trim().isEmpty) {
+    final primaryNew = _primaryNameController.text.trim();
+    if (primaryNew.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(t(currentLocale.value, 'category_name_required'))),
       );
       return;
     }
+
+    final db = DatabaseService.instance;
+    final id = widget.category.id;
+    final beforeColor = widget.category.colorValue;
+    final beforeIcon = widget.category.iconCodePoint;
+    final colorChanged =
+        _selectedColorValue != null && _selectedColorValue != beforeColor;
+    final iconChanged = _iconCodePoint !=
+        (beforeIcon ?? Icons.folder_rounded.codePoint);
+    final primaryChanged = primaryNew != widget.category.name.trim();
+
+    final oldNames = widget.category.localizedNames ?? const <String, String>{};
+    final names = Map<String, String>.from(oldNames);
+    for (final entry in <String, String>{
+      'en': _nameEnController.text.trim(),
+      'ru': _nameRuController.text.trim(),
+    }.entries) {
+      if (entry.value.isEmpty) {
+        names.remove(entry.key);
+      } else {
+        names[entry.key] = entry.value;
+      }
+    }
+    final namesChanged = !_sameStrings(names, oldNames);
+    final keywords = <String, List<String>>{};
+    for (final e in _keywordsByLang.entries) {
+      final values = e.value.map((s) => s.trim())
+          .where((s) => s.isNotEmpty).toList();
+      if (values.isNotEmpty) keywords[e.key] = values;
+    }
+    final oldKeywords = widget.category.keywords ?? const <String, List<String>>{};
+    final keywordsChanged = !_sameKeywords(keywords, oldKeywords);
+    final delta = <String, dynamic>{
+      if (colorChanged) 'color_value': _selectedColorValue,
+      if (iconChanged) 'icon_code_point': _iconCodePoint,
+      if (namesChanged) 'localized_names': names,
+      if (keywordsChanged) 'keywords': keywords,
+    };
+
+    if (!primaryChanged && delta.isEmpty) {
+      // No change is not a network operation.
+      if (!widget.inline) Navigator.of(context).pop();
+      return;
+    }
+
     setState(() => _saving = true);
     final messenger = ScaffoldMessenger.of(context);
-    final cid = widget.category.id;
-    final currentColor = widget.category.colorValue;
-    final colorChanged =
-        _selectedColorValue != null && _selectedColorValue != currentColor;
-    final iconChanged =
-        _iconCodePoint !=
-        (widget.category.iconCodePoint ?? Icons.folder_rounded.codePoint);
-    if (colorChanged) {
-      DatabaseService.instance.updateNestedCategory(
-        cid,
-        colorValue: _selectedColorValue,
+    if (colorChanged || iconChanged) {
+      db.updateNestedCategory(
+        id,
+        colorValue: colorChanged ? _selectedColorValue : null,
+        iconCodePoint: iconChanged ? _iconCodePoint : null,
       );
     }
-    if (iconChanged) {
-      DatabaseService.instance.updateNestedCategory(
-        cid,
-        iconCodePoint: _iconCodePoint,
-      );
-    }
-    final newNames = <String, String>{};
-    final enName = _nameEnController.text.trim();
-    final ruName = _nameRuController.text.trim();
-    if (enName.isNotEmpty) newNames['en'] = enName;
-    if (ruName.isNotEmpty) newNames['ru'] = ruName;
-    final bool namesChanged = newNames.isNotEmpty;
-    final Map<String, List<String>> keywords = {};
-    for (final e in _keywordsByLang.entries) {
-      final parts = e.value
-          .map((s) => s.trim())
-          .where((s) => s.isNotEmpty)
-          .toList();
-      if (parts.isNotEmpty) keywords[e.key] = parts;
-    }
-    final primaryNew = _primaryNameController.text.trim();
-    final primaryChanged =
-        primaryNew.isNotEmpty && primaryNew != widget.category.name.trim();
     try {
       if (primaryChanged) {
-        final result = await DatabaseService.instance.updateCategory(cid, primaryNew);
-        if (!result.ok) throw StateError('Rename failed');
+        final renamed = await db.updateCategory(id, primaryNew)
+            .timeout(const Duration(seconds: 12));
+        if (!renamed.ok) throw StateError(renamed.errorDetail ?? 'Rename failed');
       }
-      final delta = <String, dynamic>{'keywords': keywords};
-      if (namesChanged) {
-        DatabaseService.instance.updateCategoryLocalizedNames(cid, newNames);
-        delta['localized_names'] = newNames;
+      if (delta.isNotEmpty) {
+        // Appearance-only changes are already in the local category tree and
+        // need no blocking second full-catalog download after server ACK.
+        final appearanceOnly = !namesChanged && !keywordsChanged;
+        final result = await db.patchCategoryDelta(
+          id,
+          delta,
+          refreshAfterPatch: !appearanceOnly,
+        ).timeout(const Duration(seconds: 12));
+        if (!result.ok) {
+          throw StateError(result.errorDetail ?? 'Category patch failed');
+        }
       }
-      if (colorChanged) delta['color_value'] = _selectedColorValue;
-      if (iconChanged) delta['icon_code_point'] = _iconCodePoint;
-      final patch = await DatabaseService.instance.patchCategoryDelta(cid, delta);
-      if (!patch.ok) throw StateError('Category patch failed');
       if (!mounted) return;
       widget.onSaved();
-      if (!widget.inline && mounted) Navigator.of(context).pop();
-    } catch (_) {
+      if (!widget.inline) {
+        Navigator.of(context).pop();
+      } else {
+        messenger.showSnackBar(SnackBar(
+          content: Text(currentLocale.value == 'ru'
+              ? 'Изменения сохранены'
+              : 'Changes saved'),
+          duration: const Duration(seconds: 2),
+        ));
+      }
+    } catch (error) {
+      // Never show a successful save when the server did not acknowledge it.
+      // Restore the prior in-memory appearance on failure; keep the editor
+      // open so the user can retry without losing the selected color.
+      final current = db.getCategoryRuleById(id);
+      if (current != null) {
+        if (colorChanged) current.colorValue = beforeColor;
+        if (iconChanged) current.iconCodePoint = beforeIcon;
+        db.updateNestedCategory(id);
+      }
       if (mounted) {
         messenger.showSnackBar(SnackBar(
-          content: Text(t(currentLocale.value, 'sync_failed')),
+          content: Text(currentLocale.value == 'ru'
+              ? 'Сохранение не подтверждено сервером. Проверьте подключение и повторите.'
+              : 'Server did not confirm the save. Check the connection and retry.'),
+          duration: const Duration(seconds: 5),
         ));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
+
+  bool _sameStrings(Map<String, String> a, Map<String, String> b) =>
+      a.length == b.length &&
+      a.entries.every((entry) => b[entry.key] == entry.value);
+
+  bool _sameKeywords(Map<String, List<String>> a, Map<String, List<String>> b) =>
+      a.length == b.length &&
+      a.entries.every((entry) {
+        final other = b[entry.key];
+        return other != null &&
+            other.length == entry.value.length &&
+            List.generate(other.length, (i) => i).every(
+              (i) => other[i] == entry.value[i],
+            );
+      });
 
   Future<void> _confirmDelete() async {
     final loc = currentLocale.value;
@@ -264,15 +321,15 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
       {bool rounded = true}) {
     final outline = Theme.of(context).colorScheme.onSurface;
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: EdgeInsets.zero,
       child: InkWell(
         onTap: tap,
         customBorder: rounded
             ? const CircleBorder()
             : RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
         child: Container(
-          width: 34,
-          height: 34,
+          width: 30,
+          height: 30,
           decoration: BoxDecoration(
             color: color,
             shape: rounded ? BoxShape.circle : BoxShape.rectangle,
@@ -579,19 +636,77 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                         ),
                         if (_showShades) ...[
                           const SizedBox(height: 10),
-                          Wrap(spacing: 4, runSpacing: 8,
-                            children: kCategorySelectableTones.map((tone) {
-                                final c = _selectedPrimary![tone]!;
-                                final v = c.toARGB32();
-                                return _compactSwatch(c, _selectedShadeValue == v, () {
-                                  setState(() {
-                                    _selectedShadeValue = v;
-                                    _selectedColorValue = v;
-                                  });
-                                }, rounded: false);
-                              }).toList(),
-                          ),
-                        ],
+                          // One unbroken horizontal strip of base hues,
+                         // including grey. Narrow screens scroll, not wrap.
+                         SizedBox(
+                           height: 40,
+                           child: ListView.separated(
+                             key: const ValueKey('category-base-palette-row'),
+                             scrollDirection: Axis.horizontal,
+                             itemCount: kCategoryPickerMaterialColors.length,
+                             separatorBuilder: (_, _) =>
+                                 const SizedBox(width: 6),
+                             itemBuilder: (context, index) {
+                               final color = kCategoryPickerMaterialColors[index];
+                               return Tooltip(
+                                 message: index == kCategoryPickerMaterialColors.length - 1
+                                     ? 'Нейтральный серый' : 'Цветовая группа ${index + 1}',
+                                 child: _compactSwatch(
+                                   color,
+                                   _selectedPrimary == color,
+                                   () => setState(() {
+                                     _selectedPrimary = color;
+                                     _selectedShadeValue =
+                                         categoryColorAtDepth(color, route.length - 1);
+                                     _selectedColorValue = _selectedShadeValue;
+                                   }),
+                                 ),
+                               );
+                             },
+                           ),
+                         ),
+                         const SizedBox(height: 12),
+                         // The levels are immediately visible, separated from
+                         // the base families by a fine rule.
+                         Divider(height: 1, color: scheme.outlineVariant),
+                         const SizedBox(height: 10),
+                         Text('Интенсивность по уровню',
+                             style: Theme.of(context).textTheme.bodyMedium),
+                         const SizedBox(height: 8),
+                         Row(
+                           key: const ValueKey('category-visible-tone-row'),
+                           children: [
+                             for (var i = 0; i < kCategorySelectableTones.length; i++) ...[
+                               if (i > 0)
+                                 Container(
+                                   margin: const EdgeInsets.symmetric(horizontal: 13),
+                                   height: 28,
+                                   width: 1,
+                                   color: scheme.outlineVariant,
+                                 ),
+                               Tooltip(
+                                 message: switch (i) {
+                                   0 => 'Уровень 3 и глубже',
+                                   1 => 'Дочерняя категория',
+                                   _ => 'Корневая категория',
+                                 },
+                                 child: _compactSwatch(
+                                   _selectedPrimary![kCategorySelectableTones[i]]!,
+                                   _selectedShadeValue ==
+                                       _selectedPrimary![kCategorySelectableTones[i]]!
+                                           .toARGB32(),
+                                   () => setState(() {
+                                     final v = _selectedPrimary![
+                                         kCategorySelectableTones[i]]!.toARGB32();
+                                     _selectedShadeValue = v;
+                                     _selectedColorValue = v;
+                                   }),
+                                   rounded: false,
+                                 ),
+                               ),
+                             ],
+                           ],
+                         ),
                       ],
                     );
                     return Row(
