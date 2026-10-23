@@ -1,6 +1,4 @@
-// Production Lists-tab Notes library shell.
-// Visual structure follows LIFE_OS_Notes_MVP_v32_gapfix5.html directly while
-// keeping the existing Lists/Brain callbacks as the data and mutation source.
+// Production Notes library shell; Lists/Brain own data and mutations.
 
 import 'dart:async';
 import 'dart:convert';
