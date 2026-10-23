@@ -372,7 +372,7 @@ void main() {
       }},
       {'name': 'start_record', 'arguments': {'title': 'Не запускать'}},
     ]);
-    expect(ViktorProposedDayDraft.hasMultipleCreates(batch), isTrue);
+    expect(ViktorProposedDayDraft.needsReadOnlyDraft(batch), isTrue);
     var reads = 0;
     final draft = await ViktorProposedDayDraft.describe(batch, loadDay: (day) async {
       reads++;
@@ -395,11 +395,27 @@ void main() {
     expect(draft, contains('ничего не сохранено'));
   });
 
+  test('plan mixed with timer action becomes a draft, never a timer command', () async {
+    final mixed = proposal([
+      {'name': 'create_plan', 'arguments': {
+        'title': 'Съездить в бар', 'wall_day': '2026-10-24',
+        'start_time': '18:00', 'duration_minutes': 60,
+      }},
+      {'name': 'start_record', 'arguments': {'title': 'Не запускать'}},
+    ]);
+    expect(ViktorProposedDayDraft.needsReadOnlyDraft(mixed), isTrue);
+    final result = await ViktorProposedDayDraft.describe(mixed,
+        loadDay: (day) async => []);
+    expect(result, contains('18:00–19:00'));
+    expect(result, contains('запуск или остановку записи'));
+    expect(result, contains('пока ничего не сохранено'));
+  });
+
   test('one create_plan is not downgraded into a multi-event draft', () {
     final single = proposal([{'name': 'create_plan', 'arguments': {
       'title': 'Один план', 'wall_day': '2026-10-24',
       'start_time': '12:00', 'duration_minutes': 30,
     }}]);
-    expect(ViktorProposedDayDraft.hasMultipleCreates(single), isFalse);
+    expect(ViktorProposedDayDraft.needsReadOnlyDraft(single), isFalse);
   });
 }
