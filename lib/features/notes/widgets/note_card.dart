@@ -642,13 +642,26 @@ String _noteCreatedDate(DateTime date, {bool fullYear = false}) {
 
 /// Preview only visible document content; keep checklist structure/state.
 String _plainPreview(NoteCardData data) {
+  final checklist = data.doc.blocks
+      .where((block) =>
+          block.type == NoteBlockType.checklist &&
+          block.effectiveText.trim().isNotEmpty)
+      .take(4)
+      .toList();
+  // If a document contains a checklist, surface its actual items instead of
+  // hiding them under unrelated paragraph text in the four-line preview.
+  if (checklist.isNotEmpty) {
+    return checklist
+        .map((block) =>
+            '${block.checked ? '☑' : '☐'} ${block.effectiveText.trim()}')
+        .join('\n');
+  }
   final chunks = <String>[];
   var number = 0;
   for (final block in data.doc.blocks) {
     final text = block.effectiveText.trim();
     if (text.isEmpty) continue;
     final line = switch (block.type) {
-      NoteBlockType.checklist => '${block.checked ? '☑' : '☐'} $text',
       NoteBlockType.bulletedList => '• $text',
       NoteBlockType.numberedList => '${++number}. $text',
       _ => text,
