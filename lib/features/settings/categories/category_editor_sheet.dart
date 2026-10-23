@@ -116,60 +116,32 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     final primaryNew = _primaryNameController.text.trim();
     final primaryChanged =
         primaryNew.isNotEmpty && primaryNew != widget.category.name.trim();
-    if (mounted && !widget.inline) {
+    try {
+      if (primaryChanged) {
+        final result = await DatabaseService.instance.updateCategory(cid, primaryNew);
+        if (!result.ok) throw StateError('Rename failed');
+      }
+      final delta = <String, dynamic>{'keywords': keywords};
+      if (namesChanged) {
+        DatabaseService.instance.updateCategoryLocalizedNames(cid, newNames);
+        delta['localized_names'] = newNames;
+      }
+      if (colorChanged) delta['color_value'] = _selectedColorValue;
+      if (iconChanged) delta['icon_code_point'] = _iconCodePoint;
+      final patch = await DatabaseService.instance.patchCategoryDelta(cid, delta);
+      if (!patch.ok) throw StateError('Category patch failed');
+      if (!mounted) return;
       widget.onSaved();
-      Navigator.of(context).pop();
-    }
-    unawaited(() async {
-      try {
-        if (primaryChanged) {
-          final res = await DatabaseService.instance.updateCategory(
-            cid,
-            primaryNew,
-          );
-          if (!res.ok && mounted) {
-            messenger.showSnackBar(
-              SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
-            );
-          }
-        }
-        final delta = <String, dynamic>{'keywords': keywords};
-        if (namesChanged) {
-          DatabaseService.instance.updateCategoryLocalizedNames(cid, newNames);
-          delta['localized_names'] = newNames;
-        }
-        if (colorChanged) {
-          DatabaseService.instance.updateNestedCategory(
-            cid,
-            colorValue: _selectedColorValue,
-          );
-          delta['color_value'] = _selectedColorValue;
-        }
-        if (iconChanged) {
-          delta['icon_code_point'] = _iconCodePoint;
-        }
-        final patch = await DatabaseService.instance.patchCategoryDelta(
-          cid,
-          delta,
-        );
-        if (!patch.ok) {
-          if (mounted) {
-            messenger.showSnackBar(
-              SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
-            );
-          }
-          return;
-        }
-      } catch (_) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
-        );
-      }
+      if (!widget.inline && mounted) Navigator.of(context).pop();
+    } catch (_) {
       if (mounted) {
-        setState(() => _saving = false);
-        if (widget.inline) widget.onSaved();
+        messenger.showSnackBar(SnackBar(
+          content: Text(t(currentLocale.value, 'sync_failed')),
+        ));
       }
-    }());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   Future<void> _confirmDelete() async {
