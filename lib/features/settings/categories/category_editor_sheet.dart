@@ -481,7 +481,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                     controller: _primaryNameController,
                     textCapitalization: TextCapitalization.words,
                     decoration: InputDecoration(
-                      labelText: t(locale, 'category_primary_tag_name'),
+                      labelText: t(locale, 'category_name_label'),
                       isDense: true,
                       border: const OutlineInputBorder(),
                     ),
