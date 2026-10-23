@@ -409,6 +409,7 @@ class DatabaseService {
   /// Local category revisions are authoritative for UI until a matching
   /// server-backed refresh is available; never let a late GET erase an edit.
   final Map<int, Map<String, dynamic>> _optimisticCategoryEdits = {};
+  String? _optimisticCategoryOwner;
   bool _categoryMutationFlushInFlight = false;
 
 
