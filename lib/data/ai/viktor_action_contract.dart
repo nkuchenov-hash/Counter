@@ -87,8 +87,8 @@ class ViktorAction {
         // resulting wall times before any write.
         _onlyKeys(args, const {'operations'});
         final raw = args['operations'];
-        if (raw is! List || raw.isEmpty || raw.length > 3) {
-          throw const FormatException('Expected 1–3 bulk planning operations');
+        if (raw is! List || raw.isEmpty || raw.length > 8) {
+          throw const FormatException('Expected 1–8 bulk planning operations');
         }
         final seen = <String>{};
         final canonicalOperations = <Map<String, Object?>>[];
@@ -99,10 +99,11 @@ class ViktorAction {
           final operation = Map<String, Object?>.from(item);
           _onlyKeys(operation, const {
             'kind', 'status', 'source_day', 'target_day',
-            'start_time', 'timezone',
+            'start_time', 'timezone', 'category_name', 'tag_name',
+            'title_contains', 'priority', 'max_count',
           });
           final kind = _text(operation, 'kind', maxLength: 16);
-          if (!const {'move', 'compact'}.contains(kind)) {
+          if (!const {'move', 'compact', 'keep'}.contains(kind)) {
             throw const FormatException('Invalid bulk operation kind');
           }
           // A model may use conventional completion labels instead of the
@@ -123,7 +124,11 @@ class ViktorAction {
           };
           operation['status'] = status;
           final source = _day(operation, 'source_day');
-          if (!seen.add('$source|$status')) {
+          final selector = '$source|$status|' +
+              (operation['category_name'] ?? '').toString() + '|' +
+              (operation['tag_name'] ?? '').toString() + '|' +
+              (operation['title_contains'] ?? '').toString();
+          if (!seen.add(selector)) {
             throw const FormatException('Overlapping bulk plan filters');
           }
           if (kind == 'move') {
@@ -133,17 +138,77 @@ class ViktorAction {
             }
             _bulkClock(operation, 'start_time');
           } else if (operation.containsKey('target_day')) {
-            throw const FormatException('Compaction is always same-day');
+            throw const FormatException('Only moves specify target_day');
+          } else if (kind == 'keep' &&
+              (operation.containsKey('start_time') ||
+               operation.containsKey('timezone'))) {
+            throw const FormatException('Keep must not change schedule time');
           } else if (operation.containsKey('start_time')) {
             _bulkClock(operation, 'start_time');
           }
           if (operation.containsKey('timezone')) {
             _text(operation, 'timezone', maxLength: 64);
           }
+          for (final field in const ['category_name', 'tag_name',
+              'title_contains']) {
+            if (operation.containsKey(field)) {
+              _text(operation, field, maxLength: 160);
+              if ((operation[field] as String).trim().isEmpty) {
+                throw FormatException('Empty filter: $field');
+              }
+            }
+          }
+          if (operation.containsKey('priority')) {
+            final n = operation['priority'];
+            if (n is! int || n < 1 || n > 100) {
+              throw const FormatException('Invalid bulk priority');
+            }
+          }
+          if (operation.containsKey('max_count')) {
+            final n = operation['max_count'];
+            if (n is! int || n < 1 || n > 100) {
+              throw const FormatException('Invalid bulk max_count');
+            }
+          }
           canonicalOperations.add(operation);
         }
         // All downstream preview/Brain paths receive one canonical form.
         args['operations'] = canonicalOperations;
+      case 'search_notes':
+      case 'search_record_notes':
+        _onlyKeys(args, const {'query', 'year', 'month', 'limit'});
+        if (args.containsKey('query')) {
+          _text(args, 'query', maxLength: 160);
+        }
+        if (args.containsKey('year')) {
+          final year = args['year'];
+          if (year is! int || year < 1970 || year > 2100) {
+            throw const FormatException('Invalid note search year');
+          }
+        }
+        if (args.containsKey('month')) {
+          final month = args['month'];
+          if (!args.containsKey('year') ||
+              month is! int || month < 1 || month > 12) {
+            throw const FormatException('Invalid note search month');
+          }
+        }
+        if (args.containsKey('limit')) {
+          final limit = args['limit'];
+          if (limit is! int || limit < 1 || limit > 30) {
+            throw const FormatException('Invalid note search limit');
+          }
+        }
+        if ((args['query'] as String? ?? '').trim().isEmpty &&
+            !args.containsKey('year')) {
+          throw const FormatException('Note search requires text or year');
+        }
+      case 'read_note':
+        _onlyKeys(args, const {'note_id'});
+        _id(args, 'note_id');
+      case 'read_record_note':
+        _onlyKeys(args, const {'record_id'});
+        _id(args, 'record_id');
       case 'list_categories':
       case 'list_backlog_items':
       case 'list_notes':
@@ -192,6 +257,21 @@ class ViktorAction {
         _title(args, 'title');
         _longText(args, 'text', maxLength: 8000);
         if (args.containsKey('category_id')) _id(args, 'category_id');
+      case 'edit_note_line':
+        _onlyKeys(args, const {
+          'note_id', 'expected_title', 'line_number', 'expected_text', 'text',
+        });
+        _id(args, 'note_id');
+        _title(args, 'expected_title');
+        final lineNumber = args['line_number'];
+        if (lineNumber is! int || lineNumber < 1 || lineNumber > 10000) {
+          throw const FormatException('Invalid note line_number');
+        }
+        _longText(args, 'expected_text', maxLength: 2000);
+        _longText(args, 'text', maxLength: 2000);
+        if ((args['text'] as String).contains('\n')) {
+          throw const FormatException('Line replacement must not add lines');
+        }
       case 'edit_note':
         _onlyKeys(args, const {'note_id', 'expected_title', 'text'});
         _id(args, 'note_id');

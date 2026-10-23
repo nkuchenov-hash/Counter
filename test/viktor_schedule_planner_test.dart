@@ -260,4 +260,99 @@ void main() {
     }]), throwsFormatException);
   });
 
+  test('multi-day category/tag filters honor priority and keep unrelated tasks', () {
+    PlanningTask row(String id, String title, int category, String d, int hour,
+        {String? tag}) => PlanningTask(
+      id: 0, pocketRecordId: id, planRowId: id, title: title,
+      categoryId: category, dateKey: d,
+      startTime: DateTime.parse(d).add(Duration(hours: hour)),
+      endDateTime: DateTime.parse(d).add(Duration(hours: hour + 1)),
+      tags: tag == null ? [] : [Tag(tagId: 42, name: tag)],
+    );
+    final tuesday = [
+      row(a, 'Price Report', 2, '2026-10-20', 10, tag: 'urgent'),
+      row(b, 'Unrelated job', 2, '2026-10-20', 11, tag: 'later'),
+      row(c, 'Keep exercise', 3, '2026-10-20', 12, tag: 'urgent'),
+    ];
+    final monday = [
+      row('jjjjjkkkkklllll', 'Urgent call', 4, '2026-10-19', 14,
+          tag: 'urgent'),
+    ];
+    final action = proposal([{'name': 'bulk_replan', 'arguments': {
+      'operations': [
+        {'kind':'move','status':'all','source_day':'2026-10-20',
+         'target_day':'2026-10-21','category_name':'Price Reporter',
+         'tag_name':'urgent','priority':2,'start_time':'09:00'},
+        {'kind':'move','status':'all','source_day':'2026-10-19',
+         'target_day':'2026-10-21','tag_name':'urgent',
+         'priority':1,'start_time':'09:00'},
+      ],
+    }}]).actions.single;
+    DateTime wall(String day, String time, String zone) {
+      final d = DateTime.parse(day);
+      return DateTime(d.year, d.month, d.day,
+          int.parse(time.substring(0, 2)), int.parse(time.substring(3, 5)));
+    }
+    final result = const ViktorBulkPlanner().calculate(
+      action: action, source: tuesday, target: [], sourceDay: '2026-10-20',
+      targetDay: null, allDays: {
+        '2026-10-19': monday, '2026-10-20': tuesday, '2026-10-21': [],
+      },
+      categoryName: (p) => p.categoryId == 2
+          ? 'Work / Price Reporter' : 'Other',
+      wallTime: wall, fixedTime: (_) => false,
+    );
+    expect(result.moves.length, 2);
+    expect(result.moves[0].plan.title, 'Urgent call');
+    expect(result.moves[0].start, DateTime(2026, 10, 21, 9));
+    expect(result.moves[1].plan.title, 'Price Report');
+    expect(result.moves[1].start, DateTime(2026, 10, 21, 10));
+    expect(result.moves.any((m) => m.plan.title == 'Keep exercise'), isFalse);
+    expect(result.moves.any((m) => m.plan.title == 'Unrelated job'), isFalse);
+  });
+
+  test('multi-day filter collision is rejected before any writes', () {
+    final action = proposal([{'name':'bulk_replan','arguments':{
+      'operations':[{'kind':'move','status':'all',
+        'source_day':'2026-10-17','target_day':'2026-10-18',
+        'start_time':'09:00','tag_name':'urgent'}],
+    }}]).actions.single;
+    DateTime clock(String date, String time, String zone) =>
+      DateTime(2026, 10, 18, 9);
+    final one = task(a, 'urgent plan', 600, 660)
+        .copyWith(tags: [const Tag(tagId: 1, name: 'urgent')]);
+    final occupied = task(b, 'Existing', 570, 630).copyWith(
+      dateKey: '2026-10-18',
+      startTime: DateTime(2026, 10, 18, 9, 30),
+      endDateTime: DateTime(2026, 10, 18, 10, 30),
+    );
+    expect(() => const ViktorBulkPlanner().calculate(
+      action: action, source: [one], target: [occupied],
+      sourceDay:'2026-10-17', targetDay:'2026-10-18',
+      wallTime:clock, fixedTime: (_) => false,
+    ), throwsStateError);
+  });
+
+  test('explicit keep category on Tuesday excludes it from broad move', () {
+    final keep = task(a, 'Keep gym', 540, 600);
+    final other = task(b, 'Move report', 600, 660);
+    final group = proposal([{'name': 'bulk_replan', 'arguments': {
+      'operations': [
+        {'kind':'move','status':'all','source_day':'2026-10-17',
+         'target_day':'2026-10-18','start_time':'09:00'},
+        {'kind':'keep','status':'all','source_day':'2026-10-17',
+         'category_name':'Exercise'}
+      ],
+    }}]).actions.single;
+    final preview = const ViktorBulkPlanner().calculate(
+      action: group, source:[keep,other],target:[],
+      sourceDay:'2026-10-17',targetDay:'2026-10-18',
+      wallTime: (_, _, _) => DateTime(2026,10,18,9),
+      fixedTime: (_) => false,
+      categoryName: (p) => p.pocketRecordId == a ? 'Exercise' : 'Work',
+    );
+    expect(preview.moves.map((m) => m.plan.pocketRecordId).toList(), [b]);
+    expect(preview.moves.single.day, '2026-10-18');
+  });
+
 }

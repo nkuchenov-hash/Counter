@@ -143,6 +143,9 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 
 | `ai/viktor_schedule_planner.dart` | Pure plan order/time previews with collision protection |
 | `ai/viktor_executor.dart` | Brain-backed approved changes and real schedule checks |
+| `ai/viktor_record_note_tools.dart` | Owner-scoped historical Record note retrieval by actual creation date and content, never raw database writes |
+| `ai/viktor_atomic_bulk_gateway.dart` | Brain-owned authenticated atomic bulk schedule gateway and post-save verification |
+| `ai/viktor_conversation_store.dart` | Owner-scoped immutable PocketBase conversation turns and bounded model dialogue context; no provider secrets |
 | `ai/viktor_gateway.dart` | Authenticated model-independent provider gateway and scoped per-account cloud BYOK connection, observation context for tools |
 | `ai/viktor_voice_recorder.dart` | Real PCM16 microphone capture and WAV encoding, audio-level and duration feedback |
 | `ai/viktor_voice_gateway.dart` | Signed-in transient BYOK cloud transcription and returned editable text |

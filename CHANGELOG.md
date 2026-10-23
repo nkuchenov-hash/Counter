@@ -1,3 +1,25 @@
+## [2026-10-23] — Viktor dialogue retry after transient sync failure (PR #337; not released)
+
+- Keep unsent chat turns in an owner-scoped encrypted local outbox, restore them after reopening the app and retry them in order; avoid disabling all subsequent writes after a transient failure.
+- Use stable owner-scoped `client_turn_id` values and read-back verification after ambiguous server/network errors to avoid duplicate history entries.
+- Show pending sync status separately from the AI dialogue so technical alerts never pollute model conversation history. Limit long turn content to the PocketBase field size. Offer an explicit «Повторить» sync control without inserting a new chat turn. Full restart/device tests, and end-to-end release acceptance remain outstanding.
+- Four JS contract suites passed in a V8 harness, including the new encrypted outbox source invariant checks; CI now invokes them. Flutter compilation and web/Android release builds were not run, and the PR remains unmerged.
+
+## [2026-10-22] — Viktor guarded schedule commit correctness (PR #337; not released)
+
+- Reject duplicate PocketBase plan IDs before atomic schedule commit; `Set.add()` does not return a success boolean, so the old duplicate guard was ineffective.
+- Require exact millisecond `updated` revision match on commit, rejecting another device's edit even within one second of preview approval; preserve existing timestamp comparison tolerance for schedule fields.
+- Expand `viktor_atomic_schedule_hook_test.cjs` with duplicate-ID, malformed-ID and subsecond stale-approval rollback regressions; JavaScript handler test passed locally, but GitHub CI and authenticated production tests remain blocked/pending.
+
+## [2026-10-22] — Viktor V2 agent groundwork (PR #337 — unmerged, NOT released)
+
+- Add owner-scoped, append-only `viktor_turns` for cross-session/cross-device conversation history. Client restores recent messages and persists turns without overwriting a second device's changes; provider receives at most 12 recent bounded turns, not credentials.
+- Add `search_notes`, `read_note`, `search_record_notes` and `read_record_note` so Viktor can locate dated historic texts in Notes **and** Records and quote exact numbered lines after reading a source.
+- Add `edit_note_line` with exact old-text checks, rich formatting/media preservation and normal Brain preview, freshness and consent. Editing text inside historic Record notes is not yet available.
+- Guard exact-line questions against prematurely stopping on search snippets, test owner isolation/schema and multi-turn context, document acceptance gates in `docs/VIKTOR_AGENT_V2.md`.
+- Bulk moves now use an owner-scoped all-or-none PocketBase transaction with server-side stale-row and collision guards, category/tag/title/keep selectors and priority ordering. Client independently rechecks saved times.
+- **NOT finished:** semantic memory beyond the chat history, durable weekend draft alternatives with new event creation, and authenticated real-account multi-day acceptance tests. No production release or full-readiness claim.
+
 ## [2026-10-22] — Viktor bulk move clock/read contract (pending production verification)
 
 - Accept explicitly stated clock variations (9, 9.00, 9 утра, 09:00 NY, 9 часов по Нью-Йорку) in a bulk move, normalize to HH:mm and refuse ambiguous times.

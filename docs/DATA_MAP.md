@@ -22,6 +22,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **records** | Base | Standard collection. |
 | **plans** | Base | Standard collection. |
 | **tags** | Base | Standard collection. |
+| **viktor_turns** | Base, owner-scoped append-only | Conversation history: user_id relation, conversation_id, unique client_turn_id, role (user/assistant), body. Read/create/delete restricted to owning auth user; updates blocked. |
 | **viktor_connections** | Base, server-only | Encrypted BYOK credentials per authenticated owner and provider; closed collection, accessible through `/api/viktor/connection` only. |\n| **sleep_sync_connections** | Base, server-only | Closed provider connection/sync state. Xiaomi Cloud is the active primary sleep provider; clients use `/api/sleep-sync/*`. |
 
 ## 1. Collection: `records`

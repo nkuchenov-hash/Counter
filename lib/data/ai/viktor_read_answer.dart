@@ -28,6 +28,33 @@ class ViktorReadAnswer {
           r'(?:[\s,!.?;:]+(?:отмена|cancel))*[\s,!.?;:]*$',
           caseSensitive: false).hasMatch(input.trim());
 
+  /// A read-only user question may still require multiple tools (search
+  /// documents, then read the exact source). Only direct day listing is a
+  /// complete observation without another model turn.
+  /// A direct answer about a specific line must be grounded in the
+  /// complete document, not search-result snippets. Request the next
+  /// bounded observation even when a provider forgot continue:true.
+  static bool requiresDocumentRead({
+    required String input,
+    required List<String> actions,
+  }) {
+    if (!RegExp(r'строк|строч|line|процитир|цитат|quote|'
+        r'содержани|текст\s+стих', caseSensitive: false).hasMatch(input)) {
+      return false;
+    }
+    return actions.any((name) =>
+        name == 'search_notes' || name == 'search_record_notes') &&
+      !actions.any((name) =>
+        name == 'read_note' || name == 'read_record_note');
+  }
+
+  static bool isDirectDayListResult({
+    required String input,
+    required List<String> toolNames,
+  }) => isReadOnlyRequest(input) &&
+      toolNames.isNotEmpty &&
+      toolNames.every((tool) => tool == 'list_day_plans');
+
   static bool isReadOnlyRequest(String input) {
     final text = input.toLowerCase().trim();
     final startsWithRead = RegExp(

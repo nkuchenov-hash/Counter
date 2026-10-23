@@ -7,6 +7,7 @@ import 'viktor_date_scope.dart';
 import 'viktor_plan_category.dart';
 import 'viktor_existing_plan.dart';
 import 'viktor_plan_timezone.dart';
+import 'viktor_atomic_bulk_gateway.dart';
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -99,14 +100,17 @@ class ViktorExecutor {
   }
 
   Future<ViktorBulkPreview> _planBulk(ViktorAction action) async {
-    // Read the actual source and destination day identified by the user.
-    // The day visible in the calendar is not an execution constraint.
-    final scope = ViktorDateScope.bulkDays(action);
-    final source = await db.getPlanningTasksForWallDate(
-        ViktorDateScope.parseDay(scope.sourceDay));
-    final target = scope.targetDay == null ? <PlanningTask>[] :
-      await db.getPlanningTasksForWallDate(
-          ViktorDateScope.parseDay(scope.targetDay!));
+    final operations = action.arguments['operations'] as List;
+    final dates = <String>{
+      for (final raw in operations) (raw as Map)['source_day'] as String,
+      for (final raw in operations)
+        if ((raw as Map)['kind'] == 'move') raw['target_day'] as String,
+    };
+    final allDays = <String, List<PlanningTask>>{};
+    for (final date in dates.toList()..sort()) {
+      allDays[date] = await db.getPlanningTasksForWallDate(
+          ViktorDateScope.parseDay(date));
+    }
     DateTime wallTime(String date, String time, String zone) {
       final parts = date.split('-').map(int.parse).toList();
       final clock = time.split(':').map(int.parse).toList();
@@ -128,11 +132,16 @@ class ViktorExecutor {
       }
       return db.applyUserOffset(zoned.toUtc());
     }
+    final firstSource = (operations.first as Map)['source_day'] as String;
     return _bulk.calculate(
-      action: action, source: source, target: target,
-      sourceDay: scope.sourceDay, targetDay: scope.targetDay,
-      wallTime: wallTime,
-      fixedTime: _fixed,
+      action: action, source: allDays[firstSource]!, target: const [],
+      sourceDay: firstSource, targetDay: null, allDays: allDays,
+      wallTime: wallTime, fixedTime: _fixed,
+      categoryName: (plan) {
+        final path = db.getCategoryPath(plan.categoryId).trim();
+        return path.isNotEmpty ? path :
+            (db.getCategoryRuleById(plan.categoryId)?.name ?? '');
+      },
     );
   }
 
@@ -326,8 +335,13 @@ class ViktorExecutor {
         case 'set_list_item_done':
         case 'rename_list_item':
         case 'list_notes':
+        case 'search_notes':
+        case 'search_record_notes':
+        case 'read_record_note':
+        case 'read_note':
         case 'create_note':
         case 'edit_note':
+        case 'edit_note_line':
         case 'list_paths':
         case 'create_path':
         case 'get_settings':
@@ -431,29 +445,12 @@ class ViktorExecutor {
       if (result.signature != _bulkSignature) {
         throw StateError('Планы изменились после подтверждения.');
       }
-      final patches = <PlanningBulkPatch>[
-        for (final m in result.moves)
-          PlanningBulkPatch(
-            planRowId: m.plan.recordIdForBackend,
-            planBusinessId: m.plan.planRowId,
-            startTimeDisplay: m.start,
-            endDateTimeDisplay: m.end,
-            initialDateKey: m.kind == 'move'
-              ? db.planningAuditAnchorDateKey(m.plan) : null,
-            isPostponed: m.kind == 'move'
-              ? db.planningShouldMarkPostponed(
-                  anchorKey: db.planningAuditAnchorDateKey(m.plan),
-                  newScheduleKey: m.day,
-                ) : null,
-          ),
-      ];
-      final ok = await db.bulkUpdatePlans(patches, suppressAppSnack: true);
-      if (!ok) {
-        throw StateError('Не все изменения сохранены. Проверьте оба дня '
-            'перед повторной попыткой.');
-      }
-      return 'Изменено планов: ${result.moves.length}. '
-          'Проверьте синхронизацию.';
+      // One atomic server transaction and independent post-commit read.
+      // NEVER fall back to a sequence of per-plan PATCH calls.
+      return ViktorAtomicBulkGateway(db).commit(
+        approved: result,
+        requestId: batch.requestId,
+      );
     }
     final scheduleDay = ViktorDateScope.scheduleDay(batch, day);
     final plans = await db.getPlanningTasksForWallDate(scheduleDay);
@@ -529,8 +526,13 @@ class ViktorExecutor {
         case 'set_list_item_done':
         case 'rename_list_item':
         case 'list_notes':
+        case 'search_notes':
+        case 'search_record_notes':
+        case 'read_record_note':
+        case 'read_note':
         case 'create_note':
         case 'edit_note':
+        case 'edit_note_line':
         case 'list_paths':
         case 'create_path':
         case 'get_settings':
