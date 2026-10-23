@@ -4,6 +4,7 @@
 import 'dart:ui' as ui;
 
 import 'package:counter/core/widgets/app_text_field.dart';
+import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// Editor column (`max-w-3xl`).
