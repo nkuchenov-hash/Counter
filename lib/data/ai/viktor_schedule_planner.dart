@@ -563,8 +563,13 @@ class ViktorBulkPlanner {
 class ViktorProposedDayDraft {
   const ViktorProposedDayDraft._();
 
-  static bool hasMultipleCreates(ViktorActionBatch batch) =>
-      batch.actions.where((action) => action.name == 'create_plan').length > 1;
+  static bool needsReadOnlyDraft(ViktorActionBatch batch) {
+    final creates = batch.actions.where(
+        (action) => action.name == 'create_plan').length;
+    final hasTimer = batch.actions.any((action) =>
+        action.name == 'start_record' || action.name == 'stop_record');
+    return creates > 1 || (creates == 1 && hasTimer);
+  }
 
   static Future<String> describe(
     ViktorActionBatch batch, {
@@ -572,8 +577,8 @@ class ViktorProposedDayDraft {
   }) async {
     final items = batch.actions.where((action) =>
         action.name == 'create_plan').toList(growable: false);
-    if (items.length < 2) {
-      throw ArgumentError('Multiple create_plan proposals required');
+    if (!needsReadOnlyDraft(batch)) {
+      throw ArgumentError('Read-only itinerary fallback not applicable');
     }
     final dates = <String, DateTime>{};
     for (final item in items) {
