@@ -1,3 +1,8 @@
+## [2026-10-23] — Viktor chat input composer
+
+- Added a ChatGPT-style bounded auto-growing multiline composer with embedded microphone and send actions. Desktop Enter submits; Shift+Enter adds a newline; the mobile keyboard supports multiline editing. Empty drafts cannot send, and local keystrokes do not rebuild conversation history.
+- Added dedicated composer widget regression tests for long pasted text and desktop keyboard behavior. No model, plan execution, PocketBase schema or sync contracts changed.
+
 ## [2026-10-23] — Viktor natural-language timezone and itinerary follow-ups
 
 - Removed example-city bias from AI prompts; a user-named timezone takes precedence over the profile setting and local event times stay wall-clock unless a real conversion is requested.
