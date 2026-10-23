@@ -255,7 +255,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         _push('Не удалось выполнить запрос. $msg');
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) setState(() { _busy = false; _voiceNotice = null; });
     }
   }
   Future<bool> _confirm(ViktorActionBatch batch, String preview) async {
