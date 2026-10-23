@@ -200,6 +200,18 @@ class ViktorConversationStore {
     }
   }
 
+  /// Explicit retry does not enqueue a new conversational turn. Use the same
+  /// serialized queue as regular appends to avoid races with user messages.
+  Future<void> retryPending() {
+    final owner = _owner();
+    final next = _writeTail.catchError((Object _) {}).then((_) async {
+      await _restoreOutbox(owner);
+      await _flush(owner);
+    });
+    _writeTail = next;
+    return next;
+  }
+
   /// Enqueue encrypted before attempting the network write. Operations are
   /// serialized so two incoming turns cannot overwrite the same outbox.
   Future<void> append(ViktorDialogueTurn turn) {
