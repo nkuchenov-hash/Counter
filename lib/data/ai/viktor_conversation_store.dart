@@ -209,7 +209,7 @@ class ViktorConversationStore {
     if (turn.content.trim().isEmpty) return Future<void>.value();
     final ownerAtSubmission = _owner();
     final text = turn.content.length <= 6000 ? turn.content
-        : '${turn.content.substring(0, 5970)}\n[Сообщение обрезано при сохранении]';
+        : '${turn.content.substring(0, 5950)}\n[Сообщение обрезано при сохранении]';
     final id = 'turn_${DateTime.now().microsecondsSinceEpoch}_${++_sequence}';
     final next = _writeTail.catchError((Object _) {}).then((_) async {
       await _restoreOutbox(ownerAtSubmission);
