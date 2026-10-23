@@ -556,8 +556,16 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-            child: AppButton.primary(
-              label: t(locale, 'save'),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                AppButton.secondary(
+                  label: t(locale, 'cancel'),
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+                const SizedBox(width: 10),
+                AppButton.primary(
+                  label: t(locale, 'save'),
               loading: _saving,
               fullWidth: true,
               onPressed: _saving ? null : () => unawaited(_save()),
