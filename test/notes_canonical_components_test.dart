@@ -90,6 +90,14 @@ void main() {
     expect(colors.first.a, 0);
     expect(colors.last.a, greaterThan(0.95));
     expect(colors.last, isNot(Colors.transparent));
+    // Paper fade never paints *under* the pill: its aperture reveals the real
+    // note text for the capsule's own clipped backdrop-filter blur.
+    final aperture = tester.widget<ClipPath>(
+      find.byKey(const ValueKey('notes-bottom-glass-aperture')),
+    );
+    final path = aperture.clipper!.getClip(const Size(450, 86));
+    expect(path.contains(const Offset(225, 54)), isFalse);
+    expect(path.contains(const Offset(12, 54)), isTrue);
     // Only the scroll content fades. The toolbar remains outside the mask.
     expect(
       find.ancestor(
@@ -138,8 +146,8 @@ void main() {
     expect(surface.borderRadius, BorderRadius.circular(24));
     expect(surface.color, isNull);
     final glassColors = (surface.gradient! as LinearGradient).colors;
-    expect(glassColors.first.a, inInclusiveRange(0.80, 0.86));
-    expect(glassColors.last.a, inInclusiveRange(0.68, 0.76));
+    expect(glassColors.first.a, inInclusiveRange(0.45, 0.51));
+    expect(glassColors.last.a, inInclusiveRange(0.29, 0.36));
     expect(glassColors.first.a, greaterThan(glassColors.last.a));
     expect(surface.border, isNotNull);
     expect(
@@ -162,7 +170,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('dark Notes editor preserves an opaque-enough glass pill', (tester) async {
+  testWidgets('dark Notes editor keeps a translucent pill', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData.dark(),
@@ -185,8 +193,8 @@ void main() {
     );
     final decoration = pill.decoration as BoxDecoration;
     final glassColors = (decoration.gradient! as LinearGradient).colors;
-    expect(glassColors.first.a, inInclusiveRange(0.79, 0.85));
-    expect(glassColors.last.a, inInclusiveRange(0.66, 0.73));
+    expect(glassColors.first.a, inInclusiveRange(0.49, 0.55));
+    expect(glassColors.last.a, inInclusiveRange(0.32, 0.39));
     expect(find.byType(BackdropFilter), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
