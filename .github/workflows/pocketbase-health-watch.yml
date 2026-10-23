@@ -1,0 +1,85 @@
+name: LIFE OS PocketBase availability watch
+
+# GitHub scheduled workflows run from the repository's default gh-pages branch.
+# deploy.yml copies this workflow there from the validated main revision.
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: lifeos-pocketbase-health-watch
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check production PocketBase health with retries
+        id: health
+        shell: bash
+        run: |
+          set -euo pipefail
+          healthy=false
+          for attempt in 1 2 3; do
+            http_code="$(curl --silent --show-error --location --max-time 12 \
+              --output /tmp/pocketbase-health.json --write-out '%{http_code}' \
+              'https://217-114-0-201.sslip.io/api/health' || true)"
+            if [[ "$http_code" == "200" ]] && python3 - <<'PY'
+          import json
+          try:
+              with open('/tmp/pocketbase-health.json', encoding='utf-8') as stream:
+                  response = json.load(stream)
+              assert response.get('code') == 200
+          except (OSError, ValueError, AssertionError):
+              raise SystemExit(1)
+          PY
+            then
+              healthy=true
+              break
+            fi
+            echo "Health attempt $attempt failed (HTTP $http_code)"
+            if [[ "$attempt" != "3" ]]; then sleep 10; fi
+          done
+          echo "healthy=$healthy" >> "$GITHUB_OUTPUT"
+          echo "PocketBase healthy: $healthy"
+
+      - name: Open one incident issue or close it on recovery
+        uses: actions/github-script@v7
+        env:
+          HEALTHY: ${{ steps.health.outputs.healthy }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const title = '[LIFE OS] PocketBase is unavailable';
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', per_page: 100,
+            });
+            const current = issues.find(x => !x.pull_request && x.title === title);
+            const healthy = process.env.HEALTHY === 'true';
+            if (!healthy && !current) {
+              await github.rest.issues.create({
+                owner, repo, title,
+                body: 'The production PocketBase /api/health endpoint failed three checks ' +
+                  'from GitHub Actions. Verify PocketBase systemd status, migration logs, ' +
+                  'disk, HTTPS listener and network route. Do not clear pb_data or restart ' +
+                  'repeatedly without inspecting the logs. ' +
+                  'This issue is automatically closed after a healthy check.\n\n' +
+                  'Run: ' + context.serverUrl + '/' + owner + '/' + repo +
+                  '/actions/runs/' + context.runId,
+              });
+            } else if (healthy && current) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: current.number,
+                body: 'PocketBase /api/health recovered (HTTP 200, JSON code 200). Closing incident.',
+              });
+              await github.rest.issues.update({
+                owner, repo, issue_number: current.number, state: 'closed',
+              });
+            }
+            if (!healthy) core.setFailed('PocketBase failed three health checks');

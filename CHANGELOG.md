@@ -1,3 +1,11 @@
+## [2026-10-23] — PocketBase migration outage repair and deployment safeguards
+
+- Fixed `1792710000_viktor_turns.js`: explicitly declare `created` as an auto-date field before SQL indexes use it; matches the emergency on-server repair that restored LIFE OS.
+- Strengthened `viktor_turns_migration_test.cjs`: verify every indexed column exists, including a negative reproduction of the missing-`created` failure.
+- Added an isolated SQLite snapshot + `pocketbase migrate up` preflight **before** any production deployment write or service restart; fail closed on migration errors or insufficient disk space.
+- Added scheduled HTTPS PocketBase health checks with deduplicated GitHub incident issues and automatic closure after recovery. Preserve the scheduled workflow in the default `gh-pages` branch.
+- No Flutter, Android, PocketBase schema data or personal records edited by this patch.
+
 ## [2026-10-23] — Viktor V2 release integration (candidate; not deployed)
 
 - Integrated the current `main` Notes folder fixes without discarding Viktor's model/dialogue changes.

@@ -115,6 +115,42 @@ jobs:
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
           [[ -n "$service_name" && -n "$app_dir" && -d "$app_dir" ]]
 
+          # P0: migrations MUST succeed on a disposable, consistent SQLite
+          # snapshot before writing any production hooks/migrations or restarting.
+          # A syntax-only JS test could not catch the 2026-10-23 index failure.
+          preflight_dir="$(mktemp -d /tmp/lifeos-pb-preflight.XXXXXX)"
+          trap '$SUDO rm -rf "$preflight_dir"' EXIT
+          mkdir -p "$preflight_dir/pb_data" "$preflight_dir/pb_migrations" "$preflight_dir/empty_hooks"
+          tar -xzf "$ARCHIVE" -C "$preflight_dir" pb_migrations
+          $SUDO python3 - "$app_dir/pb_data/data.db" "$preflight_dir/pb_data/data.db" <<'PY'
+          import os, shutil, sqlite3, sys
+          source, destination = sys.argv[1:]
+          assert os.path.isfile(source), "Production SQLite data.db missing"
+          size = os.path.getsize(source)
+          free = shutil.disk_usage(os.path.dirname(destination)).free
+          if free < 2 * size + 256 * 1024 * 1024:
+              raise SystemExit("Insufficient free space for isolated migration preflight; production unchanged")
+          source_db = sqlite3.connect("file:" + source + "?mode=ro", uri=True)
+          try:
+              snapshot_db = sqlite3.connect(destination)
+              try:
+                  source_db.backup(snapshot_db, pages=1000, sleep=0.05)
+              finally:
+                  snapshot_db.close()
+          finally:
+              source_db.close()
+          os.chmod(destination, 0o600)
+          print("Consistent SQLite snapshot created for migration preflight")
+          PY
+          echo "Running isolated PocketBase migration preflight (production untouched)..."
+          $SUDO timeout 120s "$app_dir/pocketbase" migrate up \
+            --dir="$preflight_dir/pb_data" \
+            --migrationsDir="$preflight_dir/pb_migrations" \
+            --hooksDir="$preflight_dir/empty_hooks"
+          echo "PocketBase migration preflight passed; proceeding with deployment."
+          $SUDO rm -rf "$preflight_dir"
+          trap - EXIT
+
           fit_env="$app_dir/.lifeos-google-fit.env"
           [[ -f "$fit_env" ]]
           grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=' "$fit_env"

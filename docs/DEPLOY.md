@@ -208,3 +208,34 @@ A `main` push with no PocketBase bundle change still completes the server valida
 The PocketBase workflow provisions `/etc/lifeos/viktor-vault.env` **once** on the VPS with a 32-character server-only `VIKTOR_VAULT_KEY` for PocketBase's AES-256-GCM `$security.encrypt`/`decrypt`. The file is mode 600 under `/etc/lifeos` and added via the service's systemd `EnvironmentFile`; it is never committed, downloaded, logged or regenerated on routine deploy. **Back up the vault key separately and securely**: losing/rotating it without migration renders already encrypted connections unreadable. This key is not the end user's Yandex/GPT API key.
 
 The `1792533600_viktor_connections.js` migration creates a closed server-only collection. Authenticated `GET/POST/DELETE /api/viktor/connection` implements owner-isolated save/status/disconnect without returning API secrets. Model and speech PocketBase hooks read/decrypt only the authenticated user's connection. Missing master key returns 503; no plaintext fallback. Deployment/restart must complete before the matching web client is published. Test the first connection save from a signed-in account, log in on a second device, verify the model works with **no API key present in that device's memory**, and verify another account cannot view/use/delete it.
+
+### PocketBase outage prevention (2026-10-23)
+
+The 2026-10-23 production outage was caused by `1792710000_viktor_turns.js`
+creating an index on `created` without declaring that field. The service
+restarted continuously until `created` was added as a PocketBase `autodate`
+field. The corrected migration is version-controlled and tested against the
+previously failing missing-index-column case.
+
+**Release gate:** on every PocketBase bundle change, the production deployment
+workflow first takes a consistent SQLite snapshot using Python's SQLite backup
+API and applies all pending migrations in a disposable data directory using the
+installed PocketBase binary, isolated migration files and an empty hooks
+directory. It checks available disk capacity before copying. If the snapshot or
+trial migration fails, the live `pb_data`, hooks, migrations and running
+service are not changed or restarted. This prevents the outage class that
+syntax-only JS validation cannot catch. The preflight directory is removed
+after the check. This preflight is not an off-site backup and does not validate
+network-facing hooks.
+
+**Availability watch:** `.github/workflows/pocketbase-health-watch.yml`
+checks the HTTPS `/api/health` endpoint four times per hour, retries failed
+requests, opens one deduplicated GitHub issue for an outage, and closes the
+issue on confirmed recovery. `deploy.yml` publishes this workflow to the
+repository's default `gh-pages` branch so the scheduled trigger runs. GitHub
+issue notification delivery depends on repository notification settings.
+The workflow does not restart production automatically or modify the database.
+
+Do not remove the preflight to speed up deployment. If a trial migration fails,
+stop that release, inspect the migration and test in an isolated environment.
+Keep production data and credentials out of GitHub Actions logs.

@@ -253,6 +253,7 @@ jobs:
           mkdir -p build/web/.github/workflows
           cp .github/workflows/deploy.yml build/web/.github/workflows/deploy.yml
           cp .github/workflows/deploy-pocketbase.yml build/web/.github/workflows/deploy-pocketbase.yml
+          cp .github/workflows/pocketbase-health-watch.yml build/web/.github/workflows/pocketbase-health-watch.yml
 
           git worktree remove --force /tmp/counter-gh-pages
 
