@@ -59,7 +59,7 @@ void main() {
     expect(preview, findsOneWidget);
     expect(find.textContaining('☐ Второй пункт'), findsOneWidget);
     expect(find.text('1/2'), findsOneWidget);
-    expect(find.text('23.10.26'), findsOneWidget);
+    expect(find.text('23.10.2026'), findsOneWidget);
     expect(find.text('24.10.26'), findsNothing);
     final gap = tester.getTopLeft(preview).dy - tester.getBottomLeft(title).dy;
     expect(gap, inInclusiveRange(0, 22));
