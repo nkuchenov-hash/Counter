@@ -184,15 +184,27 @@ void main() {
     expect(field.decoration?.fillColor, Colors.transparent);
     expect(field.decoration?.border, InputBorder.none);
 
-    expect(find.byKey(const Key('viktor_chat_scroll_configuration')),
-      findsOneWidget);
-    // Flutter can still build Scrollbar widgets for desktop-specific
-    // Scrollables. The local theme must keep any such widgets invisible.
-    final scrollbars = tester.widget<ScrollbarTheme>(
-      find.byKey(const Key('viktor_hidden_scrollbar_theme')));
-    expect(scrollbars.data.thickness?.resolve(<WidgetState>{}), 0.0);
-    expect(scrollbars.data.thumbVisibility?.resolve(<WidgetState>{}), false);
-    expect(scrollbars.data.trackVisibility?.resolve(<WidgetState>{}), false);
+    // The messages viewport must extend to the WINDOW edge, regardless
+    // of the centered 760px conversation-content column.
+    final viewport = tester.getRect(
+      find.byKey(const Key('viktor_chat_messages_viewport')));
+    final scrollbar = tester.getRect(
+      find.byKey(const Key('viktor_edge_scrollbar')));
+    expect(viewport.left, closeTo(0, 0.1));
+    expect(viewport.right, closeTo(1440, 0.1));
+    expect(scrollbar.left, closeTo(0, 0.1));
+    expect(scrollbar.right, closeTo(1440, 0.1));
+
+    final edgeScrollbar = tester.widget<Scrollbar>(
+      find.byKey(const Key('viktor_edge_scrollbar')));
+    expect(edgeScrollbar.thumbVisibility, false);
+    expect(edgeScrollbar.trackVisibility, false);
+    expect(edgeScrollbar.thickness, 3);
+    expect(edgeScrollbar.interactive, false);
+    // Chat message text remains centered and does not fill the window.
+    final intro = tester.getRect(find.textContaining('Я Виктор'));
+    expect(intro.width, lessThan(761));
+    expect(intro.center.dx, closeTo(720, 60));
     expect(tester.takeException(), isNull);
   });
 
