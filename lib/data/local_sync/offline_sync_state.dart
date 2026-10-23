@@ -1,4 +1,3 @@
-import 'package:counter/data/local_sync/category_mutation_outbox.dart';
 import 'package:counter/data/local_sync/plan_mutation_outbox.dart';
 import 'package:counter/data/local_sync/record_mutation_outbox.dart';
 import 'package:flutter/foundation.dart';
