@@ -227,7 +227,9 @@ class NotesFolderTabStrip extends StatelessWidget {
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          for (var i = 0; i < tabs.length; i++)
+                          // Earlier spines sit above later ones, exposing
+                          // their right-hand paper lip and cast shadow.
+                          for (var i = tabs.length - 1; i >= 0; i--)
                             if (i != selectedIndex) categoryAt(i),
                           if (selectedIndex >= 0) categoryAt(selectedIndex),
                         ],
@@ -341,13 +343,16 @@ class _PhysicalNotesTab extends StatelessWidget {
     return SizedBox(
       width: width,
       height: selected ? NotesFolderTabStrip.height : NotesFolderTabStrip.height - 3,
-      child: Material(
-        color: Colors.transparent,
-        elevation: selected ? 1.5 : 0.35,
-        shadowColor: Colors.black.withValues(alpha: dark ? 0.16 : 0.08),
-        shape: const NotesPhysicalFolderShape(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Material(
+            color: Colors.transparent,
+            elevation: selected ? 2.3 : 1.2,
+            shadowColor: Colors.black.withValues(alpha: dark ? 0.27 : 0.17),
+            shape: const NotesPhysicalFolderShape(),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
           onTap: onTap,
           onLongPress: onLongPress,
           customBorder: const NotesPhysicalFolderShape(),
@@ -394,8 +399,70 @@ class _PhysicalNotesTab extends StatelessWidget {
                     ],
                   ),
           ),
-        ),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: NotesFolderLipPainter(
+                  dark: dark,
+                  selected: selected,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+/// Separate narrow raised paper edge, visible even on adjacent pastel tabs.
+class NotesFolderLipPainter extends CustomPainter {
+  const NotesFolderLipPainter({required this.dark, required this.selected});
+  final bool dark;
+  final bool selected;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final right = size.width;
+    final slope = (right * 0.14).clamp(14.0, 21.0).toDouble();
+    final edge = Path()
+      ..moveTo(right - slope - 5, 0)
+      ..cubicTo(
+        right - slope + 2, 0,
+        right - slope + 5, 5,
+        right - slope + 8, 12,
+      )
+      ..quadraticBezierTo(right - 5, size.height, right, size.height);
+    canvas.drawPath(
+      edge,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4
+        ..color = Colors.black.withValues(alpha: dark ? 0.28 : 0.15)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5),
+    );
+    canvas.drawPath(
+      edge,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = selected ? 1.1 : 0.85
+        ..color = Colors.black.withValues(alpha: dark ? 0.34 : 0.18),
+    );
+    final highlight = Path()
+      ..moveTo(1, 12)
+      ..quadraticBezierTo(1, 1, 13, 1)
+      ..lineTo(right - slope - 5, 1);
+    canvas.drawPath(
+      highlight,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.1
+        ..color = Colors.white.withValues(alpha: dark ? 0.15 : 0.75),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant NotesFolderLipPainter oldDelegate) =>
+      oldDelegate.dark != dark || oldDelegate.selected != selected;
 }
