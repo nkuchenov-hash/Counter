@@ -1,3 +1,5 @@
+import 'package:timezone/timezone.dart' as tz;
+
 import 'viktor_action_contract.dart';
 
 /// Dates used by Viktor tools are explicit user-intent dates, not the
@@ -24,6 +26,11 @@ class ViktorDateScope {
     return date;
   }
 
+
+  /// Reproject a persisted UTC instant into the requested conversation
+  /// clock without editing the underlying PocketBase record.
+  static DateTime projectUtcInstant(DateTime instant, String ianaZone) =>
+      tz.TZDateTime.from(instant.toUtc(), tz.getLocation(ianaZone));
 
   static DateTime itineraryDay(String input, DateTime displayed,
       List<Map<String, String>> history, {bool revision = false}) {
