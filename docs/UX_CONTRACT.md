@@ -2,6 +2,12 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor saved-plan clock projection (2026-10-23)
+
+- When the user explicitly selects a chat schedule timezone different from their profile's persistent timezone, calculate saved plan wall-clock labels from each stored `startUtcInstant` using the IANA timezone database. Fetch adjacent profile-wall days so plans crossing midnight are not omitted from the requested Moscow day. Never change stored UTC instants or account timezone.
+- Provide the model only the correctly reprojected day and following-day plan clocks, with `existing_plan_clock_timezone` indicating the projection zone. Missing UTC instants must be disclosed as uncertain rather than assigning a false local time.
+- Regression: a saved plan whose UTC start is 2026-10-24T17:00:00Z is 20:00 Moscow and 13:00 New York; a 2026-10-24T22:30:00Z start belongs to October 25 in Moscow.
+
 ## Viktor itinerary completeness, date and zone (2026-10-23)
 
 - For a natural-language itinerary, read the user's **specified calendar date** rather than assuming the currently opened calendar tab; draft revisions inherit that date, not the date of after-midnight sleep.
