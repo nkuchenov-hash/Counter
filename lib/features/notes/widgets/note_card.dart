@@ -709,23 +709,43 @@ class _LifeSelectableText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return TextSelectionTheme(
-      data: TextSelectionTheme.of(context).copyWith(
-        cursorColor: scheme.primary,
-        selectionColor: scheme.primary.withValues(alpha: 0.28),
-        selectionHandleColor: scheme.primary,
-      ),
-      child: SelectableText(
-        data,
-        style: style,
-        maxLines: maxLines,
-        onTap: onTap,
-        selectionControls: _controls,
-        contextMenuBuilder: (context, editableTextState) =>
-            AdaptiveTextSelectionToolbar.editableText(
-          editableTextState: editableTextState,
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // SelectableText reserves the height of maxLines even for a
+        // one-line title. Compute the *actual* line count first so a short
+        // title never creates two empty rows before the card's preview.
+        var visibleLines = maxLines;
+        if (maxLines != null && constraints.maxWidth.isFinite) {
+          final painter = TextPainter(
+            text: TextSpan(text: data, style: style),
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+            maxLines: maxLines,
+          )..layout(maxWidth: constraints.maxWidth);
+          visibleLines = painter.computeLineMetrics().length
+              .clamp(1, maxLines)
+              .toInt();
+          painter.dispose();
+        }
+        return TextSelectionTheme(
+          data: TextSelectionTheme.of(context).copyWith(
+            cursorColor: scheme.primary,
+            selectionColor: scheme.primary.withValues(alpha: 0.28),
+            selectionHandleColor: scheme.primary,
+          ),
+          child: SelectableText(
+            data,
+            style: style,
+            maxLines: visibleLines,
+            onTap: onTap,
+            selectionControls: _controls,
+            contextMenuBuilder: (context, editableTextState) =>
+                AdaptiveTextSelectionToolbar.editableText(
+              editableTextState: editableTextState,
+            ),
+          ),
+        );
+      },
     );
   }
 }
