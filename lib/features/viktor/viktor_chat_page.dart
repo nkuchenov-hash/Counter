@@ -81,6 +81,8 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     _controller.clear();
     final dialogContext = ViktorDialogueTurn.modelContext(
         _messages.skip(1));
+    final revisionOfDraft = ViktorReadAnswer.isDraftRevision(
+        input: input, history: dialogContext);
     _push(input, mine: true);
     if (ViktorReadAnswer.isExplicitCancellation(input)) {
       _push('Команда отменена. Изменения не выполнялись.');
@@ -109,10 +111,10 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       );
       var repairedEmptyRead = false;
       var repairedRepeatedRead = false;
-      for (var step = 0; response.needsMoreContext ||
+      for (var step = 0; !revisionOfDraft && (response.needsMoreContext ||
           ViktorReadAnswer.requiresDocumentRead(input: input,
             actions: response.actions?.actions.map((a) => a.name).toList()
-                ?? const <String>[]); step++) {
+                ?? const <String>[])); step++) {
         if (!mounted) return;
         if (step >= 4) {
           throw StateError('Виктор достиг предела проверки данных. '
