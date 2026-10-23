@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `5ccb77cd` on 2026-10-22.**
+**Generated from input HEAD `7638495e` on 2026-10-23.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 944 — each appears **exactly once** below.
+**Tracked files:** 945 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -35,7 +35,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `platform resource` | 44 |
 | `governing documentation` | 43 |
 | `Desktop Voice runtime` | 36 |
-| `test fixture` | 28 |
+| `test fixture` | 29 |
 | `PocketBase backend` | 24 |
 | `PocketBase migration` | 20 |
 | `shared Voice system` | 20 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 508 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 248 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 249 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 861 |
+| `HIGH` | 862 |
 | `MEDIUM` | 83 |
 
 ---
@@ -19652,7 +19652,7 @@ EN:
 - **What this is:** `notes_component_tools.dart` on notes area — Canonical toolbar button/toolbar plus heading, formatting, and insert menu surfaces.
 - **Why needed:** Users see `notes_component_tools.dart` when using notes area.
 - **Contents:** Primary symbols: `NotesToolbarMenuItem`, `NotesToolbarAction`, `NotesToolbarButton`, `_NotesToolbarMenuButton`, `_NotesToolbarMenuButtonState`, `_NotesCompactToolbarMenu`.
-- **Key code names:** `NotesToolbarMenuItem`, `NotesToolbarAction`, `NotesToolbarButton`, `_NotesToolbarMenuButton`, `_NotesToolbarMenuButtonState`, `_NotesCompactToolbarMenu`, `NotesEditorToolbar`
+- **Key code names:** `NotesToolbarMenuItem`, `NotesToolbarAction`, `NotesToolbarButton`, `_NotesToolbarMenuButton`, `_NotesToolbarMenuButtonState`, `_NotesCompactToolbarMenu`, `NotesEditorToolbar`, `NotesFloatingMenuSurface`
 - **Repository role:** production UI
 - **Evidence of use:** Included by `lib/features/notes/widgets/notes_canonical_components.dart` through a `part` directive (not imported directly).
 - **Necessity status:** PROVEN_REQUIRED
@@ -38155,7 +38155,7 @@ EN:
 - **Why needed:** Prevents regressions when related production code changes.
 - **Contents:** Test cases (symbols: test groups).
 - **Repository role:** test fixture
-- **Evidence of use:** Read/referenced by: `.github/workflows/deploy-pocketbase.yml`, `CHANGELOG.md`.
+- **Evidence of use:** Read/referenced by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `CHANGELOG.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
 - **Confidence:** HIGH
@@ -38172,7 +38172,7 @@ RU:
 - **Зачем:** Ловит регрессии при правках связанного production-кода.
 - **Содержимое:** Тест-кейсы (символы: test groups).
 - **Роль в репозитории:** test fixture
-- **Доказательства использования:** Читается/упоминается: `.github/workflows/deploy-pocketbase.yml`, `CHANGELOG.md`.
+- **Доказательства использования:** Читается/упоминается: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `CHANGELOG.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
 - **Уверенность:** HIGH
@@ -38331,6 +38331,43 @@ RU:
 - **Когда открывать:** Падение CI или правка кода около `viktor_connection_vault`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Набор `test/`; production-субъект около `viktor_connection_vault`.
+
+
+### `test/viktor_conversation_outbox_contract_test.cjs`
+
+EN:
+
+- **Human purpose:** Automated test `viktor_conversation_outbox_contract_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `viktor_conversation_outbox_contract_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: test groups).
+- **Repository role:** test fixture
+- **Evidence of use:** Read/referenced by: `.github/workflows/architecture-guard.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `viktor_conversation_outbox_contract_test` scenario.
+- **When to open:** CI failure or changing code near `viktor_conversation_outbox_contract`.
+- **Can it be deleted?** Broken fixture-backed test or missing diagnostic sample.
+- **Connected to:** `test/` suite; production subject near `viktor_conversation_outbox_contract`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `viktor_conversation_outbox_contract_test` — проверяет поведение без ручных нажатий. Ловит регрессии при правках связанного production-кода.
+- **Что это:** Автотест `viktor_conversation_outbox_contract_test` — проверяет поведение без ручных нажатий.
+- **Зачем:** Ловит регрессии при правках связанного production-кода.
+- **Содержимое:** Тест-кейсы (символы: test groups).
+- **Роль в репозитории:** test fixture
+- **Доказательства использования:** Читается/упоминается: `.github/workflows/architecture-guard.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Проверяет ожидаемое поведение сценария `viktor_conversation_outbox_contract_test`.
+- **Когда открывать:** Падение CI или правка кода около `viktor_conversation_outbox_contract`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Набор `test/`; production-субъект около `viktor_conversation_outbox_contract`.
 
 
 ### `test/viktor_conversation_store_test.dart`
@@ -38532,7 +38569,7 @@ EN:
 - **Why needed:** Prevents regressions when related production code changes.
 - **Contents:** Test cases (symbols: test groups).
 - **Repository role:** test fixture
-- **Evidence of use:** Read/referenced by: `.github/workflows/deploy-pocketbase.yml`.
+- **Evidence of use:** Read/referenced by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
 - **Confidence:** HIGH
@@ -38549,7 +38586,7 @@ RU:
 - **Зачем:** Ловит регрессии при правках связанного production-кода.
 - **Содержимое:** Тест-кейсы (символы: test groups).
 - **Роль в репозитории:** test fixture
-- **Доказательства использования:** Читается/упоминается: `.github/workflows/deploy-pocketbase.yml`.
+- **Доказательства использования:** Читается/упоминается: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
 - **Уверенность:** HIGH
@@ -38683,7 +38720,7 @@ EN:
 - **Why needed:** Prevents regressions when related production code changes.
 - **Contents:** Test cases (symbols: test groups).
 - **Repository role:** test fixture
-- **Evidence of use:** Read/referenced by: `.github/workflows/deploy-pocketbase.yml`.
+- **Evidence of use:** Read/referenced by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
 - **Confidence:** HIGH
@@ -38700,7 +38737,7 @@ RU:
 - **Зачем:** Ловит регрессии при правках связанного production-кода.
 - **Содержимое:** Тест-кейсы (символы: test groups).
 - **Роль в репозитории:** test fixture
-- **Доказательства использования:** Читается/упоминается: `.github/workflows/deploy-pocketbase.yml`.
+- **Доказательства использования:** Читается/упоминается: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
 - **Уверенность:** HIGH
