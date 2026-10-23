@@ -400,6 +400,7 @@ class _PhysicalNotesTab extends StatelessWidget {
                   ),
           ),
           ),
+          ),
           Positioned.fill(
             child: IgnorePointer(
               child: CustomPaint(
