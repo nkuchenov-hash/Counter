@@ -18,6 +18,14 @@ The Life OS design system makes Figma the visual source of truth and Flutter can
 - **Tags:** stored tag colors remain the authoritative display colors across Timeline, Plans, Lists and tag manager. Preserve the established exact yellow-gold **#F6C500** / yellow-family contrast and plate-opacity rules in `tag_contrast.dart`. The semantic hue catalogue supplies *new* tag options; it does not reinterpret existing colors.
 - **Semantic roles are distinct:** primary actions remain dark/neutral; success, danger, disabled, active and selection states preserve their meaning. Do not repurpose the green success color or red error color as a generic surface fill. Dark mode uses the same hue identities with contrast-appropriate surfaces, not the literal light-mode background.
 
+## Palette clarity and offline category color edits
+
+- Category hue families form **one horizontal row**, never multiple wrapped rows. The three selectable intensities (400/500/600) must be visible beneath a fine divider, with subtle separators between tones.
+- The neutral grey family is **achromatic** at every tone: red, green and blue channel values must match.
+- Color, icon and name changes are immediate Brain-owned optimistic edits; the UI never waits for PocketBase. The same owner-scoped category edit journal survives offline/restart and is drained by the existing SyncManager on reconnect.
+- Routine remote failures do not roll back a local color or produce an interruptive error. Failure to save on the *device itself* is different: retain recovery and warn clearly. Never allow an old server response to overwrite a newer locally chosen color.
+- Legacy automatic category recoloring is disabled. Existing custom category/tag colors are never silently migrated.
+
 ## Naming Contract
 
 Figma component names should stay clean and designer-facing. Flutter component names should stay app-namespaced and code-owned.
