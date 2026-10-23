@@ -3,6 +3,13 @@ part of 'viktor_chat_page.dart';
 // Composer has one visual surface and one compact row at rest. A multiline
 // draft expands only the editable text area while controls stay at its bottom.
 extension _ViktorComposerUi on _ViktorChatPageState {
+  // Hardware Enter sends; Shift+Enter remains a native newline.
+  void _sendFromKeyboard() {
+    if (_busy || _listening || _transcribing || _startingMic ||
+        !_settingsReady || _controller.text.trim().isEmpty) return;
+    unawaited(_send());
+  }
+
   Widget _buildComposer(ColorScheme scheme) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
