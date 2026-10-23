@@ -315,6 +315,11 @@ class NotesBottomGlassFade extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Explicit paper-colored fade: blur alone on a fully transparent child
+    // had no visual white transition when long notes crossed the bottom edge.
+    // Use the editor surface (white in light theme) and fade the whole effect
+    // in gradually so no hard horizontal edge is visible.
+    final paper = NotesFigmaTokens.surfaceCard(context);
     return SizedBox(
       height: height,
       child: Stack(
@@ -332,18 +337,29 @@ class NotesBottomGlassFade extends StatelessWidget {
                     colors: [
                       Colors.transparent,
                       Colors.transparent,
-                      Color(0x55000000),
+                      Color(0x99000000),
                       Colors.black,
                     ],
-                    stops: [0, 0.27, 0.72, 1],
+                    stops: [0, 0.22, 0.73, 1],
                   ).createShader(bounds),
                   child: BackdropFilter(
-                    filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                    // Transparent: only backdrop blur is revealed by the
-                    // feathered alpha mask; there is no opaque dock rectangle.
-                    child: const ColoredBox(
-                      color: Colors.transparent,
-                      child: SizedBox.expand(),
+                    filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    child: DecoratedBox(
+                      key: const ValueKey('notes-bottom-paper-gradient'),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            paper.withValues(alpha: 0.14),
+                            paper.withValues(alpha: 0.64),
+                            paper.withValues(alpha: 0.98),
+                          ],
+                          stops: const [0, 0.30, 0.70, 1],
+                        ),
+                      ),
+                      child: const SizedBox.expand(),
                     ),
                   ),
                 ),
