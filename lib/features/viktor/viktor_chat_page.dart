@@ -196,8 +196,8 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           input, response, plans, toolObservations, requestId, dialogContext,
           intentDay);
       if (completed == null) {
-        _push('Виктор не сформировал расписание: модель дважды вернула '
-            'обещание вместо результата. Никакие планы не изменены.');
+        _push('Виктор не сформировал полный согласованный черновик '
+            'с нужным часовым поясом. Планы не изменены.');
         return;
       }
       response = completed;
