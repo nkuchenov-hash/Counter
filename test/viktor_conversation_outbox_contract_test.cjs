@@ -27,6 +27,12 @@ assert.doesNotMatch(source, /_pending\.insert\(0, item\)/,
   'A failed browser-cache rewrite must not undo a confirmed server receipt');
 assert.match(source, /_secureStorageUnavailable/,
   'Browser secure-storage errors must be distinguished from server failures');
+assert.match(source, /_outboxUnreadable/,
+  'Unreadable encrypted pending turns must never be silently discarded');
+assert.match(source, /if \(_outboxUnreadable\)/,
+  'A new local write must not overwrite an unreadable old outbox');
+assert.match(ui, /_dialogueStore\.localOutboxUnreadable/,
+  'Keep visible warning and retry restoring existing unreadable encrypted history');
 assert.match(source, /await _flush\(ownerAtSubmission\)/,
   'Online saves must still run if browser encrypted storage fails');
 
