@@ -17,12 +17,14 @@ class CategoryEditorSheet extends StatefulWidget {
     required this.category,
     required this.onSaved,
     this.onCategoryDeleted,
+    this.onCancel,
     this.inline = false,
   });
 
   final CategoryRule category;
   final VoidCallback onSaved;
   final VoidCallback? onCategoryDeleted;
+  final VoidCallback? onCancel;
   final bool inline;
 
   @override
@@ -33,7 +35,6 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
   final Map<String, List<String>> _keywordsByLang = {};
   bool _saving = false;
   bool _showShades = false;
-  int? _parentId;
   int? _selectedColorValue;
   MaterialColor? _selectedPrimary;
   int? _selectedShadeValue;
@@ -51,10 +52,8 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
         widget.category.keywordsFor(lang),
       );
     }
-    _parentId = DatabaseService.instance.getParentId(widget.category.id);
     _selectedColorValue = widget.category.colorValue;
-    _iconCodePoint =
-        widget.category.iconCodePoint ?? Icons.folder_rounded.codePoint;
+    _iconCodePoint = categoryManagerIconFor(widget.category).codePoint;
     final names = widget.category.localizedNames ?? const {};
     _primaryNameController = TextEditingController(
       text: widget.category.name.trim(),
@@ -114,9 +113,6 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
           .toList();
       if (parts.isNotEmpty) keywords[e.key] = parts;
     }
-    final currentParent = DatabaseService.instance.getParentId(cid);
-    final newParent = _parentId;
-    final currentEffective = currentParent;
     final primaryNew = _primaryNameController.text.trim();
     final primaryChanged =
         primaryNew.isNotEmpty && primaryNew != widget.category.name.trim();
@@ -163,9 +159,6 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
             );
           }
           return;
-        }
-        if (currentEffective != newParent) {
-          await DatabaseService.instance.updateCategoryParent(cid, newParent);
         }
       } catch (_) {
         messenger.showSnackBar(
@@ -266,37 +259,6 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
 
   void _onTagsChanged(String langCode, List<String> newTags) {
     setState(() => _keywordsByLang[langCode] = newTags);
-  }
-
-  Widget _buildParentPicker(BuildContext context) {
-    final db = DatabaseService.instance;
-    final forbidden = {
-      widget.category.id,
-      ...db.getRecordIdsInSubtree(widget.category.id),
-    };
-    final pairs = db.allCategoryIdPathPairs
-        .where((p) => !forbidden.contains(p.id))
-        .toList();
-    return DropdownButtonFormField<int?>(
-      isExpanded: true,
-      initialValue: _parentId,
-      decoration: InputDecoration(
-        labelText: t(currentLocale.value, 'parent_category'),
-      ),
-      items: [
-        DropdownMenuItem<int?>(
-          value: null,
-          child: Text(t(currentLocale.value, 'root_top_level')),
-        ),
-        ...pairs.map(
-          (p) => DropdownMenuItem<int?>(
-            value: p.id,
-            child: Text(p.path, overflow: TextOverflow.ellipsis),
-          ),
-        ),
-      ],
-      onChanged: (v) => setState(() => _parentId = v),
-    );
   }
 
   Future<void> _translateAndAddRuIfNeeded(
