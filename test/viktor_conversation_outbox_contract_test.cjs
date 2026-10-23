@@ -21,8 +21,14 @@ assert.match(source, /existing\.items\.single\.data\['body'\] != item\.body/,
   'A retrieved server row must match the pending turn exactly');
 assert.match(source, /existing\.items\.isEmpty[\s\S]*?rethrow/,
   'Unverified sends must stay pending');
-assert.match(source, /_pending\.insert\(0, item\)/,
-  'Failure after remote success must retain the receipt for deduplication');
+assert.match(source, /_pending\.removeAt\(0\)/,
+  'An acknowledged server turn must leave the live pending queue');
+assert.doesNotMatch(source, /_pending\.insert\(0, item\)/,
+  'A failed browser-cache rewrite must not undo a confirmed server receipt');
+assert.match(source, /_secureStorageUnavailable/,
+  'Browser secure-storage errors must be distinguished from server failures');
+assert.match(source, /await _flush\(ownerAtSubmission\)/,
+  'Online saves must still run if browser encrypted storage fails');
 
 const append = source.slice(source.indexOf('Future<void> append('));
 assert.ok(append.indexOf('await _restoreOutbox(ownerAtSubmission)') <
@@ -38,6 +44,14 @@ assert.match(load, /await _restoreOutbox\(owner\)/);
 assert.match(load, /serverIds\.contains\(item\.id\)/,
   'Local pending messages must not duplicate server history');
 assert.match(ui, /_dialogueStore\.pendingCount == 0/);
+assert.match(ui, /_dialogueStore\.load\(\)/,
+  'Recovery must re-fetch history even when the pending queue is empty');
+assert.match(ui, /ViktorDialogueTurn\.lastRepeatableUserRequest/,
+  'The retry affordance must resolve an actual earlier user command');
+assert.match(ui, /ViktorDialogueTurn\.isRepeatCommand/,
+  'A typed repeat request must not be sent literally to the provider');
+assert.match(ui, /pendingInMemoryOnly/,
+  'Unprotected in-memory turns require an explicit durability warning');
 assert.match(ui, /unawaited\(_persistTurn\(turn\)\)/,
   'A transient error must not disable subsequent writes');
 
