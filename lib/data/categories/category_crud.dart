@@ -482,8 +482,9 @@ extension CategoryCrudExtension on DatabaseService {
 
   Future<({bool ok, String? errorDetail})> patchCategoryDelta(
     int targetId,
-    Map<String, dynamic> fields,
-  ) async {
+    Map<String, dynamic> fields, {
+    bool refreshAfterPatch = true,
+  }) async {
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       return (ok: false, errorDetail: 'not_initialized');
     }
@@ -512,7 +513,14 @@ extension CategoryCrudExtension on DatabaseService {
       final merged = _nocoFieldsForPatch(prepared);
       await ensurePocketBaseReady();
       await _pb.collection(PbCollections.categories).update(pbId, body: merged);
-      await _loadRulesFromNoco();
+      // A color/icon-only save is already represented in the local category
+      // tree. Waiting for the entire catalog refresh needlessly keeps Save
+      // spinning and can obscure an otherwise successful server PATCH.
+      if (refreshAfterPatch) {
+        await _loadRulesFromNoco();
+      } else {
+        _categoryController.add(List<CategoryRule>.from(_rules));
+      }
       return (ok: true, errorDetail: null);
     } on ClientException catch (e) {
       if (e.statusCode == 404) {
@@ -1117,6 +1125,9 @@ extension CategoryCrudExtension on DatabaseService {
     }
     if (colorValue != null) f.colorValue = colorValue;
     if (iconCodePoint != null) f.iconCodePoint = iconCodePoint;
+    // Mutating a nested node does not replace the tree's root list; emit an
+    // event explicitly for Notes, Timeline, category lists and pickers.
+    _categoryController.add(List<CategoryRule>.from(_rules));
     return true;
   }
 }
