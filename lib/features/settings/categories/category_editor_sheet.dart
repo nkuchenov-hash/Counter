@@ -382,6 +382,42 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     );
   }
 
+  Widget _iconPanel(bool desktop) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(t(currentLocale.value, 'category_choose_icon'),
+            style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 8),
+        LayoutBuilder(builder: (context, constraints) {
+          final columns = desktop ? 5 : 4;
+          final count = columns * 3;
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: count,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+              mainAxisSpacing: 7,
+              crossAxisSpacing: 7,
+              mainAxisExtent: 38,
+            ),
+            itemBuilder: (context, index) {
+              if (index == count - 1) {
+                return OutlinedButton(
+                  onPressed: () => unawaited(_showIconGallery()),
+                  style: OutlinedButton.styleFrom(padding: EdgeInsets.zero),
+                  child: const Icon(Icons.more_horiz_rounded, size: 22),
+                );
+              }
+              return _iconTile(kCategoryIconChoices[index]);
+            },
+          );
+        }),
+      ],
+    );
+  }
+
   Widget _advancedFields(List<String> langs, String locale) {
     final scheme = Theme.of(context).colorScheme;
     return ExpansionTile(
