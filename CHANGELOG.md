@@ -2,7 +2,7 @@
 
 - Keep unsent chat turns in an owner-scoped encrypted local outbox, restore them after reopening the app and retry them in order; avoid disabling all subsequent writes after a transient failure.
 - Use stable owner-scoped `client_turn_id` values and read-back verification after ambiguous server/network errors to avoid duplicate history entries.
-- Show pending sync status separately from the AI dialogue so technical alerts never pollute model conversation history. Limit long turn content to the PocketBase field size. Full restart/device tests, and end-to-end release acceptance remain outstanding.
+- Show pending sync status separately from the AI dialogue so technical alerts never pollute model conversation history. Limit long turn content to the PocketBase field size. Offer an explicit «Повторить» sync control without inserting a new chat turn. Full restart/device tests, and end-to-end release acceptance remain outstanding.
 - Four JS contract suites passed in a V8 harness, including the new encrypted outbox source invariant checks; CI now invokes them. Flutter compilation and web/Android release builds were not run, and the PR remains unmerged.
 
 ## [2026-10-22] — Viktor guarded schedule commit correctness (PR #337; not released)
