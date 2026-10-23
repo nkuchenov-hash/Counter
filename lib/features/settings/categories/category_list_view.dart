@@ -488,7 +488,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                         value: 'move',
                         child: Row(
                           children: [
-                            const Icon(Icons.drive_file_move_outline_rounded, size: 20),
+                            const Icon(Icons.folder_open_rounded, size: 20),
                             const SizedBox(width: 8),
                             Text(t(loc, 'category_move_to')),
                           ],
