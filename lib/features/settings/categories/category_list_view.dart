@@ -7,6 +7,7 @@ import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/settings/categories/category_editor_sheet.dart';
+import 'package:counter/features/settings/categories/category_helpers.dart';
 import 'package:counter/features/settings/categories/category_row_widget.dart';
 import 'package:counter/features/settings/categories/create_category_dialog.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
@@ -356,7 +357,15 @@ class _CategoriesPageState extends State<CategoriesPage> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Icon(r.iconOrDefault, color: tint, size: 23),
+                  Container(
+                    width: 36, height: 36,
+                    decoration: BoxDecoration(
+                      color: tint.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(categoryManagerIconFor(r), color: tint, size: 21),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
