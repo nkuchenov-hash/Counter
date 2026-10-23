@@ -100,6 +100,10 @@ extension CategoryCacheExtension on DatabaseService {
   }
   Future<void> _restoreCategoryPendingEdits() async {
     final owner = (currentProfileId ?? _userIdForWhere ?? '').trim();
+    if (_optimisticCategoryOwner != owner) {
+      _optimisticCategoryEdits.clear();
+      _optimisticCategoryOwner = owner;
+    }
     if (owner.isNotEmpty) {
       try {
         final prefs = _prefs ?? await SharedPreferences.getInstance();
