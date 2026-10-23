@@ -4,6 +4,7 @@ import 'package:counter/features/notes/widgets/notes_library_production_shell.da
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'notes/fixtures/notes_glm_library_parity_fixture.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -24,8 +25,74 @@ void main() {
     expect(path.contains(const Offset(195, 3)), isFalse);
     expect(path.contains(const Offset(100, 30)), isTrue);
     expect(NotesFolderTabStrip.height, 38);
-    expect(NotesFolderTabStrip.tabWidth('Folder'), lessThan(140));
-    expect(NotesFolderTabStrip.tabWidth('A very long category name'), lessThanOrEqualTo(186));
+    expect(
+      NotesFolderTabStrip.tabWidth('Folder'),
+      lessThan(NotesFolderTabStrip.tabWidth('Правители России')),
+    );
+    // No more 186px hard cap: legible labels take their measured width.
+    expect(NotesFolderTabStrip.tabWidth('Правители России'), greaterThan(140));
+    expect(
+      NotesFolderTabStrip.tabWidth('Образовательный дневник'),
+      greaterThan(186),
+    );
+    expect(
+      NotesFolderTabStrip.tabWidth('An extremely long category label that is wider than the screen'),
+      lessThanOrEqualTo(460),
+    );
+  });
+
+  testWidgets('real folder names remain complete rather than ellipsized',
+      (tester) async {
+    final scroll = ScrollController();
+    addTearDown(scroll.dispose);
+    const labels = [
+      'Правители России',
+      'Образовательный дневник',
+      'Price Reporter',
+      'Atozed Website',
+    ];
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 630,
+          child: NotesFolderTabStrip(
+            tabs: [
+              for (var i = 0; i < labels.length; i++)
+                NotesFolderTabData(
+                  id: i + 1,
+                  label: labels[i],
+                  icon: Icons.folder_outlined,
+                  paper: const Color(0xFFE9EDF3),
+                ),
+            ],
+            selectedId: 2,
+            scrollController: scroll,
+            allLabel: 'Все',
+            allPaper: const Color(0xFFF2F4F7),
+            onSelect: (_) {},
+            onAdd: () {},
+          ),
+        ),
+      ),
+    ));
+
+    for (var i = 0; i < labels.length; i++) {
+      final tab = find.byKey(ValueKey('notes-tab-${i + 1}'));
+      final label = find.descendant(
+        of: tab,
+        matching: find.text(labels[i]),
+      );
+      expect(label, findsOneWidget);
+      final textWidget = tester.widget<Text>(label);
+      expect(textWidget.style!.fontSize, 14);
+      final paragraph = tester.renderObject<RenderParagraph>(label);
+      expect(paragraph.didExceedMaxLines, isFalse,
+          reason: 'Folder name ${labels[i]} must not be clipped.');
+      expect(tester.getSize(tab).width,
+          NotesFolderTabStrip.tabWidth(labels[i]));
+    }
+    expect(scroll.position.maxScrollExtent, greaterThan(0));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('All and add stay fixed while category middle scrolls',

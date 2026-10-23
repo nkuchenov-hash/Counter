@@ -95,8 +95,35 @@ class NotesFolderTabStrip extends StatelessWidget {
   final VoidCallback onAdd;
   final VoidCallback? onManage;
 
-  static double tabWidth(String label) =>
-      (label.runes.length * 7.8 + 61).clamp(94.0, 186.0).toDouble();
+  // Folder rail alone uses compact typography: filenames should remain readable,
+  // not truncated to a few letters to pack more tabs into the viewport.
+  static const TextStyle labelStyle = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -0.2,
+    height: 1.05,
+  );
+
+  /// Measure the actual displayed glyph widths. Cyrillic and Latin letters
+  /// have different advances, so a rune-count formula clips real category names.
+  /// Unusually long labels receive the full title in a hover/hold tooltip.
+  static double tabWidth(
+    String label, {
+    TextScaler textScaler = TextScaler.noScaling,
+  }) {
+    final painter = TextPainter(
+      text: TextSpan(text: label, style: labelStyle),
+      textScaler: textScaler,
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+    final contentWidth = painter.width;
+    painter.dispose();
+    // 56px for icon + padding + shoulder; an extra 10px prevents narrow
+    // fallback fonts / fractional glyph rounding from cutting the last letter.
+    // The maximum is only a safety bound for exceptionally long titles.
+    return (contentWidth + 66).clamp(90.0, 460.0).toDouble();
+  }
 
   void _scrollWheel(PointerSignalEvent event) {
     if (event is! PointerScrollEvent || !scrollController.hasClients) return;
@@ -138,11 +165,15 @@ class NotesFolderTabStrip extends StatelessWidget {
 
     // Selected tab is painted last so its leading edge stays in front of
     // neighboring folder tabs, matching the real overlapping folder silhouette.
+    final textScaler = MediaQuery.textScalerOf(context);
+    final widths = [
+      for (final tab in tabs) tabWidth(tab.label, textScaler: textScaler),
+    ];
     final offsets = <double>[];
     var trackWidth = 0.0;
-    for (final tab in tabs) {
+    for (final width in widths) {
       offsets.add(trackWidth);
-      trackWidth += tabWidth(tab.label) - _overlap;
+      trackWidth += width - _overlap;
     }
     if (tabs.isNotEmpty) trackWidth += _overlap;
 
@@ -159,7 +190,7 @@ class NotesFolderTabStrip extends StatelessWidget {
           paper: tab.paper,
           accent: tab.accent,
           selected: tab.id == selectedId,
-          width: tabWidth(tab.label),
+          width: widths[index],
           onTap: () => onSelect(tab.id),
         ),
       );
@@ -343,15 +374,20 @@ class _PhysicalNotesTab extends StatelessWidget {
                       Icon(icon, size: 16, color: foreground.withValues(alpha: 0.82)),
                       const SizedBox(width: 7),
                       Expanded(
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 16,
-                            height: 1.0,
-                            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                            color: foreground,
+                        child: Tooltip(
+                          message: label,
+                          waitDuration: const Duration(milliseconds: 450),
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
+                            style: NotesFolderTabStrip.labelStyle.copyWith(
+                              fontWeight: selected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                              color: foreground,
+                            ),
                           ),
                         ),
                       ),
