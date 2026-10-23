@@ -101,6 +101,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         conversationHistory: dialogContext,
       );
       var repairedEmptyRead = false;
+      var repairedRepeatedRead = false;
       for (var step = 0; response.needsMoreContext ||
           ViktorReadAnswer.requiresDocumentRead(input: input,
             actions: response.actions?.actions.map((a) => a.name).toList()
@@ -148,6 +149,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           // for the user to solve. Repair from conversation + known results.
           response = await _completeRepeatedRead(input, plans,
               toolObservations, requestId, dialogContext);
+          repairedRepeatedRead = true;
           if (response.actions?.hasMutations == true) break;
           _push(response.message.trim().isNotEmpty
               ? response.message.trim()
@@ -238,7 +240,8 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           firstId != secondId &&
           (groundedByPosition || matchedSelection ||
               (titleSpoken(firstId) && titleSpoken(secondId)));
-      final approved = isUnambiguousSwap || actions.isSingleReversibleWrite
+      final approved = !repairedRepeatedRead &&
+              (isUnambiguousSwap || actions.isSingleReversibleWrite)
           ? true : await _confirm(actions, preview);
       if (!mounted) return;
       if (!approved) {
