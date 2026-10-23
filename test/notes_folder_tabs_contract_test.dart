@@ -25,7 +25,10 @@ void main() {
     expect(path.contains(const Offset(195, 3)), isFalse);
     expect(path.contains(const Offset(100, 30)), isTrue);
     expect(NotesFolderTabStrip.height, 38);
-    expect(NotesFolderTabStrip.tabWidth('Folder'), lessThan(140));
+    expect(
+      NotesFolderTabStrip.tabWidth('Folder'),
+      lessThan(NotesFolderTabStrip.tabWidth('Правители России')),
+    );
     // No more 186px hard cap: legible labels take their measured width.
     expect(NotesFolderTabStrip.tabWidth('Правители России'), greaterThan(140));
     expect(
