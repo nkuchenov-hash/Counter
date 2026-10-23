@@ -16,6 +16,115 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('embedded Notes sheet is rounded with breathing room for ghost actions', (tester) async {
+    final title = TextEditingController(text: 'Test note');
+    addTearDown(title.dispose);
+    await tester.pumpWidget(
+      _host(
+        SizedBox(
+          width: 960,
+          height: 610,
+          child: NotesEmbeddedEditorScope(
+            onClose: () {},
+            child: NotesEditorScreen(
+              titleController: title,
+              onTitleChanged: (_) {},
+              onDone: () {},
+              pinned: false,
+              onTogglePinned: () {},
+              onDelete: () {},
+              content: ListView(children: const [Text('Block one')]),
+              toolbar: const SizedBox(width: 300, height: 48),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    const surfaceKey = ValueKey('notes-embedded-editor-rounded-surface');
+    final clip = tester.widget<ClipRRect>(find.byKey(surfaceKey));
+    expect(clip.borderRadius, BorderRadius.circular(20));
+    final back = find.byIcon(Icons.arrow_back_rounded);
+    final bounds = tester.getRect(find.byKey(surfaceKey));
+    expect(tester.getTopLeft(back).dy - bounds.top, greaterThan(20));
+    final backMaterial = find.ancestor(
+      of: back,
+      matching: find.byType(Material),
+    );
+    expect(
+      tester.widgetList<Material>(backMaterial).any(
+        (material) => material.color == Colors.transparent &&
+            material.shape is CircleBorder,
+      ),
+      isTrue,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Notes document scrolls behind bottom feather without reserving a strip', (tester) async {
+    const contentKey = ValueKey('notes-scroll-through-content');
+    await tester.pumpWidget(
+      _host(
+        const SizedBox(
+          width: 450,
+          height: 310,
+          child: NotesEditorBody(
+            content: ColoredBox(
+              key: contentKey,
+              color: Colors.white,
+              child: SizedBox.expand(),
+            ),
+            toolbar: SizedBox(width: 260, height: 48),
+          ),
+        ),
+      ),
+    );
+    expect(tester.getSize(find.byKey(contentKey)).height, 310);
+    final fade = find.byKey(const ValueKey('notes-feathered-bottom-fade'));
+    expect(fade, findsOneWidget);
+    final glass = find.descendant(
+      of: fade,
+      matching: find.byType(ColoredBox),
+    );
+    expect(
+      tester.widgetList<ColoredBox>(glass).every(
+        (box) => box.color == Colors.transparent,
+      ),
+      isTrue,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('floating Notes formatting toolbar has no rectangular panel', (tester) async {
+    await tester.pumpWidget(
+      _host(
+        NotesEditorToolbar(
+          actions: [
+            NotesToolbarAction(
+              tool: NotesToolbarTool.heading,
+              icon: Icons.title,
+              tooltip: 'Heading',
+              onPressed: () {},
+            ),
+            NotesToolbarAction(
+              tool: NotesToolbarTool.text,
+              icon: Icons.format_bold,
+              tooltip: 'Bold',
+              selected: true,
+              onPressed: () {},
+            ),
+          ],
+        ),
+      ),
+    );
+    final dock = find.byKey(const ValueKey('notes-transparent-format-toolbar'));
+    expect(dock, findsOneWidget);
+    expect(find.descendant(of: dock, matching: find.byType(BackdropFilter)), findsNothing);
+    expect(find.descendant(of: dock, matching: find.byType(DecoratedBox)), findsNothing);
+    expect(find.byKey(const ValueKey('notes-toolbar-heading')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Notes footer blur feathers in without a toolbar backplate', (
     tester,
   ) async {

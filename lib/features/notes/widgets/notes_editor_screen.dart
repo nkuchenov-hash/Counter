@@ -30,14 +30,10 @@ class NotesEditorBody extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        Positioned.fill(
-          child: Padding(
-            padding: const EdgeInsets.only(
-              bottom: NotesFigmaTokens.toolbarHeight + 28,
-            ),
-            child: content,
-          ),
-        ),
+        // Scroll the document under the independent feathered dock. A
+        // scroll-end inset belongs to the document, not this viewport: a
+        // shortened viewport produced the opaque empty strip reported in UX.
+        Positioned.fill(child: content),
         Positioned(
           left: 0,
           right: 0,
@@ -201,10 +197,8 @@ class NotesEditorScreen extends StatelessWidget {
     );
 
     if (embedded) {
-      return Material(
-        color: NotesFigmaTokens.surfaceCard(context),
-        child: editor,
-      );
+      // The folder paper must be visible around the embedded sheet's corners.
+      return Material(color: Colors.transparent, child: editor);
     }
     return Scaffold(
       backgroundColor: NotesFigmaTokens.canvas(context),
@@ -329,7 +323,17 @@ class _NotesEditorSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (embedded || !desktop) {
+    if (embedded) {
+      return ClipRRect(
+        key: const ValueKey('notes-embedded-editor-rounded-surface'),
+        borderRadius: BorderRadius.circular(20),
+        child: ColoredBox(
+          color: NotesFigmaTokens.surfaceCard(context),
+          child: child,
+        ),
+      );
+    }
+    if (!desktop) {
       return ColoredBox(
         color: NotesFigmaTokens.surfaceCard(context),
         child: child,
@@ -386,7 +390,7 @@ class _NotesNavigationHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 4, 20, 8),
+      padding: EdgeInsets.fromLTRB(8, embedded ? 22 : 12, 16, 10),
       child: Row(
         children: [
           _NotesBackHeaderAction(onPressed: onDone),
@@ -454,13 +458,13 @@ class _NotesBackHeaderAction extends StatelessWidget {
     return Tooltip(
       message: 'Back',
       child: Material(
-        color: NotesFigmaTokens.glassFill(context),
-        elevation: 1,
-        shadowColor: Colors.black.withValues(alpha: 0.08),
+        color: Colors.transparent,
         shape: const CircleBorder(),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onPressed,
+          customBorder: const CircleBorder(),
+          hoverColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07),
           child: SizedBox.square(
             dimension: 48,
             child: Icon(
@@ -565,10 +569,9 @@ class _NotesHeaderMoreMenu extends StatelessWidget {
           ),
       ],
       child: Material(
-        color: NotesFigmaTokens.glassFill(context),
-        elevation: 1,
-        shadowColor: Colors.black.withValues(alpha: 0.08),
+        color: Colors.transparent,
         shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
         child: SizedBox.square(
           dimension: 40,
           child: Icon(
@@ -643,15 +646,13 @@ class _NotesHeaderAction extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: subtle
-            ? Colors.transparent
-            : NotesFigmaTokens.glassFill(context),
-        elevation: subtle ? 0 : 1,
-        shadowColor: Colors.black.withValues(alpha: 0.08),
+        color: Colors.transparent,
         shape: const CircleBorder(),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onPressed,
+          customBorder: const CircleBorder(),
+          hoverColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07),
           child: SizedBox.square(
             dimension: 40,
             child: Icon(icon, size: 17, color: foreground),

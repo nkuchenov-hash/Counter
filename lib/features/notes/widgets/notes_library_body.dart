@@ -183,16 +183,15 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
                 color: scheme.outlineVariant.withValues(alpha: 0.65),
               ),
               Expanded(
-                child: ColoredBox(
-                  color: scheme.surface,
-                  child: NotesEmbeddedEditorScope(
-                    onClose: _closeEmbeddedEditor,
-                    child: NoteEditorPage(
-                      key: ValueKey<String>(
-                        'embedded-note-${selected.planRowIdForBackend}',
-                      ),
-                      task: selected,
+                // Keep the folder tint behind the rounded editor corners;
+                // a full-size white parent would square them back off.
+                child: NotesEmbeddedEditorScope(
+                  onClose: _closeEmbeddedEditor,
+                  child: NoteEditorPage(
+                    key: ValueKey<String>(
+                      'embedded-note-${selected.planRowIdForBackend}',
                     ),
+                    task: selected,
                   ),
                 ),
               ),
