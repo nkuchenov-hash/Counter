@@ -183,7 +183,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     final moved = visible[oldIndex];
     var targetIndex = newIndex > oldIndex ? newIndex - 1 : newIndex;
     final remaining = List<_CategoryTreeRow>.of(visible)..removeAt(oldIndex);
-    targetIndex = targetIndex.clamp(0, remaining.length);
+    targetIndex = targetIndex.clamp(0, remaining.length).toInt();
     if (targetIndex == oldIndex) return;
     final target = targetIndex < remaining.length
         ? remaining[targetIndex]
