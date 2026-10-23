@@ -2,15 +2,21 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor draft-edit and failure presentation (2026-10-23)
+
+- Unapproved itinerary corrections (including changed wake-up time) must yield a completed revised draft, never `bulk_replan` or other database changes; reject mutation/action-only and incomplete replies, with a single bounded repair attempt.
+- Put retry actions inside the affected failed chat bubble instead of floating above the input. Explain model/provider failures without raw validator exceptions or internal tool names.
+- Preserve transparent provider content-filter errors; do not claim completion or silently bypass filters.
+
 ## Viktor send control optical inset (2026-10-23)
 
-- The Send control has a **34 logical px painted circular disc** inside a **44px accessible hit target**. Never decorate the touch target itself: it creates an oversized circle that collides with capsule edges at 100% and zoomed web scales.
-- In the idle single-row composer, use a **15px optical margin** from the painted circle to the capsule's right, top, and bottom edges, with tolerance of 2px. The input and microphone remain vertically centered. No globally changed button dimensions.
+- The Send control has a **42 logical px painted circular disc** inside a **48px accessible hit target**. Never decorate the touch target itself: it creates an oversized circle that collides with capsule edges at 100% and zoomed web scales.
+- In the idle single-row composer, use a **10px optical margin** from the painted circle to the capsule's right, top, and bottom edges, with tolerance of 2px. The input and microphone remain vertically centered. No globally changed button dimensions.
 - Regression tests must measure the painted disc and hit target as distinct objects at 320/390/768/1440px, and compare physical disc edge gaps rather than only a Tooltip or IconButton layout rect.
 
 ## Viktor dialogue completion and chat-grid alignment (2026-10-23)
 
-- One canonical content-column width of **840 logical px** for chat rows and the input area. Both use identical 16px edge insets; the send circle has a **14px visible right inset** within the input capsule, is vertically centered and remains visible in idle and active states. The messages' scroll viewport and thin auto-hidden scrollbar still span the full window.
+- One canonical content-column width of **840 logical px** for chat rows and the input area. Both use identical 16px edge insets; the send circle has a **10px visible right inset** within the input capsule, is vertically centered and remains visible in idle and active states. The messages' scroll viewport and thin auto-hidden scrollbar still span the full window.
 - An explicit timezone correction to an earlier **uncommitted draft** must produce the full revised draft, not another promise to fetch plans. Preserve user-stated wall clock times and change a demonstrably incorrect source timezone label without fabricating saved changes or silently converting hours.
 - An assistant reply that only promises future work (e.g. "Сейчас проверю") is incomplete for an itinerary. Attempt at most one bounded model repair, then report failure rather than enter a dialogue loop. Preserve the last substantive assistant timetable as part of bounded model history when repetitive nonanswers would otherwise evict it.
 - Regression tests cover 24/25 October 2026 Moscow follow-up, multiple repeated no-op promises, actual light/dark composer visual contract, narrow/mobile widths, shared column geometry, and send inset.

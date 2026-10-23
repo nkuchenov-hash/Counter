@@ -55,6 +55,33 @@ class ViktorReadAnswer {
     return null;
   }
 
+  /// A corrected multi-event draft must contain actual clock ranges,
+  /// not merely "cancelled", "checking" or "I will replan" status text.
+  static bool hasTimedItinerary(String message) =>
+      RegExp(r'\b\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}')
+          .allMatches(message).length >= 3;
+
+  /// A conversation about revising an UNSAVED itinerary is a request for
+  /// another draft, not an authorization to move already-saved plans.
+  /// "Confirm/save/apply" remains an explicit separate user operation.
+  static bool isDraftRevision({
+    required String input,
+    required Iterable<Map<String, String>> history,
+  }) {
+    if (lastTimedDraft(history) == null) return false;
+    final q = input.toLowerCase().trim();
+    if (RegExp(r'(?:подтверждаю|сохрани|запиши\s+в|применяй|'
+        r'выполни\s+изменения|confirm|apply|save\b)').hasMatch(q)) {
+      return false;
+    }
+    return RegExp(
+      r'скоррект|подкоррект|передела|поменя|сдвин|пересостав|'
+      r'встан|просну|подъ[её]м|вместо\s+\d|начн[её]м|'
+      r'перенеси.*(?:время|начало)|revise|adjust|draft|later|earlier|wake',
+      caseSensitive: false,
+    ).hasMatch(q);
+  }
+
   /// A short explicit timezone correction to a previously proposed DRAFT
   /// changes the timezone LABEL of the wall-clock timetable, not its hours.
   /// No provider call or writes are needed to fix a mislabeled draft.

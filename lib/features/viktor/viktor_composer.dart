@@ -30,7 +30,7 @@ extension _ViktorComposerUi on _ViktorChatPageState {
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+              padding: const EdgeInsets.all(7),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -104,8 +104,8 @@ extension _ViktorComposerUi on _ViktorChatPageState {
                       final canSend = !_busy && !_listening &&
                           !_transcribing && !_startingMic &&
                           _settingsReady && value.text.trim().isNotEmpty;
-                      // The 44px touch target is intentionally larger than
-                      // the visible 34px circle. Never paint the whole touch
+                      // A 48px accessible touch target surrounds the visible
+                      // 42px disc, leaving even optical margins. Never paint the whole touch
                       // target as a giant disc near the capsule edges.
                       return Tooltip(
                         message: 'Отправить Виктору',
@@ -115,7 +115,7 @@ extension _ViktorComposerUi on _ViktorChatPageState {
                           label: 'Отправить Виктору',
                           child: SizedBox.square(
                             key: const Key('viktor_send_touch_target'),
-                            dimension: 44,
+                            dimension: 48,
                             child: Material(
                               type: MaterialType.transparency,
                               child: InkWell(
@@ -126,7 +126,7 @@ extension _ViktorComposerUi on _ViktorChatPageState {
                                 customBorder: const CircleBorder(),
                                 child: Center(
                                   child: SizedBox.square(
-                                    dimension: 34,
+                                    dimension: 42,
                                     child: DecoratedBox(
                                       key: const Key('viktor_send_button_surface'),
                                       decoration: BoxDecoration(
@@ -139,7 +139,7 @@ extension _ViktorComposerUi on _ViktorChatPageState {
                                       child: Center(
                                         child: Icon(
                                           Icons.arrow_upward_rounded,
-                                          size: 19,
+                                          size: 22,
                                           color: canSend
                                               ? scheme.surface
                                               : scheme.onSurfaceVariant,

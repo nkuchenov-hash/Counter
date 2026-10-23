@@ -105,6 +105,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         selectedPlanIds: widget.selectedPlanIds,
         requestId: requestId,
         conversationHistory: dialogContext,
+        proposalFeedback: _draftRevisionFeedback(input, dialogContext),
       );
       var repairedEmptyRead = false;
       var repairedRepeatedRead = false;
@@ -267,10 +268,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       if (mounted) _push(result);
     } catch (error) {
       if (mounted) {
-        var msg = error.toString().replaceFirst('FormatException: ', '')
-            .replaceFirst('Bad state: ', '');
-        if (msg.length > 270) msg = '${msg.substring(0, 270)}…';
-        _push('Не удалось выполнить запрос. $msg');
+        _push('Не удалось выполнить запрос. ${_friendlyError(error)}');
       }
     } finally {
       if (mounted) setState(() { _busy = false; _voiceNotice = null; });
@@ -864,15 +862,21 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                                   : scheme.surfaceContainerLow,
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: SelectableText(
-                              message.content,
-                              style: TextStyle(
-                                fontSize: 16,
-                                height: 1.45,
-                                color: message.isUser
-                                    ? scheme.onPrimaryContainer
-                                    : scheme.onSurface,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SelectableText(message.content, style: TextStyle(
+                                  fontSize: 16, height: 1.45,
+                                  color: message.isUser
+                                      ? scheme.onPrimaryContainer : scheme.onSurface)),
+                                if (!_busy && index == 0 && !message.isUser &&
+                                    message.content.startsWith('Не удалось выполнить запрос.'))
+                                  AppButton.ghost(
+                                    label: 'Повторить',
+                                    onPressed: _retryLastCommand,
+                                  ),
+                              ],
                             ),
                           ),
                         );
@@ -922,16 +926,6 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                               ),
                             ],
                           ],
-                        ),
-                      ),
-                    if (!_busy && _messages.any((m) => m.isUser) &&
-                        _messages.last.content.startsWith(
-                            'Не удалось выполнить запрос.'))
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: AppButton.ghost(
-                          label: 'Повторить последнюю команду',
-                          onPressed: _retryLastCommand,
                         ),
                       ),
                     if (_listening || _transcribing || _startingMic)

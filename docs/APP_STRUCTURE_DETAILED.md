@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `12b49119` on 2026-10-23.**
+**Generated from input HEAD `4c18d3eb` on 2026-10-23.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -12980,7 +12980,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`MouseDragScrollBehavior`, `AppReorderItemBuilder`, `AppReorderItemKeyBuilder`, `AppReorderLabelBuilder`, `AppReorderHandleBuilder`, `AppHoldToReorderListener`).
 - **Key code names:** `MouseDragScrollBehavior`, `AppReorderItemBuilder`, `AppReorderItemKeyBuilder`, `AppReorderLabelBuilder`, `AppReorderHandleBuilder`, `AppHoldToReorderListener`, `AppReorderableList`, `AppReorderHandle`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_stage_card.dart`, `lib/features/planning/planning_page_shell.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_stage_card.dart`, `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12997,7 +12997,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `mouse_drag_scroll_behavior`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_stage_card.dart`, `lib/features/planning/planning_page_shell.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_stage_card.dart`, `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22303,8 +22303,8 @@ EN:
 - **Human purpose:** `category_list_view.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings. Users see `category_list_view.dart` when using settings area.
 - **What this is:** `category_list_view.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings.
 - **Why needed:** Users see `category_list_view.dart` when using settings area.
-- **Contents:** Primary symbols: `_CategoryTreeRow`, `CategoriesPage`, `_CategoriesPageState`.
-- **Key code names:** `_CategoryTreeRow`, `CategoriesPage`, `_CategoriesPageState`
+- **Contents:** Primary symbols: `_CategoryTreeRow`, `CategoryDropPosition`, `CategoriesPage`, `_CategoriesPageState`.
+- **Key code names:** `_CategoryTreeRow`, `CategoryDropPosition`, `CategoriesPage`, `_CategoriesPageState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED

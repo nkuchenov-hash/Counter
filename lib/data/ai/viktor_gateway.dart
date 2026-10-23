@@ -550,7 +550,13 @@ class ViktorGateway {
         selectedPlanIds: selectedPlanIds,
         toolObservations: toolObservations,
         requestId: reqId,
-        proposalFeedback: error.message.toString(),
+        // Preserve the draft-only constraint when correcting invalid tool
+        // arguments; otherwise schema repair can reintroduce an unsafe write.
+        proposalFeedback: [
+          if (proposalFeedback != null && proposalFeedback.isNotEmpty)
+            proposalFeedback,
+          'Invalid action structure: ${error.message}',
+        ].join('\n'),
         conversationHistory: conversationHistory,
         allowRepair: false,
       );

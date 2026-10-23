@@ -20,6 +20,20 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     return true;
   }
 
+  String? _draftRevisionFeedback(
+      String input, List<Map<String, String>> history) {
+    if (!ViktorReadAnswer.isDraftRevision(input: input, history: history)) {
+      return null;
+    }
+    final draft = ViktorReadAnswer.lastTimedDraft(history)!;
+    return 'The user is REVISING this UNSAVED draft, not requesting a write: '
+        '$draft\n'
+        'Provide a complete revised timetable in the assistant message. '
+        'Consider the new wake-up time, shift affected morning events and '
+        'check chronological constraints. DO NOT propose bulk_replan or '
+        'any mutation; use actions:[], continue:false. No saved plans change.';
+  }
+
   /// Reject a provider's "I will check..." as an itinerary result.
   /// A single repair turn is permitted, never an unbounded status loop.
   Future<ViktorResponse?> _completeScheduleResponse(
@@ -30,13 +44,20 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     String requestId,
     List<Map<String, String>> history,
   ) async {
-    final isSchedule = RegExp(
+    final draftRevision = ViktorReadAnswer.isDraftRevision(
+        input: input, history: history);
+    final isSchedule = draftRevision || RegExp(
           r'распланир|расписани|черновик|составь\s+план|itinerary|schedule',
           caseSensitive: false,
         ).hasMatch(input) ||
         ViktorReadAnswer.lastTimedDraft(history) != null;
-    if (!isSchedule || response.actions != null ||
-        !ViktorReadAnswer.isUnfinishedScheduleReply(response.message)) {
+    final unsafeDraftWrite = draftRevision &&
+        (response.actions?.hasMutations ?? false);
+    final incompleteDraft = draftRevision &&
+        !ViktorReadAnswer.hasTimedItinerary(response.message);
+    if (!isSchedule || (!unsafeDraftWrite && !incompleteDraft &&
+        (response.actions != null ||
+         !ViktorReadAnswer.isUnfinishedScheduleReply(response.message)))) {
       return response;
     }
     final repaired = await _gateway.propose(
@@ -48,14 +69,25 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
       toolObservations: observations,
       requestId: requestId,
       conversationHistory: history,
-      proposalFeedback: 'The previous reply only promised future work. '
-          'It did not provide a timetable. Return the COMPLETE chronological '
-          'schedule now with dates, time ranges and explicit assumptions. '
-          'Keep user wall-clock times in the requested timezone. '
-          'An unapproved draft must have actions:[], continue:false. '
-          'Never claim you saved plans.',
+      proposalFeedback: unsafeDraftWrite
+          ? 'The user corrected an UNAPPROVED draft, but you proposed a '
+            'database mutation. That is not authorized. Reconstruct the '
+            'entire revised timetable in message with actions:[], '
+            'continue:false. Never call bulk_replan for a draft.'
+          : 'The previous reply did NOT provide a complete revised '
+            'timetable with at least 3 clock ranges. '
+            'Return the COMPLETE chronological '
+            'schedule now with dates, time ranges and explicit assumptions. '
+            'Keep user wall-clock times in the requested timezone. '
+            'An unapproved draft must have actions:[], continue:false. '
+            'Never claim you saved plans.',
       allowRepair: false,
     );
+    if (draftRevision &&
+        ((repaired.actions?.hasMutations ?? false) ||
+         !ViktorReadAnswer.hasTimedItinerary(repaired.message))) {
+      return null; // No write or empty/status-only answer for a draft.
+    }
     return repaired.actions == null &&
             ViktorReadAnswer.isUnfinishedScheduleReply(repaired.message)
         ? null : repaired;
@@ -84,6 +116,30 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
         'profile setting. Do not claim any plan was saved.',
       allowRepair: false,
     );
+
+  /// Never expose provider schema or internal tool exceptions as chat prose.
+  /// Keep a transparent explanation of what failed and whether a write ran.
+  String _friendlyError(Object error) {
+    final raw = error.toString();
+    if (raw.contains('Move target must differ from source')) {
+      return 'Модель попыталась перенести план на ту же дату. '
+          'Для корректировки черновика это не нужно. Планы не изменены.';
+    }
+    if (raw.contains('provider_content_filter') ||
+        raw.contains('заблокировал ответ своим фильтром')) {
+      return 'Провайдер ИИ заблокировал ответ. '
+          'Расписание не изменено, данные не сохранены.';
+    }
+    if (raw.contains('Invalid bulk') || raw.contains('Unknown Viktor action') ||
+        raw.contains('Invalid action') || raw.contains('proposal')) {
+      return 'ИИ предложил некорректное действие. '
+          'Оно отклонено до применения; планы не изменены.';
+    }
+    final cleaned = raw.replaceFirst('FormatException: ', '')
+        .replaceFirst('Bad state: ', '');
+    return cleaned.length > 220
+        ? '${cleaned.substring(0, 220)}…' : cleaned;
+  }
 
   final _dialogueStore = ViktorConversationStore(DatabaseService.instance);
   bool _dialogueLoaded = false;

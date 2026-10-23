@@ -133,20 +133,20 @@ void main() {
       expect(surface.right, closeTo(contentColumn.right - 16, 1));
       expect(surface.width, lessThanOrEqualTo(kViktorChatContentMaxWidth));
       // Distinguish the actual painted disc from its larger touch target:
-      // screenshots exposed that the old 48px disc nearly touched the edges.
+      // User feedback requires a visible 42px disc with equal optical gaps.
       final touch = tester.getRect(
         find.byKey(const Key('viktor_send_touch_target')));
       final disc = tester.getRect(
         find.byKey(const Key('viktor_send_button_surface')));
-      expect(touch.width, 44);
-      expect(touch.height, 44);
-      expect(disc.width, 34);
-      expect(disc.height, 34);
+      expect(touch.width, 48);
+      expect(touch.height, 48);
+      expect(disc.width, 42);
+      expect(disc.height, 42);
       expect(disc.center, touch.center);
       final rightInset = surface.right - disc.right;
       final topInset = disc.top - surface.top;
       final bottomInset = surface.bottom - disc.bottom;
-      expect(rightInset, closeTo(15, 2));
+      expect(rightInset, closeTo(10, 2));
       expect(topInset, closeTo(bottomInset, 1));
       // Capsule edge and button edge have the same visual breathing room.
       expect(rightInset, closeTo(topInset, 2));
@@ -275,8 +275,8 @@ void main() {
       find.byKey(const Key('viktor_send_touch_target')));
     final disc = tester.getSize(
       find.byKey(const Key('viktor_send_button_surface')));
-    expect(touch, const Size(44, 44));
-    expect(disc, const Size(34, 34));
+    expect(touch, const Size(48, 48));
+    expect(disc, const Size(42, 42));
     expect(find.byKey(const Key('viktor_send_tap')), findsOneWidget);
     expect(find.byTooltip('Отправить Виктору'), findsOneWidget);
     final ink = tester.widget<InkWell>(

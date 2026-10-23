@@ -1,3 +1,10 @@
+## [2026-10-23] — Viktor send visibility, inline errors, safe draft revisions
+
+- Increased send disc to 42px within a 48px hit target, maintaining equal 10px optical gaps from the capsule top, right and bottom.
+- Moved retry action from a floating composer banner into the failed assistant message; replaced raw internal action errors with clearer explanations.
+- Corrections to unconfirmed schedules, including a later wake-up time, now request a complete read-only replacement draft and reject accidental mutation actions and status-only answers before any writes.
+- Added layout and draft intent regression tests.
+
 ## [2026-10-23] — Viktor send circle optical inset
 
 - Corrected oversized Send control: previous filled circular wrapper painted the entire canonical icon button's padded touch surface and nearly met the top/right/bottom capsule edges.
