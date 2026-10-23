@@ -39,6 +39,14 @@ assert.match(ui, /_dialogueStore\.pendingCount == 0/);
 assert.match(ui, /unawaited\(_persistTurn\(turn\)\)/,
   'A transient error must not disable subsequent writes');
 
+assert.match(source, /Future<void> retryPending\(\)/);
+assert.match(ui, /_dialogueStore\.retryPending\(\)/,
+  'An explicit retry must use the same serialized outbox as appends');
+assert.match(ui, /label: 'Повторить'/,
+  'Unsynced dialogue must offer a manual retry control');
+assert.match(ui, /String\? _historyNotice/,
+  'Sync warnings must not pollute model conversation turns');
+
 const max = Number(append.match(/substring\(0,\s*(\d+)\)/)?.[1]);
 const footer = '\n[Сообщение обрезано при сохранении]';
 assert.ok(Number.isInteger(max) && max + footer.length <= 6000,
