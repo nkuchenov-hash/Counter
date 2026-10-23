@@ -68,6 +68,8 @@ class AppReorderableList extends StatelessWidget {
     this.physics,
     this.primary,
     this.shrinkWrap = false,
+    this.onReorderStart,
+    this.onReorderEnd,
   });
 
   final int itemCount;
@@ -83,6 +85,8 @@ class AppReorderableList extends StatelessWidget {
   final ScrollPhysics? physics;
   final bool? primary;
   final bool shrinkWrap;
+  final ValueChanged<int>? onReorderStart;
+  final ValueChanged<int>? onReorderEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -106,6 +110,8 @@ class AppReorderableList extends StatelessWidget {
         );
       },
       onReorder: onReorder,
+      onReorderStart: onReorderStart,
+      onReorderEnd: onReorderEnd,
       buildDefaultDragHandles: false,
       header: header,
       footer: footer,
