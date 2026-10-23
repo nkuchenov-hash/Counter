@@ -602,7 +602,17 @@
 - A transient startup PocketBase backoff now schedules one automatic retry after the cooldown; no user action and no periodic polling are required.
 - App-open/resume sync uses one deduplicated push-first path followed by a single catch-up fetch for events missed while suspended.
 
-# 📖 DEV_JOURNAL (Changelog)
+# 📖 DEV_JOURNAL
+
+## [2026-10-23] — Categories appearance / optimistic sync [pending verification]
+
+- Category editor and quick appearance picker now apply color/icon changes in the Brain immediately, then queue PocketBase PATCHs in an owner-scoped revisioned outbox instead of holding the save button on network.
+- Persisted pending category edits survive restart and override stale category fetch/cache data; rapid edits coalesce with revision-safe ACKs.
+- Category pickers expose hues in one horizontal row and visible separated shade swatches; neutral gray presets use equal RGB channels.
+- Automatic Nordic recoloring on background category refresh has been disabled so custom category choices are not overwritten.
+- Added outbox coalescing, user-scope and stale-ACK regression tests. Flutter build/device validation is still required before deployment.
+
+ (Changelog)
 
 ## [2026-10-19] - Notes physical folder tabs and usable category scrolling [in review]\n\n* **Notes:** Curved diagonal folder spines with overlap (reference: physical colored index folders); active category paper matches the tab with a 260ms animated change.\n* **Folder navigation:** `All` pinned left, `+` pinned right, categories horizontally scroll between; mouse wheel, mouse drag and touch supported. Selecting a category no longer reorders tabs.\n* **Regression:** Widget tests for folder silhouette, fixed controls and scroll, while preserving the 18px interior card gap.\n\n
 
