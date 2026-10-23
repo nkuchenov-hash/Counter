@@ -1,28 +1,29 @@
 import 'package:flutter/material.dart';
 
-/// Life OS / Counter design tokens (V3/V7). Change [actionPrimary] once to
-/// retint buttons, tabs, nav selection, and other default action chrome.
+/// Life OS design tokens: neutral chrome shared across every feature.
+/// Semantic category/tag color families live in category_color_palette.dart;
+/// success/error controls keep their own meaning and never inherit category hues.
 abstract final class AppColors {
   // --- Action / brand (default UI chrome, not category data) ---
   static const Color actionPrimary = Color(0xFF111111);
   static const Color onActionPrimary = Color(0xFFFFFFFF);
-  static const Color actionPrimaryContainer = Color(0xFFF0EFEC);
+  static const Color actionPrimaryContainer = Color(0xFFF1F5F9);
   static const Color onActionPrimaryContainer = Color(0xFF111111);
 
   // --- Surfaces ---
-  static const Color appBackground = Color(0xFFFAFAF8);
+  static const Color appBackground = Color(0xFFF8FAFC);
   static const Color cardSurface = Color(0xFFFFFFFF);
-  static const Color borderSubtle = Color(0xFFE6E3DE);
-  static const Color borderMuted = Color(0xFFE8E8E4);
-  static const Color surfaceMuted = Color(0xFFF4F4F2);
+  static const Color borderSubtle = Color(0xFFDEE5ED);
+  static const Color borderMuted = Color(0xFFE7EDF3);
+  static const Color surfaceMuted = Color(0xFFF1F5F9);
 
   // --- Semantic (success only — not default action color) ---
   static const Color success = Color(0xFF2E7D32);
   static const Color onSuccess = Color(0xFFFFFFFF);
 
   // --- Dark surfaces ---
-  static const Color darkAppBackground = Color(0xFF121212);
-  static const Color darkCardSurface = Color(0xFF1E1E1E);
+  static const Color darkAppBackground = Color(0xFF121820);
+  static const Color darkCardSurface = Color(0xFF1E2731);
   static const Color darkActionPrimary = Color(0xFFE8E8E4);
   static const Color onDarkActionPrimary = Color(0xFF111111);
   static const Color darkActionPrimaryContainer = Color(0xFF2A2A2A);
