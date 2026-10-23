@@ -475,4 +475,3 @@ The web microphone MUST capture actual audio through `record`, not browser `Spee
 - Keep 16 px readable body text and modest vertical rhythm. Do not use empty rows, duplicate message cards or full-width, padded assistant panels.
 - The input is a **single** rounded composer surface. The inner TextField must explicitly disable the global filled field theme; never render a white inner rectangle. Microphone and high-contrast Send are circular actions inside the same surface; retain speech states and existing Enter/Shift+Enter behavior.
 - Preserve conversation durability/retry, settings, provider actions, recording, and keyboard safe-area behaviors while changing presentation. Validate 320/390 px narrow screens and longer drafts.
-
