@@ -69,78 +69,62 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     super.dispose();
   }
 
-  Future<void> _save() async {
+  void _save() {
     if (_saving) return;
-    if (_primaryNameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(currentLocale.value, 'category_name_required'))),
-      );
+    final primaryNew = _primaryNameController.text.trim();
+    final messenger = ScaffoldMessenger.of(context);
+    if (primaryNew.isEmpty) {
+      messenger.showSnackBar(SnackBar(
+        content: Text(t(currentLocale.value, 'category_name_required')),
+      ));
       return;
     }
-    setState(() => _saving = true);
-    final messenger = ScaffoldMessenger.of(context);
+    final db = DatabaseService.instance;
     final cid = widget.category.id;
-    final currentColor = widget.category.colorValue;
-    final colorChanged =
-        _selectedColorValue != null && _selectedColorValue != currentColor;
-    final iconChanged =
-        _iconCodePoint !=
-        (widget.category.iconCodePoint ?? Icons.folder_rounded.codePoint);
-    if (colorChanged) {
-      DatabaseService.instance.updateNestedCategory(
-        cid,
-        colorValue: _selectedColorValue,
-      );
-    }
-    if (iconChanged) {
-      DatabaseService.instance.updateNestedCategory(
-        cid,
-        iconCodePoint: _iconCodePoint,
-      );
+    if (primaryNew != widget.category.name.trim() &&
+        db.siblingHasTag(db.getParentId(cid), primaryNew, excludeId: cid)) {
+      messenger.showSnackBar(SnackBar(
+        content: Text(t(currentLocale.value, 'category_name_required')),
+      ));
+      return;
     }
     final newNames = <String, String>{};
     final enName = _nameEnController.text.trim();
     final ruName = _nameRuController.text.trim();
     if (enName.isNotEmpty) newNames['en'] = enName;
     if (ruName.isNotEmpty) newNames['ru'] = ruName;
-    final bool namesChanged = newNames.isNotEmpty;
-    final Map<String, List<String>> keywords = {};
-    for (final e in _keywordsByLang.entries) {
-      final parts = e.value
-          .map((s) => s.trim())
-          .where((s) => s.isNotEmpty)
-          .toList();
-      if (parts.isNotEmpty) keywords[e.key] = parts;
+    final keywords = <String, List<String>>{};
+    for (final entry in _keywordsByLang.entries) {
+      final parts = entry.value.map((s) => s.trim())
+          .where((s) => s.isNotEmpty).toList();
+      if (parts.isNotEmpty) keywords[entry.key] = parts;
     }
-    final primaryNew = _primaryNameController.text.trim();
-    final primaryChanged =
-        primaryNew.isNotEmpty && primaryNew != widget.category.name.trim();
-    try {
-      if (primaryChanged) {
-        final result = await DatabaseService.instance.updateCategory(cid, primaryNew);
-        if (!result.ok) throw StateError('Rename failed');
-      }
-      final delta = <String, dynamic>{'keywords': keywords};
-      if (namesChanged) {
-        DatabaseService.instance.updateCategoryLocalizedNames(cid, newNames);
-        delta['localized_names'] = newNames;
-      }
-      if (colorChanged) delta['color_value'] = _selectedColorValue;
-      if (iconChanged) delta['icon_code_point'] = _iconCodePoint;
-      final patch = await DatabaseService.instance.patchCategoryDelta(cid, delta);
-      if (!patch.ok) throw StateError('Category patch failed');
-      if (!mounted) return;
-      widget.onSaved();
-      if (!widget.inline && mounted) Navigator.of(context).pop();
-    } catch (_) {
-      if (mounted) {
+    final delta = <String, dynamic>{
+      'keywords': keywords,
+      if (newNames.isNotEmpty) 'localized_names': newNames,
+      if (primaryNew != widget.category.name.trim()) ...{
+        'name': primaryNew,
+        'normalized_id': primaryNew.toLowerCase().replaceAll(RegExp(r'\\s+'), ''),
+      },
+      if (_selectedColorValue != null &&
+          _selectedColorValue != widget.category.colorValue)
+        'color_value': _selectedColorValue,
+      if (_iconCodePoint !=
+          (widget.category.iconCodePoint ?? Icons.folder_rounded.codePoint))
+        'icon_code_point': _iconCodePoint,
+    };
+    // Brain mutates the live category tree before the first await.
+    unawaited(db.patchCategoryDelta(cid, delta).then((result) {
+      // Only an invalid local edit / failed durable write needs feedback.
+      // Network errors are retried silently via the category outbox.
+      if (!result.ok) {
         messenger.showSnackBar(SnackBar(
           content: Text(t(currentLocale.value, 'sync_failed')),
         ));
       }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
+    }));
+    widget.onSaved();
+    if (!widget.inline && mounted) Navigator.of(context).pop();
   }
 
   Future<void> _confirmDelete() async {
@@ -630,7 +614,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                 AppButton.primary(
                   label: t(locale, 'save'),
                   loading: _saving,
-                  onPressed: _saving ? null : () => unawaited(_save()),
+                  onPressed: _saving ? null : _save,
                 ),
               ],
             ),
