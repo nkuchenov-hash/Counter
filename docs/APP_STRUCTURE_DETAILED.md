@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `55a68e2d` on 2026-10-22.**
+**Generated from input HEAD `cb244a73` on 2026-10-23.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -19611,8 +19611,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `notes_folder_pane.dart` on notes area — Animated category-color folder paper with 18px inset plus reusable slanted overlapping spine/rail: fixed All and +, scrollable categories. Users see `notes_folder_pane.dart` when using notes area.
-- **What this is:** `notes_folder_pane.dart` on notes area — Animated category-color folder paper with 18px inset plus reusable slanted overlapping spine/rail: fixed All and +, scrollable categories.
+- **Human purpose:** `notes_folder_pane.dart` on notes area — Subtle pastel folder paper with 18px inset. Users see `notes_folder_pane.dart` when using notes area.
+- **What this is:** `notes_folder_pane.dart` on notes area — Subtle pastel folder paper with 18px inset.
 - **Why needed:** Users see `notes_folder_pane.dart` when using notes area.
 - **Contents:** Primary symbols: `NotesFolderPane`, `NotesFolderTabData`, `NotesFolderTabStrip`, `NotesPhysicalFolderShape`, `_PhysicalNotesTab`.
 - **Key code names:** `NotesFolderPane`, `NotesFolderTabData`, `NotesFolderTabStrip`, `NotesPhysicalFolderShape`, `_PhysicalNotesTab`
@@ -19622,10 +19622,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Notes UI
-- **Responsibilities:** Animated category-color folder paper with 18px inset plus reusable slanted overlapping spine/rail: fixed All and +, scrollable categories
+- **Responsibilities:** Subtle pastel folder paper with 18px inset
 - **When to open:** When behavior tied to `notes_folder_pane.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Animated category-color folder paper with 18px inset plus reusable slanted overlapping spine/rail: fixed All and +, scro
+- **Connected to:** APP_STRUCTURE role: Subtle pastel folder paper with 18px inset
 
 RU:
 
@@ -19690,8 +19690,8 @@ EN:
 - **Human purpose:** `notes_library_production_shell.dart` on notes area — Production Notes shell, physical slanted overlapping folder-edge tabs with fixed All/+ and scrollable category middle on mobile/desktop. Users see `notes_library_production_shell.dart` when using notes area.
 - **What this is:** `notes_library_production_shell.dart` on notes area — Production Notes shell, physical slanted overlapping folder-edge tabs with fixed All/+ and scrollable category middle on mobile/desktop.
 - **Why needed:** Users see `notes_library_production_shell.dart` when using notes area.
-- **Contents:** Primary symbols: `NotesLibraryProductionShell`, `_MobileNotesLibrary`, `_MobileNotesModePill`.
-- **Key code names:** `NotesLibraryProductionShell`, `_MobileNotesLibrary`, `_MobileNotesModePill`
+- **Contents:** Primary symbols: `NotesLibraryProductionShell`, `_MobileNotesLibrary`, `_MobileNotesModePill`, `_MobileRoundAction`.
+- **Key code names:** `NotesLibraryProductionShell`, `_MobileNotesLibrary`, `_MobileNotesModePill`, `_MobileRoundAction`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -35841,7 +35841,7 @@ EN:
 - **Contents:** Flutter widget tree wrapping Notes library/production shell with mock notes.
 - **Key code names:** `NotesGlmLibraryParityFixture`
 - **Repository role:** test
-- **Evidence of use:** Referenced by tests/tooling: `test/notes_glm_editor_parity_test.dart`.
+- **Evidence of use:** Referenced by tests/tooling: `test/notes_folder_tabs_contract_test.dart`, `test/notes_glm_editor_parity_test.dart`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Missing test coverage or broken manual benchmark/smoke harness.
 - **Confidence:** HIGH
@@ -35858,7 +35858,7 @@ RU:
 - **Зачем:** Ловит регрессии при изменении связанного production-кода.
 - **Содержимое:** Test cases для сценария `notes_glm_library_parity_fixture.dart`.
 - **Роль в репозитории:** test
-- **Доказательства использования:** Нужен тестам/инструментам: `test/notes_glm_editor_parity_test.dart`.
+- **Доказательства использования:** Нужен тестам/инструментам: `test/notes_folder_tabs_contract_test.dart`, `test/notes_glm_editor_parity_test.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Пропадёт покрытие тестами или сломается benchmark/smoke.
 - **Уверенность:** HIGH
