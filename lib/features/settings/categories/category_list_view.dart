@@ -139,6 +139,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     setState(() {
       if (_selectedId == id) _selectedId = null;
       _expanded.remove(id);
+      _rowAnchors.remove(id);
     });
   }
 
@@ -270,11 +271,14 @@ class _CategoriesPageState extends State<CategoriesPage> {
       return;
     }
     setState(() {
-      if (_selectedId == r.id && _expanded.contains(r.id)) {
+      final hasChildren = (r.children ?? <CategoryRule>[]).isNotEmpty;
+      if (hasChildren &&
+          _selectedId == r.id &&
+          _expanded.contains(r.id)) {
         _expanded.remove(r.id);
       } else {
         _selectedId = r.id;
-        _expanded.add(r.id);
+        if (hasChildren) _expanded.add(r.id);
       }
     });
   }
