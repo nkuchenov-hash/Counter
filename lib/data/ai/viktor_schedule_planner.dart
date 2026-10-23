@@ -556,3 +556,109 @@ class ViktorBulkPlanner {
       [for (final date in allRows) ...days[date]!], []));
   }
 }
+
+
+/// Multi-event planning is a read-only draft until LIFE OS has an atomic
+/// batch-create Brain gateway. Never partially execute an LLM-generated set.
+class ViktorProposedDayDraft {
+  const ViktorProposedDayDraft._();
+
+  static bool hasMultipleCreates(ViktorActionBatch batch) =>
+      batch.actions.where((action) => action.name == 'create_plan').length > 1;
+
+  static Future<String> describe(
+    ViktorActionBatch batch, {
+    required Future<List<PlanningTask>> Function(DateTime day) loadDay,
+  }) async {
+    final items = batch.actions.where((action) =>
+        action.name == 'create_plan').toList(growable: false);
+    if (items.length < 2) {
+      throw ArgumentError('Multiple create_plan proposals required');
+    }
+    final dates = <String, DateTime>{};
+    for (final item in items) {
+      final wallDay = item.arguments['wall_day'] as String;
+      dates.putIfAbsent(wallDay, () {
+        final date = DateTime.parse(wallDay);
+        return DateTime(date.year, date.month, date.day);
+      });
+    }
+    final existing = <String, List<PlanningTask>>{};
+    for (final entry in dates.entries) {
+      existing[entry.key] = await loadDay(entry.value);
+    }
+    final draft = <({String date, DateTime start, DateTime end,
+        String title, String? timezone})>[];
+    for (final action in items) {
+      final args = action.arguments;
+      final day = args['wall_day'] as String;
+      final hhmm = (args['start_time'] as String).split(':');
+      final date = dates[day]!;
+      final start = DateTime(date.year, date.month, date.day,
+          int.parse(hhmm[0]), int.parse(hhmm[1]));
+      final end = start.add(Duration(
+          minutes: args['duration_minutes'] as int));
+      draft.add((
+        date: day,
+        start: start,
+        end: end,
+        title: args['title'] as String,
+        timezone: args['timezone'] as String?,
+      ));
+    }
+    draft.sort((a, b) => a.start.compareTo(b.start));
+    String clock(DateTime t) =>
+        '${t.hour.toString().padLeft(2, '0')}:'
+        '${t.minute.toString().padLeft(2, '0')}';
+    final lines = <String>['Проект расписания (пока ничего не сохранено):'];
+    var previousDate = '';
+    for (var i = 0; i < draft.length; i++) {
+      final item = draft[i];
+      if (item.date != previousDate) {
+        previousDate = item.date;
+        lines.add('\n${item.date}');
+      }
+      final overlap = <String>[];
+      if (item.end.year != item.start.year ||
+          item.end.month != item.start.month ||
+          item.end.day != item.start.day) {
+        overlap.add('выходит за пределы дня');
+      }
+      for (var j = 0; j < draft.length; j++) {
+        if (j == i) continue;
+        final other = draft[j];
+        if (item.date == other.date &&
+            item.start.isBefore(other.end) &&
+            item.end.isAfter(other.start)) {
+          overlap.add('пересекается с другим предложением');
+          break;
+        }
+      }
+      for (final old in existing[item.date] ?? <PlanningTask>[]) {
+        if (old.startTime != null && old.endDateTime != null &&
+            item.start.isBefore(old.endDateTime!) &&
+            item.end.isAfter(old.startTime!)) {
+          overlap.add('есть сохранённый план «${old.title}»');
+          break;
+        }
+      }
+      final tz = item.timezone;
+      final zone = tz == null || tz.isEmpty ? '' : ' (${tz})';
+      final warning = overlap.isEmpty ? '' : ' — проверить: ${overlap.join('; ')}';
+      lines.add('${clock(item.start)}–${clock(item.end)}$zone  '
+          '${item.title}$warning');
+    }
+    final discarded = batch.actions.where((action) =>
+        action.name != 'create_plan' &&
+        action.name != 'list_day_plans').length;
+    if (discarded > 0) {
+      lines.add('\nДругие действия модели не выполнялись, '
+          'включая запуск или остановку записи.');
+    }
+    lines.add('\nВремя и длительности предложены ИИ: '
+        'проверьте порядок, дорогу и непонятные детали. '
+        'Автоматическое сохранение нескольких новых планов одним '
+        'действием пока недоступно; это только черновик.');
+    return lines.join('\n');
+  }
+}
