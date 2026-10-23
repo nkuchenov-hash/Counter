@@ -406,6 +406,8 @@ class DatabaseService {
   /// Local category revisions are authoritative for UI until a matching
   /// server-backed refresh is available; never let a late GET erase an edit.
   final Map<int, Map<String, dynamic>> _optimisticCategoryEdits = {};
+  bool _categoryMutationFlushInFlight = false;
+
 
   /// All `category_id` / `normalized_id` (lowercase) for this user from PocketBase, **including archived** — reserved for new POSTs.
   Set<String> _reservedCategorySlugsLower = {};
