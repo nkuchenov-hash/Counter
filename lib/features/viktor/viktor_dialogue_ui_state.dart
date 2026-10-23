@@ -112,6 +112,30 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
       allowRepair: false,
     );
 
+  /// Never expose provider schema or internal tool exceptions as chat prose.
+  /// Keep a transparent explanation of what failed and whether a write ran.
+  String _friendlyError(Object error) {
+    final raw = error.toString();
+    if (raw.contains('Move target must differ from source')) {
+      return 'Модель попыталась перенести план на ту же дату. '
+          'Для корректировки черновика это не нужно. Планы не изменены.';
+    }
+    if (raw.contains('provider_content_filter') ||
+        raw.contains('заблокировал ответ своим фильтром')) {
+      return 'Провайдер ИИ заблокировал ответ. '
+          'Расписание не изменено, данные не сохранены.';
+    }
+    if (raw.contains('Invalid bulk') || raw.contains('Unknown Viktor action') ||
+        raw.contains('Invalid action') || raw.contains('proposal')) {
+      return 'ИИ предложил некорректное действие. '
+          'Оно отклонено до применения; планы не изменены.';
+    }
+    final cleaned = raw.replaceFirst('FormatException: ', '')
+        .replaceFirst('Bad state: ', '');
+    return cleaned.length > 220
+        ? '${cleaned.substring(0, 220)}…' : cleaned;
+  }
+
   final _dialogueStore = ViktorConversationStore(DatabaseService.instance);
   bool _dialogueLoaded = false;
   String? _historyNotice;
