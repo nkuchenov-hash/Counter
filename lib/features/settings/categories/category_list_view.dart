@@ -469,6 +469,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
                         } else {
                           _editOnPhone(r);
                         }
+                      } else if (action == 'move') {
+                        unawaited(_moveCategoryWithPicker(r));
                       } else if (action == 'delete') {
                         unawaited(_deleteCategory(r));
                       }
@@ -481,6 +483,16 @@ class _CategoriesPageState extends State<CategoriesPage> {
                       PopupMenuItem(
                         value: 'add',
                         child: Text(t(loc, 'add_subcategory')),
+                      ),
+                      PopupMenuItem(
+                        value: 'move',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.drive_file_move_outline_rounded, size: 20),
+                            const SizedBox(width: 8),
+                            Text(t(loc, 'category_move_to')),
+                          ],
+                        ),
                       ),
                       const PopupMenuDivider(),
                       PopupMenuItem(
