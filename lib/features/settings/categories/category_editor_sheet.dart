@@ -558,101 +558,66 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                     t(locale, 'category_section_appearance'),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    height: 39,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: kCategoryPickerMaterialColors.map((color) {
-                        final selected = _selectedPrimary == color;
-                        return _compactSwatch(color, selected, () {
-                          setState(() {
-                            _selectedPrimary = color;
-                            _selectedShadeValue = color[500]!.toARGB32();
-                            _selectedColorValue = _selectedShadeValue;
-                          });
-                          HapticFeedback.lightImpact();
-                        });
-                      }).toList(),
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () => setState(
-                        () => _showShades = !_showShades,
-                      ),
-                      icon: Icon(
-                        _showShades
-                            ? Icons.keyboard_arrow_up_rounded
-                            : Icons.keyboard_arrow_down_rounded,
-                      ),
-                      label: Text(t(locale, 'category_color_shades')),
-                    ),
-                  ),
-                  if (_showShades)
-                    Wrap(
-                      spacing: 2,
-                      runSpacing: 8,
-                      children: <int>[50, 100, 200, 300, 400, 500, 600, 700, 800, 900]
-                          .map((tone) {
-                        final color = _selectedPrimary![tone]!;
-                        final value = color.toARGB32();
-                        return _compactSwatch(
-                          color,
-                          _selectedShadeValue == value,
-                          () {
-                            setState(() {
-                              _selectedShadeValue = value;
-                              _selectedColorValue = value;
-                            });
-                            HapticFeedback.lightImpact();
-                          },
-                          rounded: false,
-                        );
-                      }).toList(),
-                    ),
                   const SizedBox(height: 12),
-                  Text(
-                    t(locale, 'category_choose_icon'),
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 48,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: kCategoryIconChoices.map((icon) {
-                        final selected = icon.codePoint == _iconCodePoint;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 7),
-                          child: InkWell(
-                            onTap: () {
-                              setState(() => _iconCodePoint = icon.codePoint);
-                              HapticFeedback.lightImpact();
-                            },
-                            borderRadius: BorderRadius.circular(9),
-                            child: Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(9),
-                                border: Border.all(
-                                  color: selected
-                                      ? scheme.primary
-                                      : scheme.outlineVariant,
-                                  width: selected ? 2 : 1,
-                                ),
-                              ),
-                              child: Icon(icon, color: selected
-                                  ? scheme.primary : scheme.onSurface),
+                  LayoutBuilder(builder: (context, constraints) {
+                    final desktopPicker = constraints.maxWidth >= 540;
+                    final colors = Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(t(locale, 'category_color'),
+                            style: Theme.of(context).textTheme.titleSmall),
+                        const SizedBox(height: 8),
+                        Wrap(spacing: 4, runSpacing: 8,
+                          children: [
+                            ...kCategoryPickerMaterialColors.map((color) =>
+                              _compactSwatch(color, _selectedPrimary == color, () {
+                                setState(() {
+                                  _selectedPrimary = color;
+                                  _selectedShadeValue = color[500]!.toARGB32();
+                                  _selectedColorValue = _selectedShadeValue;
+                                });
+                              })),
+                            IconButton.outlined(
+                              onPressed: () => setState(() => _showShades = !_showShades),
+                              tooltip: t(locale, 'category_color_shades'),
+                              icon: Icon(_showShades ? Icons.remove : Icons.add),
                             ),
+                          ],
+                        ),
+                        if (_showShades) ...[
+                          const SizedBox(height: 10),
+                          Wrap(spacing: 4, runSpacing: 8,
+                            children: <int>[50, 100, 200, 300, 400, 500, 600, 700, 800, 900]
+                              .map((tone) {
+                                final c = _selectedPrimary![tone]!;
+                                final v = c.toARGB32();
+                                return _compactSwatch(c, _selectedShadeValue == v, () {
+                                  setState(() {
+                                    _selectedShadeValue = v;
+                                    _selectedColorValue = v;
+                                  });
+                                }, rounded: false);
+                              }).toList(),
                           ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                        ],
+                      ],
+                    );
+                    if (!desktopPicker) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [colors, const SizedBox(height: 18), _iconPanel(false)],
+                      );
+                    }
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: colors),
+                        const SizedBox(width: 24),
+                        Expanded(child: _iconPanel(true)),
+                      ],
+                    );
+                  }),
+                  const SizedBox(height: 16),
                   _advancedFields(langs, locale),
                 ],
               ),
