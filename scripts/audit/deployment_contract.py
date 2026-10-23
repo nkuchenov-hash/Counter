@@ -52,6 +52,23 @@ def main() -> int:
         if token not in web:
             violations.append(f"WEB_DEPLOY_ORDERING_MISSING {token}")
 
+    # A migration must never hit live SQLite until it has been exercised on a
+    # separate consistent snapshot. A plain node --check missed the Viktor outage.
+    for token in (
+        "sqlite3.connect",
+        "source_db.backup(snapshot_db",
+        "Insufficient free space for isolated migration preflight",
+        'migrate up \\',
+        '--migrationsDir="$preflight_dir/pb_migrations"',
+        '--hooksDir="$preflight_dir/empty_hooks"',
+        "PocketBase migration preflight passed",
+    ):
+        if token not in pb:
+            violations.append(f"POCKETBASE_MIGRATION_PREFLIGHT_MISSING {token}")
+
+    if "cp .github/workflows/pocketbase-health-watch.yml build/web/.github/workflows/pocketbase-health-watch.yml" not in web:
+        violations.append("HEALTH_MONITOR_DEFAULT_BRANCH_COPY_MISSING")
+
     if "branches:\n      - main" in web or "branches: [main]" in web:
         violations.append("WEB_DEPLOY_DIRECT_MAIN_PUSH_FORBIDDEN")
     if "workflow_dispatch:" in web:
