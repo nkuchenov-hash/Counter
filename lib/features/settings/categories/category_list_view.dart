@@ -432,6 +432,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
                         } else {
                           _editOnPhone(r);
                         }
+                      } else if (action == 'delete') {
+                        unawaited(_deleteCategory(r));
                       }
                     },
                     itemBuilder: (_) => <PopupMenuEntry<String>>[
@@ -442,6 +444,19 @@ class _CategoriesPageState extends State<CategoriesPage> {
                       PopupMenuItem(
                         value: 'add',
                         child: Text(t(loc, 'add_subcategory')),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline_rounded,
+                              size: 20, color: scheme.error),
+                            const SizedBox(width: 8),
+                            Text(t(loc, 'delete_category'),
+                              style: TextStyle(color: scheme.error)),
+                          ],
+                        ),
                       ),
                     ],
                   ),
