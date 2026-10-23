@@ -108,75 +108,78 @@ class _CategoryAppearanceSheetState extends State<CategoryAppearanceSheet> {
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: kCategoryPickerMaterialColors.map((p) {
-                final sel = _selectedPrimary == p;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedPrimary = p;
-                      _selectedShadeValue = categoryColorAtDepth(
-                        p,
-                        DatabaseService.instance
-                                .categoryPathFromRootToLocalId(widget.category.id)
-                                .length - 1,
-                      );
-                      _colorValue = _selectedShadeValue;
-                    });
-                    HapticFeedback.lightImpact();
-                  },
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: p,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: sel
-                            ? Theme.of(context).colorScheme.primary
-                            : Colors.transparent,
-                        width: sel ? 3 : 0,
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: kCategoryPickerMaterialColors.map((p) {
+                  final sel = _selectedPrimary == p;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedPrimary = p;
+                          _selectedShadeValue = categoryColorAtDepth(p, depth);
+                          _colorValue = _selectedShadeValue;
+                        });
+                        HapticFeedback.lightImpact();
+                      },
+                      customBorder: const CircleBorder(),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: p,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: sel
+                                ? Theme.of(context).colorScheme.onSurface
+                                : Theme.of(context).colorScheme.outlineVariant,
+                            width: sel ? 3 : 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Divider(height: 1, color: Theme.of(context).colorScheme.outlineVariant),
+            const SizedBox(height: 12),
+            Row(
+              children: kCategorySelectableTones.map((tone) {
+                final c = _selectedPrimary![tone]!;
+                final v = c.toARGB32();
+                final sel = _selectedShadeValue == v;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        _selectedShadeValue = v;
+                        _colorValue = v;
+                      });
+                      HapticFeedback.lightImpact();
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: c,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: sel
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(context).colorScheme.outlineVariant,
+                          width: sel ? 3 : 1,
+                        ),
                       ),
                     ),
                   ),
                 );
               }).toList(),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: kCategorySelectableTones.map((tone) {
-                    final c = _selectedPrimary![tone]!;
-                    final v = c.toARGB32();
-                    final sel = _selectedShadeValue == v;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedShadeValue = v;
-                          _colorValue = v;
-                        });
-                        HapticFeedback.lightImpact();
-                      },
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: c,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: sel
-                                ? Theme.of(context).colorScheme.primary
-                                : Colors.transparent,
-                            width: sel ? 3 : 0,
-                          ),
-                        ),
-                      ),
-                    );
-                  })
-                  .toList(),
             ),
             const SizedBox(height: 16),
             Text(
