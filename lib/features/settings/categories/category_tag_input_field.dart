@@ -113,6 +113,8 @@ class _TagInputFieldState extends State<TagInputField> {
                 labelText: t(currentLocale.value, 'add_keyword_hint'),
               ),
           textCapitalization: TextCapitalization.sentences,
+          onChanged: (_) => setState(() {}),
+
           onSubmitted: (_) => _commitCurrent(),
         ),
       ],
