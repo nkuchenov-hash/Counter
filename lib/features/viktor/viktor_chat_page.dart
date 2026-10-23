@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
+import 'package:counter/features/viktor/viktor_chat_composer.dart';
 import 'package:counter/data/ai/viktor_action_contract.dart';
 import 'package:counter/data/ai/viktor_executor.dart';
 import 'package:counter/data/ai/viktor_gateway.dart';
@@ -931,60 +932,15 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                       ),
                     ),
                   ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: scheme.surface,
-                    border: Border(top: BorderSide(
-                      color: scheme.outlineVariant.withValues(alpha: 0.5))),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        AppIconButton(
-                          icon: _listening ? Icons.stop_circle_outlined :
-                            Icons.mic_none_rounded,
-                          tooltip: _listening ? 'Остановить диктовку' :
-                            'Продиктовать Виктору',
-                          onPressed: _busy || _startingMic || _transcribing ? null : _toggleMic,
-                          selected: _listening,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _controller,
-                            enabled: !_busy && !_startingMic && !_transcribing,
-                            minLines: 1,
-                            maxLines: 4,
-                            textCapitalization: TextCapitalization.sentences,
-                            style: const TextStyle(fontSize: 16),
-                            decoration: InputDecoration(
-                              hintText: _listening ? 'Идёт запись — нажмите стоп' :
-                                'Что сделать в LIFE OS?',
-                              filled: true,
-                              fillColor: scheme.surfaceContainerLow,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 12),
-                            ),
-                            onSubmitted: (_) => unawaited(_send()),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        AppIconButton(
-                          icon: Icons.arrow_upward_rounded,
-                          tooltip: 'Отправить Виктору',
-                          onPressed: _busy || _listening || _transcribing || _startingMic || !_settingsReady ? null :
-                            () => unawaited(_send()),
-                          variant: AppIconButtonVariant.filled,
-                        ),
-                      ],
-                    ),
-                  ),
+                ViktorChatComposer(
+                  controller: _controller,
+                  inputEnabled: !_busy && !_startingMic && !_transcribing,
+                  microphoneEnabled: !_busy && !_startingMic && !_transcribing,
+                  sendEnabled: !_busy && !_listening && !_transcribing &&
+                      !_startingMic && _settingsReady,
+                  isListening: _listening,
+                  onMicrophone: () => unawaited(_toggleMic()),
+                  onSend: () => unawaited(_send()),
                 ),
               ],
             ),
