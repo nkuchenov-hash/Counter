@@ -80,13 +80,13 @@ class _CategoryAppearanceSheetState extends State<CategoryAppearanceSheet> {
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
     _selectedPrimary ??= _primaryForValue(_colorValue);
+    final depth = DatabaseService.instance
+        .categoryPathFromRootToLocalId(widget.category.id).length - 1;
     _selectedShadeValue ??=
         (_colorValue != null &&
-            categoryMaterialShadeValues(
-              _selectedPrimary!,
-            ).contains(_colorValue))
+            categoryMaterialShadeValues(_selectedPrimary!).contains(_colorValue))
         ? _colorValue
-        : _selectedPrimary![500]!.toARGB32();
+        : categoryColorAtDepth(_selectedPrimary!, depth);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -117,7 +117,12 @@ class _CategoryAppearanceSheetState extends State<CategoryAppearanceSheet> {
                   onTap: () {
                     setState(() {
                       _selectedPrimary = p;
-                      _selectedShadeValue = p[500]!.toARGB32();
+                      _selectedShadeValue = categoryColorAtDepth(
+                        p,
+                        DatabaseService.instance
+                                .categoryPathFromRootToLocalId(widget.category.id)
+                                .length - 1,
+                      );
                       _colorValue = _selectedShadeValue;
                     });
                     HapticFeedback.lightImpact();
@@ -143,8 +148,7 @@ class _CategoryAppearanceSheetState extends State<CategoryAppearanceSheet> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: <int>[50, 100, 200, 300, 400, 500, 600, 700, 800, 900]
-                  .map((tone) {
+              children: kCategorySelectableTones.map((tone) {
                     final c = _selectedPrimary![tone]!;
                     final v = c.toARGB32();
                     final sel = _selectedShadeValue == v;
