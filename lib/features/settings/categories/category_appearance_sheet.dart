@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/data/database_service.dart';
@@ -40,40 +41,28 @@ class _CategoryAppearanceSheetState extends State<CategoryAppearanceSheet> {
 
   MaterialColor _primaryForValue(int? v) => categoryMaterialPrimaryForValue(v);
 
-  Future<void> _apply() async {
+  void _apply() {
     if (_busy) return;
-    setState(() => _busy = true);
+    final db = DatabaseService.instance;
     final messenger = ScaffoldMessenger.of(context);
-    final id = widget.category.id;
-    final cv = _colorValue ?? 0;
-    DatabaseService.instance.updateNestedCategory(
-      id,
-      colorValue: cv,
-      iconCodePoint: _iconCodePoint,
+    final staged = db.stageCategoryDelta(
+      widget.category.id,
+      <String, dynamic>{
+        'color_value': _colorValue ?? 0,
+        'icon_code_point': _iconCodePoint,
+      },
     );
-    if (mounted) {
-      widget.onSaved();
-      Navigator.of(context).pop();
-    }
-    try {
-      final patch = await DatabaseService.instance.patchCategoryDelta(
-        id,
-        <String, dynamic>{'color_value': cv, 'icon_code_point': _iconCodePoint},
-      );
-      if (!patch.ok && mounted) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
+    // The local state is already updated by stageCategoryDelta before its
+    // first await. Never wait for network status to dismiss the appearance UI.
+    widget.onSaved();
+    Navigator.of(context).pop();
+    unawaited(staged.catchError((Object _, StackTrace __) {
+      messenger.showSnackBar(SnackBar(
+        content: Text(currentLocale.value == 'ru'
+            ? 'Не удалось сохранить изменение на устройстве.'
+            : 'Could not save the edit on this device.'),
+      ));
+    }));
   }
 
   @override
@@ -108,75 +97,90 @@ class _CategoryAppearanceSheetState extends State<CategoryAppearanceSheet> {
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: kCategoryPickerMaterialColors.map((p) {
-                final sel = _selectedPrimary == p;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedPrimary = p;
-                      _selectedShadeValue = categoryColorAtDepth(
-                        p,
-                        DatabaseService.instance
-                                .categoryPathFromRootToLocalId(widget.category.id)
-                                .length - 1,
-                      );
-                      _colorValue = _selectedShadeValue;
-                    });
-                    HapticFeedback.lightImpact();
-                  },
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: p,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: sel
-                            ? Theme.of(context).colorScheme.primary
-                            : Colors.transparent,
-                        width: sel ? 3 : 0,
+            SizedBox(
+              height: 44,
+              child: ListView.separated(
+                key: const ValueKey('category-quick-base-palette-row'),
+                scrollDirection: Axis.horizontal,
+                itemCount: kCategoryPickerMaterialColors.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 7),
+                itemBuilder: (context, i) {
+                  final p = kCategoryPickerMaterialColors[i];
+                  final selected = _selectedPrimary == p;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedPrimary = p;
+                        _selectedShadeValue = categoryColorAtDepth(p, depth);
+                        _colorValue = _selectedShadeValue;
+                      });
+                      HapticFeedback.selectionClick();
+                    },
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: p,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: selected
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(context).colorScheme.outlineVariant,
+                          width: selected ? 2.5 : 1,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
+            Divider(height: 1, color: Theme.of(context).colorScheme.outlineVariant),
+            const SizedBox(height: 10),
+            Text('Интенсивность по уровню',
+                style: Theme.of(context).textTheme.bodyMedium),
+            const SizedBox(height: 8),
+            Row(
+              key: const ValueKey('category-quick-tone-row'),
+              children: [
+                for (var i = 0; i < kCategorySelectableTones.length; i++) ...[
+                  if (i > 0)
+                    Container(
+                      width: 1, height: 30,
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                  GestureDetector(
+                    onTap: () {
+                      final v = _selectedPrimary![
+                          kCategorySelectableTones[i]]!.toARGB32();
+                      setState(() {
+                        _selectedShadeValue = v;
+                        _colorValue = v;
+                      });
+                      HapticFeedback.selectionClick();
+                    },
+                    child: Container(
+                      width: 36, height: 36,
+                      decoration: BoxDecoration(
+                        color: _selectedPrimary![kCategorySelectableTones[i]]!,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: _selectedShadeValue ==
+                                  _selectedPrimary![
+                                    kCategorySelectableTones[i]]!.toARGB32()
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(context).colorScheme.outlineVariant,
+                          width: _selectedShadeValue ==
+                                  _selectedPrimary![
+                                    kCategorySelectableTones[i]]!.toARGB32()
+                              ? 2.5 : 1,
+                        ),
                       ),
                     ),
                   ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: kCategorySelectableTones.map((tone) {
-                    final c = _selectedPrimary![tone]!;
-                    final v = c.toARGB32();
-                    final sel = _selectedShadeValue == v;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedShadeValue = v;
-                          _colorValue = v;
-                        });
-                        HapticFeedback.lightImpact();
-                      },
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: c,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: sel
-                                ? Theme.of(context).colorScheme.primary
-                                : Colors.transparent,
-                            width: sel ? 3 : 0,
-                          ),
-                        ),
-                      ),
-                    );
-                  })
-                  .toList(),
+                ],
+              ],
             ),
             const SizedBox(height: 16),
             Text(
