@@ -186,7 +186,13 @@ void main() {
 
     expect(find.byKey(const Key('viktor_chat_scroll_configuration')),
       findsOneWidget);
-    expect(find.byType(Scrollbar), findsNothing);
+    // Flutter can still build Scrollbar widgets for desktop-specific
+    // Scrollables. The local theme must keep any such widgets invisible.
+    final scrollbars = tester.widget<ScrollbarTheme>(
+      find.byKey(const Key('viktor_hidden_scrollbar_theme')));
+    expect(scrollbars.data.thickness?.resolve(<WidgetState>{}), 0.0);
+    expect(scrollbars.data.thumbVisibility?.resolve(<WidgetState>{}), false);
+    expect(scrollbars.data.trackVisibility?.resolve(<WidgetState>{}), false);
     expect(tester.takeException(), isNull);
   });
 
