@@ -44,6 +44,12 @@ class ViktorConversationStore {
   Future<void> _writeTail = Future<void>.value();
   int _sequence = 0;
   String? _pendingOwner;
+  bool _secureStorageUnavailable = false;
+
+  /// If encryption/storage fails and PocketBase is also unreachable,
+  /// unsent turns can only survive while this page remains open.
+  bool get pendingInMemoryOnly =>
+      _secureStorageUnavailable && _pending.isNotEmpty;
   final List<({String owner, String id, String role, String body})>
       _pending = [];
 
@@ -68,7 +74,21 @@ class ViktorConversationStore {
     if (_pendingOwner != null && _pending.isNotEmpty) {
       await _saveOutbox();
     }
-    final raw = await _secureStorage.read(key: _outboxKey(owner));
+    String? raw;
+    try {
+      raw = await _secureStorage.read(key: _outboxKey(owner));
+      _secureStorageUnavailable = false;
+    } catch (_) {
+      // A full or unavailable browser secure store must not prevent fetching
+      // already-saved dialogue from PocketBase.
+      if (_pending.isNotEmpty) {
+        throw StateError('Невозможно сменить аккаунт с '
+            'несохранённой локальной историей.');
+      }
+      _pendingOwner = owner;
+      _secureStorageUnavailable = true;
+      return;
+    }
     final restored = <({String owner, String id, String role, String body})>[];
     if (raw != null && raw.isNotEmpty) {
       final data = jsonDecode(raw);
@@ -101,13 +121,19 @@ class ViktorConversationStore {
   Future<void> _saveOutbox() async {
     final owner = _pendingOwner;
     if (owner == null) throw StateError('Виктор не определил аккаунт.');
-    await _secureStorage.write(
-      key: _outboxKey(owner),
-      value: jsonEncode([
-        for (final item in _pending)
-          {'id': item.id, 'role': item.role, 'body': item.body},
-      ]),
-    );
+    try {
+      await _secureStorage.write(
+        key: _outboxKey(owner),
+        value: jsonEncode([
+          for (final item in _pending)
+            {'id': item.id, 'role': item.role, 'body': item.body},
+        ]),
+      );
+      _secureStorageUnavailable = false;
+    } catch (_) {
+      _secureStorageUnavailable = true;
+      rethrow;
+    }
   }
 
   /// Every successful remote write is removed from the encrypted queue.
@@ -145,14 +171,16 @@ class ViktorConversationStore {
           rethrow;
         }
       }
+      // PocketBase already acknowledged (or deduplicated) this turn. Do
+      // not classify a successful server write as unsynced merely because
+      // the browser cannot rewrite its encrypted local cache.
       _pending.removeAt(0);
       try {
         await _saveOutbox();
       } catch (_) {
-        // The server may have saved the turn: keep its identifier for
-        // deduplication on restart rather than losing its pending receipt.
-        _pending.insert(0, item);
-        rethrow;
+        // An older encrypted snapshot may still contain the turn.
+        // Its stable client_turn_id is deduplicated on the next load.
+        // Never reinsert an already-acknowledged row in the live queue.
       }
     }
   }
@@ -231,7 +259,21 @@ class ViktorConversationStore {
       }
       _pending.add((owner: ownerAtSubmission, id: id,
           role: turn.role, body: text));
-      await _saveOutbox();
+      try {
+        await _saveOutbox();
+      } catch (_) {
+        // Browser storage quota/security failure is not a server error.
+        // Still attempt to save the actual user message in PocketBase now.
+        // If offline too, keep it in memory and expose the durability risk.
+        try {
+          await _flush(ownerAtSubmission);
+          return;
+        } catch (_) {
+          throw StateError('История не сохранилась ни на сервере, '
+              'ни в защищённом хранилище. Не закрывайте эту вкладку '
+              'до восстановления синхронизации.');
+        }
+      }
       await _flush(ownerAtSubmission);
     });
     _writeTail = next;
