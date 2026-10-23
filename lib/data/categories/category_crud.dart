@@ -547,6 +547,10 @@ extension CategoryCrudExtension on DatabaseService {
     if (owner.isEmpty || rowId == null) {
       throw StateError('Category edit cannot yet be journaled for this profile');
     }
+    if (_optimisticCategoryOwner != owner) {
+      _optimisticCategoryEdits.clear();
+      _optimisticCategoryOwner = owner;
+    }
     final prior = _optimisticCategoryEdits[categoryId] ??
         <String, dynamic>{};
     _optimisticCategoryEdits[categoryId] = {...prior, ...fields};
