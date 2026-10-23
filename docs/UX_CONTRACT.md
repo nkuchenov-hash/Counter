@@ -277,6 +277,14 @@ This document defines how Life OS behaves when people interact with it. It is th
 - Persisted order sync should be batched or debounced and must not block drag motion.
 - Failed reorder sync should restore or reconcile order without duplicating rows.
 
+## Category appearance edits (2026-10-23)
+
+- Color, shade, icon, name, localized names and keywords in Settings → Categories commit immediately to the Brain's live category stream without awaiting PocketBase.
+- Category PATCH operations are owner-scoped, durable, coalesced by PocketBase row ID and retried on reconnect, resume and valid authentication. A delayed response must never overwrite a newer local edit.
+- Category loading and realtime refresh preserve pending field values until the server has confirmed them. A network outage does not clear saved local category colors or block closing the edit sheet.
+- Base colors occupy one horizontal row; available shade swatches are permanently visible directly below a thin divider. Neutral gray presets have identical RGB components (no blue tint).
+- Retriable backend errors do not produce repeated per-action snackbars. A genuine validation or storage issue remains distinguishable from ordinary offline pending sync.
+
 ## Optimistic UI Expectations
 
 - **Priority 1:** Records and Planning/Lists CRUD follow the Iron Laws: visible local shadow and immediate local acknowledgment first, durable outbox handoff second, PocketBase sync third. No success toast waits for a forced refetch or remote acknowledgment; a server-confirmed claim requires real server acknowledgment.
