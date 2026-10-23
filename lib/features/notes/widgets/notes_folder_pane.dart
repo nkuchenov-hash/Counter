@@ -9,17 +9,14 @@ Color notesFolderPaper(BuildContext context, int? categoryId) {
   final scheme = Theme.of(context).colorScheme;
   final dark = Theme.of(context).brightness == Brightness.dark;
   if (categoryId == null) {
-    return dark
-        ? Color.alphaBlend(const Color(0xFF285B99).withValues(alpha: 0.25), scheme.surface)
-        : const Color(0xFFE3ECF8);
+    return dark ? scheme.surfaceContainerLow : const Color(0xFFF2F4F7);
   }
   final accent = DatabaseService.instance.getCategoryRuleById(categoryId)?.colorOrDefault;
   if (accent == null) return scheme.surface;
-  // Real folder paper: the selected spine and the page use one saturated
-  // category surface, not a nearly-white tint that hides the active color.
+  // Restrained category tint, same as the selected spine's lower edge.
   return Color.alphaBlend(
-    accent.withValues(alpha: dark ? 0.68 : 0.82),
-    dark ? scheme.surface : Colors.white,
+    accent.withValues(alpha: dark ? 0.22 : 0.15),
+    dark ? scheme.surface : const Color(0xFFF9FAFB),
   );
 }
 
@@ -61,12 +58,14 @@ class NotesFolderTabData {
     required this.label,
     required this.icon,
     required this.paper,
+    this.accent,
   });
 
   final int id;
   final String label;
   final IconData icon;
   final Color paper;
+  final Color? accent;
 }
 
 /// All | horizontally scrollable physical category tabs | add.
@@ -84,8 +83,8 @@ class NotesFolderTabStrip extends StatelessWidget {
     this.onManage,
   });
 
-  static const double height = 50;
-  static const double _overlap = 30;
+  static const double height = 38;
+  static const double _overlap = 15;
 
   final List<NotesFolderTabData> tabs;
   final int? selectedId;
@@ -97,7 +96,7 @@ class NotesFolderTabStrip extends StatelessWidget {
   final VoidCallback? onManage;
 
   static double tabWidth(String label) =>
-      (label.runes.length * 9.0 + 92).clamp(132.0, 248.0).toDouble();
+      (label.runes.length * 7.8 + 61).clamp(94.0, 186.0).toDouble();
 
   void _scrollWheel(PointerSignalEvent event) {
     if (event is! PointerScrollEvent || !scrollController.hasClients) return;
@@ -119,17 +118,19 @@ class NotesFolderTabStrip extends StatelessWidget {
       label: allLabel,
       icon: Icons.format_list_bulleted_rounded,
       paper: allPaper,
+      accent: const Color(0xFF8591A3),
       selected: selectedId == null,
-      width: 114,
+      width: 90,
       onTap: () => onSelect(null),
     );
     final addTab = _PhysicalNotesTab(
       key: const ValueKey('notes-tab-add'),
       label: '',
       icon: Icons.add_rounded,
-      paper: dark ? const Color(0xFF34363C) : const Color(0xFF17191D),
+      paper: dark ? const Color(0xFF34373D) : const Color(0xFFF0F2F5),
+      accent: const Color(0xFF748092),
       selected: false,
-      width: 58,
+      width: 46,
       compact: true,
       onTap: onAdd,
       onLongPress: onManage,
@@ -156,6 +157,7 @@ class NotesFolderTabStrip extends StatelessWidget {
           label: tab.label,
           icon: tab.icon,
           paper: tab.paper,
+          accent: tab.accent,
           selected: tab.id == selectedId,
           width: tabWidth(tab.label),
           onTap: () => onSelect(tab.id),
@@ -230,18 +232,19 @@ class NotesPhysicalFolderShape extends ShapeBorder {
     final top = rect.top;
     final right = rect.right;
     final bottom = rect.bottom;
-    final slope = (rect.width * 0.32).clamp(19.0, 43.0).toDouble();
+    // Short, softly sloped trailing shoulder, not a broad trapezoid.
+    final slope = (rect.width * 0.14).clamp(14.0, 21.0).toDouble();
     return Path()
       ..moveTo(left, bottom)
-      ..lineTo(left, top + 13)
-      ..quadraticBezierTo(left, top, left + 14, top)
-      ..lineTo(right - slope - 7, top)
+      ..lineTo(left, top + 9)
+      ..quadraticBezierTo(left, top, left + 9, top)
+      ..lineTo(right - slope - 5, top)
       ..cubicTo(
-        right - slope + 5, top,
-        right - slope + 11, top + 11,
-        right - slope + 17, top + 23,
+        right - slope + 2, top,
+        right - slope + 5, top + 5,
+        right - slope + 8, top + 12,
       )
-      ..quadraticBezierTo(right - 8, bottom, right, bottom)
+      ..quadraticBezierTo(right - 5, bottom, right, bottom)
       ..close();
   }
 
@@ -255,8 +258,8 @@ class NotesPhysicalFolderShape extends ShapeBorder {
       getOuterPath(rect, textDirection: textDirection),
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1
-        ..color = const Color(0x55FFFFFF),
+        ..strokeWidth = 0.9
+        ..color = const Color(0x42FFFFFF),
     );
   }
 
@@ -272,6 +275,7 @@ class _PhysicalNotesTab extends StatelessWidget {
     required this.paper,
     required this.selected,
     required this.width,
+    this.accent,
     required this.onTap,
     this.onLongPress,
     this.compact = false,
@@ -280,6 +284,7 @@ class _PhysicalNotesTab extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color paper;
+  final Color? accent;
   final bool selected;
   final double width;
   final VoidCallback onTap;
@@ -290,19 +295,25 @@ class _PhysicalNotesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = accent ?? scheme.onSurfaceVariant;
     final fill = compact
         ? paper
-        : (selected ? paper : Color.lerp(paper, scheme.surface, dark ? 0.20 : 0.12)!);
-    final foreground = compact
+        : (selected ? paper
+            : Color.lerp(paper, accentColor, dark ? 0.22 : 0.17)!);
+    // Fine bevel at the top, same paper at the selected spine's bottom.
+    final topFill = compact ? fill
+        : Color.lerp(fill, accentColor, selected ? 0.17 : 0.08)!;
+    final foreground = ThemeData.estimateBrightnessForColor(fill) ==
+            Brightness.dark
         ? Colors.white
-        : ThemeData.estimateBrightnessForColor(fill) == Brightness.dark
-            ? Colors.white
-            : const Color(0xFF171717);
+        : const Color(0xFF202630);
     return SizedBox(
       width: width,
-      height: NotesFolderTabStrip.height,
+      height: selected ? NotesFolderTabStrip.height : NotesFolderTabStrip.height - 3,
       child: Material(
         color: Colors.transparent,
+        elevation: selected ? 1.5 : 0.35,
+        shadowColor: Colors.black.withValues(alpha: dark ? 0.16 : 0.08),
         shape: const NotesPhysicalFolderShape(),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -314,17 +325,23 @@ class _PhysicalNotesTab extends StatelessWidget {
             curve: Curves.easeInOutCubic,
             alignment: Alignment.centerLeft,
             padding: EdgeInsets.only(
-              left: compact ? 12 : 12,
-              right: compact ? 20 : 36,
+              left: compact ? 11 : 10,
+              right: compact ? 14 : 23,
             ),
-            decoration: BoxDecoration(color: fill),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [topFill, fill],
+              ),
+            ),
             child: compact
                 ? Icon(icon, color: foreground, size: 21)
                 : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(icon, size: 18, color: foreground),
-                      const SizedBox(width: 8),
+                      Icon(icon, size: 16, color: foreground.withValues(alpha: 0.82)),
+                      const SizedBox(width: 7),
                       Expanded(
                         child: Text(
                           label,
