@@ -14,6 +14,7 @@ import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 export 'package:counter/features/settings/categories/category_editor_sheet.dart'
     show CategoryEditorSheet;
@@ -53,6 +54,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
   StreamSubscription<List<CategoryRule>>? _categoriesSubscription;
   int? _selectedId;
   bool _moving = false;
+  final Map<int, GlobalKey> _rowAnchors = <int, GlobalKey>{};
+  int? _draggedCategoryId;
+  int? _dropInsideCategoryId;
+  bool _nestDropHandled = false;
 
   @override
   void initState() {
@@ -134,6 +139,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     setState(() {
       if (_selectedId == id) _selectedId = null;
       _expanded.remove(id);
+      _rowAnchors.remove(id);
     });
   }
 
@@ -227,6 +233,25 @@ class _CategoriesPageState extends State<CategoriesPage> {
     );
   }
 
+  void _toggleAllCategories() {
+    setState(() {
+      if (_expanded.isNotEmpty || _search.text.trim().isNotEmpty) {
+        _expanded.clear();
+        if (_search.text.isNotEmpty) _search.clear();
+      } else {
+        void visit(List<CategoryRule> rows) {
+          for (final rule in rows) {
+            if ((rule.children ?? <CategoryRule>[]).isNotEmpty) {
+              _expanded.add(rule.id);
+              visit(rule.children!);
+            }
+          }
+        }
+        visit(DatabaseService.instance.getChildrenOf(null));
+      }
+    });
+  }
+
   void _toggle(int id) {
     setState(() {
       if (!_expanded.remove(id)) _expanded.add(id);
@@ -235,13 +260,121 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
   void _select(CategoryRule r, bool wide) {
     if (!wide) {
-      _editOnPhone(r);
+      if ((r.children ?? <CategoryRule>[]).isNotEmpty) {
+        setState(() {
+          _selectedId = r.id;
+          if (!_expanded.remove(r.id)) _expanded.add(r.id);
+        });
+      } else {
+        _editOnPhone(r);
+      }
       return;
     }
     setState(() {
-      _selectedId = r.id;
-      _expanded.add(r.id);
+      final hasChildren = (r.children ?? <CategoryRule>[]).isNotEmpty;
+      if (hasChildren &&
+          _selectedId == r.id &&
+          _expanded.contains(r.id)) {
+        _expanded.remove(r.id);
+      } else {
+        _selectedId = r.id;
+        if (hasChildren) _expanded.add(r.id);
+      }
     });
+  }
+
+  void _beginCategoryDrag(int index, List<_CategoryTreeRow> rows) {
+    if (index < 0 || index >= rows.length) return;
+    setState(() {
+      _draggedCategoryId = rows[index].rule.id;
+      _dropInsideCategoryId = null;
+      _nestDropHandled = false;
+    });
+  }
+
+  void _trackCategoryDrop(Offset globalPosition, List<_CategoryTreeRow> rows) {
+    final source = _draggedCategoryId;
+    if (source == null || _moving) return;
+    final invalidIds = DatabaseService.instance.getRecordIdsInSubtree(source);
+    int? targetId;
+    for (final item in rows) {
+      if (invalidIds.contains(item.rule.id)) continue;
+      final object = _rowAnchors[item.rule.id]?.currentContext?.findRenderObject();
+      if (object is! RenderBox || !object.hasSize) continue;
+      final point = object.globalToLocal(globalPosition);
+      final size = object.size;
+      if (point.dx < 0 || point.dx > size.width ||
+          point.dy < 0 || point.dy > size.height) continue;
+      // Middle 60% nests into the row. Its top/bottom 20% keeps the
+      // ordinary shared ReorderableListView before/after insertion.
+      if (point.dy >= size.height * 0.20 &&
+          point.dy <= size.height * 0.80) {
+        targetId = item.rule.id;
+      }
+      break;
+    }
+    if (targetId != _dropInsideCategoryId && mounted) {
+      setState(() => _dropInsideCategoryId = targetId);
+    }
+  }
+
+  void _finishCategoryDrag() {
+    final source = _draggedCategoryId;
+    final target = _dropInsideCategoryId;
+    if (!_nestDropHandled && source != null && target != null) {
+      _nestDropHandled = true;
+      unawaited(_nestCategory(source, target));
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _draggedCategoryId = null;
+        _dropInsideCategoryId = null;
+      });
+    });
+  }
+
+  Future<void> _nestCategory(int categoryId, int targetParentId) async {
+    if (_moving) return;
+    final db = DatabaseService.instance;
+    if (db.getRecordIdsInSubtree(categoryId).contains(targetParentId)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(currentLocale.value, 'category_move_invalid'))),
+      );
+      return;
+    }
+    final previousParent = db.getParentId(categoryId);
+    if (previousParent == targetParentId) {
+      setState(() => _expanded.add(targetParentId));
+      return;
+    }
+    final previousOrder = db.getChildrenOf(previousParent)
+        .map((rule) => rule.id).toList();
+    setState(() {
+      _moving = true;
+      _expanded.add(targetParentId);
+    });
+    final saved = await db.updateCategoryParent(categoryId, targetParentId);
+    if (!mounted) return;
+    setState(() => _moving = false);
+    if (!saved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
+      );
+      return;
+    }
+    unawaited(widget.onChanged());
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(t(currentLocale.value, 'category_moved')),
+        action: SnackBarAction(
+          label: t(currentLocale.value, 'undo'),
+          onPressed: () => unawaited(
+            _undoParentMove(categoryId, previousParent, previousOrder),
+          ),
+        ),
+      ),
+    );
   }
 
   // AppReorderableList is also used in Paths and Planning. Its flat insertion
@@ -254,6 +387,15 @@ class _CategoriesPageState extends State<CategoriesPage> {
   ) async {
     if (_moving || oldIndex < 0 || oldIndex >= visible.length) return;
     final moved = visible[oldIndex];
+    // A center drop changes the parent, even when Flutter reports no
+    // positional reorder. The end callback is a fallback for that case.
+    if (_nestDropHandled && _draggedCategoryId == moved.rule.id) return;
+    final nestedTarget = _dropInsideCategoryId;
+    if (_draggedCategoryId == moved.rule.id && nestedTarget != null) {
+      _nestDropHandled = true;
+      await _nestCategory(moved.rule.id, nestedTarget);
+      return;
+    }
     var targetIndex = newIndex > oldIndex ? newIndex - 1 : newIndex;
     final remaining = List<_CategoryTreeRow>.of(visible)..removeAt(oldIndex);
     targetIndex = targetIndex.clamp(0, remaining.length).toInt();
@@ -404,9 +546,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
     return AppHoldToReorderListener(
       index: index,
       child: Material(
-        color: selected
-            ? tint.withValues(alpha: 0.10)
-            : scheme.surface,
+        key: _rowAnchors.putIfAbsent(r.id, () => GlobalKey()),
+        color: _dropInsideCategoryId == r.id
+            ? tint.withValues(alpha: 0.19)
+            : (selected ? tint.withValues(alpha: 0.07) : scheme.surface),
+        elevation: _dropInsideCategoryId == r.id ? 2 : 0,
+        shadowColor: tint,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
@@ -420,16 +565,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
               ),
               child: Row(
                 children: [
-                  Container(
-                    height: 30,
-                    width: 4,
-                    decoration: BoxDecoration(
-                      color: tint,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
+                   Container(
                     width: 36, height: 36,
                     decoration: BoxDecoration(
                       color: tint.withValues(alpha: 0.12),
@@ -459,7 +595,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
                     ),
                   PopupMenuButton<String>(
                     tooltip: t(loc, 'category_actions'),
-                    icon: const Icon(Icons.more_horiz_rounded),
+                    icon: Icon(
+                      Icons.more_horiz_rounded,
+                      color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
+                    ),
                     onSelected: (action) {
                       if (action == 'add') {
                         unawaited(_create(parentId: r.id));
@@ -525,22 +664,40 @@ class _CategoriesPageState extends State<CategoriesPage> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: TextField(
-            controller: _search,
-            decoration: InputDecoration(
-              isDense: true,
-              hintText: t(loc, 'category_search'),
-              prefixIcon: const Icon(Icons.search_rounded),
-              suffixIcon: _search.text.isEmpty
-                  ? null
-                  : IconButton(
-                      tooltip: t(loc, 'clear'),
-                      onPressed: _search.clear,
-                      icon: const Icon(Icons.close_rounded),
-                    ),
-              border: const OutlineInputBorder(),
-            ),
+          padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _search,
+                  decoration: InputDecoration(
+                    isDense: true,
+                    hintText: t(loc, 'category_search'),
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    suffixIcon: _search.text.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: t(loc, 'clear'),
+                            onPressed: _search.clear,
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: t(loc, _expanded.isEmpty && _search.text.isEmpty
+                    ? 'category_expand_all' : 'category_collapse_all'),
+                icon: Icon(
+                  _expanded.isEmpty && _search.text.isEmpty
+                      ? Icons.unfold_more_rounded
+                      : Icons.unfold_less_rounded,
+                ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                onPressed: _toggleAllCategories,
+              ),
+            ],
           ),
         ),
         Expanded(
@@ -555,10 +712,18 @@ class _CategoriesPageState extends State<CategoriesPage> {
                 )
               : visible.isEmpty
                   ? Center(child: Text(t(loc, 'category_search_empty')))
-                  : AppReorderableList(
+                  : Listener(
+                      onPointerMove: (event) =>
+                          _trackCategoryDrop(event.position, visible),
+                      onPointerUp: (event) =>
+                          _trackCategoryDrop(event.position, visible),
+                      child: AppReorderableList(
                       padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
                       spacing: 4,
                       itemCount: visible.length,
+                      onReorderStart: (index) =>
+                          _beginCategoryDrag(index, visible),
+                      onReorderEnd: (_) => _finishCategoryDrag(),
                       itemKeyBuilder: (index) =>
                           ValueKey('category-tree-${visible[index].rule.id}'),
                       dragLabelBuilder: (index) =>
@@ -570,6 +735,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                           unawaited(_onReorder(oldIndex, newIndex, visible)),
                       itemBuilder: (context, index, _) =>
                           _row(context, visible[index], index, wide),
+                      ),
                     ),
         ),
       ],

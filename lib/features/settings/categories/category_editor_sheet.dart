@@ -395,10 +395,11 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
   }
 
   Widget _advancedFields(List<String> langs, String locale) {
-    final scheme = Theme.of(context).colorScheme;
     return ExpansionTile(
       initiallyExpanded: false,
       tilePadding: EdgeInsets.zero,
+      shape: const RoundedRectangleBorder(side: BorderSide.none),
+      collapsedShape: const RoundedRectangleBorder(side: BorderSide.none),
       title: Text(t(locale, 'category_advanced')),
       children: [
         TextField(
@@ -447,23 +448,6 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
           icon: Icons.check_circle_outline,
           onPressed: _setAsDefault,
         ),
-        const SizedBox(height: 14),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            t(locale, 'delete_subcategories_warning'),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        AppButton.danger(
-          label: t(locale, 'delete_category'),
-          icon: Icons.delete_outline_rounded,
-          onPressed: _confirmDelete,
-        ),
-        const SizedBox(height: 12),
       ],
     );
   }
@@ -497,15 +481,45 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 16, 10),
+            padding: const EdgeInsets.fromLTRB(20, 14, 16, 12),
             child: Row(
               children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Color(_selectedColorValue ?? widget.category.colorOrDefault.toARGB32())
+                        .withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  child: Icon(
+                    IconData(_iconCodePoint, fontFamily: 'MaterialIcons'),
+                    color: Color(_selectedColorValue ?? widget.category.colorOrDefault.toARGB32()),
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    widget.category.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleLarge,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _primaryNameController.text.trim().isEmpty
+                            ? widget.category.name
+                            : _primaryNameController.text.trim(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      Text(
+                        pathLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 if (!widget.inline)
@@ -517,40 +531,12 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
               ],
             ),
           ),
-          Text(pathLabel, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall),
-          Divider(height: 1, color: scheme.outlineVariant),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: scheme.onSurface.withValues(alpha: 0.035),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: scheme.outlineVariant),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40, height: 40,
-                          decoration: BoxDecoration(
-                            color: widget.category.colorOrDefault.withValues(alpha: 0.13),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(IconData(_iconCodePoint, fontFamily: 'MaterialIcons'),
-                              color: widget.category.colorOrDefault),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(child: Text(widget.category.name,
-                            style: Theme.of(context).textTheme.titleMedium)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
                   TextField(
                     controller: _primaryNameController,
                     textCapitalization: TextCapitalization.words,
@@ -624,19 +610,31 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          Container(
+            color: scheme.surface,
+            padding: const EdgeInsets.fromLTRB(12, 10, 18, 14),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                AppButton.secondary(
-                  label: t(locale, 'cancel'),
-                  onPressed: _saving ? null : (widget.inline ? widget.onCancel : () => Navigator.of(context).pop()),
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: scheme.error,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  onPressed: _saving ? null : () => unawaited(_confirmDelete()),
+                  icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                  label: Text(t(locale, 'delete')),
                 ),
-                const SizedBox(width: 10),
+                const Spacer(),
+                AppButton.ghost(
+                  label: t(locale, 'cancel'),
+                  onPressed: _saving
+                      ? null
+                      : (widget.inline ? widget.onCancel
+                          : () => Navigator.of(context).pop()),
+                ),
+                const SizedBox(width: 8),
                 AppButton.primary(
                   label: t(locale, 'save'),
-                  icon: Icons.check_rounded,
                   loading: _saving,
                   onPressed: _saving ? null : () => unawaited(_save()),
                 ),

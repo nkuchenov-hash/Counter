@@ -43,8 +43,7 @@ const Map<String, String> kEnL10n = {
   'lists_delete_backlog_confirm': 'Remove this backlog task?',
   'lists_pin_chips_title': 'Filter chips',
   'lists_pin_chips_subtitle': 'Pick which categories appear as quick filters (besides All).',
-  'lists_chip_bar_settings_tooltip':
-      'Lists section: filter chips (manual or frequent)',
+  'lists_chip_bar_settings_tooltip': 'Lists section: filter chips (manual or frequent)',
   'lists_chip_mode_frequent': 'Most frequent',
   'lists_chip_mode_manual': 'Manual',
   'lists_chip_bar_sheet_title': 'Quick filters',
@@ -59,8 +58,7 @@ const Map<String, String> kEnL10n = {
   'lists_subitems_tab': 'Sub-items',
   'lists_subitems_save_parent_first': 'Save this item first to add sub-items.',
   'lists_subitems_add_hint': 'Add sub-item…',
-  'lists_pin_item_todo':
-      'TODO: backlog pin needs plans.is_pinned (bool) in PocketBase + DATA_MAP.',
+  'lists_pin_item_todo': 'TODO: backlog pin needs plans.is_pinned (bool) in PocketBase + DATA_MAP.',
   'lists_no_category_chosen':
       'No lists are chosen. Choose a category to add ideas to your list.',
   'plan_graduate_warning':
@@ -446,6 +444,8 @@ const Map<String, String> kEnL10n = {
   'default_label': 'Default',
   'edit_keywords': 'Edit keywords',
   'category_search': 'Search categories',
+  'category_collapse_all': 'Collapse all categories',
+  'category_expand_all': 'Expand all categories',
   'category_search_empty': 'No matching categories',
   'category_select_to_edit': 'Select a category to edit',
   'category_expand_children': 'Expand or collapse children',

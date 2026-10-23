@@ -56,11 +56,9 @@ const Map<String, String> kRuL10n = {
   'lists_export_empty': 'Нечего экспортировать',
   'lists_filter_tag_all': 'Все теги',
   'lists_subitems_tab': 'Подпункты',
-  'lists_subitems_save_parent_first':
-      'Сначала сохраните элемент, чтобы добавить подпункты.',
+  'lists_subitems_save_parent_first': 'Сначала сохраните элемент, чтобы добавить подпункты.',
   'lists_subitems_add_hint': 'Добавить подпункт…',
-  'lists_pin_item_todo':
-      'TODO: закрепление требует plans.is_pinned (bool) в PocketBase + DATA_MAP.',
+  'lists_pin_item_todo': 'TODO: закрепление требует plans.is_pinned (bool) в PocketBase + DATA_MAP.',
   'lists_no_category_chosen':
       'Списки не выбраны. Выберите категорию, чтобы добавлять идеи в список.',
   'plan_graduate_warning':
@@ -451,6 +449,8 @@ const Map<String, String> kRuL10n = {
   'default_label': 'По умолчанию',
   'edit_keywords': 'Редактировать ключевые слова',
   'category_search': 'Поиск категорий',
+  'category_collapse_all': 'Свернуть все категории',
+  'category_expand_all': 'Развернуть все категории',
   'category_search_empty': 'Категории не найдены',
   'category_select_to_edit': 'Выберите категорию для редактирования',
   'category_expand_children': 'Раскрыть или свернуть подкатегории',
