@@ -17,13 +17,10 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 part 'viktor_dialogue_ui_state.dart';
 part 'viktor_composer.dart';
-
 // One content-grid width for message rows and the composer.
 const double kViktorChatContentMaxWidth = 840;
-
 /// Single LIFE OS assistant entry point. Replaces the old record-only mic FAB.
 /// No overlay over the planner, no extra button beside bottom navigation.
 class ViktorChatPage extends StatefulWidget {
@@ -70,16 +67,6 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     _controller.dispose();
     super.dispose();
   }
-  // Hardware Enter sends the message; Shift+Enter keeps native multiline input.
-  // Mobile soft keyboards retain a newline key and the visible Send button.
-  void _sendFromKeyboard() {
-    if (_busy || _listening || _transcribing || _startingMic ||
-        !_settingsReady || _controller.text.trim().isEmpty) {
-      return;
-    }
-    unawaited(_send());
-  }
-
   Future<void> _send() async {
     if (_busy) return;
     final input = _resolveRepeatCommand(_controller.text.trim());
@@ -99,20 +86,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       _push('Команда отменена. Изменения не выполнялись.');
       return;
     }
-    // An explicit correction of a known wall-clock DRAFT does not need
-    // another provider round-trip or a fresh plan read. Do not reclassify
-    // a draft as saved plans or convert its intended local clock times.
-    final correctedDraft = ViktorReadAnswer.correctMislabeledMoscowDraft(
-      input: input,
-      history: _messages.skip(1).map((turn) => {
-        'role': turn.role,
-        'content': turn.content,
-      }),
-    );
-    if (correctedDraft != null) {
-      _push(correctedDraft);
-      return;
-    }
+    if (_showCorrectedScheduleDraft(input)) return;
     setState(() => _busy = true);
     try {
       final db = DatabaseService.instance;
@@ -213,43 +187,14 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         );
       }
       if (!mounted) return;
-      // A provider sometimes returns "Сейчас проверю..." as a final
-      // response, with no actions. Never display this as completed work for
-      // an itinerary or its continuation: one bounded self-repair attempt.
-      final pendingSchedule = RegExp(
-            r'распланир|расписани|черновик|составь\s+план|itinerary|schedule',
-            caseSensitive: false,
-          ).hasMatch(input) ||
-          ViktorReadAnswer.lastTimedDraft(dialogContext) != null;
-      if (pendingSchedule && response.actions == null &&
-          ViktorReadAnswer.isUnfinishedScheduleReply(response.message)) {
-        response = await _gateway.propose(
-          input: input,
-          wallDay: widget.wallDay,
-          plans: plans,
-          settings: _settings,
-          selectedPlanIds: widget.selectedPlanIds,
-          toolObservations: toolObservations,
-          requestId: requestId,
-          conversationHistory: dialogContext,
-          proposalFeedback: 'The previous response only promised to '
-              'check or compose the schedule. That is NOT an answer. '
-              'Return the complete requested timetable now with '
-              'specific date, clock ranges, existing constraints and '
-              'clear assumptions. If correcting a draft, preserve its '
-              'wall-clock hours in the user-specified timezone. '
-              'Do not claim to save anything. Reply with actions:[] '
-              'and continue:false if this is a draft.',
-          allowRepair: false,
-        );
-        if (response.actions == null &&
-            ViktorReadAnswer.isUnfinishedScheduleReply(response.message)) {
-          _push('Виктор не сформировал расписание: модель дважды '
-              'вернула обещание выполнить запрос вместо результата. '
-              'Никакие планы не изменены.');
-          return;
-        }
+      final completed = await _completeScheduleResponse(
+          input, response, plans, toolObservations, requestId, dialogContext);
+      if (completed == null) {
+        _push('Виктор не сформировал расписание: модель дважды вернула '
+            'обещание вместо результата. Никакие планы не изменены.');
+        return;
       }
+      response = completed;
       final actions = response.actions;
       if (response.needsMoreContext && actions == null) {
         throw StateError('Виктор запросил дополнительные данные, '
@@ -1041,7 +986,6 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                           ),
                         ),
                       ),
-
                     _buildComposer(scheme),
                   ],
                 ),
