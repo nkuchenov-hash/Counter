@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `88e19765` on 2026-10-23.**
+**Generated from input HEAD `1ecf4adb` on 2026-10-23.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 947 — each appears **exactly once** below.
+**Tracked files:** 948 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,7 +26,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 183 |
+| `production UI` | 184 |
 | `test` | 131 |
 | `Brain/data` | 110 |
 | `platform build` | 83 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 510 |
+| `PROVEN_REQUIRED` | 511 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 249 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 864 |
+| `HIGH` | 865 |
 | `MEDIUM` | 83 |
 
 ---
@@ -24066,6 +24066,44 @@ RU:
 - **Владелец / слой:** корень репозитория
 - **Обязанности:** Отвечает за видимый UI, собранный в `viktor_chat_page.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `viktor_chat_page.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/viktor/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/viktor/viktor_composer.dart`
+
+EN:
+
+- **Human purpose:** `viktor_composer.dart` on viktor area — viktor composer. Users see `viktor_composer.dart` when using viktor area.
+- **What this is:** `viktor_composer.dart` on viktor area — viktor composer.
+- **Why needed:** Users see `viktor_composer.dart` when using viktor area.
+- **Contents:** Primary symbols: `_ViktorComposerUi`.
+- **Key code names:** `_ViktorComposerUi`
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/features/viktor/viktor_chat_page.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/features/viktor/viktor_chat_page.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** repository root
+- **Responsibilities:** Implements `_ViktorComposerUi` and related API in `viktor_composer.dart`.
+- **When to open:** When behavior tied to `viktor_composer.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Brain/library compile failure in `lib/features/viktor/viktor_chat_page.dart` and broken related UI/data ops.
+- **Connected to:** APP_STRUCTURE role: viktor composer
+
+RU:
+
+- **Зачем файл человеку:** `viktor_composer.dart` на viktor — Поддерживает поведение `viktor_composer` в этой feature-зоне.. Пользователь видит UI из `viktor_composer.dart` на viktor.
+- **Что это:** `viktor_composer.dart` на viktor — Поддерживает поведение `viktor_composer` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `viktor_composer.dart` на viktor.
+- **Содержимое:** Dart-модуль `viktor_composer.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/features/viktor/viktor_chat_page.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/features/viktor/viktor_chat_page.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Поддерживает поведение `viktor_composer` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_composer.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/viktor/`, `docs/APP_STRUCTURE.md`
 
