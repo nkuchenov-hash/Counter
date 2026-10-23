@@ -260,6 +260,100 @@ class _CategoriesPageState extends State<CategoriesPage> {
     });
   }
 
+  void _beginCategoryDrag(int index, List<_CategoryTreeRow> rows) {
+    if (index < 0 || index >= rows.length) return;
+    setState(() {
+      _draggedCategoryId = rows[index].rule.id;
+      _dropInsideCategoryId = null;
+      _nestDropHandled = false;
+    });
+  }
+
+  void _trackCategoryDrop(Offset globalPosition, List<_CategoryTreeRow> rows) {
+    final source = _draggedCategoryId;
+    if (source == null || _moving) return;
+    final invalidIds = DatabaseService.instance.getRecordIdsInSubtree(source);
+    int? targetId;
+    for (final item in rows) {
+      if (invalidIds.contains(item.rule.id)) continue;
+      final object = _rowAnchors[item.rule.id]?.currentContext?.findRenderObject();
+      if (object is! RenderBox || !object.hasSize) continue;
+      final point = object.globalToLocal(globalPosition);
+      final size = object.size;
+      if (point.dx < 0 || point.dx > size.width ||
+          point.dy < 0 || point.dy > size.height) continue;
+      // Middle 60% nests into the row. Its top/bottom 20% keeps the
+      // ordinary shared ReorderableListView before/after insertion.
+      if (point.dy >= size.height * 0.20 &&
+          point.dy <= size.height * 0.80) {
+        targetId = item.rule.id;
+      }
+      break;
+    }
+    if (targetId != _dropInsideCategoryId && mounted) {
+      setState(() => _dropInsideCategoryId = targetId);
+    }
+  }
+
+  void _finishCategoryDrag() {
+    final source = _draggedCategoryId;
+    final target = _dropInsideCategoryId;
+    if (!_nestDropHandled && source != null && target != null) {
+      _nestDropHandled = true;
+      unawaited(_nestCategory(source, target));
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _draggedCategoryId = null;
+        _dropInsideCategoryId = null;
+      });
+    });
+  }
+
+  Future<void> _nestCategory(int categoryId, int targetParentId) async {
+    if (_moving) return;
+    final db = DatabaseService.instance;
+    if (db.getRecordIdsInSubtree(categoryId).contains(targetParentId)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(currentLocale.value, 'category_move_invalid'))),
+      );
+      return;
+    }
+    final previousParent = db.getParentId(categoryId);
+    if (previousParent == targetParentId) {
+      setState(() => _expanded.add(targetParentId));
+      return;
+    }
+    final previousOrder = db.getChildrenOf(previousParent)
+        .map((rule) => rule.id).toList();
+    setState(() {
+      _moving = true;
+      _expanded.add(targetParentId);
+    });
+    final saved = await db.updateCategoryParent(categoryId, targetParentId);
+    if (!mounted) return;
+    setState(() => _moving = false);
+    if (!saved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
+      );
+      return;
+    }
+    unawaited(widget.onChanged());
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(t(currentLocale.value, 'category_moved')),
+        action: SnackBarAction(
+          label: t(currentLocale.value, 'undo'),
+          onPressed: () => unawaited(
+            _undoParentMove(categoryId, previousParent, previousOrder),
+          ),
+        ),
+      ),
+    );
+  }
+
   // AppReorderableList is also used in Paths and Planning. Its flat insertion
   // index picks the receiving sibling group, including expanded child groups.
   // The Brain retains ownership of the parent relation and order persistence.
