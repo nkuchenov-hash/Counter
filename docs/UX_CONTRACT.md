@@ -2,6 +2,14 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor itinerary completeness, date and zone (2026-10-23)
+
+- For a natural-language itinerary, read the user's **specified calendar date** rather than assuming the currently opened calendar tab; draft revisions inherit that date, not the date of after-midnight sleep.
+- Model context may pin the original multi-step user request, the latest detailed assistant timetable and a user-authored timezone correction. Preserve their longer text rather than trimming complete schedules at 1000/1200 characters.
+- The *last positive user instruction* about local clock time determines schedule timezone for the current dialogue, overriding profile timezone without changing profile settings. A complaint saying "Why New York?" is not a positive New York timezone selection. Saved plans projected in profile timezone must be distinguished from requested schedule clocks.
+- An unapproved draft revision is **read-only** and must contain a complete chronological timetable, including original errands, named locations, transport, fixed meetings, buffers and next-day sleep. Do not enter a read-tool continuation loop for such edits.
+- Reject mismatched timezone labels or incomplete draft results with one bounded repair attempt; if the provider cannot produce a correct draft, display a truthful failure and do not write plans. Never bypass a provider content filter.
+
 ## Viktor draft-edit and failure presentation (2026-10-23)
 
 - Unapproved itinerary corrections (including changed wake-up time) must yield a completed revised draft, never `bulk_replan` or other database changes; reject mutation/action-only and incomplete replies, with a single bounded repair attempt.
