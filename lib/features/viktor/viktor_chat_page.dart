@@ -194,7 +194,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       }
       // A complex Saturday itinerary is a draft, not an unsafe sequence of
       // partially committed individual create_plan calls.
-      if (ViktorProposedDayDraft.hasMultipleCreates(actions)) {
+      if (ViktorProposedDayDraft.needsReadOnlyDraft(actions)) {
         final draft = await ViktorProposedDayDraft.describe(actions,
           loadDay: db.getPlanningTasksForWallDate);
         if (mounted) _push(draft);
