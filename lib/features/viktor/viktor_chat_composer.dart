@@ -28,7 +28,7 @@ class ViktorChatComposer extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final maxEditorHeight =
-        (MediaQuery.sizeOf(context).height * 0.34).clamp(120.0, 280.0);
+        (MediaQuery.sizeOf(context).height * 0.34).clamp(120.0, 280.0).toDouble();
 
     void submit() {
       if (inputEnabled && sendEnabled && controller.text.trim().isNotEmpty) {
