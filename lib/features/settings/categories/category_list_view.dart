@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
-import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/settings/categories/category_editor_sheet.dart';
@@ -725,30 +724,13 @@ class _CategoriesPageState extends State<CategoriesPage> {
                 )
               : visible.isEmpty
                   ? Center(child: Text(t(loc, 'category_search_empty')))
-                  : Listener(
-                      onPointerMove: (event) =>
-                          _trackCategoryDrop(event.position, visible),
-                      onPointerUp: (event) =>
-                          _trackCategoryDrop(event.position, visible),
-                      child: AppReorderableList(
+                  : ListView.separated(
+                      key: const ValueKey('category-stationary-tree'),
                       padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
-                      spacing: 4,
                       itemCount: visible.length,
-                      onReorderStart: (index) =>
-                          _beginCategoryDrag(index, visible),
-                      onReorderEnd: (_) => _finishCategoryDrag(),
-                      itemKeyBuilder: (index) =>
-                          ValueKey('category-tree-${visible[index].rule.id}'),
-                      dragLabelBuilder: (index) =>
-                          t(loc, 'category_reorder'),
-                      // Deliberately no drag affordance; holding the row
-                      // starts the same reorder gesture as Plans and Notes.
-                      dragHandleBuilder: (_, _) => const SizedBox.shrink(),
-                      onReorder: (oldIndex, newIndex) =>
-                          unawaited(_onReorder(oldIndex, newIndex, visible)),
-                      itemBuilder: (context, index, _) =>
+                      separatorBuilder: (_, _) => const SizedBox(height: 4),
+                      itemBuilder: (context, index) =>
                           _row(context, visible[index], index, wide),
-                      ),
                     ),
         ),
       ],
