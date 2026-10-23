@@ -313,6 +313,75 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     );
   }
 
+  Future<void> _showIconGallery() async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520, maxHeight: 590),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(t(currentLocale.value, 'category_choose_icon'),
+                        style: Theme.of(ctx).textTheme.titleLarge)),
+                    IconButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 64,
+                    mainAxisSpacing: 9,
+                    crossAxisSpacing: 9,
+                    mainAxisExtent: 48,
+                  ),
+                  itemCount: kCategoryMoreIconChoices.length,
+                  itemBuilder: (context, index) {
+                    final icon = kCategoryMoreIconChoices[index];
+                    return _iconTile(icon, closeGallery: () => Navigator.of(ctx).pop());
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _iconTile(IconData icon, {VoidCallback? closeGallery}) {
+    final scheme = Theme.of(context).colorScheme;
+    final active = _iconCodePoint == icon.codePoint;
+    return InkWell(
+      borderRadius: BorderRadius.circular(9),
+      onTap: () {
+        setState(() => _iconCodePoint = icon.codePoint);
+        HapticFeedback.selectionClick();
+        closeGallery?.call();
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: active ? scheme.onSurface.withValues(alpha: 0.05) : scheme.surface,
+          borderRadius: BorderRadius.circular(9),
+          border: Border.all(
+            color: active ? scheme.onSurface : scheme.outlineVariant,
+            width: active ? 2 : 1,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Icon(icon, size: 20, color: scheme.onSurface),
+      ),
+    );
+  }
+
   Widget _advancedFields(List<String> langs, String locale) {
     final scheme = Theme.of(context).colorScheme;
     return ExpansionTile(
