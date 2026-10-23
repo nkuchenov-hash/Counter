@@ -1,4 +1,6 @@
 import 'package:counter/data/models.dart';
+import 'package:counter/core/category_color_palette.dart';
+import 'package:counter/shared/categories/picker/category_picker_contracts.dart';
 import 'package:counter/features/shared/edit_sheet/category_edit_draft.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
 import 'package:counter/shared/categories/picker/category_tree_picker.dart';
@@ -97,6 +99,88 @@ void main() {
         categoryPickerAddInsideLabel('en', 'Price Reporter'),
         contains('Price Reporter'),
       );
+    });
+  });
+
+  group('unified semantic palette and hierarchy', () {
+    test('root is strongest; all siblings share same child tone', () {
+      expect(categoryToneForDepth(0), 600);
+      expect(categoryToneForDepth(1), 500);
+      expect(categoryToneForDepth(2), 400);
+      expect(categoryToneForDepth(5), 400);
+      final root = categoryNordicRootColorValue(0);
+      expect(root, kNordicWork[600]!.toARGB32());
+      final child1 = categoryNordicChildColorValue(root, 0);
+      final child2 = categoryNordicChildColorValue(root, 12);
+      expect(child1, kNordicWork[500]!.toARGB32());
+      expect(child1, child2);
+      expect(
+        categoryMaterialPrimaryForValue(const Color(0xFFFA5050).toARGB32()),
+        kNordicEntertainment,
+      );
+      expect(
+        categoryMaterialPrimaryForValue(Colors.grey.toARGB32()),
+        kCategoryNeutral,
+      );
+      expect(
+        categoryNordicChildColorValue(child1, 0),
+        kNordicWork[400]!.toARGB32(),
+      );
+      expect(
+        categoryNordicChildColorValue(kNordicWork[400]!.toARGB32(), 2),
+        kNordicWork[400]!.toARGB32(),
+      );
+    });
+
+    test('picker offers legible tones without near-white or near-black', () {
+      expect(kCategorySelectableTones, [400, 500, 600]);
+      expect(kCategorySelectableTones, isNot(contains(50)));
+      expect(kCategorySelectableTones, isNot(contains(900)));
+      expect(kCategoryPickerMaterialColors.length, 10);
+    });
+
+    test('tag defaults reuse category families; gold remains exact', () {
+      expect(kLifeTagColorPresets.length, kCategoryPickerMaterialColors.length);
+      expect(kLifeTagColorPresets, contains('#3978C5'));
+      expect(kLifeTagColorPresets, contains('#D64F55'));
+      expect(kLifeTagColorPresets, contains('#F6C500'));
+      expect(kLifeTagColorPresets, isNot(contains('#000000')));
+      expect(kLifeTagColorPresets, isNot(contains('#FFFFFF')));
+    });
+
+    test('tree picker creates child from exact parent family, without a recolor of existing data', () async {
+      final work = CategoryRule(
+        id: 1,
+        name: 'Work',
+        colorValue: kNordicWork[600]!.toARGB32(),
+        children: [
+          CategoryRule(id: 100, name: 'Price Reporter',
+              colorValue: kNordicWork[500]!.toARGB32()),
+        ],
+      );
+      CategoryTreeSource.getChildrenOf = (parentId) {
+        if (parentId == null) return [work];
+        if (parentId == 1) return work.children!;
+        return const <CategoryRule>[];
+      };
+      addTearDown(() => CategoryTreeSource.getChildrenOf = null);
+      int? createdColor;
+      categoryPickerAddNestedCategoryOverride = (parentId, child) async {
+        expect(parentId, 100);
+        createdColor = child.colorValue;
+        return 501;
+      };
+      final result = await createCategoryFromPickerSubmit(
+        name: 'Pricing',
+        target: CategoryPickerCreateTarget.child(
+          parentLocalId: 100,
+          parentDisplayName: 'Price Reporter',
+        ),
+      );
+      expect(result, 501);
+      expect(createdColor, kNordicWork[400]!.toARGB32());
+      expect(work.colorValue, kNordicWork[600]!.toARGB32());
+      expect(work.children!.single.colorValue, kNordicWork[500]!.toARGB32());
     });
   });
 
