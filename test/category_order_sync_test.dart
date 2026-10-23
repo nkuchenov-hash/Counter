@@ -45,8 +45,20 @@ void main() {
       final initialSource = tester.getTopLeft(source);
       final gesture = await tester.startGesture(tester.getCenter(source));
       await tester.pump(const Duration(milliseconds: 350));
+      // Ensure Flutter actually recognized the long press before we move.
+      expect(
+        find.descendant(
+          of: source,
+          matching: find.byWidgetPredicate(
+            (w) => w is Opacity && w.opacity < 0.5,
+          ),
+        ),
+        findsOneWidget,
+      );
       await gesture.moveTo(tester.getCenter(target));
       await tester.pump(const Duration(milliseconds: 30));
+      expect(find.byIcon(Icons.subdirectory_arrow_right_rounded),
+          findsOneWidget);
       // Hover previews must not move either real row. Only the dragged
       // floating feedback moves.
       expect(tester.getTopLeft(target), initialTarget);
