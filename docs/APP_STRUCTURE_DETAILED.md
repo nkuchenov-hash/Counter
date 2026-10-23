@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `0dac3b75` on 2026-10-23.**
+**Generated from input HEAD `5c9d6d86` on 2026-10-23.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 947 — each appears **exactly once** below.
+**Tracked files:** 949 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,8 +26,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 183 |
-| `test` | 131 |
+| `production UI` | 184 |
+| `test` | 132 |
 | `Brain/data` | 110 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 510 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 249 |
+| `PROVEN_REQUIRED` | 511 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 250 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 864 |
+| `HIGH` | 866 |
 | `MEDIUM` | 83 |
 
 ---
@@ -24032,6 +24032,44 @@ RU:
 - **Связано с:** Вкладка Timeline (shell index 0)
 
 
+### `lib/features/viktor/viktor_chat_composer.dart`
+
+EN:
+
+- **Human purpose:** `viktor_chat_composer.dart` on viktor area — viktor chat composer. Users see `viktor_chat_composer.dart` when using viktor area.
+- **What this is:** `viktor_chat_composer.dart` on viktor area — viktor chat composer.
+- **Why needed:** Users see `viktor_chat_composer.dart` when using viktor area.
+- **Contents:** Primary symbols: `ViktorChatComposer`.
+- **Key code names:** `ViktorChatComposer`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/viktor/viktor_chat_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** repository root
+- **Responsibilities:** Implements `ViktorChatComposer` and related API in `viktor_chat_composer.dart`.
+- **When to open:** When behavior tied to `viktor_chat_composer.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: viktor chat composer
+
+RU:
+
+- **Зачем файл человеку:** `viktor_chat_composer.dart` на viktor — Поддерживает поведение `viktor_chat_composer` в этой feature-зоне.. Пользователь видит UI из `viktor_chat_composer.dart` на viktor.
+- **Что это:** `viktor_chat_composer.dart` на viktor — Поддерживает поведение `viktor_chat_composer` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `viktor_chat_composer.dart` на viktor.
+- **Содержимое:** Dart-модуль `viktor_chat_composer.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/viktor/viktor_chat_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Поддерживает поведение `viktor_chat_composer` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_chat_composer.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/viktor/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/features/viktor/viktor_chat_page.dart`
 
 EN:
@@ -38328,6 +38366,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `viktor_browser_quota`.
 - **Когда открывать:** Падение CI или правка кода рядом с `viktor_browser_quota`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/viktor_chat_composer_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `viktor_chat_composer_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `viktor_chat_composer_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/viktor_chat_composer_test.dart` / CI when enabled. (2) Namesake production subject: `lib/features/viktor/viktor_chat_composer.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `viktor_chat_composer_test` scenario.
+- **When to open:** CI failure or changing code near `viktor_chat_composer`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `viktor_chat_composer`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `viktor_chat_composer` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `viktor_chat_composer` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `viktor_chat_composer`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/viktor_chat_composer_test.dart`. (2) Парный production-файл: `lib/features/viktor/viktor_chat_composer.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `viktor_chat_composer`.
+- **Когда открывать:** Падение CI или правка кода рядом с `viktor_chat_composer`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
