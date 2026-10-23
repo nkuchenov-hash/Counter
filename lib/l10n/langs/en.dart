@@ -459,6 +459,8 @@ const Map<String, String> kEnL10n = {
   'category_reorder': 'Reorder category',
   'category_move_invalid': 'Cannot move a category into itself or its children.',
   'category_color_shades': 'Color shades',
+  'category_moved': 'Category moved',
+  'clear': 'Clear',
   'category_advanced': 'Advanced settings',
   'categories_title': 'Categories',
   'category_edit_mode': 'Edit mode',
