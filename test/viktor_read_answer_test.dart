@@ -3,6 +3,34 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
 
+  test('A changed wake-up time revises an uncommitted timetable only', () {
+    const draft = '2026-10-24\n'
+        '08:00–08:30 Зарядка\n'
+        '11:30–13:00 Купить тыквы\n'
+        '20:00–21:00 RCC';
+    final history = <Map<String, String>>[
+      {'role': 'assistant', 'content': draft},
+      {'role': 'user', 'content': 'Встану дай бог в 10'},
+      {'role': 'assistant', 'content': 'Изменения отменены.'},
+    ];
+    expect(ViktorReadAnswer.isDraftRevision(
+      input: 'Скорректируй план с учетом того, что встану в 10',
+      history: history,
+    ), isTrue);
+    expect(ViktorReadAnswer.isDraftRevision(
+      input: 'Встану дай бог в 10', history: history,
+    ), isTrue);
+    expect(ViktorReadAnswer.isDraftRevision(
+      input: 'Подтверждаю, сохрани план', history: history,
+    ), isFalse);
+    expect(ViktorReadAnswer.isDraftRevision(
+      input: 'Скорректируй план с учетом подъема в 10',
+      history: const [{'role':'user', 'content': draft}],
+    ), isFalse);
+  });
+
+
+
   test('Moscow follow-up finishes the earlier draft without shifting clocks', () {
     const draft = 'Проект расписания (пока ничего не сохранено):\n'
         '2026-10-24\n'
