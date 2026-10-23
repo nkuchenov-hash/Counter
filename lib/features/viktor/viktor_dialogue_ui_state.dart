@@ -53,7 +53,9 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
         ViktorReadAnswer.lastTimedDraft(history) != null;
     final unsafeDraftWrite = draftRevision &&
         (response.actions?.hasMutations ?? false);
-    if (!isSchedule || (!unsafeDraftWrite &&
+    final incompleteDraft = draftRevision &&
+        !ViktorReadAnswer.hasTimedItinerary(response.message);
+    if (!isSchedule || (!unsafeDraftWrite && !incompleteDraft &&
         (response.actions != null ||
          !ViktorReadAnswer.isUnfinishedScheduleReply(response.message)))) {
       return response;
@@ -72,16 +74,19 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
             'database mutation. That is not authorized. Reconstruct the '
             'entire revised timetable in message with actions:[], '
             'continue:false. Never call bulk_replan for a draft.'
-          : 'The previous reply only promised future work. '
-            'It did not provide a timetable. Return the COMPLETE chronological '
+          : 'The previous reply did NOT provide a complete revised '
+            'timetable with at least 3 clock ranges. '
+            'Return the COMPLETE chronological '
             'schedule now with dates, time ranges and explicit assumptions. '
             'Keep user wall-clock times in the requested timezone. '
             'An unapproved draft must have actions:[], continue:false. '
             'Never claim you saved plans.',
       allowRepair: false,
     );
-    if (draftRevision && (repaired.actions?.hasMutations ?? false)) {
-      return null; // Never execute an unconfirmed draft revision.
+    if (draftRevision &&
+        ((repaired.actions?.hasMutations ?? false) ||
+         !ViktorReadAnswer.hasTimedItinerary(repaired.message))) {
+      return null; // No write or empty/status-only answer for a draft.
     }
     return repaired.actions == null &&
             ViktorReadAnswer.isUnfinishedScheduleReply(repaired.message)
