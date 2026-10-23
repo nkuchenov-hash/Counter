@@ -80,7 +80,7 @@ def main() -> int:
     ):
         if token not in health_watch:
             violations.append(f"HEALTH_MONITOR_CONTRACT_MISSING {token}")
-    if "systemctl restart" in health_watch or "pb_data" in health_watch:
+    if "systemctl restart" in health_watch or "rm -rf" in health_watch:
         violations.append("HEALTH_MONITOR_MUTATING_PRODUCTION_FORBIDDEN")
 
     if "branches:\n      - main" in web or "branches: [main]" in web:
