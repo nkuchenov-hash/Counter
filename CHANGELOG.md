@@ -1,3 +1,10 @@
+## [2026-10-23] — Categories manager UX (PR #341; validation in progress)
+
+- Replace Categories tile bands with a responsive tree manager: desktop side-by-side inspector, mobile compact list and bounded edit surface.
+- Reuse the canonical 300 ms AppHoldToReorderListener/AppReorderableList without drag buttons; sibling reorder and cross-parent placement through existing category Brain paths, with Undo.
+- Compact the editor with primary fields, color/icon selection and sticky Save. Keep translation, keywords, default and delete options in Advanced.
+- Prevent cyclic parent changes before optimistic or PocketBase mutation. No collection schema changes.
+
 ## [2026-10-22] — Viktor bulk move clock/read contract (pending production verification)
 
 - Accept explicitly stated clock variations (9, 9.00, 9 утра, 09:00 NY, 9 часов по Нью-Йорку) in a bulk move, normalize to HH:mm and refuse ambiguous times.
