@@ -237,7 +237,7 @@ void main() {
     expect(tester.getSize(find.byKey(const ValueKey('notes-tab-add'))).height, 35);
   });
 
-  testWidgets('physical folder tabs have layered elevation and edge contrast',
+  testWidgets('active folder spine paints above its neighbors with subtle elevation',
       (tester) async {
     final controller = ScrollController();
     addTearDown(controller.dispose);
@@ -252,7 +252,7 @@ void main() {
               NotesFolderTabData(id: 2, label: 'Second',
                   icon: Icons.folder, paper: Color(0xFFF6E7DA)),
             ],
-            selectedId: 1,
+            selectedId: 2,
             scrollController: controller,
             allLabel: 'Все', allPaper: const Color(0xFFF2F4F7),
             onSelect: (_) {}, onAdd: () {},
@@ -271,13 +271,14 @@ void main() {
     expect(tabMaterial(1).elevation, lessThan(0.5));
     expect(tabMaterial(2).elevation, lessThan(0.5));
     expect(tabMaterial(1).shadowColor!.a, lessThan(0.10));
-    // Selection must never move a folder out of its physical z-order.
+    // Keep saved tab indices, but always paint the selected folder LAST.
+    // It must be hit-tested and drawn above the adjacent shoulder.
     final stack = tester.widget<Stack>(
       find.byKey(const ValueKey('notes-layered-tab-stack')),
     );
     expect(
       stack.children.map((child) => (child as Positioned).child.key).toList(),
-      [const ValueKey('notes-tab-2'), const ValueKey('notes-tab-1')],
+      [const ValueKey('notes-tab-1'), const ValueKey('notes-tab-2')],
     );
     final addTab = find.byKey(const ValueKey('notes-tab-add'));
     final addMaterial = tester.widget<Material>(
