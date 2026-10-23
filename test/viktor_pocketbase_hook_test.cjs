@@ -185,6 +185,23 @@ assert.equal(stickyContext.profile_timezone, 'America/New_York',
   'Explicit chat zone must not silently alter profile');
 assert.equal(stickyContext.existing_plan_clock_timezone, 'America/New_York');
 
+const projectedSaved = invoke({...base,
+  provider:'yandex', model:'yandexgpt/rc',
+  yandex_folder_id:'b1g9testfolder11',
+  text:'Расписание на 24 октября по Москве',
+  profile_timezone:'America/New_York',
+  existing_plan_clock_timezone:'Europe/Moscow',
+  day_plans:[{id:'aaaaabbbbbccccc',title:'RCC',
+    start_time:'20:00',duration_minutes:60,is_done:false}],
+});
+assert.equal(projectedSaved.status, 200);
+const projectedContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
+assert.equal(projectedContext.schedule_timezone, 'Europe/Moscow');
+assert.equal(projectedContext.existing_plan_clock_timezone, 'Europe/Moscow');
+assert.equal(projectedContext.day_plans[0].start_time, '20:00',
+  'Provider must use the UTC-projected Moscow plan clock, not profile NY');
+
+
 const longDraft = '24 октября 2026\\n08:00–08:30 Зарядка\\n' +
   Array.from({length: 90}, (_, i) => '13:00–13:10 Место и дорога ' + i).join('\\n');
 nextModelReplies.push({statusCode: 200, raw: JSON.stringify({choices: [
