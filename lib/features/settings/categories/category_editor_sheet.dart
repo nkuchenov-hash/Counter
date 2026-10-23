@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/widgets/app_button.dart';
-import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/settings/categories/category_helpers.dart';
