@@ -663,6 +663,7 @@ extension CategoryCrudExtension on DatabaseService {
     final owner = (currentProfileId ?? '').trim();
     if (owner.isEmpty) return;
     _categoryMutationFlushInFlight = true;
+    var pushed = false;
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
       final pending = await CategoryMutationOutbox.load(prefs, owner);
@@ -675,7 +676,7 @@ extension CategoryCrudExtension on DatabaseService {
         final revision = (item['revision'] as num?)?.toInt() ?? 0;
         final raw = item['fields'];
         if (!DatabaseService._isLikelyPocketBaseRowId(id) ||
-            raw is! Map || revision == 0) continue;
+            raw is! Map || revision == 0 || item['blocked'] == true) continue;
         final fields = _nocoFieldsForPatch(
           _categoryPatchFieldsWithJsonLongText(
             Map<String, dynamic>.from(raw),
@@ -689,6 +690,7 @@ extension CategoryCrudExtension on DatabaseService {
               ...fields,
             },
           );
+          pushed = true;
           await CategoryMutationOutbox.acknowledge(
             prefs,
             owner: owner,
@@ -700,7 +702,11 @@ extension CategoryCrudExtension on DatabaseService {
             offlineSync.setAuthPaused(true);
           } else if (e.statusCode == 400 || e.statusCode == 422) {
             // A validation failure cannot be repaired by retrying blindly.
-            offlineSync.setLastError('Category changes need synchronization');
+            await CategoryMutationOutbox.block(
+              prefs, owner: owner, pocketBaseId: id, revision: revision,
+            );
+            const message = 'Category changes need synchronization';
+            if (offlineSync.lastError != message) offlineSync.setLastError(message);
           } else {
             _maybeOpenPbCircuitFromListFailure(e, 'categoryPatch');
           }
@@ -710,9 +716,17 @@ extension CategoryCrudExtension on DatabaseService {
           break;
         }
       }
+    } catch (e) {
+      // The queue remains durable even if PocketBase initialization fails.
+      _maybeOpenPbCircuitFromListFailure(e, 'categoryPatchInit');
     } finally {
       _categoryMutationFlushInFlight = false;
       await offlineSync.refreshPendingCount();
+    }
+    // Confirmed server data clears the last optimistic overlay; this fetch
+    // is background-only and never gates Save.
+    if (pushed) {
+      unawaited(_loadRulesFromNoco().catchError((Object _, StackTrace _) {}));
     }
   }
 
