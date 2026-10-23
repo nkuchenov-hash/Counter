@@ -23,6 +23,7 @@ migrate((app) => {
       {name: "role", type: "select", required: true, maxSelect: 1,
        values: ["user", "assistant"]},
       {name: "body", type: "text", required: true, max: 6000},
+      {name: "created", type: "autodate", onCreate: true, onUpdate: false},
     ],
     indexes: [
       "CREATE UNIQUE INDEX idx_viktor_turns_owner_client " +
