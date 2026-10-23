@@ -17,6 +17,7 @@ import 'package:counter/data/cache/rendered_day_body_cache.dart';
 import 'package:counter/data/category_fuzzy_match.dart';
 import 'package:counter/data/local_sync/offline_sync_state.dart';
 import 'package:counter/data/local_sync/web_record_journal.dart';
+import 'package:counter/data/local_sync/category_mutation_outbox.dart';
 import 'package:counter/data/local_sync/plan_mutation_outbox.dart';
 import 'package:counter/data/local_sync/record_mutation_outbox.dart';
 import 'package:counter/data/local_sync/sync_manager.dart';
@@ -402,6 +403,9 @@ class DatabaseService {
 
   SharedPreferences? _prefs;
   List<CategoryRule> _rules = [];
+  // Latest local category field edits remain authoritative during server refresh.
+  final Map<String, Map<String, dynamic>> _categoryOptimisticDeltas = {};
+  bool _categoryMutationFlushInFlight = false;
   /// All `category_id` / `normalized_id` (lowercase) for this user from PocketBase, **including archived** — reserved for new POSTs.
   Set<String> _reservedCategorySlugsLower = {};
   /// Display names + archive flags for **all** PB rows (see [_rebuildCategoryDialogUniverse]) — create dialog pre-flight.
@@ -629,7 +633,9 @@ class DatabaseService {
 
   /// True while record/plan outbox flush holds [OfflineSyncController.isSyncing].
   bool get isSyncFlushInFlight =>
-      _planMutationOutboxFlushInFlight || _recordMutationOutboxFlushInFlight;
+      _planMutationOutboxFlushInFlight ||
+      _recordMutationOutboxFlushInFlight ||
+      _categoryMutationFlushInFlight;
 
   bool get isPbRealtimeUnavailable {
     final until = _realtimeEndpointUnavailableUntil;
