@@ -421,7 +421,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "Supported tools:",
     ...toolSpecifications.filter(spec => usableToolNames.has(spec[0]))
       .map(spec => spec[1]),
-    "Use schedule_timezone (last explicit USER timezone, else profile). Ignore a complained-about New York label. Never convert user wall-clock times from an invented source zone.",
+    "Use schedule_timezone (last explicit USER zone, else profile). A complaint about a wrong label does NOT select that label. Never convert stated wall-clock hours.",
     "Saved day_plans hours use existing_plan_clock_timezone. If it differs from schedule_timezone, do not label those hours as requested-zone times or pretend conflicts are checked.",
     "Follow-up revises PREVIOUS assistant draft: retain every errand, named place, travel leg, fixed meeting and overnight sleep. Full schedule; actions:[],continue:false; no rereads.",
     "After-midnight events use next calendar date. Relative dates use profile day, not wall_day.",
