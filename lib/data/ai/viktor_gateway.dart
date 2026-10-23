@@ -430,6 +430,11 @@ class ViktorGateway {
             : turn['content'],
       }).toList(),
       'profile_timezone': service.settings.preferredTimeZone,
+      'existing_plan_clock_timezone': reproject
+          ? requestedZone : service.settings.preferredTimeZone,
+      'saved_plan_clock_uncertain': reproject &&
+          allCandidates.any((p) =>
+              p.startTime != null && p.startUtcInstant == null),
       'available_tools': ViktorAgentCapabilities.tools
           .map((tool) => tool.name).toList(growable: false),
       'categories': categoryRows,
@@ -494,7 +499,7 @@ class ViktorGateway {
       'selected_plan_ids': selectedPlanIds.where(
         (id) => plans.any((p) => p.pocketRecordId == id)).toSet().toList(),
       'day_plans': [
-        for (final p in plans)
+        for (final p in modelDayPlans)
           if (p.pocketRecordId != null && p.pocketRecordId!.isNotEmpty)
             {
               'id': p.pocketRecordId,
@@ -504,24 +509,24 @@ class ViktorGateway {
               'duration_minutes': p.startTime != null && p.endDateTime != null
                   ? p.endDateTime!.difference(p.startTime!).inMinutes
                   : null,
-              'start_time': p.startTime == null
+              'start_time': shownStart(p) == null
                   ? null
-                  : '${p.startTime!.hour.toString().padLeft(2, '0')}:'
-                    '${p.startTime!.minute.toString().padLeft(2, '0')}',
+                  : '${shownStart(p)!.hour.toString().padLeft(2, '0')}:'
+                    '${shownStart(p)!.minute.toString().padLeft(2, '0')}',
               'recurrent': (p.rrule ?? '').isNotEmpty ||
                   (p.recurrenceInstanceDateKey ?? '').isNotEmpty,
             }
       ],
       'next_day_plans': [
-        for (final p in nextDayPlans)
+        for (final p in modelNextDayPlans)
           if (p.pocketRecordId != null && p.pocketRecordId!.isNotEmpty)
             {
               'id': p.pocketRecordId,
               'title': p.title,
               'is_done': p.isDone,
-              'start_time': p.startTime == null ? null :
-                  '${p.startTime!.hour.toString().padLeft(2, '0')}:'
-                  '${p.startTime!.minute.toString().padLeft(2, '0')}',
+              'start_time': shownStart(p) == null ? null :
+                  '${shownStart(p)!.hour.toString().padLeft(2, '0')}:'
+                  '${shownStart(p)!.minute.toString().padLeft(2, '0')}',
               'duration_minutes': p.startTime != null &&
                       p.endDateTime != null
                   ? p.endDateTime!.difference(p.startTime!).inMinutes
