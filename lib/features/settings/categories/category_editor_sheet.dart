@@ -167,14 +167,18 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     if (confirm != true || !mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     final idToDelete = widget.category.id;
-    widget.onCategoryDeleted?.call();
-    widget.onSaved();
-    if (!widget.inline) Navigator.of(context).pop();
     final ok = await DatabaseService.instance.deleteCategory(idToDelete);
     if (!mounted) return;
     if (ok) {
+      widget.onCategoryDeleted?.call();
+      widget.onSaved();
       messenger.showSnackBar(
         SnackBar(content: Text(t(loc, 'category_removed'))),
+      );
+      if (!widget.inline && mounted) Navigator.of(context).pop();
+    } else {
+      messenger.showSnackBar(
+        SnackBar(content: Text(t(loc, 'sync_failed'))),
       );
     }
   }
