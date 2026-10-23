@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:counter/data/ai/viktor_voice_recorder.dart';
 import 'package:counter/features/viktor/viktor_chat_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -50,9 +51,48 @@ void main() {
       expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
       expect(tester.takeException(), isNull);
 
-      final editor = tester.getRect(find.byType(TextField).first);
+      final fieldFinder = find.byKey(const Key('viktor_composer_input'));
+      final field = tester.widget<TextField>(fieldFinder);
+      expect(field.minLines, 1);
+      expect(field.maxLines, 8);
+      expect(field.keyboardType, TextInputType.multiline);
+      expect(field.style?.fontSize, greaterThanOrEqualTo(16));
+      final editor = tester.getRect(fieldFinder);
       expect(editor.left, greaterThanOrEqualTo(0));
       expect(editor.right, lessThanOrEqualTo(width));
     });
   }
+  testWidgets('Viktor composer expands for multiline messages and keeps shortcuts',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 640);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(MaterialApp(
+      home: ViktorChatPage(wallDay: DateTime(2026, 10, 17)),
+    ));
+    await tester.pump();
+
+    final fieldFinder = find.byKey(const Key('viktor_composer_input'));
+    final field = tester.widget<TextField>(fieldFinder);
+    final initialHeight = tester.getSize(fieldFinder).height;
+    field.controller!.text = 'Первая строка\nВторая строка\n'
+        'Третья строка\nЧетвёртая строка';
+    await tester.pump();
+    expect(tester.getSize(fieldFinder).height, greaterThan(initialHeight));
+
+    final shortcuts = tester.widget<CallbackShortcuts>(
+      find.byType(CallbackShortcuts));
+    expect(shortcuts.bindings.containsKey(
+      const SingleActivator(LogicalKeyboardKey.enter)), isTrue);
+    expect(shortcuts.bindings.containsKey(
+      const SingleActivator(LogicalKeyboardKey.numpadEnter)), isTrue);
+    // Shift+Enter remains the ordinary multiline newline shortcut.
+    expect(shortcuts.bindings.containsKey(
+      const SingleActivator(LogicalKeyboardKey.enter, shift: true)), isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+
 }
