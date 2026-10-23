@@ -17,6 +17,7 @@ import 'package:counter/data/cache/rendered_day_body_cache.dart';
 import 'package:counter/data/category_fuzzy_match.dart';
 import 'package:counter/data/local_sync/offline_sync_state.dart';
 import 'package:counter/data/local_sync/web_record_journal.dart';
+import 'package:counter/data/local_sync/category_mutation_outbox.dart';
 import 'package:counter/data/local_sync/plan_mutation_outbox.dart';
 import 'package:counter/data/local_sync/record_mutation_outbox.dart';
 import 'package:counter/data/local_sync/sync_manager.dart';
@@ -193,7 +194,10 @@ String _dateKeyFromDate(DateTime date) =>
     '${date.year}-${_two(date.month)}-${_two(date.day)}';
 
 class DatabaseService {
-  DatabaseService._();
+  DatabaseService._() {
+    offlineSync.categoryOwnerResolver = () =>
+        (currentProfileId ?? _userIdForWhere ?? '').trim();
+  }
   static final DatabaseService instance = DatabaseService._();
 
   /// Unit/integration tests only — bypasses PocketBase auth for Brain record paths.
@@ -402,6 +406,13 @@ class DatabaseService {
 
   SharedPreferences? _prefs;
   List<CategoryRule> _rules = [];
+  /// Local category revisions are authoritative for UI until a matching
+  /// server-backed refresh is available; never let a late GET erase an edit.
+  final Map<int, Map<String, dynamic>> _optimisticCategoryEdits = {};
+  String? _optimisticCategoryOwner;
+  bool _categoryMutationFlushInFlight = false;
+
+
   /// All `category_id` / `normalized_id` (lowercase) for this user from PocketBase, **including archived** — reserved for new POSTs.
   Set<String> _reservedCategorySlugsLower = {};
   /// Display names + archive flags for **all** PB rows (see [_rebuildCategoryDialogUniverse]) — create dialog pre-flight.

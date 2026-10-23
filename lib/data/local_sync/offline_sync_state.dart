@@ -1,3 +1,4 @@
+import 'package:counter/data/local_sync/category_mutation_outbox.dart';
 import 'package:counter/data/local_sync/plan_mutation_outbox.dart';
 import 'package:counter/data/local_sync/record_mutation_outbox.dart';
 import 'package:flutter/foundation.dart';
@@ -12,6 +13,8 @@ class OfflineSyncController extends ChangeNotifier {
   int pendingCount = 0;
   int recordsOutboxCount = 0;
   int plansOutboxCount = 0;
+  int categoriesOutboxCount = 0;
+  String? Function()? categoryOwnerResolver;
   bool isSyncing = false;
   bool authPaused = false;
   String? lastError;
@@ -121,6 +124,7 @@ class OfflineSyncController extends ChangeNotifier {
     if (pendingCount == 0 &&
         recordsOutboxCount == 0 &&
         plansOutboxCount == 0 &&
+        categoriesOutboxCount == 0 &&
         isSyncing &&
         !syncFlushInFlight) {
       setSyncing(false);
@@ -203,7 +207,12 @@ class OfflineSyncController extends ChangeNotifier {
       final records = await RecordMutationOutbox.load(prefs);
       recordsOutboxCount = records.length;
       plansOutboxCount = plans.length;
-      final next = records.length + plans.length;
+      final owner = (categoryOwnerResolver?.call() ?? '').trim();
+      final categories = owner.isEmpty
+          ? <Map<String, dynamic>>[]
+          : await CategoryMutationOutbox.load(prefs, owner);
+      categoriesOutboxCount = categories.length;
+      final next = records.length + plans.length + categories.length;
       final countChanged = pendingCount != next;
       pendingCount = next;
       if (pendingCount == 0) {
