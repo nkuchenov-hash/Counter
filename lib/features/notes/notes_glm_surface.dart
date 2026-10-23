@@ -315,7 +315,6 @@ class NotesBottomGlassFade extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final surface = Theme.of(context).colorScheme.surface;
     return SizedBox(
       height: height,
       child: Stack(
@@ -333,16 +332,18 @@ class NotesBottomGlassFade extends StatelessWidget {
                     colors: [
                       Colors.transparent,
                       Colors.transparent,
-                      Color(0x44000000),
+                      Color(0x55000000),
                       Colors.black,
                     ],
-                    stops: [0, 0.32, 0.72, 1],
+                    stops: [0, 0.27, 0.72, 1],
                   ).createShader(bounds),
                   child: BackdropFilter(
-                    filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                    child: ColoredBox(
-                      color: surface.withValues(alpha: 0.08),
-                      child: const SizedBox.expand(),
+                    filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                    // Transparent: only backdrop blur is revealed by the
+                    // feathered alpha mask; there is no opaque dock rectangle.
+                    child: const ColoredBox(
+                      color: Colors.transparent,
+                      child: SizedBox.expand(),
                     ),
                   ),
                 ),

@@ -308,11 +308,19 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 
 ## Notes library folder tabs
 
-- Notes categories appear as color-filled physical folder-edge tabs on both desktop and mobile, not translucent pill chips or mobile drawer-only navigation. Labels use at least 16px.
+- Notes categories appear as color-filled physical folder-edge tabs on both desktop and mobile, not translucent pill chips or mobile drawer-only navigation. Folder tab names use a dedicated compact 14px type size (exception to regular 16px content typography) with actual glyph-based width measurement and an upper safety cap of 460px, not fixed-width ellipsis for ordinary names. Exceptionally long labels expose their full name on hover or hold.
 - The folder spine silhouette uses a curved diagonal right edge with partially overlapping neighboring tabs; it must never degrade to rounded-rectangle/pill chips. “All” is fixed at the start and “+” fixed at the end; only category spines between them scroll, via touch swipe, mouse drag, horizontal trackpad or ordinary vertical mouse wheel. The active spine keeps its natural position and paints above neighbors.
 - The + action remains fixed beside the horizontal scrolling tabs and explicitly separates selecting existing categories from creating a new category with the canonical Brain-backed dialog; created categories are pinned immediately.
 - Pinned category order is stable: selecting an existing tab must never move it to slot 0, persist reordered IDs, or forcibly scroll the tab rail. An externally selected unpinned category may be appended after pinned tabs without disturbing them. Manual pinned categories persist across navigation/restart. No duplicate category store.
-- The active folder tab connects seamlessly to a single, borderless folder-paper surface with exactly the same color, changing with a 260ms smooth animation on category selection (including dark theme). The first note card is inset at least 18px below the tab/paper seam. Do not introduce nested frames around the Notes grid. Use the approved October 5 physical folder-tab shape as reference.
+- The tabs are compact (38px high, label-fitted width, 460px safety cap), with short rounded diagonal shoulders, modest overlap, delicate top-edge shading and no thick trapezoids or saturated solid fills. Keep category identity through restrained pastel tint; body paper must remain near-neutral with a subtle related hue (including dark theme). The selected folder tab must graduate to the exact body color at its lower seam, with a 260ms transition. The first note card is inset at least 18px below the tab/paper seam. Do not introduce nested frames around the Notes grid. Use the approved October 5 physical folder-tab shape as a silhouette reference, not its strong palette. In grid cards, preview text stays directly under the title; no variable blank vertical region between header and body.
+
+## Notes embedded editor and floating formatting dock
+
+- The white Notes editing canvas in the desktop master/detail layout is a distinct 20px-rounded paper surface on **all four corners**, with category-tinted folder paper visible at its perimeter. Do not place a full-width opaque white wrapper behind it.
+- The top editor navigation row has at least 20px internal top spacing in embedded mode. Back, undo and overflow are ghost controls: transparent at rest, readable icons, and a soft circular hover/tap highlight only.
+- The bottom formatting toolbar floats as independent controls with **no opaque, tinted, outlined, or rectangular backplate**. Selected tool feedback remains visible; other buttons use transparent backgrounds at rest.
+- Scrolling blocks continue beneath the bottom dock. A full-width feathered alpha mask reveals backdrop blur progressively only toward the lower edge. Never reserve a separate empty horizontal band beneath the document, and never place a colored rectangle underneath the formatting buttons.
+- The document scroll view provides its own end padding so the final block can still be read and edited above the floating tools. The same components apply on mobile, wide embedded editor and inline note editing without changing persistence or text selection behavior.
 
 ## Calendar navigation and view modes
 
