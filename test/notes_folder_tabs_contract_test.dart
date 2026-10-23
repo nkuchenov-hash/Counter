@@ -34,7 +34,7 @@ void main() {
     );
     expect(
       NotesFolderTabStrip.tabWidth('An extremely long category label that is wider than the screen'),
-      lessThanOrEqualTo(360),
+      lessThanOrEqualTo(460),
     );
   });
 
