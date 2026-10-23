@@ -131,8 +131,24 @@ void main() {
       expect(surface.left, closeTo(contentColumn.left + 16, 1));
       expect(surface.right, closeTo(contentColumn.right - 16, 1));
       expect(surface.width, lessThanOrEqualTo(kViktorChatContentMaxWidth));
-      // The send action remains evenly inset from the capsule border.
-      expect(surface.right - send.right, closeTo(14, 2));
+      // Distinguish the actual painted disc from its larger touch target:
+      // screenshots exposed that the old 48px disc nearly touched the edges.
+      final touch = tester.getRect(
+        find.byKey(const Key('viktor_send_touch_target')));
+      final disc = tester.getRect(
+        find.byKey(const Key('viktor_send_button_surface')));
+      expect(touch.width, 44);
+      expect(touch.height, 44);
+      expect(disc.width, 34);
+      expect(disc.height, 34);
+      expect(disc.center, touch.center);
+      final rightInset = surface.right - disc.right;
+      final topInset = disc.top - surface.top;
+      final bottomInset = surface.bottom - disc.bottom;
+      expect(rightInset, closeTo(15, 2));
+      expect(topInset, closeTo(bottomInset, 1));
+      // Capsule edge and button edge have the same visual breathing room.
+      expect(rightInset, closeTo(topInset, 2));
       expect(surface.left, greaterThanOrEqualTo(0));
       expect(surface.right, lessThanOrEqualTo(width));
       expect(editor.right, lessThanOrEqualTo(mic.left));
@@ -254,16 +270,17 @@ void main() {
     editor.controller!.text = 'Купить тыквы';
     await tester.pump();
 
-    final button = tester.widget<IconButton>(
-      find.ancestor(
-        of: find.byTooltip('Отправить Виктору'),
-        matching: find.byType(IconButton),
-      ).first,
-    );
-    // The send button must remain a canonical app control and use
-    // a circular contrast surface even while its readiness is pending.
-    expect(button.icon, isNotNull);
-    expect(find.byKey(const Key('viktor_send_button_surface')), findsOneWidget);
+    final touch = tester.getSize(
+      find.byKey(const Key('viktor_send_touch_target')));
+    final disc = tester.getSize(
+      find.byKey(const Key('viktor_send_button_surface')));
+    expect(touch, const Size(44, 44));
+    expect(disc, const Size(34, 34));
+    expect(find.byKey(const Key('viktor_send_tap')), findsOneWidget);
+    expect(find.byTooltip('Отправить Виктору'), findsOneWidget);
+    final ink = tester.widget<InkWell>(
+      find.byKey(const Key('viktor_send_tap')));
+    expect(ink.customBorder, isA<CircleBorder>());
     expect(tester.takeException(), isNull);
   });
 
