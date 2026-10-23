@@ -157,4 +157,55 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Viktor field ignores global white input fill and hides desktop scrollbars',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1440, 800);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData(
+        platform: TargetPlatform.windows,
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+        ),
+      ),
+      home: ViktorChatPage(wallDay: DateTime(2026, 10, 24)),
+    ));
+    await tester.pump();
+
+    final field = tester.widget<TextField>(
+      find.byKey(const Key('viktor_composer_input')));
+    // This explicit override prevents a white rectangle being painted
+    // inside the capsule by the app-level InputDecorationTheme.
+    expect(field.decoration?.filled, isFalse);
+    expect(field.decoration?.fillColor, Colors.transparent);
+    expect(field.decoration?.border, InputBorder.none);
+
+    // The messages viewport must extend to the WINDOW edge, regardless
+    // of the centered 760px conversation-content column.
+    final viewport = tester.getRect(
+      find.byKey(const Key('viktor_chat_messages_viewport')));
+    final scrollbar = tester.getRect(
+      find.byKey(const Key('viktor_edge_scrollbar')));
+    expect(viewport.left, closeTo(0, 0.1));
+    expect(viewport.right, closeTo(1440, 0.1));
+    expect(scrollbar.left, closeTo(0, 0.1));
+    expect(scrollbar.right, closeTo(1440, 0.1));
+
+    final edgeScrollbar = tester.widget<Scrollbar>(
+      find.byKey(const Key('viktor_edge_scrollbar')));
+    expect(edgeScrollbar.thumbVisibility, false);
+    expect(edgeScrollbar.trackVisibility, false);
+    expect(edgeScrollbar.thickness, 3);
+    expect(edgeScrollbar.interactive, false);
+    // Chat message text remains centered and does not fill the window.
+    final intro = tester.getRect(find.textContaining('Я Виктор'));
+    expect(intro.width, lessThan(761));
+    expect(intro.center.dx, closeTo(720, 60));
+    expect(tester.takeException(), isNull);
+  });
+
 }

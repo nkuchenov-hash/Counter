@@ -2,6 +2,12 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor chat surface and scroll visual parity (2026-10-23)
+
+- Viktor's chat composer explicitly disables the app-level filled InputDecoration, including on focused, disabled, and desktop states; the input has no contrasting rectangular patch inside the single rounded composer surface. Do not rely on inherited `InputDecorationTheme` defaults.
+- The **messages ListView spans the full screen width**; center the 760px conversation content within each item, not around the ListView. Put its thin, auto-hidden (3px) scrollbar at the far right edge of the window, never against the message column. Disable automatic Flutter desktop scrollbars **within Viktor only** to avoid duplicates. Keep wheel, touchpad, keyboard, touch scrolling, selection and caret visibility functional.
+- Regress against a deliberately white, filled global input theme on Windows-like layouts and verify that the chat viewport and explicit scrollbar occupy the full window width, with no constantly visible scrollbar track.
+
 ## Viktor compact chat composer (2026-10-23)
 
 - An empty Viktor message composer is a **single centered rounded row** containing text input, microphone and send controls. No permanently stacked editor plus a second toolbar or nested rectangular input fill; the empty composer should remain under 80 logical px tall at standard viewport sizes.
