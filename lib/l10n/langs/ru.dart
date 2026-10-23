@@ -233,8 +233,7 @@ const Map<String, String> kRuL10n = {
   'record_synced': 'Запись синхронизирована',
   'changes_saved': 'Изменения сохранены',
   'edit_save_title_required': 'Введите название перед сохранением.',
-  'edit_save_time_required':
-      'Укажите время начала и окончания перед сохранением.',
+  'edit_save_time_required': 'Укажите время начала и окончания перед сохранением.',
   'toast_saved': 'Сохранено',
   'toast_deleted': 'Удалено',
   'toast_updated': 'Обновлено',
@@ -279,8 +278,7 @@ const Map<String, String> kRuL10n = {
       'Задачи пойдут подряд в выбранном порядке: первая начнётся в указанное время, остальные — без промежутков. Длительность сохранится.',
   'plan_bulk_edit_date_only_hint':
       'Изменится только дата. Время начала и длительность задач сохранятся.',
-  'plan_bulk_edit_timezone_hint':
-      'Время указывается в часовом поясе профиля.',
+  'plan_bulk_edit_timezone_hint': 'Время указывается в часовом поясе профиля.',
   'plan_bulk_edit_date_label': 'Дата',
   'plan_bulk_edit_new_start_label': 'Установить время',
   'plan_bulk_edit_set_time_label': 'Установить время',
@@ -299,8 +297,7 @@ const Map<String, String> kRuL10n = {
   'manage_tags': 'Управление тегами',
   'planning_tag_display_style': 'Стиль отображения тегов',
   'tag_settings_hub_title': 'Настройки тегов',
-  'tag_settings_sheet_subtitle':
-      'Список тегов и стиль отображения в планировании.',
+  'tag_settings_sheet_subtitle': 'Список тегов и стиль отображения в планировании.',
   'tag_settings_tab_tags': 'Теги',
   'tag_settings_tab_style': 'Стиль',
   'tag_settings_tab_durations': 'Длительность',
@@ -454,6 +451,17 @@ const Map<String, String> kRuL10n = {
       'Синхронизация не удалась: категория не найдена на сервере.',
   'default_label': 'По умолчанию',
   'edit_keywords': 'Редактировать ключевые слова',
+  'category_search': 'Поиск категорий',
+  'category_search_empty': 'Категории не найдены',
+  'category_select_to_edit': 'Выберите категорию для редактирования',
+  'category_expand_children': 'Раскрыть или свернуть подкатегории',
+  'category_actions': 'Действия с категорией',
+  'category_reorder': 'Изменить порядок категории',
+  'category_move_invalid': 'Нельзя переместить категорию в саму себя или в свою подкатегорию.',
+  'category_color_shades': 'Оттенки цвета',
+  'category_moved': 'Категория перемещена',
+  'clear': 'Очистить',
+  'category_advanced': 'Дополнительные настройки',
   'categories_title': 'Категории',
   'category_edit_mode': 'Режим редактирования',
   'category_edit_mode_subtitle':
@@ -487,8 +495,7 @@ const Map<String, String> kRuL10n = {
   'category_picker_create_named': 'Создать «%s»',
   'category_name_required': 'Укажите название категории',
   'category_create_failed': 'Не удалось создать категорию',
-  'category_create_requires_connection':
-      'Создание категории требует подключения',
+  'category_create_requires_connection': 'Создание категории требует подключения',
   'calendar': 'Календарь',
   'calendar_year_view': 'Год',
   'calendar_month_view': 'Месяц',
@@ -532,8 +539,7 @@ const Map<String, String> kRuL10n = {
   'listen': 'Слушать',
   'voice_status_say_task': 'Назовите задачу…',
   'voice_status_heard': 'Распознано. Нажмите для подтверждения.',
-  'speech_error_network':
-      'Ошибка сети. Проверьте подключение и попробуйте снова.',
+  'speech_error_network': 'Ошибка сети. Проверьте подключение и попробуйте снова.',
   'speech_error_network_soft':
       'Трудности с соединением. Попробуйте продиктовать ещё раз.',
   'speech_error_network_browser':
@@ -610,8 +616,7 @@ const Map<String, String> kRuL10n = {
   'layout_wrap': 'Макет: сетка',
   'switch_to_wrap': 'Переключить на сетку',
   'switch_to_scrollable': 'Переключить на прокручиваемые строки',
-  'create_first_category':
-      'Создайте первую категорию (напр. Работа или Здоровье).',
+  'create_first_category': 'Создайте первую категорию (напр. Работа или Здоровье).',
   'segment_en': 'EN',
   'segment_ru': 'RU',
   'planned_label': 'Запланировано',
@@ -716,21 +721,18 @@ const Map<String, String> kRuL10n = {
   'desktop_voice_parser_test_hint': 'Price Reporter AGE SOLUTIONS ADD MOD',
   'desktop_voice_parser_test_run': 'Проверить парсер',
   'desktop_voice_parser_test_result': 'Результат: %s',
-  'desktop_voice_listening':
-      'Слушаю… скажите: Price Reporter [клиент] [задача]',
+  'desktop_voice_listening': 'Слушаю… скажите: Price Reporter [клиент] [задача]',
   'desktop_voice_parsing': 'Разбор команды…',
   'desktop_voice_resolved': 'Команда распознана — запуск записи',
   'desktop_voice_ambiguous':
       'Неоднозначный клиент — выберите вручную или повторите',
-  'desktop_voice_no_match':
-      'Безопасное совпадение не найдено — запись не создана',
+  'desktop_voice_no_match': 'Безопасное совпадение не найдено — запись не создана',
   'desktop_voice_no_speech': 'Речь не обнаружена',
   'desktop_voice_starting': 'Запуск записи на таймлайне…',
   'desktop_voice_transcript': 'Транскрипт',
   'desktop_voice_category_path': 'Путь категории',
   'desktop_voice_record_title': 'Название записи',
-  'desktop_voice_no_price_reporter':
-      'Категория Price Reporter не найдена в дереве',
+  'desktop_voice_no_price_reporter': 'Категория Price Reporter не найдена в дереве',
   'desktop_voice_preparing': 'Локальный движок речи (только диагностика)',
   'desktop_voice_listening_stop_hint':
       'Слушаю… нажмите «Готово», когда закончите говорить',
@@ -917,8 +919,7 @@ const Map<String, String> kRuL10n = {
   'notes_library_title': 'Заметки',
   'notes_library_search_hint': 'Поиск заметок',
   'notes_library_empty': 'Пока нет заметок',
-  'notes_library_empty_sub':
-      'Нажмите на поле выше, чтобы добавить первую заметку.',
+  'notes_library_empty_sub': 'Нажмите на поле выше, чтобы добавить первую заметку.',
   'notes_library_no_results': 'Ничего не найдено',
   'notes_library_count': '{n} заметок',
   'notes_library_updated_label': 'Обновлено {when}',
@@ -1002,8 +1003,7 @@ const Map<String, String> kRuL10n = {
   'notes_image_source_camera': 'Сделать фото',
   'notes_image_crop_title': 'Кадрирование',
   'notes_image_crop_apply': 'Применить',
-  'notes_image_crop_hint':
-      'Масштабируйте и перемещайте изображение внутри рамки.',
+  'notes_image_crop_hint': 'Масштабируйте и перемещайте изображение внутри рамки.',
   'notes_image_crop_failed': 'Не удалось обрезать изображение.',
   'notes_image_caption_title': 'Подпись к изображению',
   'notes_image_caption_hint': 'Добавьте подпись…',
