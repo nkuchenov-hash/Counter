@@ -1,6 +1,7 @@
 import 'package:counter/features/notes/widgets/notes_folder_pane.dart';
 import 'package:flutter/gestures.dart';
 import 'package:counter/features/notes/widgets/notes_library_production_shell.dart';
+import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'notes/fixtures/notes_glm_library_parity_fixture.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,96 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('Notes grid card keeps preview directly under title, with checkbox states and creation date', (tester) async {
+    final document = NoteDocument(
+      blocks: const [
+        NoteBlock(id: 'c1', type: NoteBlockType.checklist, text: 'Первый пункт', checked: true),
+        NoteBlock(id: 'c2', type: NoteBlockType.checklist, text: 'Второй пункт'),
+      ],
+    );
+    final data = NoteCardData(
+      task: PlanningTask(
+        id: 1,
+        planRowId: 'created-date-check',
+        title: 'Заголовок',
+        categoryId: 1,
+        isDone: false,
+        dateKey: '',
+        order: 0,
+        createdAt: DateTime(2026, 10, 23),
+        updatedAt: DateTime(2026, 10, 24),
+      ),
+      doc: document,
+      stats: document.computeStats(),
+      categoryName: 'Дела',
+      categoryColor: const Color(0xFF88AACC),
+      categoryIconCodePoint: Icons.folder.codePoint,
+      pinned: false,
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 310,
+          height: 310,
+          child: NoteCard(
+            data: data,
+            view: NotesLibraryView.grid,
+            checkboxesOn: false,
+            onOpen: () {},
+            onTogglePin: () {},
+            onToggleDone: () {},
+            onLongPress: () {},
+            onOpenMenu: (_) {},
+          ),
+        ),
+      ),
+    ));
+    final title = find.text('Заголовок');
+    final preview = find.textContaining('☑ Первый пункт');
+    expect(title, findsOneWidget);
+    expect(preview, findsOneWidget);
+    expect(find.textContaining('☐ Второй пункт'), findsOneWidget);
+    expect(find.text('1/2'), findsOneWidget);
+    expect(find.text('23.10.26'), findsOneWidget);
+    expect(find.text('24.10.26'), findsNothing);
+    final gap = tester.getTopLeft(preview).dy - tester.getBottomLeft(title).dy;
+    expect(gap, inInclusiveRange(0, 22));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('folder spines have separate physical edge painting', (tester) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 480,
+          child: NotesFolderTabStrip(
+            tabs: const [
+              NotesFolderTabData(id: 1, label: 'Папка А', icon: Icons.folder,
+                  paper: Color(0xFFF0D6CB)),
+              NotesFolderTabData(id: 2, label: 'Папка Б', icon: Icons.folder,
+                  paper: Color(0xFFD6E6F3)),
+            ],
+            selectedId: 2,
+            scrollController: controller,
+            allLabel: 'Все',
+            allPaper: const Color(0xFFF0F2F5),
+            onSelect: (_) {},
+            onAdd: () {},
+          ),
+        ),
+      ),
+    ));
+    final edgePaint = find.byWidgetPredicate(
+      (widget) => widget is CustomPaint && widget.painter is NotesFolderLipPainter,
+    );
+    expect(edgePaint, findsNWidgets(4)); // All, two categories, +.
+    final selected = find.byKey(const ValueKey('notes-tab-2'));
+    expect(find.descendant(of: selected, matching: edgePaint), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   test('active Notes category never changes the saved tab order', () {
     final pinned = [31, 44, 18, 72];
     expect(notesStableTabIds(pinned, 18), [31, 44, 18, 72]);
