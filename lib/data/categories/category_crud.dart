@@ -639,11 +639,21 @@ extension CategoryCrudExtension on DatabaseService {
         await _pb.collection(PbCollections.categories)
             .update(pbId, body: _nocoFieldsForPatch(fields))
             .timeout(const Duration(seconds: 10));
-        await CategoryMutationOutbox.acknowledge(
+        final acknowledged = await CategoryMutationOutbox.acknowledge(
           prefs, owner,
           categoryId: categoryId,
           revision: (entry['revision'] as num).toInt(),
         );
+        if (acknowledged) {
+          final optimistic = _optimisticCategoryEdits[categoryId];
+          // Never clear a local overlay if another color/name change
+          // occurred while this exact revision was in flight.
+          if (optimistic != null &&
+              optimistic.length == delta.length &&
+              delta.entries.every((e) => optimistic[e.key] == e.value)) {
+            _optimisticCategoryEdits.remove(categoryId);
+          }
+        }
       } catch (_) {
         // Offline, rejected connection, or expired auth: retain the exact
         // journal entry; never roll back a user's visible local edit.
