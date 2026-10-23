@@ -31,9 +31,11 @@ Concrete acceptance scenarios:
 ## Architecture and boundaries
 
 - **Dialogue implementation:** append-only `viktor_turns` PocketBase collection with authenticated owner rules and conversation_id=`main`; recent messages restore on restart and are available on other devices. This preserves messages but does not constitute semantic or long-term AI memory. Failed sync must be visible and must not cause silent data loss.
-- **Dialogue:** authenticated owner-scoped conversations persist across app
-  restarts and devices (future `viktor_conversations` / `viktor_turns`).
-  The short in-memory dialogue context alone is NOT durable memory.
+- **Offline dialogue outbox:** owner-scoped unsent turns are stored using
+  flutter_secure_storage, retried in order, and reconciled by unique client_turn_id
+  after uncertain PocketBase write results. Pending history is shown separately
+  from model dialogue. This is local encrypted storage, not long-term semantic memory;
+  full web/Android restart tests and encrypted storage failure tests are pending.
 - **Retrieval:** read-only tools index owner-scoped Plans, historic Records,
   Notes, Paths, tags and categories; query by date, title and content. Exact
   text observations retain immutable source pointers. Search results are never
@@ -76,8 +78,10 @@ Concrete acceptance scenarios:
   preserves other blocks and media, and refuses complex inline runs rather
   than corrupting formatting. Existing Brain preview/approval safeguards apply.
 - Bounded prior chat turns are forwarded for within-session references
-  ("second option", "change Saturday"). This is **not** durable,
-  cross-device conversation persistence.
+  ("second option", "change Saturday"). Recent dialogue is stored as
+  authenticated owner-scoped, append-only PocketBase turns and recovered on
+  restart; failed writes persist in a protected local queue for retry. This
+  is not semantic or lifelong AI memory and has not been production-verified.
 - No safe two-day composite draft commit tool yet. No claim of full weekend
   scheduling or of ChatGPT-equivalent capability.
 
