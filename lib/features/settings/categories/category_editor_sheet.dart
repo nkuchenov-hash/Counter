@@ -610,19 +610,31 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          Container(
+            color: scheme.surface,
+            padding: const EdgeInsets.fromLTRB(12, 10, 18, 14),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                AppButton.secondary(
-                  label: t(locale, 'cancel'),
-                  onPressed: _saving ? null : (widget.inline ? widget.onCancel : () => Navigator.of(context).pop()),
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: scheme.error,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  onPressed: _saving ? null : () => unawaited(_confirmDelete()),
+                  icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                  label: Text(t(locale, 'delete')),
                 ),
-                const SizedBox(width: 10),
+                const Spacer(),
+                AppButton.ghost(
+                  label: t(locale, 'cancel'),
+                  onPressed: _saving
+                      ? null
+                      : (widget.inline ? widget.onCancel
+                          : () => Navigator.of(context).pop()),
+                ),
+                const SizedBox(width: 8),
                 AppButton.primary(
                   label: t(locale, 'save'),
-                  icon: Icons.check_rounded,
                   loading: _saving,
                   onPressed: _saving ? null : () => unawaited(_save()),
                 ),
