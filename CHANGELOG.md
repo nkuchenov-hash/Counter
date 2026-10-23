@@ -1,9 +1,9 @@
 ## [2026-10-23] — Viktor dialogue retry after transient sync failure (PR #337; not released)
 
-- Retain unsent chat turns in an in-memory queue and retry them in order on subsequent messages, instead of disabling all future history writes after one failure.
+- Keep unsent chat turns in an owner-scoped encrypted local outbox, restore them after reopening the app and retry them in order; avoid disabling all subsequent writes after a transient failure.
 - Use stable owner-scoped `client_turn_id` values and read-back verification after ambiguous server/network errors to avoid duplicate history entries.
-- Show failed/recovered sync state in Viktor chat. Pending messages are still lost if the chat closes while offline; a durable encrypted outbox and full release acceptance remain outstanding.
-- JS server-side contract tests passed in a V8 harness. Flutter compilation and web/Android release builds were not run, and the PR remains unmerged.
+- Show pending sync status separately from the AI dialogue so technical alerts never pollute model conversation history. Limit long turn content to the PocketBase field size. Full restart/device tests, and end-to-end release acceptance remain outstanding.
+- Four JS contract suites passed in a V8 harness, including the new encrypted outbox source invariant checks; CI now invokes them. Flutter compilation and web/Android release builds were not run, and the PR remains unmerged.
 
 ## [2026-10-22] — Viktor guarded schedule commit correctness (PR #337; not released)
 
