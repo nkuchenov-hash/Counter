@@ -88,7 +88,7 @@ class ViktorConversationStore {
     if (turn.content.trim().isEmpty) return Future<void>.value();
     final ownerAtSubmission = _owner();
     final body = turn.content.length <= 6000 ? turn.content
-        : '${turn.content.substring(0, 5970)}\\n[Сообщение обрезано при сохранении]';
+        : '${turn.content.substring(0, 5970)}\n[Сообщение обрезано при сохранении]';
     final sequence = ++_sequence;
     final id = 'turn_${DateTime.now().microsecondsSinceEpoch}_$sequence';
     _pending.add((owner: ownerAtSubmission, id: id,
