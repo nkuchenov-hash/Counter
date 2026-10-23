@@ -115,6 +115,14 @@ void main() {
       expect(child1, kNordicWork[500]!.toARGB32());
       expect(child1, child2);
       expect(
+        categoryMaterialPrimaryForValue(const Color(0xFFFA5050).toARGB32()),
+        kNordicEntertainment,
+      );
+      expect(
+        categoryMaterialPrimaryForValue(Colors.grey.toARGB32()),
+        kCategoryNeutral,
+      );
+      expect(
         categoryNordicChildColorValue(child1, 0),
         kNordicWork[400]!.toARGB32(),
       );
