@@ -36,6 +36,10 @@
 
 ---
 
+## Durable optimistic category edits (2026-10-23)
+
+Category appearance and editor PATCH saves use `CategoryMutationOutbox` (`lib/data/local_sync/category_mutation_outbox.dart`), scoped by profile and keyed by 15-character PocketBase category row ID. The Brain applies edits to the live category tree before async disk/network work, then persists/coalesces field deltas with a per-row revision. Only the submitted revision can be acknowledged. Bootstrap, server fetch and realtime category reconciliation overlay pending edits; no passive refresh or automatic palette migration can overwrite local user choices. The shared sync drainer retries pending edits on connectivity and auth recovery. Backend interruptions are not surfaced as per-edit toasts.
+
 ## 3. Core contracts
 
 ### P0 — OPTIMISTIC_UI_FIRST (highest interaction priority)
