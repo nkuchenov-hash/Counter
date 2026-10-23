@@ -447,9 +447,11 @@ The web microphone MUST capture actual audio through `record`, not browser `Spee
 
 - Desktop Categories uses a two-pane tree/inline editor; mobile uses a single tree and a bounded near-full-screen editor with a sticky Save action.
 - Category tree drag uses the canonical `AppReorderableList` + `AppHoldToReorderListener` (300 ms), matching Plans and Notes. No feature-specific drag handles or buttons.
-- Drag between visible sibling groups changes the parent through `updateCategoryParent`; within a group it calls `applyLocalCategorySiblingOrder` and debounced `persistCategorySiblingOrder`. Invalid self/descendant moves are rejected *before* the optimistic mutation.
-- Expanded branches expose child-sibling insertion locations to the canonical hold-to-reorder gesture. A parent selector is not part of the edit form; the row three-dot Move action offers a picker for empty/collapsed destination branches, while drag between visible expanded sibling groups remains canonical.
+- The same canonical 300 ms reorder gesture now has two drop zones: hover the center 60% of a category row to nest inside that category (including an empty folder), or hover the upper/lower edges for sibling insertion. The row highlights while accepting a nesting drop. Parent changes use `updateCategoryParent` and keep cycle checks; sibling reorder uses `applyLocalCategorySiblingOrder` and debounced `persistCategorySiblingOrder`.
+- Parent categories can be nested by drag onto the parent row, regardless of whether it is expanded. Repeated category click toggles expansion; a neighboring button toggles Expand all / Collapse all. The row Move action remains available for non-drag or accessibility workflows.
 - Reorder/move updates the local category tree immediately, offers Undo, and reports failed server persistence. Search expands only matching paths without rewriting data.
 - Editor shows the icon preview, name and side-by-side color/icon palettes first, with a three-row icon grid and More gallery. Translations, keywords and management actions are in Advanced; keywords have an explicit Add button. The footer always provides Cancel and Save. The row three-dot menu includes confirmed Delete. Editor content is viewport-bounded and writes finish before closing.
 
 ---
+
+- Category rows have no vertical color stripes and their three-dot actions are visually subdued; colors identify categories through the icon tiles. Editor has one compact icon/title breadcrumb header, no redundant preview card, a consistently visible footer Delete action, a neutral ghost Cancel and a primary Save. Advanced settings have no expansion dividers.
