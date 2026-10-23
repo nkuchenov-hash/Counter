@@ -543,6 +543,31 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: scheme.onSurface.withValues(alpha: 0.035),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: scheme.outlineVariant),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40, height: 40,
+                          decoration: BoxDecoration(
+                            color: widget.category.colorOrDefault.withValues(alpha: 0.13),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(IconData(_iconCodePoint, fontFamily: 'MaterialIcons'),
+                              color: widget.category.colorOrDefault),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(widget.category.name,
+                            style: Theme.of(context).textTheme.titleMedium)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   TextField(
                     controller: _primaryNameController,
                     textCapitalization: TextCapitalization.words,
@@ -552,7 +577,6 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 14),
                   const SizedBox(height: 18),
                   Text(
                     t(locale, 'category_section_appearance'),
