@@ -1,3 +1,8 @@
+## [2026-10-23] — Viktor saved-plan clocks in requested timezone
+
+- Projected saved UTC plan instants into the dialogue's explicitly chosen IANA timezone, collecting neighboring profile days to avoid losing events near midnight. Model context distinguishes the projected plan clock from the persistent profile clock; unknown-source instants are flagged as uncertain.
+- Verified 13:00 New York = 20:00 Moscow on October 24, 2026, and overnight day rollover without changing saved plans.
+
 ## [2026-10-23] — Viktor complete itinerary, sticky timezone and read loop
 
 - Raised provider reply limit from 1000 to 8000 characters and preserved up to 6000 characters of detailed previous assistant drafts and up to 3000 of substantive user briefs; pinned the original weekend request, latest timed draft and explicit timezone selection through repeated failed turns.
