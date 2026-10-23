@@ -922,6 +922,13 @@ extension CategoryCrudExtension on DatabaseService {
     var categoryId = _pickNewCategoryBusinessKey(child);
 
     final nextOrder = _nextCategoryOrderAmongSiblings(parentId);
+    // Safety net for every creation entrypoint, including AI/import paths.
+    // Explicit saved colors are never overridden.
+    final newColor = child.colorValue ??
+        (parentId == null
+            ? categoryNordicRootColorValue(nextOrder)
+            : categoryNordicChildColorValue(
+                getCategoryRuleById(parentId)?.colorValue, nextOrder));
 
     // Prefer caller temp id (picker uses [DatabaseService.newId]); never `-1`.
     var placeholderLocalId = child.id;
@@ -939,7 +946,7 @@ extension CategoryCrudExtension on DatabaseService {
       name: child.name,
       normalizedId: categoryId,
       children: null,
-      colorValue: child.colorValue,
+      colorValue: newColor,
       iconCodePoint: child.iconCodePoint,
       keywords: child.keywords,
       localizedNames: child.localizedNames,
@@ -970,7 +977,7 @@ extension CategoryCrudExtension on DatabaseService {
           'category_id': categoryId,
           'name': child.name,
           if (parentKey != null && parentKey.isNotEmpty) 'parent_id': parentKey,
-          'color_value': child.colorValue ?? 0,
+          'color_value': newColor,
           'icon_code_point': child.iconCodePoint ?? 0,
           'order': nextOrder,
           if (child.keywords != null) 'keywords': child.keywords,
