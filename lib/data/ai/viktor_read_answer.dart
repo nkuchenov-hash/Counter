@@ -55,6 +55,12 @@ class ViktorReadAnswer {
     return null;
   }
 
+  /// A corrected multi-event draft must contain actual clock ranges,
+  /// not merely "cancelled", "checking" or "I will replan" status text.
+  static bool hasTimedItinerary(String message) =>
+      RegExp(r'\b\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}')
+          .allMatches(message).length >= 3;
+
   /// A conversation about revising an UNSAVED itinerary is a request for
   /// another draft, not an authorization to move already-saved plans.
   /// "Confirm/save/apply" remains an explicit separate user operation.
