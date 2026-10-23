@@ -42,8 +42,7 @@ const Map<String, String> kEnL10n = {
   'plan_filter_no_tags': 'No Tags',
   'lists_delete_backlog_confirm': 'Remove this backlog task?',
   'lists_pin_chips_title': 'Filter chips',
-  'lists_pin_chips_subtitle':
-      'Pick which categories appear as quick filters (besides All).',
+  'lists_pin_chips_subtitle': 'Pick which categories appear as quick filters (besides All).',
   'lists_chip_bar_settings_tooltip':
       'Lists section: filter chips (manual or frequent)',
   'lists_chip_mode_frequent': 'Most frequent',
@@ -454,6 +453,7 @@ const Map<String, String> kEnL10n = {
   'category_reorder': 'Reorder category',
   'category_move_invalid': 'Cannot move a category into itself or its children.',
   'category_color_shades': 'Color shades',
+  'category_move_to': 'Move to…',
   'category_moved': 'Category moved',
   'clear': 'Clear',
   'category_advanced': 'Advanced settings',

@@ -7,10 +7,12 @@ import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/settings/categories/category_editor_sheet.dart';
+import 'package:counter/features/settings/categories/category_helpers.dart';
 import 'package:counter/features/settings/categories/category_row_widget.dart';
 import 'package:counter/features/settings/categories/create_category_dialog.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:flutter/material.dart';
 
 export 'package:counter/features/settings/categories/category_editor_sheet.dart'
@@ -133,6 +135,77 @@ class _CategoriesPageState extends State<CategoriesPage> {
       if (_selectedId == id) _selectedId = null;
       _expanded.remove(id);
     });
+  }
+
+  Future<void> _moveCategoryWithPicker(CategoryRule rule) async {
+    final result = await showCategoryTreeSheet(context, showAllCategoriesRow: true);
+    if (!mounted || result == null) return;
+    final destination = switch (result) {
+      CategoryTreeSheetPicked(:final id) => id,
+      CategoryTreeSheetAll() => null,
+    };
+    final db = DatabaseService.instance;
+    if (destination != null &&
+        db.getRecordIdsInSubtree(rule.id).contains(destination)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(currentLocale.value, 'category_move_invalid'))),
+      );
+      return;
+    }
+    final previous = db.getParentId(rule.id);
+    if (previous == destination) return;
+    final ok = await db.updateCategoryParent(rule.id, destination);
+    if (!mounted) return;
+    if (ok) {
+      if (destination != null) setState(() => _expanded.add(destination));
+      unawaited(_notifyChanged());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(currentLocale.value, 'category_moved')),
+          action: SnackBarAction(
+            label: t(currentLocale.value, 'undo'),
+            onPressed: () => unawaited(db.updateCategoryParent(rule.id, previous)),
+          )),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
+      );
+    }
+  }
+
+  Future<void> _deleteCategory(CategoryRule rule) async {
+    final locale = currentLocale.value;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(t(locale, 'delete_category_confirm')),
+        content: Text(t(locale, 'delete_subcategories_confirm')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(t(locale, 'cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(t(locale, 'delete')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final ok = await DatabaseService.instance.deleteCategory(rule.id);
+    if (!mounted) return;
+    if (ok) {
+      _deleted(rule.id);
+      unawaited(_notifyChanged());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(locale, 'category_removed'))),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(locale, 'sync_failed'))),
+      );
+    }
   }
 
   void _editOnPhone(CategoryRule rule) {
@@ -356,7 +429,15 @@ class _CategoriesPageState extends State<CategoriesPage> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Icon(r.iconOrDefault, color: tint, size: 23),
+                  Container(
+                    width: 36, height: 36,
+                    decoration: BoxDecoration(
+                      color: tint.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(categoryManagerIconFor(r), color: tint, size: 21),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -388,6 +469,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
                         } else {
                           _editOnPhone(r);
                         }
+                      } else if (action == 'move') {
+                        unawaited(_moveCategoryWithPicker(r));
+                      } else if (action == 'delete') {
+                        unawaited(_deleteCategory(r));
                       }
                     },
                     itemBuilder: (_) => <PopupMenuEntry<String>>[
@@ -398,6 +483,29 @@ class _CategoriesPageState extends State<CategoriesPage> {
                       PopupMenuItem(
                         value: 'add',
                         child: Text(t(loc, 'add_subcategory')),
+                      ),
+                      PopupMenuItem(
+                        value: 'move',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.folder_open_rounded, size: 20),
+                            const SizedBox(width: 8),
+                            Text(t(loc, 'category_move_to')),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline_rounded,
+                              size: 20, color: scheme.error),
+                            const SizedBox(width: 8),
+                            Text(t(loc, 'delete_category'),
+                              style: TextStyle(color: scheme.error)),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -530,6 +638,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                                     ),
                                     category: selected,
                                     inline: true,
+                                    onCancel: () => setState(() => _selectedId = null),
                                     onSaved: () =>
                                         unawaited(_notifyChanged()),
                                     onCategoryDeleted: () =>

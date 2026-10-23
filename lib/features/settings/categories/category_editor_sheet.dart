@@ -17,12 +17,14 @@ class CategoryEditorSheet extends StatefulWidget {
     required this.category,
     required this.onSaved,
     this.onCategoryDeleted,
+    this.onCancel,
     this.inline = false,
   });
 
   final CategoryRule category;
   final VoidCallback onSaved;
   final VoidCallback? onCategoryDeleted;
+  final VoidCallback? onCancel;
   final bool inline;
 
   @override
@@ -33,7 +35,6 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
   final Map<String, List<String>> _keywordsByLang = {};
   bool _saving = false;
   bool _showShades = false;
-  int? _parentId;
   int? _selectedColorValue;
   MaterialColor? _selectedPrimary;
   int? _selectedShadeValue;
@@ -51,10 +52,8 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
         widget.category.keywordsFor(lang),
       );
     }
-    _parentId = DatabaseService.instance.getParentId(widget.category.id);
     _selectedColorValue = widget.category.colorValue;
-    _iconCodePoint =
-        widget.category.iconCodePoint ?? Icons.folder_rounded.codePoint;
+    _iconCodePoint = categoryManagerIconFor(widget.category).codePoint;
     final names = widget.category.localizedNames ?? const {};
     _primaryNameController = TextEditingController(
       text: widget.category.name.trim(),
@@ -114,69 +113,35 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
           .toList();
       if (parts.isNotEmpty) keywords[e.key] = parts;
     }
-    final currentParent = DatabaseService.instance.getParentId(cid);
-    final newParent = _parentId;
-    final currentEffective = currentParent;
     final primaryNew = _primaryNameController.text.trim();
     final primaryChanged =
         primaryNew.isNotEmpty && primaryNew != widget.category.name.trim();
-    if (mounted && !widget.inline) {
+    try {
+      if (primaryChanged) {
+        final result = await DatabaseService.instance.updateCategory(cid, primaryNew);
+        if (!result.ok) throw StateError('Rename failed');
+      }
+      final delta = <String, dynamic>{'keywords': keywords};
+      if (namesChanged) {
+        DatabaseService.instance.updateCategoryLocalizedNames(cid, newNames);
+        delta['localized_names'] = newNames;
+      }
+      if (colorChanged) delta['color_value'] = _selectedColorValue;
+      if (iconChanged) delta['icon_code_point'] = _iconCodePoint;
+      final patch = await DatabaseService.instance.patchCategoryDelta(cid, delta);
+      if (!patch.ok) throw StateError('Category patch failed');
+      if (!mounted) return;
       widget.onSaved();
-      Navigator.of(context).pop();
-    }
-    unawaited(() async {
-      try {
-        if (primaryChanged) {
-          final res = await DatabaseService.instance.updateCategory(
-            cid,
-            primaryNew,
-          );
-          if (!res.ok && mounted) {
-            messenger.showSnackBar(
-              SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
-            );
-          }
-        }
-        final delta = <String, dynamic>{'keywords': keywords};
-        if (namesChanged) {
-          DatabaseService.instance.updateCategoryLocalizedNames(cid, newNames);
-          delta['localized_names'] = newNames;
-        }
-        if (colorChanged) {
-          DatabaseService.instance.updateNestedCategory(
-            cid,
-            colorValue: _selectedColorValue,
-          );
-          delta['color_value'] = _selectedColorValue;
-        }
-        if (iconChanged) {
-          delta['icon_code_point'] = _iconCodePoint;
-        }
-        final patch = await DatabaseService.instance.patchCategoryDelta(
-          cid,
-          delta,
-        );
-        if (!patch.ok) {
-          if (mounted) {
-            messenger.showSnackBar(
-              SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
-            );
-          }
-          return;
-        }
-        if (currentEffective != newParent) {
-          await DatabaseService.instance.updateCategoryParent(cid, newParent);
-        }
-      } catch (_) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
-        );
-      }
+      if (!widget.inline && mounted) Navigator.of(context).pop();
+    } catch (_) {
       if (mounted) {
-        setState(() => _saving = false);
-        if (widget.inline) widget.onSaved();
+        messenger.showSnackBar(SnackBar(
+          content: Text(t(currentLocale.value, 'sync_failed')),
+        ));
       }
-    }());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   Future<void> _confirmDelete() async {
@@ -202,14 +167,18 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     if (confirm != true || !mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     final idToDelete = widget.category.id;
-    widget.onCategoryDeleted?.call();
-    widget.onSaved();
-    if (!widget.inline) Navigator.of(context).pop();
     final ok = await DatabaseService.instance.deleteCategory(idToDelete);
     if (!mounted) return;
     if (ok) {
+      widget.onCategoryDeleted?.call();
+      widget.onSaved();
       messenger.showSnackBar(
         SnackBar(content: Text(t(loc, 'category_removed'))),
+      );
+      if (!widget.inline && mounted) Navigator.of(context).pop();
+    } else {
+      messenger.showSnackBar(
+        SnackBar(content: Text(t(loc, 'sync_failed'))),
       );
     }
   }
@@ -268,37 +237,6 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     setState(() => _keywordsByLang[langCode] = newTags);
   }
 
-  Widget _buildParentPicker(BuildContext context) {
-    final db = DatabaseService.instance;
-    final forbidden = {
-      widget.category.id,
-      ...db.getRecordIdsInSubtree(widget.category.id),
-    };
-    final pairs = db.allCategoryIdPathPairs
-        .where((p) => !forbidden.contains(p.id))
-        .toList();
-    return DropdownButtonFormField<int?>(
-      isExpanded: true,
-      initialValue: _parentId,
-      decoration: InputDecoration(
-        labelText: t(currentLocale.value, 'parent_category'),
-      ),
-      items: [
-        DropdownMenuItem<int?>(
-          value: null,
-          child: Text(t(currentLocale.value, 'root_top_level')),
-        ),
-        ...pairs.map(
-          (p) => DropdownMenuItem<int?>(
-            value: p.id,
-            child: Text(p.path, overflow: TextOverflow.ellipsis),
-          ),
-        ),
-      ],
-      onChanged: (v) => setState(() => _parentId = v),
-    );
-  }
-
   Future<void> _translateAndAddRuIfNeeded(
     String langCode,
     String trimmed,
@@ -348,6 +286,111 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _showIconGallery() async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520, maxHeight: 590),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(t(currentLocale.value, 'category_choose_icon'),
+                        style: Theme.of(ctx).textTheme.titleLarge)),
+                    IconButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 64,
+                    mainAxisSpacing: 9,
+                    crossAxisSpacing: 9,
+                    mainAxisExtent: 48,
+                  ),
+                  itemCount: kCategoryMoreIconChoices.length,
+                  itemBuilder: (context, index) {
+                    final icon = kCategoryMoreIconChoices[index];
+                    return _iconTile(icon, closeGallery: () => Navigator.of(ctx).pop());
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _iconTile(IconData icon, {VoidCallback? closeGallery}) {
+    final scheme = Theme.of(context).colorScheme;
+    final active = _iconCodePoint == icon.codePoint;
+    return InkWell(
+      borderRadius: BorderRadius.circular(9),
+      onTap: () {
+        setState(() => _iconCodePoint = icon.codePoint);
+        HapticFeedback.selectionClick();
+        closeGallery?.call();
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: active ? scheme.onSurface.withValues(alpha: 0.05) : scheme.surface,
+          borderRadius: BorderRadius.circular(9),
+          border: Border.all(
+            color: active ? scheme.onSurface : scheme.outlineVariant,
+            width: active ? 2 : 1,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Icon(icon, size: 20, color: scheme.onSurface),
+      ),
+    );
+  }
+
+  Widget _iconPanel(bool desktop) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(t(currentLocale.value, 'category_choose_icon'),
+            style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 8),
+        LayoutBuilder(builder: (context, constraints) {
+          final columns = desktop ? 5 : 4;
+          final count = columns * 3;
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: count,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+              mainAxisSpacing: 7,
+              crossAxisSpacing: 7,
+              mainAxisExtent: 38,
+            ),
+            itemBuilder: (context, index) {
+              if (index == count - 1) {
+                return OutlinedButton(
+                  onPressed: () => unawaited(_showIconGallery()),
+                  style: OutlinedButton.styleFrom(padding: EdgeInsets.zero),
+                  child: const Icon(Icons.more_horiz_rounded, size: 22),
+                );
+              }
+              return _iconTile(kCategoryIconChoices[index]);
+            },
+          );
+        }),
+      ],
     );
   }
 
@@ -430,6 +473,12 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     final langs = DatabaseService.instance.settings.effectiveActiveLanguages;
     final locale = currentLocale.value;
     final scheme = Theme.of(context).colorScheme;
+    final route = DatabaseService.instance.categoryPathFromRootToLocalId(widget.category.id);
+    final pathLabel = route.length > 1
+        ? route.take(route.length - 1)
+            .map((id) => DatabaseService.instance.getCategoryRuleById(id)?.name ?? '')
+            .where((name) => name.isNotEmpty).join(' › ')
+        : t(locale, 'root_top_level');
     _selectedPrimary ??= categoryMaterialPrimaryForValue(_selectedColorValue);
     _selectedShadeValue ??=
         (_selectedColorValue != null &&
@@ -453,8 +502,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    t(locale, 'edit_category_tag')
-                        .replaceFirst('%s', widget.category.name),
+                    widget.category.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleLarge,
@@ -469,6 +517,8 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
               ],
             ),
           ),
+          Text(pathLabel, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall),
           Divider(height: 1, color: scheme.outlineVariant),
           Expanded(
             child: SingleChildScrollView(
@@ -476,6 +526,31 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: scheme.onSurface.withValues(alpha: 0.035),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: scheme.outlineVariant),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40, height: 40,
+                          decoration: BoxDecoration(
+                            color: widget.category.colorOrDefault.withValues(alpha: 0.13),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(IconData(_iconCodePoint, fontFamily: 'MaterialIcons'),
+                              color: widget.category.colorOrDefault),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(widget.category.name,
+                            style: Theme.of(context).textTheme.titleMedium)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   TextField(
                     controller: _primaryNameController,
                     textCapitalization: TextCapitalization.words,
@@ -485,121 +560,87 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  _buildParentPicker(context),
                   const SizedBox(height: 18),
                   Text(
                     t(locale, 'category_section_appearance'),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    height: 38,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: kCategoryPickerMaterialColors.map((color) {
-                        final selected = _selectedPrimary == color;
-                        return _compactSwatch(color, selected, () {
-                          setState(() {
-                            _selectedPrimary = color;
-                            _selectedShadeValue = color[500]!.toARGB32();
-                            _selectedColorValue = _selectedShadeValue;
-                          });
-                          HapticFeedback.lightImpact();
-                        });
-                      }).toList(),
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () => setState(
-                        () => _showShades = !_showShades,
-                      ),
-                      icon: Icon(
-                        _showShades
-                            ? Icons.keyboard_arrow_up_rounded
-                            : Icons.keyboard_arrow_down_rounded,
-                      ),
-                      label: Text(t(locale, 'category_color_shades')),
-                    ),
-                  ),
-                  if (_showShades)
-                    Wrap(
-                      spacing: 2,
-                      runSpacing: 8,
-                      children: <int>[50, 100, 200, 300, 400, 500, 600, 700, 800, 900]
-                          .map((tone) {
-                        final color = _selectedPrimary![tone]!;
-                        final value = color.toARGB32();
-                        return _compactSwatch(
-                          color,
-                          _selectedShadeValue == value,
-                          () {
-                            setState(() {
-                              _selectedShadeValue = value;
-                              _selectedColorValue = value;
-                            });
-                            HapticFeedback.lightImpact();
-                          },
-                          rounded: false,
-                        );
-                      }).toList(),
-                    ),
                   const SizedBox(height: 12),
-                  Text(
-                    t(locale, 'category_choose_icon'),
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 48,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: kCategoryIconChoices.map((icon) {
-                        final selected = icon.codePoint == _iconCodePoint;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 7),
-                          child: InkWell(
-                            onTap: () {
-                              setState(() => _iconCodePoint = icon.codePoint);
-                              HapticFeedback.lightImpact();
-                            },
-                            borderRadius: BorderRadius.circular(9),
-                            child: Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(9),
-                                border: Border.all(
-                                  color: selected
-                                      ? scheme.primary
-                                      : scheme.outlineVariant,
-                                  width: selected ? 2 : 1,
-                                ),
-                              ),
-                              child: Icon(icon, color: selected
-                                  ? scheme.primary : scheme.onSurface),
+                  LayoutBuilder(builder: (context, constraints) {
+                    final desktopPicker = constraints.maxWidth >= 540;
+                    final colors = Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(t(locale, 'category_color'),
+                            style: Theme.of(context).textTheme.titleSmall),
+                        const SizedBox(height: 8),
+                        Wrap(spacing: 4, runSpacing: 8,
+                          children: [
+                            ...kCategoryPickerMaterialColors.map((color) =>
+                              _compactSwatch(color, _selectedPrimary == color, () {
+                                setState(() {
+                                  _selectedPrimary = color;
+                                  _selectedShadeValue = color[500]!.toARGB32();
+                                  _selectedColorValue = _selectedShadeValue;
+                                });
+                              })),
+                            IconButton.outlined(
+                              onPressed: () => setState(() => _showShades = !_showShades),
+                              tooltip: t(locale, 'category_color_shades'),
+                              icon: Icon(_showShades ? Icons.remove : Icons.add),
                             ),
+                          ],
+                        ),
+                        if (_showShades) ...[
+                          const SizedBox(height: 10),
+                          Wrap(spacing: 4, runSpacing: 8,
+                            children: <int>[50, 100, 200, 300, 400, 500, 600, 700, 800, 900]
+                              .map((tone) {
+                                final c = _selectedPrimary![tone]!;
+                                final v = c.toARGB32();
+                                return _compactSwatch(c, _selectedShadeValue == v, () {
+                                  setState(() {
+                                    _selectedShadeValue = v;
+                                    _selectedColorValue = v;
+                                  });
+                                }, rounded: false);
+                              }).toList(),
                           ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                        ],
+                      ],
+                    );
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: colors),
+                        SizedBox(width: desktopPicker ? 24 : 14),
+                        Expanded(child: _iconPanel(desktopPicker)),
+                      ],
+                    );
+                  }),
+                  const SizedBox(height: 16),
                   _advancedFields(langs, locale),
                 ],
               ),
             ),
           ),
-          Divider(height: 1, color: scheme.outlineVariant),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-            child: AppButton.primary(
-              label: t(locale, 'save'),
-              loading: _saving,
-              fullWidth: true,
-              onPressed: _saving ? null : () => unawaited(_save()),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                AppButton.secondary(
+                  label: t(locale, 'cancel'),
+                  onPressed: _saving ? null : (widget.inline ? widget.onCancel : () => Navigator.of(context).pop()),
+                ),
+                const SizedBox(width: 10),
+                AppButton.primary(
+                  label: t(locale, 'save'),
+                  icon: Icons.check_rounded,
+                  loading: _saving,
+                  onPressed: _saving ? null : () => unawaited(_save()),
+                ),
+              ],
             ),
           ),
         ],
