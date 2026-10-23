@@ -497,15 +497,45 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 16, 10),
+            padding: const EdgeInsets.fromLTRB(20, 14, 16, 12),
             child: Row(
               children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Color(_selectedColorValue ?? widget.category.colorOrDefault.toARGB32())
+                        .withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  child: Icon(
+                    IconData(_iconCodePoint, fontFamily: 'MaterialIcons'),
+                    color: Color(_selectedColorValue ?? widget.category.colorOrDefault.toARGB32()),
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    widget.category.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleLarge,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _primaryNameController.text.trim().isEmpty
+                            ? widget.category.name
+                            : _primaryNameController.text.trim(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      Text(
+                        pathLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 if (!widget.inline)
@@ -517,40 +547,12 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
               ],
             ),
           ),
-          Text(pathLabel, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall),
-          Divider(height: 1, color: scheme.outlineVariant),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: scheme.onSurface.withValues(alpha: 0.035),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: scheme.outlineVariant),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40, height: 40,
-                          decoration: BoxDecoration(
-                            color: widget.category.colorOrDefault.withValues(alpha: 0.13),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(IconData(_iconCodePoint, fontFamily: 'MaterialIcons'),
-                              color: widget.category.colorOrDefault),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(child: Text(widget.category.name,
-                            style: Theme.of(context).textTheme.titleMedium)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
                   TextField(
                     controller: _primaryNameController,
                     textCapitalization: TextCapitalization.words,
