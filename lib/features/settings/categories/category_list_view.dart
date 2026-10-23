@@ -364,6 +364,15 @@ class _CategoriesPageState extends State<CategoriesPage> {
   ) async {
     if (_moving || oldIndex < 0 || oldIndex >= visible.length) return;
     final moved = visible[oldIndex];
+    // A center drop changes the parent, even when Flutter reports no
+    // positional reorder. The end callback is a fallback for that case.
+    if (_nestDropHandled && _draggedCategoryId == moved.rule.id) return;
+    final nestedTarget = _dropInsideCategoryId;
+    if (_draggedCategoryId == moved.rule.id && nestedTarget != null) {
+      _nestDropHandled = true;
+      await _nestCategory(moved.rule.id, nestedTarget);
+      return;
+    }
     var targetIndex = newIndex > oldIndex ? newIndex - 1 : newIndex;
     final remaining = List<_CategoryTreeRow>.of(visible)..removeAt(oldIndex);
     targetIndex = targetIndex.clamp(0, remaining.length).toInt();
