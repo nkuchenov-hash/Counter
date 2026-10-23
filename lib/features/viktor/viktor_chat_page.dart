@@ -865,6 +865,20 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                       ],
                     ),
                   ),
+                if (!_busy && _messages.any((m) => m.isUser) &&
+                    _messages.last.content.startsWith(
+                        'Не удалось выполнить запрос.'))
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: AppButton.ghost(
+                      label: 'Повторить последнюю команду',
+                      onPressed: () {
+                        _controller.text = _messages.lastWhere(
+                            (m) => m.isUser).content;
+                        unawaited(_send());
+                      },
+                    ),
+                  ),
                 if (_listening || _transcribing || _startingMic)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
