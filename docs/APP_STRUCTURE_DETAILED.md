@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `3443f81d` on 2026-10-23.**
+**Generated from input HEAD `c8192212` on 2026-10-23.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -13739,7 +13739,7 @@ EN:
 - **Contents:** Dart helpers and types (`ViktorDateScope`, `ViktorBulkDateScope`).
 - **Key code names:** `ViktorDateScope`, `ViktorBulkDateScope`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_plan_timezone.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_plan_timezone.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13756,7 +13756,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `viktor_date_scope`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_plan_timezone.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_plan_timezone.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
