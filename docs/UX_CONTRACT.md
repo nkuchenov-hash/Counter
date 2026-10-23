@@ -2,6 +2,14 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Categories: local-first color changes (2026-10-23)
+
+- Changing a category color, icon or name updates the active tree immediately without waiting for PocketBase.
+- An owner-scoped durable mutation journal coalesces repeated edits; SyncManager drains on reconnect, foreground and login. An older server acknowledgement cannot remove newer changes.
+- A temporary server outage never resets the selected color, blocks Save, or displays a per-edit error dialog/toast. A local persistence failure is actionable and must not be misrepresented as successful durable storage.
+- The editor shows ten curated hues in one horizontal line, with three visible separated intensity swatches. Neutral grey is achromatic.
+- Loading a remote category catalog must reapply local queued changes, not overwrite a newer unsynced edit. Never automatically migrate or recolor an existing user-customized category hierarchy.
+
 ## P0 web startup must never block on external services (2026-10-22)
 
 - Flutter must render its initial frame without awaiting Google OAuth scripts, a PocketBase health probe, an auth-refresh round trip, or unnecessary secure-storage writes.
