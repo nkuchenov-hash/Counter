@@ -32,6 +32,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
   final _messages = <ViktorDialogueTurn>[];
   final _dialogueStore = ViktorConversationStore(DatabaseService.instance);
   bool _dialogueLoaded = false;
+  String? _historyNotice;
   final _settings = ViktorModelSettings.instance;
   final _gateway = const ViktorGateway();
   bool _busy = false;
@@ -78,17 +79,16 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       if (mounted) setState(() {
         _messages.addAll(earlier);
         _dialogueLoaded = _dialogueStore.pendingCount == 0;
-        if (!_dialogueLoaded) {
-          _messages.add(const ViktorDialogueTurn(role: 'assistant',
-            content: 'Часть истории сохранена на устройстве и ожидает '
-                'отправки на сервер. Виктор повторит синхронизацию.'));
-        }
+        _historyNotice = _dialogueLoaded ? null :
+            'Некоторые реплики сохранены на устройстве и ожидают '
+            'синхронизации. Виктор повторит отправку.';
       });
     } catch (_) {
-      if (mounted) setState(() => _messages.add(
-        const ViktorDialogueTurn(role: 'assistant',
-          content: 'Историю разговора не удалось загрузить. '
-              'Проверьте подключение и локальное хранилище.')));
+      if (mounted) setState(() {
+        _dialogueLoaded = false;
+        _historyNotice = 'Историю разговора не удалось загрузить. '
+            'Проверьте подключение и защищённое хранилище.';
+      });
     }
     if (mounted) setState(() => _settingsReady = true);
   }
@@ -102,24 +102,21 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
   Future<void> _persistTurn(ViktorDialogueTurn turn) async {
     try {
       await _dialogueStore.append(turn);
-      if (mounted && !_dialogueLoaded &&
+      if (mounted && (!_dialogueLoaded || _historyNotice != null) &&
           _dialogueStore.pendingCount == 0) {
         setState(() {
           _dialogueLoaded = true;
-          _messages.add(const ViktorDialogueTurn(role: 'assistant',
-            content: 'Соединение с историей Виктора восстановлено. '
-                'Ожидавшие отправки реплики синхронизированы.'));
+          _historyNotice = null;
         });
       }
     } catch (_) {
-      if (mounted && _dialogueLoaded) {
+      if (mounted && (_dialogueLoaded || _historyNotice == null)) {
         setState(() {
           _dialogueLoaded = false;
-          _messages.add(const ViktorDialogueTurn(role: 'assistant',
-            content: 'История пока не синхронизирована с сервером. '
-                'Виктор повторит отправку при следующем сообщении. '
-                'Если защищённое хранилище устройства недоступно, '
-                'несохранённые реплики могут пропасть.'));
+          _historyNotice = 'История ещё не синхронизирована с сервером. '
+              'Отправка повторится при следующем сообщении. '
+              'Если защищённое хранилище недоступно, '
+              'несохранённые реплики могут пропасть.';
         });
       }
     }
@@ -905,6 +902,24 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                     },
                   ),
                 ),
+                if (_historyNotice != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.cloud_off_outlined, size: 22,
+                          color: scheme.onSurfaceVariant),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text(
+                          _historyNotice!,
+                          style: TextStyle(fontSize: 16, height: 1.4,
+                            color: scheme.onSurfaceVariant),
+                        )),
+                      ],
+                    ),
+                  ),
                 if (_listening || _transcribing || _startingMic)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
