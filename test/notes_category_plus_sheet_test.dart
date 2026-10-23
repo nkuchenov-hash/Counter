@@ -2,13 +2,22 @@ import 'dart:async';
 
 import 'package:counter/features/notes/widgets/notes_category_plus_sheet.dart';
 import 'package:counter/shared/categories/picker/category_tree_picker.dart';
+import 'package:counter/shared/categories/picker/category_picker_contracts.dart';
 import 'package:counter/shared/categories/picker/create_category_from_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  setUp(() => categoryCreateFromPickerAllowedOverride = () => true);
-  tearDown(() => categoryCreateFromPickerAllowedOverride = null);
+  setUp(() {
+    categoryCreateFromPickerAllowedOverride = () => true;
+    CategoryTreeSource.getChildrenOf = (_) => [];
+    CategoryTreeSource.categoryStream = () => const Stream.empty();
+  });
+  tearDown(() {
+    categoryCreateFromPickerAllowedOverride = null;
+    CategoryTreeSource.getChildrenOf = null;
+    CategoryTreeSource.categoryStream = null;
+  });
   testWidgets('Notes plus opens category tree directly with creation controls', (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
