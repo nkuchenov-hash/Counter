@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `1f1b180c` on 2026-10-23.**
+**Generated from input HEAD `6ee377f9` on 2026-10-23.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 946 — each appears **exactly once** below.
+**Tracked files:** 947 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -42,8 +42,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | `historical engineering record` | 17 |
 | `localization` | 13 |
 | `installer` | 12 |
+| `CI/deployment` | 11 |
 | `Brain Voice` | 10 |
-| `CI/deployment` | 10 |
 | `shared time` | 7 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 509 |
+| `PROVEN_REQUIRED` | 510 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 249 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 863 |
+| `HIGH` | 864 |
 | `MEDIUM` | 83 |
 
 ---
@@ -4856,6 +4856,43 @@ RU:
 - **Владелец / слой:** CI
 - **Обязанности:** Управляет CI-сценарием `install-xiaomi-sleep-runtime.yml` и его границами выполнения.
 - **Когда открывать:** Когда ломается поведение, связанное с `install-xiaomi-sleep-runtime.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
+### `.github/workflows/pocketbase-health-watch.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/pocketbase-health-watch.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/pocketbase-health-watch.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/pocketbase-health-watch.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/pocketbase-health-watch.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `pocketbase-health-watch.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `.github/workflows/deploy.yml`, `docs/DEPLOY.md`, `scripts/audit/deployment_contract.py`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `pocketbase-health-watch.yml`.
+- **When to open:** When behavior tied to `pocketbase-health-watch.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `pocketbase-health-watch.yml` для CI и операций репозитория. GitHub Actions читает `pocketbase-health-watch.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `pocketbase-health-watch.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `pocketbase-health-watch.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `pocketbase-health-watch.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `pocketbase-health-watch.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `pocketbase-health-watch.yml`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `.github/`, Flutter tooling.
 
@@ -19236,7 +19273,7 @@ EN:
 - **Contents:** Primary symbols: `NotesFigmaTokens`.
 - **Key code names:** `NotesFigmaTokens`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/widgets/note_editor_block_widgets.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`, `lib/features/notes/widgets/notes_editor_screen.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/notes_glm_surface.dart`, `lib/features/notes/widgets/note_editor_block_widgets.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`, `lib/features/notes/widgets/notes_editor_screen.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -19253,7 +19290,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `notes_figma_tokens.dart` на Notes library/editor (Lists + full-screen editor).
 - **Содержимое:** Dart-модуль `notes_figma_tokens.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/widgets/note_editor_block_widgets.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`, `lib/features/notes/widgets/notes_editor_screen.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/notes_glm_surface.dart`, `lib/features/notes/widgets/note_editor_block_widgets.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`, `lib/features/notes/widgets/notes_editor_screen.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -19499,8 +19536,7 @@ EN:
 - **Human purpose:** `notes_category_plus_sheet.dart` on notes area — Explicit Notes + category actions: select existing categories or create and pin a new category via the shared picker. Users see `notes_category_plus_sheet.dart` when using notes area.
 - **What this is:** `notes_category_plus_sheet.dart` on notes area — Explicit Notes + category actions: select existing categories or create and pin a new category via the shared picker.
 - **Why needed:** Users see `notes_category_plus_sheet.dart` when using notes area.
-- **Contents:** Primary symbols: `_NotesFolderAddAction`.
-- **Key code names:** `_NotesFolderAddAction`
+- **Contents:** Modal UI widgets and controllers in `notes_category_plus_sheet.dart`.
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/widgets/notes_library_production_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -19517,7 +19553,7 @@ RU:
 - **Зачем файл человеку:** `notes_category_plus_sheet.dart` на Notes library/editor (Lists + full-screen editor) — Пользователь открывает sheet/dialog из entry `notes_category_plus_sheet`.. Пользователь видит UI из `notes_category_plus_sheet.dart` на Notes library/editor (Lists + full-screen editor).
 - **Что это:** `notes_category_plus_sheet.dart` на Notes library/editor (Lists + full-screen editor) — Пользователь открывает sheet/dialog из entry `notes_category_plus_sheet`..
 - **Зачем:** Пользователь видит UI из `notes_category_plus_sheet.dart` на Notes library/editor (Lists + full-screen editor).
-- **Содержимое:** Основные символы: `_NotesFolderAddAction`.
+- **Содержимое:** Modal UI и controllers в `notes_category_plus_sheet.dart`.
 - **Роль в репозитории:** production UI
 - **Доказательства использования:** Импортируется production Dart: `lib/features/notes/widgets/notes_library_production_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
@@ -22194,7 +22230,7 @@ EN:
 - **Why needed:** Users see `category_helpers.dart` when using settings area.
 - **Contents:** Dart module `category_helpers.dart` — open file for classes and helpers.
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22211,7 +22247,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `category_helpers.dart` на settings.
 - **Содержимое:** Dart-модуль `category_helpers.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -25169,7 +25205,7 @@ EN:
 - **Contents:** Path-specific code, data, configuration, or documentation for `lib/shared/categories/picker/category_picker_models.dart`.
 - **Key code names:** `CategoryPickerCreateTarget`, `CategoryPickerCreateResult`, `CategoryTreeSheetPicked`, `CategoryTreeSheetAll`
 - **Repository role:** developer tool
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/widgets/notes_category_plus_sheet.dart`, `lib/features/shared/edit_sheet/category_edit_draft.dart`, `lib/shared/categories/picker/category_tree_picker.dart`, `lib/shared/categories/picker/create_category_from_picker.dart`, `lib/shared/categories/tree/category_tree_body.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/edit_sheet/category_edit_draft.dart`, `lib/shared/categories/picker/category_tree_picker.dart`, `lib/shared/categories/picker/create_category_from_picker.dart`, `lib/shared/categories/tree/category_tree_body.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -25186,7 +25222,7 @@ RU:
 - **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `lib/shared/categories/picker` для `category_picker_models.dart`.
 - **Содержимое:** Данные или код `category_picker_models.dart`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/widgets/notes_category_plus_sheet.dart`, `lib/features/shared/edit_sheet/category_edit_draft.dart`, `lib/shared/categories/picker/category_tree_picker.dart`, `lib/shared/categories/picker/create_category_from_picker.dart`, `lib/shared/categories/tree/category_tree_body.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/edit_sheet/category_edit_draft.dart`, `lib/shared/categories/picker/category_tree_picker.dart`, `lib/shared/categories/picker/create_category_from_picker.dart`, `lib/shared/categories/tree/category_tree_body.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -25207,7 +25243,7 @@ EN:
 - **Contents:** Path-specific code, data, configuration, or documentation for `lib/shared/categories/picker/category_tree_picker.dart`.
 - **Key code names:** `_CategoryTreePickerSheet`, `_CategoryTreePickerSheetState`, `_CategoryTreeMultiPickerSheet`, `_CategoryTreeMultiPickerSheetState`
 - **Repository role:** developer tool
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/notes/widgets/notes_category_plus_sheet.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/notes/widgets/notes_category_plus_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/shared/planning_task_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -25224,7 +25260,7 @@ RU:
 - **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `lib/shared/categories/picker` для `category_tree_picker.dart`.
 - **Содержимое:** Данные или код `category_tree_picker.dart`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/notes/widgets/notes_category_plus_sheet.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/notes/widgets/notes_category_plus_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/shared/planning_task_edit_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -25245,7 +25281,7 @@ EN:
 - **Contents:** `CategoryPickerCreateTarget`, submit helper, create dialog widget.
 - **Key code names:** `_CreateCategoryFromPickerDialog`, `_CreateCategoryFromPickerDialogState`
 - **Repository role:** developer tool
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/widgets/notes_category_plus_sheet.dart`, `lib/features/planning/settings/default_plan_category_search.dart`, `lib/features/wear/wear_timer_screen.dart`, `lib/shared/categories/picker/category_tree_picker.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/settings/default_plan_category_search.dart`, `lib/features/wear/wear_timer_screen.dart`, `lib/shared/categories/picker/category_tree_picker.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -25262,7 +25298,7 @@ RU:
 - **Зачем:** Edit sheets и shared tree создают потомка под известным родителем без угадывания из поиска.
 - **Содержимое:** `CategoryPickerCreateTarget`, хелпер submit, виджет диалога создания.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/widgets/notes_category_plus_sheet.dart`, `lib/features/planning/settings/default_plan_category_search.dart`, `lib/features/wear/wear_timer_screen.dart`, `lib/shared/categories/picker/category_tree_picker.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/settings/default_plan_category_search.dart`, `lib/features/wear/wear_timer_screen.dart`, `lib/shared/categories/picker/category_tree_picker.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -38758,7 +38794,7 @@ EN:
 - **Why needed:** Prevents regressions when related production code changes.
 - **Contents:** Test cases (symbols: test groups).
 - **Repository role:** test fixture
-- **Evidence of use:** Read/referenced by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`.
+- **Evidence of use:** Read/referenced by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `CHANGELOG.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
 - **Confidence:** HIGH
@@ -38775,7 +38811,7 @@ RU:
 - **Зачем:** Ловит регрессии при правках связанного production-кода.
 - **Содержимое:** Тест-кейсы (символы: test groups).
 - **Роль в репозитории:** test fixture
-- **Доказательства использования:** Читается/упоминается: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`.
+- **Доказательства использования:** Читается/упоминается: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `CHANGELOG.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
 - **Уверенность:** HIGH
