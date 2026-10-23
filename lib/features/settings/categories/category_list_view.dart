@@ -523,9 +523,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
     return AppHoldToReorderListener(
       index: index,
       child: Material(
-        color: selected
-            ? tint.withValues(alpha: 0.10)
-            : scheme.surface,
+        key: _rowAnchors.putIfAbsent(r.id, () => GlobalKey()),
+        color: _dropInsideCategoryId == r.id
+            ? tint.withValues(alpha: 0.19)
+            : (selected ? tint.withValues(alpha: 0.07) : scheme.surface),
+        elevation: _dropInsideCategoryId == r.id ? 2 : 0,
+        shadowColor: tint,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
@@ -539,16 +542,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
               ),
               child: Row(
                 children: [
-                  Container(
-                    height: 30,
-                    width: 4,
-                    decoration: BoxDecoration(
-                      color: tint,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
+                   Container(
                     width: 36, height: 36,
                     decoration: BoxDecoration(
                       color: tint.withValues(alpha: 0.12),
@@ -578,7 +572,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
                     ),
                   PopupMenuButton<String>(
                     tooltip: t(loc, 'category_actions'),
-                    icon: const Icon(Icons.more_horiz_rounded),
+                    icon: Icon(
+                      Icons.more_horiz_rounded,
+                      color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
+                    ),
                     onSelected: (action) {
                       if (action == 'add') {
                         unawaited(_create(parentId: r.id));
