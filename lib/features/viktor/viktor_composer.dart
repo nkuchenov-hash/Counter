@@ -30,7 +30,7 @@ extension _ViktorComposerUi on _ViktorChatPageState {
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+              padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
