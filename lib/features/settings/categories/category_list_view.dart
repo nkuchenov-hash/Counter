@@ -188,7 +188,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
     final target = targetIndex < remaining.length
         ? remaining[targetIndex]
         : (remaining.isEmpty ? null : remaining.last);
-    final destinationParent = target?.parentId;
+    // The end of the whole tree is a root-level drop, never an implicit
+    // move inside the final visible nested branch.
+    final destinationParent =
+        targetIndex == remaining.length ? null : target?.parentId;
     final db = DatabaseService.instance;
 
     // A category cannot be its own parent, nor be nested below a descendant.
