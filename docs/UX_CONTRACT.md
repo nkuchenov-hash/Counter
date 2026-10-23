@@ -339,6 +339,14 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - Every card footer shows the note's actual creation date (day.month.year); checklist cards show **checked/total plus creation date together**. Prefer `createdAt` and only fall back to `updatedAt` when no creation timestamp exists in older imported records. If both timestamps are absent, display a neutral dash rather than inventing a date or a misleading “Recently” label. The same information must remain available in grid, mobile rows and desktop rows.
 - Keep existing note card overall dimensions, touch targets and long-press selection behavior. A new metadata element must not cause horizontal overflow in list layouts.
 
+## Category appearance — instant, durable and legible
+
+- Changing a category's color/icon/name updates the shared category tree and all live consumers **before** any asynchronous disk or network request. Save never becomes a prolonged PocketBase spinner.
+- Persist updates in the owner-scoped category journal, automatically coalesce multiple edits and reconcile later through the canonical background synchronizer. Closing the editor, going offline, restarting, or changing color again must never lose the latest locally accepted value.
+- No repeated server-error popups for ordinary offline/unavailable PocketBase; a clear warning is warranted only if local device persistence itself fails.
+- Put all base hues in one horizontal row; put all three hierarchy tones below a dividing line with subtle vertical separators; neutral grey has no colored cast.
+
+
 ## Notes embedded editor and floating formatting dock
 
 - The white Notes editing canvas in the desktop master/detail layout is a distinct 20px-rounded paper surface on **all four corners**, with category-tinted folder paper visible at its perimeter. Do not place a full-width opaque white wrapper behind it.
