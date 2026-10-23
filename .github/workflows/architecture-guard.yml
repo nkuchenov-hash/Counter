@@ -148,6 +148,13 @@ jobs:
           fi
           for file in "${files[@]}"; do node --check "$file"; done
 
+      - name: Check Viktor agent safety contracts
+        run: |
+          node test/viktor_pocketbase_hook_test.cjs
+          node test/viktor_turns_migration_test.cjs
+          node test/viktor_atomic_schedule_hook_test.cjs
+          node test/viktor_conversation_outbox_contract_test.cjs
+
       - name: Check for whitespace errors
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then

@@ -1,5 +1,7 @@
 import 'package:counter/data/ai/viktor_action_contract.dart';
 import 'package:counter/data/ai/viktor_agent_capabilities.dart';
+import 'package:counter/data/ai/viktor_domain_tools.dart';
+import 'package:counter/data/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Map<String, dynamic> action(String name, Map<String, Object?> args) =>
@@ -8,6 +10,67 @@ Map<String, dynamic> batch(List<Map<String, dynamic>> actions) =>
     {'version': 1, 'request_id': 'request_20261021_abcdef', 'actions': actions};
 
 void main() {
+  test('Historical notes search and exact read are safe read-only tools', () {
+    expect(ViktorActionBatch.fromJson(batch([
+      action('search_record_notes', {'year': 2023, 'month': 1}),
+      action('read_record_note', {'record_id': 'aaaaabbbbbccccc'}),
+    ])).hasMutations, false);
+    expect(() => ViktorActionBatch.fromJson(batch([
+      action('search_record_notes', {'month': 1}),
+    ])), throwsFormatException);
+    for (final actionData in [
+      action('search_notes', {'year': 2023, 'month': 1}),
+      action('search_notes', {'query': 'стихотворение', 'limit': 15}),
+      action('read_note', {'note_id': 'aaaaabbbbbccccc'}),
+    ]) {
+      final batchValue = ViktorActionBatch.fromJson(batch([actionData]));
+      expect(batchValue.hasMutations, false);
+    }
+    for (final invalid in [
+      {'month': 1}, {'year': 2023, 'month': 13},
+      {'query': ''}, {'year': 2023, 'limit': 500},
+    ]) {
+      expect(() => ViktorActionBatch.fromJson(batch([
+        action('search_notes', invalid),
+      ])), throwsFormatException);
+    }
+    expect(() => ViktorActionBatch.fromJson(batch([
+      action('read_note', {'note_id': 'not-real'}),
+    ])), throwsFormatException);
+  });
+
+  test('Exact poem line edit preserves note blocks and rich metadata', () {
+    final original = NoteDocument(blocks: [
+      const NoteBlock(id: 'line1', type: NoteBlockType.paragraph,
+          text: 'Первая строка'),
+      const NoteBlock(id: 'image1', type: NoteBlockType.image,
+          imageData: 'data:fake-media', caption: 'Иллюстрация'),
+      const NoteBlock(id: 'line3', type: NoteBlockType.quote,
+          text: 'Третья строка',
+          runs: [NoteTextRun(text: 'Третья строка',
+              marks: NoteInlineMarks(italic: true))]),
+    ]);
+    final revised = ViktorNoteLinePatch.apply(original,
+        lineNumber: 2, expectedText: 'Третья строка',
+        replacement: 'Новая третья строка');
+    expect(original.blocks[2].effectiveText, 'Третья строка');
+    expect(revised.blocks[2].effectiveText, 'Новая третья строка');
+    expect(revised.blocks[2].runs.single.marks.italic, isTrue);
+    expect(revised.blocks[1].imageData, 'data:fake-media');
+    expect(revised.blocks[1].caption, 'Иллюстрация');
+    expect(revised.blocks[0].effectiveText, 'Первая строка');
+    expect(() => ViktorNoteLinePatch.apply(original,
+        lineNumber: 2, expectedText: 'Уже другая строка',
+        replacement: 'Новая версия'), throwsStateError);
+    expect(ViktorActionBatch.fromJson(batch([
+      action('edit_note_line', {
+        'note_id': 'aaaaabbbbbccccc', 'expected_title': 'Стих',
+        'line_number': 2, 'expected_text': 'Третья строка',
+        'text': 'Новая третья строка',
+      })
+    ])).requiresPreview, isTrue);
+  });
+
   test('All declared tools have unique names and explicit risk', () {
     expect(ViktorAgentCapabilities.tools.length,
         ViktorAgentCapabilities.names.length);

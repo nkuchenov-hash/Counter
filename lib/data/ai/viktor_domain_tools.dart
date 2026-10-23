@@ -4,6 +4,53 @@ import 'package:counter/data/models.dart';
 import 'package:counter/data/paths/path_repository.dart';
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'viktor_action_contract.dart';
+import 'viktor_record_note_tools.dart';
+
+/// Change a single numbered nonempty line, preserving all other note blocks,
+/// existing media, metadata and unchanged formatting.
+class ViktorNoteLinePatch {
+  static NoteDocument apply(NoteDocument document, {
+    required int lineNumber,
+    required String expectedText,
+    required String replacement,
+  }) {
+    var seen = 0;
+    for (var blockIndex = 0; blockIndex < document.blocks.length; blockIndex++) {
+      final block = document.blocks[blockIndex];
+      if (!block.type.isTextual) continue;
+      final source = block.effectiveText;
+      var offset = 0;
+      for (final line in source.split('\n')) {
+        if (line.trim().isNotEmpty) {
+          seen++;
+          if (seen == lineNumber) {
+            if (line != expectedText) {
+              throw StateError('Строка изменилась после прочтения. '
+                  'Повторно откройте заметку.');
+            }
+            if (block.runs.length > 1) {
+              throw StateError('Внутри строки сложное форматирование. '
+                  'Автоматическая замена без потерь недоступна.');
+            }
+            final revised = source.replaceRange(
+                offset, offset + line.length, replacement);
+            final updatedBlock = block.copyWith(
+              text: revised,
+              runs: block.runs.length == 1
+                  ? [block.runs.single.copyWith(text: revised)]
+                  : const <NoteTextRun>[],
+            );
+            final blocks = [...document.blocks];
+            blocks[blockIndex] = updatedBlock;
+            return document.copyWith(blocks: blocks);
+          }
+        }
+        offset += line.length + 1;
+      }
+    }
+    throw StateError('Указанная строка не найдена в заметке.');
+  }
+}
 
 /// Brain-backed, owner-scoped app tools. No direct PocketBase writes or
 /// arbitrary code evaluation by the model.
@@ -11,17 +58,20 @@ class ViktorDomainTools {
   ViktorDomainTools(this.db);
   final DatabaseService db;
   late final PathRepository _paths = PathRepository(database: db);
+  late final ViktorRecordNoteTools _recordNotes = ViktorRecordNoteTools(db);
 
   static const names = <String>{
     'list_categories', 'create_category',
     'list_tags', 'create_tag', 'rename_tag',
     'list_backlog_items', 'set_list_item_done', 'rename_list_item',
-    'list_notes', 'create_note', 'edit_note',
+    'list_notes', 'search_notes', 'read_note', 'search_record_notes',
+    'read_record_note', 'create_note', 'edit_note', 'edit_note_line',
     'list_paths', 'create_path', 'get_settings', 'change_setting',
   };
   static const reads = <String>{
     'list_categories', 'list_tags', 'list_backlog_items',
-    'list_notes', 'list_paths', 'get_settings',
+    'list_notes', 'search_notes', 'read_note',
+    'search_record_notes', 'read_record_note', 'list_paths', 'get_settings',
   };
 
   CategoryRule? _category(String? rowId) {
@@ -38,13 +88,94 @@ class ViktorDomainTools {
         scope: domain == 'list' ? TagCatalogScope.list : TagCatalogScope.plan,
       );
 
+  Future<List<PlanningTask>> _searchableNotes() async {
+    // The same Brain-owned collection and owner filter as the Notes library.
+    // Hydrate system creation timestamps; never infer dates from title text.
+    await db.ensureNoteTimestampsHydrated();
+    final rows = await db.fetchBacklogPlans(
+        categoryId: null, includeCompleted: true);
+    return rows.where((p) => p.pocketRecordId != null &&
+        p.startTime == null && p.hasNotes).toList();
+  }
+
+  Future<String> _searchNotes(Map<String, Object?> args) async {
+    final search = (args['query'] as String? ?? '').toLowerCase().trim();
+    final year = args['year'] as int?;
+    final month = args['month'] as int?;
+    final limit = args['limit'] as int? ?? 20;
+    final notes = await _searchableNotes();
+    final found = notes.where((p) {
+      final created = p.createdAt?.toLocal();
+      if (year != null && (created == null || created.year != year)) {
+        return false;
+      }
+      if (month != null && created?.month != month) return false;
+      if (search.isEmpty) return true;
+      return p.title.toLowerCase().contains(search) ||
+          (p.notesPlain ?? '').toLowerCase().contains(search);
+    }).toList()
+      ..sort((a, b) => (b.createdAt ?? DateTime(0))
+          .compareTo(a.createdAt ?? DateTime(0)));
+    if (found.isEmpty) {
+      return 'Совпадений среди доступных заметок нет. '
+          'Дата определяется по дате создания, а не по заголовку. '
+          'Если документ находится в записи или другом разделе, '
+          'потребуется поиск по тому разделу.';
+    }
+    final result = found.take(limit).map((p) {
+      final created = p.createdAt?.toLocal().toIso8601String().substring(0, 10)
+          ?? 'неизвестно';
+      final summary = (p.notesPlain ?? '')
+          .replaceAll(RegExp(r'\s+'), ' ').trim();
+      final snippet = summary.length > 170
+          ? '${summary.substring(0, 170)}…' : summary;
+      return 'id=${p.pocketRecordId}; создано=$created; '
+          'название=${p.title}; отрывок=$snippet';
+    }).join('\n');
+    final more = found.length > limit
+        ? '\nПоказаны первые $limit из ${found.length}; '
+          'уточните период или поисковую фразу.' : '';
+    return 'Найдено заметок: ${found.length}.\n$result$more';
+  }
+
+  Future<String> _readNote(String id) async {
+    final found = (await _searchableNotes())
+        .where((p) => p.pocketRecordId == id).toList();
+    if (found.length != 1) {
+      return 'Заметка не найдена или недоступна в текущем аккаунте.';
+    }
+    final note = found.single;
+    final blocks = db.parseNoteDocument(note).blocks;
+    final lines = <String>[];
+    var textLine = 0;
+    for (final block in blocks) {
+      if (!block.type.isTextual) {
+        lines.add('[Вложение ${block.type.name}, не текст]');
+        continue;
+      }
+      for (final rawLine in block.effectiveText.split('\n')) {
+        if (rawLine.trim().isNotEmpty) {
+          textLine++;
+          lines.add('Строка $textLine: $rawLine');
+        }
+      }
+    }
+    final content = lines.join('\n');
+    final shown = content.length > 7500 ? content.substring(0, 7500) : content;
+    return 'Заметка «${note.title}», id=$id, '
+        'создана=${note.createdAt?.toLocal().toIso8601String() ?? 'неизвестно'}.'
+        '\nНумерация только непустых текстовых строк:\n$shown'
+        '${shown.length < content.length ? '\n[Текст обрезан; нельзя '
+           'уверенно отвечать о скрытых строках.]' : ''}';
+  }
+
   Future<PlanningTask> _note(String rowId, String expectedTitle) async {
     final rows = await db.fetchBacklogPlans(categoryId: null,
         includeCompleted: true);
     final found = rows.where((p) =>
       p.pocketRecordId == rowId &&
       p.startTime == null &&
-      (p.notesDeltaJson ?? '').isNotEmpty &&
+      p.hasNotes &&
       p.title.trim() == expectedTitle.trim()).toList();
     if (found.length != 1) {
       throw StateError('Заметка изменилась. Перечитайте её перед изменением.');
@@ -137,6 +268,18 @@ class ViktorDomainTools {
           a['item_id'] as String, a['expected_title'] as String);
         return 'Переименовать «' + item.title + '» в «' +
             (a['title'] as String) + '».';
+      case 'search_record_notes':
+        return _recordNotes.search(
+          query: a['query'] as String? ?? '',
+          year: a['year'] as int?, month: a['month'] as int?,
+          limit: a['limit'] as int? ?? 20,
+        );
+      case 'read_record_note':
+        return _recordNotes.read(a['record_id'] as String);
+      case 'search_notes':
+        return _searchNotes(a);
+      case 'read_note':
+        return _readNote(a['note_id'] as String);
       case 'list_notes':
         final rows = await db.fetchBacklogPlans(
           categoryId: null, includeCompleted: true);
@@ -188,6 +331,23 @@ class ViktorDomainTools {
         }
         return 'Создать заметку «' + (a['title'] as String) +
             '» с текстом:\n' + (a['text'] as String);
+      case 'edit_note_line':
+        final note = await _note(
+          a['note_id'] as String, a['expected_title'] as String);
+        final edited = ViktorNoteLinePatch.apply(
+          db.parseNoteDocument(note),
+          lineNumber: a['line_number'] as int,
+          expectedText: a['expected_text'] as String,
+          replacement: a['text'] as String,
+        );
+        // The proposed preview carries a fingerprint of the WHOLE original
+        // document. The executor re-evaluates it before applying the write.
+        final originalVersion = (note.notesDeltaJson ?? '').hashCode
+            .toUnsigned(32).toRadixString(16);
+        return 'Заменить строку ${a['line_number']} в заметке «${note.title}» '
+            '(версия $originalVersion): «${a['expected_text']}» → '
+            '«${a['text']}». Остальной текст и вложения сохраняются. '
+            'Блоков: ${edited.blocks.length}.';
       case 'edit_note':
         final note = await _note(
           a['note_id'] as String, a['expected_title'] as String);
@@ -291,6 +451,21 @@ class ViktorDomainTools {
           notesPlain: text, notesDeltaJson: doc.encode()));
         if (!ok) throw StateError('Заметка не сохранена.');
         return 'Заметка создана.';
+      case 'edit_note_line':
+        final note = await _note(a['note_id'] as String,
+            a['expected_title'] as String);
+        final edited = ViktorNoteLinePatch.apply(db.parseNoteDocument(note),
+          lineNumber: a['line_number'] as int,
+          expectedText: a['expected_text'] as String,
+          replacement: a['text'] as String);
+        final ok = await db.updatePlanningTask(note.recordIdForBackend,
+          planBusinessId: note.planRowId,
+          notesPlain: edited.toPlainText(),
+          notesDeltaJson: edited.encode(),
+          suppressAppSnack: true);
+        if (!ok) throw StateError('Правка строки не сохранилась.');
+        return 'Строка ${a['line_number']} обновлена; остальные блоки '
+            'и вложения сохранены.';
       case 'edit_note':
         final note = await _note(a['note_id'] as String,
             a['expected_title'] as String);

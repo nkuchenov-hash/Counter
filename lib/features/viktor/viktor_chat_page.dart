@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/ai/viktor_action_contract.dart';
@@ -11,11 +10,13 @@ import 'package:counter/data/ai/viktor_voice_gateway.dart';
 import 'package:counter/data/ai/viktor_voice_recorder.dart';
 import 'package:counter/data/ai/viktor_voice_error.dart';
 import 'package:counter/data/ai/viktor_read_answer.dart';
+import 'package:counter/data/ai/viktor_conversation_store.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+part 'viktor_dialogue_ui_state.dart';
 /// Single LIFE OS assistant entry point. Replaces the old record-only mic FAB.
 /// No overlay over the planner, no extra button beside bottom navigation.
 class ViktorChatPage extends StatefulWidget {
@@ -23,23 +24,15 @@ class ViktorChatPage extends StatefulWidget {
     this.selectedPlanIds = const <String>[]});
   final DateTime wallDay;
   final List<String> selectedPlanIds;
-
   @override
   State<ViktorChatPage> createState() => _ViktorChatPageState();
 }
-
-class _ViktorMessage {
-  const _ViktorMessage(this.text, {this.mine = false});
-  final String text;
-  final bool mine;
-}
-
-class _ViktorChatPageState extends State<ViktorChatPage> {
+class _ViktorChatPageState extends State<ViktorChatPage>
+    with _ViktorDialogueUiState {
   final _controller = TextEditingController();
   final _recorder = ViktorVoiceRecorder();
   final _voiceGateway = const ViktorVoiceGateway();
-  final _messages = <_ViktorMessage>[];
-  final _settings = ViktorModelSettings.instance;
+  final _messages = <ViktorDialogueTurn>[];
   final _gateway = const ViktorGateway();
   bool _busy = false;
   bool _listening = false;
@@ -48,44 +41,18 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
   bool _speechDetected = false;
   DateTime? _lastVoiceActivity;
   String? _voiceNotice;
-  bool _settingsReady = false;
-  String? _cloudConnectionError;
-
   @override
   void initState() {
     super.initState();
     _recorder.addListener(_onRecorderChanged);
     unawaited(_loadSettings());
-    _messages.add(const _ViktorMessage(
-      'Я Виктор. Могу работать с планами, записями, заметками, '
+    _messages.add(const ViktorDialogueTurn(role: 'assistant',
+      content: 'Я Виктор. Могу работать с планами, записями, заметками, '
       'тегами, категориями, Путями и настройками LIFE OS. '
       'Опишите результат, а не последовательность нажатий. '
       'Перед изменениями я покажу план для подтверждения.',
     ));
   }
-
-  Future<void> _loadSettings() async {
-    try {
-      await _settings.load();
-      await DatabaseService.instance.ensurePocketBaseReady();
-      _settings.ensureOwner(
-        DatabaseService.instance.pocketBase.authStore.record?.id ?? 'signed_out',
-      );
-      await _settings.loadCloudConnection();
-      if (mounted) setState(() {
-        _cloudConnectionError = null;
-        _settingsReady = true;
-      });
-    } catch (error) {
-      if (mounted) setState(() {
-        _cloudConnectionError = error.toString().replaceAll(
-          'FormatException: ', '',
-        );
-        _settingsReady = true;
-      });
-    }
-  }
-
   @override
   void dispose() {
     _recorder.removeListener(_onRecorderChanged);
@@ -93,12 +60,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     _controller.dispose();
     super.dispose();
   }
-
-  void _push(String value, {bool mine = false}) {
-    if (!mounted) return;
-    setState(() => _messages.add(_ViktorMessage(value, mine: mine)));
-  }
-
   Future<void> _send() async {
     if (_busy) return;
     final input = _controller.text.trim();
@@ -111,8 +72,9 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     if (_listening || _transcribing || _startingMic) return;
     if (!mounted) return;
     _controller.clear();
+    final dialogContext = ViktorDialogueTurn.modelContext(
+        _messages.skip(1));
     _push(input, mine: true);
-    // Trailing voice command cancellation overrides any earlier instruction.
     if (ViktorReadAnswer.isExplicitCancellation(input)) {
       _push('Команда отменена. Изменения не выполнялись.');
       return;
@@ -134,12 +96,13 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         settings: _settings,
         selectedPlanIds: widget.selectedPlanIds,
         requestId: requestId,
+        conversationHistory: dialogContext,
       );
-      // Some models emit continue:true even alongside a final mutation.
-      // Never reject an authorized proposal solely due to that flag:
-      // the ordinary Brain preview and user consent still govern writes.
       var repairedEmptyRead = false;
-      for (var step = 0; response.needsMoreContext; step++) {
+      for (var step = 0; response.needsMoreContext ||
+          ViktorReadAnswer.requiresDocumentRead(input: input,
+            actions: response.actions?.actions.map((a) => a.name).toList()
+                ?? const <String>[]); step++) {
         if (!mounted) return;
         if (step >= 4) {
           throw StateError('Виктор достиг предела проверки данных. '
@@ -154,8 +117,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                 'операции чтения. Планы не изменены.');
           }
           repairedEmptyRead = true;
-          // One bounded proposal repair: the model can now return a valid
-          // final bulk_replan or an actual read; neither is auto-applied.
           response = await _gateway.propose(
             input: input,
             wallDay: widget.wallDay,
@@ -164,6 +125,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
             selectedPlanIds: widget.selectedPlanIds,
             toolObservations: toolObservations,
             requestId: requestId,
+            conversationHistory: dialogContext,
             proposalFeedback: 'continue:true requires at least one read tool. '
                 'For bulk_replan propose a final write with continue:false '
                 'because Brain loads source and destination day records.',
@@ -193,7 +155,9 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
         }
         final observation = await executor.describe(proposed, widget.wallDay);
         latestReadAnswer = ViktorReadAnswer.format(input, observation);
-        if (ViktorReadAnswer.isReadOnlyRequest(input)) {
+        if (ViktorReadAnswer.isDirectDayListResult(
+            input: input,
+            toolNames: proposed.actions.map((a) => a.name).toList())) {
           _push(latestReadAnswer);
           return;
         }
@@ -209,6 +173,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
           selectedPlanIds: widget.selectedPlanIds,
           toolObservations: toolObservations,
           requestId: requestId,
+            conversationHistory: dialogContext,
         );
       }
       if (!mounted) return;
@@ -284,7 +249,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       if (mounted) setState(() => _busy = false);
     }
   }
-
   Future<bool> _confirm(ViktorActionBatch batch, String preview) async {
     final answer = await showDialog<bool>(
       context: context,
@@ -310,11 +274,8 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     );
     return answer == true;
   }
-
   void _onRecorderChanged() {
     if (!mounted) return;
-    // Simple end-of-utterance detection. The stop button remains available,
-    // so failure to detect silence never blocks manual completion.
     if (_recorder.isRecording && !_startingMic && !_transcribing &&
         _recorder.capturedBytes > 16000) {
       final now = DateTime.now();
@@ -346,7 +307,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       unawaited(_finishRecording());
     }
   }
-
   Future<void> _finishRecording() async {
     var shouldSubmit = false;
     var captured = false;
@@ -394,7 +354,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       }
     }
   }
-
   Future<void> _toggleMic() async {
     if (_busy || _startingMic || _transcribing) return;
     if (_recorder.isRecording) {
@@ -441,7 +400,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       if (mounted) setState(() => _startingMic = false);
     }
   }
-
   String _cloudSaveErrorText(Object error) {
     final value = error.toString().replaceAll('FormatException: ', '');
     if (value.contains('api_key_required')) {
@@ -476,11 +434,8 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     }
     return 'Не удалось подтвердить сохранение: $value';
   }
-
   Future<void> _openSettings() async {
     if (!_settingsReady) await _loadSettings();
-    // Refresh actual server status every time settings are opened, including
-    // after account auth becomes available later than the first page render.
     try {
       await _settings.loadCloudConnection();
       _cloudConnectionError = null;
@@ -504,7 +459,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, updateDialog) => AlertDialog(
-          // Long errors must not change the dialog's width on desktop.
           constraints: const BoxConstraints(maxWidth: 560),
           insetPadding: const EdgeInsets.symmetric(
             horizontal: 16, vertical: 24),
@@ -718,8 +672,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                       'подписки и серверного учёта лимитов.',
                       style: TextStyle(fontSize: 16),
                     ),
-                  // Error belongs inside the bounded scrollable content,
-                  // not in AlertDialog.actions (which uses intrinsic width).
                   if (saveError != null) ...[
                     const SizedBox(height: 16),
                     Text(saveError!, style: const TextStyle(
@@ -774,8 +726,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                   _settings.sessionSpeechApiKey = speechKeyCtrl.text.trim();
                 }
                 try {
-                  // Successful encrypted cloud save is authoritative. A full
-                  // browser localStorage must not turn it into a false error.
                   await _settings.saveCloudConnection();
                   localPreferencesSaved = await _settings.save();
                   _cloudConnectionError = null;
@@ -808,7 +758,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
     folderCtrl.dispose();
     speechKeyCtrl.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -859,7 +808,7 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                       final message = _messages[_messages.length - 1 -
                           (index - offset)];
                       return Align(
-                        alignment: message.mine ? Alignment.centerRight :
+                        alignment: message.isUser ? Alignment.centerRight :
                             Alignment.centerLeft,
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 12),
@@ -867,14 +816,14 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 13),
                           decoration: BoxDecoration(
-                            color: message.mine ? scheme.primaryContainer :
+                            color: message.isUser ? scheme.primaryContainer :
                                 scheme.surfaceContainerLow,
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: SelectableText(message.text,
+                          child: SelectableText(message.content,
                             style: TextStyle(
                               fontSize: 16, height: 1.45,
-                              color: message.mine ? scheme.onPrimaryContainer :
+                              color: message.isUser ? scheme.onPrimaryContainer :
                                   scheme.onSurface,
                             )),
                         ),
@@ -882,6 +831,31 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
                     },
                   ),
                 ),
+                if (_historyNotice != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.cloud_off_outlined, size: 22,
+                          color: scheme.onSurfaceVariant),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text(
+                          _historyNotice!,
+                          style: TextStyle(fontSize: 16, height: 1.4,
+                            color: scheme.onSurfaceVariant),
+                        )),
+                        if (_dialogueStore.pendingCount > 0) ...[
+                          const SizedBox(width: 8),
+                          AppButton.ghost(
+                            label: 'Повторить',
+                            onPressed: () => unawaited(_retryHistorySync()),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 if (_listening || _transcribing || _startingMic)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

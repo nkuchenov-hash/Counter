@@ -284,6 +284,7 @@ class ViktorGateway {
     List<String> toolObservations = const [],
     String? requestId,
     String? proposalFeedback,
+    List<Map<String, String>> conversationHistory = const [],
     bool allowRepair = true,
   }) async {
     final service = DatabaseService.instance;
@@ -378,6 +379,14 @@ class ViktorGateway {
       'tool_observations': toolObservations.take(4)
           .map((entry) => entry.length > 4500 ?
              entry.substring(0, 4500) : entry).toList(),
+      // Account-session conversation; bounded and transmitted only to the
+      // already selected BYOK model. No credentials or hidden app state.
+      'conversation_history': conversationHistory.take(12).map((turn) => {
+        'role': turn['role'],
+        'content': (turn['content'] ?? '').length > 1200
+            ? turn['content']!.substring(0, 1200)
+            : turn['content'],
+      }).toList(),
       'profile_timezone': service.settings.preferredTimeZone,
       'available_tools': ViktorAgentCapabilities.tools
           .map((tool) => tool.name).toList(growable: false),
@@ -542,6 +551,7 @@ class ViktorGateway {
         toolObservations: toolObservations,
         requestId: reqId,
         proposalFeedback: error.message.toString(),
+        conversationHistory: conversationHistory,
         allowRepair: false,
       );
     }
