@@ -1,0 +1,35 @@
+name: Categories UX Flutter checks
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'lib/features/settings/categories/**'
+      - 'lib/data/categories/**'
+      - 'lib/l10n/langs/en.dart'
+      - 'lib/l10n/langs/ru.dart'
+      - '.github/workflows/categories-ux-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+      - name: Prepare local environment placeholder
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = \x27\x27;' '}' > lib/core/env/env.dart
+      - run: flutter pub get
+      - name: Static analysis
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Unit and widget tests
+        run: flutter test
+      - name: Web release compilation
+        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none --no-web-resources-cdn
