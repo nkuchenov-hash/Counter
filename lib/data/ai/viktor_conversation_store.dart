@@ -60,29 +60,72 @@ class ViktorDialogueTurn {
     return [...remote, ...unsynced];
   }
 
+  /// Pin the original user itinerary, the latest timed draft and the user's
+  /// own timezone correction. Without these anchors, repeated tool errors can
+  /// evict the exact original stops and switch the clock back to profile zone.
+  /// All entries remain user/assistant turns (no synthetic system authority).
   static List<Map<String, String>> modelContext(
-    Iterable<ViktorDialogueTurn> turns, {int maxTurns = 12}) {
+      Iterable<ViktorDialogueTurn> turns, {int maxTurns = 12}) {
     final accepted = turns.where((turn) =>
         (turn.role == 'user' || turn.role == 'assistant') &&
-        turn.content.trim().isNotEmpty).map((turn) => <String, String>{
-      'role': turn.role,
-      'content': turn.content.length > 1200
-          ? turn.content.substring(0, 1200) : turn.content,
+        turn.content.trim().isNotEmpty).map((turn) {
+      final timedDraft = turn.role == 'assistant' &&
+          RegExp(r'\b\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}')
+              .allMatches(turn.content).length >= 3;
+      final originalBrief = turn.role == 'user' &&
+          turn.content.length > 150 &&
+          RegExp(r'расплан|расписани|маршрут|суббот|встреч|itinerary|schedule',
+              caseSensitive: false).hasMatch(turn.content);
+      final cap = timedDraft ? 6000 : originalBrief ? 3000 : 1200;
+      return <String, String>{
+        'role': turn.role,
+        'content': turn.content.length > cap
+            ? turn.content.substring(0, cap) : turn.content,
+      };
     }).toList();
-    if (accepted.length <= maxTurns) return accepted;
+    if (accepted.length <= maxTurns || maxTurns <= 3) {
+      return accepted.length <= maxTurns
+          ? accepted : accepted.sublist(accepted.length - maxTurns);
+    }
     final recent = accepted.sublist(accepted.length - maxTurns);
-    // Repeated short model acknowledgements must not erase the user's
-    // last substantive AI-produced timetable from model context. Pin one
-    // prior assistant draft while keeping the newest turns and approvals.
-    final previousDraftIndex = accepted.lastIndexWhere((turn) =>
+    // Anchors are relevant ONLY while the latest turns discuss the itinerary.
+    final latestUserTurns = accepted.reversed.where(
+        (turn) => turn['role'] == 'user').take(4).toList();
+    final continuingPlan = latestUserTurns.any((turn) => RegExp(
+      r'план|расписани|встан|подъ[её]м|загс|тыкв|москв|мск|'
+      r'часов|new york|дорог|бар|маршрут|встреч|schedule|itinerary',
+      caseSensitive: false,
+    ).hasMatch(turn['content'] ?? ''));
+    if (!continuingPlan) return recent;
+
+    bool isDraft(Map<String, String> turn) =>
         turn['role'] == 'assistant' &&
         RegExp(r'\b\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}')
-            .allMatches(turn['content'] ?? '').length >= 3);
-    if (previousDraftIndex >= 0 &&
-        previousDraftIndex < accepted.length - maxTurns) {
-      return [accepted[previousDraftIndex], ...recent.skip(1)];
-    }
-    return recent;
+            .allMatches(turn['content'] ?? '').length >= 3;
+    final draftIndex = accepted.lastIndexWhere(isDraft);
+    if (draftIndex < 0) return recent;
+    final originalIndex = accepted.lastIndexWhere((turn) =>
+        turn['role'] == 'user' &&
+        (turn['content'] ?? '').length > 150 &&
+        RegExp(r'расплан|расписани|суббот|маршрут|itinerary|schedule',
+          caseSensitive: false).hasMatch(turn['content'] ?? ''), draftIndex);
+    final timezoneIndex = accepted.lastIndexWhere((turn) =>
+        turn['role'] == 'user' &&
+        RegExp(r'по\s+москв|мск\b|время.{0,24}москв|'
+          r'по\s+нью[- ]йорк|время.{0,24}new york|'
+          r'по\s+берлин|время.{0,24}берлин',
+          caseSensitive: false).hasMatch(turn['content'] ?? ''));
+    final recentStart = accepted.length - maxTurns;
+    final pinned = <int>{
+      if (originalIndex >= 0 && originalIndex < recentStart) originalIndex,
+      if (draftIndex < recentStart) draftIndex,
+      if (timezoneIndex >= 0 && timezoneIndex < recentStart) timezoneIndex,
+    }.toList()..sort();
+    if (pinned.isEmpty) return recent;
+    return [
+      for (final i in pinned) accepted[i],
+      ...accepted.skip(accepted.length - (maxTurns - pinned.length)),
+    ];
   }
 }
 
