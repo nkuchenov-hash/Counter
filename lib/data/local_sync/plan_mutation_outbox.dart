@@ -472,6 +472,21 @@ abstract final class CategoryMutationOutbox {
     await prefs.setString(_key(owner), jsonEncode(q));
   });
 
+  /// A schema/validation error is terminal for this revision, not a reason
+  /// to send the same broken PATCH every two seconds.
+  static Future<void> block(
+    SharedPreferences prefs, {
+    required String owner,
+    required String pocketBaseId,
+    required int revision,
+  }) => _locked(() async {
+    final q = _decode(prefs.getString(_key(owner)));
+    final i = q.indexWhere((item) => item['pocketBaseId'] == pocketBaseId);
+    if (i < 0 || (q[i]['revision'] as num?)?.toInt() != revision) return;
+    q[i]['blocked'] = true;
+    await prefs.setString(_key(owner), jsonEncode(q));
+  });
+
   /// Removes only the revision actually submitted to PocketBase.
   static Future<bool> acknowledge(
     SharedPreferences prefs, {
