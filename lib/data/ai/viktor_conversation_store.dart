@@ -38,6 +38,13 @@ class ViktorConversationStore {
   static const String mainConversation = 'main';
   Future<void> _writeTail = Future<void>.value();
   int _sequence = 0;
+  final List<({String owner, String id, String role, String body})>
+      _pending = [];
+
+  /// Failed writes stay in memory and are retried, in order, with stable
+  /// client_turn_id values. Until successfully synced they must remain
+  /// visible to the user; closing the chat still discards this queue.
+  int get pendingCount => _pending.length;
 
   String _owner() {
     final userId = db.pocketBase.authStore.record?.id ?? '';
@@ -70,32 +77,58 @@ class ViktorConversationStore {
     return turns;
   }
 
-  /// Writes are serialized locally. Remote append-only turns preserve
-  /// the other device's conversation instead of overwriting it.
+  /// Serializes all writes and retries earlier failed turns before later
+  /// ones. A server timeout may happen *after* PocketBase committed a row;
+  /// check its unique client_turn_id before retrying so each turn is saved
+  /// exactly once in the owner's conversation.
   Future<void> append(ViktorDialogueTurn turn) {
     if (turn.role != 'user' && turn.role != 'assistant') {
       throw ArgumentError.value(turn.role, 'role', 'Invalid dialogue role');
     }
     if (turn.content.trim().isEmpty) return Future<void>.value();
     final ownerAtSubmission = _owner();
-    final text = turn.content.length <= 6000 ? turn.content
-        : '${turn.content.substring(0, 5970)}\n[Сообщение обрезано при сохранении]';
+    final body = turn.content.length <= 6000 ? turn.content
+        : '${turn.content.substring(0, 5970)}\\n[Сообщение обрезано при сохранении]';
     final sequence = ++_sequence;
-    final turnId = 'turn_${DateTime.now().microsecondsSinceEpoch}_$sequence';
+    final id = 'turn_${DateTime.now().microsecondsSinceEpoch}_$sequence';
+    _pending.add((owner: ownerAtSubmission, id: id,
+      role: turn.role, body: body));
     final next = _writeTail.catchError((Object _) {}).then((_) async {
       await db.ensurePocketBaseReady();
       if (_owner() != ownerAtSubmission) {
         throw StateError('Аккаунт изменился; история не отправлена.');
       }
-      await db.pocketBase.collection(collectionName).create(body: {
-        'user_id': ownerAtSubmission,
-        'conversation_id': mainConversation,
-        'client_turn_id': turnId,
-        'role': turn.role,
-        'body': text,
-      });
+      while (_pending.isNotEmpty) {
+        final item = _pending.first;
+        if (item.owner != ownerAtSubmission) {
+          throw StateError('Аккаунт изменился; прежняя очередь не отправлена.');
+        }
+        final collection = db.pocketBase.collection(collectionName);
+        try {
+          await collection.create(body: {
+            'user_id': item.owner,
+            'conversation_id': mainConversation,
+            'client_turn_id': item.id,
+            'role': item.role,
+            'body': item.body,
+          });
+        } catch (_) {
+          // A timeout could mean the server persisted the turn. An explicit
+          // owner-scoped lookup disambiguates that from a failed mutation.
+          // Never drop a turn when this confirmation is unavailable.
+          final existing = await collection.getList(
+            page: 1,
+            perPage: 1,
+            filter: 'user_id = "${item.owner}" && '
+                'client_turn_id = "${item.id}"',
+          );
+          if (existing.items.isEmpty) rethrow;
+        }
+        _pending.removeAt(0);
+      }
     });
     _writeTail = next;
     return next;
   }
+
 }
