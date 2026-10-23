@@ -388,7 +388,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                         } else {
                           _editOnPhone(r);
                         }
-                      },
+                      }
                     },
                     itemBuilder: (_) => <PopupMenuEntry<String>>[
                       PopupMenuItem(
