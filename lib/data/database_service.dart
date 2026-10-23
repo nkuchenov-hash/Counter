@@ -194,7 +194,10 @@ String _dateKeyFromDate(DateTime date) =>
     '${date.year}-${_two(date.month)}-${_two(date.day)}';
 
 class DatabaseService {
-  DatabaseService._();
+  DatabaseService._() {
+    offlineSync.categoryOwnerResolver = () =>
+        (currentProfileId ?? _userIdForWhere ?? '').trim();
+  }
   static final DatabaseService instance = DatabaseService._();
 
   /// Unit/integration tests only — bypasses PocketBase auth for Brain record paths.
