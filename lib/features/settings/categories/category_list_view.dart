@@ -445,6 +445,24 @@ class _CategoriesPageState extends State<CategoriesPage> {
   ) async {
     if (_moving) return;
     final db = DatabaseService.instance;
+    // Undo of a sibling reorder must restore the persisted sibling order as
+    // well, not merely reassign an unchanged parent relation.
+    if (db.getParentId(categoryId) == previousParent) {
+      final before = List<CategoryRule>.from(db.getChildrenOf(previousParent));
+      final restored = List<CategoryRule>.from(before)
+        ..sort((a, b) {
+          final ai = originalOrder.indexOf(a.id);
+          final bi = originalOrder.indexOf(b.id);
+          return (ai < 0 ? originalOrder.length : ai)
+              .compareTo(bi < 0 ? originalOrder.length : bi);
+        });
+      db.applyLocalCategorySiblingOrder(previousParent, restored);
+      _redraw();
+      unawaited(db.persistCategorySiblingOrder(
+        previousParent, restored, baselineBeforeReorder: before,
+      ));
+      return;
+    }
     setState(() => _moving = true);
     final rollback = db.updateCategoryParent(categoryId, previousParent);
     final siblings = db.getChildrenOf(previousParent);
