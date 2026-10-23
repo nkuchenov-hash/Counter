@@ -136,6 +136,41 @@ class _CategoriesPageState extends State<CategoriesPage> {
     });
   }
 
+  Future<void> _deleteCategory(CategoryRule rule) async {
+    final locale = currentLocale.value;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(t(locale, 'delete_category_confirm')),
+        content: Text(t(locale, 'delete_subcategories_confirm')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(t(locale, 'cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(t(locale, 'delete')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final ok = await DatabaseService.instance.deleteCategory(rule.id);
+    if (!mounted) return;
+    if (ok) {
+      _deleted(rule.id);
+      unawaited(_notifyChanged());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(locale, 'category_removed'))),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(locale, 'sync_failed'))),
+      );
+    }
+  }
+
   void _editOnPhone(CategoryRule rule) {
     setState(() => _selectedId = rule.id);
     showModalBottomSheet<void>(
