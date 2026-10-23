@@ -5,7 +5,9 @@ const fs = require('node:fs');
 const source = fs.readFileSync(
   'lib/data/ai/viktor_conversation_store.dart', 'utf8');
 const ui = fs.readFileSync(
-  'lib/features/viktor/viktor_chat_page.dart', 'utf8');
+  'lib/features/viktor/viktor_chat_page.dart', 'utf8') + '\n' +
+  fs.readFileSync(
+    'lib/features/viktor/viktor_dialogue_ui_state.dart', 'utf8');
 const migration = fs.readFileSync(
   'pb_migrations/1792710000_viktor_turns.js', 'utf8');
 
