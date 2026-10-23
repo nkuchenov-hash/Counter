@@ -233,7 +233,6 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 | `local_sync/record_mutation_outbox.dart` | Offline queue: record start/stop/update/delete |
 | `local_sync/web_record_journal.dart` | Browser IndexedDB record mutation journal + recovery drafts; transactional migration from localStorage |
 | `local_sync/plan_mutation_outbox.dart` | Offline queue: plan/list create/update/delete |
-| `local_sync/category_mutation_outbox.dart` | Owner-scoped durable category field PATCH queue; revision-aware acknowledgement |
 | `local_sync/offline_sync_state.dart` | Pending count, syncing, auth-paused UI state |
 | `local_sync/sync_manager.dart` | Connectivity / resume → flush trigger |
 | `web_history.dart` | Web history API conditional export |
