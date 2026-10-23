@@ -714,16 +714,17 @@ class _LifeSelectableText extends StatelessWidget {
         // SelectableText reserves the height of maxLines even for a
         // one-line title. Compute the *actual* line count first so a short
         // title never creates two empty rows before the card's preview.
-        var visibleLines = maxLines;
-        if (maxLines != null && constraints.maxWidth.isFinite) {
+        final maxAllowedLines = maxLines;
+        var visibleLines = maxAllowedLines;
+        if (maxAllowedLines != null && constraints.maxWidth.isFinite) {
           final painter = TextPainter(
             text: TextSpan(text: data, style: style),
             textDirection: Directionality.of(context),
             textScaler: MediaQuery.textScalerOf(context),
-            maxLines: maxLines,
+            maxLines: maxAllowedLines,
           )..layout(maxWidth: constraints.maxWidth);
           visibleLines = painter.computeLineMetrics().length
-              .clamp(1, maxLines)
+              .clamp(1, maxAllowedLines)
               .toInt();
           painter.dispose();
         }
