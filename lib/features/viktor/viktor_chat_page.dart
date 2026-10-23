@@ -16,8 +16,10 @@ import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 part 'viktor_dialogue_ui_state.dart';
+part 'viktor_composer.dart';
 /// Single LIFE OS assistant entry point. Replaces the old record-only mic FAB.
 /// No overlay over the planner, no extra button beside bottom navigation.
 class ViktorChatPage extends StatefulWidget {
@@ -62,6 +64,16 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     _controller.dispose();
     super.dispose();
   }
+  // Hardware Enter sends the message; Shift+Enter keeps native multiline input.
+  // Mobile soft keyboards retain a newline key and the visible Send button.
+  void _sendFromKeyboard() {
+    if (_busy || _listening || _transcribing || _startingMic ||
+        !_settingsReady || _controller.text.trim().isEmpty) {
+      return;
+    }
+    unawaited(_send());
+  }
+
   Future<void> _send() async {
     if (_busy) return;
     final input = _resolveRepeatCommand(_controller.text.trim());
@@ -931,61 +943,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                       ),
                     ),
                   ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: scheme.surface,
-                    border: Border(top: BorderSide(
-                      color: scheme.outlineVariant.withValues(alpha: 0.5))),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        AppIconButton(
-                          icon: _listening ? Icons.stop_circle_outlined :
-                            Icons.mic_none_rounded,
-                          tooltip: _listening ? 'Остановить диктовку' :
-                            'Продиктовать Виктору',
-                          onPressed: _busy || _startingMic || _transcribing ? null : _toggleMic,
-                          selected: _listening,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _controller,
-                            enabled: !_busy && !_startingMic && !_transcribing,
-                            minLines: 1,
-                            maxLines: 4,
-                            textCapitalization: TextCapitalization.sentences,
-                            style: const TextStyle(fontSize: 16),
-                            decoration: InputDecoration(
-                              hintText: _listening ? 'Идёт запись — нажмите стоп' :
-                                'Что сделать в LIFE OS?',
-                              filled: true,
-                              fillColor: scheme.surfaceContainerLow,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 12),
-                            ),
-                            onSubmitted: (_) => unawaited(_send()),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        AppIconButton(
-                          icon: Icons.arrow_upward_rounded,
-                          tooltip: 'Отправить Виктору',
-                          onPressed: _busy || _listening || _transcribing || _startingMic || !_settingsReady ? null :
-                            () => unawaited(_send()),
-                          variant: AppIconButtonVariant.filled,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                _buildComposer(scheme),
               ],
             ),
           ),
