@@ -10,6 +10,14 @@ The Life OS design system makes Figma the visual source of truth and Flutter can
 - Variations are parameters, not copied widgets.
 - Component Lab shows the current executable component state for admin review.
 
+## Semantic palette contract (categories, tags, UI chrome)
+
+- **One palette owner:** `lib/core/category_color_palette.dart` defines the nine semantic category hues plus neutral grey (lists/rest/system). Category creation, the appearance editor and the tag color chooser use these same families. `lib/core/app_colors.dart` owns the shared cool-white/dark neutral surfaces and action/status roles used across the app.
+- **Hierarchy:** new root category = shade 600, child = 500, grandchild and deeper = 400, without sibling-order variation. Children inherit their parent's color **family**, not a separate random hue; cap at 400 to avoid invisible pale colors. The chooser offers only 400/500/600 instead of ten near-white/near-black choices.
+- **Backwards compatibility:** do not batch-update PocketBase `categories.color_value` or `tags.color`. Existing saved colors and manually customized category colors remain intact. New defaults apply only to new categories; manual category color selection is retained. The tag picker shows legacy/custom hex as a selectable swatch.
+- **Tags:** stored tag colors remain the authoritative display colors across Timeline, Plans, Lists and tag manager. Preserve the established exact yellow-gold `#F6C500`/yellow-family contrast and plate-opacity rules in `tag_contrast.dart`. The semantic hue catalogue supplies *new* tag options; it does not reinterpret existing colors.
+- **Semantic roles are distinct:** primary actions remain dark/neutral; success, danger, disabled, active and selection states preserve their meaning. Do not repurpose the green success color or red error color as a generic surface fill. Dark mode uses the same hue identities with contrast-appropriate surfaces, not the literal light-mode background.
+
 ## Naming Contract
 
 Figma component names should stay clean and designer-facing. Flutter component names should stay app-namespaced and code-owned.
