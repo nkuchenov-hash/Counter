@@ -578,57 +578,107 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
-                  LayoutBuilder(builder: (context, constraints) {
-                    final desktopPicker = constraints.maxWidth >= 540;
-                    final colors = Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(t(locale, 'category_color'),
-                            style: Theme.of(context).textTheme.titleSmall),
-                        const SizedBox(height: 8),
-                        Wrap(spacing: 4, runSpacing: 8,
-                          children: [
-                            ...kCategoryPickerMaterialColors.map((color) =>
-                              _compactSwatch(color, _selectedPrimary == color, () {
-                                setState(() {
-                                  _selectedPrimary = color;
-                                  _selectedShadeValue = categoryColorAtDepth(color, route.length - 1);
-                                  _selectedColorValue = _selectedShadeValue;
-                                });
-                              })),
-                            IconButton.outlined(
-                              onPressed: () => setState(() => _showShades = !_showShades),
-                              tooltip: t(locale, 'category_color_shades'),
-                              icon: Icon(_showShades ? Icons.remove : Icons.add),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Keep colors and icons alongside each other even in a
+                      // mobile editor. The color palette is a deliberately
+                      // narrow column, so it cannot swallow the icon picker.
+                      final wide = constraints.maxWidth >= 470;
+                      final colorWidth = constraints.maxWidth >= 680
+                          ? 190.0
+                          : wide
+                              ? 150.0
+                              : 116.0;
+                      final gap = wide ? 22.0 : 12.0;
+                      final colors = Column(
+                        key: const Key('category_color_column'),
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            t(locale, 'category_color'),
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 0,
+                            runSpacing: 2,
+                            children: [
+                              for (final color in kCategoryPickerMaterialColors)
+                                _compactSwatch(
+                                  color,
+                                  _selectedPrimary == color,
+                                  () {
+                                    setState(() {
+                                      _selectedPrimary = color;
+                                      _selectedShadeValue = categoryColorAtDepth(
+                                        color, route.length - 1,
+                                      );
+                                      _selectedColorValue = _selectedShadeValue;
+                                    });
+                                  },
+                                ),
+                              SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 28,
+                                    minHeight: 28,
+                                  ),
+                                  onPressed: () => setState(
+                                    () => _showShades = !_showShades,
+                                  ),
+                                  tooltip: t(locale, 'category_color_shades'),
+                                  icon: Icon(
+                                    _showShades
+                                        ? Icons.remove_circle_outline
+                                        : Icons.add_circle_outline,
+                                    size: 24,
+                                    color: scheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (_showShades) ...[
+                            const SizedBox(height: 9),
+                            Wrap(
+                              spacing: 0,
+                              runSpacing: 2,
+                              children: [
+                                for (final tone in kCategorySelectableTones)
+                                  _compactSwatch(
+                                    _selectedPrimary![tone]!,
+                                    _selectedShadeValue ==
+                                        _selectedPrimary![tone]!.toARGB32(),
+                                    () {
+                                      setState(() {
+                                        _selectedShadeValue =
+                                            _selectedPrimary![tone]!.toARGB32();
+                                        _selectedColorValue =
+                                            _selectedShadeValue;
+                                      });
+                                    },
+                                    rounded: false,
+                                  ),
+                              ],
                             ),
                           ],
-                        ),
-                        if (_showShades) ...[
-                          const SizedBox(height: 10),
-                          Wrap(spacing: 4, runSpacing: 8,
-                            children: kCategorySelectableTones.map((tone) {
-                                final c = _selectedPrimary![tone]!;
-                                final v = c.toARGB32();
-                                return _compactSwatch(c, _selectedShadeValue == v, () {
-                                  setState(() {
-                                    _selectedShadeValue = v;
-                                    _selectedColorValue = v;
-                                  });
-                                }, rounded: false);
-                              }).toList(),
-                          ),
                         ],
-                      ],
-                    );
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: colors),
-                        SizedBox(width: desktopPicker ? 24 : 14),
-                        Expanded(child: _iconPanel(desktopPicker)),
-                      ],
-                    );
-                  }),
+                      );
+                      return Row(
+                        key: const Key('category_appearance_columns'),
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(width: colorWidth, child: colors),
+                          SizedBox(width: gap),
+                          Expanded(child: _iconPanel(wide)),
+                        ],
+                      );
+                    },
+                  ),
                   const SizedBox(height: 16),
                   _advancedFields(langs, locale),
                 ],
