@@ -544,9 +544,12 @@ extension CategoryCrudExtension on DatabaseService {
     if (existing == null) throw StateError('Category no longer exists');
     final rowId = _categoryBackendRowIdStrict(existing);
     final owner = (currentProfileId ?? _userIdForWhere ?? '').trim();
-    if (owner.isEmpty || rowId == null) {
+    if (owner.isEmpty) {
       throw StateError('Category edit cannot yet be journaled for this profile');
     }
+    // A locally restored category may not have its PocketBase row id yet.
+    // Saving the local change MUST still work offline; resolve the server id
+    // when the background drain gets a fresh authenticated catalog.
     if (_optimisticCategoryOwner != owner) {
       _optimisticCategoryEdits.clear();
       _optimisticCategoryOwner = owner;
@@ -560,7 +563,7 @@ extension CategoryCrudExtension on DatabaseService {
     final prefs = _prefs ?? await SharedPreferences.getInstance();
     await CategoryMutationOutbox.enqueue(
       prefs, owner, categoryId: categoryId,
-      pocketBaseId: rowId, fields: fields,
+      pocketBaseId: rowId ?? '', fields: fields,
     );
     await offlineSync.refreshPendingCount();
     // A background drain may fail indefinitely when offline; the journal and
@@ -624,8 +627,18 @@ extension CategoryCrudExtension on DatabaseService {
     for (final entry in pending) {
       if (offlineSync.isOffline || offlineSync.authPaused) break;
       final categoryId = (entry['categoryId'] as num).toInt();
-      final pbId = (entry['pocketBaseId'] ?? '').toString();
-      if (pbId.isEmpty) continue;
+      var pbId = (entry['pocketBaseId'] ?? '').toString();
+      if (pbId.isEmpty) {
+        // Defer missing row resolution to online sync, never the editor.
+        try {
+          await ensurePocketBaseReady();
+          await _loadRulesFromNoco();
+          pbId = _categoryBackendRowIdStrict(
+                getCategoryRuleById(categoryId),
+              ) ?? '';
+        } catch (_) {}
+        if (pbId.isEmpty) break;
+      }
       final delta = Map<String, dynamic>.from(entry['fields'] as Map);
       final category = getCategoryRuleById(categoryId);
       final biz = category == null ? null : _categoryStringPkForApi(category);
