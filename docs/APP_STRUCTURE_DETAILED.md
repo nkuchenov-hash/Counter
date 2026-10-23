@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `8208acb5` on 2026-10-23.**
+**Generated from input HEAD `bec2d490` on 2026-10-23.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -11701,7 +11701,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `category_color_palette.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/create_category_dialog.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/profile/tag_manager_page.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/create_category_dialog.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -11718,7 +11718,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `category_color_palette.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/create_category_dialog.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/profile/tag_manager_page.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/create_category_dialog.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12225,7 +12225,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `tag_contrast.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_card_tags.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/features/lists/lists_card.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_color_palette.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_card_tags.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12242,7 +12242,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `tag_contrast.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_card_tags.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`, `lib/features/lists/lists_card.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/category_color_palette.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_card_tags.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
