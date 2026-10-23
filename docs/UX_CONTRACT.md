@@ -4,7 +4,7 @@ This document defines how Life OS behaves when people interact with it. It is th
 
 ## Viktor dialogue completion and chat-grid alignment (2026-10-23)
 
-- One canonical content-column width of **840 logical px** for chat rows and the input area. Both use identical 16px edge insets; the send circle has a **10px right inset** within the input capsule, is vertically centered and remains visible in idle and active states. The messages' scroll viewport and thin auto-hidden scrollbar still span the full window.
+- One canonical content-column width of **840 logical px** for chat rows and the input area. Both use identical 16px edge insets; the send circle has a **14px visible right inset** within the input capsule, is vertically centered and remains visible in idle and active states. The messages' scroll viewport and thin auto-hidden scrollbar still span the full window.
 - An explicit timezone correction to an earlier **uncommitted draft** must produce the full revised draft, not another promise to fetch plans. Preserve user-stated wall clock times and change a demonstrably incorrect source timezone label without fabricating saved changes or silently converting hours.
 - An assistant reply that only promises future work (e.g. "Сейчас проверю") is incomplete for an itinerary. Attempt at most one bounded model repair, then report failure rather than enter a dialogue loop. Preserve the last substantive assistant timetable as part of bounded model history when repetitive nonanswers would otherwise evict it.
 - Regression tests cover 24/25 October 2026 Moscow follow-up, multiple repeated no-op promises, actual light/dark composer visual contract, narrow/mobile widths, shared column geometry, and send inset.
