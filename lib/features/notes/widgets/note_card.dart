@@ -183,30 +183,24 @@ class _GridCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 7),
-            Expanded(
-              // Keep preview at its natural height, TOP-aligned beneath the
-              // title. Editable/SelectableText can otherwise expand inside
-              // the available flex space and visually center the first line.
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Opacity(
-                  opacity: isDone ? 0.60 : 1,
-                  child: ClipRect(
-                    child: _LifeSelectableText(
-                      preview.isEmpty ? t(loc, 'notes_library_no_text') : preview,
-                      onTap: onOpen,
-                      maxLines: 4,
-                      style: TextStyle(
-                        fontSize: 13,
-                        height: 1.4,
-                        color: scheme.onSurfaceVariant,
-                        fontStyle: preview.isEmpty ? FontStyle.italic : null,
-                      ),
-                    ),
-                  ),
+            // The preview MUST stay in natural document flow. An Expanded
+            // SelectableText occupies the remaining card height and can place
+            // its glyphs near the bottom, creating a fake title/body gap.
+            Opacity(
+              opacity: isDone ? 0.60 : 1,
+              child: _LifeSelectableText(
+                preview.isEmpty ? t(loc, 'notes_library_no_text') : preview,
+                onTap: onOpen,
+                maxLines: 4,
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.4,
+                  color: scheme.onSurfaceVariant,
+                  fontStyle: preview.isEmpty ? FontStyle.italic : null,
                 ),
               ),
             ),
+            const Spacer(),
             const SizedBox(height: 6),
             SizedBox(
               height: 20,
@@ -586,80 +580,74 @@ class _StatusMeta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final loc = currentLocale.value;
+    final date = noteCardCreationDate(data.task);
+    final dateLabel = date == null
+        ? '—'
+        : '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
     final color = notesGlmMetaColor(context);
-    if (data.stats.hasChecklist) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.format_list_bulleted_rounded, size: 13, color: color),
-          const SizedBox(width: 5),
+    final textStyle = TextStyle(
+      fontSize: 11,
+      color: color,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (data.stats.hasChecklist) ...[
+          Icon(Icons.checklist_rounded, size: 13, color: color),
+          const SizedBox(width: 3),
           Text(
             '${data.stats.checklistChecked}/${data.stats.checklistTotal}',
-            style: TextStyle(
-              fontSize: 11,
-              color: color,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
+            style: textStyle,
           ),
+          const SizedBox(width: 8),
         ],
-      );
-    }
-    return Text(
-      data.task.isDone
-          ? _doneLabel(loc)
-          : _recentLabel(loc, data.task.updatedAt ?? data.task.createdAt),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(fontSize: 11, color: color),
+        Text(dateLabel, key: const ValueKey('note-card-created-date'),
+            style: textStyle, maxLines: 1,
+            overflow: TextOverflow.ellipsis),
+      ],
     );
   }
 }
 
-String _plainPreview(NoteCardData data) {
+/// Prefer creation time over updates: the footer describes when this note was
+/// made. Legacy imported notes may have only updatedAt; do not fabricate dates.
+DateTime? noteCardCreationDate(PlanningTask task) =>
+    (task.createdAt ?? task.updatedAt)?.toLocal();
+
+/// Compact 2–4 line structural preview. Checklists take priority over
+/// unrelated paragraphs, with their saved completion state visible. Bulleted
+/// and numbered lists are also distinguished from ordinary text.
+String noteCardPreview(NoteDocument document) {
+  final blocks = document.blocks;
+  final checklist = blocks
+      .where((block) => block.type == NoteBlockType.checklist &&
+          block.effectiveText.trim().isNotEmpty)
+      .take(4)
+      .toList();
+  if (checklist.isNotEmpty) {
+    return checklist
+        .map((block) => '${block.checked ? '☑' : '☐'} ${block.effectiveText.trim()}')
+        .join('\n');
+  }
   final chunks = <String>[];
-  for (final block in data.doc.blocks) {
-    final text = block.text.trim();
+  var orderedIndex = 0;
+  for (final block in blocks) {
+    final text = block.effectiveText.trim();
     if (text.isEmpty) continue;
-    chunks.add(text);
+    String prefix = '';
+    if (block.type == NoteBlockType.bulletedList) prefix = '• ';
+    if (block.type == NoteBlockType.numberedList) {
+      orderedIndex++;
+      prefix = '$' + '{orderedIndex}. ';
+    }
+    chunks.add('$' + '{prefix}$' + '{text}');
     if (chunks.length == 4) break;
   }
   return chunks.join('\n');
 }
 
-String _doneLabel(String locale) {
-  switch (locale) {
-    case 'ru':
-      return 'Выполнено';
-    case 'de':
-      return 'Erledigt';
-    case 'fr':
-      return 'Terminé';
-    case 'es':
-      return 'Hecho';
-    case 'it':
-      return 'Fatto';
-    default:
-      return 'Done';
-  }
-}
-
-String _recentLabel(String locale, DateTime? dt) {
-  switch (locale) {
-    case 'ru':
-      return 'Недавно';
-    case 'de':
-      return 'Kürzlich';
-    case 'fr':
-      return 'Récent';
-    case 'es':
-      return 'Reciente';
-    case 'it':
-      return 'Recente';
-    default:
-      return 'Recent';
-  }
-}
+String _plainPreview(NoteCardData data) => noteCardPreview(data.doc);
 
 class _NoteCardMenuButton extends StatefulWidget {
   const _NoteCardMenuButton({required this.onPressed});
