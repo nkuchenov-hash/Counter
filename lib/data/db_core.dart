@@ -773,6 +773,7 @@ extension DbCoreExtension on DatabaseService {
     }
     await flushPendingRecordMutations();
     await flushPendingPlanMutations();
+    await flushPendingCategoryMutations();
     await offlineSync.refreshPendingCount();
     offlineSync.reconcileStuckSyncingBanner(
       syncFlushInFlight: isSyncFlushInFlight,
