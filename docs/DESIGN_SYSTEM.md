@@ -10,6 +10,12 @@ The Life OS design system makes Figma the visual source of truth and Flutter can
 - Variations are parameters, not copied widgets.
 - Component Lab shows the current executable component state for admin review.
 
+## Category picker visual contract (2026-10-23)
+
+- The palette's canonical neutral gray family uses equal red/green/blue channels across every tone. Existing persisted custom colors are never silently recolored.
+- All primary hue swatches remain on one horizontal, scrollable line. All supported tone swatches are displayed immediately beneath a subtle divider, without a +/expand action.
+- Category editor Save is an immediate local commit; category color swatches notify the live Brain model and do not wait for PocketBase response.
+
 ## Semantic palette contract (categories, tags, UI chrome)
 
 - **One palette owner:** `lib/core/category_color_palette.dart` defines the nine semantic category hues plus neutral grey (lists/rest/system). Category creation, the appearance editor and the tag color chooser use these same families. `lib/core/app_colors.dart` owns the shared cool-white/dark neutral surfaces and action/status roles used across the app.
