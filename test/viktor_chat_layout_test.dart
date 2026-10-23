@@ -57,6 +57,7 @@ void main() {
       expect(field.minLines, 1);
       expect(field.maxLines, 8);
       expect(field.keyboardType, TextInputType.multiline);
+      expect(field.decoration?.hintMaxLines, 1);
       expect(field.style?.fontSize, greaterThanOrEqualTo(16));
       final editor = tester.getRect(fieldFinder);
       expect(editor.left, greaterThanOrEqualTo(0));
