@@ -248,7 +248,9 @@ class NotesFolderTabStrip extends StatelessWidget {
               child: OverflowBox(
                 minWidth: 46,
                 maxWidth: 46,
-                alignment: Alignment.centerRight,
+                minHeight: 35,
+                maxHeight: 35,
+                alignment: Alignment.bottomRight,
                 // The fixed + tab is the ONE exception to the normal folder
                 // z-order: painted last and overlapping the scrolling rail.
                 child: addTab,
