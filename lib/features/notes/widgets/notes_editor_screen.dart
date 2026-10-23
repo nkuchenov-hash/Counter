@@ -40,6 +40,7 @@ class NotesEditorBody extends StatelessWidget {
           bottom: 0,
           child: NotesBottomGlassFade(
             height: embedded ? 78 : 86,
+            toolbarBottomInset: embedded ? 14 : 8,
             child: RepaintBoundary(
               child: Align(
                 alignment: Alignment.bottomCenter,

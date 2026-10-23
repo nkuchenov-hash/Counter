@@ -307,12 +307,14 @@ class NotesBottomGlassFade extends StatelessWidget {
     this.height = 82,
     this.horizontalPadding = 0,
     this.verticalPadding = 0,
+    this.toolbarBottomInset = 8,
   });
 
   final Widget child;
   final double height;
   final double horizontalPadding;
   final double verticalPadding;
+  final double toolbarBottomInset;
 
   @override
   Widget build(BuildContext context) {
@@ -328,7 +330,11 @@ class NotesBottomGlassFade extends StatelessWidget {
         children: [
           Positioned.fill(
             child: IgnorePointer(
-              child: ClipRect(
+              child: ClipPath(
+                key: const ValueKey('notes-bottom-glass-aperture'),
+                clipper: _NotesPaperFadeApertureClipper(
+                  toolbarBottomInset: toolbarBottomInset,
+                ),
                 child: ShaderMask(
                   key: const ValueKey('notes-feathered-bottom-fade'),
                   blendMode: BlendMode.dstIn,
@@ -378,6 +384,35 @@ class NotesBottomGlassFade extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Exclude the floating glass pill from the paper whitening overlay.
+/// Otherwise the fully-whitened fade plus the pill's own tint compound into
+/// an effectively opaque result, even when the pill is translucent.
+class _NotesPaperFadeApertureClipper extends CustomClipper<Path> {
+  const _NotesPaperFadeApertureClipper({
+    required this.toolbarBottomInset,
+  });
+
+  final double toolbarBottomInset;
+
+  @override
+  Path getClip(Size size) {
+    final width = (size.width - 40).clamp(0.0, 350.0).toDouble();
+    final top = size.height - toolbarBottomInset - 48;
+    final capsule = RRect.fromRectAndRadius(
+      Rect.fromLTWH((size.width - width) / 2, top, width, 48),
+      const Radius.circular(24),
+    );
+    return Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect(Offset.zero & size)
+      ..addRRect(capsule);
+  }
+
+  @override
+  bool shouldReclip(covariant _NotesPaperFadeApertureClipper oldClipper) =>
+      oldClipper.toolbarBottomInset != toolbarBottomInset;
 }
 
 /// Card surface from the supplied Notes mockup: quiet paper, 14px corners,
