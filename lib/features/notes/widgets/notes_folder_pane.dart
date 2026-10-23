@@ -163,8 +163,8 @@ class NotesFolderTabStrip extends StatelessWidget {
       onLongPress: onManage,
     );
 
-    // An index folder has a fixed physical order: each preceding spine
-    // overlaps the next one. Selection changes the tint, not z-order.
+    // Keep the underlying order stable; the selected folder paints above
+    // its neighbors instead of disappearing under the previous spine.
     final textScaler = MediaQuery.textScalerOf(context);
     final widths = [
       for (final tab in tabs) tabWidth(tab.label, textScaler: textScaler),
@@ -227,10 +227,13 @@ class NotesFolderTabStrip extends StatelessWidget {
                         key: const ValueKey('notes-layered-tab-stack'),
                         clipBehavior: Clip.none,
                         children: [
-                          // Paint right-to-left: the previous tab physically
-                          // covers the next tab's leftmost 15px at ALL times.
+                          // Inactive folders preserve right-to-left overlap.
+                          // Paint the active tab LAST so both its shoulders
+                          // cover neighboring spines without reordering data.
                           for (var i = tabs.length - 1; i >= 0; i--)
-                            categoryAt(i),
+                            if (tabs[i].id != selectedId) categoryAt(i),
+                          for (var i = 0; i < tabs.length; i++)
+                            if (tabs[i].id == selectedId) categoryAt(i),
                         ],
                       ),
                     ),
