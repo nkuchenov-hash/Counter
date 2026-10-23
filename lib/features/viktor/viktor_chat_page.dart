@@ -802,8 +802,12 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           const SizedBox(width: 8),
         ],
       ),
-      body: SafeArea(
-        top: false,
+      // ChatGPT-style interaction: wheel/touch/trackpad scrolling works,
+      // without Flutter's thick always-visible desktop scrollbar.
+      body: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+        child: SafeArea(
+          top: false,
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 760),
@@ -948,6 +952,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
             ),
           ),
         ),
+      ),
       ),
     );
   }
