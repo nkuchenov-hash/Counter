@@ -377,6 +377,7 @@ extension CategoryCacheExtension on DatabaseService {
       if (flat.isNotEmpty) {
         final built = _buildCategoryTreeFromFlat(flat);
         if (built.$1.isNotEmpty) {
+          await _overlayPendingCategoryFields(built.$1);
           _rules = built.$1;
         }
       }
@@ -458,9 +459,10 @@ extension CategoryCacheExtension on DatabaseService {
       final built = flat.isEmpty
           ? (<CategoryRule>[], <List<CategoryRule>>[])
           : _buildCategoryTreeFromFlat(flat);
+      await _overlayPendingCategoryFields(built.$1);
       _rules = built.$1;
       _categoryController.add(List.from(_rules));
-      unawaited(_migrateExistingCategoryColorsToNordicOnce());
+      // Never auto-migrate colors during a refresh: it overrides user choices.
       for (final g in built.$2) {
         unawaited(
           _persistCategoryOrdersBulkForce(g, contextLabel: 'nullOrderInit'),
