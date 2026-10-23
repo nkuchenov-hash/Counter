@@ -43,8 +43,7 @@ const Map<String, String> kRuL10n = {
   'lists_delete_backlog_confirm': 'Удалить эту задачу из списка?',
   'lists_pin_chips_title': 'Быстрые фильтры',
   'lists_pin_chips_subtitle': 'Выберите категории для чипов рядом с «Все».',
-  'lists_chip_bar_settings_tooltip':
-      'Раздел «Списки»: быстрые фильтры (вручную или по частоте)',
+  'lists_chip_bar_settings_tooltip': 'Раздел «Списки»: быстрые фильтры (вручную или по частоте)',
   'lists_chip_mode_frequent': 'Чаще всего',
   'lists_chip_mode_manual': 'Вручную',
   'lists_chip_bar_sheet_title': 'Быстрые фильтры',
@@ -459,6 +458,7 @@ const Map<String, String> kRuL10n = {
   'category_reorder': 'Изменить порядок категории',
   'category_move_invalid': 'Нельзя переместить категорию в саму себя или в свою подкатегорию.',
   'category_color_shades': 'Оттенки цвета',
+  'category_move_to': 'Переместить…',
   'category_moved': 'Категория перемещена',
   'clear': 'Очистить',
   'category_advanced': 'Дополнительные настройки',
