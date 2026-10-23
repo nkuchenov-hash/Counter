@@ -91,6 +91,11 @@ class ViktorConversationStore {
   int _sequence = 0;
   String? _pendingOwner;
   bool _secureStorageUnavailable = false;
+  bool _outboxUnreadable = false;
+
+  /// The original encrypted queue could not be read. Do not overwrite it
+  /// before a later retry succeeds, even if server writes currently work.
+  bool get localOutboxUnreadable => _outboxUnreadable;
 
   /// If encryption/storage fails and PocketBase is also unreachable,
   /// unsent turns can only survive while this page remains open.
@@ -114,7 +119,8 @@ class ViktorConversationStore {
   String _outboxKey(String owner) => 'viktor_turn_outbox_v1_$owner';
 
   Future<void> _restoreOutbox(String owner) async {
-    if (_pendingOwner == owner) return;
+    if (_pendingOwner == owner &&
+        (!_outboxUnreadable || _pending.isNotEmpty)) return;
     // Preserve the previous signed-in user's outbox across account switches.
     // Never send the old owner's turns using the new session.
     if (_pendingOwner != null && _pending.isNotEmpty) {
@@ -124,6 +130,7 @@ class ViktorConversationStore {
     try {
       raw = await _secureStorage.read(key: _outboxKey(owner));
       _secureStorageUnavailable = false;
+      _outboxUnreadable = false;
     } catch (_) {
       // A full or unavailable browser secure store must not prevent fetching
       // already-saved dialogue from PocketBase.
@@ -133,6 +140,7 @@ class ViktorConversationStore {
       }
       _pendingOwner = owner;
       _secureStorageUnavailable = true;
+      _outboxUnreadable = true;
       return;
     }
     final restored = <({String owner, String id, String role, String body})>[];
@@ -167,6 +175,11 @@ class ViktorConversationStore {
   Future<void> _saveOutbox() async {
     final owner = _pendingOwner;
     if (owner == null) throw StateError('Виктор не определил аккаунт.');
+    if (_outboxUnreadable) {
+      _secureStorageUnavailable = true;
+      throw StateError('Предыдущая защищённая очередь недоступна для чтения. '
+          'Не перезаписываем её до восстановления доступа.');
+    }
     try {
       await _secureStorage.write(
         key: _outboxKey(owner),
