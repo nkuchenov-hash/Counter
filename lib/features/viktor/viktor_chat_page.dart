@@ -15,6 +15,8 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+part 'viktor_dialogue_ui_state.dart';
 /// Single LIFE OS assistant entry point. Replaces the old record-only mic FAB.
 /// No overlay over the planner, no extra button beside bottom navigation.
 class ViktorChatPage extends StatefulWidget {
@@ -25,15 +27,12 @@ class ViktorChatPage extends StatefulWidget {
   @override
   State<ViktorChatPage> createState() => _ViktorChatPageState();
 }
-class _ViktorChatPageState extends State<ViktorChatPage> {
+class _ViktorChatPageState extends State<ViktorChatPage>
+    with _ViktorDialogueUiState {
   final _controller = TextEditingController();
   final _recorder = ViktorVoiceRecorder();
   final _voiceGateway = const ViktorVoiceGateway();
   final _messages = <ViktorDialogueTurn>[];
-  final _dialogueStore = ViktorConversationStore(DatabaseService.instance);
-  bool _dialogueLoaded = false;
-  String? _historyNotice;
-  final _settings = ViktorModelSettings.instance;
   final _gateway = const ViktorGateway();
   bool _busy = false;
   bool _listening = false;
@@ -42,8 +41,6 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
   bool _speechDetected = false;
   DateTime? _lastVoiceActivity;
   String? _voiceNotice;
-  bool _settingsReady = false;
-  String? _cloudConnectionError;
   @override
   void initState() {
     super.initState();
@@ -56,101 +53,12 @@ class _ViktorChatPageState extends State<ViktorChatPage> {
       'Перед изменениями я покажу план для подтверждения.',
     ));
   }
-  Future<void> _loadSettings() async {
-    try {
-      await _settings.load();
-      await DatabaseService.instance.ensurePocketBaseReady();
-      _settings.ensureOwner(
-        DatabaseService.instance.pocketBase.authStore.record?.id ?? 'signed_out',
-      );
-      await _settings.loadCloudConnection();
-      if (mounted) setState(() {
-        _cloudConnectionError = null;
-      });
-    } catch (error) {
-      if (mounted) setState(() {
-        _cloudConnectionError = error.toString().replaceAll(
-          'FormatException: ', '',
-        );
-      });
-    }
-    try {
-      final earlier = await _dialogueStore.load();
-      if (mounted) setState(() {
-        _messages.addAll(earlier);
-        _dialogueLoaded = _dialogueStore.pendingCount == 0;
-        _historyNotice = _dialogueLoaded ? null :
-            'Некоторые реплики сохранены на устройстве и ожидают '
-            'синхронизации. Виктор повторит отправку.';
-      });
-    } catch (_) {
-      if (mounted) setState(() {
-        _dialogueLoaded = false;
-        _historyNotice = 'Историю разговора не удалось загрузить. '
-            'Проверьте подключение и защищённое хранилище.';
-      });
-    }
-    if (mounted) setState(() => _settingsReady = true);
-  }
   @override
   void dispose() {
     _recorder.removeListener(_onRecorderChanged);
     _recorder.dispose();
     _controller.dispose();
     super.dispose();
-  }
-  Future<void> _persistTurn(ViktorDialogueTurn turn) async {
-    try {
-      await _dialogueStore.append(turn);
-      if (mounted && (!_dialogueLoaded || _historyNotice != null) &&
-          _dialogueStore.pendingCount == 0) {
-        setState(() {
-          _dialogueLoaded = true;
-          _historyNotice = null;
-        });
-      }
-    } catch (_) {
-      if (mounted && (_dialogueLoaded || _historyNotice == null)) {
-        setState(() {
-          _dialogueLoaded = false;
-          _historyNotice = 'История ещё не синхронизирована с сервером. '
-              'Отправка повторится при следующем сообщении. '
-              'Если защищённое хранилище недоступно, '
-              'несохранённые реплики могут пропасть.';
-        });
-      }
-    }
-  }
-
-  Future<void> _retryHistorySync() async {
-    if (_dialogueStore.pendingCount == 0) return;
-    try {
-      await _dialogueStore.retryPending();
-      if (mounted && _dialogueStore.pendingCount == 0) {
-        setState(() {
-          _dialogueLoaded = true;
-          _historyNotice = null;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _dialogueLoaded = false;
-          _historyNotice = 'История пока не синхронизирована. '
-              'Локальные реплики сохранены для повторной отправки.';
-        });
-      }
-    }
-  }
-
-  void _push(String value, {bool mine = false}) {
-    if (!mounted) return;
-    final turn = ViktorDialogueTurn(
-        role: mine ? 'user' : 'assistant', content: value);
-    setState(() => _messages.add(turn));
-    // Even if history loading or a previous write failed, try saving new
-    // turns. The store retries earlier pending turns first, preserving order.
-    unawaited(_persistTurn(turn));
   }
   Future<void> _send() async {
     if (_busy) return;
