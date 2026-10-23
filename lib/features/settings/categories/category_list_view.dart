@@ -207,6 +207,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     }
 
     final oldParent = db.getParentId(moved.rule.id);
+    final originalOrder = db.getChildrenOf(oldParent).map((r) => r.id).toList();
     final before = db.getChildrenOf(destinationParent);
     final siblings = List<CategoryRule>.from(before)
       ..removeWhere((r) => r.id == moved.rule.id);
@@ -230,6 +231,23 @@ class _CategoriesPageState extends State<CategoriesPage> {
         siblings,
         baselineBeforeReorder: before,
       ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(t(currentLocale.value, 'category_moved')),
+          action: SnackBarAction(
+            label: t(currentLocale.value, 'undo'),
+            onPressed: () {
+              db.applyLocalCategorySiblingOrder(destinationParent, before);
+              _redraw();
+              unawaited(db.persistCategorySiblingOrder(
+                destinationParent,
+                before,
+                baselineBeforeReorder: siblings,
+              ));
+            },
+          ),
+        ),
+      );
       return;
     }
 
@@ -244,6 +262,50 @@ class _CategoriesPageState extends State<CategoriesPage> {
     db.applyLocalCategorySiblingOrder(destinationParent, siblings);
     _redraw();
     final ok = await moving;
+    if (!mounted) return;
+    setState(() => _moving = false);
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(t(currentLocale.value, 'category_moved')),
+          action: SnackBarAction(
+            label: t(currentLocale.value, 'undo'),
+            onPressed: () => unawaited(_undoParentMove(
+              moved.rule.id,
+              oldParent,
+              originalOrder,
+            )),
+          ),
+        ),
+      );
+    }
+    unawaited(widget.onChanged());
+  }
+
+  Future<void> _undoParentMove(
+    int categoryId,
+    int? previousParent,
+    List<int> originalOrder,
+  ) async {
+    if (_moving) return;
+    final db = DatabaseService.instance;
+    setState(() => _moving = true);
+    final rollback = db.updateCategoryParent(categoryId, previousParent);
+    final siblings = db.getChildrenOf(previousParent);
+    final restored = List<CategoryRule>.from(siblings)
+      ..sort((a, b) {
+        final left = originalOrder.indexOf(a.id);
+        final right = originalOrder.indexOf(b.id);
+        return (left < 0 ? originalOrder.length : left)
+            .compareTo(right < 0 ? originalOrder.length : right);
+      });
+    db.applyLocalCategorySiblingOrder(previousParent, restored);
+    _redraw();
+    final ok = await rollback;
     if (!mounted) return;
     setState(() => _moving = false);
     if (!ok) {
