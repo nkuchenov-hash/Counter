@@ -7,6 +7,27 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
   final _dialogueStore = ViktorConversationStore(DatabaseService.instance);
   bool _dialogueLoaded = false;
   String? _historyNotice;
+  Timer? _historyRetryTimer;
+  bool _historyRetryInFlight = false;
+
+  void _scheduleHistoryRetry() {
+    if (_historyRetryTimer != null || _dialogueStore.pendingCount == 0) {
+      return;
+    }
+    _historyRetryTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (!mounted) {
+        _stopHistoryRetry();
+      } else if (!_historyRetryInFlight) {
+        unawaited(_retryHistorySync());
+      }
+    });
+  }
+
+  void _stopHistoryRetry() {
+    _historyRetryTimer?.cancel();
+    _historyRetryTimer = null;
+  }
+
   final _settings = ViktorModelSettings.instance;
   bool _settingsReady = false;
   String? _cloudConnectionError;
@@ -38,6 +59,7 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
             'Некоторые реплики сохранены на устройстве и ожидают '
             'синхронизации. Виктор повторит отправку.';
       });
+      _scheduleHistoryRetry();
     } catch (_) {
       if (mounted) setState(() {
         _dialogueLoaded = false;
@@ -56,6 +78,7 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
           _dialogueLoaded = true;
           _historyNotice = null;
         });
+        _stopHistoryRetry();
       }
     } catch (_) {
       if (mounted && (_dialogueLoaded || _historyNotice == null)) {
@@ -67,11 +90,17 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
               'несохранённые реплики могут пропасть.';
         });
       }
+      _scheduleHistoryRetry();
     }
   }
 
   Future<void> _retryHistorySync() async {
-    if (_dialogueStore.pendingCount == 0) return;
+    if (_historyRetryInFlight) return;
+    if (_dialogueStore.pendingCount == 0) {
+      _stopHistoryRetry();
+      return;
+    }
+    _historyRetryInFlight = true;
     try {
       await _dialogueStore.retryPending();
       if (mounted && _dialogueStore.pendingCount == 0) {
@@ -85,8 +114,15 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
         setState(() {
           _dialogueLoaded = false;
           _historyNotice = 'История пока не синхронизирована. '
-              'Локальные реплики сохранены для повторной отправки.';
+              'Локальные реплики ожидают повторной отправки.';
         });
+      }
+    } finally {
+      _historyRetryInFlight = false;
+      if (_dialogueStore.pendingCount == 0) {
+        _stopHistoryRetry();
+      } else {
+        _scheduleHistoryRetry();
       }
     }
   }

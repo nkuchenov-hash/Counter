@@ -355,4 +355,67 @@ void main() {
     expect(preview.moves.single.day, '2026-10-18');
   });
 
+
+  test('multi-event Saturday itinerary is a read-only proposal with overlap warnings', () async {
+    final batch = proposal([
+      {'name': 'create_plan', 'arguments': {
+        'title': 'Зарядка', 'wall_day': '2026-10-24',
+        'start_time': '09:00', 'duration_minutes': 30,
+      }},
+      {'name': 'create_plan', 'arguments': {
+        'title': 'Завтрак', 'wall_day': '2026-10-24',
+        'start_time': '09:30', 'duration_minutes': 45,
+      }},
+      {'name': 'create_plan', 'arguments': {
+        'title': 'Встреча', 'wall_day': '2026-10-24',
+        'start_time': '18:00', 'duration_minutes': 60,
+      }},
+      {'name': 'start_record', 'arguments': {'title': 'Не запускать'}},
+    ]);
+    expect(ViktorProposedDayDraft.needsReadOnlyDraft(batch), isTrue);
+    var reads = 0;
+    final draft = await ViktorProposedDayDraft.describe(batch, loadDay: (day) async {
+      reads++;
+      expect(day, DateTime(2026, 10, 24));
+      return [
+        task(a, 'Уже занято', 1080, 1140).copyWith(
+          dateKey: '2026-10-24',
+          startTime: DateTime(2026, 10, 24, 18),
+          endDateTime: DateTime(2026, 10, 24, 19),
+        ),
+      ];
+    });
+    expect(reads, 1);
+    expect(draft, contains('2026-10-24'));
+    expect(draft, contains('09:00–09:30'));
+    expect(draft, contains('09:30–10:15'));
+    expect(draft, contains('18:00–19:00'));
+    expect(draft, contains('Уже занято'));
+    expect(draft, contains('Другие действия модели не выполнялись'));
+    expect(draft, contains('ничего не сохранено'));
+  });
+
+  test('plan mixed with timer action becomes a draft, never a timer command', () async {
+    final mixed = proposal([
+      {'name': 'create_plan', 'arguments': {
+        'title': 'Съездить в бар', 'wall_day': '2026-10-24',
+        'start_time': '18:00', 'duration_minutes': 60,
+      }},
+      {'name': 'start_record', 'arguments': {'title': 'Не запускать'}},
+    ]);
+    expect(ViktorProposedDayDraft.needsReadOnlyDraft(mixed), isTrue);
+    final result = await ViktorProposedDayDraft.describe(mixed,
+        loadDay: (day) async => []);
+    expect(result, contains('18:00–19:00'));
+    expect(result, contains('запуск или остановку записи'));
+    expect(result, contains('пока ничего не сохранено'));
+  });
+
+  test('one create_plan is not downgraded into a multi-event draft', () {
+    final single = proposal([{'name': 'create_plan', 'arguments': {
+      'title': 'Один план', 'wall_day': '2026-10-24',
+      'start_time': '12:00', 'duration_minutes': 30,
+    }}]);
+    expect(ViktorProposedDayDraft.needsReadOnlyDraft(single), isFalse);
+  });
 }

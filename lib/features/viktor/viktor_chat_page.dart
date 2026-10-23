@@ -55,6 +55,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
   }
   @override
   void dispose() {
+    _stopHistoryRetry();
     _recorder.removeListener(_onRecorderChanged);
     _recorder.dispose();
     _controller.dispose();
@@ -191,6 +192,14 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         }
         return;
       }
+      // A complex Saturday itinerary is a draft, not an unsafe sequence of
+      // partially committed individual create_plan calls.
+      if (ViktorProposedDayDraft.needsReadOnlyDraft(actions)) {
+        final draft = await ViktorProposedDayDraft.describe(actions,
+          loadDay: db.getPlanningTasksForWallDate);
+        if (mounted) _push(draft);
+        return;
+      }
       final preview = await executor.describe(actions, widget.wallDay);
       if (!mounted) return;
       if (!actions.hasMutations) {
@@ -246,7 +255,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         _push('Не удалось выполнить запрос. $msg');
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) setState(() { _busy = false; _voiceNotice = null; });
     }
   }
   Future<bool> _confirm(ViktorActionBatch batch, String preview) async {
@@ -854,6 +863,20 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                           ),
                         ],
                       ],
+                    ),
+                  ),
+                if (!_busy && _messages.any((m) => m.isUser) &&
+                    _messages.last.content.startsWith(
+                        'Не удалось выполнить запрос.'))
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: AppButton.ghost(
+                      label: 'Повторить последнюю команду',
+                      onPressed: () {
+                        _controller.text = _messages.lastWhere(
+                            (m) => m.isUser).content;
+                        unawaited(_send());
+                      },
                     ),
                   ),
                 if (_listening || _transcribing || _startingMic)

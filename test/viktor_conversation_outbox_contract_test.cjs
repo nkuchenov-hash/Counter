@@ -59,6 +59,13 @@ assert.match(dialoguePart, /part of 'viktor_chat_page\.dart';/);
 assert.ok(chatPage.split(/\r?\n/).length <= 1000,
   'Viktor UI page must remain below the architecture size threshold');
 
+assert.match(ui, /Timer\.periodic\(const Duration\(seconds: 20\)/,
+  'Pending turns should retry without waiting for another user message');
+assert.match(ui, /_stopHistoryRetry\(\)/,
+  'A completed dialogue sync must stop the retry timer');
+assert.match(ui, /_historyRetryInFlight/,
+  'Overlapping timer sync attempts must be prevented');
+
 const max = Number(append.match(/substring\(0,\s*(\d+)\)/)?.[1]);
 const footer = '\n[Сообщение обрезано при сохранении]';
 assert.ok(Number.isInteger(max) && max + footer.length <= 6000,
