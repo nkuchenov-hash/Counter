@@ -12,6 +12,7 @@ import 'package:counter/features/settings/categories/category_row_widget.dart';
 import 'package:counter/features/settings/categories/create_category_dialog.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:flutter/material.dart';
 
 export 'package:counter/features/settings/categories/category_editor_sheet.dart'
@@ -134,6 +135,42 @@ class _CategoriesPageState extends State<CategoriesPage> {
       if (_selectedId == id) _selectedId = null;
       _expanded.remove(id);
     });
+  }
+
+  Future<void> _moveCategoryWithPicker(CategoryRule rule) async {
+    final result = await showCategoryTreeSheet(context, showAllCategoriesRow: true);
+    if (!mounted || result == null) return;
+    final destination = switch (result) {
+      CategoryTreeSheetPicked(:final id) => id,
+      CategoryTreeSheetAll() => null,
+    };
+    final db = DatabaseService.instance;
+    if (destination != null &&
+        db.getRecordIdsInSubtree(rule.id).contains(destination)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(currentLocale.value, 'category_move_invalid'))),
+      );
+      return;
+    }
+    final previous = db.getParentId(rule.id);
+    if (previous == destination) return;
+    final ok = await db.updateCategoryParent(rule.id, destination);
+    if (!mounted) return;
+    if (ok) {
+      if (destination != null) setState(() => _expanded.add(destination));
+      unawaited(_notifyChanged());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(currentLocale.value, 'category_moved')),
+          action: SnackBarAction(
+            label: t(currentLocale.value, 'undo'),
+            onPressed: () => unawaited(db.updateCategoryParent(rule.id, previous)),
+          )),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
+      );
+    }
   }
 
   Future<void> _deleteCategory(CategoryRule rule) async {
