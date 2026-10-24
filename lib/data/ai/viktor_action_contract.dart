@@ -49,9 +49,26 @@ class ViktorAction {
         });
         _title(args, 'title');
         _day(args, 'wall_day');
-        _duration(args, 'duration_minutes');
-        _clock(args, 'start_time');
-        if (args.containsKey('timezone')) _text(args, 'timezone', maxLength: 64);
+        // Date-only plans are supported by the existing Planning Brain.
+        // A timed plan must provide BOTH a valid start and duration; never
+        // invent a clock or silently discard a supplied duration.
+        final timed = args.containsKey('start_time');
+        if (timed != args.containsKey('duration_minutes')) {
+          throw const FormatException(
+              'Timed plans require start_time and duration_minutes together');
+        }
+        if (timed) {
+          _duration(args, 'duration_minutes');
+          _clock(args, 'start_time');
+        }
+        if (args.containsKey('timezone')) {
+          if (!timed) throw const FormatException(
+              'Date-only plans cannot override an absent start clock');
+          _text(args, 'timezone', maxLength: 64);
+        }
+        if (!timed && args['conflict_policy'] == 'shift') {
+          throw const FormatException('Cannot shift other plans without a time');
+        }
         if (args.containsKey('conflict_policy') &&
             !const {'reject', 'shift'}.contains(args['conflict_policy'])) {
           throw const FormatException('Unknown plan conflict policy');
