@@ -208,7 +208,17 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
       return "Europe/Berlin";
     return null;
   };
-  let conversationZone = explicitZone(input);
+  const validatedZone = raw => {
+    const zoneId = String(raw || "").trim().slice(0, 64);
+    return /^(?:Africa|America|Antarctica|Arctic|Asia|Atlantic|Australia|Europe|Indian|Pacific)\/[A-Za-z0-9_+\-/]+$/.test(zoneId)
+      ? zoneId : null;
+  };
+  // The client resolves explicit user context (including Perm and arbitrary
+  // IANA zones). Legacy clients still get the old conservative parser.
+  // Do not equate the device timezone with the user's city of residence.
+  const clientZone = validatedZone(body.explicit_schedule_timezone);
+  const deviceZone = validatedZone(body.device_timezone);
+  let conversationZone = explicitZone(input) || clientZone;
   if (!conversationZone) {
     for (let i = dialogue.length - 1; i >= 0; i--) {
       if (dialogue[i].role !== "user") continue;
@@ -245,7 +255,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "Return ONLY one JSON object with keys message (short helpful answer), actions (array, max 12), and optional continue boolean.",
     "If another user-owned object list is needed to resolve a multi-step request, propose ONLY read tools and set continue:true. The app will execute the reads safely and send back tool_observations. After those observations return final write actions with continue:false.",
     "Treat dialogue as one continuing conversation. Follow-up corrections ('wrong timezone', 'later', 'shorter', 'the second option') edit the latest relevant assistant draft in conversation_history, not an unrelated new task. Return the COMPLETE revised answer with actions:[] when only changing a draft's presentation; do not request list_day_plans/get_settings again unless the user explicitly requests fresh data.",
-    "Timezones: explicit timezone in the current conversation wins over profile_timezone; otherwise use profile_timezone. Never guess a city or silently use an example timezone. Event times stated by the user are WALL CLOCK in that requested zone, not instants to convert from an invented source zone. Convert actual instants only on an explicit conversion request.",
+    "Timezones are per-user and per-event, never Moscow by default: respect an explicitly named event clock zone, then an explicit current-dialogue timezone. For physical events at a named destination use that location's LOCAL clock unless the user explicitly specifies another zone; ordinary unspecific daily plans use the user's profile/home IANA timezone. Device timezone is only a travel hint, NOT proof of residence; never geolocate by IP. If the place or timezone is genuinely ambiguous, state the assumption or ask only if essential. Do not convert user wall-clock hours from an invented source timezone.",
     "Calendar: dates and times form one coherent timeline; activities after midnight belong to the NEXT calendar day. Preserve fixed meeting times, estimate only unspecified durations/travel, show conflicts or ambiguity rather than inventing facts.",
     "When correcting a previous draft, retain EVERY original requested activity (including purchases, delivery, car drop-off, return transport, named venues, travel buffers and overnight sleep). Show every segment in chronological order and flag conflicts. No re-reading or writes without separate user approval.",
     "For a request to plan MULTIPLE new activities (e.g. Saturday itinerary), compose a clear chronological DRAFT in message with tentative times and actions:[]; never emit multiple create_plan actions. Keep ambiguity explicit, never claim it was saved. Only one independently approved new plan may use create_plan.",
@@ -317,6 +327,8 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     profile_timezone: zone,
     schedule_timezone: conversationZone || zone,
     schedule_timezone_source: conversationZone ? "user_conversation" : "profile",
+    device_timezone_hint: deviceZone,
+    home_city_verified: false,
     // The client projects UTC plan instants into this zone before presenting
     // them, even if the owner's persistent profile uses another zone.
     existing_plan_clock_timezone: savedClockZone,
@@ -424,9 +436,9 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "Supported tools:",
     ...toolSpecifications.filter(spec => usableToolNames.has(spec[0]))
       .map(spec => spec[1]),
-    "Use schedule_timezone (last explicit USER zone, else profile). A complaint about a wrong label does NOT select that label. Never convert stated wall-clock hours.",
-    "Saved day_plans hours use existing_plan_clock_timezone. If it differs from schedule_timezone, do not label those hours as requested-zone times or pretend conflicts are checked.",
-    "Follow-up revises PREVIOUS assistant draft: retain every errand, named place, travel leg, fixed meeting and overnight sleep. Full schedule; actions:[],continue:false; no rereads.",
+    "Timezone: event-place clock unless user explicitly chooses a zone; else profile/home. Device is not residence. Never default Moscow or infer via IP.",
+    "Saved plans use existing_plan_clock_timezone; compare with schedule_timezone before checking conflicts.",
+    "Follow-up revises PREVIOUS assistant draft: keep all stops, roads, meetings and sleep. Full answer; actions:[],continue:false; no rereads.",
     "After-midnight events use next calendar date. Relative dates use profile day, not wall_day.",
     "create_plan appointments; conflict_policy:shift for urgent insertions.",
     "bulk_replan handles filtered multi-day changes, kind:keep exclusions and priority. Brain validates; skip list_day_plans before bulk.",

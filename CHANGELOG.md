@@ -1,3 +1,10 @@
+## [2026-10-24] — Viktor user-context timezone rules
+
+- Replaced city-specific conversational matching with explicit IANA timezone handling and contextual Russian phrases, including Perm `Asia/Yekaterinburg`. No universal Moscow override.
+- Kept profile timezone as daily default and passed OS timezone as a separate, non-geolocating hint rather than substituting it for the user's home location. Named event location and explicit dialogue zone are distinct from account defaults.
+- Updated server prompt to forbid IP-derived residence and invented geographic timezones; validated server responses for user profile Perm despite device Moscow.
+- Added Flutter and PocketBase regression tests for explicit Perm/Moscow, non-timezone mentions of cities, and non-persistence of dialogue zone changes.
+
 ## [2026-10-23] — Viktor saved-plan clocks in requested timezone
 
 - Projected saved UTC plan instants into the dialogue's explicitly chosen IANA timezone, collecting neighboring profile days to avoid losing events near midnight. Model context distinguishes the projected plan clock from the persistent profile clock; unknown-source instants are flagged as uncertain.

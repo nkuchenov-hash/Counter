@@ -61,34 +61,83 @@ class ViktorReadAnswer {
       RegExp(r'\b\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}')
           .allMatches(message).length >= 3;
 
-  /// Only positive USER choices establish a dialogue-level clock zone.
-  /// Mentioning "New York" in a complaint is NOT choosing New York.
+  /// Clock preference for this draft; a city mentioned as a destination
+  /// does not change the user's home/profile timezone.
+  static String? explicitScheduleTimezone(String input) {
+    final q = input.toLowerCase().trim();
+    final iana = RegExp(
+      r'\b(?:africa|america|antarctica|arctic|asia|atlantic|'
+      r'australia|europe|indian|pacific)/[a-z0-9_+\-/]+',
+    ).firstMatch(q);
+    if (iana != null && (q == iana.group(0) ||
+        RegExp(r'врем|часов|timezone|time\s*zone|пояс').hasMatch(q))) {
+      return iana.group(0)!.split('/').map((part) =>
+          part.split('_').map((word) =>
+              word.isEmpty ? word
+                  : word[0].toUpperCase() + word.substring(1)).join('_')
+      ).join('/');
+    }
+
+    const aliases = <String, String>{
+      r'москв|московск|мск\b': 'Europe/Moscow',
+      r'перм|пермск|екатеринбург|екатеринбургск': 'Asia/Yekaterinburg',
+      r'новосибирск': 'Asia/Novosibirsk',
+      r'омск': 'Asia/Omsk',
+      r'красноярск': 'Asia/Krasnoyarsk',
+      r'иркутск': 'Asia/Irkutsk',
+      r'владивосток': 'Asia/Vladivostok',
+      r'самар|самарск': 'Europe/Samara',
+      r'калининград': 'Europe/Kaliningrad',
+      r'берлин|berlin': 'Europe/Berlin',
+      r'нью[- ]йорк|new york': 'America/New_York',
+    };
+    final candidates = <(int, String)>[];
+    for (final alias in aliases.entries) {
+      for (final match in RegExp(alias.key, caseSensitive: false)
+          .allMatches(q)) {
+        final before = q.substring(0, match.start);
+        final after = q.substring(match.end);
+        final recent = before.length > 36
+            ? before.substring(before.length - 36) : before;
+        final positiveBefore = RegExp(
+          r'по\s+(?:местному\s+)?(?:(?:времени|часам)\s+)?$|'
+          r'время\s+(?:по|в)\s*$|'
+          r'часовой\s+пояс\s*$',
+        ).hasMatch(recent);
+        final positiveAfter = RegExp(
+          r'^\s*[а-яa-z]*\s*(?:времени|время|часам|пояс)',
+        ).hasMatch(after);
+        final abbreviation = match.group(0) == 'мск' &&
+            !RegExp(r'^(?:почему|зачем)\b').hasMatch(q);
+        if (positiveBefore || positiveAfter || abbreviation) {
+          final negated = RegExp(
+            r'(?:^|[,;]\s*|\s)не\s+(?:надо\s+|нужно\s+)?по\s*$',
+          ).hasMatch(recent);
+          if (!negated) candidates.add((match.start, alias.value));
+        }
+      }
+    }
+    if (candidates.isEmpty) return null;
+    candidates.sort((a, b) => a.$1.compareTo(b.$1));
+    return candidates.last.$2;
+  }
+
+  /// The latest positive USER clock instruction applies to this dialogue,
+  /// not to all users or to the persistent profile.
   static String? requestedScheduleTimezone({
     required String input,
     required Iterable<Map<String, String>> history,
   }) {
-    String? parse(String text) {
-      final q = text.toLowerCase();
-      if (RegExp(r'по\s+москв|время.{0,24}москв|мск\b|europe/moscow')
-          .hasMatch(q)) return 'Europe/Moscow';
-      if (RegExp(r'по\s+нью[- ]йорк|время.{0,24}new york|america/new_york')
-          .hasMatch(q)) return 'America/New_York';
-      if (RegExp(r'по\s+берлин|время.{0,24}берлин|europe/berlin')
-          .hasMatch(q)) return 'Europe/Berlin';
-      return null;
-    }
-    final latest = parse(input);
-    if (latest != null) return latest;
+    final current = explicitScheduleTimezone(input);
+    if (current != null) return current;
     for (final turn in history.toList().reversed) {
       if (turn['role'] != 'user') continue;
-      final zone = parse(turn['content'] ?? '');
+      final zone = explicitScheduleTimezone(turn['content'] ?? '');
       if (zone != null) return zone;
     }
     return null;
   }
 
-  /// Do not accept a timetable with the wrong label as a completed answer.
-  /// This is a validation error, NOT an instruction to shift clock hours.
   static bool mismatchedScheduleTimezone({
     required String message,
     required String input,
@@ -100,14 +149,10 @@ class ViktorReadAnswer {
       r'\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}\s*\(([^)]{2,40})\)',
       caseSensitive: false,
     ).allMatches(message);
-    for (final entry in entries) {
-      final zone = (entry[1] ?? '').toLowerCase();
-      if (RegExp(r'new york|нью[- ]йорк|america/new_york')
-          .hasMatch(zone) && expected != 'America/New_York') return true;
-      if (RegExp(r'москв|мск|europe/moscow')
-          .hasMatch(zone) && expected != 'Europe/Moscow') return true;
-      if (RegExp(r'берлин|berlin|europe/berlin')
-          .hasMatch(zone) && expected != 'Europe/Berlin') return true;
+    for (final row in entries) {
+      final declared = explicitScheduleTimezone(
+          'время по ' + (row[1] ?? ''));
+      if (declared != null && declared != expected) return true;
     }
     return false;
   }

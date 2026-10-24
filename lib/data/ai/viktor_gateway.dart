@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -276,6 +277,20 @@ class ViktorResponse {
 class ViktorGateway {
   const ViktorGateway();
 
+  // Timezone from OS is a non-GPS hint, never a home-city assertion.
+  // Cache it per process to avoid repeated platform calls in a conversation.
+  static Future<String?>? _deviceTimezone;
+
+  static Future<String?> _readDeviceTimezone() async {
+    try {
+      final info = await FlutterTimezone.getLocalTimezone();
+      final id = info.identifier.trim();
+      return id.contains('/') || id == 'UTC' ? id : null;
+    } catch (_) {
+      return null; // Unsupported environments keep the profile preference.
+    }
+  }
+
   Future<ViktorResponse> propose({
     required String input,
     required DateTime wallDay,
@@ -333,6 +348,7 @@ class ViktorGateway {
     // This is read-only, scoped to this chat turn, and never changes profile.
     final requestedZone = ViktorReadAnswer.requestedScheduleTimezone(
         input: input, history: conversationHistory);
+    final deviceZone = await (_deviceTimezone ??= _readDeviceTimezone());
     final reproject = requestedZone != null &&
         requestedZone != service.settings.preferredTimeZone;
     final previousDay = DateTime(
@@ -429,6 +445,11 @@ class ViktorGateway {
             : turn['content'],
       }).toList(),
       'profile_timezone': service.settings.preferredTimeZone,
+      // Home/profile default, explicit dialogue override and OS context
+      // are separate. OS timezone is not the user's residence or GPS.
+      if (requestedZone != null)
+        'explicit_schedule_timezone': requestedZone,
+      if (deviceZone != null) 'device_timezone': deviceZone,
       'existing_plan_clock_timezone': reproject
           ? requestedZone : service.settings.preferredTimeZone,
       'saved_plan_clock_uncertain': reproject &&

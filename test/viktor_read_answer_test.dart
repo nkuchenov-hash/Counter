@@ -3,6 +3,48 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
 
+  test('Perm user keeps own default and location mention is not a zone override', () {
+    expect(ViktorReadAnswer.explicitScheduleTimezone('По пермскому времени'),
+        'Asia/Yekaterinburg');
+    expect(ViktorReadAnswer.explicitScheduleTimezone('По времени Перми'),
+        'Asia/Yekaterinburg');
+    expect(ViktorReadAnswer.explicitScheduleTimezone(
+        'Встреча в Перми, вечером'), isNull);
+    expect(ViktorReadAnswer.explicitScheduleTimezone(
+        'Я живу в Перми'), isNull);
+    expect(ViktorReadAnswer.explicitScheduleTimezone(
+        'Время по Москве'), 'Europe/Moscow');
+    expect(ViktorReadAnswer.explicitScheduleTimezone(
+        'по московскому времени'), 'Europe/Moscow');
+    expect(ViktorReadAnswer.explicitScheduleTimezone(
+        'Почему New York-то?'), isNull);
+    expect(ViktorReadAnswer.explicitScheduleTimezone(
+        'Не по Москве, а по Перми'), 'Asia/Yekaterinburg');
+    expect(ViktorReadAnswer.explicitScheduleTimezone(
+        'Не по пермскому, а по московскому времени'), 'Europe/Moscow');
+    expect(ViktorReadAnswer.explicitScheduleTimezone(
+        'Asia/Yekaterinburg'), 'Asia/Yekaterinburg');
+
+    final history = <Map<String, String>>[
+      {'role':'user','content':'Встреча в Перми'},
+      {'role':'assistant','content':'Разберём события'},
+    ];
+    expect(ViktorReadAnswer.requestedScheduleTimezone(
+        input: 'Составь ежедневное расписание', history: history), isNull,
+        reason: 'No Moscow fallback: use caller-supplied profile timezone');
+    history.add({'role':'user','content':'по времени Перми'});
+    expect(ViktorReadAnswer.requestedScheduleTimezone(
+        input:'Продолжай', history:history), 'Asia/Yekaterinburg');
+    expect(ViktorReadAnswer.mismatchedScheduleTimezone(
+      message:'10:00–10:30 (Москва, МСК) Зарядка',
+      input:'Продолжай', history:history), isTrue);
+    expect(ViktorReadAnswer.mismatchedScheduleTimezone(
+      message:'10:00–10:30 (Пермь) Зарядка',
+      input:'Продолжай', history:history), isFalse);
+  });
+
+
+
   test('Critiques about lost stops and New York remain read-only draft edits', () {
     const draft = '2026-10-24\n'
         '10:00–10:30 Зарядка\n'

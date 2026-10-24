@@ -2,6 +2,14 @@
 
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
+## Viktor contextual timezones (2026-10-24)
+
+- NEVER assume Moscow (or any city) is the default for all users. An ordinary daily schedule without an explicit location/timezone uses the user's persisted `preferredTimeZone` profile IANA zone (a user in Perm can set `Asia/Yekaterinburg`).
+- Distinguish **home/profile timezone**, **device OS timezone** (a travel hint only, not proof of residence or GPS), **per-event location/timezone**, and **the explicit clock convention of a particular dialogue/draft**. A specifically stated zone affects the appropriate event or draft without overwriting profile.
+- A place merely mentioned in dialogue is not automatically the user's residence. Do not infer home by IP; do not request precise GPS without permission. Future home-city and consent-based precise location preferences require dedicated UI/storage, not silent guessing.
+- Parse explicit user-provided IANA identifiers and common Russian-language clock phrases (including Perm) while leaving unqualified city mentions for semantic event-location reasoning. For destinations with uncertain timezone, make an explicit assumption or ask only if material.
+- Check all saved plan instants in the resolved schedule's timezone without changing the stored UTC records. Tests verify a Perm profile never receives Moscow time merely because the device uses Moscow.
+
 ## Viktor saved-plan clock projection (2026-10-23)
 
 - When the user explicitly selects a chat schedule timezone different from their profile's persistent timezone, calculate saved plan wall-clock labels from each stored `startUtcInstant` using the IANA timezone database. Fetch adjacent profile-wall days so plans crossing midnight are not omitted from the requested Moscow day. Never change stored UTC instants or account timezone.
