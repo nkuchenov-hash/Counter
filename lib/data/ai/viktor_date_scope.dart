@@ -32,8 +32,136 @@ class ViktorDateScope {
   static DateTime projectUtcInstant(DateTime instant, String ianaZone) =>
       tz.TZDateTime.from(instant.toUtc(), tz.getLocation(ianaZone));
 
+  /// Read a relative day against today's profile clock, not a visible tab.
+  static DateTime? relativeDay(String input, DateTime profileToday) {
+    final match = RegExp(
+      r'через\s+(?:(\d{1,2}|один|одну|два|две|три|четыре|пять)\s+)?'
+      r'(неделю|недели|недель|день|дня|дней)\b',
+      caseSensitive: false,
+    ).firstMatch(input);
+    if (match == null) return null;
+    final raw = match.group(1)?.toLowerCase();
+    const names = <String, int>{
+      'один': 1, 'одну': 1, 'два': 2, 'две': 2,
+      'три': 3, 'четыре': 4, 'пять': 5,
+    };
+    final n = raw == null ? 1 : int.tryParse(raw) ?? names[raw];
+    if (n == null || n < 1 || n > 12) return null;
+    final days = match.group(2)!.startsWith('недел') ? n * 7 : n;
+    return DateTime(profileToday.year, profileToday.month,
+        profileToday.day + days);
+  }
+
+  /// Strict deterministic single-plan command: no AI round trips or
+  /// arbitrary start hour. Unclear/multiple instructions use normal agent.
+  static ({DateTime day, String title})? independentDateOnlyPlan(
+      String input, DateTime profileToday) {
+    if (RegExp(r'\b\d{1,2}:\d{2}\b').hasMatch(input)) return null;
+    final match = RegExp(
+      r'^\s*(?:добавь|создай|запиши|запланируй)\s+'
+      r'(?:мне\s+)?(?:(?:новый|отдельный)\s+)?'
+      r'(?:план|задачу)\s+'
+      r'(через\s+(?:(?:\d{1,2}|один|одну|два|две|три|четыре|пять)\s+)?'
+      r'(?:неделю|недели|недель|день|дня|дней))'
+      r'(?:\s+от\s+(?:сегодняшнего\s+дня|сегодня))?'
+      r'\s+(?:чтобы\s+)?(.+?)\s*[.!?]*\s*
+    DateTime? findDate(String text) {
+      final iso = RegExp(r'20[0-9]{2}-[0-9]{2}-[0-9]{2}').firstMatch(text);
+      if (iso != null) {
+        try { return parseDay(iso.group(0)!); } catch (_) { return null; }
+      }
+      const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+          'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+      final ru = RegExp(r'([0-9]{1,2})\s+(' + months.join('|') +
+          r')\s+(20[0-9]{2})', caseSensitive: false).firstMatch(text);
+      if (ru == null) return null;
+      final date = DateTime(int.parse(ru.group(3)!),
+          months.indexOf(ru.group(2)!.toLowerCase()) + 1,
+          int.parse(ru.group(1)!));
+      if (date.year != int.parse(ru.group(3)!) ||
+          date.day != int.parse(ru.group(1)!)) return null;
+      return date;
+    }
+    final explicit = findDate(input);
+    if (explicit != null) return explicit;
+    final relative = profileToday == null ? null
+        : relativeDay(input, profileToday);
+    if (relative != null) return relative;
+    if (!revision) return displayed;
+    for (final turn in history) {
+      if (turn['role'] != 'user') continue;
+      final content = turn['content'] ?? '';
+      if (!RegExp('расплан|расписани|маршрут|суббот|itinerary|schedule',
+          caseSensitive: false).hasMatch(content)) continue;
+      final date = findDate(content);
+      if (date != null) return date;
+    }
+    return displayed;
+  }
+
+  static DateTime scheduleDay(
+      ViktorActionBatch batch, DateTime displayedDay) {
+    final dates = <String>{
+      for (final action in batch.actions)
+        if (const {'move_plan_after', 'swap_plan_positions',
+                    'update_plan_duration'}.contains(action.name) &&
+            action.arguments.containsKey('wall_day'))
+          action.arguments['wall_day'] as String,
+    };
+    if (dates.length > 1) {
+      throw StateError('Составные изменения расписания относятся к '
+          'разным дням. Выполните их отдельно.');
+    }
+    return dates.isEmpty ? displayedDay : parseDay(dates.single);
+  }
+
+  static ViktorBulkDateScope bulkDays(ViktorAction action) {
+    if (action.name != 'bulk_replan') {
+      throw ArgumentError('Expected bulk_replan');
+    }
+    final ops = action.arguments['operations'] as List;
+    final sources = <String>{};
+    final targets = <String>{};
+    for (final item in ops) {
+      final op = Map<String, Object?>.from(item as Map);
+      sources.add(op['source_day'] as String);
+      if (op['kind'] == 'move') {
+        targets.add(op['target_day'] as String);
+      }
+    }
+    if (sources.length != 1 || targets.length > 1) {
+      throw StateError('Пакет переноса охватывает несколько независимых '
+          'исходных или целевых дней. Разделите его на операции.');
+    }
+    final source = sources.single;
+    parseDay(source);
+    final target = targets.isEmpty ? null : targets.single;
+    if (target != null) parseDay(target);
+    return ViktorBulkDateScope(source, target);
+  }
+}
+
+class ViktorBulkDateScope {
+  const ViktorBulkDateScope(this.sourceDay, this.targetDay);
+  final String sourceDay;
+  final String? targetDay;
+}
+,
+      caseSensitive: false,
+      dotAll: true,
+    ).firstMatch(input);
+    if (match == null) return null;
+    final day = relativeDay(match.group(1)!, profileToday);
+    final title = match.group(2)!.trim();
+    if (day == null || title.length < 3 || title.length > 180 ||
+        RegExp(r'\b(?:и\s+ещ[её]\s+добавь|а\s+также\s+создай)\b',
+            caseSensitive: false).hasMatch(title)) return null;
+    return (day: day, title: title[0].toUpperCase() + title.substring(1));
+  }
+
   static DateTime itineraryDay(String input, DateTime displayed,
-      List<Map<String, String>> history, {bool revision = false}) {
+      List<Map<String, String>> history,
+      {bool revision = false, DateTime? profileToday}) {
     DateTime? findDate(String text) {
       final iso = RegExp(r'20[0-9]{2}-[0-9]{2}-[0-9]{2}').firstMatch(text);
       if (iso != null) {
