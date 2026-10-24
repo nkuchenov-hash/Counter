@@ -436,9 +436,9 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "Supported tools:",
     ...toolSpecifications.filter(spec => usableToolNames.has(spec[0]))
       .map(spec => spec[1]),
-    "Timezone: event-place local clock unless user explicitly specifies a zone; otherwise their profile/home zone. Device zone is ONLY a hint, not residence. Never default Moscow, infer via IP, or convert hours from an invented zone.",
-    "Saved day_plans hours use existing_plan_clock_timezone. If it differs from schedule_timezone, do not label those hours as requested-zone times or pretend conflicts are checked.",
-    "Follow-up revises PREVIOUS assistant draft: retain every errand, named place, travel leg, fixed meeting and overnight sleep. Full schedule; actions:[],continue:false; no rereads.",
+    "Timezone: event-place clock unless user explicitly chooses a zone; else profile/home. Device is not residence. Never default Moscow or infer via IP.",
+    "Saved plans use existing_plan_clock_timezone; compare with schedule_timezone before checking conflicts.",
+    "Follow-up revises PREVIOUS assistant draft: keep all stops, roads, meetings and sleep. Full answer; actions:[],continue:false; no rereads.",
     "After-midnight events use next calendar date. Relative dates use profile day, not wall_day.",
     "create_plan appointments; conflict_policy:shift for urgent insertions.",
     "bulk_replan handles filtered multi-day changes, kind:keep exclusions and priority. Brain validates; skip list_day_plans before bulk.",
