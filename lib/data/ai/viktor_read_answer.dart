@@ -61,27 +61,76 @@ class ViktorReadAnswer {
       RegExp(r'\b\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}')
           .allMatches(message).length >= 3;
 
-  /// Only positive USER choices establish a dialogue-level clock zone.
-  /// Mentioning "New York" in a complaint is NOT choosing New York.
+  /// Resolve explicit conversational TIMEZONE requests, not mentions of
+  /// travel destinations. Daily defaults come from each user's own profile.
+  /// No city has universal priority.
+  static String? explicitScheduleTimezone(String text) {
+    final value = text.toLowerCase().trim();
+    // Allow any standard IANA zone supplied directly by the user.
+    final iana = RegExp(
+      r'\b(?:africa|america|antarctica|arctic|asia|atlantic|'
+      r'australia|europe|indian|pacific)/[a-z0-9_+\-/]+',
+    ).firstMatch(value);
+    if (iana != null &&
+        (value == iana.group(0) ||
+         RegExp(r'врем|часов|timezone|time\s*zone|пояс')
+             .hasMatch(value))) {
+      final parts = iana.group(0)!.split('/');
+      return parts.map((p) => p.split('_').map((word) =>
+          word.isEmpty ? word : word[0].toUpperCase() +
+              word.substring(1)).join('_')).join('/');
+    }
+    // Convenience aliases must accompany a POSITIVE time instruction.
+    // They never infer the user's HOME city or modify profile settings.
+    const aliases = <String, String>{
+      r'москв|московск|мск\b': 'Europe/Moscow',
+      r'перм|пермск|екатеринбург|екатеринбургск': 'Asia/Yekaterinburg',
+      r'новосибирск': 'Asia/Novosibirsk',
+      r'омск': 'Asia/Omsk',
+      r'красноярск': 'Asia/Krasnoyarsk',
+      r'иркутск': 'Asia/Irkutsk',
+      r'владивосток': 'Asia/Vladivostok',
+      r'самар|самарск': 'Europe/Samara',
+      r'калининград': 'Europe/Kaliningrad',
+      r'берлин|berlin': 'Europe/Berlin',
+      r'нью[- ]йорк|new york': 'America/New_York',
+    };
+    for (final alias in aliases.entries) {
+      final namePattern = RegExp(alias.key, caseSensitive: false);
+      for (final found in namePattern.allMatches(value)) {
+        final leading = value.substring(0, found.start);
+        final trailing = value.substring(found.end);
+        final recent = leading.length > 36
+            ? leading.substring(leading.length - 36) : leading;
+        final explicitBefore = RegExp(
+          r'по\s+(?:местному\s+)?(?:(?:времени|часам)\s+)?$|'
+          r'время\s+(?:по|в)\s*$|'
+          r'часовой\s+пояс\s*$',
+        ).hasMatch(recent);
+        final explicitAfter = RegExp(
+          r'^\s*[а-яa-z]*\s*(?:времени|время|часам|пояс)',
+        ).hasMatch(trailing);
+        // Standalone Moscow abbreviation is an explicit clock label.
+        final standaloneMsk = found.group(0) == 'мск';
+        if (explicitBefore || explicitAfter || standaloneMsk) {
+          return alias.value;
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Most recent explicit USER instruction governs only the current
+  /// schedule dialogue. Otherwise caller must use the user's profile zone.
   static String? requestedScheduleTimezone({
     required String input,
     required Iterable<Map<String, String>> history,
   }) {
-    String? parse(String text) {
-      final q = text.toLowerCase();
-      if (RegExp(r'по\s+москв|время.{0,24}москв|мск\b|europe/moscow')
-          .hasMatch(q)) return 'Europe/Moscow';
-      if (RegExp(r'по\s+нью[- ]йорк|время.{0,24}new york|america/new_york')
-          .hasMatch(q)) return 'America/New_York';
-      if (RegExp(r'по\s+берлин|время.{0,24}берлин|europe/berlin')
-          .hasMatch(q)) return 'Europe/Berlin';
-      return null;
-    }
-    final latest = parse(input);
-    if (latest != null) return latest;
+    final current = explicitScheduleTimezone(input);
+    if (current != null) return current;
     for (final turn in history.toList().reversed) {
       if (turn['role'] != 'user') continue;
-      final zone = parse(turn['content'] ?? '');
+      final zone = explicitScheduleTimezone(turn['content'] ?? '');
       if (zone != null) return zone;
     }
     return null;
