@@ -104,23 +104,8 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       final executor = ViktorExecutor(db);
       final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
       if (independentPlan != null) {
-        // No YandexGPT call, no obsolete itinerary context, no arbitrary time.
-        // Still enforce the same typed Brain preview, idempotency and write.
-        final batch = ViktorActionBatch.fromJson({
-          'version': 1,
-          'request_id': requestId,
-          'actions': [{
-            'name': 'create_plan',
-            'arguments': {
-              'title': independentPlan.title,
-              'wall_day': ViktorDateScope.key(independentPlan.day),
-            },
-          }],
-        });
-        final preview = await executor.describe(batch, independentPlan.day);
-        final result = await executor.apply(batch, independentPlan.day,
-            approvedPreview: preview);
-        if (mounted) _push(result);
+        await _createIndependentDateOnlyPlan(
+            independentPlan, executor, requestId);
         return;
       }
       final plans = await db.getPlanningTasksForWallDate(intentDay);
