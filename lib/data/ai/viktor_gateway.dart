@@ -349,6 +349,19 @@ class ViktorGateway {
     final requestedZone = ViktorReadAnswer.requestedScheduleTimezone(
         input: input, history: conversationHistory);
     final deviceZone = await (_deviceTimezone ??= _readDeviceTimezone());
+    // Snapshot the current real instant for each model request. Project it
+    // separately into the saved profile zone and any explicitly requested
+    // itinerary zone; the selected calendar tab is not "now".
+    final nowUtc = DatabaseService.getPlanetaryNow();
+    String wallClock(String timezone) {
+      final wall = ViktorDateScope.projectUtcInstant(nowUtc, timezone);
+      return '${ViktorDateScope.key(wall)} '
+          '${wall.hour.toString().padLeft(2, '0')}:'
+          '${wall.minute.toString().padLeft(2, '0')}';
+    }
+    final profileClock = wallClock(service.settings.preferredTimeZone);
+    final scheduleClock = requestedZone == null
+        ? profileClock : wallClock(requestedZone);
     final reproject = requestedZone != null &&
         requestedZone != service.settings.preferredTimeZone;
     final previousDay = DateTime(
@@ -444,6 +457,9 @@ class ViktorGateway {
                     ? 6000 : turn['role'] == 'user' ? 3000 : 1200)
             : turn['content'],
       }).toList(),
+      'current_instant_utc': nowUtc.toIso8601String(),
+      'current_profile_datetime': profileClock,
+      'current_schedule_datetime': scheduleClock,
       'profile_timezone': service.settings.preferredTimeZone,
       // Home/profile default, explicit dialogue override and OS context
       // are separate. OS timezone is not the user's residence or GPS.
