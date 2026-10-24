@@ -150,13 +150,11 @@ class ViktorReadAnswer {
       caseSensitive: false,
     ).allMatches(message);
     for (final entry in entries) {
-      final zone = (entry[1] ?? '').toLowerCase();
-      if (RegExp(r'new york|нью[- ]йорк|america/new_york')
-          .hasMatch(zone) && expected != 'America/New_York') return true;
-      if (RegExp(r'москв|мск|europe/moscow')
-          .hasMatch(zone) && expected != 'Europe/Moscow') return true;
-      if (RegExp(r'берлин|berlin|europe/berlin')
-          .hasMatch(zone) && expected != 'Europe/Berlin') return true;
+      // Resolve any recognized explicit zone LABEL through the same
+      // parser as the conversation, rather than special-case Moscow/NY.
+      final label = entry[1] ?? '';
+      final declared = explicitScheduleTimezone('время по $label');
+      if (declared != null && declared != expected) return true;
     }
     return false;
   }
