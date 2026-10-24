@@ -73,7 +73,13 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     final input = _resolveRepeatCommand(_controller.text.trim());
     if (input.isEmpty) return;
     if (!_settingsReady) return;
-    if (_settings.mode == 'byok' && !_settings.modelConnected) {
+    final db = DatabaseService.instance;
+    final profileToday = db.getProjectedToday();
+    final independentPlan = ViktorDateScope.independentDateOnlyPlan(
+        input, profileToday);
+    // Local deterministic commands do not need an AI provider connection.
+    if (independentPlan == null &&
+        _settings.mode == 'byok' && !_settings.modelConnected) {
       await _openSettings();
       if (!mounted || !_settings.modelConnected) return;
     }
@@ -85,7 +91,8 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     final revisionOfDraft = ViktorReadAnswer.isDraftRevision(
         input: input, history: dialogContext);
     final intentDay = ViktorDateScope.itineraryDay(
-        input, widget.wallDay, dialogContext, revision: revisionOfDraft);
+        input, widget.wallDay, dialogContext,
+        revision: revisionOfDraft, profileToday: profileToday);
     _push(input, mine: true);
     if (ViktorReadAnswer.isExplicitCancellation(input)) {
       _push('Команда отменена. Изменения не выполнялись.');
@@ -94,14 +101,33 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     if (_showCorrectedScheduleDraft(input)) return;
     setState(() => _busy = true);
     try {
-      final db = DatabaseService.instance;
+      final executor = ViktorExecutor(db);
+      final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
+      if (independentPlan != null) {
+        // No YandexGPT call, no obsolete itinerary context, no arbitrary time.
+        // Still enforce the same typed Brain preview, idempotency and write.
+        final batch = ViktorActionBatch.fromJson({
+          'version': 1,
+          'request_id': requestId,
+          'actions': [{
+            'name': 'create_plan',
+            'arguments': {
+              'title': independentPlan.title,
+              'wall_day': ViktorDateScope.key(independentPlan.day),
+            },
+          }],
+        });
+        final preview = await executor.describe(batch, independentPlan.day);
+        final result = await executor.apply(batch, independentPlan.day,
+            approvedPreview: preview);
+        if (mounted) _push(result);
+        return;
+      }
       final plans = await db.getPlanningTasksForWallDate(intentDay);
       final lastTwoIds = ViktorSchedulePlanner.resolveLastTwoSwap(input, plans);
-      final executor = ViktorExecutor(db);
       final toolObservations = <String>[];
       final seenReads = <String>{};
       String? latestReadAnswer;
-      final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
       var response = await _gateway.propose(
         input: input,
         wallDay: intentDay,
