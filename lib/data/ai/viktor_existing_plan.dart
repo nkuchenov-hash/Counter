@@ -30,7 +30,27 @@ class ViktorExistingPlan {
     return null;
   }
 
+  /// Date-only idempotency: match same normalized title on the requested
+  /// day, but never confuse it with a separately timed appointment.
+  static PlanningTask? findDateOnly({
+    required String title,
+    required String wallDay,
+    required Iterable<PlanningTask> plans,
+  }) {
+    final target = normalize(title);
+    if (target.isEmpty) return null;
+    for (final plan in plans) {
+      if (plan.dateKey != wallDay || plan.endDateTime != null) continue;
+      if (normalize(plan.title) == target) return plan;
+    }
+    return null;
+  }
+
   static String describe(PlanningTask plan) {
+    if (plan.endDateTime == null) {
+      return 'План «${plan.title}» уже существует на ${plan.dateKey} '
+          'без назначенного времени. Повторное создание не требуется.';
+    }
     final start = plan.startTime!;
     String clock(DateTime d) =>
         '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';

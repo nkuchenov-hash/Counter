@@ -32,8 +32,56 @@ class ViktorDateScope {
   static DateTime projectUtcInstant(DateTime instant, String ianaZone) =>
       tz.TZDateTime.from(instant.toUtc(), tz.getLocation(ianaZone));
 
+
+  /// Relative dates use the profile's current date, never the opened tab.
+  static DateTime? relativeDay(String input, DateTime profileToday) {
+    final m = RegExp(
+      r'через\s+(?:(\d{1,2}|один|одну|два|две|три|четыре|пять)\s+)?'
+      r'(неделю|недели|недель|день|дня|дней)(?=\s|$|[.,!?])',
+      caseSensitive: false,
+    ).firstMatch(input);
+    if (m == null) return null;
+    const names = <String, int>{
+      'один': 1, 'одну': 1, 'два': 2, 'две': 2,
+      'три': 3, 'четыре': 4, 'пять': 5,
+    };
+    final word = m.group(1)?.toLowerCase();
+    final count = word == null ? 1 : int.tryParse(word) ?? names[word];
+    if (count == null || count < 1 || count > 12) return null;
+    final days = m.group(2)!.startsWith('недел') ? count * 7 : count;
+    return DateTime(profileToday.year, profileToday.month,
+        profileToday.day + days);
+  }
+
+  /// A simple standalone untimed plan bypasses model round trips but still
+  /// goes through Viktor's typed Brain-backed executor.
+  static ({DateTime day, String title})? independentDateOnlyPlan(
+      String input, DateTime profileToday) {
+    final normalized = input.trim();
+    if (RegExp(r'\b\d{1,2}:\d{2}\b').hasMatch(normalized)) return null;
+    final m = RegExp(
+      r'^(?:добавь|создай|запиши|запланируй)\s+'
+      r'(?:мне\s+)?(?:(?:новый|отдельный)\s+)?'
+      r'(?:план|задачу)\s+'
+      r'(через\s+(?:(?:\d{1,2}|один|одну|два|две|три|четыре|пять)\s+)?'
+      r'(?:неделю|недели|недель|день|дня|дней))'
+      r'(?:\s+от\s+(?:сегодняшнего\s+дня|сегодня))?'
+      r'\s+(.+)',
+      caseSensitive: false,
+      dotAll: true,
+    ).firstMatch(normalized);
+    if (m == null || m.end != normalized.length) return null;
+    final day = relativeDay(m.group(1)!, profileToday);
+    final title = m.group(2)!.trim();
+    if (day == null || title.length < 3 || title.length > 160 ||
+        RegExp(r'\b(?:и\s+ещ[её]\s+добавь|а\s+также\s+создай)\b',
+          caseSensitive: false).hasMatch(title)) return null;
+    return (day: day, title: title[0].toUpperCase() + title.substring(1));
+  }
+
   static DateTime itineraryDay(String input, DateTime displayed,
-      List<Map<String, String>> history, {bool revision = false}) {
+      List<Map<String, String>> history,
+      {bool revision = false, DateTime? profileToday}) {
     DateTime? findDate(String text) {
       final iso = RegExp(r'20[0-9]{2}-[0-9]{2}-[0-9]{2}').firstMatch(text);
       if (iso != null) {
@@ -53,6 +101,9 @@ class ViktorDateScope {
     }
     final explicit = findDate(input);
     if (explicit != null) return explicit;
+    final relative = profileToday == null ? null
+        : relativeDay(input, profileToday);
+    if (relative != null) return relative;
     if (!revision) return displayed;
     for (final turn in history) {
       if (turn['role'] != 'user') continue;

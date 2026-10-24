@@ -260,4 +260,20 @@ void main() {
     expect(ViktorReadAnswer.format('Покажи планы на пятницу',
       'На 2026-10-23 планов нет.'), 'На 2026-10-23 планов нет.');
   });
+  test('New plan after itinerary draft is not a draft revision', () {
+    final earlier = <Map<String, String>>[
+      {'role': 'assistant', 'content': '2026-10-24\n'
+        '11:30–12:30 ЗАГС\n17:00–18:00 Тыквы\n18:00–20:00 RCC'},
+    ];
+    expect(ViktorReadAnswer.isDraftRevision(
+      input: 'добавь план через две недели от сегодняшнего дня сходить '
+          'в альфа банк отделение узнать статус нового заявления',
+      history: earlier,
+    ), isFalse);
+    expect(ViktorReadAnswer.isDraftRevision(
+      input: 'Добавь в этот черновик остановку на Сенной',
+      history: earlier,
+    ), isTrue);
+  });
+
 }

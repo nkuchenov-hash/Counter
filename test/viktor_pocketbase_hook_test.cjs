@@ -113,10 +113,13 @@ const contextual = invoke({...base, text: 'Выбираю второй вари�
   ],
 });
 assert.equal(contextual.status, 200);
-const context = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
-assert.equal(context.conversation_history.length, 2);
-assert.equal(context.conversation_history[1].content,
+const context = JSON.parse(JSON.parse(lastRequest.body).messages.at(-1).content);
+const contextualTurns = JSON.parse(lastRequest.body).messages.slice(1, -1);
+assert.deepEqual(contextualTurns.map(x => x.role), ['user', 'assistant']);
+assert.equal(contextualTurns[1].content,
   '1. Музеи; 2. Прогулка; 3. Кино');
+assert.equal(context.conversation_history, undefined,
+  'Dialogue must not be duplicated in the final app-context JSON');
 assert.equal(context.user_request, 'Выбираю второй вариант');
 assert.equal(JSON.parse(lastRequest.body).messages[0].role, 'system');
 
@@ -159,10 +162,10 @@ const timezoneCorrection = invoke({...base, provider: 'yandex',
 });
 assert.equal(timezoneCorrection.status, 200);
 const followupContext = JSON.parse(
-  JSON.parse(lastRequest.body).messages[1].content);
+  JSON.parse(lastRequest.body).messages.at(-1).content);
 assert.equal(followupContext.user_request, 'нужны время по Москве');
 assert.equal(followupContext.profile_timezone, 'America/New_York');
-assert.equal(followupContext.conversation_history[1].content,
+assert.equal(JSON.parse(lastRequest.body).messages.at(-2).content,
   '2026-10-24 20:00 New York RCC');
 
 
@@ -178,7 +181,7 @@ const stickyZone = invoke({...base,
   ],
 });
 assert.equal(stickyZone.status, 200);
-const stickyContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
+const stickyContext = JSON.parse(JSON.parse(lastRequest.body).messages.at(-1).content);
 assert.equal(stickyContext.schedule_timezone, 'Europe/Moscow');
 assert.equal(stickyContext.schedule_timezone_source, 'user_conversation');
 assert.equal(stickyContext.profile_timezone, 'America/New_York',
@@ -193,7 +196,7 @@ const permDaily = invoke({...base,
   device_timezone:'Europe/Moscow',
 });
 assert.equal(permDaily.status, 200);
-const permContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
+const permContext = JSON.parse(JSON.parse(lastRequest.body).messages.at(-1).content);
 assert.equal(permContext.schedule_timezone, 'Asia/Yekaterinburg',
   'A Perm user must not receive Moscow time by default');
 assert.equal(permContext.schedule_timezone_source, 'profile');
@@ -208,7 +211,7 @@ const permExplicit = invoke({...base,
   explicit_schedule_timezone:'Asia/Yekaterinburg',
 });
 assert.equal(permExplicit.status, 200);
-const explicitContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
+const explicitContext = JSON.parse(JSON.parse(lastRequest.body).messages.at(-1).content);
 assert.equal(explicitContext.schedule_timezone, 'Asia/Yekaterinburg');
 assert.equal(explicitContext.schedule_timezone_source, 'user_conversation');
 assert.equal(explicitContext.profile_timezone, 'Europe/Moscow',
@@ -225,7 +228,7 @@ const projectedSaved = invoke({...base,
     start_time:'20:00',duration_minutes:60,is_done:false}],
 });
 assert.equal(projectedSaved.status, 200);
-const projectedContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
+const projectedContext = JSON.parse(JSON.parse(lastRequest.body).messages.at(-1).content);
 assert.equal(projectedContext.schedule_timezone, 'Europe/Moscow');
 assert.equal(projectedContext.existing_plan_clock_timezone, 'Europe/Moscow');
 assert.equal(projectedContext.day_plans[0].start_time, '20:00',
@@ -250,8 +253,8 @@ const longReply = invoke({...base,
 assert.equal(longReply.status, 200);
 assert.equal(longReply.value.message, longDraft,
   'Detailed timetables must not be truncated at the old 1000-char limit');
-const longContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
-assert.ok(longContext.conversation_history[0].content.length > 1200,
+const longContext = JSON.parse(JSON.parse(lastRequest.body).messages.at(-1).content);
+assert.ok(JSON.parse(lastRequest.body).messages.at(-2).content.length > 1200,
   'Original multi-event request should reach the model beyond 1200 chars');
 
 assert.equal(lastRequest.url,
@@ -291,7 +294,7 @@ const selected = invoke({...base,
   }],
 });
 assert.equal(selected.status, 200);
-const modelContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
+const modelContext = JSON.parse(JSON.parse(lastRequest.body).messages.at(-1).content);
 assert.deepEqual(modelContext.selected_plan_ids, ['aaaaabbbbbccccc']);
 
 
@@ -312,7 +315,7 @@ const feedback = invoke({...base,
   proposal_feedback: 'Action 1: Tool create_plan: Unexpected field category_name. Allowed fields: title, wall_day, start_time, duration_minutes',
 });
 assert.equal(feedback.status, 200);
-const feedbackContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
+const feedbackContext = JSON.parse(JSON.parse(lastRequest.body).messages.at(-1).content);
 assert.match(feedbackContext.if_previous_proposal_rejected,
   /Tool create_plan.*category_name/,
   'Repair model must see the specific rejected field rather than a generic error');
@@ -330,7 +333,7 @@ const bulk = invoke({...base,
   }],
 });
 assert.equal(bulk.status, 200);
-const bulkContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
+const bulkContext = JSON.parse(JSON.parse(lastRequest.body).messages.at(-1).content);
 assert.equal(bulkContext.day_plans[0].is_done, true,
   'Completion status must be supplied to the model');
 assert.equal(bulkContext.next_day_plans[0].start_time, '10:00',

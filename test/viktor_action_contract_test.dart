@@ -496,4 +496,27 @@ void main() {
       );
     });
   });
+    test('Allows date-only plan and forbids partial time guesses', () {
+      final untimed = ViktorActionBatch.fromJson(batch([
+        action('create_plan', {
+          'title': 'Сходить в Альфа-Банк и узнать статус заявления',
+          'wall_day': '2026-11-07',
+        }),
+      ]));
+      expect(untimed.isSingleReversibleWrite, isTrue);
+      expect(untimed.actions.single.arguments.containsKey('start_time'), isFalse);
+      for (final invalid in [
+        {'start_time': '10:00'},
+        {'duration_minutes': 60},
+        {'conflict_policy': 'shift'},
+        {'timezone': 'Europe/Moscow'},
+      ]) {
+        expect(() => ViktorAction.fromJson(action('create_plan', {
+          'title': 'Visit bank',
+          'wall_day': '2026-11-07',
+          ...invalid,
+        })), throwsFormatException);
+      }
+    });
+
 }

@@ -97,4 +97,23 @@ void main() {
         'speech_unstructured_error (HTTP 400, stage submit)')),
       contains('HTTP 400'));
   });
+  test('Date-only bank plan blocks exact duplicate but not timed task', () {
+    final dateOnly = PlanningTask(
+      id: 0, pocketRecordId: 'aaaaabbbbbccccc', title: 'Посетить Альфа-Банк',
+      categoryId: 1, dateKey: '2026-11-07',
+    );
+    final timed = task('dddddeeeeefffff',
+        'Посетить Альфа-Банк', DateTime(2026, 11, 7, 12));
+    expect(ViktorExistingPlan.findDateOnly(
+      title: 'Посетить Альфа-Банк', wallDay: '2026-11-07',
+      plans: [dateOnly, timed],
+    )?.pocketRecordId, dateOnly.pocketRecordId);
+    expect(ViktorExistingPlan.findDateOnly(
+      title: 'Посетить Альфа-Банк', wallDay: '2026-11-08',
+      plans: [dateOnly, timed],
+    ), isNull);
+    expect(ViktorExistingPlan.describe(dateOnly),
+        contains('без назначенного времени'));
+  });
+
 }

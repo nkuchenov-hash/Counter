@@ -1,5 +1,14 @@
 # UX Contract
 
+## Viktor standalone plan creation and dialogue (2026-10-24)
+
+- Independent create commands do not inherit old unsaved itinerary drafts just because the user says 'добавь'. Only an explicit revision of that draft is treated as such.
+- Relative days are anchored to the profile's current wall date; do not use the open calendar tab. Two weeks after October 24, 2026 means November 7, 2026.
+- A date-only plan is valid without guessed time or duration. Timed plans still require both start and duration. Simple unambiguous commands can go straight to validated Brain tools, without provider retry loops.
+- Real clock projections and chronological dialogue turns are passed to the model; a successful save is reported only after Brain acceptance and sync status.
+- No PocketBase schema change; optimistic UI, owner isolation, collision rules and existing write safeguards remain mandatory.
+
+
 This document defines how Life OS behaves when people interact with it. It is the behavioral source of truth that sits beside `ARCHITECTURE.md`; app code and feature screens must follow it before adding new UI patterns.
 
 ## Viktor contextual timezones (2026-10-24)
