@@ -1,3 +1,11 @@
+## [2026-10-24] — Viktor independent date-only creation
+
+- Fixed a standalone 'add plan' request after an old itinerary being misrouted into draft revision and repeated time-zone checks.
+- Relative days are resolved from profile today, never the selected tab or a previous draft. October 24 plus two weeks means November 7.
+- Date-only plan actions omit start and duration; a simple independent request bypasses YandexGPT and uses typed Brain-backed validation, duplicate checks and receipts.
+- Provider context now includes a live clock and actual user/assistant dialogue roles, retaining separate app state.
+- Added regression tests for these cases. Flutter and Android CI are required before production acceptance.
+
 ## [2026-10-24] — Viktor user-context timezone rules
 
 - Replaced city-specific conversational matching with explicit IANA timezone handling and contextual Russian phrases, including Perm `Asia/Yekaterinburg`. No universal Moscow override.
