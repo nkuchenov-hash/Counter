@@ -19,6 +19,10 @@ void main() {
     expect(ViktorReadAnswer.explicitScheduleTimezone(
         'Почему New York-то?'), isNull);
     expect(ViktorReadAnswer.explicitScheduleTimezone(
+        'Не по Москве, а по Перми'), 'Asia/Yekaterinburg');
+    expect(ViktorReadAnswer.explicitScheduleTimezone(
+        'Не по пермскому, а по московскому времени'), 'Europe/Moscow');
+    expect(ViktorReadAnswer.explicitScheduleTimezone(
         'Asia/Yekaterinburg'), 'Asia/Yekaterinburg');
 
     final history = <Map<String, String>>[
