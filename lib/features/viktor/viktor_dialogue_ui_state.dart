@@ -51,8 +51,7 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     final isSchedule = draftRevision || RegExp(
           r'распланир|расписани|черновик|составь\s+план|itinerary|schedule',
           caseSensitive: false,
-        ).hasMatch(input) ||
-        ViktorReadAnswer.lastTimedDraft(history) != null;
+        ).hasMatch(input);
     final unsafeDraftWrite = draftRevision && response.actions != null;
     final incompleteDraft = draftRevision &&
         (response.needsMoreContext ||
