@@ -170,7 +170,7 @@ class ViktorReadAnswer {
     // last multi-event draft merely because it contains "добавь".
     if (RegExp(
       r'^(?:добавь|создай|запиши|запланируй)\s+(?:мне\s+)?'
-      r'(?:(?:новый|отдельный)\s+)?(?:план|задачу|напоминание)\b',
+      r'(?:(?:новый|отдельный)\s+)?(?:план|задачу|напоминание)(?=\s|$|[.,!?])',
       caseSensitive: false,
     ).hasMatch(q)) return false;
     if (RegExp(r'(?:подтверждаю|сохрани|запиши\s+в|применяй|'
