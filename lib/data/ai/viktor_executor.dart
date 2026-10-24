@@ -36,6 +36,16 @@ class ViktorExecutor {
   );
 
   Future<PlanningTask?> _existingPlan(ViktorAction action) async {
+    if (!action.arguments.containsKey('start_time')) {
+      final dayKey = action.arguments['wall_day'] as String;
+      final plans = await db.getPlanningTasksForWallDate(
+          ViktorDateScope.parseDay(dayKey));
+      return ViktorExistingPlan.findDateOnly(
+        title: action.arguments['title'] as String,
+        wallDay: dayKey,
+        plans: plans,
+      );
+    }
     final start = _planStart(action);
     final plans = await db.getPlanningTasksForWallDate(start);
     return ViktorExistingPlan.find(
@@ -76,14 +86,15 @@ class ViktorExecutor {
   }
 
   Future<({bool accepted, bool pendingSync, String clientPlanId})>
-      _createPlan(ViktorAction action, DateTime start) {
+      _createPlan(ViktorAction action, DateTime? start) {
     final category = _planCategory(action);
     return db.addPlanningTaskWithReceipt(PlanningTask(
       id: 0, title: action.arguments['title'] as String,
       categoryId: category.id,
-      dateKey: ViktorDateScope.key(start),
+      dateKey: start == null ? action.arguments['wall_day'] as String
+          : ViktorDateScope.key(start),
       startTime: start,
-      endDateTime: start.add(Duration(
+      endDateTime: start == null ? null : start.add(Duration(
           minutes: action.arguments['duration_minutes'] as int)),
     ));
   }
@@ -276,9 +287,19 @@ class ViktorExecutor {
             lines.add('$requestedDay $clock  ${p.title}');
           }
         case 'create_plan':
+          final existing = await _existingPlan(action);
+          if (!a.containsKey('start_time')) {
+            if (existing != null) {
+              lines.add(ViktorExistingPlan.describe(existing));
+            } else {
+              lines.add('Добавить план «${a['title']}» на ${a['wall_day']} '
+                  'без назначенного часа. '
+                  'Категория: ${_planCategoryLabel(action)}.');
+            }
+            continue;
+          }
           final start = _planStart(action);
           final end = start.add(Duration(minutes: a['duration_minutes'] as int));
-          final existing = await _existingPlan(action);
           if (existing != null) {
             lines.add(ViktorExistingPlan.describe(existing));
             continue;
@@ -490,7 +511,8 @@ class ViktorExecutor {
             receipts.add(ViktorExistingPlan.describe(existing));
             continue;
           }
-          final created = await _createPlan(action, _planStart(action));
+          final created = await _createPlan(action,
+              a.containsKey('start_time') ? _planStart(action) : null);
           if (!created.accepted) {
             throw StateError('Не удалось добавить план.');
           }
