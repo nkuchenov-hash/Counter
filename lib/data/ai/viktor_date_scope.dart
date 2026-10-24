@@ -37,7 +37,7 @@ class ViktorDateScope {
   static DateTime? relativeDay(String input, DateTime profileToday) {
     final m = RegExp(
       r'через\s+(?:(\d{1,2}|один|одну|два|две|три|четыре|пять)\s+)?'
-      r'(неделю|недели|недель|день|дня|дней)\b',
+      r'(неделю|недели|недель|день|дня|дней)(?=\s|$|[.,!?])',
       caseSensitive: false,
     ).firstMatch(input);
     if (m == null) return null;
