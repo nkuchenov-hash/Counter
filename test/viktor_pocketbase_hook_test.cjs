@@ -147,7 +147,7 @@ assert.match(compactYandexInstructions, /PREVIOUS assistant draft/);
 assert.match(compactYandexInstructions, /next calendar date/);
 assert.doesNotMatch(compactYandexInstructions, /New York/,
   'The agent prompt must not bias local schedules toward an example city');
-assert.match(source, /Timezones: explicit timezone/,
+assert.match(source, /Timezones are per-user and per-event/,
   'All other providers need the same timezone precedence contract');
 const timezoneCorrection = invoke({...base, provider: 'yandex',
   model: 'yandexgpt/rc', yandex_folder_id: 'b1g9testfolder11',
@@ -184,6 +184,36 @@ assert.equal(stickyContext.schedule_timezone_source, 'user_conversation');
 assert.equal(stickyContext.profile_timezone, 'America/New_York',
   'Explicit chat zone must not silently alter profile');
 assert.equal(stickyContext.existing_plan_clock_timezone, 'America/New_York');
+
+const permDaily = invoke({...base,
+  provider:'yandex', model:'yandexgpt/rc',
+  yandex_folder_id:'b1g9testfolder11',
+  text:'Распланируй обычный день',
+  profile_timezone:'Asia/Yekaterinburg',
+  device_timezone:'Europe/Moscow',
+});
+assert.equal(permDaily.status, 200);
+const permContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
+assert.equal(permContext.schedule_timezone, 'Asia/Yekaterinburg',
+  'A Perm user must not receive Moscow time by default');
+assert.equal(permContext.schedule_timezone_source, 'profile');
+assert.equal(permContext.device_timezone_hint, 'Europe/Moscow');
+assert.equal(permContext.home_city_verified, false);
+
+const permExplicit = invoke({...base,
+  provider:'yandex', model:'yandexgpt/rc',
+  yandex_folder_id:'b1g9testfolder11',
+  text:'Время по Перми, распиши субботу',
+  profile_timezone:'Europe/Moscow',
+  explicit_schedule_timezone:'Asia/Yekaterinburg',
+});
+assert.equal(permExplicit.status, 200);
+const explicitContext = JSON.parse(JSON.parse(lastRequest.body).messages[1].content);
+assert.equal(explicitContext.schedule_timezone, 'Asia/Yekaterinburg');
+assert.equal(explicitContext.schedule_timezone_source, 'user_conversation');
+assert.equal(explicitContext.profile_timezone, 'Europe/Moscow',
+  'Per-event preference never changes account profile');
+
 
 const projectedSaved = invoke({...base,
   provider:'yandex', model:'yandexgpt/rc',
