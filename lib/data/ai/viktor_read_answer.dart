@@ -166,6 +166,13 @@ class ViktorReadAnswer {
   }) {
     if (lastTimedDraft(history) == null) return false;
     final q = input.toLowerCase().trim();
+    // Creation of a standalone plan cannot be interpreted as editing the
+    // last multi-event draft merely because it contains "добавь".
+    if (RegExp(
+      r'^(?:добавь|создай|запиши|запланируй)\s+(?:мне\s+)?'
+      r'(?:(?:новый|отдельный)\s+)?(?:план|задачу|напоминание)\b',
+      caseSensitive: false,
+    ).hasMatch(q)) return false;
     if (RegExp(r'(?:подтверждаю|сохрани|запиши\s+в|применяй|'
         r'выполни\s+изменения|confirm|apply|save\b)').hasMatch(q)) {
       return false;
@@ -174,7 +181,7 @@ class ViktorReadAnswer {
       r'скоррект|подкоррект|передела|поменя|сдвин|пересостав|'
       r'встан|просну|подъ[её]м|вместо\s+\d|начн[её]м|'
       r'перенеси.*(?:время|начало)|почему|не\s+учт|пропуст|забыл|'
-      r'где\s+.+|не\s+продуман|обнови\s+план|добав|'
+      r'где\s+.+|не\s+продуман|обнови\s+план|добавь\s+(?:в\s+(?:(?:этот|наш)\s+)?(?:план|черновик|расписание)|ещ[её])|'
       r'revise|adjust|draft|later|earlier|wake',
       caseSensitive: false,
     ).hasMatch(q);
