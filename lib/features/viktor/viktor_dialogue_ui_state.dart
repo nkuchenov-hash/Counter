@@ -8,6 +8,28 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
   Future<void> _send();
   ViktorGateway get _gateway;
 
+
+  /// One validated, idempotent Brain write. No provider call or draft repair.
+  Future<void> _createIndependentDateOnlyPlan(
+      ({DateTime day, String title}) plan,
+      ViktorExecutor executor, String requestId) async {
+    final batch = ViktorActionBatch.fromJson({
+      'version': 1,
+      'request_id': requestId,
+      'actions': [{
+        'name': 'create_plan',
+        'arguments': {
+          'title': plan.title,
+          'wall_day': ViktorDateScope.key(plan.day),
+        },
+      }],
+    });
+    final preview = await executor.describe(batch, plan.day);
+    final receipt = await executor.apply(
+        batch, plan.day, approvedPreview: preview);
+    if (mounted) _push(receipt);
+  }
+
   /// A correction of an UNSAVED wall-clock draft needs no new model turn.
   bool _showCorrectedScheduleDraft(String input) {
     final draft = ViktorReadAnswer.correctMislabeledMoscowDraft(
