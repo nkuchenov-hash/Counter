@@ -60,4 +60,32 @@ void main() {
         'Покажи категории', DateTime(2026, 10, 23), history);
     expect(ViktorDateScope.key(day), '2026-10-23');
   });
+  test('Two weeks from profile today creates a standalone 7 November plan', () {
+    final today = DateTime(2026, 10, 24);
+    const command = 'добавь план через две недели от сегодняшнего дня '
+        'сходить в альфа банк отделение узнать статус нового заявления';
+    final parsed = ViktorDateScope.independentDateOnlyPlan(command, today);
+    expect(parsed, isNotNull);
+    expect(ViktorDateScope.key(parsed!.day), '2026-11-07');
+    expect(parsed.title, 'Сходить в альфа банк отделение узнать статус нового заявления');
+    final resolved = ViktorDateScope.itineraryDay(
+      command, DateTime(2026, 10, 24), history,
+      profileToday: today,
+    );
+    expect(ViktorDateScope.key(resolved), '2026-11-07');
+  });
+
+  test('Independent plans do not inherit a stale draft date or guess time', () {
+    final today = DateTime(2026, 10, 24);
+    expect(ViktorDateScope.independentDateOnlyPlan(
+        'добавь план через 2 недели посетить банк', today)?.title,
+        'Посетить банк');
+    expect(ViktorDateScope.independentDateOnlyPlan(
+        'добавь план через две недели в 14:30 посетить банк', today), isNull);
+    expect(ViktorDateScope.independentDateOnlyPlan(
+        'добавь в наш черновик поход в банк', today), isNull);
+    expect(ViktorDateScope.key(ViktorDateScope.relativeDay(
+        'через три дня', today)!), '2026-10-27');
+  });
+
 }
