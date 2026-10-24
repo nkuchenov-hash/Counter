@@ -75,24 +75,18 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     if (!_settingsReady) return;
     final db = DatabaseService.instance;
     final profileToday = db.getProjectedToday();
-    final independentPlan = ViktorDateScope.independentDateOnlyPlan(
-        input, profileToday);
-    // Local deterministic commands do not need an AI provider connection.
-    if (independentPlan == null &&
-        _settings.mode == 'byok' && !_settings.modelConnected) {
+    final independentPlan = ViktorDateScope.independentDateOnlyPlan(input, profileToday);
+    if (independentPlan == null && _settings.mode == 'byok' && !_settings.modelConnected) {
       await _openSettings();
       if (!mounted || !_settings.modelConnected) return;
     }
     if (_listening || _transcribing || _startingMic) return;
     if (!mounted) return;
     _controller.clear();
-    final dialogContext = ViktorDialogueTurn.modelContext(
-        _messages.skip(1));
-    final revisionOfDraft = ViktorReadAnswer.isDraftRevision(
-        input: input, history: dialogContext);
-    final intentDay = ViktorDateScope.itineraryDay(
-        input, widget.wallDay, dialogContext,
-        revision: revisionOfDraft, profileToday: profileToday);
+    final dialogContext = ViktorDialogueTurn.modelContext(_messages.skip(1));
+    final revisionOfDraft = ViktorReadAnswer.isDraftRevision(input: input, history: dialogContext);
+    final intentDay = ViktorDateScope.itineraryDay(input, widget.wallDay,
+        dialogContext, revision: revisionOfDraft, profileToday: profileToday);
     _push(input, mine: true);
     if (ViktorReadAnswer.isExplicitCancellation(input)) {
       _push('Команда отменена. Изменения не выполнялись.');
@@ -104,8 +98,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       final executor = ViktorExecutor(db);
       final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
       if (independentPlan != null) {
-        await _createIndependentDateOnlyPlan(
-            independentPlan, executor, requestId);
+        await _createIndependentDateOnlyPlan(independentPlan, executor, requestId);
         return;
       }
       final plans = await db.getPlanningTasksForWallDate(intentDay);
@@ -114,13 +107,9 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       final seenReads = <String>{};
       String? latestReadAnswer;
       var response = await _gateway.propose(
-        input: input,
-        wallDay: intentDay,
-        plans: plans,
-        settings: _settings,
-        selectedPlanIds: widget.selectedPlanIds,
-        requestId: requestId,
-        conversationHistory: dialogContext,
+        input: input, wallDay: intentDay, plans: plans,
+        settings: _settings, selectedPlanIds: widget.selectedPlanIds,
+        requestId: requestId, conversationHistory: dialogContext,
         proposalFeedback: _draftRevisionFeedback(input, dialogContext),
       );
       var repairedEmptyRead = false;
@@ -168,8 +157,6 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         final signature = jsonEncode(
             proposed.actions.map((a) => a.toJson()).toList());
         if (!seenReads.add(signature)) {
-          // A repeated read is a model continuation failure, not a problem
-          // for the user to solve. Repair from conversation + known results.
           response = await _completeRepeatedRead(input, plans,
               toolObservations, requestId, dialogContext, intentDay);
           repairedRepeatedRead = true;
@@ -227,8 +214,6 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         }
         return;
       }
-      // A complex Saturday itinerary is a draft, not an unsafe sequence of
-      // partially committed individual create_plan calls.
       if (ViktorProposedDayDraft.needsReadOnlyDraft(actions)) {
         final draft = await ViktorProposedDayDraft.describe(actions,
           loadDay: db.getPlanningTasksForWallDate);
