@@ -349,6 +349,16 @@ class ViktorGateway {
     final requestedZone = ViktorReadAnswer.requestedScheduleTimezone(
         input: input, history: conversationHistory);
     final deviceZone = await (_deviceTimezone ??= _readDeviceTimezone());
+    // Profile clock is projected using Brain's canonical timezone handling;
+    // old profile display labels need not be valid IANA database keys.
+    final nowUtc = DatabaseService.getPlanetaryNow();
+    String clock(DateTime wall) =>
+        '${ViktorDateScope.key(wall)} '
+        '${wall.hour.toString().padLeft(2, '0')}:'
+        '${wall.minute.toString().padLeft(2, '0')}';
+    final profileClock = clock(service.applyUserOffset(nowUtc));
+    final scheduleClock = requestedZone == null ? profileClock :
+        clock(ViktorDateScope.projectUtcInstant(nowUtc, requestedZone));
     final reproject = requestedZone != null &&
         requestedZone != service.settings.preferredTimeZone;
     final previousDay = DateTime(
@@ -444,6 +454,9 @@ class ViktorGateway {
                     ? 6000 : turn['role'] == 'user' ? 3000 : 1200)
             : turn['content'],
       }).toList(),
+      'current_instant_utc': nowUtc.toIso8601String(),
+      'current_profile_datetime': profileClock,
+      'current_schedule_datetime': scheduleClock,
       'profile_timezone': service.settings.preferredTimeZone,
       // Home/profile default, explicit dialogue override and OS context
       // are separate. OS timezone is not the user's residence or GPS.
