@@ -83,6 +83,11 @@ String viktorVoiceErrorText(Object error, {String stage = 'recognition'}) {
   if (value.contains('auth_required')) {
     return 'Для голосового ввода войдите в LIFE OS.';
   }
+  if (value.contains('speech_recognition_timeout')) {
+    return 'Yandex SpeechKit не завершил распознавание за 45 секунд. '
+        'Команда не выполнялась; повторите запись. '
+        'Если ошибка повторится, проверьте доступность сервиса.';
+  }
   if (value.contains('timeout') || value.contains('unreachable') ||
       value.contains('network') || value.contains('clientexception') ||
       value.contains('socketexception')) {
