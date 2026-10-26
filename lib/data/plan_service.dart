@@ -19,10 +19,6 @@ DateTime? _allPlansUserCacheFetchedAt;
 const Duration _allPlansUserCacheFreshTtl = Duration(seconds: 30);
 Future<void>? _plansRealtimeSubscribeFuture;
 Future<void> Function()? _plansRealtimeUnsubscribe;
-// REST snapshots can arrive AFTER newer SSE updates. Keep every in-flight
-// snapshot's realtime deltas until all overlapping reads have completed.
-int _plansFullFetchesInFlight = 0;
-final Map<String, PlanningTask?> _plansRealtimeDuringFullFetch = {};
 
 List<PlanningTask> _tasksCache = [];
 
@@ -285,56 +281,6 @@ extension PlanServiceExtension on DatabaseService {
   }) {
     if (anchorKey.length < 10 || newScheduleKey.length < 10) return false;
     return newScheduleKey.compareTo(anchorKey) > 0;
-  }
-
-  Future<List<PlanningTask>> _fetchAllPlanningTasksForCurrentUser() async {
-    if (!_isPlansTableConfigured) return [];
-    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return [];
-    final ownerFilter = _pocketBaseOwnerFilterClauseForRecords();
-    if (ownerFilter == null || ownerFilter.isEmpty) return [];
-    final sw = Stopwatch()..start();
-    _plansFullFetchesInFlight++;
-    try {
-      final tagCatalog = await _fetchPlanAndListTagCatalog();
-      final list = await _pb
-          .collection(PbCollections.plans)
-          .getFullList(
-            expand: kPbPlanTagsExpand,
-            filter: ownerFilter,
-            batch: 200,
-          );
-      sw.stop();
-      RebuildMetrics.instance.pbDuringSwipe(
-        collection: 'plans',
-        method: 'getFullList',
-        durationMs: sw.elapsedMilliseconds,
-        action: 'fetchAllPlansUserCache',
-      );
-      final out = [
-        for (final r in list)
-          _planningTaskFromPocketRecord(r, pocketTagCatalog: tagCatalog),
-      ];
-      _allPlansUserCache = scrubPlanningTasksForLocalCache(out);
-      _scrubJitVirtualRowsFromUserCache();
-      // A late REST response must never undo an SSE create/update/delete
-      // that was already applied while this request was in flight.
-      for (final change in _plansRealtimeDuringFullFetch.entries) {
-        if (change.value == null) {
-          _removePlanFromUserCache(change.key);
-        } else {
-          _upsertPlanInUserCache(change.value!);
-        }
-      }
-      _allPlansUserCacheFetchedAt = DateTime.now();
-      return _allPlansUserCache;
-    } catch (_) {
-      return _allPlansUserCache;
-    } finally {
-      _plansFullFetchesInFlight--;
-      if (_plansFullFetchesInFlight == 0) {
-        _plansRealtimeDuringFullFetch.clear();
-      }
-    }
   }
 
   /// Undated plans (`start_time` unset): backlog / Lists tab. Excludes virtual, optimistic rows.
