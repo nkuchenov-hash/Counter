@@ -20,7 +20,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 part 'viktor_dialogue_ui_state.dart';
 part 'viktor_composer.dart';
-// One content-grid width for message rows and the composer.
 const double kViktorChatContentMaxWidth = 840;
 /// Single LIFE OS assistant entry point. Replaces the old record-only mic FAB.
 /// No overlay over the planner, no extra button beside bottom navigation.
@@ -333,6 +332,11 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         !_startingMic && !_transcribing) {
       unawaited(_finishRecording());
     }
+  }
+  void _onSpeechProgress(ViktorSpeechStage stage, Duration elapsed) {
+    if (!mounted || !_transcribing) return;
+    final text = viktorSpeechProgressText(stage, elapsed);
+    if (text != _voiceNotice) setState(() => _voiceNotice = text);
   }
   Future<void> _finishRecording() async {
     var shouldSubmit = false;
