@@ -335,8 +335,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
   }
   void _onSpeechProgress(ViktorSpeechStage stage, Duration elapsed) {
     if (!mounted || !_transcribing) return;
-    final text = viktorSpeechProgressText(stage, elapsed);
-    if (text != _voiceNotice) setState(() => _voiceNotice = text);
+    setState(() => _voiceNotice = viktorSpeechProgressText(stage, elapsed));
   }
   Future<void> _finishRecording() async {
     var shouldSubmit = false;
