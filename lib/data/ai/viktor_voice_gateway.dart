@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:counter/data/database_service.dart';
@@ -7,6 +8,28 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:http/http.dart' as http;
 
 import 'viktor_gateway.dart';
+
+/// No model request can hold the UI in indefinite Yandex operation polling.
+enum ViktorSpeechStage { uploading, waiting }
+
+/// Hard wall-clock budget includes upload, server processing and every poll.
+/// The model's response time is accounted separately by ViktorGateway.
+abstract final class ViktorSpeechPollingPolicy {
+  static const maxElapsed = Duration(seconds: 45);
+  static const uploadTimeout = Duration(seconds: 25);
+
+  static Duration delay(Duration elapsed) =>
+      elapsed < const Duration(seconds: 6)
+          ? const Duration(milliseconds: 600)
+          : const Duration(milliseconds: 1100);
+
+  static Duration pollTimeout(Duration elapsed) {
+    final remaining = maxElapsed - elapsed;
+    if (remaining <= Duration.zero) return Duration.zero;
+    const limit = Duration(seconds: 8);
+    return remaining < limit ? remaining : limit;
+  }
+}
 
 /// BYOK speech transport. YandexGPT can reuse its API key for SpeechKit,
 /// provided the service account has both model and STT permissions.
@@ -50,7 +73,10 @@ class ViktorVoiceGateway {
   Future<String> transcribe({
     required Uint8List wav,
     required ViktorModelSettings settings,
+    void Function(ViktorSpeechStage stage, Duration elapsed)? onProgress,
   }) async {
+    final clock = Stopwatch()..start();
+    onProgress?.call(ViktorSpeechStage.uploading, Duration.zero);
     final db = DatabaseService.instance;
     await db.ensurePocketBaseReady();
     final token = db.pocketBase.authStore.token.trim();
@@ -93,7 +119,7 @@ class ViktorVoiceGateway {
             ? 'ru' : 'en',
         if (isYandex) 'yandex_folder_id': settings.yandexFolderId.trim(),
       }),
-    ).timeout(const Duration(seconds: 55));
+    ).timeout(ViktorSpeechPollingPolicy.uploadTimeout);
 
     final payload = _payload(response);
     if (isYandex && response.statusCode == 202) {
@@ -101,21 +127,42 @@ class ViktorVoiceGateway {
       if (!RegExp(r'^[a-zA-Z0-9_-]{8,90}$').hasMatch(operationId)) {
         throw const FormatException('invalid_speech_response');
       }
-      // The Yandex REST API processes recorded audio asynchronously.
-      // Poll from Flutter so the PocketBase HTTP hook is never held open
-      // waiting for transcription or blocking other app operations.
-      for (var attempt = 0; attempt < 40; attempt++) {
-        await Future<void>.delayed(const Duration(milliseconds: 1200));
-        final check = await http.post(
-          Uri.parse('$base/api/viktor/transcribe-yandex/status'),
-          headers: headers,
-          body: jsonEncode({
-            'provider': 'yandex',
-            if (apiKey.isNotEmpty) 'api_key': apiKey,
-            'yandex_folder_id': settings.yandexFolderId.trim(),
-            'operation_id': operationId,
-          }),
-        ).timeout(const Duration(seconds: 20));
+      // The Yandex operation is asynchronous. Poll on the client with a
+      // single bounded elapsed budget, never N * per-poll HTTP timeouts.
+      // Fast first polls improve latency for short voice commands.
+      while (true) {
+        final timeout = ViktorSpeechPollingPolicy.pollTimeout(clock.elapsed);
+        if (timeout <= Duration.zero) {
+          throw const FormatException('speech_recognition_timeout');
+        }
+        onProgress?.call(ViktorSpeechStage.waiting, clock.elapsed);
+        await Future<void>.delayed(
+            ViktorSpeechPollingPolicy.delay(clock.elapsed));
+        final requestTimeout =
+            ViktorSpeechPollingPolicy.pollTimeout(clock.elapsed);
+        if (requestTimeout <= Duration.zero) {
+          throw const FormatException('speech_recognition_timeout');
+        }
+        late final http.Response check;
+        try {
+          check = await http.post(
+            Uri.parse('$base/api/viktor/transcribe-yandex/status'),
+            headers: headers,
+            body: jsonEncode({
+              'provider': 'yandex',
+              if (apiKey.isNotEmpty) 'api_key': apiKey,
+              'yandex_folder_id': settings.yandexFolderId.trim(),
+              'operation_id': operationId,
+            }),
+          ).timeout(requestTimeout);
+        } on TimeoutException {
+          // A slow individual status request must never consume minutes.
+          if (ViktorSpeechPollingPolicy.pollTimeout(clock.elapsed)
+              <= Duration.zero) {
+            throw const FormatException('speech_recognition_timeout');
+          }
+          continue;
+        }
         final state = _payload(check);
         if (check.statusCode == 202) continue;
         if (check.statusCode != 200) {
@@ -125,7 +172,6 @@ class ViktorVoiceGateway {
         if (transcript.isEmpty) throw const FormatException('no_speech_detected');
         return transcript;
       }
-      throw const FormatException('speech_recognition_timeout');
     }
     if (response.statusCode != 200) {
       throw _failure(payload, httpStatus: response.statusCode, stage: 'submit');
