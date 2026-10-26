@@ -19,6 +19,10 @@ DateTime? _allPlansUserCacheFetchedAt;
 const Duration _allPlansUserCacheFreshTtl = Duration(seconds: 30);
 Future<void>? _plansRealtimeSubscribeFuture;
 Future<void> Function()? _plansRealtimeUnsubscribe;
+// REST snapshots can arrive AFTER newer SSE updates. Keep every in-flight
+// snapshot's realtime deltas until all overlapping reads have completed.
+int _plansFullFetchesInFlight = 0;
+final Map<String, PlanningTask?> _plansRealtimeDuringFullFetch = {};
 
 List<PlanningTask> _tasksCache = [];
 
@@ -289,6 +293,7 @@ extension PlanServiceExtension on DatabaseService {
     final ownerFilter = _pocketBaseOwnerFilterClauseForRecords();
     if (ownerFilter == null || ownerFilter.isEmpty) return [];
     final sw = Stopwatch()..start();
+    _plansFullFetchesInFlight++;
     try {
       final tagCatalog = await _fetchPlanAndListTagCatalog();
       final list = await _pb
@@ -311,10 +316,24 @@ extension PlanServiceExtension on DatabaseService {
       ];
       _allPlansUserCache = scrubPlanningTasksForLocalCache(out);
       _scrubJitVirtualRowsFromUserCache();
+      // A late REST response must never undo an SSE create/update/delete
+      // that was already applied while this request was in flight.
+      for (final change in _plansRealtimeDuringFullFetch.entries) {
+        if (change.value == null) {
+          _removePlanFromUserCache(change.key);
+        } else {
+          _upsertPlanInUserCache(change.value!);
+        }
+      }
       _allPlansUserCacheFetchedAt = DateTime.now();
-      return out;
+      return _allPlansUserCache;
     } catch (_) {
       return _allPlansUserCache;
+    } finally {
+      _plansFullFetchesInFlight--;
+      if (_plansFullFetchesInFlight == 0) {
+        _plansRealtimeDuringFullFetch.clear();
+      }
     }
   }
 
@@ -1666,6 +1685,9 @@ extension PlanServiceExtension on DatabaseService {
       if (action == 'delete') {
         final id = e.record?.id.trim() ?? '';
         if (id.isNotEmpty) {
+          if (_plansFullFetchesInFlight > 0) {
+            _plansRealtimeDuringFullFetch[id] = null;
+          }
           _removePlanFromUserCache(id);
           clearOptimisticPlanningForPlanRow(id);
           notifyPlanningRefresh(scheduleNetworkRefresh: false);
@@ -1681,6 +1703,9 @@ extension PlanServiceExtension on DatabaseService {
           rec,
           pocketTagCatalog: _userTagsCatalogCache,
         );
+        if (_plansFullFetchesInFlight > 0) {
+          _plansRealtimeDuringFullFetch[task.planRowIdForBackend] = task;
+        }
         _upsertPlanInUserCache(task);
         _allPlansUserCacheFetchedAt = DateTime.now();
         final biz = _planBusinessUuidFromTask(task);
