@@ -1,3 +1,10 @@
+## [2026-10-26] — PocketBase instant cross-device reconciliation hardening
+
+- Preserved realtime plan/record create, update and delete events that arrive during an older full-list REST refresh. The full snapshot replays those newer deltas, so a late HTTP response cannot visibly revert a newer SSE change.
+- Serialized PocketBase reconnect catch-up; if reconnect happens while the foreground refresh is running, a second authoritative pull now follows the in-flight refresh, and new gaps during reconciliation get another bounded retry.
+- Retained push-first SSE and existing optimistic local writes. No periodic polling, schema changes or new manual sync button.
+- Added regression contract tests; real-device latency still depends on connectivity and is not guaranteed to be zero.
+
 ## [2026-10-26] — Viktor bounded voice recognition
 
 - Changed Yandex SpeechKit operation polling from 40 requests with individual 20-second timeouts to an elapsed-time budget of 45 seconds including upload, server processing and retries. Fast initial polling now checks every 600 ms and backs off to 1100 ms.
