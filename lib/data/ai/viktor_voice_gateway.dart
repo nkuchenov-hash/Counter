@@ -78,7 +78,7 @@ class ViktorVoiceGateway {
     final clock = Stopwatch()..start();
     onProgress?.call(ViktorSpeechStage.uploading, Duration.zero);
     final db = DatabaseService.instance;
-    await db.ensurePocketBaseReady();
+    await db.ensurePocketBaseReady().timeout(const Duration(seconds: 12));
     final token = db.pocketBase.authStore.token.trim();
     settings.ensureOwner(db.pocketBase.authStore.record?.id ?? 'signed_out');
     if (token.isEmpty) throw const FormatException('auth_required');
