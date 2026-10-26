@@ -1,5 +1,13 @@
 # UX Contract
 
+## Instant multi-device sync (2026-10-26)
+
+- Local writes must render optimistically; successful PocketBase realtime messages must update other active devices without navigation or polling.
+- When a REST full-list fetch overlaps an SSE event, the event is newer and must not be overwritten by the late REST response. Replay queued create/update/delete deltas after the snapshot for both Plans and Records.
+- After an SSE disconnect and reconnection, reconcile authoritative state; if an older foreground refresh is already in progress, run a fresh pull afterward. New gaps during recovery must result in a subsequent catch-up, with bounded retry on failure.
+- Offline/network outage prevents literal instantaneous remote delivery; preserve durable outboxes and show sync status, recover promptly on network restoration. Never claim a remote write is synchronized until the server acknowledges it.
+
+
 ## Viktor voice latency and feedback (2026-10-26)
 
 - After stopping a recording, display upload and recognition progress with elapsed seconds. Never leave the chat in an unbounded 'Распознаю' state: the Yandex SpeechKit path has a strict 45-second wall-time budget, including upload and status polling.
