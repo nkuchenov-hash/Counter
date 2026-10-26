@@ -227,14 +227,16 @@ void main() {
 
   test('late plans full-list response preserves newer SSE changes', () {
     final plans = File('lib/data/plan_service.dart').readAsStringSync();
-    expect(plans, contains('_plansFullFetchesInFlight++'));
+    final cache = File('lib/data/plans/plan_cache_helpers.dart')
+        .readAsStringSync();
+    expect(cache, contains('_plansFullFetchesInFlight++'));
     expect(plans, contains('_plansRealtimeDuringFullFetch[task.planRowIdForBackend] = task;'));
     expect(plans, contains('_plansRealtimeDuringFullFetch[id] = null;'));
-    expect(plans, contains('for (final change in _plansRealtimeDuringFullFetch.entries)'));
-    expect(plans, contains('_upsertPlanInUserCache(change.value!)'));
-    expect(plans, contains('_removePlanFromUserCache(change.key)'));
-    expect(plans, contains('_plansFullFetchesInFlight--'));
-    expect(plans, contains('_plansRealtimeDuringFullFetch.clear()'));
+    expect(cache, contains('for (final change in _plansRealtimeDuringFullFetch.entries)'));
+    expect(cache, contains('_upsertPlanInUserCache(change.value!)'));
+    expect(cache, contains('_removePlanFromUserCache(change.key)'));
+    expect(cache, contains('_plansFullFetchesInFlight--'));
+    expect(cache, contains('_plansRealtimeDuringFullFetch.clear()'));
   });
 
   test('late records full-list response preserves newer SSE changes', () {
