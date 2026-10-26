@@ -311,6 +311,7 @@ extension RecordServiceExtension on DatabaseService {
         _cachedFlatRecords.isNotEmpty) {
       return List<Map<String, dynamic>>.from(_cachedFlatRecords);
     }
+    _recordsFullFetchesInFlight++;
     try {
       await ensurePocketBaseReady();
       if (_pbHttpBackoffActive) {
@@ -381,6 +382,7 @@ extension RecordServiceExtension on DatabaseService {
       }
       final beforeCount = _cachedFlatRecords.length;
       _cachedFlatRecords = kept;
+      _replayRecordRealtimeOverFetchedSnapshot();
       _markTimelineDayIndexDirty();
       _pruneRecord404DeadletterUsingCache();
       _lastSuccessfulRecordsNetworkFetchAt = DateTime.now();
@@ -398,7 +400,8 @@ extension RecordServiceExtension on DatabaseService {
       final cacheKey = _scopedDataCacheKey(
         DatabaseService._cacheRecordsFlatKey,
       );
-      final keptJson = await compute(_encodeRecordsFlatForPrefs, kept);
+      final keptJson = await compute(
+          _encodeRecordsFlatForPrefs, _cachedFlatRecords);
       unawaited(() async {
         try {
           final prefs = _prefs ?? await SharedPreferences.getInstance();
@@ -410,6 +413,11 @@ extension RecordServiceExtension on DatabaseService {
       _maybeOpenPbCircuitFromListFailure(e, 'fetchRecords');
       await _hydrateRecordsCacheFromPrefsIfEmpty();
       return List<Map<String, dynamic>>.from(_cachedFlatRecords);
+    } finally {
+      _recordsFullFetchesInFlight--;
+      if (_recordsFullFetchesInFlight == 0) {
+        _recordsRealtimeDuringFullFetch.clear();
+      }
     }
   }
 
