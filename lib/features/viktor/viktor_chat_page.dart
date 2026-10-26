@@ -352,7 +352,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         _voiceNotice = 'Распознаю речь…';
       });
       final transcript = await _voiceGateway.transcribe(
-        wav: wav, settings: _settings);
+        wav: wav, settings: _settings, onProgress: _onSpeechProgress);
       if (!mounted) return;
       final original = _controller.text.trim();
       setState(() {
