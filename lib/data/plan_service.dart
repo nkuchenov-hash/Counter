@@ -283,41 +283,6 @@ extension PlanServiceExtension on DatabaseService {
     return newScheduleKey.compareTo(anchorKey) > 0;
   }
 
-  Future<List<PlanningTask>> _fetchAllPlanningTasksForCurrentUser() async {
-    if (!_isPlansTableConfigured) return [];
-    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return [];
-    final ownerFilter = _pocketBaseOwnerFilterClauseForRecords();
-    if (ownerFilter == null || ownerFilter.isEmpty) return [];
-    final sw = Stopwatch()..start();
-    try {
-      final tagCatalog = await _fetchPlanAndListTagCatalog();
-      final list = await _pb
-          .collection(PbCollections.plans)
-          .getFullList(
-            expand: kPbPlanTagsExpand,
-            filter: ownerFilter,
-            batch: 200,
-          );
-      sw.stop();
-      RebuildMetrics.instance.pbDuringSwipe(
-        collection: 'plans',
-        method: 'getFullList',
-        durationMs: sw.elapsedMilliseconds,
-        action: 'fetchAllPlansUserCache',
-      );
-      final out = [
-        for (final r in list)
-          _planningTaskFromPocketRecord(r, pocketTagCatalog: tagCatalog),
-      ];
-      _allPlansUserCache = scrubPlanningTasksForLocalCache(out);
-      _scrubJitVirtualRowsFromUserCache();
-      _allPlansUserCacheFetchedAt = DateTime.now();
-      return out;
-    } catch (_) {
-      return _allPlansUserCache;
-    }
-  }
-
   /// Undated plans (`start_time` unset): backlog / Lists tab. Excludes virtual, optimistic rows.
   /// When [includeCompleted] is false (default), excludes [PlanningTask.isDone] (e.g. chip counts).
   Future<List<PlanningTask>> fetchBacklogPlans({
@@ -1666,6 +1631,9 @@ extension PlanServiceExtension on DatabaseService {
       if (action == 'delete') {
         final id = e.record?.id.trim() ?? '';
         if (id.isNotEmpty) {
+          if (_plansFullFetchesInFlight > 0) {
+            _plansRealtimeDuringFullFetch[id] = null;
+          }
           _removePlanFromUserCache(id);
           clearOptimisticPlanningForPlanRow(id);
           notifyPlanningRefresh(scheduleNetworkRefresh: false);
@@ -1681,6 +1649,9 @@ extension PlanServiceExtension on DatabaseService {
           rec,
           pocketTagCatalog: _userTagsCatalogCache,
         );
+        if (_plansFullFetchesInFlight > 0) {
+          _plansRealtimeDuringFullFetch[task.planRowIdForBackend] = task;
+        }
         _upsertPlanInUserCache(task);
         _allPlansUserCacheFetchedAt = DateTime.now();
         final biz = _planBusinessUuidFromTask(task);

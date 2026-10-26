@@ -225,6 +225,45 @@ void main() {
     expect(refresh, isNot(contains('Timer.periodic')));
   });
 
+  test('late plans full-list response preserves newer SSE changes', () {
+    final plans = File('lib/data/plan_service.dart').readAsStringSync();
+    final cache = File('lib/data/plans/plan_cache_helpers.dart')
+        .readAsStringSync();
+    expect(cache, contains('_plansFullFetchesInFlight++'));
+    expect(plans, contains('_plansRealtimeDuringFullFetch[task.planRowIdForBackend] = task;'));
+    expect(plans, contains('_plansRealtimeDuringFullFetch[id] = null;'));
+    expect(cache, contains('for (final change in _plansRealtimeDuringFullFetch.entries)'));
+    expect(cache, contains('_upsertPlanInUserCache(change.value!)'));
+    expect(cache, contains('_removePlanFromUserCache(change.key)'));
+    expect(cache, contains('_plansFullFetchesInFlight--'));
+    expect(cache, contains('_plansRealtimeDuringFullFetch.clear()'));
+  });
+
+  test('late records full-list response preserves newer SSE changes', () {
+    final records = File('lib/data/record_service.dart').readAsStringSync();
+    final realtime =
+        File('lib/data/records/record_realtime.dart').readAsStringSync();
+    expect(records, contains('_recordsFullFetchesInFlight++'));
+    expect(records, contains('_replayRecordRealtimeOverFetchedSnapshot()'));
+    expect(records, contains('_recordsFullFetchesInFlight--'));
+    expect(records, contains('_recordsRealtimeDuringFullFetch.clear()'));
+    expect(realtime, contains('_recordsRealtimeDuringFullFetch[rec.id] = rec;'));
+    expect(realtime, contains('_recordsRealtimeDuringFullFetch[id] = null;'));
+    expect(realtime, contains('suppressTimelineNotify: true'));
+  });
+
+  test('repeated reconnects queue a second authoritative pull after in-flight refresh', () {
+    final realtime =
+        File('lib/data/records/record_realtime.dart').readAsStringSync();
+    expect(realtime, contains('_realtimeGapCatchUpInFlight'));
+    expect(realtime, contains('final earlierRefresh = _foregroundDataRefreshFuture;'));
+    expect(realtime, contains('await earlierRefresh;'));
+    expect(realtime, contains('await refreshForegroundData();'));
+    expect(realtime, contains('if (_realtimeTransportGapDetected && _isInitialized'));
+    expect(realtime, contains('delay: const Duration(seconds: 5)'));
+    expect(realtime, isNot(contains('Timer.periodic')));
+  });
+
   test('realtime gap guard ignores intentional PB_CONNECT-only transport', () {
     final realtime = File(
       'lib/data/records/record_realtime.dart',
