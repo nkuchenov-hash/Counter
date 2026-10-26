@@ -2,7 +2,16 @@ part of 'viktor_chat_page.dart';
 
 /// Keeps cloud model bootstrap and owner-scoped dialogue state out of the
 /// UI page. This mixin never owns domain writes; ViktorExecutor still does.
+String viktorSpeechProgressText(ViktorSpeechStage stage, Duration elapsed) {
+  final seconds = elapsed.inSeconds;
+  if (stage == ViktorSpeechStage.uploading) return 'Передаю запись…';
+  return seconds >= 15
+      ? 'Yandex SpeechKit обрабатывает запись · ${seconds} с'
+      : 'Распознаю речь · ${seconds} с';
+}
+
 mixin _ViktorDialogueUiState on State<ViktorChatPage> {
+
   List<ViktorDialogueTurn> get _messages;
   TextEditingController get _controller;
   Future<void> _send();

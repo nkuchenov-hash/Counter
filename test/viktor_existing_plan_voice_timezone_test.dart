@@ -2,6 +2,7 @@ import 'package:counter/data/ai/viktor_existing_plan.dart';
 import 'package:counter/data/ai/viktor_plan_timezone.dart';
 import 'package:counter/data/ai/viktor_action_contract.dart';
 import 'package:counter/data/ai/viktor_voice_error.dart';
+import 'package:counter/data/ai/viktor_voice_gateway.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
@@ -114,6 +115,31 @@ void main() {
     ), isNull);
     expect(ViktorExistingPlan.describe(dateOnly),
         contains('без назначенного времени'));
+  });
+
+  test('SpeechKit polling starts quickly without a multi-minute wait', () {
+    expect(ViktorSpeechPollingPolicy.delay(Duration.zero),
+        const Duration(milliseconds: 600));
+    expect(ViktorSpeechPollingPolicy.delay(const Duration(seconds: 5)),
+        const Duration(milliseconds: 600));
+    expect(ViktorSpeechPollingPolicy.delay(const Duration(seconds: 6)),
+        const Duration(milliseconds: 1100));
+  });
+
+  test('SpeechKit request budget is bounded by an actual elapsed deadline', () {
+    expect(ViktorSpeechPollingPolicy.pollTimeout(Duration.zero),
+        const Duration(seconds: 8));
+    expect(ViktorSpeechPollingPolicy.pollTimeout(const Duration(seconds: 39)),
+        const Duration(seconds: 6));
+    expect(ViktorSpeechPollingPolicy.pollTimeout(
+        const Duration(milliseconds: 44500)),
+        const Duration(milliseconds: 500));
+    expect(ViktorSpeechPollingPolicy.pollTimeout(const Duration(seconds: 45)),
+        Duration.zero);
+    expect(ViktorSpeechPollingPolicy.pollTimeout(const Duration(seconds: 500)),
+        Duration.zero);
+    expect(ViktorSpeechPollingPolicy.uploadTimeout <
+        ViktorSpeechPollingPolicy.maxElapsed, isTrue);
   });
 
 }

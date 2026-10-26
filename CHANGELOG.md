@@ -1,3 +1,9 @@
+## [2026-10-26] — Viktor bounded voice recognition
+
+- Changed Yandex SpeechKit operation polling from 40 requests with individual 20-second timeouts to an elapsed-time budget of 45 seconds including upload, server processing and retries. Fast initial polling now checks every 600 ms and backs off to 1100 ms.
+- The chat composer shows upload and elapsed recognition progress; a slow SpeechKit operation now ends with a bounded error instead of an indefinite spinner.
+- Added deterministic polling-budget regressions. Live SpeechKit latency and physical-device voice quality still require an authenticated production check.
+
 ## [2026-10-24] — Viktor independent date-only creation
 
 - Fixed a standalone 'add plan' request after an old itinerary being misrouted into draft revision and repeated time-zone checks.

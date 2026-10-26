@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `57b7e83a` on 2026-10-24.**
+**Generated from input HEAD `552de0dd` on 2026-10-26.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -14151,8 +14151,8 @@ EN:
 - **Human purpose:** Brain helper for data/sync — Signed-in transient BYOK cloud transcription and returned editable text. Shared PocketBase/auth/parse logic used by multiple tabs.
 - **What this is:** Brain helper for data/sync — Signed-in transient BYOK cloud transcription and returned editable text.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **Contents:** Dart helpers and types (`ViktorVoiceGateway`).
-- **Key code names:** `ViktorVoiceGateway`
+- **Contents:** Dart helpers and types (`ViktorSpeechStage`, `ViktorSpeechPollingPolicy`, `ViktorVoiceGateway`).
+- **Key code names:** `ViktorSpeechStage`, `ViktorSpeechPollingPolicy`, `ViktorVoiceGateway`
 - **Repository role:** Brain/data
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/viktor/viktor_chat_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
