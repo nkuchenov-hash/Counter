@@ -5,6 +5,10 @@ Future<void>? _realtimeRecoveryConnectSubscribeFuture;
 bool _realtimeTransportGapDetected = false;
 Timer? _realtimeGapCatchUpTimer;
 Future<void>? _realtimeGapCatchUpInFlight;
+// Keep SSE writes while an older full-list HTTP response is still pending.
+int _recordsFullFetchesInFlight = 0;
+final Map<String, RecordModel?> _recordsRealtimeDuringFullFetch = {};
+
 
 extension RecordRealtimeExtension on DatabaseService {
   void _onPbRecordsSubscriptionEvent(RecordSubscriptionEvent e) {
@@ -13,6 +17,9 @@ extension RecordRealtimeExtension on DatabaseService {
     if (action == 'delete') {
       final id = e.record?.id.trim() ?? '';
       if (id.isNotEmpty) {
+        if (_recordsFullFetchesInFlight > 0) {
+          _recordsRealtimeDuringFullFetch[id] = null;
+        }
         _removeCachedFlatRecordByPk(id);
       }
       return;
@@ -20,6 +27,9 @@ extension RecordRealtimeExtension on DatabaseService {
     final rec = e.record;
     if (rec == null) return;
     try {
+      if (_recordsFullFetchesInFlight > 0) {
+        _recordsRealtimeDuringFullFetch[rec.id] = rec;
+      }
       _upsertFlatRecordFromPbModel(
         rec,
         preserveExpand: true,
@@ -27,6 +37,23 @@ extension RecordRealtimeExtension on DatabaseService {
         logSuccessLine: false,
       );
     } catch (_) {}
+  }
+
+  // Replay newest pushes on top of a potentially stale full-list snapshot.
+  // The caller emits one consolidated timeline refresh after the replay.
+  void _replayRecordRealtimeOverFetchedSnapshot() {
+    for (final change in _recordsRealtimeDuringFullFetch.entries) {
+      if (change.value == null) {
+        _cachedFlatRecords = [
+          for (final row in _cachedFlatRecords)
+            if (CategoryServiceExtension.recordsTablePk(row) != change.key) row,
+        ];
+      } else {
+        _upsertFlatRecordFromPbModel(change.value!,
+            preserveExpand: true, suppressTimelineNotify: true,
+            logSuccessLine: false);
+      }
+    }
   }
 
   /// PocketBase automatically restores SSE subscriptions after a transport
