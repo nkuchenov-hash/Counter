@@ -1,5 +1,12 @@
 # UX Contract
 
+## Viktor voice latency and feedback (2026-10-26)
+
+- After stopping a recording, display upload and recognition progress with elapsed seconds. Never leave the chat in an unbounded 'Распознаю' state: the Yandex SpeechKit path has a strict 45-second wall-time budget, including upload and status polling.
+- Poll earlier for short requests while avoiding concurrent status calls. Do not report a successful command before recognized speech has been dispatched and the Brain confirms its action.
+- A timeout must leave existing plans untouched, surface a recoverable error and permit voice retry; benchmark real-provider latency separately from speech quality.
+
+
 ## Viktor standalone plan creation and dialogue (2026-10-24)
 
 - Independent create commands do not inherit old unsaved itinerary drafts just because the user says 'добавь'. Only an explicit revision of that draft is treated as such.
