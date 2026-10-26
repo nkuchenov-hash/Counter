@@ -1,5 +1,10 @@
 part of '../database_service.dart';
 
+// REST snapshots can arrive AFTER newer SSE updates. Keep every in-flight
+// snapshot's realtime deltas until all overlapping reads have completed.
+int _plansFullFetchesInFlight = 0;
+final Map<String, PlanningTask?> _plansRealtimeDuringFullFetch = {};
+
 double titleSimilarityForPlanLink(String a, String b) {
     final na = a.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
     final nb = b.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
@@ -48,6 +53,56 @@ double titlePlanLinkScore(String a, String b) {
   }
 
 extension PlanCacheProjectionExtension on DatabaseService {
+  Future<List<PlanningTask>> _fetchAllPlanningTasksForCurrentUser() async {
+    if (!_isPlansTableConfigured) return [];
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return [];
+    final ownerFilter = _pocketBaseOwnerFilterClauseForRecords();
+    if (ownerFilter == null || ownerFilter.isEmpty) return [];
+    final sw = Stopwatch()..start();
+    _plansFullFetchesInFlight++;
+    try {
+      final tagCatalog = await _fetchPlanAndListTagCatalog();
+      final list = await _pb
+          .collection(PbCollections.plans)
+          .getFullList(
+            expand: kPbPlanTagsExpand,
+            filter: ownerFilter,
+            batch: 200,
+          );
+      sw.stop();
+      RebuildMetrics.instance.pbDuringSwipe(
+        collection: 'plans',
+        method: 'getFullList',
+        durationMs: sw.elapsedMilliseconds,
+        action: 'fetchAllPlansUserCache',
+      );
+      final out = [
+        for (final r in list)
+          _planningTaskFromPocketRecord(r, pocketTagCatalog: tagCatalog),
+      ];
+      _allPlansUserCache = scrubPlanningTasksForLocalCache(out);
+      _scrubJitVirtualRowsFromUserCache();
+      // A late REST response must never undo an SSE create/update/delete
+      // that was already applied while this request was in flight.
+      for (final change in _plansRealtimeDuringFullFetch.entries) {
+        if (change.value == null) {
+          _removePlanFromUserCache(change.key);
+        } else {
+          _upsertPlanInUserCache(change.value!);
+        }
+      }
+      _allPlansUserCacheFetchedAt = DateTime.now();
+      return _allPlansUserCache;
+    } catch (_) {
+      return _allPlansUserCache;
+    } finally {
+      _plansFullFetchesInFlight--;
+      if (_plansFullFetchesInFlight == 0) {
+        _plansRealtimeDuringFullFetch.clear();
+      }
+    }
+  }
+
   /// Stable business **plan_id** (UUID) for merge/dedupe — not PocketBase system id.
   String? _planBusinessUuidFromTask(PlanningTask task) {
     final row = task.planRowId?.trim() ?? '';
