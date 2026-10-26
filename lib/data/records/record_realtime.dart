@@ -4,6 +4,7 @@ Future<void> Function()? _realtimeRecoveryConnectUnsubscribe;
 Future<void>? _realtimeRecoveryConnectSubscribeFuture;
 bool _realtimeTransportGapDetected = false;
 Timer? _realtimeGapCatchUpTimer;
+Future<void>? _realtimeGapCatchUpInFlight;
 
 extension RecordRealtimeExtension on DatabaseService {
   void _onPbRecordsSubscriptionEvent(RecordSubscriptionEvent e) {
@@ -80,7 +81,19 @@ extension RecordRealtimeExtension on DatabaseService {
       return;
     }
 
+    // If a foreground refresh started BEFORE the reconnect, awaiting its
+    // future alone is not a catch-up: its REST snapshot may predate the
+    // missed events. Always issue another authoritative pull afterward.
+    final earlierRefresh = _foregroundDataRefreshFuture;
+    if (earlierRefresh != null) {
+      try {
+        await earlierRefresh;
+      } catch (_) {}
+    }
     await refreshForegroundData();
+    if (_pbHttpBackoffActive) {
+      throw StateError('realtime_gap_catchup_offline');
+    }
     try {
       await _loadSettingsFromNoco();
     } catch (_) {}
@@ -93,9 +106,15 @@ extension RecordRealtimeExtension on DatabaseService {
     } catch (_) {}
   }
 
-  void _scheduleRealtimeGapCatchUp() {
+  void _scheduleRealtimeGapCatchUp({
+    Duration delay = const Duration(milliseconds: 200),
+  }) {
+    // Do not join an older foreground refresh (or another gap recovery).
+    // A disconnect during an active recovery must run another catch-up
+    // after the earlier one finishes, not be silently marked handled.
+    if (_realtimeGapCatchUpInFlight != null) return;
     _realtimeGapCatchUpTimer?.cancel();
-    _realtimeGapCatchUpTimer = Timer(const Duration(milliseconds: 200), () {
+    _realtimeGapCatchUpTimer = Timer(delay, () {
       _realtimeGapCatchUpTimer = null;
       if (!_realtimeTransportGapDetected ||
           !_isInitialized ||
@@ -104,24 +123,31 @@ extension RecordRealtimeExtension on DatabaseService {
         return;
       }
 
-      // Clear before dispatch so repeated PB_CONNECT messages cannot stack
-      // duplicate full refreshes. refreshForegroundData itself also coalesces
-      // overlapping calls and schedules retry when PocketBase backoff is active.
       _realtimeTransportGapDetected = false;
       planStreamLifecycleLog(
         'realtime transport reconnected; authoritative catch-up starting',
       );
-      unawaited(
-        _reconcileRealtimeGapAuthoritativeState().then((_) {
-          planStreamLifecycleLog(
-            'realtime reconnect authoritative catch-up complete',
+      final recovery = _reconcileRealtimeGapAuthoritativeState();
+      _realtimeGapCatchUpInFlight = recovery;
+      unawaited(recovery.then((_) {
+        planStreamLifecycleLog(
+          'realtime reconnect authoritative catch-up complete',
+        );
+      }).catchError((Object error, StackTrace _) {
+        _realtimeTransportGapDetected = true;
+        planStreamLifecycleLog('realtime catch-up retry after failure: $error');
+      }).whenComplete(() {
+        if (identical(_realtimeGapCatchUpInFlight, recovery)) {
+          _realtimeGapCatchUpInFlight = null;
+        }
+        if (_realtimeTransportGapDetected && _isInitialized &&
+            _hasAuthenticatedUserId && !isPbRealtimeUnavailable) {
+          // Avoid a tight network retry loop on a temporarily broken server.
+          _scheduleRealtimeGapCatchUp(
+            delay: const Duration(seconds: 5),
           );
-        }).catchError((Object _, StackTrace __) {
-          // Preserve the gap marker so the next successful bridge/connect can
-          // retry reconciliation instead of silently accepting stale state.
-          _realtimeTransportGapDetected = true;
-        }),
-      );
+        }
+      }));
     });
   }
 
