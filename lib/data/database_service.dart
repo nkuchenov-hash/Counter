@@ -434,8 +434,10 @@ class DatabaseService {
 
   void _emitTimelineRefreshRaw() {
     _syncCanonicalRunningBusinessIdCache('timelineEmit');
-    _timelineDayIndexDirty = true;
-    _timelineDayViewCache.clear();
+    // The row VM is keyed by business ID. Clear it on same-count edits,
+    // otherwise an existing card can keep old title/status until navigation
+    // while the large (>480) day index rebuild is deferred.
+    _markTimelineDayIndexDirty();
     _timeUpdateController.add(null);
     // Plan alarms are reconciled from planning refresh / resume / hydrate only
     // (not on every record timeline emit — Law of the Main Thread).

@@ -435,12 +435,10 @@ class TimelinePage extends StatefulWidget {
 }
 
 class _TimelinePageState extends State<TimelinePage> {
-  Stream<List<Map<String, dynamic>>>? _recordsStream;
-  StreamSubscription<List<Map<String, dynamic>>>? _recordsSub;
-
-  /// Last non-transient list for visible calendar day; keeps ListView stable when stream
-  /// briefly emits `waiting` + empty during background refresh.
-  List<Map<String, dynamic>> _lastCoalescedRecords = [];
+  // Repaint directly from the canonical Brain cache on every record mutation.
+  // Do not hold an asynchronously coalesced list: it can lag behind realtime
+  // and remain stale until the user leaves and reopens Timeline.
+  StreamSubscription<void>? _timelineUpdatesSub;
 
   DateTime get _visibleDate => widget.visibleDate;
 
@@ -448,48 +446,32 @@ class _TimelinePageState extends State<TimelinePage> {
 
   bool get _visibleIsFuture => _visibleDate.isAfter(widget.anchorToday);
 
-  void _initStream() {
-    if (!widget.isActivePage) return;
-    _recordsSub?.cancel();
-    _lastCoalescedRecords = List<Map<String, dynamic>>.from(
-      DatabaseService.instance.peekTimelineRecordsForDate(_visibleDate),
-    );
-    _recordsStream = DatabaseService.instance.recordsStream(_visibleDate);
-    _recordsSub = _recordsStream!.listen((records) {
-      if (!mounted || !widget.isActivePage) return;
-      _lastCoalescedRecords = List<Map<String, dynamic>>.from(records);
-      setState(() {});
+  void _attachLiveTimelineUpdates() {
+    if (!widget.isActivePage || _timelineUpdatesSub != null) return;
+    // Listen synchronously during initState / activation, not after the first
+    // frame or an awaited network read. Incoming SSE updates must never be
+    // dropped during that window.
+    _timelineUpdatesSub = DatabaseService.instance.timeUpdates.listen((_) {
+      if (mounted && widget.isActivePage) setState(() {});
     });
   }
 
   List<Map<String, dynamic>>? _liveRecordsForVisibleDay() {
     if (!widget.isActivePage) return null;
-    if (_lastCoalescedRecords.isNotEmpty) {
-      return _lastCoalescedRecords;
-    }
-    final peek = DatabaseService.instance.peekTimelineRecordsForDate(
-      _visibleDate,
-    );
-    return peek.isEmpty ? null : peek;
+    // One authoritative in-memory source for active Timeline rendering.
+    // In particular, a confirmed remote delete must display an empty day.
+    return DatabaseService.instance.peekTimelineRecordsForDate(_visibleDate);
   }
 
   @override
   void initState() {
     super.initState();
-    _lastCoalescedRecords = List<Map<String, dynamic>>.from(
-      DatabaseService.instance.peekTimelineRecordsForDate(_visibleDate),
-    );
-    if (widget.isActivePage) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || !widget.isActivePage) return;
-        _initStream();
-      });
-    }
+    _attachLiveTimelineUpdates();
   }
 
   @override
   void dispose() {
-    _recordsSub?.cancel();
+    _timelineUpdatesSub?.cancel();
     super.dispose();
   }
 
@@ -497,19 +479,13 @@ class _TimelinePageState extends State<TimelinePage> {
   void didUpdateWidget(covariant TimelinePage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!oldWidget.isActivePage && widget.isActivePage) {
-      _initStream();
+      _attachLiveTimelineUpdates();
     } else if (oldWidget.isActivePage && !widget.isActivePage) {
-      _recordsSub?.cancel();
-      _recordsSub = null;
+      _timelineUpdatesSub?.cancel();
+      _timelineUpdatesSub = null;
     }
-    if (widget.isActivePage &&
-        (oldWidget.visibleDate != widget.visibleDate ||
-            oldWidget.isActivePage != widget.isActivePage)) {
-      _lastCoalescedRecords = List<Map<String, dynamic>>.from(
-        DatabaseService.instance.peekTimelineRecordsForDate(_visibleDate),
-      );
-      _initStream();
-    }
+    // The active day always reads the current cache in build. A date change
+    // needs no asynchronous subscription teardown/recreation.
   }
 
   void _showEditRecordSheet(BuildContext context, Map<String, dynamic> data) {

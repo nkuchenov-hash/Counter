@@ -275,6 +275,33 @@ void main() {
     expect(source.substring(start, end), contains("r['updated']"));
   });
 
+  test('visible Timeline repaints directly on PocketBase cache mutation', () {
+    final timeline = File('lib/features/timeline/timeline_view.dart')
+        .readAsStringSync();
+    final brain = File('lib/data/database_service.dart').readAsStringSync();
+    final pageStart = timeline.indexOf('class _TimelinePageState');
+    final page = timeline.substring(pageStart);
+
+    expect(page, contains('DatabaseService.instance.timeUpdates.listen'));
+    expect(page, contains('_attachLiveTimelineUpdates();'));
+    expect(page, contains('if (mounted && widget.isActivePage) setState(() {});'));
+    expect(page, contains('DatabaseService.instance.peekTimelineRecordsForDate'));
+    expect(page, isNot(contains('_lastCoalescedRecords')));
+    expect(page, isNot(contains('recordsStream(_visibleDate)')));
+    expect(page, isNot(contains('addPostFrameCallback')));
+
+    // Same-count edit updates and live inserts must also invalidate the
+    // cached per-record display VM before notifying an already-open page.
+    final emitStart = brain.indexOf('void _emitTimelineRefreshRaw()');
+    final emitEnd = brain.indexOf('Future<T> _runBatchedRecordCacheTimelineNotify', emitStart);
+    expect(emitStart, greaterThanOrEqualTo(0));
+    expect(emitEnd, greaterThan(emitStart));
+    expect(brain.substring(emitStart, emitEnd),
+        contains('_markTimelineDayIndexDirty();'));
+    expect(brain.substring(emitStart, emitEnd),
+        contains('_timeUpdateController.add(null);'));
+  });
+
   test('late records full-list response preserves newer SSE changes', () {
     final records = File('lib/data/record_service.dart').readAsStringSync();
     final realtime =
