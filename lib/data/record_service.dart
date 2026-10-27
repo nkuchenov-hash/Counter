@@ -311,6 +311,7 @@ extension RecordServiceExtension on DatabaseService {
         _cachedFlatRecords.isNotEmpty) {
       return List<Map<String, dynamic>>.from(_cachedFlatRecords);
     }
+    final requestSequence = ++_recordsNetworkFetchSequence;
     _recordsFullFetchesInFlight++;
     try {
       await ensurePocketBaseReady();
@@ -377,11 +378,19 @@ extension RecordServiceExtension on DatabaseService {
       }
       final outboxPrefs = _prefs ?? await SharedPreferences.getInstance();
       await _mergePendingRecordCreatesIntoRows(kept, outboxPrefs);
+      // Two concurrent REST reads can finish out of order. Do not let the
+      // earlier request replace a newer authoritative snapshot, or let an
+      // old account's response overwrite the current account after sign-out.
+      if (currentProfileId != pid ||
+          requestSequence < _recordsLastAppliedFetchSequence) {
+        return List<Map<String, dynamic>>.from(_cachedFlatRecords);
+      }
       if (kept.isEmpty && _cachedFlatRecords.isNotEmpty) {
         return List<Map<String, dynamic>>.from(_cachedFlatRecords);
       }
       final beforeCount = _cachedFlatRecords.length;
       _cachedFlatRecords = kept;
+      _recordsLastAppliedFetchSequence = requestSequence;
       _replayRecordRealtimeOverFetchedSnapshot();
       _markTimelineDayIndexDirty();
       _pruneRecord404DeadletterUsingCache();
