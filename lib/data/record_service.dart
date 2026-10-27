@@ -385,7 +385,13 @@ extension RecordServiceExtension on DatabaseService {
           requestSequence < _recordsLastAppliedFetchSequence) {
         return List<Map<String, dynamic>>.from(_cachedFlatRecords);
       }
-      if (kept.isEmpty && _cachedFlatRecords.isNotEmpty) {
+      // Keep the offline snapshot if auth has expired, but an authenticated,
+      // successful full-list response containing zero rows is authoritative.
+      // Previously the old cache could NEVER become empty after all records
+      // were deleted on another device and the deletion SSE was missed.
+      if (kept.isEmpty &&
+          _cachedFlatRecords.isNotEmpty &&
+          !_pb.authStore.isValid) {
         return List<Map<String, dynamic>>.from(_cachedFlatRecords);
       }
       final beforeCount = _cachedFlatRecords.length;
