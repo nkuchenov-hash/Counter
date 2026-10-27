@@ -149,6 +149,23 @@ function __xiaomiStatus(app, connection) {
     if (configured) __xiaomiDisableGoogleProviders(app, userId);
 
     var lastError = String(connection.get("last_error") || "");
+    // A valid Xiaomi token is not proof that last night's sleep arrived.
+    // Surface missing data separately from transport/auth success; never erase
+    // an upstream error simply because the status endpoint was queried.
+    if (configured && !!connection.get("enabled") &&
+        phase !== "connecting" && phase !== "syncing") {
+        try {
+            var profile = __xiaomiProfile(app, userId);
+            var local = __xiaomiLocalClock(profile, new Date());
+            if (!__xiaomiHasSleepForLocalDay(app, userId, profile, local.day) &&
+                (local.minutes >= 10 * 60 || !__xiaomiHasRecentSleep(app, userId))) {
+                phase = "error";
+                if (!lastError) lastError = "xiaomi_sleep_not_available_today";
+            }
+        } catch (_) {
+            // Status must not fail just because a freshness probe failed.
+        }
+    }
     return {
         configured: configured,
         provider: __xiaomiProvider,
@@ -345,6 +362,19 @@ function __xiaomiHasSleepForLocalDay(app, userId, profile, localDay) {
     }
 }
 
+function __xiaomiHasRecentSleep(app, userId) {
+    try {
+        app.findFirstRecordByFilter(
+            "records",
+            "user_id = {:uid} && (sleep_source = 'xiaomi' || external_source = 'xiaomi') && end_time >= {:cutoff}",
+            { uid: userId, cutoff: new Date(Date.now() - 36 * 3600000).toISOString() }
+        );
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
 function __xiaomiRunConnection(app, connection) {
     var userId = String(connection.get("user_id") || "");
     if (!userId || !__xiaomiHasToken(userId)) throw new Error("Xiaomi authorization is required");
@@ -360,7 +390,10 @@ function __xiaomiRunConnection(app, connection) {
         imported += __xiaomiUpsert(app, userId, profile, category, sessions[i]);
     }
     var local = __xiaomiLocalClock(profile, now);
-    connection.set("status", "connected");
+    var missingExpectedSleep =
+        !__xiaomiHasSleepForLocalDay(app, userId, profile, local.day) &&
+        (local.minutes >= 10 * 60 || !__xiaomiHasRecentSleep(app, userId));
+    connection.set("status", missingExpectedSleep ? "error" : "connected");
     connection.set("enabled", true);
     connection.set("last_sync_at", now.toISOString());
     connection.set("last_sync_local_day", local.day);
@@ -369,7 +402,7 @@ function __xiaomiRunConnection(app, connection) {
     connection.set("last_sleep_count", sessions.length);
     connection.set("last_activity_count", 0);
     if (fullDue) connection.set("last_full_sync_at", now.toISOString());
-    connection.set("last_error", "");
+    connection.set("last_error", missingExpectedSleep ? "xiaomi_sleep_not_available_today" : "");
     app.save(connection);
     __xiaomiDisableGoogleProviders(app, userId);
     return { sessions: sessions.length, imported: imported, sleep: sessions.length };
@@ -384,7 +417,7 @@ function __xiaomiRunSafe(app, connection) {
     } catch (err) {
         connection.set("status", "error");
         connection.set("last_error", String(err));
-        connection.set("last_sync_at", new Date().toISOString());
+        // A failed attempt must not move the last successful query timestamp.
         app.save(connection);
         try { app.logger().error("xiaomi sleep sync failed", "connection", connection.id, "error", err); } catch (_) {}
         throw err;

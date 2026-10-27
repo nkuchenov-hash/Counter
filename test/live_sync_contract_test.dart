@@ -239,6 +239,42 @@ void main() {
     expect(cache, contains('_plansRealtimeDuringFullFetch.clear()'));
   });
 
+  test('overlapping REST responses cannot roll back newer snapshots', () {
+    final records = File('lib/data/record_service.dart').readAsStringSync();
+    final recordRealtime =
+        File('lib/data/records/record_realtime.dart').readAsStringSync();
+    final plans = File('lib/data/plans/plan_cache_helpers.dart')
+        .readAsStringSync();
+
+    expect(recordRealtime, contains('int _recordsNetworkFetchSequence = 0;'));
+    expect(recordRealtime, contains('int _recordsLastAppliedFetchSequence = 0;'));
+    expect(records, contains('requestSequence = ++_recordsNetworkFetchSequence'));
+    expect(records, contains('requestSequence < _recordsLastAppliedFetchSequence'));
+    expect(records, contains('_recordsLastAppliedFetchSequence = requestSequence'));
+    expect(records, contains('currentProfileId != pid'));
+    // A valid authenticated empty REST list must remove remote-deleted rows.
+    expect(records, contains('!_pb.authStore.isValid'));
+
+    expect(plans, contains('int _plansNetworkFetchSequence = 0;'));
+    expect(plans, contains('int _plansLastAppliedFetchSequence = 0;'));
+    expect(plans, contains('requestSequence = ++_plansNetworkFetchSequence'));
+    expect(plans, contains('requestSequence < _plansLastAppliedFetchSequence'));
+    expect(plans, contains('_plansLastAppliedFetchSequence = requestSequence'));
+    expect(plans, contains('currentProfileId != fetchProfileId'));
+  });
+
+  test('timeline stream observes record metadata revisions', () {
+    final source = File('lib/data/records/record_cache_helpers.dart')
+        .readAsStringSync();
+    final start = source.indexOf(
+      'String _timelineRecordsStreamDistinctSignature(',
+    );
+    final end = source.indexOf('debugTimelineRecordsStreamSignatureForDay(', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+    expect(source.substring(start, end), contains("r['updated']"));
+  });
+
   test('late records full-list response preserves newer SSE changes', () {
     final records = File('lib/data/record_service.dart').readAsStringSync();
     final realtime =

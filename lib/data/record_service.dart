@@ -311,6 +311,7 @@ extension RecordServiceExtension on DatabaseService {
         _cachedFlatRecords.isNotEmpty) {
       return List<Map<String, dynamic>>.from(_cachedFlatRecords);
     }
+    final requestSequence = ++_recordsNetworkFetchSequence;
     _recordsFullFetchesInFlight++;
     try {
       await ensurePocketBaseReady();
@@ -377,11 +378,20 @@ extension RecordServiceExtension on DatabaseService {
       }
       final outboxPrefs = _prefs ?? await SharedPreferences.getInstance();
       await _mergePendingRecordCreatesIntoRows(kept, outboxPrefs);
-      if (kept.isEmpty && _cachedFlatRecords.isNotEmpty) {
+      // Reject older REST responses and responses from a previous account.
+      if (currentProfileId != pid ||
+          requestSequence < _recordsLastAppliedFetchSequence) {
+        return List<Map<String, dynamic>>.from(_cachedFlatRecords);
+      }
+      // Authenticated empty results must clear remote-deleted cached records.
+      if (kept.isEmpty &&
+          _cachedFlatRecords.isNotEmpty &&
+          !_pb.authStore.isValid) {
         return List<Map<String, dynamic>>.from(_cachedFlatRecords);
       }
       final beforeCount = _cachedFlatRecords.length;
       _cachedFlatRecords = kept;
+      _recordsLastAppliedFetchSequence = requestSequence;
       _replayRecordRealtimeOverFetchedSnapshot();
       _markTimelineDayIndexDirty();
       _pruneRecord404DeadletterUsingCache();

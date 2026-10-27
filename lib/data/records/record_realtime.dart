@@ -6,6 +6,10 @@ bool _realtimeTransportGapDetected = false;
 Timer? _realtimeGapCatchUpTimer;
 Future<void>? _realtimeGapCatchUpInFlight;
 // Keep SSE writes while an older full-list HTTP response is still pending.
+// Monotonic request order: an older REST response cannot replace a newer
+// successfully applied full-list snapshot even when no SSE event was emitted.
+int _recordsNetworkFetchSequence = 0;
+int _recordsLastAppliedFetchSequence = 0;
 int _recordsFullFetchesInFlight = 0;
 final Map<String, RecordModel?> _recordsRealtimeDuringFullFetch = {};
 
