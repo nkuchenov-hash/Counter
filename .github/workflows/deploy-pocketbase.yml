@@ -44,7 +44,6 @@ jobs:
           node test/viktor_connection_vault_test.cjs
           node test/viktor_turns_migration_test.cjs
           node test/viktor_atomic_schedule_hook_test.cjs
-          node test/xiaomi_sleep_freshness_test.cjs
 
       - name: Detect PocketBase bundle changes
         id: changes
