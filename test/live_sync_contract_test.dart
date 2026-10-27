@@ -261,6 +261,18 @@ void main() {
     expect(plans, contains('currentProfileId != fetchProfileId'));
   });
 
+  test('timeline stream observes record metadata revisions', () {
+    final source = File('lib/data/records/record_cache_helpers.dart')
+        .readAsStringSync();
+    final start = source.indexOf(
+      'String _timelineRecordsStreamDistinctSignature(',
+    );
+    final end = source.indexOf('debugTimelineRecordsStreamSignatureForDay(', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+    expect(source.substring(start, end), contains("r['updated']"));
+  });
+
   test('late records full-list response preserves newer SSE changes', () {
     final records = File('lib/data/record_service.dart').readAsStringSync();
     final realtime =
