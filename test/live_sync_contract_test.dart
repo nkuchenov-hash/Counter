@@ -252,6 +252,8 @@ void main() {
     expect(records, contains('requestSequence < _recordsLastAppliedFetchSequence'));
     expect(records, contains('_recordsLastAppliedFetchSequence = requestSequence'));
     expect(records, contains('currentProfileId != pid'));
+    // A valid authenticated empty REST list must remove remote-deleted rows.
+    expect(records, contains('!_pb.authStore.isValid'));
 
     expect(plans, contains('int _plansNetworkFetchSequence = 0;'));
     expect(plans, contains('int _plansLastAppliedFetchSequence = 0;'));
