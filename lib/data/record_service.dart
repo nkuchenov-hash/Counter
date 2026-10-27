@@ -378,17 +378,12 @@ extension RecordServiceExtension on DatabaseService {
       }
       final outboxPrefs = _prefs ?? await SharedPreferences.getInstance();
       await _mergePendingRecordCreatesIntoRows(kept, outboxPrefs);
-      // Two concurrent REST reads can finish out of order. Do not let the
-      // earlier request replace a newer authoritative snapshot, or let an
-      // old account's response overwrite the current account after sign-out.
+      // Reject older REST responses and responses from a previous account.
       if (currentProfileId != pid ||
           requestSequence < _recordsLastAppliedFetchSequence) {
         return List<Map<String, dynamic>>.from(_cachedFlatRecords);
       }
-      // Keep the offline snapshot if auth has expired, but an authenticated,
-      // successful full-list response containing zero rows is authoritative.
-      // Previously the old cache could NEVER become empty after all records
-      // were deleted on another device and the deletion SSE was missed.
+      // Authenticated empty results must clear remote-deleted cached records.
       if (kept.isEmpty &&
           _cachedFlatRecords.isNotEmpty &&
           !_pb.authStore.isValid) {
