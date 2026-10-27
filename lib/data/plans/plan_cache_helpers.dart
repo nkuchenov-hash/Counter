@@ -3,6 +3,9 @@ part of '../database_service.dart';
 // REST snapshots can arrive AFTER newer SSE updates. Keep every in-flight
 // snapshot's realtime deltas until all overlapping reads have completed.
 int _plansFullFetchesInFlight = 0;
+// A slower earlier GET must never roll back a later successful list read.
+int _plansNetworkFetchSequence = 0;
+int _plansLastAppliedFetchSequence = 0;
 final Map<String, PlanningTask?> _plansRealtimeDuringFullFetch = {};
 
 double titleSimilarityForPlanLink(String a, String b) {
@@ -58,6 +61,8 @@ extension PlanCacheProjectionExtension on DatabaseService {
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return [];
     final ownerFilter = _pocketBaseOwnerFilterClauseForRecords();
     if (ownerFilter == null || ownerFilter.isEmpty) return [];
+    final fetchProfileId = currentProfileId;
+    final requestSequence = ++_plansNetworkFetchSequence;
     final sw = Stopwatch()..start();
     _plansFullFetchesInFlight++;
     try {
@@ -80,6 +85,11 @@ extension PlanCacheProjectionExtension on DatabaseService {
         for (final r in list)
           _planningTaskFromPocketRecord(r, pocketTagCatalog: tagCatalog),
       ];
+      if (currentProfileId != fetchProfileId ||
+          requestSequence < _plansLastAppliedFetchSequence) {
+        return _allPlansUserCache;
+      }
+      _plansLastAppliedFetchSequence = requestSequence;
       _allPlansUserCache = scrubPlanningTasksForLocalCache(out);
       _scrubJitVirtualRowsFromUserCache();
       // A late REST response must never undo an SSE create/update/delete
