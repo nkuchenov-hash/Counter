@@ -56,6 +56,11 @@ extension RecordCacheProjectionExtension on DatabaseService {
       b.write((r['status'] ?? '').toString().trim().toLowerCase());
       b.write('|');
       b.write((r['title'] ?? '').toString());
+      // A note/tag/checklist edit may leave title, status, and times unchanged.
+      // PocketBase updates this timestamp on every persisted record change;
+      // include it so subscribers cannot suppress those realtime updates.
+      b.write('|');
+      b.write((r['updated'] ?? '').toString());
       b.write('|');
       final st = r['startTime'] as DateTime?;
       final en = r['endTime'] as DateTime?;
