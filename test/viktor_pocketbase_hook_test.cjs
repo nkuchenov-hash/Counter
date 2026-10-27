@@ -470,6 +470,7 @@ const runtime = fs.readFileSync('pb_hooks/xiaomi_sleep_runtime.js', 'utf8');
 function harness() {
   const context = vm.createContext({
     module: { exports: {} },
+    __hooks: '/tmp/pb_hooks',
     $os: { stat: () => ({}) }, // a saved Xiaomi token exists
   });
   vm.runInContext(runtime, context, { filename: 'xiaomi_sleep_runtime.js' });
