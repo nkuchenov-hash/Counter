@@ -10,6 +10,7 @@ const routes = new Map();
 const db = {
   profiles: [], people: [], plans: [],
   shared_objects: [], shared_members: [], shared_messages: [],
+  shared_personal_state: [],
 };
 let nextId = 1;
 class Record {
@@ -72,6 +73,11 @@ const $app = {
     } else if (table === 'shared_members') {
       found = db.shared_members.find(r => r.getString('object_id') === args.sid &&
         r.getString('user_id') === args.uid);
+    } else if (table === 'shared_personal_state') {
+      found = db.shared_personal_state.find(r =>
+        r.getString('object_id') === args.sid &&
+        r.getString('user_id') === args.uid &&
+        r.getString('source_plan_id') === args.planId);
     }
     if (!found) throw new Error('not found');
     return found;
@@ -86,6 +92,10 @@ const $app = {
           ? r.getString('object_id') === args.sid
           : r.getString('user_id') === args.uid &&
             r.getString('status') !== 'revoked';
+      }
+      if (table === 'shared_personal_state') {
+        return r.getString('object_id') === args.sid &&
+          r.getString('user_id') === args.uid;
       }
       return r.getString('object_id') === args.sid;
     });
@@ -161,6 +171,38 @@ assert.equal(participantDay.status, 200);
 assert.equal(participantDay.data.shares.length, 1);
 assert.equal(participantDay.data.shares[0].my_status, 'accepted');
 assert.equal(JSON.stringify(participantDay.data).includes('PRIVATE JOURNAL'), false);
+// One shared schedule, two independent personal completion states.
+const completion = '/api/shares/{id}/completion';
+assert.equal(call('POST',completion,outsider,
+  {plan_id:ownerPlan,completed:true},idParam).status,404);
+assert.equal(call('POST',completion,recipient,
+  {plan_id:'000001111122222',completed:true},idParam).status,400);
+assert.equal(call('POST',completion,recipient,
+  {plan_id:ownerPlan,completed:'true'},idParam).status,400);
+assert.equal(call('POST',completion,recipient,
+  {plan_id:ownerPlan,completed:true},idParam).status,200);
+assert.equal(call('POST',completion,recipient,
+  {plan_id:ownerPlan,completed:true},idParam).status,200,
+  'Repeated completion must be idempotent, not create duplicates');
+assert.equal(db.shared_personal_state.length,1);
+assert.equal(call('GET','/api/shares/{id}',recipient,{},idParam)
+  .data.my_completed[ownerPlan],true);
+assert.equal(call('GET','/api/shares/{id}',owner,{},idParam)
+  .data.my_completed[ownerPlan],undefined,
+  'Owner must not see recipient completion');
+assert.equal(call('POST','/api/shares/day',owner,
+  {wall_day:'2026-10-31'}).data.shares[0].my_completed[ownerPlan],undefined);
+assert.equal(call('POST',completion,owner,
+  {plan_id:ownerPlan,completed:false},idParam).status,200);
+assert.equal(db.shared_personal_state.length,2,
+  'Owner and participant completion must live in independent rows');
+assert.equal(call('POST',completion,recipient,
+  {plan_id:ownerPlan,completed:false},idParam).status,200);
+assert.equal(call('POST','/api/shares/day',recipient,
+  {wall_day:'2026-10-31'}).data.shares[0].my_completed[ownerPlan],false);
+assert.equal(db.plans[0].getBool('is_done'),false,
+  'Shared personal completion never writes the owner's private plan');
+
 
 assert.equal(call('POST','/api/shares/{id}/respond',outsider,
   {accept:true},idParam).status,404);
@@ -221,6 +263,7 @@ assert.equal(call('POST',revoke, outsider,{},revokeParams).status,403);
 assert.equal(call('POST',revoke,recipient,{},revokeParams).status,403);
 assert.equal(call('POST',revoke,owner,{},revokeParams).status,200);
 assert.equal(call('GET','/api/shares/{id}',recipient,{},idParam).status,404);
+assert.equal(call('POST',completion,recipient,{plan_id:ownerPlan,completed:true},idParam).status,404);
 assert.equal(call('POST','/api/shares/day',recipient,
   {wall_day:'2026-10-31'}).data.shares.length,0);
 assert.equal(call('POST','/api/shares/{id}/messages',recipient,
