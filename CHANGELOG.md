@@ -1,3 +1,9 @@
+## [2026-10-28] — Shared plans using existing People (candidate, unmerged)
+
+- Added **on-demand** selected-day plan sharing into a server-owned shared draft; the existing People section now provides recipient selection and a Shared invitation inbox. No second Contacts domain.
+- New closed `shared_objects` / `shared_members` / `shared_messages` schema and authenticated `/api/shares` hooks isolate each owner's records, require invite acceptance, and support discussion and versioned task-title proposals with owner approval.
+- Added deterministic route authorization tests and the collaboration implementation contract (`docs/SHARING_COLLABORATION.md`). **Not deployed / not production-ready.** Accepted suggestions update the shared draft only; participant Planner/Calendar sync, offline queues, and real-account E2E remain outstanding.
+
 ## [2026-10-28] — Viktor composable record tools, architecture foundation
 
 - Added owner-scoped `read_day_records` and `create_completed_records` primitives. AI can inspect actual Timeline entries and propose 1–12 explicit UTC completed-record intervals, without a hardcoded "between X and Y" command.
