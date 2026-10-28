@@ -5,6 +5,8 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/people/people_models.dart';
 import 'package:counter/data/people/people_service.dart';
 import 'package:counter/data/sharing/share_service.dart';
+import 'package:counter/features/sharing/shared_proposal_sheet.dart';
+import 'package:counter/shared/time/wall_clock.dart' as wall_clock;
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -130,31 +132,30 @@ class _SharedDetailPageState extends State<SharedDetailPage> {
     ));
   }
 
+  String _clock(String raw) {
+    final utc = DateTime.tryParse(raw)?.toUtc();
+    if (utc == null) return '';
+    final settings = DatabaseService.instance.settings;
+    final wall = wall_clock.toWallClockForLabel(utc,
+      settings.timezoneOffsetHours, settings.preferredTimeZone);
+    return '${wall.hour.toString().padLeft(2, '0')}:'
+        '${wall.minute.toString().padLeft(2, '0')}';
+  }
+
   Future<void> _propose(SharedPlanItem item) async {
-    final ctrl = TextEditingController(text: item.title);
-    final title = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l('Предложить изменение', 'Suggest a change')),
-        content: TextField(
-          controller: ctrl, autofocus: true, maxLength: 160,
-          decoration: InputDecoration(labelText: l('Название задачи', 'Task title')),
-        ),
-        actions: [
-          AppButton.ghost(label: l('Отмена', 'Cancel'),
-              onPressed: () => Navigator.pop(ctx)),
-          AppButton.primary(label: l('Предложить', 'Suggest'),
-              onPressed: () => Navigator.pop(ctx, ctrl.text.trim())),
-        ],
-      ),
-    );
-    ctrl.dispose();
-    if (title == null || title.isEmpty || title == item.title || _detail == null) return;
+    final current = _detail;
+    if (current == null) return;
+    final draft = await showSharedProposalSheet(context,
+      item: item, wallDay: current.share.wallDay, ru: _ru);
+    if (draft == null || !mounted) return;
     await _mutate(() => _service.propose(
       widget.shareId,
-      revision: _detail!.share.revision,
+      revision: current.share.revision,
       sourcePlanId: item.planId,
-      title: title,
+      title: draft.title,
+      startTime: draft.startUtc,
+      endTime: draft.endUtc,
+      comment: draft.comment,
     ));
   }
 
@@ -197,9 +198,11 @@ class _SharedDetailPageState extends State<SharedDetailPage> {
                           Card(child: ListTile(
                             title: Text(item.title),
                             subtitle: Text([
-                              if (item.startTime.isNotEmpty) item.startTime,
-                              if (item.endTime.isNotEmpty) item.endTime,
-                            ].join(' — ')),
+                              if (_clock(item.startTime).isNotEmpty)
+                                _clock(item.startTime),
+                              if (_clock(item.endTime).isNotEmpty)
+                                _clock(item.endTime),
+                            ].join(' – ')),
                             trailing: IconButton(
                               tooltip: l('Предложить изменение', 'Suggest change'),
                               onPressed: _sending ? null : () => unawaited(_propose(item)),
