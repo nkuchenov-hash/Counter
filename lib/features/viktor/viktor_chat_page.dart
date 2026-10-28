@@ -105,22 +105,8 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         return;
       }
       if (historical != null) {
-        final batch = ViktorActionBatch.fromJson({
-          'version': 1, 'request_id': requestId,
-          'actions': [{'name': 'create_completed_records_between',
-            'arguments': {'wall_day': ViktorDateScope.key(historical.day),
-              'before_title': historical.beforeTitle,
-              'after_title': historical.afterTitle,
-              'titles': historical.titles}}],
-        });
-        final preview = await executor.describe(batch, historical.day);
-        if (!mounted) return;
-        if (await _confirm(batch, preview)) {
-          _push(await executor.apply(batch, historical.day,
-              approvedPreview: preview));
-        } else {
-          _push('Добавление записей отменено.');
-        }
+        await _runHistoricalRecords(historical, executor, requestId,
+            _confirm, _push);
         return;
       }
       final plans = await db.getPlanningTasksForWallDate(intentDay);
