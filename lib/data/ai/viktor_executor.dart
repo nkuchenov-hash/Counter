@@ -101,9 +101,10 @@ class ViktorExecutor {
       identifyCategory: db.identifyCategory,
       categoryById: db.getCategoryRuleById,
       defaultCategoryId: db.defaultCategoryId,
+      // A locally known category can still lack its loaded PB row id.
+      // Let the canonical async category resolver repair that reference
+      // during the write; never reject the user's request prematurely.
       rootCategories: db.rules,
-      canSave: (rule) =>
-          db.categoryRelationIdForPlanCreate(rule.id) != null,
     );
   }
 
@@ -479,6 +480,28 @@ class ViktorExecutor {
         'применена. Проверьте результат перед повторным запросом.');
     }
     return lines.join('\n');
+  }
+
+  /// One explicit, unambiguous date-only Plan needs no model or approval.
+  /// Unlike describe() + apply(), this performs only ONE duplicate read,
+  /// then resolves its category and writes. No extra schedule round trips.
+  Future<String> createSingleDateOnlyPlan(
+      ViktorActionBatch batch, DateTime day) async {
+    _checkScope(batch, day);
+    if (batch.actions.length != 1 ||
+        batch.actions.single.name != 'create_plan' ||
+        batch.actions.single.arguments.containsKey('start_time') ||
+        batch.actions.single.arguments.containsKey('duration_minutes')) {
+      throw StateError('Ожидается один план без указанного времени.');
+    }
+    final action = batch.actions.single;
+    final existing = await _existingPlan(action);
+    if (existing != null) return ViktorExistingPlan.describe(existing);
+    final created = await _createPlan(action, null);
+    if (!created.accepted && !created.pendingSync) {
+      throw StateError('Не удалось начать сохранение плана.');
+    }
+    return _creationReceipt(action, created);
   }
 
   Future<String> apply(ViktorActionBatch batch, DateTime day, {
