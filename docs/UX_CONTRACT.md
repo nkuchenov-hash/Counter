@@ -242,6 +242,13 @@ This document defines how Life OS behaves when people interact with it. It is th
 - When disabled, Timeline's morning gate must never open the check-in automatically. Enabling it restores the existing one-per-day, wake-window and done/dismissed rules.
 - This visibility preference does not disable sleep synchronization, delete sleep records, or alter the existing first-activity start flow.
 
+## Header date navigation
+
+- Tapping the global header date opens **one** date-only dialog on web, desktop, and mobile: an always-visible calendar plus a manual `DD.MM.YYYY` field. No calendar/input mode toggle.
+- Choosing any enabled calendar day closes the dialog and dispatches day navigation **in the same tap callback**; no OK or Save confirmation and no network wait.
+- Manual input navigates on keyboard Go/Enter or the inline arrow; invalid or out-of-range dates keep the dialog open with a localized validation message.
+- The picker does not alter planned/recorded data or the profile timezone. Timeline and Planning continue to use their existing day-navigation and swipe paths.
+
 ## Tap Feedback
 
 - Tappable controls must have an obvious pressed/selected/disabled state.
