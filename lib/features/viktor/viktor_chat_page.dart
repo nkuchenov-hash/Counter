@@ -84,10 +84,8 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     }
     final profileToday = db.getProjectedToday();
     final dialogContext = ViktorDialogueTurn.modelContext(_messages.skip(1));
-    final historical = ViktorHistoricalRecordIntent.parse(
-        input, dialogContext, profileToday);
     final independentPlan = ViktorDateScope.independentDateOnlyPlan(input, profileToday);
-    if (independentPlan == null && historical == null &&
+    if (independentPlan == null &&
         _settings.mode == 'byok' && !_settings.modelConnected) {
       await _openSettings();
       if (!mounted || !_settings.modelConnected) return;
@@ -110,11 +108,6 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
       if (independentPlan != null) {
         await _createIndependentDateOnlyPlan(independentPlan, executor, requestId);
-        return;
-      }
-      if (historical != null) {
-        await _runHistoricalRecords(historical, executor, requestId,
-            _confirm, _push);
         return;
       }
       final plans = await db.getPlanningTasksForWallDate(intentDay);
