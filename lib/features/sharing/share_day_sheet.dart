@@ -78,7 +78,7 @@ class _ShareDayPickerState extends State<_ShareDayPicker> {
         16, 8, 16, 16 + MediaQuery.viewInsetsOf(context).bottom,
       ),
       child: SizedBox(
-        height: (MediaQuery.sizeOf(context).height * .72).clamp(280.0, 680.0),
+        height: (MediaQuery.sizeOf(context).height * .72).clamp(280.0, 680.0).toDouble(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
