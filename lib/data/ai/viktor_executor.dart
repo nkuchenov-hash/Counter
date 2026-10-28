@@ -102,18 +102,32 @@ class ViktorExecutor {
       categoryById: db.getCategoryRuleById,
       defaultCategoryId: db.defaultCategoryId,
       rootCategories: db.rules,
+      canSave: (rule) =>
+          db.categoryRelationIdForPlanCreate(rule.id) != null,
     );
   }
 
   String _planCategoryLabel(ViktorAction action) {
-    final category = _planCategory(action);
-    final path = db.getCategoryPath(category.id).trim();
-    return path.isNotEmpty ? path : category.name;
+    try {
+      final category = _planCategory(action);
+      final path = db.getCategoryPath(category.id).trim();
+      return path.isNotEmpty ? path : category.name;
+    } on StateError {
+      // Preview should not fail solely because category data is stale.
+      return 'Подберу доступную категорию';
+    }
   }
 
   Future<({bool accepted, bool pendingSync, String clientPlanId})>
-      _createPlan(ViktorAction action, DateTime? start) {
-    final category = _planCategory(action);
+      _createPlan(ViktorAction action, DateTime? start) async {
+    CategoryRule category;
+    try {
+      category = _planCategory(action);
+    } on StateError {
+      // Recover the real server category IDs automatically before giving up.
+      await db.refreshCategoryRulesFromServer();
+      category = _planCategory(action);
+    }
     return db.addPlanningTaskWithReceipt(PlanningTask(
       id: 0, title: action.arguments['title'] as String,
       categoryId: category.id,
