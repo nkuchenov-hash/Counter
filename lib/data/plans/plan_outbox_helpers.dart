@@ -462,6 +462,16 @@ extension PlanOutboxSyncExtension on DatabaseService {
       body['user_id'] = _pidForPbFilter;
       try {
         final existingId = await _fetchPbPlanSysIdByPlanIdField(businessId);
+        if (existingId == null || existingId.isEmpty) {
+          final category = await resolveQueuedPlanCreateCategory(
+            body['category_id'],
+          );
+          if (category == null) {
+            offlineSync.setLastError('План пока не сохранён. Повторю автоматически.');
+            return false;
+          }
+          body['category_id'] = category;
+        }
         var record = existingId != null && existingId.isNotEmpty
             ? await _pb.collection(PbCollections.plans).getOne(existingId)
             : await _pb.collection(PbCollections.plans).create(body: body);
