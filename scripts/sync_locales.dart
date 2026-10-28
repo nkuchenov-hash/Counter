@@ -33,26 +33,10 @@ void main(List<String> args) {
     return;
   }
 
-  // Notes V3 keys are kept in a companion const map to avoid oversized
-  // localization files. Both English maps together remain the SSOT.
-  final enNotesPath = File(_join(langsDir.path, 'en_notes_v3.dart'));
-  final enNotes = enNotesPath.readAsStringSync(encoding: utf8);
-  final enNotesRegion = _findL10nMap(enNotes);
-  if (enNotesRegion == null || enNotesRegion.name != 'kEnNotesV3L10n') {
-    stderr.writeln('Missing or invalid English Notes V3 localization map');
-    exitCode = 1;
-    return;
-  }
-  final inner = enContent.substring(enRegion.openBrace + 1, enRegion.closeBrace)
-      .replaceAll(RegExp(r'\.\.\.kEnNotesV3L10n\s*,?'), '');
-  final enNotesInner = enNotes.substring(
-    enNotesRegion.openBrace + 1, enNotesRegion.closeBrace);
+  final inner = enContent.substring(enRegion.openBrace + 1, enRegion.closeBrace);
   List<(String, String)> enOrdered;
   try {
-    enOrdered = [
-      ..._parseOrderedEntries(inner),
-      ..._parseOrderedEntries(enNotesInner),
-    ];
+    enOrdered = _parseOrderedEntries(inner);
   } on FormatException catch (e) {
     stderr.writeln('Failed to parse en.dart map body: $e');
     exitCode = 1;
@@ -71,9 +55,7 @@ void main(List<String> args) {
 
   for (final entity in langsDir.listSync(followLinks: false)) {
     if (entity is! File || !_endsWith(entity.path, '.dart')) continue;
-    final fileName = _basename(entity.path);
-    if (fileName == 'en.dart' || fileName == 'en_notes_v3.dart' ||
-        fileName == 'ru_notes_v3.dart') continue;
+    if (_basename(entity.path) == 'en.dart') continue;
 
     final path = entity.path;
     final text = File(path).readAsStringSync(encoding: utf8);
@@ -83,21 +65,10 @@ void main(List<String> args) {
       continue;
     }
 
-    final tInner = text.substring(region.openBrace + 1, region.closeBrace)
-        .replaceAll(RegExp(r'\.\.\.kRuNotesV3L10n\s*,?'), '');
+    final tInner = text.substring(region.openBrace + 1, region.closeBrace);
     List<(String, String)> tParsed;
     try {
       tParsed = _parseOrderedEntries(tInner);
-      if (fileName == 'ru.dart') {
-        final ruNotes = File(_join(langsDir.path, 'ru_notes_v3.dart'))
-            .readAsStringSync(encoding: utf8);
-        final region = _findL10nMap(ruNotes);
-        if (region == null || region.name != 'kRuNotesV3L10n') {
-          throw FormatException('Missing Russian Notes V3 localization map');
-        }
-        tParsed.addAll(_parseOrderedEntries(ruNotes.substring(
-          region.openBrace + 1, region.closeBrace)));
-      }
     } on FormatException catch (e) {
       stderr.writeln('Skip (parse error in ${_basename(path)}): $e');
       continue;
