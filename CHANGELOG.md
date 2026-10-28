@@ -3,6 +3,15 @@
 - Ported the October 16 header date-picker fix into current `main` through a scoped merge. Global date navigation opens a single calendar plus DD.MM.YYYY field on all platforms; clicking a day applies immediately without OK or entry-mode switching.
 - Added localized invalid-date feedback and regression widget tests for calendar selection and manual entry. No PocketBase, plan, record, or timezone mutation logic changed.
 
+## [2026-10-28] — Reliable automatic delivery and honest Viktor responses
+
+- Start the shared offline mutation drain whenever the authenticated LIFE OS shell starts. Pending plans are replayed automatically without asking the user to manage storage.
+- A Plan create is aborted if the write-ahead outbox could not be durably saved; a failed remote write can no longer be mistaken for safely queued work.
+- Rejected create replays remain in the durable outbox (including validation errors), instead of being silently acknowledged and lost. Stalled attempts use bounded retry backoff.
+- Viktor confirms the requested date only after an acknowledged create. If delivery has not yet been verified, it reports a short automatic-in-progress status without exposing the database or a manual sync workflow.
+- Updated onboarding: straightforward commands execute immediately; complex changes ask for approval. Added durable plan regression assertions.
+- A queued plan from a prior app version can only be recovered if its local outbox still exists; successful CI is not proof of a specific user's saved plan.
+
 ## [2026-10-28] — Stop independent November 2 plan from reviving older itineraries
 
 - A standalone explicit dated plan (EN/RU, e.g. "November 2 - new plan ...") is now parsed as **one** untimed Plan with the correct profile-calendar date, without passing the previous conversation's itinerary through AI.
