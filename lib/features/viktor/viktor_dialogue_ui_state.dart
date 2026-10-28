@@ -11,6 +11,29 @@ String viktorSpeechProgressText(ViktorSpeechStage stage, Duration elapsed) {
 }
 
 mixin _ViktorDialogueUiState on State<ViktorChatPage> {
+  Future<void> _runHistoricalRecords(
+      ViktorHistoricalRecordIntent intent, ViktorExecutor executor,
+      String requestId,
+      Future<bool> Function(ViktorActionBatch, String) confirm,
+      void Function(String) report) async {
+    final batch = ViktorActionBatch.fromJson({
+      'version': 1, 'request_id': requestId,
+      'actions': [{'name': 'create_completed_records_between',
+        'arguments': {'wall_day': ViktorDateScope.key(intent.day),
+          'before_title': intent.beforeTitle, 'after_title': intent.afterTitle,
+          'titles': intent.titles}}],
+    });
+    final preview = await executor.describe(batch, intent.day);
+    if (!mounted) return;
+    if (await confirm(batch, preview)) {
+      final result = await executor.apply(batch, intent.day,
+          approvedPreview: preview);
+      if (mounted) report(result);
+    } else {
+      if (mounted) report('Добавление записей отменено.');
+    }
+  }
+
 
   List<ViktorDialogueTurn> get _messages;
   TextEditingController get _controller;
