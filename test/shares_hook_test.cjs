@@ -201,7 +201,7 @@ assert.equal(call('POST',completion,recipient,
 assert.equal(call('POST','/api/shares/day',recipient,
   {wall_day:'2026-10-31'}).data.shares[0].my_completed[ownerPlan],false);
 assert.equal(db.plans[0].getBool('is_done'),false,
-  'Shared personal completion never writes the owner's private plan');
+  'Shared personal completion never writes private owner plan');
 
 
 assert.equal(call('POST','/api/shares/{id}/respond',outsider,
