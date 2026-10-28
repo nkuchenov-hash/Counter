@@ -831,11 +831,12 @@ extension PlanServiceExtension on DatabaseService {
         offlineSync.setConnectivityOffline(true);
         return true;
       }
-      await _acknowledgePlanMutation(writeAheadReceipt);
-      if (!_hasPendingPlanMutationForBusinessId(clientPlanId)) {
-        clearOptimisticPlanningForPlanRow(optimisticId);
-      }
-      notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      // A server rejection is not successful delivery. Keep the durable
+      // intent and its optimistic row for recovery after catalog refresh.
+      // Replays back off; never delete the only copy of the plan on HTTP 400.
+      offlineSync.setLastError('План пока не сохранён. Повторю автоматически.');
+      _debugPrintPocketBaseClientException(
+        operation: 'plan create', e: e, payload: body);
       return false;
     } catch (e, st) {
       DatabaseService._log('ADD_PLAN_PB: $e');
