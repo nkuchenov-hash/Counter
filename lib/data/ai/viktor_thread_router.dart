@@ -5,6 +5,7 @@ import 'viktor_conversation_store.dart';
 class ViktorThreadRouter {
   static bool isFollowUp(String value) {
     final q = value.toLowerCase().trim();
+    if (q.startsWith('а ') || q.startsWith('ну ')) return true;
     return RegExp(
       r'^(?:да|нет|ок|хорошо|ага|почему|а\s+|ну\s+|'
       r'исправь|переделай|повтори|продолжи|'
