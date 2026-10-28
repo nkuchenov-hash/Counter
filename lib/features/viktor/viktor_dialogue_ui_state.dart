@@ -216,6 +216,66 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
   ];
   bool _desktopThreadsVisible = true;
   int _historyLoadEpoch = 0;
+  Future<void> Function()? _turnsLiveUnsubscribe;
+  Future<void> Function()? _threadsLiveUnsubscribe;
+  bool _chatSubscribePending = false;
+  bool _chatLiveDirty = false;
+  Timer? _chatLiveTimer;
+
+  void _disposeChatRealtime() {
+    _chatLiveTimer?.cancel();
+    _chatLiveTimer = null;
+    final turn = _turnsLiveUnsubscribe;
+    final thread = _threadsLiveUnsubscribe;
+    _turnsLiveUnsubscribe = null;
+    _threadsLiveUnsubscribe = null;
+    if (turn != null) unawaited(turn());
+    if (thread != null) unawaited(thread());
+  }
+
+  void _scheduleChatLiveRefresh() {
+    if (!mounted) return;
+    _chatLiveDirty = true;
+    if (_chatLiveTimer != null) return;
+    _chatLiveTimer = Timer(const Duration(milliseconds: 160), () {
+      _chatLiveTimer = null;
+      if (!mounted || _historyRetryInFlight) return;
+      _chatLiveDirty = false;
+      unawaited(_retryHistorySync());
+    });
+  }
+
+  Future<void> _subscribeChatRealtime() async {
+    if (_chatSubscribePending || _turnsLiveUnsubscribe != null) return;
+    _chatSubscribePending = true;
+    try {
+      final db = DatabaseService.instance;
+      await db.ensurePocketBaseReady();
+      final owner = db.pocketBase.authStore.record?.id;
+      if (owner == null || owner.isEmpty || !mounted) return;
+      final filter = 'user_id = "$owner"';
+      _turnsLiveUnsubscribe = await db.pocketBase
+          .collection(ViktorConversationStore.collectionName)
+          .subscribe('*', (event) {
+        if (!mounted || event.record?.data['user_id'] != owner) return;
+        if (event.record?.data['conversation_id'] ==
+            _dialogueStore.activeConversationId) {
+          _scheduleChatLiveRefresh();
+        }
+      }, filter: filter);
+      _threadsLiveUnsubscribe = await db.pocketBase
+          .collection(ViktorConversationStore.threadsCollection)
+          .subscribe('*', (event) {
+        if (mounted && event.record?.data['user_id'] == owner) {
+          unawaited(_refreshThreadIndex());
+        }
+      }, filter: filter);
+    } catch (_) {
+      // Recovery still works via app resume and queued outbox retries.
+    } finally {
+      _chatSubscribePending = false;
+    }
+  }
   bool _dialogueLoaded = false;
 
   Future<void> _refreshThreadIndex() async {
@@ -328,6 +388,7 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
                 : null;
       });
       _scheduleHistoryRetry();
+      unawaited(_subscribeChatRealtime());
     } catch (_) {
       if (mounted) setState(() {
         _dialogueLoaded = false;
@@ -408,6 +469,10 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
       }
     } finally {
       _historyRetryInFlight = false;
+      if (_chatLiveDirty && mounted) _scheduleChatLiveRefresh();
+      if (_turnsLiveUnsubscribe == null && mounted) {
+        unawaited(_subscribeChatRealtime());
+      }
       if (_dialogueLoaded && _dialogueStore.pendingCount == 0 &&
           !_dialogueStore.localOutboxUnreadable) {
         _stopHistoryRetry();
