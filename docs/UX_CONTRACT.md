@@ -1,4 +1,13 @@
 # UX Contract
+## Viktor conversations, dates and context (2026-10-28)
+
+- The app must preserve exactly when each user/assistant turn was sent, including UTC instant and the profile day/timezone at submission. Older legacy turns retain their known PocketBase server-created instant, but must **not** be assigned a fabricated historical profile date/zone.
+- The model receives only the active conversation's bounded chronological history. In a previous message, "сегодня" means the original message day; in a new message it means the live profile day. Repeat actions must never silently reinterpret an earlier date.
+- A collapsible conversation panel on desktop and drawer on mobile supports a legacy all-purpose main chat plus separate task conversations. Topic separation is conservative: explicit new topics and clearly unrelated independent actions split, while pronoun follow-ups remain in the same dialogue.
+- Chat titles and timestamps are owner-scoped PocketBase data; the encrypted offline queue retains turn-to-thread attribution and old queued rows default to the existing main thread. Conversation history is not a replacement for separate project memory.
+- Changing chats must not leak previous topics or private tool observations into the model context. Existing owner-scoped Brain validation and write confirmation still govern all mutations.
+
+
 ## Viktor composable Records tools (2026-10-28)
 
 - Prefer general `read_day_records {wall_day}` and `create_completed_records {wall_day,records:[{title,start_utc,end_utc}]}` over per-phrase bespoke actions. Natural-language intent may compose multiple owner-scoped reads before one explicitly approved write.
