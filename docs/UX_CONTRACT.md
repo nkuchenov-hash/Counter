@@ -480,6 +480,13 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - Explicit user clock-time input is not automatically moved to a different day. If no fitting auto-placement slot exists in the 14-day search horizon, display a specific error rather than creating a hidden plan.
 - An automatic move shows the destination date/time. No PocketBase reads or heavy full-history scans on the tap hot path.
 
+## Viktor conversation time context
+
+- Current user phrases such as "сегодня", "вчера" and "завтра" resolve using the current **profile date**, not a previously viewed Planner/Timeline day.
+- Referencing a prior request ("добавь эти записи тоже") must preserve the request's **original message date**, even when the follow-up is written on another day. Explicit dates in the new request take precedence.
+- Undated legacy turns cannot be silently reinterpreted as having been sent today. If the original date is unknown, Viktor must not claim to know it; user-visible UI fallback does not authorize a mutation without checking its date.
+- A confirmed Records write must always respect the existing Timeline anti-overlap rules and must not mutate Plans.
+
 ## Planning Time Mode
 
 - **Selected-time stability:** typing or editing a task title, notes, checklist, category, or tags must not change a start time selected on the Time View grid. Start/end changes require an explicit time control or drag/resize gesture.

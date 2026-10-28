@@ -32,6 +32,16 @@ void main() {
     expect(ViktorThreadRouter.shouldOpenNew(
       input: 'Добавь эти записи тоже',
       previous: prior, nowUtc: DateTime.utc(2026, 10, 28, 11)), false);
+    // The actual morning report is declarative; it must open a separate
+    // activity context instead of inheriting the October 24 itinerary.
+    expect(ViktorThreadRouter.shouldOpenNew(
+      input: 'Между просыпанием и Atozed Clients сегодня у меня были '
+          'зарядка, кофе и душ',
+      previous: prior, nowUtc: DateTime.utc(2026, 10, 28, 11)), true);
+    // A follow-up that bridges domains still needs the source records.
+    expect(ViktorThreadRouter.shouldOpenNew(
+      input: 'Создай заметку по этим записям',
+      previous: prior, nowUtc: DateTime.utc(2026, 10, 28, 11)), false);
     expect(ViktorThreadRouter.shouldOpenNew(
       input: 'Новая тема — мои заметки', previous: prior,
       nowUtc: DateTime.utc(2026, 10, 28, 11)), true);

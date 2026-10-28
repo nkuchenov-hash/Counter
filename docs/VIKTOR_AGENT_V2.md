@@ -1,5 +1,9 @@
 # Viktor V2 — dialogue-first LIFE OS agent
 
+## Follow-up date scope regression (2026-10-28)
+
+The client resolves explicit current-day phrases against the profile date even when the calendar shows a different day. Referencing a previous dated user request can reuse its original source day; a new explicit date always wins. Undated legacy sources must remain uncertain. Unit tests cover the user's October 28 morning Records request and a follow-up on October 29. The auto-thread router also recognizes new declarative morning activities and preserves cross-domain references such as a note created from previously discussed records. This does **not** replace real-account end-to-end acceptance or establish ChatGPT-level reasoning.
+
 ## Time-aware task conversations (2026-10-28)
 
 Implementation introduced: per-turn UTC/profile-day/timezone metadata, owner-scoped thread index, legacy 'main' preservation, encrypted pending thread attribution and a responsive thread selector. A conservative router can separate clearly independent subjects without forcing every follow-up into a fresh chat. Provider dialogue now carries the original dates on which relative phrases were written.

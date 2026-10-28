@@ -88,4 +88,67 @@ void main() {
         'через три дня', today)!), '2026-10-27');
   });
 
+
+  test('Current today uses profile day, never a stale calendar tab', () {
+    final today = DateTime(2026, 10, 28);
+    final visible = DateTime(2026, 10, 24);
+    expect(ViktorDateScope.key(ViktorDateScope.itineraryDay(
+      'Сегодня утром была зарядка и душ', visible, history,
+      profileToday: today,
+    )), '2026-10-28');
+    expect(ViktorDateScope.key(ViktorDateScope.itineraryDay(
+      'Запиши вчерашние дела', visible, history,
+      profileToday: today,
+    )), '2026-10-27');
+    expect(ViktorDateScope.key(ViktorDateScope.itineraryDay(
+      'Покажи дела на послезавтра', visible, history,
+      profileToday: today,
+    )), '2026-10-30');
+  });
+
+  test('28 October backfill follow-up retains the original day after midnight', () {
+    final prior = <Map<String, String>>[
+      {'role': 'user', 'message_day': '2026-10-24',
+       'content': 'Распланируй субботу 24 октября 2026'},
+      {'role': 'assistant', 'content': 'Составил расписание'},
+      {'role': 'user', 'message_day': '2026-10-28',
+       'content': 'Между просыпанием и Atozed Clients сегодня у меня были '
+           'зарядка, поиск в интернете, заказ свечей, кофе, умывание и душ'},
+      {'role': 'assistant', 'content': 'Найду реальные границы'},
+    ];
+    final day = ViktorDateScope.itineraryDay(
+      'Добавь эти записи тоже', DateTime(2026, 10, 24),
+      prior, profileToday: DateTime(2026, 10, 29),
+    );
+    expect(ViktorDateScope.key(day), '2026-10-28');
+    expect(ViktorDateScope.key(ViktorDateScope.itineraryDay(
+      'Добавь эти записи за 30 октября 2026 года',
+      DateTime(2026, 10, 24), prior, profileToday: DateTime(2026, 10, 29),
+    )), '2026-10-30');
+    expect(ViktorDateScope.key(ViktorDateScope.itineraryDay(
+      'Сегодня добавь эти записи', DateTime(2026, 10, 24),
+      prior, profileToday: DateTime(2026, 10, 29),
+    )), '2026-10-29');
+  });
+
+  test('Legacy undated today is never assigned a made-up original date', () {
+    final old = <Map<String, String>>[
+      {'role': 'user',
+       'content': 'Сегодня делал зарядку и заказывал свечи'},
+    ];
+    final visible = DateTime(2026, 10, 24);
+    expect(ViktorDateScope.key(ViktorDateScope.itineraryDay(
+      'Добавь эти записи тоже', visible, old,
+      profileToday: DateTime(2026, 10, 29),
+    )), '2026-10-24');
+  });
+
+  test('Conflicting relative dates do not silently choose one day', () {
+    final visible = DateTime(2026, 10, 24);
+    expect(ViktorDateScope.key(ViktorDateScope.itineraryDay(
+      'Не сегодня, а завтра или послезавтра?',
+      visible, history, profileToday: DateTime(2026, 10, 28),
+    )), '2026-10-24');
+  });
+
 }
