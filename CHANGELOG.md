@@ -1,4 +1,10 @@
 ## [2026-10-28] — Global header opens inline calendar immediately
+## 2026-10-28 — Date-only plans visible on their assigned day
+
+- Show date-only plans (no start clock) in their requested Planning day using the stored date key, without inventing a start time.
+- Persist new date-only plans without a fabricated midnight start; restore their day from the original date anchor when the server has no start clock.
+- Keep timezone-projected timed plans unchanged and add a regression for Viktor's November 2 LS Screening request.
+
 
 - Ported the October 16 header date-picker fix into current `main` through a scoped merge. Global date navigation opens a single calendar plus DD.MM.YYYY field on all platforms; clicking a day applies immediately without OK or entry-mode switching.
 - Added localized invalid-date feedback and regression widget tests for calendar selection and manual entry. No PocketBase, plan, record, or timezone mutation logic changed.

@@ -11,6 +11,14 @@ String? _lastPlanTimeTzLogKey;
 DateTime? _lastPlanTimeTzLogAt;
 const Duration _planTimeTzLogDebounce = Duration(seconds: 8);
 
+/// Date-only Plans are assigned to a day without a clock instant.
+/// Keep them in the day/list view; Time View can still require startTime.
+bool unscheduledPlanMatchesWallDay(PlanningTask task, String dayKey) {
+  if (task.startTime != null || task.startUtcInstant != null) return false;
+  final key = task.dateKey.trim();
+  return key.length >= 10 && key.substring(0, 10) == dayKey;
+}
+
 /// Profile-timezone projection for Time mode (labels, placement, drag, filter).
 class TimeModeProjectedPlan {
   const TimeModeProjectedPlan({
@@ -412,6 +420,12 @@ extension PlanProfileTimezoneProjectionExtension on DatabaseService {
     return _dateKeyFromDate(startWall) == targetDayStr;
   }
 
+  /// Test seam for the real wall-day projection (not only its date predicate).
+  List<PlanningTask> filterPlansForWallDayForTest(
+    List<PlanningTask> all,
+    DateTime selectedDate,
+  ) => _filterPlansForWallDay(all, selectedDate);
+
   List<PlanningTask> _filterPlansForWallDay(
     List<PlanningTask> all,
     DateTime selectedDate,
@@ -422,7 +436,12 @@ extension PlanProfileTimezoneProjectionExtension on DatabaseService {
     for (final t in all) {
       if (t.rrule != null && t.rrule!.trim().isNotEmpty) continue;
       final instants = _planUtcInstants(t);
-      if (instants == null) continue;
+      if (instants == null) {
+        if (unscheduledPlanMatchesWallDay(t, targetDayStr)) {
+          plans.add(t);
+        }
+        continue;
+      }
       final startWall = _profileWallFromUtc(instants.startUtc);
       final endWall = instants.endUtc != null
           ? _profileWallFromUtc(instants.endUtc!)
