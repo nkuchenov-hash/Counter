@@ -247,6 +247,13 @@ Paths are no longer encoded as Planner rows. Server schema is governed by `docs/
 
 **Path → Planner source identity:** `path_id + revision_id + action_id`. Scheduling/materialization belongs only to `lib/data/plans/path_planner_bridge.dart` and downstream Planning code.
 
+## Shared collaboration (candidate schema; not in production)
+
+- `shared_objects.id`: PocketBase system ID; `owner_id` → `profiles.id` (owner). `kind` select currently `plan_day`; `wall_day` profile-day key, `title`, `content` JSON limited projection, `revision` monotonic integer, `archived`.
+- `shared_members.id`: PocketBase system ID; `object_id` → shared object, `user_id` → invited profile, `invited_by` → owner; `status` invited/accepted/declined/revoked, `role` commenter/editor. Unique (object_id,user_id). A People contact is NOT a Profile relation until server resolution of verified email.
+- `shared_messages.id`: `object_id` → shared object; `author_id` → profile, `kind` comment/proposal, `body` text, `patch` JSON allowlisted task fields, `base_revision`, `status` none/pending/accepted/rejected.
+- All three collections have fully closed direct API rules; `pb_hooks/shares.pb.js` authorizes every action. No cross-owner relationship is added to the existing `plans.user_id` / `records.user_id` rules. Candidate contract: `docs/SHARING_COLLABORATION.md`.
+
 ## People domain (2026-09-03)
 
 People is a separate personal-relationship domain and does not reuse plan Categories.
