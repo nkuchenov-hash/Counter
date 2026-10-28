@@ -494,18 +494,18 @@ extension PlanOutboxSyncExtension on DatabaseService {
           offlineSync.setAuthPaused(true, message: 'HTTP $code');
           return false;
         }
-        if (_planMutationRetriableHttpCode(code)) {
-          offlineSync.setLastError('HTTP $code');
-          DatabaseService.logSyncFlushFailure(
-            collection: PbCollections.plans,
-            operation: PlanMutationOutbox.kindPlanCreate,
-            businessId: businessId,
-            httpStatus: code,
-            message: e.response['message']?.toString(),
-          );
-          return false;
-        }
-        return true;
+        // A validation error is NOT successful delivery. Retain the
+        // durable create so a future corrected retry can recover it.
+        // The sync manager backs off instead of busy-looping on a 400.
+        offlineSync.setLastError('Не удалось завершить сохранение плана.');
+        DatabaseService.logSyncFlushFailure(
+          collection: PbCollections.plans,
+          operation: PlanMutationOutbox.kindPlanCreate,
+          businessId: businessId,
+          httpStatus: code,
+          message: e.response['message']?.toString(),
+        );
+        return false;
       } catch (e) {
         if (_planMutationRetriableHttpCode(0)) {
           offlineSync.setLastError('$e');
