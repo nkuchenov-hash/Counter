@@ -470,7 +470,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "Clock: event zone if given; else profile. Never infer zone by IP.",
     "Compare saved plan timezone with schedule_timezone.",
     "Revise PREVIOUS assistant draft only on explicit follow-up; preserve stops and clocks.",
-    "Past work: read_day_records -> observe real clock anchors -> create_completed_records after preview. Missing title? inspect nearby entries, propose estimates with consent; never invent certainty or use Plans.",
+    "Past work: read_day_records first, then observe actual anchors -> create_completed_records after preview. Missing title? inspect nearby records, propose estimates for approval; never invent certainty or use Plans.",
     "After midnight: next calendar date. Current relative dates = profile today. Prior-turn dates = that message's original day; never redate old 'today'.",
     "create_plan appointments; conflict_policy:shift for urgent insertions.",
     "bulk_replan filters actual plans; skip list_day_plans before bulk. Brain validates.",
