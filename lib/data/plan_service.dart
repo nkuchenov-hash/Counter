@@ -320,9 +320,17 @@ extension PlanServiceExtension on DatabaseService {
     final endDisplay = endUtc != null
         ? _profileWallFromUtc(endUtc.toUtc())
         : null;
+    // No start_time means no clock. A newly committed date-only plan
+    // carries its day in initial_date_key, without a fabricated midnight.
+    // A postponed plan needs its actual scheduled day; the original audit
+    // anchor must not be mistaken for that new day.
+    final anchor = (d['initial_date_key'] ?? '').toString().trim();
+    final dateOnlyKey = d['is_postponed'] != true && anchor.length >= 10
+        ? anchor.substring(0, 10)
+        : '';
     final derivedDateKey = startDisplay != null
         ? _dateKeyFromDate(startDisplay)
-        : (endDisplay != null ? _dateKeyFromDate(endDisplay) : '');
+        : (endDisplay != null ? _dateKeyFromDate(endDisplay) : dateOnlyKey);
     final derivedEndDateKey = endDisplay != null
         ? _dateKeyFromDate(endDisplay)
         : derivedDateKey;
@@ -435,26 +443,6 @@ extension PlanServiceExtension on DatabaseService {
       if (s != null && s.isNotEmpty) return s;
     }
     return '';
-  }
-
-  /// ISO UTC for start of a calendar [dateKey] (`YYYY-MM-DD`) in profile wall-clock, then stored as UTC.
-  String? _planStartUtcIsoFromDateKey(String dateKey) {
-    try {
-      if (dateKey.length < 10) return null;
-      final y = int.parse(dateKey.substring(0, 4));
-      final m = int.parse(dateKey.substring(5, 7));
-      final d = int.parse(dateKey.substring(8, 10));
-      final startWall = DateTime(y, m, d, 0, 0, 0);
-      return wall_clock
-          .wallClockToUtcForLabel(
-            startWall,
-            _settings.timezoneOffsetHours,
-            _settings.preferredTimeZone,
-          )
-          .toIso8601String();
-    } catch (_) {
-      return null;
-    }
   }
 
   int newId() => -DateTime.now().millisecondsSinceEpoch - _random.nextInt(9999);
@@ -665,17 +653,11 @@ extension PlanServiceExtension on DatabaseService {
           : <dynamic>[],
       'order': task.order,
     };
-    final isDatelessBacklog =
-        task.startTime == null && task.dateKey.trim().length < 10;
+    // A date-only plan is stored without a fabricated midnight timestamp.
+    // initial_date_key below persists the requested day for first placement.
     if (task.startTime != null) {
       final instants = _planUtcInstantsFromWall(task)!;
       body['start_time'] = instants.startUtc.toIso8601String();
-    } else if (!isDatelessBacklog) {
-      final dk = task.dateKey.trim();
-      if (dk.length >= 10) {
-        final iso = _planStartUtcIsoFromDateKey(dk);
-        if (iso != null) body['start_time'] = iso;
-      }
     }
     if (task.endDateTime != null) {
       final instants = _planUtcInstantsFromWall(task)!;
