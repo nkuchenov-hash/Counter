@@ -1,6 +1,6 @@
 # LIFE OS — Collaboration foundation (2026-10-28, candidate)
 
-**Status:** Implementation branch only. Not released or installed on the production PocketBase server. This is the first vertical slice, **not** full two-way Planner synchronization.
+**Status:** Implementation branch only. Not released or installed on production PocketBase. Default UI gate `kSharedPlansEnabled` is **false**; staging build uses `--dart-define=LIFEOS_SHARED_PLANS=true`. This is the first vertical slice, **not** full two-way Planner synchronization.
 
 ## Existing People is the source of contacts
 
@@ -17,7 +17,7 @@ The canonical **Settings → People** domain already owns contacts, Circles, imp
 ## Not yet implemented; do not claim completed
 
 - Agreed edits **do not yet modify** any participant's personal `plans` rows or reminders; accepted shared drafts are displayed separately in Planning and the Calendar focused-day panel, not native Time View blocks. This first slice is a **shared projection**. The UI explicitly says so.
-- Full multi-task alternatives, per-task comments, multi-user realtime subscriptions, offline collaboration outbox, iOS/Android deep links and push notifications.
+- Full multi-task alternatives, per-task comments, multi-user realtime subscriptions, offline collaboration outbox, iOS/Android deep links and push notifications. Collaboration currently uses on-demand HTTP and active Planning polling; it does not promise instant realtime.
 - Generic sharing for Notes, Lists, Paths (schema `kind` reserves types, but API currently accepts only `plan_day`).
 - Final People-contact linkage as a permanent verified profile relation, shared-tag mapping and participant-specific timezone projection.
 - Two-real-account Web/Android E2E + schema deployment verification and production release.
@@ -36,7 +36,7 @@ API: `POST /api/shares`, `GET /api/shares`, `POST /api/shares/day`, `GET /api/sh
 
 ## Acceptance / rollout gates
 
-1. Run `node test/shares_hook_test.cjs` (authorization, over-sharing prevention, consent, replay, 409 conflicts).
+1. Run `node test/shares_hook_test.cjs` (also enforced in `.github/workflows/deploy-pocketbase.yml`) (authorization, over-sharing prevention, consent, replay, 409 conflicts).
 2. Run `flutter analyze --no-fatal-infos --no-fatal-warnings` and Flutter widget smoke on both form factors; run project architecture guard and regenerate `docs/APP_STRUCTURE_DETAILED.md` from a checked-out repository.
 3. On a **staging** PocketBase matching production version, apply migration and load hooks; verify direct REST returns denied even if authenticated, while signed-in app routes work.
 4. Test two independent verified accounts, invitation accepted/declined, unregistered email, blocked People contact, no access for unrelated account, concurrent proposals and delayed/offline network.
