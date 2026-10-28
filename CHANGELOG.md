@@ -11,6 +11,7 @@
 - Viktor confirms the requested date only after an acknowledged create. If delivery has not yet been verified, it reports a short automatic-in-progress status without exposing the database or a manual sync workflow.
 - Updated onboarding: straightforward commands execute immediately; complex changes ask for approval. Added durable plan regression assertions.
 - A queued plan from a prior app version can only be recovered if its local outbox still exists; successful CI is not proof of a specific user's saved plan.
+- The separate header/calendar locale guard fix (`9211f0c`) is already on `main`; its translations are retained. This release does not require changing or suppressing the structure guard.
 
 ## [2026-10-28] — Stop independent November 2 plan from reviving older itineraries
 
