@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `f98b42e5` on 2026-10-28.**
+**Generated from input HEAD `e45285f2` on 2026-10-28.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 963 — each appears **exactly once** below.
+**Tracked files:** 966 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,9 +26,9 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 187 |
+| `production UI` | 189 |
 | `test` | 135 |
-| `Brain/data` | 114 |
+| `Brain/data` | 115 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
 | `developer tool` | 63 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 520 |
+| `PROVEN_REQUIRED` | 523 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 254 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 44 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 880 |
+| `HIGH` | 883 |
 | `MEDIUM` | 83 |
 
 ---
@@ -4771,7 +4771,7 @@ EN:
 - **Why needed:** The CI system loads `.github/workflows/deploy-pocketbase.yml` to run its declared triggers, permissions, jobs, and checks.
 - **Contents:** YAML workflow definition specific to `deploy-pocketbase.yml`.
 - **Repository role:** CI/deployment
-- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `.github/workflows/deploy.yml`, `docs/DEPLOY.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`, `docs/reports/GOOGLE_HEALTH_SLEEP_SYNC_2026-08-11.md`.
+- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `.github/workflows/deploy.yml`, `docs/DEPLOY.md`, `docs/SHARING_COLLABORATION.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
 - **Confidence:** HIGH
@@ -17769,7 +17769,7 @@ EN:
 - **Contents:** Coordinator extensions plus links to `part` files under `shares/` or `share/`.
 - **Key code names:** `ShareService`, `ShareApiException`, `SharedObject`, `SharedPlanItem`, `ShareMessage`, `ShareDetail`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/sharing/share_day_sheet.dart`, `lib/features/sharing/shared_detail_page.dart`, `lib/features/sharing/shared_inbox_section.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/sharing/share_day_sheet.dart`, `lib/features/sharing/shared_detail_page.dart`, `lib/features/sharing/shared_inbox_section.dart`, `lib/features/sharing/shared_planning_day_section.dart`, `lib/features/sharing/shared_proposal_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -17786,13 +17786,50 @@ RU:
 - **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
 - **Содержимое:** Extensions + `part` файлы для share.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/features/sharing/share_day_sheet.dart`, `lib/features/sharing/shared_detail_page.dart`, `lib/features/sharing/shared_inbox_section.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/sharing/share_day_sheet.dart`, `lib/features/sharing/shared_detail_page.dart`, `lib/features/sharing/shared_inbox_section.dart`, `lib/features/sharing/shared_planning_day_section.dart`, `lib/features/sharing/shared_proposal_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** Brain/data
 - **Обязанности:** Координатор домена: share service.
 - **Когда открывать:** Когда ломается поведение, связанное с `share_service.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/sharing/sharing_flags.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — sharing flags. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — sharing flags.
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (logic in `sharing_flags`).
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/settings/people/people_settings_page_impl.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** sharing flags
+- **When to open:** When behavior tied to `sharing_flags.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: sharing flags
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — sharing_flags. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — sharing_flags.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `sharing_flags`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/settings/people/people_settings_page_impl.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `sharing_flags`.
+- **Когда открывать:** Когда ломается поведение, связанное с `sharing_flags.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
@@ -23865,7 +23902,7 @@ EN:
 - **Contents:** Primary symbols: `SharedDetailPage`, `_SharedDetailPageState`.
 - **Key code names:** `SharedDetailPage`, `_SharedDetailPageState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/sharing/share_day_sheet.dart`, `lib/features/sharing/shared_inbox_section.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/sharing/share_day_sheet.dart`, `lib/features/sharing/shared_inbox_section.dart`, `lib/features/sharing/shared_planning_day_section.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -23882,7 +23919,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `shared_detail_page.dart` на sharing.
 - **Содержимое:** Компоновка экрана и state в `shared_detail_page.dart`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/sharing/share_day_sheet.dart`, `lib/features/sharing/shared_inbox_section.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/sharing/share_day_sheet.dart`, `lib/features/sharing/shared_inbox_section.dart`, `lib/features/sharing/shared_planning_day_section.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -23927,6 +23964,82 @@ RU:
 - **Владелец / слой:** корень репозитория
 - **Обязанности:** Поддерживает поведение `shared_inbox_section` в этой feature-зоне.
 - **Когда открывать:** Когда ломается поведение, связанное с `shared_inbox_section.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/sharing/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/sharing/shared_planning_day_section.dart`
+
+EN:
+
+- **Human purpose:** `shared_planning_day_section.dart` on sharing area — shared planning day section. Users see `shared_planning_day_section.dart` when using sharing area.
+- **What this is:** `shared_planning_day_section.dart` on sharing area — shared planning day section.
+- **Why needed:** Users see `shared_planning_day_section.dart` when using sharing area.
+- **Contents:** Primary symbols: `SharedPlanningDaySection`, `_SharedPlanningDaySectionState`.
+- **Key code names:** `SharedPlanningDaySection`, `_SharedPlanningDaySectionState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** repository root
+- **Responsibilities:** Implements `SharedPlanningDaySection` and related API in `shared_planning_day_section.dart`.
+- **When to open:** When behavior tied to `shared_planning_day_section.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: shared planning day section
+
+RU:
+
+- **Зачем файл человеку:** `shared_planning_day_section.dart` на sharing — Поддерживает поведение `shared_planning_day_section` в этой feature-зоне.. Пользователь видит UI из `shared_planning_day_section.dart` на sharing.
+- **Что это:** `shared_planning_day_section.dart` на sharing — Поддерживает поведение `shared_planning_day_section` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `shared_planning_day_section.dart` на sharing.
+- **Содержимое:** Dart-модуль `shared_planning_day_section.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Поддерживает поведение `shared_planning_day_section` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `shared_planning_day_section.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/sharing/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/sharing/shared_proposal_sheet.dart`
+
+EN:
+
+- **Human purpose:** `shared_proposal_sheet.dart` on sharing area — shared proposal sheet. Users see `shared_proposal_sheet.dart` when using sharing area.
+- **What this is:** `shared_proposal_sheet.dart` on sharing area — shared proposal sheet.
+- **Why needed:** Users see `shared_proposal_sheet.dart` when using sharing area.
+- **Contents:** Primary symbols: `SharedProposalDraft`.
+- **Key code names:** `SharedProposalDraft`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/sharing/shared_detail_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** repository root
+- **Responsibilities:** Implements `SharedProposalDraft` and related API in `shared_proposal_sheet.dart`.
+- **When to open:** When behavior tied to `shared_proposal_sheet.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: shared proposal sheet
+
+RU:
+
+- **Зачем файл человеку:** `shared_proposal_sheet.dart` на sharing — Пользователь открывает sheet/dialog из entry `shared_proposal_sheet`.. Пользователь видит UI из `shared_proposal_sheet.dart` на sharing.
+- **Что это:** `shared_proposal_sheet.dart` на sharing — Пользователь открывает sheet/dialog из entry `shared_proposal_sheet`..
+- **Зачем:** Пользователь видит UI из `shared_proposal_sheet.dart` на sharing.
+- **Содержимое:** Основные символы: `SharedProposalDraft`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/sharing/shared_detail_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Пользователь открывает sheet/dialog из entry `shared_proposal_sheet`.
+- **Когда открывать:** Когда ломается поведение, связанное с `shared_proposal_sheet.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/sharing/`, `docs/APP_STRUCTURE.md`
 
@@ -26275,7 +26388,7 @@ EN:
 - **Why needed:** UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
 - **Contents:** Time helper or injectable clock hook (logic in `wall_clock`).
 - **Repository role:** shared time
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/services/plan_alarm_schedule.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/features/sharing/shared_detail_page.dart`, `lib/features/sharing/shared_planning_day_section.dart`, `lib/features/sharing/shared_proposal_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -26292,7 +26405,7 @@ RU:
 - **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
 - **Содержимое:** Time helper или injectable clock hook (logic in `wall_clock`).
 - **Роль в репозитории:** shared time
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/services/plan_alarm_schedule.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/features/sharing/shared_detail_page.dart`, `lib/features/sharing/shared_planning_day_section.dart`, `lib/features/sharing/shared_proposal_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -38276,7 +38389,7 @@ EN:
 - **Why needed:** Prevents regressions when related production code changes.
 - **Contents:** Test cases (symbols: test groups).
 - **Repository role:** test fixture
-- **Evidence of use:** Read/referenced by: `docs/SHARING_COLLABORATION.md`.
+- **Evidence of use:** Read/referenced by: `.github/workflows/deploy-pocketbase.yml`, `docs/SHARING_COLLABORATION.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
 - **Confidence:** HIGH
@@ -38293,7 +38406,7 @@ RU:
 - **Зачем:** Ловит регрессии при правках связанного production-кода.
 - **Содержимое:** Тест-кейсы (символы: test groups).
 - **Роль в репозитории:** test fixture
-- **Доказательства использования:** Читается/упоминается: `docs/SHARING_COLLABORATION.md`.
+- **Доказательства использования:** Читается/упоминается: `.github/workflows/deploy-pocketbase.yml`, `docs/SHARING_COLLABORATION.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
 - **Уверенность:** HIGH
