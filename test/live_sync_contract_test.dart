@@ -457,7 +457,11 @@ void main() {
       source.indexOf('Future<bool> addPlanningTask('),
       source.indexOf('Map<String, dynamic> _scalarPatchBodyForPlanningRow('),
     );
-    expect(method, contains('categoryRelationIdForPlanCreate(task.categoryId)'));
+    expect(method, contains('resolvePlanCategoryRelationForCreate(catRule)'));
+    final categoryLookup = File('lib/data/categories/category_lookup.dart')
+        .readAsStringSync();
+    expect(categoryLookup, contains('_resolveCategoryRowIdForPb(rule)'));
+    expect(categoryLookup, contains('_fetchPbCategorySysIdByCategoryIdField('));
     expect(method, isNot(contains('catNocoSys')));
     expect(method, isNot(contains('_categoryStringPkForApi(catRule)')));
     final resolver = File('lib/data/ai/viktor_executor.dart')
