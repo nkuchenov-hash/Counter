@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `e9db5775` on 2026-10-27.**
+**Generated from input HEAD `fae60bfd` on 2026-10-28.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 951 — each appears **exactly once** below.
+**Tracked files:** 953 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,8 +27,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 184 |
-| `test` | 133 |
-| `Brain/data` | 111 |
+| `test` | 134 |
+| `Brain/data` | 112 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
 | `developer tool` | 63 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 512 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 251 |
+| `PROVEN_REQUIRED` | 513 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 252 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 868 |
+| `HIGH` | 870 |
 | `MEDIUM` | 83 |
 
 ---
@@ -13739,7 +13739,7 @@ EN:
 - **Contents:** Dart helpers and types (`ViktorDateScope`, `ViktorBulkDateScope`).
 - **Key code names:** `ViktorDateScope`, `ViktorBulkDateScope`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_plan_timezone.dart`, `lib/features/viktor/viktor_chat_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_historical_records.dart`, `lib/data/ai/viktor_plan_timezone.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13756,7 +13756,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `viktor_date_scope`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_plan_timezone.dart`, `lib/features/viktor/viktor_chat_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_historical_records.dart`, `lib/data/ai/viktor_plan_timezone.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -13917,6 +13917,44 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `viktor_gateway.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/ai/viktor_historical_records.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — Deterministic past-activity intent routing, authenticated Timeline anchor resolution, collision-safe record interval preview and approved completed-record backfill. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Deterministic past-activity intent routing, authenticated Timeline anchor resolution, collision-safe record interval preview and approved completed-record backfill.
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`ViktorHistoricalRecordIntent`, `ViktorHistoricalSlot`, `ViktorHistoricalPreview`, `ViktorHistoricalRecords`).
+- **Key code names:** `ViktorHistoricalRecordIntent`, `ViktorHistoricalSlot`, `ViktorHistoricalPreview`, `ViktorHistoricalRecords`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/features/viktor/viktor_chat_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** Deterministic past-activity intent routing, authenticated Timeline anchor resolution, collision-safe record interval preview and approved completed-record backfill
+- **When to open:** When behavior tied to `viktor_historical_records.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; Timeline tab, edit sheet, Wear; APP_STRUCTURE role: Deterministic past-activity intent routing, authenticated Timeline anchor resolution, collision-safe record interval pre
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — viktor_historical_records. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — viktor_historical_records.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `viktor_historical_records`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`, `lib/features/viktor/viktor_chat_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `viktor_historical_records`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_historical_records.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`; Timeline, edit sheet, Wear
 
 
 ### `lib/data/ai/viktor_plan_category.dart`
@@ -38706,6 +38744,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `viktor_general_agent_contract`.
 - **Когда открывать:** Падение CI или правка кода рядом с `viktor_general_agent_contract`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/viktor_historical_records_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `viktor_historical_records_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `viktor_historical_records_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/viktor_historical_records_test.dart` / CI when enabled. (2) Namesake production subject: `lib/data/ai/viktor_historical_records.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `viktor_historical_records_test` scenario.
+- **When to open:** CI failure or changing code near `viktor_historical_records`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `viktor_historical_records`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `viktor_historical_records` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `viktor_historical_records` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `viktor_historical_records`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/viktor_historical_records_test.dart`. (2) Парный production-файл: `lib/data/ai/viktor_historical_records.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `viktor_historical_records`.
+- **Когда открывать:** Падение CI или правка кода рядом с `viktor_historical_records`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
