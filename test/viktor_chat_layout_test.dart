@@ -45,10 +45,13 @@ void main() {
     ));
     expect(find.text('Общий чат'), findsNothing);
     await tester.tap(find.byTooltip('Диалоги'));
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 450));
     expect(find.text('Общий чат'), findsOneWidget);
-    expect(find.byKey(const Key('viktor_new_chat')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('viktor_new_chat')));
+    final newChat = find.byKey(const Key('viktor_new_chat'));
+    expect(newChat, findsOneWidget);
+    expect(tester.getRect(newChat).left, greaterThanOrEqualTo(0));
+    await tester.tap(newChat);
     await tester.pump();
     expect(tester.takeException(), isNull);
   });
