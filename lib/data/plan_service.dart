@@ -1,9 +1,7 @@
 // ignore_for_file: avoid_print
 part of 'database_service.dart';
-
 /// Legacy **plans** M2M column key (historical Noco expand / JSON only — unused with PocketBase plans).
 const String _plansToTagsLinkColumnSystemId = 'cnmo43ed26h293n';
-
 bool get _isPlansTableConfigured => true;
 
 bool _planMutationOutboxFlushInFlight = false;
