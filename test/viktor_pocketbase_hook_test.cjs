@@ -133,6 +133,10 @@ assert.equal(yandex.status, 200);
 const compactYandexInstructions = JSON.parse(lastRequest.body).messages[0].content;
 assert.match(compactYandexInstructions, /create_plan/);
 assert.match(compactYandexInstructions, /bulk_replan/);
+assert.match(compactYandexInstructions, /read_day_records/);
+assert.match(compactYandexInstructions, /create_completed_records/);
+assert.match(compactYandexInstructions, /read_day_records first/,
+  'YandexGPT must read observed record times before proposing writes');
 assert.match(compactYandexInstructions, /continue:true ONLY for read-only tools/,
   'Model is told that reads may continue but mutations must finalize');
 assert.match(compactYandexInstructions, /skip list_day_plans/,
