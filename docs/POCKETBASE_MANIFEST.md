@@ -1,5 +1,13 @@
 # PocketBase manifest (project law)
 
+## Viktor thread time metadata (2026-10-28)
+
+- `viktor_turns` remains immutable, owner scoped. It gains optional `sent_at_utc`, `message_day`, and `message_timezone` text fields for client-submission context. Legacy rows remain unchanged and use the existing server `created` timestamp when the original profile day is unavailable.
+- `viktor_threads` stores user-owned `thread_key`, `title`, server timestamps; all five direct rules enforce `user_id = @request.auth.id`, with a unique `user_id,thread_key` index. Historical `conversation_id=main` remains accessible without migration of existing message rows.
+- Local unsent messages are still encrypted and owner scoped; each carries an immutable thread key and time information, falling back to `main` for old encrypted queue formats. No API keys or hidden tool observations go into dialogue history.
+
+
+
 This file is the **single source of truth** for how this app talks to **PocketBase**: URL, collection names, auth, **relation fields**, **expand** paths, and **API rule intent** (what the server should enforce). Semantic field names stay aligned with **`docs/DATA_MAP.md`**.
 
 **Code anchors:** `lib/data/pb_config.dart` (`kPocketBaseUrl`, `PbCollections`, `PbAppApiRoutes`, `kPbRecordCategoryExpand`, `kPbPlanTagsExpand`, `kPbRecordTagsExpand`), `lib/data/database_service.dart`, `lib/data/auth_bridge.dart`.
