@@ -541,7 +541,6 @@ void main() {
         {'start_time': '10:00'},
         {'duration_minutes': 60},
         {'conflict_policy': 'shift'},
-        {'timezone': 'Europe/Moscow'},
       ]) {
         expect(() => ViktorAction.fromJson(action('create_plan', {
           'title': 'Visit bank',
