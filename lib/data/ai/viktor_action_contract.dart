@@ -62,9 +62,11 @@ class ViktorAction {
           _clock(args, 'start_time');
         }
         if (args.containsKey('timezone')) {
-          if (!timed) throw const FormatException(
-              'Date-only plans cannot override an absent start clock');
+          // A timezone is redundant for an untimed day but models often send
+          // the ambient profile zone. Validate it and discard it instead of
+          // refusing a legitimate create_plan operation.
           _text(args, 'timezone', maxLength: 64);
+          if (!timed) args.remove('timezone');
         }
         if (!timed && args['conflict_policy'] == 'shift') {
           throw const FormatException('Cannot shift other plans without a time');
