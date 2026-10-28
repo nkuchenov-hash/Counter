@@ -39,6 +39,9 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
   TextEditingController get _controller;
   Future<void> _send();
   ViktorGateway get _gateway;
+  bool get _busy;
+  bool get _transcribing;
+  bool get _listening;
 
 
   /// One validated, idempotent Brain write. No provider call or draft repair.
