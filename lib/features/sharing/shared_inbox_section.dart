@@ -6,6 +6,19 @@ import 'package:counter/features/sharing/shared_detail_page.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
+/// A subpage of existing People; keeps the three canonical People tabs compact.
+class SharedInboxPage extends StatelessWidget {
+  const SharedInboxPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text(currentLocale.value == 'ru'
+        ? 'Общие планы' : 'Shared plans')),
+    body: ListView(padding: const EdgeInsets.all(16),
+      children: const [SharedInboxSection()]),
+  );
+}
+
 /// Incoming invitations live inside existing People, not a second contact app.
 class SharedInboxSection extends StatefulWidget {
   const SharedInboxSection({super.key});
