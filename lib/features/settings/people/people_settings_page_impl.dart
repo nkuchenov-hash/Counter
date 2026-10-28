@@ -5,6 +5,7 @@ import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/data/people/people_models.dart';
 import 'package:counter/data/people/people_service.dart';
+import 'package:counter/data/sharing/sharing_flags.dart';
 import 'package:counter/features/settings/people/people_avatar.dart';
 import 'package:counter/features/settings/people/people_person_editor.dart';
 import 'package:counter/features/settings/people/people_sources_section.dart';
@@ -130,7 +131,8 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
         appBar: AppBar(
           title: Text(peopleT(_locale, 'title')),
           actions: [
-            IconButton(
+            if (kSharedPlansEnabled)
+              IconButton(
               tooltip: _locale == 'ru' ? 'Общие планы' : 'Shared plans',
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
