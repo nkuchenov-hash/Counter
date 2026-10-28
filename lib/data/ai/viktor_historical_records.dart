@@ -82,11 +82,12 @@ class ViktorHistoricalPreview {
   final String before;
   final String after;
 
-  String describe() {
+  String describe(DateTime Function(DateTime) toWall) {
     String clock(DateTime utc) {
-      final h = utc.hour.toString().padLeft(2, '0');
-      final m = utc.minute.toString().padLeft(2, '0');
-      return h + ':' + m + ' UTC';
+      final wall = toWall(utc);
+      final h = wall.hour.toString().padLeft(2, '0');
+      final m = wall.minute.toString().padLeft(2, '0');
+      return h + ':' + m;
     }
     return 'Добавить завершённые записи между «' + before + '» и «' +
         after + '» (время ориентировочное):\n' +
