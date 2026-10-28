@@ -956,7 +956,6 @@ const Map<String, String> kRuL10n = {
   'notes_v3_day_ago': '{n} дн назад',
   'notes_v3_edited': 'Изменено {when}',
   'notes_v3_just_created': 'Только создано',
-
   // Editor
   'notes_v3_editor_done': 'Готово',
   'notes_v3_editor_pin': 'Закрепить',
@@ -1000,7 +999,6 @@ const Map<String, String> kRuL10n = {
   'notes_v3_editor_open_note': 'Открыть заметку',
   'notes_v3_pin_indicator': 'Закреплено',
   'notes_v3_checklist_progress': '{done}/{total}',
-
   'notes_image_source_title': 'Добавить изображение',
   'notes_image_source_files': 'Выбрать из файлов',
   'notes_image_source_gallery': 'Выбрать из галереи',
@@ -1015,7 +1013,6 @@ const Map<String, String> kRuL10n = {
   'notes_image_copy_failed': 'Не удалось скопировать изображение.',
   'notes_image_saved': 'Изображение сохранено',
   'notes_image_save_failed': 'Не удалось сохранить изображение.',
-
   'notes_audio_title': 'Аудиозапись',
   'notes_audio_ready': 'Готово',
   'notes_audio_recording': 'Идёт запись…',
@@ -1077,7 +1074,6 @@ const Map<String, String> kRuL10n = {
   'notes_tools_header_row': 'Строка заголовков',
   'notes_tools_remove_row': 'Удалить строку',
   'notes_tools_remove_column': 'Удалить столбец',
-
   'notes_tools_create_plan': 'Создать план из выделения',
   'notes_tools_plan_created': 'План добавлен в Списки',
   'plan_schedule_adjusted': 'Пересекается с другой задачей — перенесено на %s',

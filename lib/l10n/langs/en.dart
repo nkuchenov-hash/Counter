@@ -945,7 +945,6 @@ const Map<String, String> kEnL10n = {
   'notes_v3_day_ago': '{n}d ago',
   'notes_v3_edited': 'Edited {when}',
   'notes_v3_just_created': 'Just created',
-
   // Editor
   'notes_v3_editor_done': 'Done',
   'notes_v3_editor_pin': 'Pin',
@@ -989,7 +988,6 @@ const Map<String, String> kEnL10n = {
   'notes_v3_editor_open_note': 'Open note',
   'notes_v3_pin_indicator': 'Pinned',
   'notes_v3_checklist_progress': '{done}/{total}',
-
   'notes_image_source_title': 'Add image',
   'notes_image_source_files': 'Choose from files',
   'notes_image_source_gallery': 'Choose from gallery',
@@ -1004,7 +1002,6 @@ const Map<String, String> kEnL10n = {
   'notes_image_copy_failed': 'Could not copy the image.',
   'notes_image_saved': 'Image saved',
   'notes_image_save_failed': 'Could not save the image.',
-
   'notes_audio_title': 'Audio recording',
   'notes_audio_ready': 'Ready',
   'notes_audio_recording': 'Recording…',
@@ -1066,7 +1063,6 @@ const Map<String, String> kEnL10n = {
   'notes_tools_header_row': 'Header row',
   'notes_tools_remove_row': 'Remove row',
   'notes_tools_remove_column': 'Remove column',
-
   'notes_tools_create_plan': 'Create plan from selection',
   'notes_tools_plan_created': 'Plan added to Lists',
   'plan_schedule_adjusted': 'Overlapped another task — moved to %s',
