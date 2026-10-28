@@ -23,6 +23,8 @@ class SharedDetailPage extends StatefulWidget {
 class _SharedDetailPageState extends State<SharedDetailPage> {
   final _service = ShareService.instance;
   final _composer = TextEditingController();
+  final Map<String, bool> _doneOverride = <String, bool>{};
+  final Set<String> _pendingCompletion = <String>{};
   ShareDetail? _detail;
   String? _error;
   bool _loading = true;
@@ -168,6 +170,32 @@ class _SharedDetailPageState extends State<SharedDetailPage> {
     _ => raw,
   };
 
+  Future<void> _toggleCompletion(SharedPlanItem item, bool value) async {
+    final id = item.planId;
+    if (_pendingCompletion.contains(id)) return;
+    setState(() {
+      _doneOverride[id] = value;
+      _pendingCompletion.add(id);
+    });
+    try {
+      await _service.setMyCompletion(
+        shareId: widget.shareId, planId: id, completed: value);
+      if (!mounted) return;
+      // Keep optimistic value visible until the authoritative refresh ends.
+      await _reload(silent: true);
+      if (mounted) setState(() => _doneOverride.remove(id));
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _doneOverride.remove(id));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l('Не удалось сохранить личный статус.',
+          'Could not save your personal status.'))),
+      );
+    } finally {
+      if (mounted) setState(() => _pendingCompletion.remove(id));
+    }
+  }
+
   Future<void> _propose(SharedPlanItem item) async {
     final current = _detail;
     if (current == null) return;
@@ -250,14 +278,24 @@ class _SharedDetailPageState extends State<SharedDetailPage> {
                             + '${detail.share.revision}',
                           style: Theme.of(context).textTheme.labelMedium),
                         const SizedBox(height: 8),
-                        Text(l('Согласование изменяет общий черновик. '
-                          'Личные планы участников пока не меняются.',
-                          'Decisions update this shared draft only. '
-                          'Personal planners are not yet modified.'),
+                        Text(l('Изменения расписания согласуются отдельно. '
+                          'Галочки ниже — только твой личный статус выполнения.',
+                          'Schedule changes require approval. '
+                          'Checkboxes below are your personal completion state.'),
                           style: Theme.of(context).textTheme.bodySmall),
                         const SizedBox(height: 16),
                         for (final item in detail.share.items)
                           Card(child: ListTile(
+                            leading: Checkbox(
+                              value: _doneOverride[item.planId] ??
+                                  (detail.myCompleted[item.planId] ?? false),
+                              onChanged: _pendingCompletion.contains(item.planId)
+                                  ? null
+                                  : (v) {
+                                      if (v != null) unawaited(
+                                        _toggleCompletion(item, v));
+                                    },
+                            ),
                             title: Text(item.title),
                             subtitle: Text([
                               if (_clock(item.startTime).isNotEmpty)
