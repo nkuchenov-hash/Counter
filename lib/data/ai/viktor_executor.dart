@@ -2,6 +2,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'viktor_action_contract.dart';
 import 'viktor_historical_records.dart';
+import 'viktor_record_tools.dart';
 import 'viktor_schedule_planner.dart';
 import 'viktor_domain_tools.dart';
 import 'viktor_date_scope.dart';
@@ -23,6 +24,18 @@ class ViktorExecutor {
   final ViktorPlanInsertionPlanner _insertion = const ViktorPlanInsertionPlanner();
   late final ViktorDomainTools _domain = ViktorDomainTools(db);
   late final ViktorHistoricalRecords _history = ViktorHistoricalRecords(db);
+  late final ViktorRecordTools _recordTools = ViktorRecordTools(db);
+
+  Future<ViktorRecordCreatePreview> _recordCreatePreview(
+      ViktorAction action) async {
+    final a = action.arguments;
+    return _recordTools.prepare(
+      wallDay: a['wall_day'] as String,
+      records: (a['records'] as List)
+          .map((row) => Map<String, Object?>.from(row as Map))
+          .toList(),
+    );
+  }
 
   Future<ViktorHistoricalPreview> _historicalPreview(
       ViktorAction action) async {
@@ -207,6 +220,15 @@ class ViktorExecutor {
           'выполняется одной защищённой операцией.');
     }
     if (batch.actions.any((a) =>
+            a.name == 'create_completed_records' ||
+            a.name == 'read_day_records') &&
+        batch.actions.any((a) =>
+            a.name != 'read_day_records') &&
+        batch.actions.length != 1) {
+      throw StateError('Чтение записей и их сохранение должны идти '
+          'последовательными шагами с подтверждением.');
+    }
+    if (batch.actions.any((a) =>
             a.name == 'create_completed_records_between') &&
         batch.actions.length != 1) {
       throw StateError('Добавление завершённых записей требует '
@@ -228,6 +250,19 @@ class ViktorExecutor {
 
   Future<String> describe(ViktorActionBatch batch, DateTime day) async {
     _checkScope(batch, day);
+    if (batch.actions.every((a) => a.name == 'read_day_records')) {
+      final observations = <String>[];
+      for (final action in batch.actions) {
+        observations.add(await _recordTools.listDay(
+            action.arguments['wall_day'] as String));
+      }
+      return observations.join('\n\n');
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'create_completed_records') {
+      final preview = await _recordCreatePreview(batch.actions.single);
+      return _recordTools.describe(preview);
+    }
     if (batch.actions.length == 1 &&
         batch.actions.single.name == 'create_completed_records_between') {
       final proposal = await _historicalPreview(batch.actions.single);
@@ -430,6 +465,14 @@ class ViktorExecutor {
          approvedInsertionSignature != _insertionSignature)) {
       throw StateError('Данные изменились после подтверждения. '
           'Проверьте новый вариант.');
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'create_completed_records') {
+      final proposal = await _recordCreatePreview(batch.actions.single);
+      if (_recordTools.describe(proposal) != approvedPreview) {
+        throw StateError('Записи изменились после подтверждения.');
+      }
+      return _recordTools.apply(proposal);
     }
     if (batch.actions.length == 1 &&
         batch.actions.single.name == 'create_completed_records_between') {
