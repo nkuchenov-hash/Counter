@@ -570,6 +570,10 @@ Every production Notes feature module above must be listed by exact filename (no
 
 ---
 
+### 3.2.S Shared collaboration — opt-in Planning + existing People
+
+Candidate-only modules (2026-10-28; not deployed). `lib/data/sharing/share_service.dart` owns authorized on-demand collaboration API traffic, `lib/features/sharing/share_day_sheet.dart` selects persisted plans from the visible day, `shared_detail_page.dart` owns discussion/proposals, and `shared_inbox_section.dart` is embedded in the **existing** `lib/features/settings/people/people_settings_page_impl.dart` as the Shared tab. `pb_migrations/1793188800_shared_collaboration.js` creates closed collections; `pb_hooks/shares.pb.js` is their only server API. No new contact domain; no startup preloading or cross-owner direct Plans writes. See `docs/SHARING_COLLABORATION.md`.
+
 ### 3.2.P People — Settings-owned personal relationship domain
 
 People is an on-demand Settings feature. External address books stay in a hidden source index and never become visible People merely because a contact exists in a provider.
