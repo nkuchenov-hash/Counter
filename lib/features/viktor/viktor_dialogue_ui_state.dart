@@ -221,6 +221,7 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
   int _historyLoadEpoch = 0;
   Future<void> Function()? _turnsLiveUnsubscribe;
   Future<void> Function()? _threadsLiveUnsubscribe;
+  Future<void> Function()? _chatConnectUnsubscribe;
   bool _chatSubscribePending = false;
   bool _chatLiveDirty = false;
   Timer? _chatLiveTimer;
@@ -230,10 +231,13 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     _chatLiveTimer = null;
     final turn = _turnsLiveUnsubscribe;
     final thread = _threadsLiveUnsubscribe;
+    final connect = _chatConnectUnsubscribe;
     _turnsLiveUnsubscribe = null;
     _threadsLiveUnsubscribe = null;
+    _chatConnectUnsubscribe = null;
     if (turn != null) unawaited(turn());
     if (thread != null) unawaited(thread());
+    if (connect != null) unawaited(connect());
   }
 
   void _scheduleChatLiveRefresh() {
@@ -266,6 +270,14 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
           _scheduleChatLiveRefresh();
         }
       }, filter: filter);
+      _chatConnectUnsubscribe = await db.pocketBase.realtime.subscribe(
+        'PB_CONNECT', (_) {
+          // A disconnected device may have missed other-device turns.
+          // Reconcile the complete active conversation on SSE reconnect.
+          _scheduleChatLiveRefresh();
+          unawaited(_refreshThreadIndex());
+        },
+      );
       _threadsLiveUnsubscribe = await db.pocketBase
           .collection(ViktorConversationStore.threadsCollection)
           .subscribe('*', (event) {
