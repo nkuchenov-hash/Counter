@@ -51,7 +51,6 @@ import 'package:counter/features/planning/widgets/planning_quick_add_strip.dart'
 part 'planning_quick_add_schedule.dart';
 part 'planning_bulk_edit_actions.dart';
 part 'planning_viktor_navigation.dart';
-
 class PlanningPage extends StatefulWidget {
   const PlanningPage({
     super.key,
@@ -74,7 +73,6 @@ class PlanningPage extends StatefulWidget {
     this.onDateChanged,
     this.onDatePagerLockChanged,
   });
-
   final String selectedDateString;
   final DateTime? selectedDate;
 
@@ -101,7 +99,6 @@ class PlanningPage extends StatefulWidget {
   final void Function(DateTime date)? onDatePicked;
   final void Function(DateTime date)? onDateChanged;
   final void Function(bool locked)? onDatePagerLockChanged;
-
   @override
   State<PlanningPage> createState() => _PlanningPageState();
 }
@@ -1494,13 +1491,8 @@ class _PlanningPageState extends State<PlanningPage>
           onAdd: _addTask,
           onSettings: timeView.showPlanningSettingsSheet,
           onSmart: _openViktorChat,
-          shareTooltip: currentLocale.value == 'ru'
-              ? 'Поделиться планом' : 'Share plan',
-          onShare: () => unawaited(showSharePlanningDaySheet(
-            context,
-            dayKey: _dateKeyFromDate(widget.selectedDate ?? _today),
-            tasks: _latestPlanningDayTasks,
-          )),
+          onShare: () => unawaited(showSharePlanningDaySheet(context,
+              dayKey: widget.selectedDateString, tasks: _latestPlanningDayTasks)),
           loading: _planQuickAddInFlight,
         ),
         Expanded(
