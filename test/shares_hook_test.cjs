@@ -191,6 +191,30 @@ assert.equal(call('POST',decisionRoute,owner,
   {accept:true},decisionParams).status,409);
 assert.equal(db.plans[0].getString('title'), 'Walk',
   'Collaborative draft must not silently mutate personal Plans');
+const moved = call('POST','/api/shares/{id}/messages',recipient,{
+  kind:'proposal', base_revision:2, patch:{
+    plan_id:ownerPlan,
+    start_time:'2026-10-31T15:00:00.000Z',
+    end_time:'2026-10-31T16:00:00.000Z',
+  },
+},idParam);
+assert.equal(moved.status,201);
+assert.equal(call('POST',decisionRoute,owner,{accept:true},{
+  id:shareId,messageId:moved.data.message.id,
+}).status,200);
+const movedDay = call('POST','/api/shares/day',recipient,{
+  wall_day:'2026-10-31',
+});
+assert.equal(movedDay.data.shares[0].revision,3);
+assert.equal(movedDay.data.shares[0].content.items[0].start_time,
+  '2026-10-31T15:00:00.000Z');
+assert.equal(db.plans[0].getString('start_time'),
+  '2026-10-31 13:00:00.000Z',
+  'Shared revised time must not secretly write personal Plans');
+assert.equal(call('POST','/api/shares/{id}/messages',recipient,{
+  kind:'proposal',base_revision:2, patch:{plan_id:ownerPlan,title:'Stale'},
+},idParam).status,409);
+
 const revoke = '/api/shares/{id}/members/{userId}/revoke';
 const revokeParams = {id:shareId, userId:recipient};
 assert.equal(call('POST',revoke, outsider,{},revokeParams).status,403);
