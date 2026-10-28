@@ -111,6 +111,15 @@ class ShareService {
         body: {'accept': accept});
   }
 
+  Future<void> revokeMember(String shareId, String memberUserId) async {
+    await _request('POST',
+        '${PbAppApiRoutes.shares}/$shareId/members/$memberUserId/revoke');
+  }
+
+  Future<void> leave(String shareId) async {
+    await _request('POST', '${PbAppApiRoutes.shares}/$shareId/leave');
+  }
+
   Future<void> comment(String shareId, String message) async {
     await _request('POST', '${PbAppApiRoutes.shares}/$shareId/messages',
         body: {'kind': 'comment', 'body': message});
