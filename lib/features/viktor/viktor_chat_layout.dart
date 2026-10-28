@@ -4,13 +4,28 @@ extension _ViktorChatLayout on _ViktorChatPageState {
   Widget _buildViktorLayout(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: scheme.surface,
+      drawer: _compactThreads ? Drawer(
+        width: 310, child: _buildThreadsPanel(context)) : null,
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         titleSpacing: 4,
         title: const Text('Виктор', style:
             TextStyle(fontWeight: FontWeight.w800, fontSize: 22)),
         actions: [
+          AppIconButton(
+            icon: Icons.forum_outlined,
+            tooltip: 'Диалоги',
+            onPressed: () {
+              if (_compactThreads) {
+                _scaffoldKey.currentState?.openDrawer();
+              } else {
+                setState(() =>
+                    _desktopThreadsVisible = !_desktopThreadsVisible);
+              }
+            },
+          ),
           AppIconButton(
             icon: Icons.tune_rounded,
             tooltip: 'Настройки ИИ и API-ключ',
@@ -21,7 +36,10 @@ extension _ViktorChatLayout on _ViktorChatPageState {
       ),
       body: SafeArea(
         top: false,
-        child: Column(
+        child: Row(children: [
+          if (!_compactThreads && _desktopThreadsVisible)
+            SizedBox(width: 270, child: _buildThreadsPanel(context)),
+          Expanded(child: Column(
           children: [
             Expanded(
               child: ScrollConfiguration(
@@ -43,6 +61,7 @@ extension _ViktorChatLayout on _ViktorChatPageState {
                     itemCount: _messages.length + (_busy ? 1 : 0),
                     itemBuilder: (ctx, index) {
                       late final Widget content;
+                      String? dayHeader;
                       if (_busy && index == 0) {
                         content = Align(
                           alignment: Alignment.centerLeft,
@@ -59,8 +78,14 @@ extension _ViktorChatLayout on _ViktorChatPageState {
                         );
                       } else {
                         final offset = _busy ? 1 : 0;
-                        final message = _messages[
-                            _messages.length - 1 - (index - offset)];
+                        final messageIndex =
+                            _messages.length - 1 - (index - offset);
+                        final message = _messages[messageIndex];
+                        final day = _messageDay(message);
+                        final previous = messageIndex > 0
+                            ? _messageDay(_messages[messageIndex - 1])
+                            : null;
+                        if (day != null && day != previous) dayHeader = day;
                         content = Align(
                           alignment: message.isUser
                               ? Alignment.centerRight
@@ -84,6 +109,12 @@ extension _ViktorChatLayout on _ViktorChatPageState {
                                   fontSize: 16, height: 1.45,
                                   color: message.isUser
                                       ? scheme.onPrimaryContainer : scheme.onSurface)),
+                                if (message.sentAtUtc != null) ...[
+                                  const SizedBox(height: 5),
+                                  Text(_messageTime(message),
+                                    style: TextStyle(fontSize: 14,
+                                      color: scheme.onSurfaceVariant)),
+                                ],
                                 if (!_busy && index == 0 && !message.isUser &&
                                     message.content.startsWith('Не удалось выполнить запрос.'))
                                   AppButton.ghost(
@@ -102,7 +133,21 @@ extension _ViktorChatLayout on _ViktorChatPageState {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16),
-                            child: content,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (dayHeader != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        top: 8, bottom: 15),
+                                    child: Text(_dayHeading(context, dayHeader),
+                                      style: TextStyle(fontSize: 16,
+                                        color: scheme.onSurfaceVariant,
+                                        fontWeight: FontWeight.w600)),
+                                  ),
+                                content,
+                              ],
+                            ),
                           ),
                         ),
                       );
@@ -200,7 +245,8 @@ extension _ViktorChatLayout on _ViktorChatPageState {
               ),
             ),
           ],
-        ),
+        )),
+        ]),
       ),
     );
   }
