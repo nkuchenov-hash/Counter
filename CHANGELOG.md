@@ -1,5 +1,14 @@
 ## [2026-10-28] — Global header opens inline calendar immediately
 
+## 2026-10-28 — Viktor cannot create one November 2 plan: category relation and durable error handling
+
+- Use the validated PocketBase relation ID for creating a plan; never fall back to obsolete Noco numeric IDs or category business slugs.
+- Viktor chooses only categories that can be saved, and automatically refreshes stale category rules once if no valid candidate is available.
+- Server-rejected create attempts retain their durable local operation instead of acknowledging and deleting it; status remains pending, not falsely completed.
+- Explicitly fail if saving the local outbox returns false. Tests protect the category fallback, retained queued write, and truthful pending receipt.
+- Release acceptance still requires a real-account creation-and-readback check. Do not assume the earlier November 2 request succeeded.
+
+
 - Ported the October 16 header date-picker fix into current `main` through a scoped merge. Global date navigation opens a single calendar plus DD.MM.YYYY field on all platforms; clicking a day applies immediately without OK or entry-mode switching.
 - Added localized invalid-date feedback and regression widget tests for calendar selection and manual entry. No PocketBase, plan, record, or timezone mutation logic changed.
 
