@@ -14,10 +14,16 @@ extension _ViktorThreadsUi on _ViktorChatPageState {
   String _messageTime(ViktorDialogueTurn turn) {
     final at = turn.sentAtUtc;
     if (at == null) return '';
-    final wall = DatabaseService.instance.applyUserOffset(at);
+    final zone = turn.messageTimezone;
+    DateTime wall;
+    try {
+      wall = zone == null ? DatabaseService.instance.applyUserOffset(at)
+          : ViktorDateScope.projectUtcInstant(at, zone);
+    } catch (_) {
+      wall = DatabaseService.instance.applyUserOffset(at);
+    }
     final time = '${wall.hour.toString().padLeft(2, '0')}:'
         '${wall.minute.toString().padLeft(2, '0')}';
-    final zone = turn.messageTimezone;
     return zone == null ? time : '$time · $zone';
   }
 
