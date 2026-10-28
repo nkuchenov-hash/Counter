@@ -32,13 +32,18 @@ class _ShareDayPicker extends StatefulWidget {
 }
 
 class _ShareDayPickerState extends State<_ShareDayPicker> {
-  late final Set<String> _selected =
-      widget.tasks.map((t) => t.planRowIdForBackend).toSet();
+  late final Set<String> _selected;
   bool _busy = false;
   String? _error;
 
   bool get _ru => currentLocale.value == 'ru';
   String l(String ru, String en) => _ru ? ru : en;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.tasks.map((t) => t.planRowIdForBackend).toSet();
+  }
 
   Future<void> _create() async {
     if (_busy || _selected.isEmpty) return;
