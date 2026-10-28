@@ -230,6 +230,33 @@
     return e.json(200, {member: memberDto(member)});
   }));
 
+  // Explicit owner revoke, and recipient leave. Membership rules are server
+  // enforced; a revoked participant loses content immediately on next fetch.
+  routerAdd("POST", "/api/shares/{id}/members/{userId}/revoke", guarded((e, uid) => {
+    const sid = e.request.pathValue("id");
+    let share;
+    try { share = readObject(sid); } catch (_) { return fail(e, 404, "share_not_found"); }
+    if (!share || !own(share, uid)) return fail(e, 403, "owner_required");
+    const target = String(e.request.pathValue("userId") || "");
+    if (!idOk(target) || target === uid) return fail(e, 400, "invalid_member");
+    const member = getMember(sid, target);
+    if (!member) return fail(e, 404, "member_not_found");
+    member.set("status", "revoked");
+    $app.save(member);
+    return e.json(200, {member: memberDto(member)});
+  }));
+
+  routerAdd("POST", "/api/shares/{id}/leave", guarded((e, uid) => {
+    const sid = e.request.pathValue("id");
+    const member = getMember(sid, uid);
+    if (!member || member.getString("status") === "revoked") {
+      return fail(e, 404, "membership_not_found");
+    }
+    member.set("status", "revoked");
+    $app.save(member);
+    return e.json(200, {left: true});
+  }));
+
   routerAdd("POST", "/api/shares/{id}/respond", guarded((e, uid) => {
     const sid = e.request.pathValue("id");
     const member = getMember(sid, uid);
