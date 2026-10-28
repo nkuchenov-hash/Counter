@@ -2,7 +2,7 @@
 
 ## Follow-up date scope regression (2026-10-28)
 
-The client resolves explicit current-day phrases against the profile date even when the calendar shows a different day. Referencing a previous dated user request can reuse its original source day; a new explicit date always wins. Undated legacy sources must remain uncertain. Unit tests cover the user's October 28 morning Records request and a follow-up on October 29. This does **not** replace real-account end-to-end acceptance or establish ChatGPT-level reasoning.
+The client resolves explicit current-day phrases against the profile date even when the calendar shows a different day. Referencing a previous dated user request can reuse its original source day; a new explicit date always wins. Undated legacy sources must remain uncertain. Unit tests cover the user's October 28 morning Records request and a follow-up on October 29. The auto-thread router also recognizes new declarative morning activities and preserves cross-domain references such as a note created from previously discussed records. This does **not** replace real-account end-to-end acceptance or establish ChatGPT-level reasoning.
 
 ## Time-aware task conversations (2026-10-28)
 
