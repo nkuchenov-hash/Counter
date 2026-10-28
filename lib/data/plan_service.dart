@@ -739,7 +739,6 @@ extension PlanServiceExtension on DatabaseService {
         existingDayPlans: freshestDayPlans,
       ).task;
     }
-
     final optimisticId = 'optimistic-$clientPlanId';
     applyOptimisticPlanningTask(
       createTask.copyWith(
@@ -829,7 +828,6 @@ extension PlanServiceExtension on DatabaseService {
       return true;
     }
   }
-
   Future<bool> addPlanningTask(
     PlanningTask task, {
     String? clientPlanId,
@@ -888,7 +886,6 @@ extension PlanServiceExtension on DatabaseService {
       return false;
     }
   }
-
   /// Flat `plans` scalar PATCH map (no `user_id` key). Shared by [updatePlanningTask] and [bulkUpdatePlans].
   Map<String, dynamic> _scalarPatchBodyForPlanningRow({
     String? planBusinessId,
