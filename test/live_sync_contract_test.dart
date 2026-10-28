@@ -451,7 +451,7 @@ void main() {
 
 
 
-  test('Viktor creates plans only with valid category relation IDs', () {
+  test('Viktor only POSTs valid category relations; queues legacy keys', () {
     final source = File('lib/data/plan_service.dart').readAsStringSync();
     final method = source.substring(
       source.indexOf('Future<bool> addPlanningTask('),
@@ -468,11 +468,15 @@ void main() {
     expect(replay, contains('resolveQueuedPlanCreateCategory('));
     expect(replay, contains("body['category_id'] = category;"));
     expect(method, isNot(contains('catNocoSys')));
-    expect(method, isNot(contains('_categoryStringPkForApi(catRule)')));
+    expect(method, contains('allowDeferredCategoryRelation'));
+    final create = source.substring(
+        source.indexOf('Future<bool> _addPlanningTaskPocket('),
+        source.indexOf('Future<bool> addPlanningTask('));
+    expect(create, contains('if (!categoryRelationReady) return true;'));
     final resolver = File('lib/data/ai/viktor_executor.dart')
         .readAsStringSync();
     expect(resolver, contains('db.refreshCategoryRulesFromServer()'));
-    expect(resolver, contains('db.categoryRelationIdForPlanCreate(rule.id)'));
+    expect(resolver, contains('createSingleDateOnlyPlan('));
   });
 
   test('Failed initial plan POST keeps durable write and honest receipt', () {
