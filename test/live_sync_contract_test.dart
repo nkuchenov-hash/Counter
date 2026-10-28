@@ -531,4 +531,28 @@ void main() {
     expect(executor, isNot(contains('canSave: (rule) =>')));
   });
 
+
+  test('Agent safely queues unresolved category without invalid POST', () {
+    final plans = File('lib/data/plan_service.dart').readAsStringSync();
+    final create = plans.substring(
+        plans.indexOf('Future<bool> _addPlanningTaskPocket('),
+        plans.indexOf('Future<bool> addPlanningTask('));
+    final enqueue = create.indexOf('_enqueuePlanCreateMutation(');
+    final staged = create.indexOf('if (!categoryRelationReady) return true;');
+    final post = create.indexOf('.create(body: body)');
+    expect(enqueue, greaterThanOrEqualTo(0));
+    expect(staged, greaterThan(enqueue));
+    expect(post, greaterThan(staged),
+        reason: 'Cannot POST a category business slug as a PB relation');
+    final add = plans.substring(plans.indexOf('Future<bool> addPlanningTask('),
+        plans.indexOf('/// Flat `plans` scalar PATCH map'));
+    expect(add, contains('allowDeferredCategoryRelation = false'));
+    expect(add, contains('categoryRelationIdForPlanCreate(catRule.id)'));
+    expect(add, contains('categoryRelationReady: categoryRelation != null'));
+    final receipt = File('lib/data/plans/plan_outbox_helpers.dart')
+        .readAsStringSync();
+    expect(receipt, contains('allowDeferredCategoryRelation: true'));
+    expect(receipt, contains('pendingSync: _hasPendingPlanMutationForBusinessId('));
+  });
+
 }
