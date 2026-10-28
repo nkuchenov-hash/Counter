@@ -62,9 +62,11 @@ class ViktorAction {
           _clock(args, 'start_time');
         }
         if (args.containsKey('timezone')) {
-          if (!timed) throw const FormatException(
-              'Date-only plans cannot override an absent start clock');
+          // A timezone is redundant for an untimed day but models often send
+          // the ambient profile zone. Validate it and discard it instead of
+          // refusing a legitimate create_plan operation.
           _text(args, 'timezone', maxLength: 64);
+          if (!timed) args.remove('timezone');
         }
         if (!timed && args['conflict_policy'] == 'shift') {
           throw const FormatException('Cannot shift other plans without a time');
@@ -344,6 +346,24 @@ class ViktorAction {
         if (field == 'list_completion_behavior' &&
             !const {'stay', 'bottom', 'hide', 'archive'}.contains(value)) {
           throw const FormatException('Invalid list completion behavior');
+        }
+      case 'create_completed_records_between':
+        _onlyKeys(args, const {
+          'wall_day', 'before_title', 'after_title', 'titles',
+        });
+        _day(args, 'wall_day');
+        _text(args, 'before_title', maxLength: 120);
+        _text(args, 'after_title', maxLength: 120);
+        final titles = args['titles'];
+        if (titles is! List || titles.length < 2 || titles.length > 12) {
+          throw const FormatException(
+              'Provide 2–12 completed record titles');
+        }
+        for (final title in titles) {
+          if (title is! String || title.trim().length < 2 ||
+              title.trim().length > 160) {
+            throw const FormatException('Invalid completed record title');
+          }
         }
       case 'start_record':
         _onlyKeys(args, const {'title', 'category_id'});

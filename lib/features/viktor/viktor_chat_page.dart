@@ -4,6 +4,7 @@ import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/ai/viktor_action_contract.dart';
 import 'package:counter/data/ai/viktor_executor.dart';
+import 'package:counter/data/ai/viktor_historical_records.dart';
 import 'package:counter/data/ai/viktor_gateway.dart';
 import 'package:counter/data/ai/viktor_schedule_planner.dart';
 import 'package:counter/data/ai/viktor_voice_gateway.dart';
@@ -21,8 +22,6 @@ import 'package:flutter/services.dart';
 part 'viktor_dialogue_ui_state.dart';
 part 'viktor_composer.dart';
 const double kViktorChatContentMaxWidth = 840;
-/// Single LIFE OS assistant entry point. Replaces the old record-only mic FAB.
-/// No overlay over the planner, no extra button beside bottom navigation.
 class ViktorChatPage extends StatefulWidget {
   const ViktorChatPage({super.key, required this.wallDay,
     this.selectedPlanIds = const <String>[]});
@@ -74,15 +73,18 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     if (!_settingsReady) return;
     final db = DatabaseService.instance;
     final profileToday = db.getProjectedToday();
+    final dialogContext = ViktorDialogueTurn.modelContext(_messages.skip(1));
+    final historical = ViktorHistoricalRecordIntent.parse(
+        input, dialogContext, profileToday);
     final independentPlan = ViktorDateScope.independentDateOnlyPlan(input, profileToday);
-    if (independentPlan == null && _settings.mode == 'byok' && !_settings.modelConnected) {
+    if (independentPlan == null && historical == null &&
+        _settings.mode == 'byok' && !_settings.modelConnected) {
       await _openSettings();
       if (!mounted || !_settings.modelConnected) return;
     }
     if (_listening || _transcribing || _startingMic) return;
     if (!mounted) return;
     _controller.clear();
-    final dialogContext = ViktorDialogueTurn.modelContext(_messages.skip(1));
     final revisionOfDraft = ViktorReadAnswer.isDraftRevision(input: input, history: dialogContext);
     final intentDay = ViktorDateScope.itineraryDay(input, widget.wallDay,
         dialogContext, revision: revisionOfDraft, profileToday: profileToday);
@@ -98,6 +100,11 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
       if (independentPlan != null) {
         await _createIndependentDateOnlyPlan(independentPlan, executor, requestId);
+        return;
+      }
+      if (historical != null) {
+        await _runHistoricalRecords(historical, executor, requestId,
+            _confirm, _push);
         return;
       }
       final plans = await db.getPlanningTasksForWallDate(intentDay);
@@ -721,9 +728,6 @@ class _ViktorChatPageState extends State<ViktorChatPage>
               label: 'Сохранить',
               loading: savingConnection,
               onPressed: savingConnection ? null : () async {
-                // Never close the dialog while the server has not accepted
-                // and verified the connection. The user keeps typed keys
-                // for correcting validation errors without starting over.
                 if (keyCtrl.text.trim().isEmpty &&
                     !_settings.cloudProviders.contains(provider)) {
                   updateDialog(() => saveError =
@@ -807,9 +811,6 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           const SizedBox(width: 8),
         ],
       ),
-      // The scrolling viewport spans the entire window. The conversation
-      // content is centered INSIDE each row, so its scrollbar remains at
-      // the screen edge rather than at the 760px message column edge.
       body: SafeArea(
         top: false,
         child: Column(

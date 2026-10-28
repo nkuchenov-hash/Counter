@@ -61,6 +61,38 @@ void main() {
       expect(result.actions.single.name, 'create_plan');
     });
 
+    test('date-only plan ignores an irrelevant timezone instead of failing', () {
+      final batch = ViktorActionBatch.fromJson({
+        'version': 1, 'request_id': 'req_20261028_dateonly',
+        'actions': [action('create_plan', {
+          'title': 'Visit bank', 'wall_day': '2026-11-07',
+          'timezone': 'Europe/Moscow',
+        })],
+      });
+      expect(batch.actions.single.arguments.containsKey('timezone'), false);
+      expect(batch.actions.single.arguments.containsKey('start_time'), false);
+    });
+
+    test('historical record batch requires valid anchors and preview', () {
+      final batch = ViktorActionBatch.fromJson({
+        'version': 1, 'request_id': 'req_20261028_history',
+        'actions': [action('create_completed_records_between', {
+          'wall_day': '2026-10-28',
+          'before_title': 'Просыпание', 'after_title': 'Atozed Clients',
+          'titles': ['Зарядка', 'Поиск информации', 'Утренний кофе'],
+        })],
+      });
+      expect(batch.hasMutations, true);
+      expect(batch.requiresPreview, true);
+      expect(batch.isSingleReversibleWrite, false);
+      expect(() => ViktorAction.fromJson(action(
+        'create_completed_records_between', {
+          'wall_day': '2026-10-28',
+          'before_title': 'Просыпание', 'after_title': 'Atozed Clients',
+          'titles': ['Зарядка'], // too little to infer sequential slots
+        })), throwsFormatException);
+    });
+
     test('accepts read-only day request', () {
       final result = ViktorActionBatch.fromJson(batch([
         action('list_day_plans', {'wall_day': '2026-10-17'}),
@@ -509,7 +541,6 @@ void main() {
         {'start_time': '10:00'},
         {'duration_minutes': 60},
         {'conflict_policy': 'shift'},
-        {'timezone': 'Europe/Moscow'},
       ]) {
         expect(() => ViktorAction.fromJson(action('create_plan', {
           'title': 'Visit bank',

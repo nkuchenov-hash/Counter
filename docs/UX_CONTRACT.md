@@ -1,5 +1,15 @@
 # UX Contract
 
+## Viktor completed Timeline records (2026-10-28)
+
+- Past activities called **записи** must be created in Timeline Records, never silently converted into future Planning cards.
+- An explicit follow-up 'Добавь эти записи тоже' following 'между [record A] и [record B] сегодня была [list]' resolves the prior user statement and uses the actual existing owner-scoped record timestamps as anchors.
+- Proposed past intervals are estimates, visible in the profile wall clock; the agent must request confirmation before writing. Never invent or silently overwrite an existing interval, and never start a live timer for past events.
+- Keep completed intervals within the two anchors and reject collisions or insufficient gaps; partial writes are reported precisely and repeated calls must avoid exact duplicates.
+- An extraneous profile timezone on a date-only Plan request must not cause refusal: normalize it out after validation. Timed plans still require an explicit valid start and duration.
+- All writes go through Brain's optimistic local cache and durable PocketBase outboxes; do not claim remote sync before confirmed.
+
+
 ## Instant multi-device sync (2026-10-26)
 
 - Local writes must render optimistically; successful PocketBase realtime messages must update other active devices without navigation or polling.

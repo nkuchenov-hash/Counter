@@ -1,6 +1,7 @@
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'viktor_action_contract.dart';
+import 'viktor_historical_records.dart';
 import 'viktor_schedule_planner.dart';
 import 'viktor_domain_tools.dart';
 import 'viktor_date_scope.dart';
@@ -21,6 +22,18 @@ class ViktorExecutor {
   final ViktorBulkPlanner _bulk = const ViktorBulkPlanner();
   final ViktorPlanInsertionPlanner _insertion = const ViktorPlanInsertionPlanner();
   late final ViktorDomainTools _domain = ViktorDomainTools(db);
+  late final ViktorHistoricalRecords _history = ViktorHistoricalRecords(db);
+
+  Future<ViktorHistoricalPreview> _historicalPreview(
+      ViktorAction action) async {
+    final args = action.arguments;
+    return _history.prepare(
+      wallDay: args['wall_day'] as String,
+      beforeTitle: args['before_title'] as String,
+      afterTitle: args['after_title'] as String,
+      titles: (args['titles'] as List).cast<String>(),
+    );
+  }
   String? _bulkSignature;
   String? _insertionSignature;
 
@@ -193,6 +206,12 @@ class ViktorExecutor {
       throw StateError('Приоритетная вставка с пересчётом расписания '
           'выполняется одной защищённой операцией.');
     }
+    if (batch.actions.any((a) =>
+            a.name == 'create_completed_records_between') &&
+        batch.actions.length != 1) {
+      throw StateError('Добавление завершённых записей требует '
+          'отдельного подтверждения.');
+    }
     for (final a in batch.actions) {
       // Validated action dates may differ from the visible calendar date.
       if (a.name == 'start_record' &&
@@ -209,6 +228,11 @@ class ViktorExecutor {
 
   Future<String> describe(ViktorActionBatch batch, DateTime day) async {
     _checkScope(batch, day);
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'create_completed_records_between') {
+      final proposal = await _historicalPreview(batch.actions.single);
+      return proposal.describe(db.applyUserOffset);
+    }
     if (batch.actions.length == 1 &&
         _isPriorityInsertion(batch.actions.single)) {
       final action = batch.actions.single;
@@ -404,8 +428,18 @@ class ViktorExecutor {
         (batch.actions.length == 1 &&
          _isPriorityInsertion(batch.actions.single) &&
          approvedInsertionSignature != _insertionSignature)) {
-      throw StateError('Расписание изменилось после подтверждения. '
+      throw StateError('Данные изменились после подтверждения. '
           'Проверьте новый вариант.');
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'create_completed_records_between') {
+      final action = batch.actions.single;
+      final proposal = await _historicalPreview(action);
+      if (proposal.describe(db.applyUserOffset) != approvedPreview) {
+        throw StateError('Исходные записи изменились, сохранение отменено.');
+      }
+      return _history.save(proposal,
+          wallDay: action.arguments['wall_day'] as String);
     }
     if (batch.actions.length == 1 &&
         _isPriorityInsertion(batch.actions.single)) {
