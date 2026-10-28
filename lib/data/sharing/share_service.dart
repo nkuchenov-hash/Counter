@@ -120,6 +120,15 @@ class ShareService {
     await _request('POST', '${PbAppApiRoutes.shares}/$shareId/leave');
   }
 
+  Future<void> setMyCompletion({
+    required String shareId,
+    required String planId,
+    required bool completed,
+  }) async {
+    await _request('POST', '${PbAppApiRoutes.shares}/$shareId/completion',
+        body: {'plan_id': planId, 'completed': completed});
+  }
+
   Future<void> comment(String shareId, String message) async {
     await _request('POST', '${PbAppApiRoutes.shares}/$shareId/messages',
         body: {'kind': 'comment', 'body': message});
@@ -170,6 +179,14 @@ class ShareApiException implements Exception {
 Map<String, dynamic> _map(dynamic raw) =>
     raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
 
+Map<String, bool> _boolMap(dynamic raw) {
+  if (raw is! Map) return const <String, bool>{};
+  return <String, bool>{
+    for (final entry in raw.entries)
+      if (entry.value is bool) entry.key.toString(): entry.value as bool,
+  };
+}
+
 class SharedObject {
   const SharedObject({
     required this.id,
@@ -179,6 +196,7 @@ class SharedObject {
     required this.revision,
     required this.status,
     required this.items,
+    this.myCompleted = const <String, bool>{},
   });
   final String id;
   final String title;
@@ -187,6 +205,7 @@ class SharedObject {
   final int revision;
   final String status;
   final List<SharedPlanItem> items;
+  final Map<String, bool> myCompleted;
 
   factory SharedObject.fromJson(dynamic json, {dynamic content}) {
     final data = _map(json);
@@ -198,6 +217,7 @@ class SharedObject {
       wallDay: (data['wall_day'] ?? '').toString(),
       revision: (data['revision'] as num?)?.toInt() ?? 0,
       status: (data['my_status'] ?? 'accepted').toString(),
+      myCompleted: _boolMap(data['my_completed']),
       items: raw is List
           ? raw.map((e) => SharedPlanItem.fromJson(e)).toList(growable: false)
           : const <SharedPlanItem>[],
@@ -260,13 +280,16 @@ class ShareDetail {
     required this.share,
     required this.messages,
     required this.members,
+    required this.myCompleted,
   });
   final SharedObject share;
+  final Map<String, bool> myCompleted;
   final List<ShareMessage> messages;
   final List<Map<String, dynamic>> members;
 
   factory ShareDetail.fromJson(Map<String, dynamic> json) => ShareDetail(
         share: SharedObject.fromJson(json['share'], content: json['content']),
+        myCompleted: _boolMap(json['my_completed']),
         messages: (json['messages'] as List? ?? [])
             .map((m) => ShareMessage.fromJson(m))
             .toList(growable: false),
