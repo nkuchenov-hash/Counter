@@ -71,6 +71,10 @@ abstract class PbAppApiRoutes {
   static String calendarIntegrationConnection(String provider) =>
       '/api/calendar-integrations/$provider';
 
+  /// Authenticated, server-authorized collaboration routes.
+  /// Direct PocketBase REST access to shared_* collections is closed.
+  static const String shares = '/api/shares';
+
   /// People cloud source integrations. Device contacts and Telegram export are
   /// intentionally client-owned and do not use these routes.
   static const String peopleIntegrationsStatus =
