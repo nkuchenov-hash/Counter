@@ -62,12 +62,9 @@ class ViktorDialogueTurn {
       }
     }
     final combined = [...remote, ...unsynced];
-    combined.sort((a, b) {
-      final x = a.sentAtUtc;
-      final y = b.sentAtUtc;
-      if (x == null || y == null) return 0;
-      return x.compareTo(y);
-    });
+    if (combined.every((turn) => turn.sentAtUtc != null)) {
+      combined.sort((a, b) => a.sentAtUtc!.compareTo(b.sentAtUtc!));
+    }
     return combined;
   }
 
