@@ -129,11 +129,13 @@ class ViktorExecutor {
       ViktorAction action, ({bool accepted, bool pendingSync,
       String clientPlanId}) result) {
     final name = action.arguments['title'] as String;
+    final day = action.arguments['wall_day'] as String;
     if (result.pendingSync) {
-      return 'План «$name» создан локально и ожидает синхронизации '
-          'с PocketBase. Не отправляйте команду повторно.';
+      return 'Добавляю план «$name» на $day. '
+          'Сохранение пока не подтверждено; приложение продолжит '
+          'автоматически. Повторять запрос не нужно.';
     }
-    return 'План «$name» сохранён в PocketBase.';
+    return 'План «$name» добавлен на $day.';
   }
 
   Future<ViktorBulkPreview> _planBulk(ViktorAction action) async {
