@@ -795,6 +795,14 @@ extension PlanServiceExtension on DatabaseService {
       tags: task.tags,
     );
     await offlineSync.refreshPendingCount();
+    // Never attempt a network-only create without a durable replay intent.
+    // Otherwise a transient failure can return success while losing the plan.
+    if (writeAheadReceipt == null) {
+      clearOptimisticPlanningForPlanRow(optimisticId);
+      notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      DatabaseService._log('ADD_PLAN: durable queue unavailable; creation aborted');
+      return false;
+    }
     try {
       final record = await _pb
           .collection(PbCollections.plans)
