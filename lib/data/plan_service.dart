@@ -868,21 +868,13 @@ extension PlanServiceExtension on DatabaseService {
         AppSnack.failed();
         return false;
       }
-      // Noco **Link** / FK columns on `plans.category_id` often expect the linked row’s system **Id** (int),
-      // not the business slug. Prefer [CategoryRule.nocoId]; fall back to string PK like [addPlan] / DATA_MAP.
-      final Object categoryFieldForPlan;
-      final catNocoSys = _categoryBackendRowIdStrict(catRule);
-      if (catNocoSys != null) {
-        categoryFieldForPlan = catNocoSys;
-      } else {
-        final catStr = _categoryStringPkForApi(catRule);
-        if (catStr != null && catStr.isNotEmpty) {
-          categoryFieldForPlan = catStr;
-        } else {
-          categoryFieldForPlan = _recordCategoryBusinessPkForApi(
-            task.categoryId,
-          );
-        }
+      // PocketBase plans.category_id requires the actual categories row ID.
+      // The old Noco numeric ID and the business slug both cause HTTP 400.
+      final categoryFieldForPlan =
+          categoryRelationIdForPlanCreate(task.categoryId);
+      if (categoryFieldForPlan == null) {
+        DatabaseService._log('ADD_PLAN: category relation unavailable');
+        return false;
       }
       final titleTrimmed = task.title.trim();
       if (titleTrimmed.isEmpty) {
