@@ -1,5 +1,13 @@
 # Viktor V2 — dialogue-first LIFE OS agent
 
+## Time-aware task conversations (2026-10-28)
+
+Implementation introduced: per-turn UTC/profile-day/timezone metadata, owner-scoped thread index, legacy 'main' preservation, encrypted pending thread attribution and a responsive thread selector. A conservative router can separate clearly independent subjects without forcing every follow-up into a fresh chat. Provider dialogue now carries the original dates on which relative phrases were written.
+
+This is an architectural step, not a claim of ChatGPT-equivalent reasoning. It does not yet constitute long-term semantic memory, universal action composition or verified live device behavior. Acceptance requires actual cross-device chat switching, offline retries, accurate source-date interpretation and multi-step tool recovery.
+
+
+
 Status: **in implementation; NOT release-ready**. This document governs the
 agent redesign; existing source and Brain invariants remain authoritative.
 

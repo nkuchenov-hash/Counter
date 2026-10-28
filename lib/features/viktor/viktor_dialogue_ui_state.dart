@@ -39,6 +39,9 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
   TextEditingController get _controller;
   Future<void> _send();
   ViktorGateway get _gateway;
+  bool get _busy;
+  bool get _transcribing;
+  bool get _listening;
 
 
   /// One validated, idempotent Brain write. No provider call or draft repair.
@@ -210,7 +213,134 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
   }
 
   final _dialogueStore = ViktorConversationStore(DatabaseService.instance);
+  List<ViktorThread> _threads = const [
+    ViktorThread(id: ViktorConversationStore.mainConversation,
+        title: 'Общий чат'),
+  ];
+  bool _desktopThreadsVisible = true;
+  int _historyLoadEpoch = 0;
+  Future<void> Function()? _turnsLiveUnsubscribe;
+  Future<void> Function()? _threadsLiveUnsubscribe;
+  Future<void> Function()? _chatConnectUnsubscribe;
+  bool _chatSubscribePending = false;
+  bool _chatLiveDirty = false;
+  Timer? _chatLiveTimer;
+
+  void _disposeChatRealtime() {
+    _chatLiveTimer?.cancel();
+    _chatLiveTimer = null;
+    final turn = _turnsLiveUnsubscribe;
+    final thread = _threadsLiveUnsubscribe;
+    final connect = _chatConnectUnsubscribe;
+    _turnsLiveUnsubscribe = null;
+    _threadsLiveUnsubscribe = null;
+    _chatConnectUnsubscribe = null;
+    if (turn != null) unawaited(turn());
+    if (thread != null) unawaited(thread());
+    if (connect != null) unawaited(connect());
+  }
+
+  void _scheduleChatLiveRefresh() {
+    if (!mounted) return;
+    _chatLiveDirty = true;
+    if (_chatLiveTimer != null) return;
+    _chatLiveTimer = Timer(const Duration(milliseconds: 160), () {
+      _chatLiveTimer = null;
+      if (!mounted || _historyRetryInFlight) return;
+      _chatLiveDirty = false;
+      unawaited(_retryHistorySync());
+    });
+  }
+
+  Future<void> _subscribeChatRealtime() async {
+    if (_chatSubscribePending || _turnsLiveUnsubscribe != null) return;
+    _chatSubscribePending = true;
+    try {
+      final db = DatabaseService.instance;
+      await db.ensurePocketBaseReady();
+      final owner = db.pocketBase.authStore.record?.id;
+      if (owner == null || owner.isEmpty || !mounted) return;
+      final filter = 'user_id = "$owner"';
+      _turnsLiveUnsubscribe = await db.pocketBase
+          .collection(ViktorConversationStore.collectionName)
+          .subscribe('*', (event) {
+        if (!mounted || event.record?.data['user_id'] != owner) return;
+        if (event.record?.data['conversation_id'] ==
+            _dialogueStore.activeConversationId) {
+          _scheduleChatLiveRefresh();
+        }
+      }, filter: filter);
+      _chatConnectUnsubscribe = await db.pocketBase.realtime.subscribe(
+        'PB_CONNECT', (_) {
+          // A disconnected device may have missed other-device turns.
+          // Reconcile the complete active conversation on SSE reconnect.
+          _scheduleChatLiveRefresh();
+          unawaited(_refreshThreadIndex());
+        },
+      );
+      _threadsLiveUnsubscribe = await db.pocketBase
+          .collection(ViktorConversationStore.threadsCollection)
+          .subscribe('*', (event) {
+        if (mounted && event.record?.data['user_id'] == owner) {
+          unawaited(_refreshThreadIndex());
+        }
+      }, filter: filter);
+    } catch (_) {
+      // Recovery still works via app resume and queued outbox retries.
+    } finally {
+      _chatSubscribePending = false;
+    }
+  }
   bool _dialogueLoaded = false;
+
+  Future<void> _refreshThreadIndex() async {
+    try {
+      final threads = await _dialogueStore.loadThreads();
+      if (mounted) setState(() => _threads = threads);
+    } catch (_) {
+      // Keep current conversation available through outages.
+    }
+  }
+
+  Future<void> _selectConversation(String id,
+      {bool locallyNew = false}) async {
+    if (_busy || _transcribing || _listening) return;
+    final epoch = ++_historyLoadEpoch;
+    _dialogueStore.selectConversation(id);
+    final intro = _messages.isNotEmpty ? _messages.first
+        : const ViktorDialogueTurn(role: 'assistant',
+            content: 'Расскажите, что нужно сделать в LIFE OS.');
+    setState(() {
+      _messages..clear()..add(intro);
+      _historyNotice = null;
+      _dialogueLoaded = locallyNew;
+    });
+    if (locallyNew) return;
+    try {
+      final turns = await _dialogueStore.load();
+      if (!mounted || epoch != _historyLoadEpoch) return;
+      setState(() {
+        _messages..clear()..add(intro)..addAll(turns);
+        _dialogueLoaded = _dialogueStore.pendingCount == 0;
+      });
+    } catch (_) {
+      if (mounted && epoch == _historyLoadEpoch) {
+        setState(() => _historyNotice =
+            'Не удалось загрузить выбранный диалог. Повторяем синхронизацию.');
+        _scheduleHistoryRetry();
+      }
+    }
+  }
+
+  void _startNewConversation() {
+    if (_busy || _transcribing || _listening) return;
+    final id = ViktorConversationStore.newConversationId();
+    setState(() => _threads = [
+      ..._threads, ViktorThread(id: id, title: 'Новый разговор'),
+    ]);
+    unawaited(_selectConversation(id, locallyNew: true));
+  }
+
   String? _historyNotice;
   Timer? _historyRetryTimer;
   bool _historyRetryInFlight = false;
@@ -259,7 +389,9 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     }
     try {
       final earlier = await _dialogueStore.load();
+      final threads = await _dialogueStore.loadThreads();
       if (mounted) setState(() {
+        _threads = threads;
         _messages.addAll(earlier);
         _dialogueLoaded = _dialogueStore.pendingCount == 0;
         _historyNotice = !_dialogueLoaded
@@ -271,6 +403,7 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
                 : null;
       });
       _scheduleHistoryRetry();
+      unawaited(_subscribeChatRealtime());
     } catch (_) {
       if (mounted) setState(() {
         _dialogueLoaded = false;
@@ -285,6 +418,7 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     try {
       await _dialogueStore.append(turn);
       if (!mounted) return;
+      if (turn.isUser) unawaited(_refreshThreadIndex());
       if (_dialogueLoaded && _dialogueStore.pendingCount == 0 &&
           !_dialogueStore.localOutboxUnreadable) {
         if (_historyNotice != null) {
@@ -316,8 +450,9 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
       await _dialogueStore.retryPending();
       // A successful send is not proof that earlier history was loaded:
       // re-fetch the server conversation, even with an empty local outbox.
+      final threadAtStart = _dialogueStore.activeConversationId;
       final serverHistory = await _dialogueStore.load();
-      if (mounted) {
+      if (mounted && _dialogueStore.activeConversationId == threadAtStart) {
         setState(() {
           final introduction = _messages.isEmpty ? null : _messages.first;
           final visible = _messages.skip(1).toList();
@@ -349,6 +484,10 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
       }
     } finally {
       _historyRetryInFlight = false;
+      if (_chatLiveDirty && mounted) _scheduleChatLiveRefresh();
+      if (_turnsLiveUnsubscribe == null && mounted) {
+        unawaited(_subscribeChatRealtime());
+      }
       if (_dialogueLoaded && _dialogueStore.pendingCount == 0 &&
           !_dialogueStore.localOutboxUnreadable) {
         _stopHistoryRetry();
@@ -385,8 +524,20 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
 
   void _push(String value, {bool mine = false}) {
     if (!mounted) return;
+    final db = DatabaseService.instance;
+    String? messageDay;
+    String? timezone;
+    try {
+      messageDay = ViktorDateScope.key(db.getProjectedToday());
+      timezone = db.settings.preferredTimeZone;
+    } catch (_) {
+      // If profile context isn't loaded, preserve the instant without
+      // inventing an incorrect local date.
+    }
     final turn = ViktorDialogueTurn(
-        role: mine ? 'user' : 'assistant', content: value);
+        role: mine ? 'user' : 'assistant', content: value,
+        sentAtUtc: DateTime.now().toUtc(), messageDay: messageDay,
+        messageTimezone: timezone);
     setState(() => _messages.add(turn));
     // Even if history loading or a previous write failed, try saving new
     // turns. The store retries earlier pending turns first, preserving order.

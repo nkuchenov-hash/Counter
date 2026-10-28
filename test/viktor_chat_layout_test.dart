@@ -34,6 +34,44 @@ void main() {
 
   SharedPreferences.setMockInitialValues(<String, Object>{});
 
+  testWidgets('Viktor mobile drawer shows isolated chats and new thread',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 720);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(
+      home: ViktorChatPage(wallDay: DateTime(2026, 10, 28)),
+    ));
+    expect(find.text('Общий чат'), findsNothing);
+    await tester.tap(find.byTooltip('Диалоги'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+    expect(find.text('Общий чат'), findsOneWidget);
+    final newChat = find.byKey(const Key('viktor_new_chat'));
+    expect(newChat, findsOneWidget);
+    expect(tester.getRect(newChat).left, greaterThanOrEqualTo(0));
+    await tester.tap(newChat);
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Viktor desktop shows collapsible chat panel',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1200, 780);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(
+      home: ViktorChatPage(wallDay: DateTime(2026, 10, 28)),
+    ));
+    expect(find.text('Общий чат'), findsOneWidget);
+    await tester.tap(find.byTooltip('Диалоги'));
+    await tester.pump();
+    expect(find.text('Общий чат'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final width in <double>[320, 390, 768]) {
     testWidgets('Viktor composer never overflows at width $width',
         (tester) async {
@@ -226,15 +264,15 @@ void main() {
     expect(field.decoration?.fillColor, Colors.transparent);
     expect(field.decoration?.border, InputBorder.none);
 
-    // The messages viewport must extend to the WINDOW edge, regardless
-    // of the centered 760px conversation-content column.
+    // On desktop, the conversation viewport starts after the visible 270px
+    // thread panel, while the scrollbar remains at the message-area edge.
     final viewport = tester.getRect(
       find.byKey(const Key('viktor_chat_messages_viewport')));
     final scrollbar = tester.getRect(
       find.byKey(const Key('viktor_edge_scrollbar')));
-    expect(viewport.left, closeTo(0, 0.1));
+    expect(viewport.left, closeTo(270, 0.1));
     expect(viewport.right, closeTo(1440, 0.1));
-    expect(scrollbar.left, closeTo(0, 0.1));
+    expect(scrollbar.left, closeTo(270, 0.1));
     expect(scrollbar.right, closeTo(1440, 0.1));
 
     final edgeScrollbar = tester.widget<Scrollbar>(
@@ -248,7 +286,7 @@ void main() {
     final content = tester.getRect(
       find.byKey(const Key('viktor_message_content_column')).first);
     expect(content.width, closeTo(kViktorChatContentMaxWidth, 1));
-    expect(content.center.dx, closeTo(720, 1));
+    expect(content.center.dx, closeTo((270 + 1440) / 2, 1));
     final intro = tester.getRect(find.textContaining('Я Виктор'));
     expect(intro.left, greaterThanOrEqualTo(content.left));
     expect(intro.right, lessThanOrEqualTo(content.right));

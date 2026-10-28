@@ -191,8 +191,27 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
         role: item.role,
         content: item.content.slice(0,
           /\b\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}/.test(item.content)
-            ? 6000 : item.role === "user" ? 3000 : 1200)
+            ? 6000 : item.role === "user" ? 3000 : 1200),
+        sent_at_utc: /^\d{4}-\d\d-\d\dT\d\d:\d\d/.test(
+          String(item.sent_at_utc || "")) ?
+          String(item.sent_at_utc).slice(0, 35) : null,
+        message_day: /^\d{4}-\d\d-\d\d$/.test(
+          String(item.message_day || "")) ? item.message_day : null,
+        message_timezone: /^[A-Za-z_]+\/[A-Za-z0-9_+\/-]+$/.test(
+          String(item.message_timezone || "")) ?
+          String(item.message_timezone).slice(0, 70) : null
       })) : [];
+  // These timestamps are from the authenticated app's persisted messages.
+  // Quoted "today" refers to the DATE OF THAT PRIOR TURN, not to today.
+  const datedDialogue = dialogue.map(turn => ({
+    role: turn.role,
+    content: (turn.sent_at_utc || turn.message_day ?
+      "[Sent " + (turn.sent_at_utc || "unknown UTC") +
+      "; profile day " + (turn.message_day || "unknown") +
+      "; zone " + (turn.message_timezone || "unknown") +
+      ". Relative dates in this prior turn are anchored here.]\n" : "") +
+      turn.content
+  }));
   const proposalFeedback = String(body.proposal_feedback || "").slice(0, 1200);
   // A user's explicit clock timezone stays in effect for the CURRENT
   // itinerary across follow-ups ("why New York?", "where are pumpkins?").
@@ -249,7 +268,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "You are Viktor, the LIFE OS raven assistant. Reply in the user's language (" + language + ").",
     "You can only propose approved application actions. Never invent IDs or claim an action succeeded.",
     "Calendar wall_day is only the day being viewed, NOT a restriction on action dates.",
-    "Resolve 'today', 'yesterday' and 'tomorrow' ONLY from profile-timezone today_day, yesterday_day and tomorrow_day. Never infer them from wall_day or next_day.",
+    "For CURRENT user_request resolve today from today_day. For quoted PRIOR turns, relative words today/yesterday/tomorrow belong to the original message_day, not current day. Historical turns with unknown message_day must not be silently assigned a new date.",
     "For operations involving different dates, choose source_day and target_day from the user request. Application tools will fetch and validate those dates; never force source_day to wall_day.",
     "If a relevant date is unclear, use list_day_plans for that explicit day before planning a change. For bulk_replan the app reads and checks both real days itself.",
     "Return ONLY one JSON object with keys message (short helpful answer), actions (array, max 12), and optional continue boolean.",
@@ -261,7 +280,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "Independent requests to create a new plan are NOT revisions of previous drafts, even if they say 'добавь'. Reply naturally to ordinary questions with actions:[]; questions alone authorize no writes.",
     "When correcting a previous draft, retain EVERY original requested activity (including purchases, delivery, car drop-off, return transport, named venues, travel buffers and overnight sleep). Show every segment in chronological order and flag conflicts. No re-reading or writes without separate user approval.",
     "For a request to plan MULTIPLE new activities (e.g. Saturday itinerary), compose a clear chronological DRAFT in message with tentative times and actions:[]; never emit multiple create_plan actions. Keep ambiguity explicit, never claim it was saved. Only one independently approved new plan may use create_plan.",
-    "For any past completed activities, read_day_records {wall_day} first to inspect real owned Timeline entries; continue:true. After receiving actual UTC anchors, propose create_completed_records {wall_day,records:[{title,start_utc,end_utc}]} with continue:false. Explicit UTC intervals are mandatory; never invent dates, read results or overlaps. The Brain validates all slots and asks for confirmation. NEVER use create_plan for completed activities. Legacy create_completed_records_between remains only for compatibility.",
+    "For past completed activities, read_day_records {wall_day} first, continue:true. After reading real UTC anchors, propose create_completed_records {wall_day,records:[{title,start_utc,end_utc}]} with continue:false. Never invent times or create Plans for past activities. If an exact record title is not found, search nearby records and infer candidate free windows only from observed data; show estimated intervals and ask for approval. Do not refuse until alternate available reads have been checked.",
     "For old poems search_notes and search_record_notes by creation year/month, then read_note or read_record_note by returned ID. Quote ONLY observed text; never invent it.",
     "Never emit continue:true with any mutation. For bulk_replan the Brain itself loads real source/destination days and completion statuses: propose the mutation directly without a preceding list_day_plans read.",
     "If if_previous_proposal_rejected is present, your previous tool action failed validation. Correct the proposal to a supported action; do not repeat the invalid arguments. This is bounded to one retry by the client.",
@@ -451,8 +470,8 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "Clock: event zone if given; else profile. Never infer zone by IP.",
     "Compare saved plan timezone with schedule_timezone.",
     "Revise PREVIOUS assistant draft only on explicit follow-up; preserve stops and clocks.",
-    "Past activities: read_day_records first, then create_completed_records using real UTC Z times, with approved preview. Never use Plans for past work.",
-    "After midnight: next calendar date. Relative dates: profile today.",
+    "Past work: read_day_records first, then observe actual anchors -> create_completed_records after preview. Missing title? inspect nearby records, propose estimates for approval; never invent certainty or use Plans.",
+    "After midnight: next calendar date. Current relative dates = profile today. Prior-turn dates = that message's original day; never redate old 'today'.",
     "create_plan appointments; conflict_policy:shift for urgent insertions.",
     "bulk_replan filters actual plans; skip list_day_plans before bulk. Brain validates.",
     "continue:true ONLY for read-only tools; mutations final with continue:false. Never repeat an already observed read.",
@@ -507,7 +526,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
         model: provider === "yandex" ? "gpt://" + folderId + "/" + model : model,
         messages: [
           {role: "system", content: provider === "yandex" ? compactSystem : system},
-          ...dialogue,
+          ...datedDialogue,
           {role: "user", content: JSON.stringify(currentTurnContext)}
         ],
         temperature: 0,

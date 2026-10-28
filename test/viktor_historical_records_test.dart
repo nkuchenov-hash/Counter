@@ -7,7 +7,7 @@ void main() {
     final intent = ViktorHistoricalRecordIntent.parse(
       'Добавь эти записи тоже',
       const [
-        {'role': 'user', 'content':
+        {'role': 'user', 'message_day': '2026-10-28', 'content':
           'Между просыпанием и Atozed Clients сегодня у меня была '
           'зарядка, поиск информации в Интернете, заказ подарка свечей, '
           'Утренний кофе, умывание и душ.'},
