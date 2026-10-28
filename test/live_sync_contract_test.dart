@@ -502,4 +502,33 @@ void main() {
         'if (!created.accepted && !created.pendingSync)'));
   });
 
+  test('Viktor one-date plan does not double preview or reload the day', () {
+    final ui = File('lib/features/viktor/viktor_dialogue_ui_state.dart')
+        .readAsStringSync();
+    final start = ui.indexOf(
+        'Future<void> _createIndependentDateOnlyPlan(');
+    final end = ui.indexOf('bool _showCorrectedScheduleDraft(', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+    final fastUi = ui.substring(start, end);
+    expect(fastUi, contains('executor.createSingleDateOnlyPlan('));
+    expect(fastUi, isNot(contains('executor.describe(')));
+    expect(fastUi, isNot(contains('executor.apply(')));
+
+    final executor = File('lib/data/ai/viktor_executor.dart')
+        .readAsStringSync();
+    final begin = executor.indexOf('Future<String> createSingleDateOnlyPlan(');
+    final finish = executor.indexOf('Future<String> apply(', begin);
+    expect(begin, greaterThanOrEqualTo(0));
+    expect(finish, greaterThan(begin));
+    final direct = executor.substring(begin, finish);
+    expect(direct, contains('_checkScope(batch, day)'));
+    expect(direct, contains('_existingPlan(action)'));
+    expect(direct, contains('_createPlan(action, null)'));
+    expect(direct, isNot(contains('describe(batch,')));
+    expect(direct, isNot(contains('apply(batch,')));
+    expect(direct, isNot(contains('getPlanningTasksForWallDate(')));
+    expect(executor, isNot(contains('canSave: (rule) =>')));
+  });
+
 }
