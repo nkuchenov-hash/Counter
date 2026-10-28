@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `85156621` on 2026-10-28.**
+**Generated from input HEAD `8d415b7b` on 2026-10-28.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -13695,8 +13695,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain helper for data/sync — Owner-scoped multiple conversations with per-turn UTC/profile-day/zone, encrypted offline outbox, legacy main compatibility and dated model context. Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What this is:** Brain helper for data/sync — Owner-scoped multiple conversations with per-turn UTC/profile-day/zone, encrypted offline outbox, legacy main compatibility and dated model context.
+- **Human purpose:** Brain helper for data/sync — Owner-scoped multiple conversations with per-turn UTC/profile-day/zone, encrypted offline outbox, original main compatibility and dated model context. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Owner-scoped multiple conversations with per-turn UTC/profile-day/zone, encrypted offline outbox, original main compatibility and dated model context.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
 - **Contents:** Dart helpers and types (`ViktorDialogueTurn`, `ViktorThread`, `ViktorConversationStore`).
 - **Key code names:** `ViktorDialogueTurn`, `ViktorThread`, `ViktorConversationStore`
@@ -13706,10 +13706,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** Owner-scoped multiple conversations with per-turn UTC/profile-day/zone, encrypted offline outbox, legacy main compatibility and dated model context; no provider secrets
+- **Responsibilities:** Owner-scoped multiple conversations with per-turn UTC/profile-day/zone, encrypted offline outbox, original main compatibility and dated model context; no provider secrets
 - **When to open:** When behavior tied to `viktor_conversation_store.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Owner-scoped multiple conversations with per-turn UTC/profile-day/zone, encrypted offline outbox, legacy main compatibil
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Owner-scoped multiple conversations with per-turn UTC/profile-day/zone, encrypted offline outbox, original main compatib
 
 RU:
 
