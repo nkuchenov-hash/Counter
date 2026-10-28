@@ -1339,7 +1339,6 @@ class _PlanningPageState extends State<PlanningPage>
       },
     );
   }
-
   @override
   Widget build(BuildContext context) {
     rebuildMetricsTick('PlanningPage');
@@ -1449,7 +1448,6 @@ class _PlanningPageState extends State<PlanningPage>
       },
     );
   }
-
   Widget _buildPlanningMainColumn(
     BuildContext context,
     ColorScheme scheme,
@@ -1493,6 +1491,8 @@ class _PlanningPageState extends State<PlanningPage>
           onSmart: _openViktorChat,
           onShare: () => unawaited(showSharePlanningDaySheet(context,
               dayKey: widget.selectedDateString, tasks: _latestPlanningDayTasks)),
+          sharingDayKey: widget.selectedDateString,
+          sharingActive: widget.isActivePlanningDay && widget.shellTabActive,
           loading: _planQuickAddInFlight,
         ),
         Expanded(
