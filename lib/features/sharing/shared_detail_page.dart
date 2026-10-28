@@ -74,8 +74,13 @@ class _SharedDetailPageState extends State<SharedDetailPage> {
       await _reload(silent: true);
       return true;
     } catch (error) {
+      final message = error is ShareApiException &&
+              error.code == 'share_revision_conflict'
+          ? l('План уже изменился. Открой новую версию и предложи изменение снова.',
+              'The plan changed. Refresh and suggest the edit again.')
+          : '$error';
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$error')),
+        SnackBar(content: Text(message)),
       );
       return false;
     } finally {
@@ -141,6 +146,27 @@ class _SharedDetailPageState extends State<SharedDetailPage> {
     return '${wall.hour.toString().padLeft(2, '0')}:'
         '${wall.minute.toString().padLeft(2, '0')}';
   }
+
+  String _proposalSummary(ShareMessage message) {
+    final patch = message.patch;
+    final parts = <String>[];
+    final title = patch['title']?.toString().trim() ?? '';
+    if (title.isNotEmpty) parts.add(title);
+    final start = _clock(patch['start_time']?.toString() ?? '');
+    final end = _clock(patch['end_time']?.toString() ?? '');
+    if (start.isNotEmpty) {
+      parts.add(end.isEmpty ? start : '$start – $end');
+    }
+    return parts.isEmpty
+        ? l('Изменение задачи', 'Task change') : parts.join(' · ');
+  }
+
+  String _proposalStatus(String raw) => switch (raw) {
+    'pending' => l('На согласовании', 'Pending approval'),
+    'accepted' => l('Согласовано', 'Accepted'),
+    'rejected' => l('Отклонено', 'Rejected'),
+    _ => raw,
+  };
 
   Future<void> _propose(SharedPlanItem item) async {
     final current = _detail;
@@ -262,8 +288,8 @@ class _SharedDetailPageState extends State<SharedDetailPage> {
                                 if (msg.body.isNotEmpty) Text(msg.body),
                                 if (msg.kind == 'proposal') ...[
                                   const SizedBox(height: 4),
-                                  Text('${l('Предложено', 'Suggested')}: ${msg.patch}'),
-                                  Text(msg.status),
+                                  Text(_proposalSummary(msg)),
+                                  Text(_proposalStatus(msg.status)),
                                   if (_isOwner && msg.status == 'pending')
                                     Wrap(spacing: 8, children: [
                                       AppButton.secondary(
