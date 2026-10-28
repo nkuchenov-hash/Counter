@@ -555,8 +555,6 @@ Every production Notes feature module above must be listed by exact filename (no
 | `category_db_display.dart` | Localized category name display |
 | `langs/en.dart` | **Canonical English** (`kEnL10n`) — SSOT for EN keys |
 | `langs/ru.dart` | **Canonical Russian** (`kRuL10n`) — SSOT for RU keys |
-| `langs/en_notes_v3.dart` | English Notes V3 localization companion (`kEnNotesV3L10n`); const spread into canonical `kEnL10n`; included in locale sync SSOT |
-| `langs/ru_notes_v3.dart` | Russian Notes V3 localization companion (`kRuNotesV3L10n`); const spread into canonical `kRuL10n` |
 | `langs/ar.dart`, `langs/de.dart`, `langs/es.dart`, `langs/fr.dart`, `langs/it.dart`, `langs/ko.dart`, `langs/zh.dart` | Partial locale maps layered on English |
 
 ### 3.6 `lib/services/`
