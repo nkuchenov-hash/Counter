@@ -59,9 +59,7 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
         },
       }],
     });
-    final preview = await executor.describe(batch, plan.day);
-    final receipt = await executor.apply(
-        batch, plan.day, approvedPreview: preview);
+    final receipt = await executor.createSingleDateOnlyPlan(batch, plan.day);
     if (mounted) _push(receipt);
   }
 
