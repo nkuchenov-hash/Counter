@@ -34,6 +34,41 @@ void main() {
 
   SharedPreferences.setMockInitialValues(<String, Object>{});
 
+  testWidgets('Viktor mobile drawer shows isolated chats and new thread',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 720);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(
+      home: ViktorChatPage(wallDay: DateTime(2026, 10, 28)),
+    ));
+    expect(find.text('Общий чат'), findsNothing);
+    await tester.tap(find.byTooltip('Диалоги'));
+    await tester.pump(const Duration(milliseconds: 450));
+    expect(find.text('Общий чат'), findsOneWidget);
+    expect(find.byKey(const Key('viktor_new_chat')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('viktor_new_chat')));
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Viktor desktop shows collapsible chat panel',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1200, 780);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(
+      home: ViktorChatPage(wallDay: DateTime(2026, 10, 28)),
+    ));
+    expect(find.text('Общий чат'), findsOneWidget);
+    await tester.tap(find.byTooltip('Диалоги'));
+    await tester.pump();
+    expect(find.text('Общий чат'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final width in <double>[320, 390, 768]) {
     testWidgets('Viktor composer never overflows at width $width',
         (tester) async {
