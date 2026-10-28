@@ -450,4 +450,47 @@ void main() {
   });
 
 
+
+  test('Viktor creates plans only with valid category relation IDs', () {
+    final source = File('lib/data/plan_service.dart').readAsStringSync();
+    final method = source.substring(
+      source.indexOf('Future<bool> addPlanningTask('),
+      source.indexOf('Map<String, dynamic> _scalarPatchBodyForPlanningRow('),
+    );
+    expect(method, contains('categoryRelationIdForPlanCreate(task.categoryId)'));
+    expect(method, isNot(contains('catNocoSys')));
+    expect(method, isNot(contains('_categoryStringPkForApi(catRule)')));
+    final resolver = File('lib/data/ai/viktor_executor.dart')
+        .readAsStringSync();
+    expect(resolver, contains('db.refreshCategoryRulesFromServer()'));
+    expect(resolver, contains('db.categoryRelationIdForPlanCreate(rule.id)'));
+  });
+
+  test('Failed initial plan POST keeps durable write and honest receipt', () {
+    final source = File('lib/data/plan_service.dart').readAsStringSync();
+    final method = source.substring(
+      source.indexOf('Future<bool> _addPlanningTaskPocket('),
+      source.indexOf('Future<bool> addPlanningTask('),
+    );
+    final failure = method.substring(
+      method.indexOf('on ClientException catch'),
+      method.indexOf('} catch (e, st) {',
+          method.indexOf('on ClientException catch')),
+    );
+    expect(failure, contains('offlineSync.setLastError('));
+    expect(failure, contains('return false;'));
+    expect(failure, isNot(contains('_acknowledgePlanMutation(')));
+    final outbox = File('lib/data/local_sync/plan_mutation_outbox.dart')
+        .readAsStringSync();
+    expect(outbox, contains('if (!saved) {'));
+    final receipts = File('lib/data/plans/plan_outbox_helpers.dart')
+        .readAsStringSync();
+    expect(receipts, contains(
+        'pendingSync: _hasPendingPlanMutationForBusinessId(clientPlanId)'));
+    final executor = File('lib/data/ai/viktor_executor.dart')
+        .readAsStringSync();
+    expect(executor, contains(
+        'if (!created.accepted && !created.pendingSync)'));
+  });
+
 }
