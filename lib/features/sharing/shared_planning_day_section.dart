@@ -190,16 +190,27 @@ class _SharedPlanningDaySectionState extends State<SharedPlanningDaySection> {
                                       ?.copyWith(color: scheme.onSurfaceVariant)),
                                   const SizedBox(width: 8),
                                 ],
+                                Icon(
+                                  share.myCompleted[item.planId] == true
+                                      ? Icons.check_circle_rounded
+                                      : Icons.radio_button_unchecked_rounded,
+                                  size: 17, color: scheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 6),
                                 Expanded(child: Text(item.title,
                                   maxLines: 1,
-                                  overflow: TextOverflow.ellipsis)),
+                                  overflow: TextOverflow.ellipsis,
+                                  style: share.myCompleted[item.planId] == true
+                                      ? const TextStyle(
+                                          decoration: TextDecoration.lineThrough)
+                                      : null)),
                               ]),
                             ),
                           if (share.items.length > 2)
                             Padding(
                               padding: const EdgeInsets.only(top: 4, left: 27),
                               child: Text(l('И ещё ${share.items.length - 2}',
-                                           'And ${share.items.length - 3} more'),
+                                           'And ${share.items.length - 2} more'),
                                   style: Theme.of(context).textTheme.labelSmall),
                             ),
                         ] else
