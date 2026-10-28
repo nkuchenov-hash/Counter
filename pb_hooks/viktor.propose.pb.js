@@ -191,8 +191,27 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
         role: item.role,
         content: item.content.slice(0,
           /\b\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}/.test(item.content)
-            ? 6000 : item.role === "user" ? 3000 : 1200)
+            ? 6000 : item.role === "user" ? 3000 : 1200),
+        sent_at_utc: /^\d{4}-\d\d-\d\dT\d\d:\d\d/.test(
+          String(item.sent_at_utc || "")) ?
+          String(item.sent_at_utc).slice(0, 35) : null,
+        message_day: /^\d{4}-\d\d-\d\d$/.test(
+          String(item.message_day || "")) ? item.message_day : null,
+        message_timezone: /^[A-Za-z_]+\/[A-Za-z0-9_+\/-]+$/.test(
+          String(item.message_timezone || "")) ?
+          String(item.message_timezone).slice(0, 70) : null
       })) : [];
+  // These timestamps are from the authenticated app's persisted messages.
+  // Quoted "today" refers to the DATE OF THAT PRIOR TURN, not to today.
+  const datedDialogue = dialogue.map(turn => ({
+    role: turn.role,
+    content: (turn.sent_at_utc || turn.message_day ?
+      "[Sent " + (turn.sent_at_utc || "unknown UTC") +
+      "; profile day " + (turn.message_day || "unknown") +
+      "; zone " + (turn.message_timezone || "unknown") +
+      ". Relative dates in this prior turn are anchored here.]\n" : "") +
+      turn.content
+  }));
   const proposalFeedback = String(body.proposal_feedback || "").slice(0, 1200);
   // A user's explicit clock timezone stays in effect for the CURRENT
   // itinerary across follow-ups ("why New York?", "where are pumpkins?").
@@ -249,7 +268,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "You are Viktor, the LIFE OS raven assistant. Reply in the user's language (" + language + ").",
     "You can only propose approved application actions. Never invent IDs or claim an action succeeded.",
     "Calendar wall_day is only the day being viewed, NOT a restriction on action dates.",
-    "Resolve 'today', 'yesterday' and 'tomorrow' ONLY from profile-timezone today_day, yesterday_day and tomorrow_day. Never infer them from wall_day or next_day.",
+    "For CURRENT user_request resolve today from today_day. For quoted PRIOR turns, relative words today/yesterday/tomorrow belong to the original message_day, not current day. Historical turns with unknown message_day must not be silently assigned a new date.",
     "For operations involving different dates, choose source_day and target_day from the user request. Application tools will fetch and validate those dates; never force source_day to wall_day.",
     "If a relevant date is unclear, use list_day_plans for that explicit day before planning a change. For bulk_replan the app reads and checks both real days itself.",
     "Return ONLY one JSON object with keys message (short helpful answer), actions (array, max 12), and optional continue boolean.",
@@ -452,7 +471,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "Compare saved plan timezone with schedule_timezone.",
     "Revise PREVIOUS assistant draft only on explicit follow-up; preserve stops and clocks.",
     "Past activities: read_day_records first, then create_completed_records using real UTC Z times, with approved preview. Never use Plans for past work.",
-    "After midnight: next calendar date. Relative dates: profile today.",
+    "Current relative dates = profile today. Prior-turn dates = that message's original day; never redate old 'today'.",
     "create_plan appointments; conflict_policy:shift for urgent insertions.",
     "bulk_replan filters actual plans; skip list_day_plans before bulk. Brain validates.",
     "continue:true ONLY for read-only tools; mutations final with continue:false. Never repeat an already observed read.",
@@ -507,7 +526,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
         model: provider === "yandex" ? "gpt://" + folderId + "/" + model : model,
         messages: [
           {role: "system", content: provider === "yandex" ? compactSystem : system},
-          ...dialogue,
+          ...datedDialogue,
           {role: "user", content: JSON.stringify(currentTurnContext)}
         ],
         temperature: 0,
