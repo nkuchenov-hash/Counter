@@ -61,7 +61,14 @@ class ViktorDialogueTurn {
         unsynced.add(local);
       }
     }
-    return [...remote, ...unsynced];
+    final combined = [...remote, ...unsynced];
+    combined.sort((a, b) {
+      final x = a.sentAtUtc;
+      final y = b.sentAtUtc;
+      if (x == null || y == null) return 0;
+      return x.compareTo(y);
+    });
+    return combined;
   }
 
   /// Pin the original user itinerary, the latest timed draft and the user's
@@ -256,9 +263,15 @@ class ViktorConversationStore {
         if (!validConversationId(thread)) {
           throw StateError('Некорректный диалог в очереди Виктора.');
         }
+        // Old encrypted queues encoded creation microseconds in the stable ID.
+        // Preserve that original clock when replaying after migration.
+        final micros = int.tryParse(id.split('_')[1]);
+        final recoveredUtc = micros == null ? null
+            : DateTime.fromMicrosecondsSinceEpoch(micros, isUtc: true)
+                .toIso8601String();
         restored.add((owner: owner, id: id, role: role as String,
             body: body, thread: thread,
-            sentUtc: item['sentUtc']?.toString(),
+            sentUtc: item['sentUtc']?.toString() ?? recoveredUtc,
             messageDay: item['messageDay']?.toString(),
             timezone: item['timezone']?.toString()));
       }
@@ -455,6 +468,12 @@ class ViktorConversationStore {
             messageDay: item.messageDay, messageTimezone: item.timezone));
         }
       }
+      turns.sort((a, b) {
+        final x = a.sentAtUtc;
+        final y = b.sentAtUtc;
+        if (x == null || y == null) return 0;
+        return x.compareTo(y);
+      });
       return turns;
     } catch (_) {
       if (_pending.isEmpty) rethrow;
