@@ -462,6 +462,11 @@ void main() {
         .readAsStringSync();
     expect(categoryLookup, contains('_resolveCategoryRowIdForPb(rule)'));
     expect(categoryLookup, contains('_fetchPbCategorySysIdByCategoryIdField('));
+    expect(categoryLookup, contains('resolveQueuedPlanCreateCategory('));
+    final replay = File('lib/data/plans/plan_outbox_helpers.dart')
+        .readAsStringSync();
+    expect(replay, contains('resolveQueuedPlanCreateCategory('));
+    expect(replay, contains("body['category_id'] = category;"));
     expect(method, isNot(contains('catNocoSys')));
     expect(method, isNot(contains('_categoryStringPkForApi(catRule)')));
     final resolver = File('lib/data/ai/viktor_executor.dart')
