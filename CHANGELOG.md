@@ -1,3 +1,10 @@
+## [2026-10-28] — Viktor past Records vs Plans refusal fix
+
+- Fixed date-only `create_plan` rejecting an irrelevant timezone field; the authenticated action validator now safely discards timezone when no clock is supplied.
+- Added `create_completed_records_between`: Timeline record backfill between actual existing record anchors, safe chronological draft, overlap check, explicit confirmation, and durable Brain writes.
+- Added deterministic follow-up routing for the reported 'Между просыпанием и Atozed Clients ... Добавь эти записи тоже' case, avoiding model's previous mistaken Plan creation. YandexGPT also receives the scoped completed-record tool and instruction to distinguish past Records from future Plans.
+- Added action-contract, intent, interval, and regression tests; physical account acceptance still requires authenticated user data and confirmation.
+
 ## [2026-10-26] — PocketBase instant cross-device reconciliation hardening
 
 - Preserved realtime plan/record create, update and delete events that arrive during an older full-list REST refresh. The full snapshot replays those newer deltas, so a late HTTP response cannot visibly revert a newer SSE change.
