@@ -441,7 +441,7 @@ void main() {
     expect(manager, contains('db.flushPendingLocalMutations()'));
     expect(manager, contains('_schedulePendingDrain(delay: stalled'));
     expect(status, contains('Сохранение пока не подтверждено'));
-    expect(status, contains('План «$name» добавлен на $day.'));
+    expect(status, contains(r'План «$name» добавлен на $day.'));
     expect(status, isNot(contains('PocketBase')));
   });
 
