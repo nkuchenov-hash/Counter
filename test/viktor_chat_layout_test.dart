@@ -261,15 +261,15 @@ void main() {
     expect(field.decoration?.fillColor, Colors.transparent);
     expect(field.decoration?.border, InputBorder.none);
 
-    // The messages viewport must extend to the WINDOW edge, regardless
-    // of the centered 760px conversation-content column.
+    // On desktop, the conversation viewport starts after the visible 270px
+    // thread panel, while the scrollbar remains at the message-area edge.
     final viewport = tester.getRect(
       find.byKey(const Key('viktor_chat_messages_viewport')));
     final scrollbar = tester.getRect(
       find.byKey(const Key('viktor_edge_scrollbar')));
-    expect(viewport.left, closeTo(0, 0.1));
+    expect(viewport.left, closeTo(270, 0.1));
     expect(viewport.right, closeTo(1440, 0.1));
-    expect(scrollbar.left, closeTo(0, 0.1));
+    expect(scrollbar.left, closeTo(270, 0.1));
     expect(scrollbar.right, closeTo(1440, 0.1));
 
     final edgeScrollbar = tester.widget<Scrollbar>(
@@ -283,7 +283,7 @@ void main() {
     final content = tester.getRect(
       find.byKey(const Key('viktor_message_content_column')).first);
     expect(content.width, closeTo(kViktorChatContentMaxWidth, 1));
-    expect(content.center.dx, closeTo(720, 1));
+    expect(content.center.dx, closeTo((270 + 1440) / 2, 1));
     final intro = tester.getRect(find.textContaining('Я Виктор'));
     expect(intro.left, greaterThanOrEqualTo(content.left));
     expect(intro.right, lessThanOrEqualTo(content.right));
