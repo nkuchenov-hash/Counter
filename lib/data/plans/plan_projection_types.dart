@@ -420,6 +420,12 @@ extension PlanProfileTimezoneProjectionExtension on DatabaseService {
     return _dateKeyFromDate(startWall) == targetDayStr;
   }
 
+  /// Test seam for the real wall-day projection (not only its date predicate).
+  List<PlanningTask> filterPlansForWallDayForTest(
+    List<PlanningTask> all,
+    DateTime selectedDate,
+  ) => _filterPlansForWallDay(all, selectedDate);
+
   List<PlanningTask> _filterPlansForWallDay(
     List<PlanningTask> all,
     DateTime selectedDate,
