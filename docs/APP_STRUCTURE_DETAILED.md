@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `a871b03e` on 2026-10-28.**
+**Generated from input HEAD `f991a399` on 2026-10-28.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 955 — each appears **exactly once** below.
+**Tracked files:** 963 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,18 +26,18 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 184 |
+| `production UI` | 187 |
 | `test` | 135 |
-| `Brain/data` | 113 |
+| `Brain/data` | 114 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
 | `developer tool` | 63 |
+| `governing documentation` | 44 |
 | `platform resource` | 44 |
-| `governing documentation` | 43 |
 | `Desktop Voice runtime` | 36 |
-| `test fixture` | 29 |
-| `PocketBase backend` | 24 |
-| `PocketBase migration` | 20 |
+| `test fixture` | 30 |
+| `PocketBase backend` | 25 |
+| `PocketBase migration` | 21 |
 | `shared Voice system` | 20 |
 | `historical engineering record` | 17 |
 | `localization` | 13 |
@@ -57,10 +57,10 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 514 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 253 |
+| `PROVEN_REQUIRED` | 520 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 254 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
-| `GOVERNING_DOCUMENTATION` | 43 |
+| `GOVERNING_DOCUMENTATION` | 44 |
 | `HISTORICAL_RECORD` | 17 |
 | `GENERATED_CANONICAL_OUTPUT` | 1 |
 
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 872 |
+| `HIGH` | 880 |
 | `MEDIUM` | 83 |
 
 ---
@@ -124,6 +124,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/data/profile/`](#folder-libdataprofile)
 - [`lib/data/realtime/`](#folder-libdatarealtime)
 - [`lib/data/records/`](#folder-libdatarecords)
+- [`lib/data/sharing/`](#folder-libdatasharing)
 - [`lib/data/voice/`](#folder-libdatavoice)
 - [`lib/features/auth/`](#folder-libfeaturesauth)
 - [`lib/features/calendar/`](#folder-libfeaturescalendar)
@@ -135,6 +136,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/features/profile/`](#folder-libfeaturesprofile)
 - [`lib/features/settings/`](#folder-libfeaturessettings)
 - [`lib/features/shared/`](#folder-libfeaturesshared)
+- [`lib/features/sharing/`](#folder-libfeaturessharing)
 - [`lib/features/stats/`](#folder-libfeaturesstats)
 - [`lib/features/timeline/`](#folder-libfeaturestimeline)
 - [`lib/features/viktor/`](#folder-libfeaturesviktor)
@@ -176,7 +178,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/shared/voice/routing/`](#folder-libsharedvoicerouting)
 - [`lib/shared/voice/ui/`](#folder-libsharedvoiceui)
 - [`lib/shared/voice/platforms/desktop/`](#folder-libsharedvoiceplatformsdesktop)
-- [`lib/shared/voice/platforms/mobile/`](#folder-libsharedvoiceplatformsmobile)
+- …and 1 more folders in detailed sections below.
 
 ### Tests
 
@@ -2376,6 +2378,30 @@ RU:
 
 ---
 
+## Folder: `lib/data/sharing/`
+
+EN:
+
+- **What this folder is:** Dart source subtree `lib/data/sharing/` — part of app code for data/sharing.
+- **Why it exists:** Code under `lib/` ships in every platform build; this folder groups related Dart modules.
+- **What lives here:** Dart modules listed in file entries below.
+- **What part of the app it affects:** App behavior for the feature or layer named in the path.
+- **When to open it:** Bug or feature work in `data/sharing`.
+- **Can it be deleted?** No — required for app runtime unless explicitly deprecated in ROADMAP.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
+
+RU:
+
+- **Что это за папка:** Каталог исходного Dart-кода `lib/data/sharing/`, отвечающий за область `data/sharing`.
+- **Зачем нужна:** Собирает рядом файлы одного владельца, чтобы UI, данные и общая инфраструктура не смешивали обязанности.
+- **Что здесь лежит:** Dart-файлы и дочерние каталоги этого владельца; каждый файл описан ниже.
+- **На что влияет в приложении:** Поведение приложения в области `data/sharing` и связанные с ней потоки данных или интерфейс.
+- **Когда открывать:** Открывать при изменениях или ошибках в области `data/sharing`.
+- **Можно удалить?** Нет — нужен для работы приложения unless explicitly deprecated in ROADMAP.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
+
+---
+
 ## Folder: `lib/data/voice/`
 
 EN:
@@ -2637,6 +2663,30 @@ RU:
 - **Когда открывать:** Открывать при изменениях или ошибках в области `features/shared`.
 - **Можно удалить?** Нет — это часть исходного кода приложения, пока владелец присутствует в архитектуре.
 - **Связанные пути:** `lib/app/shell/shared/shell_edit_hosts.dart`, `docs/UX_CONTRACT.md`.
+
+---
+
+## Folder: `lib/features/sharing/`
+
+EN:
+
+- **What this folder is:** Dart source subtree `lib/features/sharing/` — part of app code for features/sharing.
+- **Why it exists:** Code under `lib/` ships in every platform build; this folder groups related Dart modules.
+- **What lives here:** Dart modules listed in file entries below.
+- **What part of the app it affects:** App behavior for the feature or layer named in the path.
+- **When to open it:** Bug or feature work in `features/sharing`.
+- **Can it be deleted?** No — required for app runtime unless explicitly deprecated in ROADMAP.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
+
+RU:
+
+- **Что это за папка:** Каталог исходного Dart-кода `lib/features/sharing/`, отвечающий за область `features/sharing`.
+- **Зачем нужна:** Собирает рядом файлы одного владельца, чтобы UI, данные и общая инфраструктура не смешивали обязанности.
+- **Что здесь лежит:** Dart-файлы и дочерние каталоги этого владельца; каждый файл описан ниже.
+- **На что влияет в приложении:** Поведение приложения в области `features/sharing` и связанные с ней потоки данных или интерфейс.
+- **Когда открывать:** Открывать при изменениях или ошибках в области `features/sharing`.
+- **Можно удалить?** Нет — нужен для работы приложения unless explicitly deprecated in ROADMAP.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
 
 ---
 
@@ -7002,6 +7052,43 @@ RU:
 - **Владелец / слой:** документация
 - **Обязанности:** Хранит актуальную документацию по назначению `SERVER_SLEEP_SYNC_DEPLOY.md`.
 - **Когда открывать:** When результат сборки or maintenance cites `SERVER_SLEEP_SYNC_DEPLOY.md`.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+
+### `docs/SHARING_COLLABORATION.md`
+
+EN:
+
+- **Human purpose:** Markdown document `SHARING_COLLABORATION.md` in `docs` — repo tooling or config. Tracked because `docs` needs `SHARING_COLLABORATION.md` for build, CI, or maintenance.
+- **What this is:** Markdown document `SHARING_COLLABORATION.md` in `docs` — repo tooling or config.
+- **Why needed:** Tracked because `docs` needs `SHARING_COLLABORATION.md` for build, CI, or maintenance.
+- **Contents:** Open `SHARING_COLLABORATION.md` when working on `docs` (see folder section above).
+- **Repository role:** governing documentation
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `CHANGELOG.md`, `docs/APP_STRUCTURE.md`, `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`.
+- **Necessity status:** GOVERNING_DOCUMENTATION
+- **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
+- **Confidence:** HIGH
+- **Owner / layer:** documentation
+- **Responsibilities:** Supports `docs` workflow for `SHARING_COLLABORATION.md`.
+- **When to open:** When build output or maintenance cites `SHARING_COLLABORATION.md`.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** Текстовая спецификация `SHARING_COLLABORATION.md` в разделе `docs`. Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Что это:** Текстовая спецификация `SHARING_COLLABORATION.md` в разделе `docs`.
+- **Зачем:** Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Содержимое:** Структурированный Markdown-текст по теме `SHARING_COLLABORATION.md` без runtime-логики приложения.
+- **Роль в репозитории:** governing documentation
+- **Доказательства использования:** Управляющая/операционная документация для людей и агентов (см. Project Knowledge / AGENTS).
+- **Статус необходимости:** GOVERNING_DOCUMENTATION
+- **Что будет, если удалить:** Пропадёт архитектурное/операционное правило.
+- **Уверенность:** HIGH
+- **Владелец / слой:** документация
+- **Обязанности:** Хранит актуальную документацию по назначению `SHARING_COLLABORATION.md`.
+- **Когда открывать:** When результат сборки or maintenance cites `SHARING_COLLABORATION.md`.
 - **Можно удалить?** Нет — governing документация.
 - **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`.
 
@@ -16014,7 +16101,7 @@ EN:
 - **Contents:** Coordinator extensions plus links to `part` files under `peoples/` or `people/`.
 - **Key code names:** `PeopleService`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/people/people_person_editor.dart`, `lib/features/settings/people/people_settings_page_impl.dart`, `lib/features/settings/people/people_sources_section.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/people/people_person_editor.dart`, `lib/features/settings/people/people_settings_page_impl.dart`, `lib/features/settings/people/people_sources_section.dart`, `lib/features/sharing/shared_detail_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -16031,7 +16118,7 @@ RU:
 - **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
 - **Содержимое:** Extensions + `part` файлы для people.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/people/people_person_editor.dart`, `lib/features/settings/people/people_settings_page_impl.dart`, `lib/features/settings/people/people_sources_section.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/people/people_person_editor.dart`, `lib/features/settings/people/people_settings_page_impl.dart`, `lib/features/settings/people/people_sources_section.dart`, `lib/features/sharing/shared_detail_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -17668,6 +17755,44 @@ RU:
 - **Владелец / слой:** Brain/data
 - **Обязанности:** Поддерживает операции данных в `recurrence_edit_scope`.
 - **Когда открывать:** Когда ломается поведение, связанное с `recurrence_edit_scope.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/sharing/share_service.dart`
+
+EN:
+
+- **Human purpose:** Main coordinator for share inside the brain. UI calls one share entry point; this file delegates to focused modules in the subfolder.
+- **What this is:** Main coordinator for share inside the brain.
+- **Why needed:** UI calls one share entry point; this file delegates to focused modules in the subfolder.
+- **Contents:** Coordinator extensions plus links to `part` files under `shares/` or `share/`.
+- **Key code names:** `ShareService`, `ShareApiException`, `SharedObject`, `SharedPlanItem`, `ShareMessage`, `ShareDetail`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/sharing/share_day_sheet.dart`, `lib/features/sharing/shared_detail_page.dart`, `lib/features/sharing/shared_inbox_section.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** share service
+- **When to open:** When behavior tied to `share_service.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: share service
+
+RU:
+
+- **Зачем файл человеку:** Главный координатор для share. UI вызывает один вход; детали — в модулях subfolder.
+- **Что это:** Главный координатор для share.
+- **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
+- **Содержимое:** Extensions + `part` файлы для share.
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/features/sharing/share_day_sheet.dart`, `lib/features/sharing/shared_detail_page.dart`, `lib/features/sharing/shared_inbox_section.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Координатор домена: share service.
+- **Когда открывать:** Когда ломается поведение, связанное с `share_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
@@ -23690,6 +23815,120 @@ RU:
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
+
+
+### `lib/features/sharing/share_day_sheet.dart`
+
+EN:
+
+- **Human purpose:** `share_day_sheet.dart` on sharing area — share day sheet. Users see `share_day_sheet.dart` when using sharing area.
+- **What this is:** `share_day_sheet.dart` on sharing area — share day sheet.
+- **Why needed:** Users see `share_day_sheet.dart` when using sharing area.
+- **Contents:** Primary symbols: `_ShareDayPicker`, `_ShareDayPickerState`.
+- **Key code names:** `_ShareDayPicker`, `_ShareDayPickerState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** repository root
+- **Responsibilities:** Implements `_ShareDayPicker` and related API in `share_day_sheet.dart`.
+- **When to open:** When behavior tied to `share_day_sheet.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: share day sheet
+
+RU:
+
+- **Зачем файл человеку:** `share_day_sheet.dart` на sharing — Пользователь открывает sheet/dialog из entry `share_day_sheet`.. Пользователь видит UI из `share_day_sheet.dart` на sharing.
+- **Что это:** `share_day_sheet.dart` на sharing — Пользователь открывает sheet/dialog из entry `share_day_sheet`..
+- **Зачем:** Пользователь видит UI из `share_day_sheet.dart` на sharing.
+- **Содержимое:** Основные символы: `_ShareDayPicker`, `_ShareDayPickerState`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Пользователь открывает sheet/dialog из entry `share_day_sheet`.
+- **Когда открывать:** Когда ломается поведение, связанное с `share_day_sheet.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/sharing/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/sharing/shared_detail_page.dart`
+
+EN:
+
+- **Human purpose:** `shared_detail_page.dart` on sharing area — shared detail page. Users see `shared_detail_page.dart` when using sharing area.
+- **What this is:** `shared_detail_page.dart` on sharing area — shared detail page.
+- **Why needed:** Users see `shared_detail_page.dart` when using sharing area.
+- **Contents:** Primary symbols: `SharedDetailPage`, `_SharedDetailPageState`.
+- **Key code names:** `SharedDetailPage`, `_SharedDetailPageState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/sharing/share_day_sheet.dart`, `lib/features/sharing/shared_inbox_section.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** repository root
+- **Responsibilities:** Implements `SharedDetailPage` and related API in `shared_detail_page.dart`.
+- **When to open:** When behavior tied to `shared_detail_page.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: shared detail page
+
+RU:
+
+- **Зачем файл человеку:** `shared_detail_page.dart` на sharing — Отвечает за видимый UI, собранный в `shared_detail_page.dart`.. Пользователь видит UI из `shared_detail_page.dart` на sharing.
+- **Что это:** `shared_detail_page.dart` на sharing — Отвечает за видимый UI, собранный в `shared_detail_page.dart`..
+- **Зачем:** Пользователь видит UI из `shared_detail_page.dart` на sharing.
+- **Содержимое:** Компоновка экрана и state в `shared_detail_page.dart`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/sharing/share_day_sheet.dart`, `lib/features/sharing/shared_inbox_section.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Отвечает за видимый UI, собранный в `shared_detail_page.dart`.
+- **Когда открывать:** Когда ломается поведение, связанное с `shared_detail_page.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/sharing/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/sharing/shared_inbox_section.dart`
+
+EN:
+
+- **Human purpose:** `shared_inbox_section.dart` on sharing area — shared inbox section. Users see `shared_inbox_section.dart` when using sharing area.
+- **What this is:** `shared_inbox_section.dart` on sharing area — shared inbox section.
+- **Why needed:** Users see `shared_inbox_section.dart` when using sharing area.
+- **Contents:** Primary symbols: `SharedInboxPage`, `SharedInboxSection`, `_SharedInboxSectionState`.
+- **Key code names:** `SharedInboxPage`, `SharedInboxSection`, `_SharedInboxSectionState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/people/people_settings_page_impl.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** repository root
+- **Responsibilities:** Implements `SharedInboxPage` and related API in `shared_inbox_section.dart`.
+- **When to open:** When behavior tied to `shared_inbox_section.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: shared inbox section
+
+RU:
+
+- **Зачем файл человеку:** `shared_inbox_section.dart` на sharing — Поддерживает поведение `shared_inbox_section` в этой feature-зоне.. Пользователь видит UI из `shared_inbox_section.dart` на sharing.
+- **Что это:** `shared_inbox_section.dart` на sharing — Поддерживает поведение `shared_inbox_section` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `shared_inbox_section.dart` на sharing.
+- **Содержимое:** Dart-модуль `shared_inbox_section.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/people/people_settings_page_impl.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Поддерживает поведение `shared_inbox_section` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `shared_inbox_section.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/sharing/`, `docs/APP_STRUCTURE.md`
 
 
 ### `lib/features/stats/stats_detail_tree.dart`
@@ -30186,6 +30425,43 @@ RU:
 - **Связано с:** `pb_hooks/`, Flutter embedder.
 
 
+### `pb_hooks/shares.pb.js`
+
+EN:
+
+- **Human purpose:** PocketBase server hook `shares` — runs on VPS when specific API events fire. Some rules (password reset email, overlapping records) must be enforced server-side.
+- **What this is:** PocketBase server hook `shares` — runs on VPS when specific API events fire.
+- **Why needed:** Some rules (password reset email, overlapping records) must be enforced server-side.
+- **Contents:** JavaScript hook handler copied to PocketBase `pb_hooks/` on server.
+- **Repository role:** PocketBase backend
+- **Evidence of use:** Server-side PocketBase hook; deployed with the PB instance (see `docs/POCKETBASE_MANIFEST.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken server-side validation/automation for PB collections.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase backend
+- **Responsibilities:** Server-side logic for `shares` (see `docs/POCKETBASE_MANIFEST.md`).
+- **When to open:** Server behavior differs from app expectations for auth/records.
+- **Can it be deleted?** No — production PocketBase deployment.
+- **Connected to:** PocketBase Admin, Flutter auth/records client.
+
+RU:
+
+- **Зачем файл человеку:** PocketBase hook `shares` — серверная логика при API-событиях на VPS. Часть правил (reset пароля, overlap записей) должна выполняться на сервере, не в APK.
+- **Что это:** PocketBase hook `shares` — серверная логика при API-событиях на VPS.
+- **Зачем:** Часть правил (reset пароля, overlap записей) должна выполняться на сервере, не в APK.
+- **Содержимое:** JavaScript handler `shares.pb.js` — копируется в PocketBase `pb_hooks/` на VPS.
+- **Роль в репозитории:** PocketBase backend
+- **Доказательства использования:** Серверный hook PocketBase; деплоится вместе с PB (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается серверная логика PocketBase.
+- **Уверенность:** HIGH
+- **Владелец / слой:** PocketBase backend
+- **Обязанности:** Серверная логика для `shares` (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Когда открывать:** Поведение auth/records на сервере не совпадает с ожиданиями приложения.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** PocketBase Admin, Flutter auth/records client.
+
+
 ### `pb_hooks/sleep_sync.pb.js`
 
 EN:
@@ -31403,6 +31679,43 @@ RU:
 - **Владелец / слой:** миграции PocketBase
 - **Обязанности:** Реализует JavaScript-часть сценария `1792710000_viktor_turns.js` в своём каталоге.
 - **Когда открывать:** When результат сборки or maintenance cites `1792710000_viktor_turns.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+
+### `pb_migrations/1793188800_shared_collaboration.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `1793188800_shared_collaboration.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1793188800_shared_collaboration.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1793188800_shared_collaboration.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1793188800_shared_collaboration.js` for build, CI, or maintenance.
+- **Contents:** Open `1793188800_shared_collaboration.js` when working on `pb_migrations` (see folder section above).
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Supports `pb_migrations` workflow for `1793188800_shared_collaboration.js`.
+- **When to open:** When build output or maintenance cites `1793188800_shared_collaboration.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `1793188800_shared_collaboration.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1793188800_shared_collaboration.js`.
+- **Что это:** `1793188800_shared_collaboration.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1793188800_shared_collaboration.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1793188800_shared_collaboration.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Реализует JavaScript-часть сценария `1793188800_shared_collaboration.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1793188800_shared_collaboration.js`.
 - **Можно удалить?** Нет — конфигурация/инструмент репозитория.
 - **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
@@ -37952,6 +38265,43 @@ RU:
 - **Когда открывать:** Падение CI или правка кода рядом с `plan_alarm_schedule`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/shares_hook_test.cjs`
+
+EN:
+
+- **Human purpose:** Automated test `shares_hook_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `shares_hook_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: test groups).
+- **Repository role:** test fixture
+- **Evidence of use:** Read/referenced by: `docs/SHARING_COLLABORATION.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `shares_hook_test` scenario.
+- **When to open:** CI failure or changing code near `shares_hook`.
+- **Can it be deleted?** Broken fixture-backed test or missing diagnostic sample.
+- **Connected to:** `test/` suite; production subject near `shares_hook`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `shares_hook_test` — проверяет поведение без ручных нажатий. Ловит регрессии при правках связанного production-кода.
+- **Что это:** Автотест `shares_hook_test` — проверяет поведение без ручных нажатий.
+- **Зачем:** Ловит регрессии при правках связанного production-кода.
+- **Содержимое:** Тест-кейсы (символы: test groups).
+- **Роль в репозитории:** test fixture
+- **Доказательства использования:** Читается/упоминается: `docs/SHARING_COLLABORATION.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Проверяет ожидаемое поведение сценария `shares_hook_test`.
+- **Когда открывать:** Падение CI или правка кода около `shares_hook`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Набор `test/`; production-субъект около `shares_hook`.
 
 
 ### `test/shell_form_factor_test.dart`
