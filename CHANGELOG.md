@@ -1,4 +1,4 @@
-## [2026-10-28] — Shared plans using existing People (candidate, unmerged)
+## [2026-10-28] — Shared plans using existing People (candidate, unmerged)\n\n- Participant-local completion is now persisted separately in the closed `shared_personal_state` collection; checks in shared discussion are optimistic but reconcile on HTTP failure, and no user’s private `plans.is_done` is changed. A server contract test checks owner/recipient isolation and revoked-member denial.
 
 - Added **on-demand** selected-day plan sharing into a server-owned shared draft; the existing People section now provides recipient selection and a Shared-plans invitation entry point. No second Contacts domain. Shared-day views in Planning and focused Calendar reflect the server-owned accepted projection; comments and task title/time proposals use profile timezone. Owner can revoke, member can leave.
 - New closed `shared_objects` / `shared_members` / `shared_messages` schema and authenticated `/api/shares` hooks isolate each owner's records, require invite acceptance, and support discussion and versioned task-title proposals with owner approval.
