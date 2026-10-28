@@ -64,16 +64,18 @@ class _SharedDetailPageState extends State<SharedDetailPage> {
     }
   }
 
-  Future<void> _mutate(Future<void> Function() action) async {
-    if (_sending) return;
+  Future<bool> _mutate(Future<void> Function() action) async {
+    if (_sending) return false;
     setState(() => _sending = true);
     try {
       await action();
       await _reload(silent: true);
+      return true;
     } catch (error) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('$error')),
       );
+      return false;
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -82,8 +84,8 @@ class _SharedDetailPageState extends State<SharedDetailPage> {
   Future<void> _send() async {
     final message = _composer.text.trim();
     if (message.isEmpty) return;
-    await _mutate(() => _service.comment(widget.shareId, message));
-    if (_detail != null && mounted && !_sending) _composer.clear();
+    final success = await _mutate(() => _service.comment(widget.shareId, message));
+    if (success && mounted && _composer.text.trim() == message) _composer.clear();
   }
 
   Future<void> _invite() async {
