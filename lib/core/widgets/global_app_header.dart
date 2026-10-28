@@ -3,7 +3,6 @@
 // Tap opens the same day picker flow as Timeline (web + native).
 // ---------------------------------------------------------------------------
 
-import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/widgets/app_bar_live_clock.dart';
 import 'package:counter/core/widgets/timezone_quick_picker.dart';
 import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
@@ -19,43 +18,125 @@ Future<void> _pickDayForGlobalHeader(
   BuildContext context,
   DateTime initialDate,
   void Function(DateTime day) onSelected,
-) async {
-  // Date-only: Omni-Picker Law (ARCHITECTURE §8.1) applies when both date and
-  // time are selected; see showAppDateTimePicker in shared_widgets.dart.
-  final loc = currentLocale.value;
-  if (useKeyboardFriendlyMaterialPickersFromContext(context)) {
-    final picked = await showDatePicker(
-      context: context,
-      locale: Locale(loc),
-      initialDate: initialDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2035),
-      initialEntryMode: appDatePickerEntryModeFromContext(context),
-    );
-    if (picked != null && context.mounted) {
-      onSelected(DateTime(picked.year, picked.month, picked.day));
-    }
-    return;
-  }
-  final picked = await showDialog<DateTime>(
+) {
+  // Date-only navigation: one calendar with an inline text field on every
+  // platform. This is separate from the unified date+time Omni-Picker.
+  final locale = currentLocale.value;
+  return showDialog<void>(
     context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(t(loc, 'calendar')),
-      content: SizedBox(
-        width: 320,
-        child: CalendarDatePicker(
-          initialDate: initialDate,
-          firstDate: DateTime(2020),
-          lastDate: DateTime(2035),
-          onDateChanged: (d) {
-            Navigator.of(ctx).pop(DateTime(d.year, d.month, d.day));
-          },
-        ),
-      ),
+    builder: (_) => _HeaderDayPicker(
+      initialDate: initialDate,
+      locale: locale,
+      onSelected: (day) {
+        if (context.mounted) onSelected(day);
+      },
     ),
   );
-  if (picked != null && context.mounted) {
-    onSelected(picked);
+}
+
+class _HeaderDayPicker extends StatefulWidget {
+  const _HeaderDayPicker({
+    required this.initialDate,
+    required this.locale,
+    required this.onSelected,
+  });
+
+  final DateTime initialDate;
+  final String locale;
+  final ValueChanged<DateTime> onSelected;
+
+  @override
+  State<_HeaderDayPicker> createState() => _HeaderDayPickerState();
+}
+
+class _HeaderDayPickerState extends State<_HeaderDayPicker> {
+  static final DateTime _firstDate = DateTime(2020);
+  static final DateTime _lastDate = DateTime(2035, 12, 31);
+  static final DateFormat _dateFormat = DateFormat('dd.MM.yyyy');
+
+  late final TextEditingController _dateController;
+  String? _dateError;
+
+  @override
+  void initState() {
+    super.initState();
+    _dateController = TextEditingController(
+      text: _dateFormat.format(widget.initialDate),
+    );
+  }
+
+  @override
+  void dispose() {
+    _dateController.dispose();
+    super.dispose();
+  }
+
+  void _selectDate(DateTime date) {
+    Navigator.of(context).pop();
+    // Run synchronously on the selection gesture, not after the dialog's
+    // dismissal animation or a second confirmation action.
+    widget.onSelected(DateTime(date.year, date.month, date.day));
+  }
+
+  void _submitManualDate() {
+    DateTime date;
+    try {
+      date = _dateFormat.parseStrict(_dateController.text.trim());
+    } on FormatException {
+      setState(() => _dateError = t(widget.locale, 'header_date_picker_invalid'));
+      return;
+    }
+    if (date.isBefore(_firstDate) || date.isAfter(_lastDate)) {
+      setState(() => _dateError = t(widget.locale, 'header_date_picker_invalid'));
+      return;
+    }
+    _selectDate(date);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+      title: Text(t(widget.locale, 'header_date_picker_title')),
+      titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      contentPadding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
+      content: SizedBox(
+        width: 328,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _dateController,
+              keyboardType: TextInputType.datetime,
+              textInputAction: TextInputAction.go,
+              decoration: InputDecoration(
+                labelText: t(widget.locale, 'header_date_picker_enter'),
+                hintText: 'DD.MM.YYYY',
+                errorText: _dateError,
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  tooltip: t(widget.locale, 'header_date_picker_go'),
+                  icon: const Icon(Icons.arrow_forward_rounded),
+                  onPressed: _submitManualDate,
+                ),
+              ),
+              onChanged: (_) {
+                if (_dateError != null) setState(() => _dateError = null);
+              },
+              onSubmitted: (_) => _submitManualDate(),
+            ),
+            const SizedBox(height: 12),
+            CalendarDatePicker(
+              initialDate: widget.initialDate,
+              firstDate: _firstDate,
+              lastDate: _lastDate,
+              onDateChanged: _selectDate,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
