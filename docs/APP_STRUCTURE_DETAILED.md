@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `e45285f2` on 2026-10-28.**
+**Updated from generated input HEAD `e45285f2` on 2026-10-28; added the subsequent shared-personal-state migration entry.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 966 — each appears **exactly once** below.
+**Tracked files:** 967 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -37,7 +37,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `Desktop Voice runtime` | 36 |
 | `test fixture` | 30 |
 | `PocketBase backend` | 25 |
-| `PocketBase migration` | 21 |
+| `PocketBase migration` | 22 |
 | `shared Voice system` | 20 |
 | `historical engineering record` | 17 |
 | `localization` | 13 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 523 |
+| `PROVEN_REQUIRED` | 524 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 254 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 44 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 883 |
+| `HIGH` | 884 |
 | `MEDIUM` | 83 |
 
 ---
@@ -31829,6 +31829,43 @@ RU:
 - **Владелец / слой:** миграции PocketBase
 - **Обязанности:** Реализует JavaScript-часть сценария `1793188800_shared_collaboration.js` в своём каталоге.
 - **Когда открывать:** When результат сборки or maintenance cites `1793188800_shared_collaboration.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+
+### `pb_migrations/1793193000_shared_personal_state.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `1793193000_shared_personal_state.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1793193000_shared_personal_state.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1793193000_shared_personal_state.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1793193000_shared_personal_state.js` for build, CI, or maintenance.
+- **Contents:** Open `1793193000_shared_personal_state.js` when working on `pb_migrations` (see folder section above).
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Supports `pb_migrations` workflow for `1793193000_shared_personal_state.js`.
+- **When to open:** When build output or maintenance cites `1793193000_shared_personal_state.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `1793193000_shared_personal_state.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1793193000_shared_personal_state.js`.
+- **Что это:** `1793193000_shared_personal_state.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1793193000_shared_personal_state.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1793193000_shared_personal_state.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Реализует JavaScript-часть сценария `1793193000_shared_personal_state.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1793193000_shared_personal_state.js`.
 - **Можно удалить?** Нет — конфигурация/инструмент репозитория.
 - **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
