@@ -444,8 +444,20 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
 
   void _push(String value, {bool mine = false}) {
     if (!mounted) return;
+    final db = DatabaseService.instance;
+    String? messageDay;
+    String? timezone;
+    try {
+      messageDay = ViktorDateScope.key(db.getProjectedToday());
+      timezone = db.settings.preferredTimeZone;
+    } catch (_) {
+      // If profile context isn't loaded, preserve the instant without
+      // inventing an incorrect local date.
+    }
     final turn = ViktorDialogueTurn(
-        role: mine ? 'user' : 'assistant', content: value);
+        role: mine ? 'user' : 'assistant', content: value,
+        sentAtUtc: DateTime.now().toUtc(), messageDay: messageDay,
+        messageTimezone: timezone);
     setState(() => _messages.add(turn));
     // Even if history loading or a previous write failed, try saving new
     // turns. The store retries earlier pending turns first, preserving order.
