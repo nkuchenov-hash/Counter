@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/data/database_service.dart';
+import 'package:counter/data/sharing/sharing_flags.dart';
 import 'package:counter/features/planning/planning_sort_mode.dart';
 import 'package:counter/features/sharing/shared_planning_day_section.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -177,7 +178,7 @@ class PlanningQuickAddChrome extends StatelessWidget {
       children: [
         Expanded(child: SizedBox(height: 40, child: tagStrip)),
         const SizedBox(width: 8),
-        shareButton,
+        if (kSharedPlansEnabled) shareButton,
         settingsButton,
         if (desktop) smartButton,
       ],
@@ -217,10 +218,11 @@ class PlanningQuickAddChrome extends StatelessWidget {
         children: [
           if (desktop) ...[inputRow, const SizedBox(height: 8), tagsRow]
           else ...[tagsRow, const SizedBox(height: 10), inputRow],
-          SharedPlanningDaySection(
-            wallDay: sharingDayKey,
-            active: sharingActive,
-          ),
+          if (kSharedPlansEnabled)
+            SharedPlanningDaySection(
+              wallDay: sharingDayKey,
+              active: sharingActive,
+            ),
         ],
       ),
     );
