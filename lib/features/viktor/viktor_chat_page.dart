@@ -4,6 +4,7 @@ import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/ai/viktor_action_contract.dart';
 import 'package:counter/data/ai/viktor_executor.dart';
+import 'package:counter/data/ai/viktor_historical_records.dart';
 import 'package:counter/data/ai/viktor_gateway.dart';
 import 'package:counter/data/ai/viktor_schedule_planner.dart';
 import 'package:counter/data/ai/viktor_voice_gateway.dart';
@@ -74,15 +75,18 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     if (!_settingsReady) return;
     final db = DatabaseService.instance;
     final profileToday = db.getProjectedToday();
+    final dialogContext = ViktorDialogueTurn.modelContext(_messages.skip(1));
+    final historical = ViktorHistoricalRecordIntent.parse(
+        input, dialogContext, profileToday);
     final independentPlan = ViktorDateScope.independentDateOnlyPlan(input, profileToday);
-    if (independentPlan == null && _settings.mode == 'byok' && !_settings.modelConnected) {
+    if (independentPlan == null && historical == null &&
+        _settings.mode == 'byok' && !_settings.modelConnected) {
       await _openSettings();
       if (!mounted || !_settings.modelConnected) return;
     }
     if (_listening || _transcribing || _startingMic) return;
     if (!mounted) return;
     _controller.clear();
-    final dialogContext = ViktorDialogueTurn.modelContext(_messages.skip(1));
     final revisionOfDraft = ViktorReadAnswer.isDraftRevision(input: input, history: dialogContext);
     final intentDay = ViktorDateScope.itineraryDay(input, widget.wallDay,
         dialogContext, revision: revisionOfDraft, profileToday: profileToday);
@@ -98,6 +102,25 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
       if (independentPlan != null) {
         await _createIndependentDateOnlyPlan(independentPlan, executor, requestId);
+        return;
+      }
+      if (historical != null) {
+        final batch = ViktorActionBatch.fromJson({
+          'version': 1, 'request_id': requestId,
+          'actions': [{'name': 'create_completed_records_between',
+            'arguments': {'wall_day': ViktorDateScope.key(historical.day),
+              'before_title': historical.beforeTitle,
+              'after_title': historical.afterTitle,
+              'titles': historical.titles}}],
+        });
+        final preview = await executor.describe(batch, historical.day);
+        if (!mounted) return;
+        if (await _confirm(batch, preview)) {
+          _push(await executor.apply(batch, historical.day,
+              approvedPreview: preview));
+        } else {
+          _push('Добавление записей отменено.');
+        }
         return;
       }
       final plans = await db.getPlanningTasksForWallDate(intentDay);
