@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/sharing/share_service.dart';
 import 'package:counter/features/sharing/shared_detail_page.dart';
+import 'package:counter/features/sharing/shared_inbox_section.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/shared/time/wall_clock.dart' as wall_clock;
 import 'package:flutter/material.dart';
@@ -151,7 +152,7 @@ class _SharedPlanningDaySectionState extends State<SharedPlanningDaySection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (final share in _shares)
+          for (final share in _shares.take(2))
             Padding(
               padding: const EdgeInsets.only(bottom: 5),
               child: Material(
@@ -179,7 +180,7 @@ class _SharedPlanningDaySectionState extends State<SharedPlanningDaySection> {
                           const Icon(Icons.chevron_right_rounded, size: 19),
                         ]),
                         if (share.status != 'owner') ...[
-                          for (final item in share.items.take(3))
+                          for (final item in share.items.take(2))
                             Padding(
                               padding: const EdgeInsets.only(top: 6, left: 27),
                               child: Row(children: [
@@ -194,10 +195,10 @@ class _SharedPlanningDaySectionState extends State<SharedPlanningDaySection> {
                                   overflow: TextOverflow.ellipsis)),
                               ]),
                             ),
-                          if (share.items.length > 3)
+                          if (share.items.length > 2)
                             Padding(
                               padding: const EdgeInsets.only(top: 4, left: 27),
-                              child: Text(l('И ещё ${share.items.length - 3}',
+                              child: Text(l('И ещё ${share.items.length - 2}',
                                            'And ${share.items.length - 3} more'),
                                   style: Theme.of(context).textTheme.labelSmall),
                             ),
@@ -214,6 +215,16 @@ class _SharedPlanningDaySectionState extends State<SharedPlanningDaySection> {
                   ),
                 ),
               ),
+            ),
+          if (_shares.length > 2)
+            TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const SharedInboxPage(),
+                ),
+              ),
+              child: Text(l('Все общие планы (${_shares.length})',
+                  'All shared plans (${_shares.length})')),
             ),
         ],
       ),
