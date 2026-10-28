@@ -1,4 +1,5 @@
 import 'package:counter/data/database_service.dart';
+import 'package:counter/data/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -33,6 +34,26 @@ void main() {
       expect(entry.source, 'pending');
       expect(entry.tasks, isEmpty);
       expect(entry.knownEmpty, isTrue);
+    });
+
+    test('date-only Viktor plans belong to the intended day without time', () {
+      final plan = PlanningTask(
+        id: 12,
+        title: 'LS Screening — remind John to sign the Cover Letter',
+        categoryId: 1,
+        dateKey: '2026-11-02',
+      );
+      expect(unscheduledPlanMatchesWallDay(plan, '2026-11-02'), isTrue);
+      expect(unscheduledPlanMatchesWallDay(plan, '2026-11-01'), isFalse);
+      expect(unscheduledPlanMatchesWallDay(plan, '2026-11-11'), isFalse);
+      final timed = PlanningTask(
+        id: 13,
+        title: 'Scheduled',
+        categoryId: 1,
+        dateKey: '2026-11-02',
+        startTime: DateTime(2026, 11, 2, 10),
+      );
+      expect(unscheduledPlanMatchesWallDay(timed, '2026-11-02'), isFalse);
     });
 
     test('planningDayTasksSnapshot returns empty list with no cache', () {
