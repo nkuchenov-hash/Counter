@@ -1,3 +1,8 @@
+## [2026-10-28] — Global header opens inline calendar immediately
+
+- Ported the October 16 header date-picker fix into current `main` through a scoped merge. Global date navigation opens a single calendar plus DD.MM.YYYY field on all platforms; clicking a day applies immediately without OK or entry-mode switching.
+- Added localized invalid-date feedback and regression widget tests for calendar selection and manual entry. No PocketBase, plan, record, or timezone mutation logic changed.
+
 ## [2026-10-28] — Stop independent November 2 plan from reviving older itineraries
 
 - A standalone explicit dated plan (EN/RU, e.g. "November 2 - new plan ...") is now parsed as **one** untimed Plan with the correct profile-calendar date, without passing the previous conversation's itinerary through AI.
