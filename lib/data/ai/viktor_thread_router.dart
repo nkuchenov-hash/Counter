@@ -11,7 +11,7 @@ class ViktorThreadRouter {
       r'добавь\s+(?:это|эти|их|туда|тоже)|'
       r'сделай\s+(?:это|так|ещ[её])|'
       r'перенеси\s+(?:это|их|его|е[её])|'
-      r'а\s+теперь\s+их)\b',
+      r'а\s+теперь\s+их)(?=\s|$|[.!?,—])',
       caseSensitive: false,
     ).hasMatch(q);
   }
@@ -44,7 +44,7 @@ class ViktorThreadRouter {
   }) {
     final q = input.trim().toLowerCase();
     if (RegExp(r'^(?:новая\s+тема|другая\s+тема|'
-        r'давай\s+о\s+другом|new\s+topic)\b').hasMatch(q)) return true;
+        r'давай\s+о\s+другом|new\s+topic)(?=\s|$|[.!?,—])').hasMatch(q)) return true;
     if (isFollowUp(input)) return false;
     final users = previous.where((t) => t.isUser).toList();
     if (users.isEmpty) return false;
@@ -52,7 +52,7 @@ class ViktorThreadRouter {
     final last = topic(users.last.content);
     if (current != null && last != null && current != last &&
         RegExp(r'^(?:создай|добавь|запиши|запланируй|'
-            r'покажи|найди|объясни|составь|как\s+мне)\b').hasMatch(q)) {
+            r'покажи|найди|объясни|составь|как\s+мне)(?=\s|$|[.!?,—])').hasMatch(q)) {
       return true;
     }
     // Clear day boundary: start a new independent activity, preserving direct
@@ -61,7 +61,7 @@ class ViktorThreadRouter {
     if (current != null && lastAt != null &&
         nowUtc.difference(lastAt.toUtc()) > const Duration(hours: 18) &&
         RegExp(r'^(?:создай|добавь|запиши|запланируй|'
-            r'покажи|найди|составь)\b').hasMatch(q)) return true;
+            r'покажи|найди|составь)(?=\s|$|[.!?,—])').hasMatch(q)) return true;
     return false;
   }
 }
