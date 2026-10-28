@@ -4,6 +4,7 @@ import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/planning/planning_sort_mode.dart';
+import 'package:counter/features/sharing/shared_planning_day_section.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -114,6 +115,8 @@ class PlanningQuickAddChrome extends StatelessWidget {
     required this.onSettings,
     required this.onSmart,
     required this.onShare,
+    required this.sharingDayKey,
+    required this.sharingActive,
     required this.loading,
   });
 
@@ -130,6 +133,8 @@ class PlanningQuickAddChrome extends StatelessWidget {
   final VoidCallback onSettings;
   final VoidCallback onSmart;
   final VoidCallback onShare;
+  final String sharingDayKey;
+  final bool sharingActive;
   final bool loading;
 
   @override
@@ -209,9 +214,14 @@ class PlanningQuickAddChrome extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
-        children: desktop
-            ? [inputRow, const SizedBox(height: 8), tagsRow]
-            : [tagsRow, const SizedBox(height: 10), inputRow],
+        children: [
+          if (desktop) ...[inputRow, const SizedBox(height: 8), tagsRow]
+          else ...[tagsRow, const SizedBox(height: 10), inputRow],
+          SharedPlanningDaySection(
+            wallDay: sharingDayKey,
+            active: sharingActive,
+          ),
+        ],
       ),
     );
     if (!desktop) return content;
