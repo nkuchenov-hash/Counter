@@ -22,7 +22,7 @@ The canonical **Settings → People** domain already owns contacts, Circles, imp
 - Final People-contact linkage as a permanent verified profile relation, shared-tag mapping and participant-specific timezone projection.
 - Two-real-account Web/Android E2E + schema deployment verification and production release.
 
-## Server schema
+## Participant-local completion\n\n- `pb_migrations/1793193000_shared_personal_state.js` adds a closed `shared_personal_state` collection, unique per object, participant, and source plan ID.\n- `POST /api/shares/{id}/completion` validates accepted membership and source plan inclusion; owners can separately track their own shared-task completion. `GET /api/shares/{id}` and `POST /api/shares/day` return **only the requesting account's** `my_completed` map, never other members' progress.\n- Flutter Shared Detail exposes immediate local checkbox feedback, then saves asynchronously. On network/server failure, it restores the known server value with an explicit error; **offline durability is not claimed** and remains a planned separate outbox step.\n- Neither person’s private `plans.is_done` changes.\n\n## Server schema
 
 Migration `pb_migrations/1793188800_shared_collaboration.js` creates:
 
