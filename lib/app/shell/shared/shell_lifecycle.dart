@@ -68,6 +68,9 @@ mixin ShellLifecycle
         await DatabaseService.instance.offlineSync.bootstrapFromOutboxes(
           pbBackoffActive: DatabaseService.instance.pbHttpBackoffActive,
         );
+        // Start automatic outbox replay after restoring persisted pending work.
+        // This needs no action from Viktor or the person using the app.
+        SyncManager.instance.attachIfNeeded();
       }());
       unawaited(initDesktopVoiceLayer());
     });
