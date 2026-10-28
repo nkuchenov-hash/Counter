@@ -412,6 +412,7 @@ class ViktorConversationStore {
 
   Future<List<ViktorDialogueTurn>> load() async {
     final owner = _owner();
+    final activeThread = activeConversationId;
     await _restoreOutbox(owner);
     // Restore local turns even when the network is unavailable.
     try {
@@ -423,9 +424,9 @@ class ViktorConversationStore {
       await db.ensurePocketBaseReady();
       final rows = await db.pocketBase.collection(collectionName).getList(
         page: 1,
-        perPage: 60,
+        perPage: 200,
         sort: '-created,-id',
-        filter: 'user_id = "$owner" && conversation_id = "main"',
+        filter: 'user_id = "$owner" && conversation_id = "$activeThread"',
       );
       final serverIds = <String>{};
       final turns = <ViktorDialogueTurn>[];
@@ -436,11 +437,22 @@ class ViktorConversationStore {
         if (role != 'user' && role != 'assistant') continue;
         if (body.trim().isEmpty) continue;
         serverIds.add(data['client_turn_id']?.toString() ?? '');
-        turns.add(ViktorDialogueTurn(role: role, content: body));
+        turns.add(ViktorDialogueTurn(role: role, content: body,
+          sentAtUtc: DateTime.tryParse(
+            (data['sent_at_utc'] ?? '').toString())?.toUtc() ??
+            DateTime.tryParse(record.created)?.toUtc(),
+          messageDay: (data['message_day'] ?? '').toString().isEmpty
+              ? null : data['message_day'].toString(),
+          messageTimezone: (data['message_timezone'] ?? '').toString().isEmpty
+              ? null : data['message_timezone'].toString(),
+        ));
       }
       for (final item in _pending) {
-        if (!serverIds.contains(item.id)) {
-          turns.add(ViktorDialogueTurn(role: item.role, content: item.body));
+        if (item.thread == activeThread && !serverIds.contains(item.id)) {
+          turns.add(ViktorDialogueTurn(
+            role: item.role, content: item.body,
+            sentAtUtc: DateTime.tryParse(item.sentUtc ?? '')?.toUtc(),
+            messageDay: item.messageDay, messageTimezone: item.timezone));
         }
       }
       return turns;
@@ -448,7 +460,10 @@ class ViktorConversationStore {
       if (_pending.isEmpty) rethrow;
       return [
         for (final item in _pending)
-          ViktorDialogueTurn(role: item.role, content: item.body),
+          if (item.thread == activeThread) ViktorDialogueTurn(
+            role: item.role, content: item.body,
+            sentAtUtc: DateTime.tryParse(item.sentUtc ?? '')?.toUtc(),
+            messageDay: item.messageDay, messageTimezone: item.timezone),
       ];
     }
   }
@@ -473,6 +488,8 @@ class ViktorConversationStore {
     }
     if (turn.content.trim().isEmpty) return Future<void>.value();
     final ownerAtSubmission = _owner();
+    final threadAtSubmission = activeConversationId;
+    final sentAt = turn.sentAtUtc ?? DateTime.now().toUtc();
     final text = turn.content.length <= 6000 ? turn.content
         : '${turn.content.substring(0, 5950)}\n[Сообщение обрезано при сохранении]';
     final id = 'turn_${DateTime.now().microsecondsSinceEpoch}_${++_sequence}';
@@ -483,7 +500,9 @@ class ViktorConversationStore {
             'Синхронизируйте её перед отправкой новых сообщений.');
       }
       _pending.add((owner: ownerAtSubmission, id: id,
-          role: turn.role, body: text));
+          role: turn.role, body: text, thread: threadAtSubmission,
+          sentUtc: sentAt.toIso8601String(),
+          messageDay: turn.messageDay, timezone: turn.messageTimezone));
       try {
         await _saveOutbox();
       } catch (_) {
