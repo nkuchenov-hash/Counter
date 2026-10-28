@@ -620,9 +620,11 @@ class ViktorExecutor {
           }
           final created = await _createPlan(action,
               a.containsKey('start_time') ? _planStart(action) : null);
-          if (!created.accepted) {
-            throw StateError('Не удалось добавить план.');
+          if (!created.accepted && !created.pendingSync) {
+            throw StateError('План не создан: сохранение не началось.');
           }
+          // A rejected initial POST can still have a safely queued write.
+          // Report it as in-progress, never as a completed plan.
           receipts.add(_creationReceipt(action, created));
           done++;
         case 'start_record':
