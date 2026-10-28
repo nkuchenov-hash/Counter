@@ -113,6 +113,8 @@ class PlanningQuickAddChrome extends StatelessWidget {
     required this.onAdd,
     required this.onSettings,
     required this.onSmart,
+    required this.onShare,
+    required this.shareTooltip,
     required this.loading,
   });
 
@@ -128,6 +130,8 @@ class PlanningQuickAddChrome extends StatelessWidget {
   final VoidCallback onAdd;
   final VoidCallback onSettings;
   final VoidCallback onSmart;
+  final VoidCallback onShare;
+  final String shareTooltip;
   final bool loading;
 
   @override
@@ -154,10 +158,22 @@ class PlanningQuickAddChrome extends StatelessWidget {
       tooltip: smartTooltip,
       onPressed: onSmart,
     );
+    final shareButton = IconButton(
+      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+      style: IconButton.styleFrom(
+        foregroundColor: scheme.primary,
+        splashFactory: NoSplash.splashFactory,
+        hoverColor: Colors.transparent,
+      ),
+      icon: const Icon(Icons.ios_share_rounded),
+      tooltip: shareTooltip,
+      onPressed: onShare,
+    );
     final tagsRow = Row(
       children: [
         Expanded(child: SizedBox(height: 40, child: tagStrip)),
         const SizedBox(width: 8),
+        shareButton,
         settingsButton,
         if (desktop) smartButton,
       ],
