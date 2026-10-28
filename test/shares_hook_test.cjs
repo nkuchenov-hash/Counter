@@ -127,6 +127,10 @@ assert.equal(call('POST', '/api/shares', outsider, {
 assert.equal(call('POST', '/api/shares', owner, {
   kind:'plan_day', wall_day:'bad', plan_ids:[ownerPlan],
 }).status, 400);
+assert.equal(call('POST', '/api/shares', owner, {
+  kind:'plan_day', wall_day:'2026-02-30', plan_ids:[ownerPlan],
+}).status, 400, 'Invalid calendar date must be rejected');
+
 const created = call('POST', '/api/shares', owner, {
   kind:'plan_day', wall_day:'2026-10-31', plan_ids:[ownerPlan],
   title:'Saturday',
@@ -220,6 +224,19 @@ assert.equal(proposed.status,201);
 assert.equal(call('POST','/api/shares/{id}/messages',recipient,{
   kind:'proposal',base_revision:1, patch:{plan_id:ownerPlan,notes_plain:'steal'},
 }, idParam).status,400);
+assert.equal(call('POST','/api/shares/{id}/messages',recipient,{
+  kind:'proposal',base_revision:1, patch:{
+    plan_id:ownerPlan, start_time:'2026-10-31T16:00:00Z',
+    end_time:'2026-10-31T15:00:00Z',
+  },
+}, idParam).status,400, 'End before start must be rejected');
+assert.equal(call('POST','/api/shares/{id}/messages',recipient,{
+  kind:'proposal',base_revision:1, patch:{
+    plan_id:ownerPlan, start_time:'2026-10-31T13:00:00Z',
+    end_time:'2026-11-09T13:00:00Z',
+  },
+}, idParam).status,400, 'Pathological duration must be rejected');
+
 const decisionRoute = '/api/shares/{id}/proposals/{messageId}/decide';
 const decisionParams = {id:shareId, messageId:proposed.data.message.id};
 assert.equal(call('POST',decisionRoute,recipient,
