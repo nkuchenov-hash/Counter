@@ -63,6 +63,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
   }
   @override
   void dispose() {
+    _disposeChatRealtime();
     _stopHistoryRetry();
     _recorder.removeListener(_onRecorderChanged);
     _recorder.dispose();
