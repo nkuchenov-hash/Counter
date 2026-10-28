@@ -31,4 +31,10 @@ migrate((app) => {
   if (app.hasTable("viktor_threads")) {
     app.delete(app.findCollectionByNameOrId("viktor_threads"));
   }
+  const turns = app.findCollectionByNameOrId("viktor_turns");
+  for (const name of ["sent_at_utc", "message_day", "message_timezone"]) {
+    const field = turns.fields.getByName(name);
+    if (field) turns.fields.removeById(field.id);
+  }
+  app.save(turns);
 });
