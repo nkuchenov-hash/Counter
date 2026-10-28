@@ -311,6 +311,18 @@ extension CategoryLookupExtension on DatabaseService {
   String? categoryRelationIdForPlanCreate(int? localCategoryId) =>
       _categoryRelationIdForPlanPatch(localCategoryId);
 
+  /// Repair old cached category references before an owned plan POST.
+  Future<String?> resolvePlanCategoryRelationForCreate(CategoryRule rule) async {
+    final known = categoryRelationIdForPlanCreate(rule.id);
+    if (known != null) return known;
+    final refreshed = await _resolveCategoryRowIdForPb(rule);
+    final id = DatabaseService.pocketRelationIdOrNull(refreshed);
+    if (id != null) return id;
+    return _fetchPbCategorySysIdByCategoryIdField(
+      _categoryStringPkForApi(rule) ?? '',
+    );
+  }
+
   String? _categoryRelationIdForPlanPatch(int? localCategoryId) {
     // Non-concrete / `-1` must never emit a relation — that made Save appear to
     // "succeed" while silently keeping the previous plan category on PB.
