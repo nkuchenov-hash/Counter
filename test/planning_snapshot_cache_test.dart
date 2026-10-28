@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -54,6 +56,22 @@ void main() {
         startTime: DateTime(2026, 11, 2, 10),
       );
       expect(unscheduledPlanMatchesWallDay(timed, '2026-11-02'), isFalse);
+    });
+
+    test('PocketBase create does not synthesize midnight for a date-only plan', () {
+      final source = File('lib/data/plan_service.dart').readAsStringSync();
+      final start = source.indexOf(
+        'Future<Map<String, dynamic>> _buildPocketPlanCreateBody(',
+      );
+      final end = source.indexOf('Future<bool> _addPlanningTaskPocket(', start);
+      expect(start, greaterThanOrEqualTo(0));
+      expect(end, greaterThan(start));
+      final create = source.substring(start, end);
+      expect(create, contains('if (task.startTime != null)'));
+      expect(create, contains("body['initial_date_key']"));
+      expect(create, isNot(contains('_planStartUtcIsoFromDateKey')));
+      expect(source, contains("final dateOnlyKey ="));
+      expect(source, contains("d['is_postponed'] != true"));
     });
 
     test('real day projection preserves untimed plan only on November 2', () {
