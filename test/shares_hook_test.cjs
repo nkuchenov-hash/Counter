@@ -139,9 +139,29 @@ assert.equal(invite.status,200);
 assert.equal(invite.data.member.user_id, recipient);
 assert.equal(call('GET','/api/shares',recipient).data.shares[0].my_status,'invited');
 assert.equal(call('GET','/api/shares/{id}',recipient,{},idParam).status,404);
+const ownerDay = call('POST', '/api/shares/day', owner,
+  {wall_day:'2026-10-31'});
+assert.equal(ownerDay.status, 200);
+assert.equal(ownerDay.data.shares.length, 1);
+assert.equal(ownerDay.data.shares[0].content.items[0].title, 'Walk');
+assert.equal(call('POST', '/api/shares/day', recipient,
+  {wall_day:'2026-10-31'}).data.shares.length, 0,
+  'Invited recipient cannot read shared day contents');
+assert.equal(call('POST', '/api/shares/day', outsider,
+  {wall_day:'2026-10-31'}).data.shares.length, 0);
+assert.equal(call('POST', '/api/shares/day', owner,
+  {wall_day:'invalid'}).status, 400);
+
 assert.equal(call('POST','/api/shares/{id}/respond',recipient,
   {accept:true},idParam).status,200);
 assert.equal(call('GET','/api/shares/{id}',recipient,{},idParam).status,200);
+const participantDay = call('POST', '/api/shares/day', recipient,
+  {wall_day:'2026-10-31'});
+assert.equal(participantDay.status, 200);
+assert.equal(participantDay.data.shares.length, 1);
+assert.equal(participantDay.data.shares[0].my_status, 'accepted');
+assert.equal(JSON.stringify(participantDay.data).includes('PRIVATE JOURNAL'), false);
+
 assert.equal(call('POST','/api/shares/{id}/respond',outsider,
   {accept:true},idParam).status,404);
 const commented = call('POST','/api/shares/{id}/messages',recipient,
