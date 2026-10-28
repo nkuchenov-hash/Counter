@@ -18,6 +18,7 @@ class SyncManager {
   Timer? _pendingDrainTimer;
   bool _attached = false;
   bool _drainInFlight = false;
+  int _stalledDrainAttempts = 0;
 
   void attachIfNeeded() {
     if (_attached) return;
@@ -81,6 +82,7 @@ class SyncManager {
     final sync = db.offlineSync;
     if (sync.pendingCount <= 0 || sync.isOffline || sync.authPaused) return;
 
+    final countBefore = sync.pendingCount;
     _drainInFlight = true;
     try {
       await db.flushPendingLocalMutations();
@@ -90,9 +92,22 @@ class SyncManager {
       _drainInFlight = false;
     }
 
-    if (sync.pendingCount > 0 && !sync.isOffline && !sync.authPaused) {
-      _schedulePendingDrain(delay: _pendingRetryDelay);
+    if (sync.pendingCount <= 0) {
+      _stalledDrainAttempts = 0;
+      return;
     }
+    if (sync.isOffline || sync.authPaused) return;
+    final stalled = sync.pendingCount >= countBefore &&
+        (sync.lastError?.isNotEmpty ?? false);
+    _stalledDrainAttempts = stalled
+        ? (_stalledDrainAttempts < 8 ? _stalledDrainAttempts + 1 : 8)
+        : 0;
+    // Transient failures recover quickly; validation failures back off
+    // automatically instead of hammering the endpoint every two seconds.
+    final seconds = 2 * (1 << _stalledDrainAttempts);
+    _schedulePendingDrain(delay: stalled
+        ? Duration(seconds: seconds > 300 ? 300 : seconds)
+        : _pendingRetryDelay);
   }
 
   Future<void> dispose() async {

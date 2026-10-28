@@ -790,11 +790,10 @@ extension PlanServiceExtension on DatabaseService {
     }
     // Write-ahead: persist the create intent before the asynchronous POST.
     final writeAheadReceipt = await _enqueuePlanCreateMutation(
-      body,
-      businessId: clientPlanId,
-      tags: task.tags,
+      body, businessId: clientPlanId, tags: task.tags,
     );
     await offlineSync.refreshPendingCount();
+    if (writeAheadReceipt == null) return _rejectUnstagedPlanCreate(optimisticId);
     try {
       final record = await _pb
           .collection(PbCollections.plans)

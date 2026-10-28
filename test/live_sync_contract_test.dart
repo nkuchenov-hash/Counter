@@ -387,4 +387,67 @@ void main() {
     expect(manifest, contains('"https://217-114-0-201.sslip.io/*"'));
     expect(manifest, contains('connect-src \'self\' https://217-114-0-201.sslip.io'));
   });
+
+  test('Plan create cannot POST without a durable recovery receipt', () {
+    final source = File('lib/data/plan_service.dart').readAsStringSync();
+    final create = source.substring(
+      source.indexOf('Future<bool> _addPlanningTaskPocket('),
+      source.indexOf('Future<bool> addPlanningTask(',
+          source.indexOf('Future<bool> _addPlanningTaskPocket(')),
+    );
+    final stage = create.indexOf('final writeAheadReceipt =');
+    final guard = create.indexOf('if (writeAheadReceipt == null)');
+    final post = create.indexOf('.create(body: body)');
+    expect(stage, greaterThanOrEqualTo(0));
+    expect(guard, greaterThan(stage));
+    expect(post, greaterThan(guard));
+    expect(create.substring(guard, post),
+        contains('_rejectUnstagedPlanCreate(optimisticId)'));
+    final helper = File('lib/data/plans/plan_outbox_helpers.dart')
+        .readAsStringSync();
+    expect(helper, contains('bool _rejectUnstagedPlanCreate('));
+    expect(helper, contains('clearOptimisticPlanningForPlanRow(optimisticId)'));
+    expect(helper, contains('return false;'));
+  });
+
+  test('Rejected queued plan create remains durable instead of vanishing', () {
+    final source = File('lib/data/plans/plan_outbox_helpers.dart')
+        .readAsStringSync();
+    final start = source.indexOf(
+        'if (kind == PlanMutationOutbox.kindPlanCreate)');
+    final end = source.indexOf(
+        'if (kind == PlanMutationOutbox.kindPlanUpdate)', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+    final createReplay = source.substring(start, end);
+    final clientCatch = createReplay.substring(
+      createReplay.indexOf('on ClientException catch'),
+      createReplay.indexOf('} catch (e) {',
+          createReplay.indexOf('on ClientException catch')),
+    );
+    expect(clientCatch, contains("offlineSync.setLastError("));
+    expect(clientCatch, contains('return false;'));
+    expect(clientCatch, isNot(contains('return true;')));
+  });
+
+  test('Pending writes retry automatically and Viktor hides storage details', () {
+    final shell = File('lib/app/shell/shared/shell_lifecycle.dart')
+        .readAsStringSync();
+    final manager = File('lib/data/local_sync/sync_manager.dart')
+        .readAsStringSync();
+    final executor = File('lib/data/ai/viktor_executor.dart')
+        .readAsStringSync();
+    final status = executor.substring(
+        executor.indexOf('String _creationReceipt('),
+        executor.indexOf('Future<ViktorBulkPreview> _planBulk('));
+    expect(shell, contains('SyncManager.instance.attachIfNeeded()'));
+    expect(manager, contains('_stalledDrainAttempts'));
+    expect(manager, contains('db.flushPendingLocalMutations()'));
+    expect(manager, contains('_schedulePendingDrain(delay: stalled'));
+    expect(status, contains('Сохранение пока не подтверждено'));
+    expect(status, contains(r'План «$name» добавлен на $day.'));
+    expect(status, isNot(contains('PocketBase')));
+  });
+
+
 }
