@@ -186,7 +186,8 @@ class ViktorConversationStore {
   /// unsent turns can only survive while this page remains open.
   bool get pendingInMemoryOnly =>
       _secureStorageUnavailable && _pending.isNotEmpty;
-  final List<({String owner, String id, String role, String body})>
+  final List<({String owner, String id, String role, String body,
+    String thread, String? sentUtc, String? messageDay, String? timezone})>
       _pending = [];
 
   /// Unsent turns survive app restarts in account-scoped encrypted storage.
@@ -228,7 +229,8 @@ class ViktorConversationStore {
       _outboxUnreadable = true;
       return;
     }
-    final restored = <({String owner, String id, String role, String body})>[];
+    final restored = <({String owner, String id, String role, String body,
+      String thread, String? sentUtc, String? messageDay, String? timezone})>[];
     if (raw != null && raw.isNotEmpty) {
       final data = jsonDecode(raw);
       if (data is! List || data.length > maxPendingTurns) {
@@ -249,8 +251,16 @@ class ViktorConversationStore {
             body is! String || body.isEmpty || body.length > 6000) {
           throw StateError('Некорректная реплика в очереди Виктора.');
         }
+        // Original encrypted outboxes did not include a thread or clock.
+        final thread = (item['thread'] ?? mainConversation).toString();
+        if (!validConversationId(thread)) {
+          throw StateError('Некорректный диалог в очереди Виктора.');
+        }
         restored.add((owner: owner, id: id, role: role as String,
-            body: body));
+            body: body, thread: thread,
+            sentUtc: item['sentUtc']?.toString(),
+            messageDay: item['messageDay']?.toString(),
+            timezone: item['timezone']?.toString()));
       }
     }
     _pending..clear()..addAll(restored);
@@ -270,7 +280,11 @@ class ViktorConversationStore {
         key: _outboxKey(owner),
         value: jsonEncode([
           for (final item in _pending)
-            {'id': item.id, 'role': item.role, 'body': item.body},
+            {'id': item.id, 'role': item.role, 'body': item.body,
+             'thread': item.thread,
+             if (item.sentUtc != null) 'sentUtc': item.sentUtc,
+             if (item.messageDay != null) 'messageDay': item.messageDay,
+             if (item.timezone != null) 'timezone': item.timezone},
         ]),
       );
       _secureStorageUnavailable = false;
