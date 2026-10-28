@@ -53,12 +53,79 @@ class ViktorDateScope {
         profileToday.day + days);
   }
 
+  /// An independent, single date-only plan must not inherit old itineraries.
+  static ({DateTime day, String title})? explicitDateOnlyPlan(
+      String input, DateTime today) {
+    final normalized = input.trim();
+    if (RegExp(r'\b\d{1,2}:\d{2}\b').hasMatch(normalized)) return null;
+    final prefix = RegExp(
+      r'^(?:([a-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?|'
+      r'(\d{1,2})\s+([а-яё]+))'
+      r'(?:,?\s+(20\d{2}))?\s*[-–—:]\s*'
+      r'(?:(?:new|новый)\s+)?(?:plan|task|план|задача)\s+(.+)$',
+      caseSensitive: false, dotAll: true,
+    ).firstMatch(normalized);
+    final command = prefix == null ? RegExp(
+      r'^(?:add|create|schedule|добавь|создай|запиши|запланируй)\s+'
+      r'(?:(?:a|мне|new|новый|отдельный)\s+)*'
+      r'(?:plan|task|план|задачу)\s+(?:for|on|на)\s+'
+      r'(?:([a-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?|'
+      r'(\d{1,2})\s+([а-яё]+))'
+      r'(?:,?\s+(20\d{2}))?\s*[:\-–—]\s*(.+)$',
+      caseSensitive: false, dotAll: true,
+    ).firstMatch(normalized) : null;
+    final m = prefix ?? command;
+    if (m == null) return null;
+    const months = <String, int>{
+      'january': 1, 'jan': 1, 'february': 2, 'feb': 2,
+      'march': 3, 'mar': 3, 'april': 4, 'apr': 4,
+      'may': 5, 'june': 6, 'jun': 6, 'july': 7, 'jul': 7,
+      'august': 8, 'aug': 8, 'september': 9, 'sep': 9,
+      'october': 10, 'oct': 10, 'november': 11, 'nov': 11,
+      'december': 12, 'dec': 12,
+      'января': 1, 'февраля': 2, 'марта': 3, 'апреля': 4,
+      'мая': 5, 'июня': 6, 'июля': 7, 'августа': 8,
+      'сентября': 9, 'октября': 10, 'ноября': 11, 'декабря': 12,
+    };
+    final month = months[(m.group(1) ?? m.group(4))?.toLowerCase()];
+    final dayNum = int.tryParse(m.group(2) ?? m.group(3) ?? '');
+    final title = (m.group(6) ?? '').trim();
+    if (month == null || dayNum == null || dayNum < 1 ||
+        dayNum > 31 || title.length < 3 || title.length > 160) return null;
+    if (RegExp(
+      r'\band\s+(?:also\s+)?(?:add|create|schedule)\s+'
+      r'(?:a\s+)?(?:new\s+)?(?:plan|task)\b|'
+      r'\bи\s+(?:ещ[её]\s+)?(?:добавь|создай)\s+(?:план|задачу)\b',
+      caseSensitive: false,
+    ).hasMatch(title)) return null;
+    bool valid(int year) {
+      final date = DateTime(year, month, dayNum);
+      return date.year == year && date.month == month && date.day == dayNum;
+    }
+    final rawYear = m.group(5);
+    int? year = rawYear == null ? null : int.tryParse(rawYear);
+    if (year != null && !valid(year)) return null;
+    if (year == null) {
+      final todayDay = DateTime(today.year, today.month, today.day);
+      for (var y = today.year; y <= today.year + 5; y++) {
+        if (valid(y) && !DateTime(y, month, dayNum).isBefore(todayDay)) {
+          year = y;
+          break;
+        }
+      }
+    }
+    if (year == null) return null;
+    return (day: DateTime(year, month, dayNum), title: title);
+  }
+
   /// A simple standalone untimed plan bypasses model round trips but still
   /// goes through Viktor's typed Brain-backed executor.
   static ({DateTime day, String title})? independentDateOnlyPlan(
       String input, DateTime profileToday) {
     final normalized = input.trim();
     if (RegExp(r'\b\d{1,2}:\d{2}\b').hasMatch(normalized)) return null;
+    final dated = explicitDateOnlyPlan(normalized, profileToday);
+    if (dated != null) return dated;
     final m = RegExp(
       r'^(?:добавь|создай|запиши|запланируй)\s+'
       r'(?:мне\s+)?(?:(?:новый|отдельный)\s+)?'

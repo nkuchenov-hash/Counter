@@ -77,15 +77,20 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     if (input.isEmpty) return;
     if (!_settingsReady) return;
     final db = DatabaseService.instance;
-    if (_dialogueLoaded && ViktorThreadRouter.shouldOpenNew(
-      input: input, previous: _messages.skip(1).toList(),
-      nowUtc: DateTime.now().toUtc(),
-    )) {
+    final profileToday = db.getProjectedToday();
+    final independentPlan =
+        ViktorDateScope.independentDateOnlyPlan(input, profileToday);
+    // A fresh self-contained dated plan must never inherit an unrelated
+    // unfinished itinerary, even when remote chat history is still syncing.
+    final hadPreviousRequest = _messages.skip(1).any((turn) => turn.isUser);
+    if ((independentPlan != null && hadPreviousRequest) ||
+        (_dialogueLoaded && ViktorThreadRouter.shouldOpenNew(
+          input: input, previous: _messages.skip(1).toList(),
+          nowUtc: DateTime.now().toUtc(),
+        ))) {
       _startNewConversation();
     }
-    final profileToday = db.getProjectedToday();
     final dialogContext = ViktorDialogueTurn.modelContext(_messages.skip(1));
-    final independentPlan = ViktorDateScope.independentDateOnlyPlan(input, profileToday);
     if (independentPlan == null &&
         _settings.mode == 'byok' && !_settings.modelConnected) {
       await _openSettings();

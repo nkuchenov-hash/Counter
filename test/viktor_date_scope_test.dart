@@ -151,4 +151,51 @@ void main() {
     )), '2026-10-24');
   });
 
+
+  test('Screenshot: November 2 produces ONE untimed plan, not a timetable', () {
+    final today = DateTime(2026, 10, 28);
+    final plan = ViktorDateScope.independentDateOnlyPlan(
+      'November 2 - new plan LS Screening remind John to sign the Cover Letter',
+      today,
+    );
+    expect(plan, isNotNull);
+    expect(ViktorDateScope.key(plan!.day), '2026-11-02');
+    expect(plan.title, 'LS Screening remind John to sign the Cover Letter');
+    // No Moscow clock, previous October 28 Records or November 11 bank plan
+    // can enter the action: the parser only returns this date and title.
+  });
+
+  test('Single dated plan handles EN/RU phrasing and year rollover', () {
+    final today = DateTime(2026, 10, 28);
+    for (final query in [
+      '2 ноября - новый план Напомнить Джону подписать письмо',
+      'Добавь план на 2 ноября: Напомнить Джону подписать письмо',
+      'Add a plan for November 2: Remind John to sign the cover letter',
+      'Nov 2 - task Remind John to sign the cover letter',
+      'November 2, 2026 - new plan Remind John to sign the cover letter',
+    ]) {
+      final plan = ViktorDateScope.independentDateOnlyPlan(query, today);
+      expect(plan, isNotNull, reason: query);
+      expect(ViktorDateScope.key(plan!.day), '2026-11-02');
+    }
+    final january = ViktorDateScope.independentDateOnlyPlan(
+      'January 5 - new plan Review contract', DateTime(2026, 12, 30));
+    expect(ViktorDateScope.key(january!.day), '2027-01-05');
+  });
+
+  test('Single-plan parser does not invent a clock or erase other intents', () {
+    final today = DateTime(2026, 10, 28);
+    expect(ViktorDateScope.independentDateOnlyPlan(
+      'November 2 at 10:30 - new plan Call John', today), isNull);
+    expect(ViktorDateScope.independentDateOnlyPlan(
+      'November 31 - new plan Call John', today), isNull);
+    expect(ViktorDateScope.independentDateOnlyPlan(
+      'November 2 - new plan Call John and also create a plan for Nov 11',
+      today), isNull);
+    expect(ViktorDateScope.independentDateOnlyPlan(
+      'November 2 - remind me of the plan from last month', today), isNull);
+    expect(ViktorDateScope.independentDateOnlyPlan(
+      'LS Screening remind John to sign the Cover Letter', today), isNull);
+  });
+
 }

@@ -1,3 +1,9 @@
+## [2026-10-28] — Stop independent November 2 plan from reviving older itineraries
+
+- A standalone explicit dated plan (EN/RU, e.g. "November 2 - new plan ...") is now parsed as **one** untimed Plan with the correct profile-calendar date, without passing the previous conversation's itinerary through AI.
+- Fresh single-plan requests open their own Viktor thread even if an old conversation's history is still syncing. Records and unrelated future plans are not mixed into this action.
+- Added regressions for the screenshot command, date year rollover, invalid dates, clock-bearing and compound requests. This is a focused fix; real-account verification and general language understanding remain separate acceptance gates.
+
 ## [2026-10-28] — Viktor relative day and dated follow-up regression fix
 
 - Resolved explicit "сегодня", "вчера", "завтра" and nearby relative days against current **profile day**, never a stale open calendar tab.
