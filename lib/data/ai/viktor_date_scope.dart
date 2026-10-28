@@ -79,6 +79,24 @@ class ViktorDateScope {
     return (day: day, title: title[0].toUpperCase() + title.substring(1));
   }
 
+  /// Only explicit relative-day words may override a visible calendar day.
+  /// "через N дней" is resolved separately by relativeDay().
+  static DateTime? _namedRelativeDay(String text, DateTime origin) {
+    final offsets = <int>{};
+    final lower = text.toLowerCase();
+    bool containsWord(String word) => RegExp(
+      '(^|[^а-яёa-z])' + word + r'(?=$|[^а-яёa-z])',
+      caseSensitive: false,
+    ).hasMatch(lower);
+    if (containsWord('позавчера')) offsets.add(-2);
+    if (containsWord('вчера(?:шн[а-яё]*)?')) offsets.add(-1);
+    if (containsWord('сегодня(?:шн[а-яё]*)?')) offsets.add(0);
+    if (containsWord('завтра(?:шн[а-яё]*)?')) offsets.add(1);
+    if (containsWord('послезавтра')) offsets.add(2);
+    if (offsets.length != 1) return null; // Conflicting dates need reasoning.
+    return DateTime(origin.year, origin.month, origin.day + offsets.single);
+  }
+
   static DateTime itineraryDay(String input, DateTime displayed,
       List<Map<String, String>> history,
       {bool revision = false, DateTime? profileToday}) {
@@ -104,6 +122,33 @@ class ViktorDateScope {
     final relative = profileToday == null ? null
         : relativeDay(input, profileToday);
     if (relative != null) return relative;
+    final named = profileToday == null ? null
+        : _namedRelativeDay(input, profileToday);
+    if (named != null) return named;
+
+    // "Добавь эти записи тоже" refers to a previous request, not to the
+    // currently open calendar tab or the day on which the follow-up is sent.
+    // Only an explicit temporal statement in a prior USER turn can supply
+    // that day. Do not invent dates for legacy turns missing message_day.
+    final referringBack = RegExp(
+      r'^(?:добавь|запиши|сохрани|внеси|переделай|исправь|'
+      r'перенеси|измени|создай)\s+(?:мне\s+)?'
+      r'(?:эти|те|их|это|ту|тот|этот|его|её|ее)(?=\s|$)',
+      caseSensitive: false,
+    ).hasMatch(input.trim());
+    if (referringBack) {
+      for (final turn in history.reversed) {
+        if (turn['role'] != 'user') continue;
+        final source = turn['content'] ?? '';
+        final dated = findDate(source);
+        if (dated != null) return dated;
+        final sourceDay = DateTime.tryParse(turn['message_day'] ?? '');
+        if (sourceDay == null) continue;
+        final sourceRelative = relativeDay(source, sourceDay) ??
+            _namedRelativeDay(source, sourceDay);
+        if (sourceRelative != null) return sourceRelative;
+      }
+    }
     if (!revision) return displayed;
     for (final turn in history) {
       if (turn['role'] != 'user') continue;
