@@ -311,6 +311,20 @@ extension CategoryLookupExtension on DatabaseService {
   String? categoryRelationIdForPlanCreate(int? localCategoryId) =>
       _categoryRelationIdForPlanPatch(localCategoryId);
 
+  /// Convert legacy queued create payloads back to an owned relation ID.
+  Future<String?> resolveQueuedPlanCreateCategory(dynamic raw) async {
+    final key = (raw ?? '').toString().trim();
+    if (key.isEmpty) return null;
+    final direct = DatabaseService.pocketRelationIdOrNull(key);
+    if (direct != null) return direct;
+    final remote = await _fetchPbCategorySysIdByCategoryIdField(key);
+    if (remote != null &&
+        DatabaseService.pocketRelationIdOrNull(remote) != null) return remote;
+    final localId = int.tryParse(key) ?? findCategoryIdForStoredCategoryKey(key);
+    final rule = localId == null ? null : getCategoryRuleById(localId);
+    return rule == null ? null : resolvePlanCategoryRelationForCreate(rule);
+  }
+
   /// Repair old cached category references before an owned plan POST.
   Future<String?> resolvePlanCategoryRelationForCreate(CategoryRule rule) async {
     final known = categoryRelationIdForPlanCreate(rule.id);
