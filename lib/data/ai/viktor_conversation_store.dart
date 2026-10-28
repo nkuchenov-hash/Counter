@@ -8,10 +8,19 @@ import 'package:counter/data/database_service.dart';
 /// Only explicit user/assistant turns are persisted; provider credentials,
 /// system prompts and private tool-observation payloads are never stored here.
 class ViktorDialogueTurn {
-  const ViktorDialogueTurn({required this.role, required this.content});
+  const ViktorDialogueTurn({
+    required this.role, required this.content,
+    this.sentAtUtc, this.messageDay, this.messageTimezone,
+  });
 
   final String role;
   final String content;
+  /// Exact client-sent instant. Legacy rows use PocketBase's created stamp.
+  final DateTime? sentAtUtc;
+  /// Date projected in the user's profile zone when this turn was written.
+  /// Never derive an older "today" from today's clock.
+  final String? messageDay;
+  final String? messageTimezone;
   bool get isUser => role == 'user';
 
   /// Natural-language retries must resolve to a real prior user instruction.
@@ -81,6 +90,11 @@ class ViktorDialogueTurn {
         'role': turn.role,
         'content': turn.content.length > cap
             ? turn.content.substring(0, cap) : turn.content,
+        if (turn.sentAtUtc != null)
+          'sent_at_utc': turn.sentAtUtc!.toUtc().toIso8601String(),
+        if (turn.messageDay != null) 'message_day': turn.messageDay!,
+        if (turn.messageTimezone != null)
+          'message_timezone': turn.messageTimezone!,
       };
     }).toList();
     if (accepted.length <= maxTurns || maxTurns <= 3) {
