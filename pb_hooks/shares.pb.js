@@ -49,6 +49,19 @@
     id: row.id, user_id: row.getString("user_id"),
     role: row.getString("role"), status: row.getString("status"),
   });
+  // Personal state is never included in a different participant's response.
+  // Missing row means "not completed" for this participant only.
+  const personalCompletion = (sid, uid) => {
+    const rows = filtered("shared_personal_state",
+      "object_id = {:sid} && user_id = {:uid}", {sid, uid}, 60);
+    const state = {};
+    for (const row of rows) {
+      if (idOk(row.getString("source_plan_id"))) {
+        state[row.getString("source_plan_id")] = row.getBool("completed");
+      }
+    }
+    return state;
+  };
   const messageDto = row => ({
     id: row.id, author_id: row.getString("author_id"),
     kind: row.getString("kind"), body: row.getString("body"),
@@ -163,7 +176,9 @@
       if (!row || seen.has(row.id) || row.getBool("archived") ||
           row.getString("wall_day") !== day) return;
       seen.add(row.id);
-      shares.push({...summary(row), my_status: status, content: contentOf(row)});
+      shares.push({...summary(row), my_status: status,
+        content: contentOf(row),
+        my_completed: personalCompletion(row.id, uid)});
     };
     for (const row of owned) add(row, "owner");
     for (const member of memberships) {
@@ -185,7 +200,42 @@
       "object_id = {:sid}", {sid: row.id}, 80);
     return e.json(200, {
       share: summary(row), content: contentOf(row),
+      my_completed: personalCompletion(row.id, uid),
       members: members.map(memberDto), messages: messages.map(messageDto),
+    });
+  }));
+
+  // One participant's completion never changes shared schedule or another
+  // participant's completion. The source plan must exist in the shared snapshot.
+  routerAdd("POST", "/api/shares/{id}/completion", guarded((e, uid) => {
+    const row = accessible(e, uid, e.request.pathValue("id"));
+    if (!row) return fail(e, 404, "share_not_found");
+    const body = bodyOf(e);
+    const planId = String(body.plan_id || "");
+    const items = contentOf(row).items || [];
+    if (!idOk(planId) || !Array.isArray(items) ||
+        !items.some(item => item.plan_id === planId) ||
+        typeof body.completed !== "boolean") {
+      return fail(e, 400, "invalid_personal_completion");
+    }
+    const params = {sid: row.id, uid, planId};
+    let personal = null;
+    try {
+      personal = $app.findFirstRecordByFilter("shared_personal_state",
+        "object_id = {:sid} && user_id = {:uid} && source_plan_id = {:planId}",
+        params);
+    } catch (_) {}
+    if (personal) {
+      personal.set("completed", body.completed);
+      $app.save(personal);
+    } else {
+      personal = make("shared_personal_state", {
+        object_id: row.id, user_id: uid, source_plan_id: planId,
+        completed: body.completed,
+      });
+    }
+    return e.json(200, {
+      plan_id: planId, completed: personal.getBool("completed"),
     });
   }));
 
