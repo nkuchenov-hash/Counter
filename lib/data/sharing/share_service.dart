@@ -28,16 +28,18 @@ class ShareService {
     };
     final uri = Uri.parse('$kPocketBaseUrl$path');
     late http.Response response;
+    final client = http.Client();
     try {
       final request = http.Request(method, uri);
       request.headers.addAll(headers);
       if (body != null) request.body = jsonEncode(body);
-      final streamed = await http.Client()
-          .send(request)
+      final streamed = await client.send(request)
           .timeout(const Duration(seconds: 20));
       response = await http.Response.fromStream(streamed);
     } catch (_) {
       throw const ShareApiException(0, 'network_unavailable');
+    } finally {
+      client.close();
     }
     Map<String, dynamic> payload;
     try {
