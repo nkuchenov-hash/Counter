@@ -402,8 +402,12 @@ void main() {
     expect(guard, greaterThan(stage));
     expect(post, greaterThan(guard));
     expect(create.substring(guard, post),
-        contains('clearOptimisticPlanningForPlanRow(optimisticId)'));
-    expect(create.substring(guard, post), contains('return false;'));
+        contains('_rejectUnstagedPlanCreate(optimisticId)'));
+    final helper = File('lib/data/plans/plan_outbox_helpers.dart')
+        .readAsStringSync();
+    expect(helper, contains('bool _rejectUnstagedPlanCreate('));
+    expect(helper, contains('clearOptimisticPlanningForPlanRow(optimisticId)'));
+    expect(helper, contains('return false;'));
   });
 
   test('Rejected queued plan create remains durable instead of vanishing', () {
