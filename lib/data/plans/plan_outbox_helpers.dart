@@ -895,8 +895,7 @@ extension PlanOutboxSyncExtension on DatabaseService {
       task, clientPlanId: clientPlanId);
     return (
       accepted: accepted,
-      pendingSync: accepted &&
-          _hasPendingPlanMutationForBusinessId(clientPlanId),
+      pendingSync: _hasPendingPlanMutationForBusinessId(clientPlanId),
       clientPlanId: clientPlanId,
     );
   }
