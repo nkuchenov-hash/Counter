@@ -56,6 +56,43 @@ void main() {
       expect(unscheduledPlanMatchesWallDay(timed, '2026-11-02'), isFalse);
     });
 
+    test('real day projection preserves untimed plan only on November 2', () {
+      final db = DatabaseService.instance;
+      final plan = PlanningTask(
+        id: 14,
+        planRowId: 'nov2-date-only',
+        title: 'LS Screening date-only',
+        categoryId: 1,
+        dateKey: '2026-11-02',
+      );
+      final other = PlanningTask(
+        id: 15,
+        planRowId: 'nov11-date-only',
+        title: 'Other day',
+        categoryId: 1,
+        dateKey: '2026-11-11',
+      );
+      final all = [plan, other];
+      final onNov2 = db.filterPlansForWallDayForTest(
+        all,
+        DateTime(2026, 11, 2),
+      );
+      expect(onNov2.map((t) => t.title), contains(plan.title));
+      expect(onNov2, hasLength(1));
+      expect(onNov2.single.startTime, isNull);
+      expect(onNov2.single.startUtcInstant, isNull);
+      expect(onNov2.single.dateKey, '2026-11-02');
+      expect(
+        db.filterPlansForWallDayForTest(all, DateTime(2026, 11, 1)),
+        isEmpty,
+      );
+      expect(
+        db.filterPlansForWallDayForTest(all, DateTime(2026, 11, 11))
+            .map((t) => t.title),
+        contains(other.title),
+      );
+    });
+
     test('planningDayTasksSnapshot returns empty list with no cache', () {
       final day = DateTime(2026, 7, 22);
       final tasks = DatabaseService.instance.planningDayTasksSnapshot(day);
