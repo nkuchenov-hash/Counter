@@ -219,14 +219,15 @@ class ViktorExecutor {
       throw StateError('Приоритетная вставка с пересчётом расписания '
           'выполняется одной защищённой операцией.');
     }
-    if (batch.actions.any((a) =>
-            a.name == 'create_completed_records' ||
-            a.name == 'read_day_records') &&
-        batch.actions.any((a) =>
-            a.name != 'read_day_records') &&
+    if (batch.actions.any((a) => a.name == 'create_completed_records') &&
         batch.actions.length != 1) {
-      throw StateError('Чтение записей и их сохранение должны идти '
-          'последовательными шагами с подтверждением.');
+      throw StateError('Создание завершённых записей должно быть одной '
+          'защищённой операцией после просмотра данных.');
+    }
+    if (batch.actions.any((a) => a.name == 'read_day_records') &&
+        mutations.isNotEmpty) {
+      throw StateError('Сначала прочитайте существующие записи, затем '
+          'предложите подтверждаемое изменение.');
     }
     if (batch.actions.any((a) =>
             a.name == 'create_completed_records_between') &&
@@ -250,11 +251,24 @@ class ViktorExecutor {
 
   Future<String> describe(ViktorActionBatch batch, DateTime day) async {
     _checkScope(batch, day);
-    if (batch.actions.every((a) => a.name == 'read_day_records')) {
+    if (batch.actions.any((a) => a.name == 'read_day_records') &&
+        !batch.hasMutations) {
       final observations = <String>[];
       for (final action in batch.actions) {
-        observations.add(await _recordTools.listDay(
-            action.arguments['wall_day'] as String));
+        if (action.name == 'read_day_records') {
+          observations.add(await _recordTools.listDay(
+              action.arguments['wall_day'] as String));
+        } else if (action.name == 'list_day_plans') {
+          final dayKey = action.arguments['wall_day'] as String;
+          final rows = await db.getPlanningTasksForWallDate(
+              ViktorDateScope.parseDay(dayKey));
+          observations.add('Планы за $dayKey: ' +
+              rows.map((p) => p.title).join('; '));
+        } else if (ViktorDomainTools.reads.contains(action.name)) {
+          observations.add(await _domain.preview(action));
+        } else {
+          throw StateError('Неизвестная операция чтения.');
+        }
       }
       return observations.join('\n\n');
     }
