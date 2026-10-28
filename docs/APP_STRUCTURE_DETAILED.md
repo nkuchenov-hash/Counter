@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `784ce7a8` on 2026-10-28.**
+**Generated from input HEAD `d7b14903` on 2026-10-28.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -24915,7 +24915,7 @@ EN:
 - **Responsibilities:** Provide translated strings for `en_notes_v3.dart`.
 - **When to open:** When behavior tied to `en_notes_v3.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: en notes v3
+- **Connected to:** APP_STRUCTURE role: English Notes V3 localization companion (`kEnNotesV3L10n`)
 
 RU:
 
@@ -25137,7 +25137,7 @@ EN:
 - **Responsibilities:** Provide translated strings for `ru_notes_v3.dart`.
 - **When to open:** When behavior tied to `ru_notes_v3.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: ru notes v3
+- **Connected to:** APP_STRUCTURE role: Russian Notes V3 localization companion (`kRuNotesV3L10n`)
 
 RU:
 
