@@ -3,6 +3,7 @@
 - Resolved explicit "сегодня", "вчера", "завтра" and nearby relative days against current **profile day**, never a stale open calendar tab.
 - Referential follow-ups such as "Добавь эти записи тоже" inherit the original user message's dated request, even after midnight; explicit new dates always win. Legacy messages with no date are not assigned a fabricated date.
 - Added focused Flutter regression tests for the reported 28 October six-record scenario, date overrides and missing legacy timestamps. Acceptance still requires live authenticated multi-turn verification.
+- Improved conservative auto-thread routing: a declarative morning activity can start a separate topic from an old itinerary, while a cross-domain request referring to **these** existing items stays in the source conversation.
 
 ## [2026-10-28] — Viktor dated conversations and isolated task context
 
