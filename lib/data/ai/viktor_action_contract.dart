@@ -347,6 +347,24 @@ class ViktorAction {
             !const {'stay', 'bottom', 'hide', 'archive'}.contains(value)) {
           throw const FormatException('Invalid list completion behavior');
         }
+      case 'create_completed_records_between':
+        _onlyKeys(args, const {
+          'wall_day', 'before_title', 'after_title', 'titles',
+        });
+        _day(args, 'wall_day');
+        _text(args, 'before_title', maxLength: 120);
+        _text(args, 'after_title', maxLength: 120);
+        final titles = args['titles'];
+        if (titles is! List || titles.length < 2 || titles.length > 12) {
+          throw const FormatException(
+              'Provide 2–12 completed record titles');
+        }
+        for (final title in titles) {
+          if (title is! String || title.trim().length < 2 ||
+              title.trim().length > 160) {
+            throw const FormatException('Invalid completed record title');
+          }
+        }
       case 'start_record':
         _onlyKeys(args, const {'title', 'category_id'});
         _title(args, 'title');
