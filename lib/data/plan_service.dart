@@ -871,17 +871,8 @@ extension PlanServiceExtension on DatabaseService {
       }
       // PocketBase plans.category_id requires the actual categories row ID.
       // The old Noco numeric ID and the business slug both cause HTTP 400.
-      var categoryFieldForPlan =
-          categoryRelationIdForPlanCreate(task.categoryId);
-      if (categoryFieldForPlan == null) {
-        // A legacy cached category may carry a business key rather than a
-        // PocketBase row id. Resolve it automatically before rejecting.
-        final resolved = await _resolveCategoryRowIdForPb(catRule);
-        categoryFieldForPlan = DatabaseService.pocketRelationIdOrNull(resolved);
-        categoryFieldForPlan ??= await _fetchPbCategorySysIdByCategoryIdField(
-          _categoryStringPkForApi(catRule) ?? '',
-        );
-      }
+      final categoryFieldForPlan =
+          await resolvePlanCategoryRelationForCreate(catRule);
       if (categoryFieldForPlan == null) {
         DatabaseService._log('ADD_PLAN: category relation unavailable');
         return false;
