@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/data/database_service.dart';
+import 'package:counter/data/sharing/sharing_flags.dart';
 import 'package:counter/features/planning/planning_sort_mode.dart';
+import 'package:counter/features/sharing/shared_planning_day_section.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -113,6 +115,9 @@ class PlanningQuickAddChrome extends StatelessWidget {
     required this.onAdd,
     required this.onSettings,
     required this.onSmart,
+    required this.onShare,
+    required this.sharingDayKey,
+    required this.sharingActive,
     required this.loading,
   });
 
@@ -128,6 +133,9 @@ class PlanningQuickAddChrome extends StatelessWidget {
   final VoidCallback onAdd;
   final VoidCallback onSettings;
   final VoidCallback onSmart;
+  final VoidCallback onShare;
+  final String sharingDayKey;
+  final bool sharingActive;
   final bool loading;
 
   @override
@@ -154,10 +162,23 @@ class PlanningQuickAddChrome extends StatelessWidget {
       tooltip: smartTooltip,
       onPressed: onSmart,
     );
+    final shareButton = IconButton(
+      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+      style: IconButton.styleFrom(
+        foregroundColor: scheme.primary,
+        splashFactory: NoSplash.splashFactory,
+        hoverColor: Colors.transparent,
+      ),
+      icon: const Icon(Icons.ios_share_rounded),
+      tooltip: currentLocale.value == 'ru'
+          ? 'Поделиться планом' : 'Share plan',
+      onPressed: onShare,
+    );
     final tagsRow = Row(
       children: [
         Expanded(child: SizedBox(height: 40, child: tagStrip)),
         const SizedBox(width: 8),
+        if (kSharedPlansEnabled) shareButton,
         settingsButton,
         if (desktop) smartButton,
       ],
@@ -194,9 +215,15 @@ class PlanningQuickAddChrome extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
-        children: desktop
-            ? [inputRow, const SizedBox(height: 8), tagsRow]
-            : [tagsRow, const SizedBox(height: 10), inputRow],
+        children: [
+          if (desktop) ...[inputRow, const SizedBox(height: 8), tagsRow]
+          else ...[tagsRow, const SizedBox(height: 10), inputRow],
+          if (kSharedPlansEnabled)
+            SharedPlanningDaySection(
+              wallDay: sharingDayKey,
+              active: sharingActive,
+            ),
+        ],
       ),
     );
     if (!desktop) return content;

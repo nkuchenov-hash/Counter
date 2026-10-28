@@ -45,6 +45,7 @@ jobs:
           node test/viktor_turns_migration_test.cjs
           node test/viktor_thread_context_migration_test.cjs
           node test/viktor_atomic_schedule_hook_test.cjs
+          node test/shares_hook_test.cjs
 
       - name: Detect PocketBase bundle changes
         id: changes

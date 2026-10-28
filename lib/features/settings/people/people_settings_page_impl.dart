@@ -5,10 +5,12 @@ import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/data/people/people_models.dart';
 import 'package:counter/data/people/people_service.dart';
+import 'package:counter/data/sharing/sharing_flags.dart';
 import 'package:counter/features/settings/people/people_avatar.dart';
 import 'package:counter/features/settings/people/people_person_editor.dart';
 import 'package:counter/features/settings/people/people_sources_section.dart';
 import 'package:counter/features/settings/people/people_strings.dart';
+import 'package:counter/features/sharing/shared_inbox_section.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -129,6 +131,16 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
         appBar: AppBar(
           title: Text(peopleT(_locale, 'title')),
           actions: [
+            if (kSharedPlansEnabled)
+              IconButton(
+              tooltip: _locale == 'ru' ? 'Общие планы' : 'Shared plans',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const SharedInboxPage(),
+                ),
+              ),
+              icon: const Icon(Icons.groups_rounded),
+            ),
             IconButton(
               tooltip: peopleT(_locale, 'refresh'),
               onPressed: _loading ? null : () => unawaited(_loadHome()),

@@ -1,3 +1,11 @@
+## [2026-10-28] — Shared plans using existing People (candidate, unmerged)
+
+- Participant-local completion is now persisted separately in the closed `shared_personal_state` collection; checks in shared discussion are optimistic but reconcile on HTTP failure, and no user’s private `plans.is_done` is changed. A server contract test checks owner/recipient isolation and revoked-member denial.
+
+- Added **on-demand** selected-day plan sharing into a server-owned shared draft; the existing People section now provides recipient selection and a Shared-plans invitation entry point. No second Contacts domain. Shared-day views in Planning and focused Calendar reflect the server-owned accepted projection; comments and task title/time proposals use profile timezone. Owner can revoke, member can leave.
+- New closed `shared_objects` / `shared_members` / `shared_messages` schema and authenticated `/api/shares` hooks isolate each owner's records, require invite acceptance, and support discussion and versioned task-title proposals with owner approval.
+- Added deterministic route authorization tests and the collaboration implementation contract (`docs/SHARING_COLLABORATION.md`). **Not deployed / not production-ready; default-off release flag.** Accepted suggestions update the shared draft only; participant Planner/Calendar sync, offline queues, and real-account E2E remain outstanding.
+
 ## [2026-10-28] — Viktor dated conversations and isolated task context
 
 - Added owner-scoped multiple Viktor conversations, with a shared legacy **Общий чат** and new auto/manual topic threads. Existing messages remain untouched and stay in their original conversation.

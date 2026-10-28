@@ -22,6 +22,7 @@ import 'package:counter/features/planning/planning_quick_add_tags_controller.dar
 import 'package:counter/features/planning/recurrence_scope_dialog.dart';
 import 'package:counter/data/smart_input_parser.dart';
 import 'package:counter/features/viktor/viktor_chat_page.dart';
+import 'package:counter/features/sharing/share_day_sheet.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -50,7 +51,6 @@ import 'package:counter/features/planning/widgets/planning_quick_add_strip.dart'
 part 'planning_quick_add_schedule.dart';
 part 'planning_bulk_edit_actions.dart';
 part 'planning_viktor_navigation.dart';
-
 class PlanningPage extends StatefulWidget {
   const PlanningPage({
     super.key,
@@ -73,7 +73,6 @@ class PlanningPage extends StatefulWidget {
     this.onDateChanged,
     this.onDatePagerLockChanged,
   });
-
   final String selectedDateString;
   final DateTime? selectedDate;
 
@@ -100,7 +99,6 @@ class PlanningPage extends StatefulWidget {
   final void Function(DateTime date)? onDatePicked;
   final void Function(DateTime date)? onDateChanged;
   final void Function(bool locked)? onDatePagerLockChanged;
-
   @override
   State<PlanningPage> createState() => _PlanningPageState();
 }
@@ -1341,7 +1339,6 @@ class _PlanningPageState extends State<PlanningPage>
       },
     );
   }
-
   @override
   Widget build(BuildContext context) {
     rebuildMetricsTick('PlanningPage');
@@ -1451,7 +1448,6 @@ class _PlanningPageState extends State<PlanningPage>
       },
     );
   }
-
   Widget _buildPlanningMainColumn(
     BuildContext context,
     ColorScheme scheme,
@@ -1493,6 +1489,10 @@ class _PlanningPageState extends State<PlanningPage>
           onAdd: _addTask,
           onSettings: timeView.showPlanningSettingsSheet,
           onSmart: _openViktorChat,
+          onShare: () => unawaited(showSharePlanningDaySheet(context,
+              dayKey: widget.selectedDateString, tasks: _latestPlanningDayTasks)),
+          sharingDayKey: widget.selectedDateString,
+          sharingActive: widget.isActivePlanningDay && widget.shellTabActive,
           loading: _planQuickAddInFlight,
         ),
         Expanded(

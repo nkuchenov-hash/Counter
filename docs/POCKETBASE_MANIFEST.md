@@ -273,6 +273,10 @@ Versioned server schema/data migrations live in **`pb_migrations/`** and are par
 | **`ARCHITECTURE.md`** | Brain / gate / data flow. |
 | **`docs/SERVER_SLEEP_SYNC_DEPLOY.md`** | Canonical Xiaomi Cloud sleep pipeline, endpoint family, cadence, dedupe, fallback, and production verification. |
 
+## Shared collaboration (candidate; NOT deployed)
+
+`shared_objects`, `shared_members`, and `shared_messages` are **server-only** collections, created by `pb_migrations/1793188800_shared_collaboration.js`; `shared_personal_state` is created by `pb_migrations/1793193000_shared_personal_state.js` for per-user completion without touching private Plans. Direct REST list/view/create/update/delete rules must remain `null`. Authenticated and authorized operations are exposed only through `pb_hooks/shares.pb.js` under `/api/shares`. Owner and accepted members can read a selected-day projection from `POST /api/shares/day`; revoked members and pending invitees cannot read content. Revocation and leave are server-authorized. See `docs/SHARING_COLLABORATION.md` for route list and staged-release prerequisites. The first server route only supports `plan_day` and never sends owner Notes, Records, Categories or private tags. Accepted suggestions update the shared draft version only; no private plan row is mutated.
+
 ## People collections (2026-09-03)
 
 Collections: `people`, `people_circles`, `people_source_contacts`, `people_integrations`.
