@@ -144,6 +144,7 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 | `ai/viktor_schedule_planner.dart` | Pure plan order/time previews with collision protection |
 | `ai/viktor_executor.dart` | Brain-backed approved changes and real schedule checks |
 | `ai/viktor_historical_records.dart` | Deterministic past-activity intent routing, authenticated Timeline anchor resolution, collision-safe record interval preview and approved completed-record backfill |
+| `ai/viktor_record_tools.dart` | Generic owner-scoped Timeline record reads and previewed creation of completed entries with explicit UTC intervals; validates duplicates and overlaps before Brain writes |
 | `ai/viktor_record_note_tools.dart` | Owner-scoped historical Record note retrieval by actual creation date and content, never raw database writes |
 | `ai/viktor_atomic_bulk_gateway.dart` | Brain-owned authenticated atomic bulk schedule gateway and post-save verification |
 | `ai/viktor_conversation_store.dart` | Owner-scoped immutable PocketBase conversation turns and bounded model dialogue context; no provider secrets |

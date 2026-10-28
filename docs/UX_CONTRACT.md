@@ -1,4 +1,12 @@
 # UX Contract
+## Viktor composable Records tools (2026-10-28)
+
+- Prefer general `read_day_records {wall_day}` and `create_completed_records {wall_day,records:[{title,start_utc,end_utc}]}` over per-phrase bespoke actions. Natural-language intent may compose multiple owner-scoped reads before one explicitly approved write.
+- The model never gets raw PocketBase write access: Brain validates UTC time, profile day, overlaps, duplicates, ownership and changed state. All proposed completed records require a reviewed preview before any write.
+- One tool call may read owned Records alongside other read-only tools. Reads and writes are separate steps; never perform a multi-row mutation before approval.
+- If the user gave insufficient timestamps, the assistant must inspect existing Records first, then ask for missing constraints or show explicit estimated times. No fabricated time certainty or silent conversions of Records to Plans.
+- The older anchor-specific completed-record operation stays temporarily for backwards compatibility; migrate it to the generic path only after verified real-device acceptance tests. Multi-Plan creation and cross-domain atomic transactions are separate outstanding work.
+
 
 ## Viktor completed Timeline records (2026-10-28)
 

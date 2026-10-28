@@ -122,7 +122,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       var repairedRepeatedRead = false;
       for (var step = 0; !revisionOfDraft && (response.needsMoreContext ||
           ViktorReadAnswer.requiresDocumentRead(input: input,
-            actions: response.actions?.actions.map((a) => a.name).toList()
+            actions: response.actions?.actions.map((a) => a.name).toList().cast<String>()
                 ?? const <String>[])); step++) {
         if (!mounted) return;
         if (step >= 4) {
@@ -177,7 +177,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         latestReadAnswer = ViktorReadAnswer.format(input, observation);
         if (ViktorReadAnswer.isDirectDayListResult(
             input: input,
-            toolNames: proposed.actions.map((a) => a.name).toList())) {
+            toolNames: proposed.actions.map((a) => a.name).toList().cast<String>())) {
           _push(latestReadAnswer);
           return;
         }

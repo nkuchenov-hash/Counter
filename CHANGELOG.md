@@ -1,3 +1,9 @@
+## [2026-10-28] — Viktor composable record tools, architecture foundation
+
+- Added owner-scoped `read_day_records` and `create_completed_records` primitives. AI can inspect actual Timeline entries and propose 1–12 explicit UTC completed-record intervals, without a hardcoded "between X and Y" command.
+- Multi-read observations combine owned Records with other read tools before a separate confirmed write. Brain checks profile day, interval validity, collisions and duplicates, and preserves the existing durable Record outbox.
+- Added strict contract/provider/regression tests and the Android release gate. The older specialized backfill remains as compatibility until real-account testing proves generic coverage. Other LIFE OS domains have not yet been generalized.
+
 ## [2026-10-28] — Viktor past Records vs Plans refusal fix
 
 - Fixed date-only `create_plan` rejecting an irrelevant timezone field; the authenticated action validator now safely discards timezone when no clock is supplied.

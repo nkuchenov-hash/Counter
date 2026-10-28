@@ -347,6 +347,35 @@ class ViktorAction {
             !const {'stay', 'bottom', 'hide', 'archive'}.contains(value)) {
           throw const FormatException('Invalid list completion behavior');
         }
+      case 'read_day_records':
+        _onlyKeys(args, const {'wall_day'});
+        _day(args, 'wall_day');
+      case 'create_completed_records':
+        _onlyKeys(args, const {'wall_day', 'records'});
+        _day(args, 'wall_day');
+        final records = args['records'];
+        if (records is! List || records.isEmpty || records.length > 12) {
+          throw const FormatException('Provide 1–12 completed records');
+        }
+        final parsed = <Map<String, Object?>>[];
+        for (final item in records) {
+          if (item is! Map) {
+            throw const FormatException('Record item must be an object');
+          }
+          final one = Map<String, Object?>.from(item);
+          _onlyKeys(one, const {'title', 'start_utc', 'end_utc'});
+          _title(one, 'title');
+          for (final field in const ['start_utc', 'end_utc']) {
+            final value = one[field];
+            if (value is! String || !value.endsWith('Z') ||
+                !value.contains('T') ||
+                DateTime.tryParse(value)?.isUtc != true) {
+              throw FormatException('Invalid UTC field: $field');
+            }
+          }
+          parsed.add(one);
+        }
+        args['records'] = parsed;
       case 'create_completed_records_between':
         _onlyKeys(args, const {
           'wall_day', 'before_title', 'after_title', 'titles',
