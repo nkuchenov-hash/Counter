@@ -8,10 +8,12 @@ CategoryRule resolveViktorPlanCategory({
   required CategoryRule? Function(int) categoryById,
   required int? defaultCategoryId,
   required Iterable<CategoryRule> rootCategories,
+  bool Function(CategoryRule)? canSave,
 }) {
   bool active(CategoryRule? rule) =>
       rule != null && !rule.isArchived &&
-      rule.id != CategoryRule.uncategorizedSyntheticId;
+      rule.id != CategoryRule.uncategorizedSyntheticId &&
+      (canSave == null || canSave(rule));
   final match = identifyCategory(title.trim());
   if (active(match)) {
     final stored = categoryById(match!.id);
