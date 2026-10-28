@@ -13,7 +13,7 @@ import 'package:counter/features/sharing/shared_inbox_section.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
-enum _PeopleSection { people, circles, sources, shared }
+enum _PeopleSection { people, circles, sources }
 
 class PeopleSettingsPage extends StatefulWidget {
   const PeopleSettingsPage({super.key});
@@ -131,6 +131,15 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
           title: Text(peopleT(_locale, 'title')),
           actions: [
             IconButton(
+              tooltip: _locale == 'ru' ? 'Общие планы' : 'Shared plans',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const SharedInboxPage(),
+                ),
+              ),
+              icon: const Icon(Icons.groups_rounded),
+            ),
+            IconButton(
               tooltip: peopleT(_locale, 'refresh'),
               onPressed: _loading ? null : () => unawaited(_loadHome()),
               icon: const Icon(Icons.refresh_rounded),
@@ -164,11 +173,6 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
                   icon: const Icon(Icons.sync_alt_rounded),
                   label: Text(peopleT(_locale, 'tab_sources')),
                 ),
-                ButtonSegment<_PeopleSection>(
-                  value: _PeopleSection.shared,
-                  icon: const Icon(Icons.groups_rounded),
-                  label: Text(_locale == 'ru' ? 'Совместно' : 'Shared'),
-                ),
               ],
               selected: <_PeopleSection>{_section},
               onSelectionChanged: (selected) {
@@ -193,7 +197,6 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
               switch (_section) {
                 _PeopleSection.people => _buildPeople(context),
                 _PeopleSection.circles => _buildCircles(context),
-                _PeopleSection.shared => const SharedInboxSection(),
                 _PeopleSection.sources => PeopleSourcesSection(
                     locale: _locale,
                     people: _people,
