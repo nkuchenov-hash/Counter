@@ -11,13 +11,13 @@ The canonical **Settings → People** domain already owns contacts, Circles, imp
 1. Planning visible-day tag/quick-entry toolbar has a Share action. User explicitly selects up to 40 persisted plans from that day, excluding `virt-*` and `optimistic-*` placeholders.
 2. `POST /api/shares` reads selected plans **on the server** under the authenticated owner; only title, start/end, order and original system plan id enter the shared projection. Notes, tags, category tree, private records and actual time **do not** leave the owner.
 3. Shared Detail allows owner to invite an existing People contact with a verified LIFE OS email. The existing People header's **Shared plans** action lists incoming invitations, accepted shared objects and owned objects.
-4. Accepted members can comment and propose task-title changes against a specific object revision. Only the owner can accept/reject; acceptance updates the shared projection atomically with the proposal decision. A stale proposal yields HTTP 409.
-5. Shared Detail refreshes on demand and while actively mounted (12 seconds), never from app startup or an offscreen Planning day.
+4. Accepted members can comment and propose task-title or time changes in profile timezone against a specific object revision. Only the owner can accept/reject; acceptance updates the shared projection atomically with the proposal decision. A stale proposal yields HTTP 409.
+5. An owner or accepted member sees the canonical shared-day projection in the visible Planning day and focused Calendar day. The active Planning subview polls every 12 seconds; Calendar loads on focus. Private native plan cards are not altered.\n6. Owner can revoke a member and invite again; an accepted member can leave. Server denies subsequent reads and proposals.
 
 ## Not yet implemented; do not claim completed
 
-- Agreed edits **do not yet update** any participant's personal `plans` rows, Planning Time View, Calendar or reminders. This first slice is a **shared draft**. The UI explicitly says so.
-- Full plan alternatives/time changes, per-task comments, multi-user realtime subscriptions, offline collaboration outbox, iOS/Android deep links and push notifications.
+- Agreed edits **do not yet modify** any participant's personal `plans` rows or reminders; accepted shared drafts are displayed separately in Planning and the Calendar focused-day panel, not native Time View blocks. This first slice is a **shared projection**. The UI explicitly says so.
+- Full multi-task alternatives, per-task comments, multi-user realtime subscriptions, offline collaboration outbox, iOS/Android deep links and push notifications.
 - Generic sharing for Notes, Lists, Paths (schema `kind` reserves types, but API currently accepts only `plan_day`).
 - Final People-contact linkage as a permanent verified profile relation, shared-tag mapping and participant-specific timezone projection.
 - Two-real-account Web/Android E2E + schema deployment verification and production release.
@@ -32,7 +32,7 @@ Migration `pb_migrations/1793188800_shared_collaboration.js` creates:
 
 **All five direct REST rules are `null` on all three collections.** App-owned routes in `pb_hooks/shares.pb.js` are the only authorization path. The server checks the authenticated account on **every** route, owner for invites/decisions and accepted membership for discussions. No raw email/profile ID invite API.
 
-API: `POST /api/shares`, `GET /api/shares`, `GET /api/shares/{id}`, `POST /api/shares/{id}/invite`, `POST /api/shares/{id}/respond`, `POST /api/shares/{id}/messages`, `POST /api/shares/{id}/proposals/{messageId}/decide`.
+API: `POST /api/shares`, `GET /api/shares`, `POST /api/shares/day`, `GET /api/shares/{id}`, `POST /api/shares/{id}/invite`, `POST /api/shares/{id}/respond`, `POST /api/shares/{id}/messages`, `POST /api/shares/{id}/proposals/{messageId}/decide`, `POST /api/shares/{id}/members/{userId}/revoke`, `POST /api/shares/{id}/leave`.
 
 ## Acceptance / rollout gates
 
