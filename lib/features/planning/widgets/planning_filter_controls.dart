@@ -114,7 +114,6 @@ class PlanningQuickAddChrome extends StatelessWidget {
     required this.onSettings,
     required this.onSmart,
     required this.onShare,
-    required this.shareTooltip,
     required this.loading,
   });
 
@@ -131,7 +130,6 @@ class PlanningQuickAddChrome extends StatelessWidget {
   final VoidCallback onSettings;
   final VoidCallback onSmart;
   final VoidCallback onShare;
-  final String shareTooltip;
   final bool loading;
 
   @override
@@ -166,7 +164,8 @@ class PlanningQuickAddChrome extends StatelessWidget {
         hoverColor: Colors.transparent,
       ),
       icon: const Icon(Icons.ios_share_rounded),
-      tooltip: shareTooltip,
+      tooltip: currentLocale.value == 'ru'
+          ? 'Поделиться планом' : 'Share plan',
       onPressed: onShare,
     );
     final tagsRow = Row(
