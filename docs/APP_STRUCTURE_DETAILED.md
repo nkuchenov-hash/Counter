@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `e059003a` on 2026-10-28.**
+**Generated from input HEAD `f5b1ae03` on 2026-10-28.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -11962,7 +11962,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `picker_entry_modes.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/global_app_header.dart`, `lib/features/planning/time_view/time_view_search_delegate.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/edit_sheet/sheet_time_picker.dart`, `lib/features/shared/planning_task_edit_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_search_delegate.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/edit_sheet/sheet_time_picker.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -11979,7 +11979,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `picker_entry_modes.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/global_app_header.dart`, `lib/features/planning/time_view/time_view_search_delegate.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/edit_sheet/sheet_time_picker.dart`, `lib/features/shared/planning_task_edit_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_search_delegate.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/edit_sheet/sheet_time_picker.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12863,8 +12863,8 @@ EN:
 - **Human purpose:** Shared design-system widget — Date/time header strip. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **What this is:** Shared design-system widget — Date/time header strip.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **Contents:** Canonical Flutter widget (`GlobalAppHeader`).
-- **Key code names:** `GlobalAppHeader`
+- **Contents:** Canonical Flutter widget (`_HeaderDayPicker`, `_HeaderDayPickerState`, `GlobalAppHeader`).
+- **Key code names:** `_HeaderDayPicker`, `_HeaderDayPickerState`, `GlobalAppHeader`
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/lists/lists_bulk_actions.dart`, `lib/features/lists/lists_view.dart`, `lib/features/planning/widgets/planning_select_mode_header.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -15293,7 +15293,7 @@ EN:
 - **Contents:** Connectivity listener → `flushPendingLocalMutations`.
 - **Key code names:** `SyncManager`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/data/database_service.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -15310,7 +15310,7 @@ RU:
 - **Зачем:** Держит offline sync согласованным с PocketBase и экранами.
 - **Содержимое:** Dart-код (`SyncManager`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/data/database_service.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
