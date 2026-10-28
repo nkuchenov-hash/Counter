@@ -471,7 +471,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "Compare saved plan timezone with schedule_timezone.",
     "Revise PREVIOUS assistant draft only on explicit follow-up; preserve stops and clocks.",
     "Past activities: read_day_records first, then create_completed_records using real UTC Z times, with approved preview. Never use Plans for past work.",
-    "Current relative dates = profile today. Prior-turn dates = that message's original day; never redate old 'today'.",
+    "After midnight: next calendar date. Current relative dates = profile today. Prior-turn dates = that message's original day; never redate old 'today'.",
     "create_plan appointments; conflict_policy:shift for urgent insertions.",
     "bulk_replan filters actual plans; skip list_day_plans before bulk. Brain validates.",
     "continue:true ONLY for read-only tools; mutations final with continue:false. Never repeat an already observed read.",
