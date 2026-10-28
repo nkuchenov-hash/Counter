@@ -78,4 +78,20 @@ void main() {
   });
 
 
+  test('A loaded category remains eligible before async PB ID resolution', () {
+    final withoutBackendId = CategoryRule(
+      id: 7,
+      name: 'LS Screening',
+    );
+    final selected = resolveViktorPlanCategory(
+      title: 'LS Screening remind John to sign the Cover Letter',
+      identifyCategory: (_) => withoutBackendId,
+      categoryById: (id) => id == 7 ? withoutBackendId : null,
+      defaultCategoryId: 7,
+      rootCategories: [withoutBackendId],
+    );
+    expect(selected.id, 7,
+        reason: 'Selecting the local category must not require a cached PB ID');
+  });
+
 }

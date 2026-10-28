@@ -1,9 +1,7 @@
 // ignore_for_file: avoid_print
 part of 'database_service.dart';
-
 /// Legacy **plans** M2M column key (historical Noco expand / JSON only — unused with PocketBase plans).
 const String _plansToTagsLinkColumnSystemId = 'cnmo43ed26h293n';
-
 bool get _isPlansTableConfigured => true;
 
 bool _planMutationOutboxFlushInFlight = false;
@@ -717,6 +715,7 @@ extension PlanServiceExtension on DatabaseService {
     required String titleTrimmed,
     required String clientPlanId,
     required Object categoryFieldForPlan,
+    required bool categoryRelationReady,
   }) async {
     var createTask = task;
     final requestedStart = task.startTime;
@@ -738,7 +737,6 @@ extension PlanServiceExtension on DatabaseService {
         existingDayPlans: freshestDayPlans,
       ).task;
     }
-
     final optimisticId = 'optimistic-$clientPlanId';
     applyOptimisticPlanningTask(
       createTask.copyWith(
@@ -776,6 +774,7 @@ extension PlanServiceExtension on DatabaseService {
     );
     await offlineSync.refreshPendingCount();
     if (writeAheadReceipt == null) return _rejectUnstagedPlanCreate(optimisticId);
+    if (!categoryRelationReady) return true; // queued for relation repair
     try {
       final record = await _pb
           .collection(PbCollections.plans)
@@ -827,10 +826,10 @@ extension PlanServiceExtension on DatabaseService {
       return true;
     }
   }
-
   Future<bool> addPlanningTask(
     PlanningTask task, {
     String? clientPlanId,
+    bool allowDeferredCategoryRelation = false,
   }) async {
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       return false;
@@ -851,14 +850,14 @@ extension PlanServiceExtension on DatabaseService {
         AppSnack.failed();
         return false;
       }
-      // PocketBase plans.category_id requires the actual categories row ID.
-      // The old Noco numeric ID and the business slug both cause HTTP 400.
-      final categoryFieldForPlan =
-          await resolvePlanCategoryRelationForCreate(catRule);
-      if (categoryFieldForPlan == null) {
-        DatabaseService._log('ADD_PLAN: category relation unavailable');
-        return false;
-      }
+      // Agent writes stage a business key; replay resolves the PB relation.
+      final categoryRelation = allowDeferredCategoryRelation
+          ? categoryRelationIdForPlanCreate(catRule.id)
+          : await resolvePlanCategoryRelationForCreate(catRule);
+      if (categoryRelation == null && !allowDeferredCategoryRelation) return false;
+      final businessKey = _categoryStringPkForApi(catRule)?.trim();
+      final categoryFieldForPlan = categoryRelation ??
+          ((businessKey?.isNotEmpty ?? false) ? businessKey! : catRule.id.toString());
       final titleTrimmed = task.title.trim();
       if (titleTrimmed.isEmpty) {
         DatabaseService._log('ADD_PLAN: blocked — empty title');
@@ -878,13 +877,13 @@ extension PlanServiceExtension on DatabaseService {
         titleTrimmed: titleTrimmed,
         clientPlanId: cid,
         categoryFieldForPlan: categoryFieldForPlan,
+        categoryRelationReady: categoryRelation != null,
       );
     } catch (e, st) {
       DatabaseService._log('[ADD_PLAN][FAIL] exception: $e\n$st');
       return false;
     }
   }
-
   /// Flat `plans` scalar PATCH map (no `user_id` key). Shared by [updatePlanningTask] and [bulkUpdatePlans].
   Map<String, dynamic> _scalarPatchBodyForPlanningRow({
     String? planBusinessId,

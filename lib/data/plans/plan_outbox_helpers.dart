@@ -1,12 +1,10 @@
 part of '../database_service.dart';
-
 bool _planMutationRetriableHttpCode(int code) {
   if (code == 401 || code == 403 || code == 404) return false;
   if (code == 400 || code == 422) return false;
   if (code >= 200 && code < 300) return false;
   return true;
 }
-
 extension PlanOutboxSyncExtension on DatabaseService {
   /// Drains queued PocketBase **plans** mutations (offline outbox). Safe to call from [SyncManager].
   Future<void> flushPendingPlanMutations() async {
@@ -902,7 +900,8 @@ extension PlanOutboxSyncExtension on DatabaseService {
       addPlanningTaskWithReceipt(PlanningTask task) async {
     final clientPlanId = DatabaseService._newClientRecordUuid();
     final accepted = await this.addPlanningTask(
-      task, clientPlanId: clientPlanId);
+      task, clientPlanId: clientPlanId,
+      allowDeferredCategoryRelation: true);
     return (
       accepted: accepted,
       pendingSync: _hasPendingPlanMutationForBusinessId(clientPlanId),

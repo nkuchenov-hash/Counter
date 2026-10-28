@@ -1,4 +1,12 @@
 ## [2026-10-28] — Global header opens inline calendar immediately
+
+## 2026-10-28 — Viktor one-plan fast execution after failing 16:26 screenshot
+
+- Single explicit day-only plan commands use one direct authenticated Brain operation rather than `describe` + `apply` + repeated schedule reads. Exactly one duplicate lookup is kept to avoid duplicate creates.
+- Stop rejecting the user's locally loaded category just because its PocketBase record id has not yet been loaded. The existing async relation repair resolves the ID as part of the write.
+- Preserve write-ahead durability and honest pending-vs-saved response. Add regression coverage for the 2026-11-02 LS Screening scenario and redundant round trips.
+- Live authenticated account creation/readback remains a separate acceptance requirement.
+
 ## 2026-10-28 — Date-only plans visible on their assigned day
 
 - Show date-only plans (no start clock) in their requested Planning day using the stored date key, without inventing a start time.

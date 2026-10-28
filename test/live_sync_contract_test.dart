@@ -451,7 +451,7 @@ void main() {
 
 
 
-  test('Viktor creates plans only with valid category relation IDs', () {
+  test('Viktor only POSTs valid category relations; queues legacy keys', () {
     final source = File('lib/data/plan_service.dart').readAsStringSync();
     final method = source.substring(
       source.indexOf('Future<bool> addPlanningTask('),
@@ -468,11 +468,15 @@ void main() {
     expect(replay, contains('resolveQueuedPlanCreateCategory('));
     expect(replay, contains("body['category_id'] = category;"));
     expect(method, isNot(contains('catNocoSys')));
-    expect(method, isNot(contains('_categoryStringPkForApi(catRule)')));
+    expect(method, contains('allowDeferredCategoryRelation'));
+    final create = source.substring(
+        source.indexOf('Future<bool> _addPlanningTaskPocket('),
+        source.indexOf('Future<bool> addPlanningTask('));
+    expect(create, contains('if (!categoryRelationReady) return true;'));
     final resolver = File('lib/data/ai/viktor_executor.dart')
         .readAsStringSync();
     expect(resolver, contains('db.refreshCategoryRulesFromServer()'));
-    expect(resolver, contains('db.categoryRelationIdForPlanCreate(rule.id)'));
+    expect(resolver, contains('createSingleDateOnlyPlan('));
   });
 
   test('Failed initial plan POST keeps durable write and honest receipt', () {
@@ -500,6 +504,59 @@ void main() {
         .readAsStringSync();
     expect(executor, contains(
         'if (!created.accepted && !created.pendingSync)'));
+  });
+
+  test('Viktor one-date plan does not double preview or reload the day', () {
+    final ui = File('lib/features/viktor/viktor_dialogue_ui_state.dart')
+        .readAsStringSync();
+    final start = ui.indexOf(
+        'Future<void> _createIndependentDateOnlyPlan(');
+    final end = ui.indexOf('bool _showCorrectedScheduleDraft(', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+    final fastUi = ui.substring(start, end);
+    expect(fastUi, contains('executor.createSingleDateOnlyPlan('));
+    expect(fastUi, isNot(contains('executor.describe(')));
+    expect(fastUi, isNot(contains('executor.apply(')));
+
+    final executor = File('lib/data/ai/viktor_executor.dart')
+        .readAsStringSync();
+    final begin = executor.indexOf('Future<String> createSingleDateOnlyPlan(');
+    final finish = executor.indexOf('Future<String> apply(', begin);
+    expect(begin, greaterThanOrEqualTo(0));
+    expect(finish, greaterThan(begin));
+    final direct = executor.substring(begin, finish);
+    expect(direct, contains('_checkScope(batch, day)'));
+    expect(direct, contains('_existingPlan(action)'));
+    expect(direct, contains('_createPlan(action, null)'));
+    expect(direct, isNot(contains('describe(batch,')));
+    expect(direct, isNot(contains('apply(batch,')));
+    expect(direct, isNot(contains('getPlanningTasksForWallDate(')));
+    expect(executor, isNot(contains('canSave: (rule) =>')));
+  });
+
+
+  test('Agent safely queues unresolved category without invalid POST', () {
+    final plans = File('lib/data/plan_service.dart').readAsStringSync();
+    final create = plans.substring(
+        plans.indexOf('Future<bool> _addPlanningTaskPocket('),
+        plans.indexOf('Future<bool> addPlanningTask('));
+    final enqueue = create.indexOf('_enqueuePlanCreateMutation(');
+    final staged = create.indexOf('if (!categoryRelationReady) return true;');
+    final post = create.indexOf('.create(body: body)');
+    expect(enqueue, greaterThanOrEqualTo(0));
+    expect(staged, greaterThan(enqueue));
+    expect(post, greaterThan(staged),
+        reason: 'Cannot POST a category business slug as a PB relation');
+    final add = plans.substring(plans.indexOf('Future<bool> addPlanningTask('),
+        plans.indexOf('/// Flat `plans` scalar PATCH map'));
+    expect(add, contains('allowDeferredCategoryRelation = false'));
+    expect(add, contains('categoryRelationIdForPlanCreate(catRule.id)'));
+    expect(add, contains('categoryRelationReady: categoryRelation != null'));
+    final receipt = File('lib/data/plans/plan_outbox_helpers.dart')
+        .readAsStringSync();
+    expect(receipt, contains('allowDeferredCategoryRelation: true'));
+    expect(receipt, contains('pendingSync: _hasPendingPlanMutationForBusinessId('));
   });
 
 }
