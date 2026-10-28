@@ -307,6 +307,10 @@ extension CategoryLookupExtension on DatabaseService {
     return match.id;
   }
 
+  /// Valid PocketBase relation ID; never a legacy numeric or business slug.
+  String? categoryRelationIdForPlanCreate(int? localCategoryId) =>
+      _categoryRelationIdForPlanPatch(localCategoryId);
+
   String? _categoryRelationIdForPlanPatch(int? localCategoryId) {
     // Non-concrete / `-1` must never emit a relation — that made Save appear to
     // "succeed" while silently keeping the previous plan category on PB.
