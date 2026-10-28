@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `f5b1ae03` on 2026-10-28.**
+**Generated from input HEAD `784ce7a8` on 2026-10-28.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 961 — each appears **exactly once** below.
+**Tracked files:** 963 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -40,7 +40,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `PocketBase migration` | 21 |
 | `shared Voice system` | 20 |
 | `historical engineering record` | 17 |
-| `localization` | 13 |
+| `localization` | 15 |
 | `installer` | 12 |
 | `CI/deployment` | 11 |
 | `Brain Voice` | 10 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 518 |
+| `PROVEN_REQUIRED` | 520 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 255 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 878 |
+| `HIGH` | 880 |
 | `MEDIUM` | 83 |
 
 ---
@@ -24898,6 +24898,43 @@ RU:
 - **Связано с:** `lib/l10n/langs/`, `docs/APP_STRUCTURE.md`
 
 
+### `lib/l10n/langs/en_notes_v3.dart`
+
+EN:
+
+- **Human purpose:** Localization module `en_notes_v3.dart` — строки локали `en_notes_v3` (частичный перевод поверх English). UI labels resolve through l10n maps instead of hard-coded strings in widgets.
+- **What this is:** Localization module `en_notes_v3.dart` — строки локали `en_notes_v3` (частичный перевод поверх English).
+- **Why needed:** UI labels resolve through l10n maps instead of hard-coded strings in widgets.
+- **Contents:** Dart maps/keys in `en_notes_v3.dart`.
+- **Repository role:** localization
+- **Evidence of use:** Imported/exported by production Dart: `lib/l10n/langs/en.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** localization
+- **Responsibilities:** Provide translated strings for `en_notes_v3.dart`.
+- **When to open:** When behavior tied to `en_notes_v3.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: en notes v3
+
+RU:
+
+- **Зачем файл человеку:** Модуль локализации `en_notes_v3.dart` — строки локали `en_notes_v3` (частичный перевод поверх English). Подписи UI берутся из l10n maps, а не из hard-coded строк в виджетах.
+- **Что это:** Модуль локализации `en_notes_v3.dart` — строки локали `en_notes_v3` (частичный перевод поверх English).
+- **Зачем:** Подписи UI берутся из l10n maps, а не из hard-coded строк в виджетах.
+- **Содержимое:** Dart-карты ключей в `en_notes_v3.dart`.
+- **Роль в репозитории:** localization
+- **Доказательства использования:** Импортируется production Dart: `lib/l10n/langs/en.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** локализация
+- **Обязанности:** Даёт переведённые строки для `en_notes_v3.dart`.
+- **Когда открывать:** Когда ломается поведение, связанное с `en_notes_v3.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/l10n/langs/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/l10n/langs/es.dart`
 
 EN:
@@ -25079,6 +25116,43 @@ RU:
 - **Владелец / слой:** локализация
 - **Обязанности:** Даёт переведённые строки для `ru.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `ru.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/l10n/langs/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/l10n/langs/ru_notes_v3.dart`
+
+EN:
+
+- **Human purpose:** Localization module `ru_notes_v3.dart` — строки локали `ru_notes_v3` (частичный перевод поверх English). UI labels resolve through l10n maps instead of hard-coded strings in widgets.
+- **What this is:** Localization module `ru_notes_v3.dart` — строки локали `ru_notes_v3` (частичный перевод поверх English).
+- **Why needed:** UI labels resolve through l10n maps instead of hard-coded strings in widgets.
+- **Contents:** Dart maps/keys in `ru_notes_v3.dart`.
+- **Repository role:** localization
+- **Evidence of use:** Imported/exported by production Dart: `lib/l10n/langs/ru.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** localization
+- **Responsibilities:** Provide translated strings for `ru_notes_v3.dart`.
+- **When to open:** When behavior tied to `ru_notes_v3.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: ru notes v3
+
+RU:
+
+- **Зачем файл человеку:** Модуль локализации `ru_notes_v3.dart` — строки локали `ru_notes_v3` (частичный перевод поверх English). Подписи UI берутся из l10n maps, а не из hard-coded строк в виджетах.
+- **Что это:** Модуль локализации `ru_notes_v3.dart` — строки локали `ru_notes_v3` (частичный перевод поверх English).
+- **Зачем:** Подписи UI берутся из l10n maps, а не из hard-coded строк в виджетах.
+- **Содержимое:** Dart-карты ключей в `ru_notes_v3.dart`.
+- **Роль в репозитории:** localization
+- **Доказательства использования:** Импортируется production Dart: `lib/l10n/langs/ru.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** локализация
+- **Обязанности:** Даёт переведённые строки для `ru_notes_v3.dart`.
+- **Когда открывать:** Когда ломается поведение, связанное с `ru_notes_v3.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/l10n/langs/`, `docs/APP_STRUCTURE.md`
 
