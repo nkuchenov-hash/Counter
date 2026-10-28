@@ -902,7 +902,8 @@ extension PlanOutboxSyncExtension on DatabaseService {
       addPlanningTaskWithReceipt(PlanningTask task) async {
     final clientPlanId = DatabaseService._newClientRecordUuid();
     final accepted = await this.addPlanningTask(
-      task, clientPlanId: clientPlanId);
+      task, clientPlanId: clientPlanId,
+      allowDeferredCategoryRelation: true);
     return (
       accepted: accepted,
       pendingSync: _hasPendingPlanMutationForBusinessId(clientPlanId),
