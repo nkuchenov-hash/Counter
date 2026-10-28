@@ -392,7 +392,7 @@ void main() {
     final source = File('lib/data/plan_service.dart').readAsStringSync();
     final create = source.substring(
       source.indexOf('Future<bool> _addPlanningTaskPocket('),
-      source.indexOf('Future<bool> addPlanningTask(', 
+      source.indexOf('Future<bool> addPlanningTask(',
           source.indexOf('Future<bool> _addPlanningTaskPocket(')),
     );
     final stage = create.indexOf('final writeAheadReceipt =');
