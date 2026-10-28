@@ -81,6 +81,18 @@ class ShareService {
         : const <SharedObject>[];
   }
 
+  Future<List<SharedObject>> listForDay(String wallDay) async {
+    final result = await _request('POST', '${PbAppApiRoutes.shares}/day',
+        body: {'wall_day': wallDay});
+    final raw = result['shares'];
+    return raw is List
+        ? raw.map((e) {
+            final map = _map(e);
+            return SharedObject.fromJson(map, content: map['content']);
+          }).toList(growable: false)
+        : const <SharedObject>[];
+  }
+
   Future<ShareDetail> detail(String id) async {
     final result = await _request('GET', '${PbAppApiRoutes.shares}/$id');
     return ShareDetail.fromJson(result);
