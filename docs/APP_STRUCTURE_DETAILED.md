@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Merged architecture inventory of main and the shared-plans feature on 2026-10-28.**
+**Generated from input HEAD `37dc841a` on 2026-10-28.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -32,8 +32,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | `platform build` | 83 |
 | `shared foundation` | 65 |
 | `developer tool` | 63 |
-| `platform resource` | 44 |
 | `governing documentation` | 44 |
+| `platform resource` | 44 |
 | `Desktop Voice runtime` | 36 |
 | `test fixture` | 31 |
 | `PocketBase backend` | 25 |
@@ -178,7 +178,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/shared/voice/routing/`](#folder-libsharedvoicerouting)
 - [`lib/shared/voice/ui/`](#folder-libsharedvoiceui)
 - [`lib/shared/voice/platforms/desktop/`](#folder-libsharedvoiceplatformsdesktop)
-- [`lib/shared/voice/platforms/mobile/`](#folder-libsharedvoiceplatformsmobile)
+- …and 1 more folders in detailed sections below.
 
 ### Tests
 
@@ -2400,7 +2400,6 @@ RU:
 - **Можно удалить?** Нет — нужен для работы приложения unless explicitly deprecated in ROADMAP.
 - **Связанные пути:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
 
-
 ---
 
 ## Folder: `lib/data/voice/`
@@ -2688,7 +2687,6 @@ RU:
 - **Когда открывать:** Открывать при изменениях или ошибках в области `features/sharing`.
 - **Можно удалить?** Нет — нужен для работы приложения unless explicitly deprecated in ROADMAP.
 - **Связанные пути:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
-
 
 ---
 
@@ -4773,7 +4771,7 @@ EN:
 - **Why needed:** The CI system loads `.github/workflows/deploy-pocketbase.yml` to run its declared triggers, permissions, jobs, and checks.
 - **Contents:** YAML workflow definition specific to `deploy-pocketbase.yml`.
 - **Repository role:** CI/deployment
-- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `.github/workflows/deploy.yml`, `docs/DEPLOY.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`, `docs/reports/GOOGLE_HEALTH_SLEEP_SYNC_2026-08-11.md`.
+- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `.github/workflows/deploy.yml`, `docs/DEPLOY.md`, `docs/SHARING_COLLABORATION.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
 - **Confidence:** HIGH
@@ -16141,7 +16139,7 @@ EN:
 - **Contents:** Coordinator extensions plus links to `part` files under `peoples/` or `people/`.
 - **Key code names:** `PeopleService`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/people/people_person_editor.dart`, `lib/features/settings/people/people_settings_page_impl.dart`, `lib/features/settings/people/people_sources_section.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/people/people_person_editor.dart`, `lib/features/settings/people/people_settings_page_impl.dart`, `lib/features/settings/people/people_sources_section.dart`, `lib/features/sharing/shared_detail_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -16158,7 +16156,7 @@ RU:
 - **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
 - **Содержимое:** Extensions + `part` файлы для people.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/people/people_person_editor.dart`, `lib/features/settings/people/people_settings_page_impl.dart`, `lib/features/settings/people/people_sources_section.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/people/people_person_editor.dart`, `lib/features/settings/people/people_settings_page_impl.dart`, `lib/features/settings/people/people_sources_section.dart`, `lib/features/sharing/shared_detail_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -23980,7 +23978,7 @@ EN:
 - **Contents:** Primary symbols: `SharedInboxPage`, `SharedInboxSection`, `_SharedInboxSectionState`.
 - **Key code names:** `SharedInboxPage`, `SharedInboxSection`, `_SharedInboxSectionState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/people/people_settings_page_impl.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/people/people_settings_page_impl.dart`, `lib/features/sharing/shared_planning_day_section.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -23997,7 +23995,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `shared_inbox_section.dart` на sharing.
 - **Содержимое:** Dart-модуль `shared_inbox_section.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/people/people_settings_page_impl.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/people/people_settings_page_impl.dart`, `lib/features/sharing/shared_planning_day_section.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -26504,7 +26502,7 @@ EN:
 - **Why needed:** UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
 - **Contents:** Time helper or injectable clock hook (logic in `wall_clock`).
 - **Repository role:** shared time
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/services/plan_alarm_schedule.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/features/sharing/shared_detail_page.dart`, `lib/features/sharing/shared_planning_day_section.dart`, `lib/features/sharing/shared_proposal_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -26521,7 +26519,7 @@ RU:
 - **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
 - **Содержимое:** Time helper или injectable clock hook (logic in `wall_clock`).
 - **Роль в репозитории:** shared time
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/services/plan_alarm_schedule.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/features/sharing/shared_detail_page.dart`, `lib/features/sharing/shared_planning_day_section.dart`, `lib/features/sharing/shared_proposal_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
