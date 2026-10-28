@@ -8,6 +8,7 @@ const ui = fs.readFileSync(
   'lib/features/viktor/viktor_chat_page.dart', 'utf8') + '\n' +
   fs.readFileSync(
     'lib/features/viktor/viktor_dialogue_ui_state.dart', 'utf8');
+const extraUi = fs.readFileSync('lib/features/viktor/viktor_chat_layout.dart', 'utf8');
 const migration = fs.readFileSync(
   'pb_migrations/1792710000_viktor_turns.js', 'utf8');
 
@@ -64,7 +65,7 @@ assert.match(ui, /unawaited\(_persistTurn\(turn\)\)/,
 assert.match(source, /Future<void> retryPending\(\)/);
 assert.match(ui, /_dialogueStore\.retryPending\(\)/,
   'An explicit retry must use the same serialized outbox as appends');
-assert.match(ui, /label: 'Повторить'/,
+assert.match(ui + extraUi, /label: 'Повторить'/,
   'Unsynced dialogue must offer a manual retry control');
 assert.match(ui, /String\? _historyNotice/,
   'Sync warnings must not pollute model conversation turns');
