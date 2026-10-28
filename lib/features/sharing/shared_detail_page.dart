@@ -170,6 +170,42 @@ class _SharedDetailPageState extends State<SharedDetailPage> {
             IconButton(tooltip: l('Пригласить', 'Invite'),
               onPressed: _sending ? null : () => unawaited(_invite()),
               icon: const Icon(Icons.person_add_alt_1_rounded)),
+          if (detail != null)
+            PopupMenuButton<String>(
+              tooltip: l('Участники и доступ', 'Members and access'),
+              onSelected: (choice) {
+                if (choice == 'leave') {
+                  unawaited(_service.leave(widget.shareId).then((_) {
+                    if (mounted) Navigator.of(context).pop();
+                  }).catchError((Object error) {
+                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('$error')));
+                  }));
+                } else if (choice.startsWith('revoke:')) {
+                  final memberId = choice.substring(7);
+                  unawaited(_mutate(() => _service.revokeMember(
+                    widget.shareId, memberId)));
+                }
+              },
+              itemBuilder: (ctx) => [
+                if (_isOwner)
+                  for (final member in detail.members)
+                    if (member['status'] == 'accepted' ||
+                        member['status'] == 'invited')
+                      PopupMenuItem(
+                        value: 'revoke:${member['user_id']}',
+                        child: Text(l('Отозвать доступ: ', 'Revoke access: ')
+                          + '${member['user_id']}'.substring(0, 6)),
+                      )
+                else
+                  PopupMenuItem(
+                    value: 'leave',
+                    child: Text(l('Выйти из общего плана',
+                        'Leave shared plan')),
+                  ),
+              ],
+              icon: const Icon(Icons.manage_accounts_outlined),
+            ),
           IconButton(tooltip: l('Обновить', 'Refresh'),
               onPressed: () => unawaited(_reload()),
               icon: const Icon(Icons.refresh_rounded)),
