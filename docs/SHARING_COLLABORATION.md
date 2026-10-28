@@ -10,7 +10,7 @@ The canonical **Settings → People** domain already owns contacts, Circles, imp
 
 1. Planning visible-day tag/quick-entry toolbar has a Share action. User explicitly selects up to 40 persisted plans from that day, excluding `virt-*` and `optimistic-*` placeholders.
 2. `POST /api/shares` reads selected plans **on the server** under the authenticated owner; only title, start/end, order and original system plan id enter the shared projection. Notes, tags, category tree, private records and actual time **do not** leave the owner.
-3. Shared Detail allows owner to invite an existing People contact with a verified LIFE OS email. New People → **Shared** tab lists incoming invitations, accepted shared objects and owned objects.
+3. Shared Detail allows owner to invite an existing People contact with a verified LIFE OS email. The existing People header's **Shared plans** action lists incoming invitations, accepted shared objects and owned objects.
 4. Accepted members can comment and propose task-title changes against a specific object revision. Only the owner can accept/reject; acceptance updates the shared projection atomically with the proposal decision. A stale proposal yields HTTP 409.
 5. Shared Detail refreshes on demand and while actively mounted (12 seconds), never from app startup or an offscreen Planning day.
 
