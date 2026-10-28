@@ -875,6 +875,15 @@ extension PlanOutboxSyncExtension on DatabaseService {
     notifyPlanningRefresh(scheduleNetworkRefresh: false);
     return (ok: false, queued: false);
   }
+  /// Reject an unstable plan create before issuing any remote request.
+  /// The optimistic row must not impersonate a saved plan.
+  bool _rejectUnstagedPlanCreate(String optimisticId) {
+    clearOptimisticPlanningForPlanRow(optimisticId);
+    notifyPlanningRefresh(scheduleNetworkRefresh: false);
+    DatabaseService._log('ADD_PLAN: durable queue unavailable; creation aborted');
+    return false;
+  }
+
   /// Create with an honest persistence receipt for agent/UI surfaces.
   /// addPlanningTask returns true for both an acknowledged PocketBase POST
   /// and a successfully queued offline write; callers must not treat those
