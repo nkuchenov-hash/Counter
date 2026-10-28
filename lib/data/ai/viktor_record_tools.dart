@@ -53,7 +53,7 @@ class ViktorRecordTools {
         '${result.join("\n")}';
   }
 
-  static DateTime _parseUtc(Object? raw) {
+  static DateTime parseUtc(Object? raw) {
     if (raw is! String ||
         !RegExp(r'^\d{4}-\d\d-\d\dT\d\d:\d\d(?::\d\d(?:\.\d{1,6})?)?Z$')
             .hasMatch(raw)) {
@@ -84,8 +84,8 @@ class ViktorRecordTools {
       if (title.length < 2 || title.length > 160) {
         throw const FormatException('Invalid completed record title');
       }
-      final start = _parseUtc(entry['start_utc']);
-      final end = _parseUtc(entry['end_utc']);
+      final start = parseUtc(entry['start_utc']);
+      final end = parseUtc(entry['end_utc']);
       if (!end.isAfter(start) ||
           end.difference(start) > const Duration(hours: 12) ||
           end.isAfter(now.add(const Duration(minutes: 2)))) {
