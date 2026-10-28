@@ -146,6 +146,36 @@
     return e.json(200, {shares: out});
   }));
 
+  // Visible-day shared projection for Planner/Calendar. Only owner or
+  // explicitly accepted members; invitations never reveal task content.
+  // No per-participant plan writes and no private categories/notes.
+  routerAdd("POST", "/api/shares/day", guarded((e, uid) => {
+    const day = String(bodyOf(e).wall_day || "");
+    if (!dayOk(day)) return fail(e, 400, "invalid_wall_day");
+    const owned = filtered("shared_objects",
+      "owner_id = {:uid} && wall_day = {:day} && archived = false",
+      {uid, day}, 40);
+    const memberships = filtered("shared_members",
+      'user_id = {:uid} && status = "accepted"', {uid}, 100);
+    const seen = new Set();
+    const shares = [];
+    const add = (row, status) => {
+      if (!row || seen.has(row.id) || row.getBool("archived") ||
+          row.getString("wall_day") !== day) return;
+      seen.add(row.id);
+      shares.push({...summary(row), my_status: status, content: contentOf(row)});
+    };
+    for (const row of owned) add(row, "owner");
+    for (const member of memberships) {
+      let share;
+      try { share = readObject(member.getString("object_id")); }
+      catch (_) { continue; }
+      // Defensive membership check if invitations change during the request.
+      if (share && canRead(share, uid)) add(share, "accepted");
+    }
+    return e.json(200, {shares});
+  }));
+
   routerAdd("GET", "/api/shares/{id}", guarded((e, uid) => {
     const row = accessible(e, uid, e.request.pathValue("id"));
     if (!row) return fail(e, 404, "share_not_found");
