@@ -1,3 +1,11 @@
+## [2026-10-28] — Viktor dated conversations and isolated task context
+
+- Added owner-scoped multiple Viktor conversations, with a shared legacy **Общий чат** and new auto/manual topic threads. Existing messages remain untouched and stay in their original conversation.
+- Persist exact per-turn UTC submission time, profile-calendar day and timezone. The model receives historical message timestamps and must anchor quoted "today" to the original message, not the current date.
+- Added responsive conversation navigation (desktop sidebar, mobile drawer), date separators and visible message times.
+- Preserved the encrypted per-owner offline outbox, now with a stable conversation ID per pending turn, and server owner rules for thread metadata.
+- Added migration and regression tests for date anchoring, automatic conservative topic separation, and legacy outbox compatibility. Live data and AI comprehension acceptance remain separate gates.
+
 ## [2026-10-28] — Viktor composable record tools, architecture foundation
 
 - Added owner-scoped `read_day_records` and `create_completed_records` primitives. AI can inspect actual Timeline entries and propose 1–12 explicit UTC completed-record intervals, without a hardcoded "between X and Y" command.
