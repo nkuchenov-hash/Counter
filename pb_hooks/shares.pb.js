@@ -129,7 +129,7 @@
     const owned = filtered("shared_objects",
       "owner_id = {:uid} && archived = false", {uid}, 60);
     const invites = filtered("shared_members",
-      "user_id = {:uid} && status != \\"revoked\\"", {uid}, 100);
+      'user_id = {:uid} && status != "revoked"', {uid}, 100);
     const seen = new Set();
     const out = [];
     for (const row of owned) {
