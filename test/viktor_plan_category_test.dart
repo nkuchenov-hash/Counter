@@ -50,4 +50,32 @@ void main() {
       defaultCategoryId: null, rootCategories: const [],
     ), throwsStateError);
   });
+
+  test('Rejects stale default category, selects a persistable fallback', () {
+    final stale = CategoryRule(id: 7, name: 'Stale default');
+    final usable = CategoryRule(id: 8, name: 'Usable category');
+    final chosen = resolveViktorPlanCategory(
+      title: 'LS Screening remind John to sign the Cover Letter',
+      identifyCategory: (_) => null,
+      categoryById: (id) => id == 7 ? stale : id == 8 ? usable : null,
+      defaultCategoryId: 7,
+      rootCategories: [stale, usable],
+      canSave: (rule) => rule.id == 8,
+    );
+    expect(chosen.id, 8);
+  });
+
+  test('Rejects apparently valid title match without server relation', () {
+    final selected = resolveViktorPlanCategory(
+      title: 'LS Screening',
+      identifyCategory: (_) => category,
+      categoryById: fromId,
+      defaultCategoryId: 8,
+      rootCategories: [category, fallback],
+      canSave: (rule) => rule.id == 8,
+    );
+    expect(selected.id, 8);
+  });
+
+
 }

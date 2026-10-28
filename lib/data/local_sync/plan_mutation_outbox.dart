@@ -105,7 +105,10 @@ abstract final class PlanMutationOutbox {
     SharedPreferences prefs,
     List<Map<String, dynamic>> items,
   ) async {
-    await prefs.setString(_prefsKey, jsonEncode(items));
+    final saved = await prefs.setString(_prefsKey, jsonEncode(items));
+    if (!saved) {
+      throw StateError('Unable to persist plan mutation outbox');
+    }
   }
 
   static Future<void> replaceAll(
