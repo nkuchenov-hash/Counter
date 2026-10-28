@@ -22,6 +22,7 @@ import 'package:counter/features/planning/planning_quick_add_tags_controller.dar
 import 'package:counter/features/planning/recurrence_scope_dialog.dart';
 import 'package:counter/data/smart_input_parser.dart';
 import 'package:counter/features/viktor/viktor_chat_page.dart';
+import 'package:counter/features/sharing/share_day_sheet.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -1493,6 +1494,13 @@ class _PlanningPageState extends State<PlanningPage>
           onAdd: _addTask,
           onSettings: timeView.showPlanningSettingsSheet,
           onSmart: _openViktorChat,
+          shareTooltip: currentLocale.value == 'ru'
+              ? 'Поделиться планом' : 'Share plan',
+          onShare: () => unawaited(showSharePlanningDaySheet(
+            context,
+            dayKey: _dateKeyFromDate(widget.selectedDate ?? _today),
+            tasks: _latestPlanningDayTasks,
+          )),
           loading: _planQuickAddInFlight,
         ),
         Expanded(
