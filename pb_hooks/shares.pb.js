@@ -4,7 +4,12 @@
 // enumeration; personal People contacts are never shared as a payload.
 (function () {
   const idOk = x => /^[a-z0-9]{15}$/.test(String(x || ""));
-  const dayOk = x => /^\d{4}-\d{2}-\d{2}$/.test(String(x || ""));
+  const dayOk = x => {
+    const str = String(x || "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return false;
+    const d = new Date(str + "T00:00:00Z");
+    return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === str;
+  };
   const txt = (x, cap) => String(x == null ? "" : x).trim().slice(0, cap);
   const auth = e => {
     const who = e.requestInfo().auth;
@@ -102,7 +107,19 @@
         clean[k] = raw[k]; touched = true;
       }
     }
-    return touched ? clean : null;
+    if (!touched) return null;
+    const original = rows.find(item => item.plan_id === raw.plan_id);
+    const nextStart = clean.start_time === undefined
+      ? String(original.start_time || "") : clean.start_time;
+    const nextEnd = clean.end_time === undefined
+      ? String(original.end_time || "") : clean.end_time;
+    if (nextStart && nextEnd) {
+      const startMs = Date.parse(nextStart);
+      const endMs = Date.parse(nextEnd);
+      if (!Number.isFinite(startMs) || !Number.isFinite(endMs) ||
+          endMs <= startMs || endMs - startMs > 48 * 3600000) return null;
+    }
+    return clean;
   };
 
   // Create a deliberately limited shared projection, not a copy of the user's
