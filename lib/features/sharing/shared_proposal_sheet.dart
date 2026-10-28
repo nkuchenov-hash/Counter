@@ -95,8 +95,9 @@ Future<SharedProposalDraft?> showSharedProposalSheet(
                 String? changedEnd;
                 if (proposedClock != null && oldWall != null) {
                   final chosen = proposedClock!;
-                  final day = DateTime.tryParse(wallDay);
-                  if (day == null) return;
+                  // Anchor to the recipient's profile-local calendar date,
+                  // which may differ from the owner's selected wall day.
+                  final day = oldWall;
                   final wall = DateTime(day.year, day.month, day.day,
                       chosen.hour, chosen.minute);
                   final proposedUtc = wall_clock.wallClockToUtcForLabel(
