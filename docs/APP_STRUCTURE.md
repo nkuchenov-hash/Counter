@@ -147,7 +147,7 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 | `ai/viktor_record_tools.dart` | Generic owner-scoped Timeline record reads and previewed creation of completed entries with explicit UTC intervals; validates duplicates and overlaps before Brain writes |
 | `ai/viktor_record_note_tools.dart` | Owner-scoped historical Record note retrieval by actual creation date and content, never raw database writes |
 | `ai/viktor_atomic_bulk_gateway.dart` | Brain-owned authenticated atomic bulk schedule gateway and post-save verification |
-| `ai/viktor_conversation_store.dart` | Owner-scoped multiple conversations with per-turn UTC/profile-day/zone, encrypted offline outbox, legacy main compatibility and dated model context; no provider secrets |
+| `ai/viktor_conversation_store.dart` | Owner-scoped multiple conversations with per-turn UTC/profile-day/zone, encrypted offline outbox, original main compatibility and dated model context; no provider secrets |
 | `ai/viktor_thread_router.dart` | Conservative automatic new-topic routing; preserves short follow-ups and explicit old-task references |
 | `ai/viktor_gateway.dart` | Authenticated model-independent provider gateway and scoped per-account cloud BYOK connection, observation context for tools |
 | `ai/viktor_voice_recorder.dart` | Real PCM16 microphone capture and WAV encoding, audio-level and duration feedback |
