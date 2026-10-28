@@ -231,7 +231,7 @@ class ViktorExecutor {
     if (batch.actions.length == 1 &&
         batch.actions.single.name == 'create_completed_records_between') {
       final proposal = await _historicalPreview(batch.actions.single);
-      return proposal.describe();
+      return proposal.describe(db.applyUserOffset);
     }
     if (batch.actions.length == 1 &&
         _isPriorityInsertion(batch.actions.single)) {
@@ -435,7 +435,7 @@ class ViktorExecutor {
         batch.actions.single.name == 'create_completed_records_between') {
       final action = batch.actions.single;
       final proposal = await _historicalPreview(action);
-      if (proposal.describe() != approvedPreview) {
+      if (proposal.describe(db.applyUserOffset) != approvedPreview) {
         throw StateError('Исходные записи изменились, сохранение отменено.');
       }
       return _history.save(proposal,
