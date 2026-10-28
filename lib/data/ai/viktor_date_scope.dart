@@ -68,6 +68,8 @@ class ViktorDateScope {
       String input, DateTime profileToday) {
     final normalized = input.trim();
     if (RegExp(r'\b\d{1,2}:\d{2}\b').hasMatch(normalized)) return null;
+    final dated = explicitDateOnlyPlan(normalized, profileToday);
+    if (dated != null) return dated;
     final m = RegExp(
       r'^(?:добавь|создай|запиши|запланируй)\s+'
       r'(?:мне\s+)?(?:(?:новый|отдельный)\s+)?'
