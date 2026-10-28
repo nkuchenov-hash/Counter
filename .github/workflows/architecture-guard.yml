@@ -152,6 +152,7 @@ jobs:
         run: |
           node test/viktor_pocketbase_hook_test.cjs
           node test/viktor_turns_migration_test.cjs
+          node test/viktor_thread_context_migration_test.cjs
           node test/viktor_atomic_schedule_hook_test.cjs
           node test/viktor_conversation_outbox_contract_test.cjs
 

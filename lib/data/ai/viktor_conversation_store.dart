@@ -8,10 +8,14 @@ import 'package:counter/data/database_service.dart';
 /// Only explicit user/assistant turns are persisted; provider credentials,
 /// system prompts and private tool-observation payloads are never stored here.
 class ViktorDialogueTurn {
-  const ViktorDialogueTurn({required this.role, required this.content});
+  const ViktorDialogueTurn({required this.role, required this.content,
+    this.sentAtUtc, this.messageDay, this.messageTimezone});
 
   final String role;
   final String content;
+  final DateTime? sentAtUtc;
+  final String? messageDay;
+  final String? messageTimezone;
   bool get isUser => role == 'user';
 
   /// Natural-language retries must resolve to a real prior user instruction.
@@ -57,7 +61,11 @@ class ViktorDialogueTurn {
         unsynced.add(local);
       }
     }
-    return [...remote, ...unsynced];
+    final combined = [...remote, ...unsynced];
+    if (combined.every((turn) => turn.sentAtUtc != null)) {
+      combined.sort((a, b) => a.sentAtUtc!.compareTo(b.sentAtUtc!));
+    }
+    return combined;
   }
 
   /// Pin the original user itinerary, the latest timed draft and the user's
@@ -81,6 +89,11 @@ class ViktorDialogueTurn {
         'role': turn.role,
         'content': turn.content.length > cap
             ? turn.content.substring(0, cap) : turn.content,
+        if (turn.sentAtUtc != null)
+          'sent_at_utc': turn.sentAtUtc!.toUtc().toIso8601String(),
+        if (turn.messageDay != null) 'message_day': turn.messageDay!,
+        if (turn.messageTimezone != null)
+          'message_timezone': turn.messageTimezone!,
       };
     }).toList();
     if (accepted.length <= maxTurns || maxTurns <= 3) {
@@ -129,9 +142,15 @@ class ViktorDialogueTurn {
   }
 }
 
-/// Persistent single-conversation dialogue for the authenticated LIFE OS
-/// owner. One immutable row per turn, rather than a shared JSON blob, keeps
-/// messages from two devices from overwriting each other.
+class ViktorThread {
+  const ViktorThread({required this.id, required this.title,
+    this.updatedAtUtc});
+  final String id;
+  final String title;
+  final DateTime? updatedAtUtc;
+}
+
+/// Owner-scoped multi-thread history. Legacy 'main' remains untouched.
 ///
 /// This is user-controlled PocketBase data, not long-term semantic memory.
 class ViktorConversationStore {
@@ -142,6 +161,21 @@ class ViktorConversationStore {
   static const int maxPendingTurns = 200;
   static const String collectionName = 'viktor_turns';
   static const String mainConversation = 'main';
+  static const String threadsCollection = 'viktor_threads';
+  String activeConversationId = mainConversation;
+  final Set<String> _knownThreads = {};
+  static bool validConversationId(String value) =>
+      value == mainConversation ||
+      RegExp(r'^chat_[0-9]+_[0-9]+$').hasMatch(value);
+  static String newConversationId() =>
+      'chat_${DateTime.now().microsecondsSinceEpoch}_'
+      '${DateTime.now().millisecondsSinceEpoch % 1000000}';
+  void selectConversation(String value) {
+    if (!validConversationId(value)) {
+      throw ArgumentError.value(value, 'conversation_id');
+    }
+    activeConversationId = value;
+  }
   Future<void> _writeTail = Future<void>.value();
   int _sequence = 0;
   String? _pendingOwner;
@@ -156,7 +190,8 @@ class ViktorConversationStore {
   /// unsent turns can only survive while this page remains open.
   bool get pendingInMemoryOnly =>
       _secureStorageUnavailable && _pending.isNotEmpty;
-  final List<({String owner, String id, String role, String body})>
+  final List<({String owner, String id, String role, String body,
+    String thread, String? sentUtc, String? messageDay, String? timezone})>
       _pending = [];
 
   /// Unsent turns survive app restarts in account-scoped encrypted storage.
@@ -198,7 +233,8 @@ class ViktorConversationStore {
       _outboxUnreadable = true;
       return;
     }
-    final restored = <({String owner, String id, String role, String body})>[];
+    final restored = <({String owner, String id, String role, String body,
+      String thread, String? sentUtc, String? messageDay, String? timezone})>[];
     if (raw != null && raw.isNotEmpty) {
       final data = jsonDecode(raw);
       if (data is! List || data.length > maxPendingTurns) {
@@ -219,8 +255,22 @@ class ViktorConversationStore {
             body is! String || body.isEmpty || body.length > 6000) {
           throw StateError('Некорректная реплика в очереди Виктора.');
         }
+        // Original encrypted outboxes did not include a thread or clock.
+        final thread = (item['thread'] ?? mainConversation).toString();
+        if (!validConversationId(thread)) {
+          throw StateError('Некорректный диалог в очереди Виктора.');
+        }
+        // Old encrypted queues encoded creation microseconds in the stable ID.
+        // Preserve that original clock when replaying after migration.
+        final micros = int.tryParse(id.split('_')[1]);
+        final recoveredUtc = micros == null ? null
+            : DateTime.fromMicrosecondsSinceEpoch(micros, isUtc: true)
+                .toIso8601String();
         restored.add((owner: owner, id: id, role: role as String,
-            body: body));
+            body: body, thread: thread,
+            sentUtc: item['sentUtc']?.toString() ?? recoveredUtc,
+            messageDay: item['messageDay']?.toString(),
+            timezone: item['timezone']?.toString()));
       }
     }
     _pending..clear()..addAll(restored);
@@ -240,7 +290,11 @@ class ViktorConversationStore {
         key: _outboxKey(owner),
         value: jsonEncode([
           for (final item in _pending)
-            {'id': item.id, 'role': item.role, 'body': item.body},
+            {'id': item.id, 'role': item.role, 'body': item.body,
+             'thread': item.thread,
+             if (item.sentUtc != null) 'sentUtc': item.sentUtc,
+             if (item.messageDay != null) 'messageDay': item.messageDay,
+             if (item.timezone != null) 'timezone': item.timezone},
         ]),
       );
       _secureStorageUnavailable = false;
@@ -248,6 +302,69 @@ class ViktorConversationStore {
       _secureStorageUnavailable = true;
       rethrow;
     }
+  }
+
+  Future<void> _ensureThread(String owner, String thread, String title) async {
+    if (thread == mainConversation || _knownThreads.contains(thread)) return;
+    final collection = db.pocketBase.collection(threadsCollection);
+    final filter = 'user_id = "$owner" && thread_key = "$thread"';
+    final existing = await collection.getList(
+        page: 1, perPage: 1, filter: filter);
+    if (existing.items.isEmpty) {
+      final clean = title.replaceAll(RegExp(r'\s+'), ' ').trim();
+      final name = clean.isEmpty ? 'Новый разговор' :
+          clean.substring(0, clean.length > 90 ? 90 : clean.length);
+      try {
+        await collection.create(body: {
+          'user_id': owner, 'thread_key': thread, 'title': name,
+        });
+      } catch (_) {
+        // A different device may already have created the same thread.
+        final verified = await collection.getList(
+            page: 1, perPage: 1, filter: filter);
+        if (verified.items.isEmpty) rethrow;
+      }
+    }
+    _knownThreads.add(thread);
+  }
+
+  Future<List<ViktorThread>> loadThreads() async {
+    final owner = _owner();
+    await _restoreOutbox(owner);
+    final threads = <ViktorThread>[
+      const ViktorThread(id: mainConversation, title: 'Общий чат'),
+    ];
+    try {
+      await db.ensurePocketBaseReady();
+      final result = await db.pocketBase.collection(threadsCollection).getList(
+        page: 1, perPage: 100, sort: '-updated,-id',
+        filter: 'user_id = "$owner"',
+      );
+      for (final record in result.items) {
+        final id = (record.data['thread_key'] ?? '').toString();
+        if (!validConversationId(id) || id == mainConversation) continue;
+        _knownThreads.add(id);
+        threads.add(ViktorThread(
+          id: id, title: (record.data['title'] ?? 'Разговор').toString(),
+          updatedAtUtc: DateTime.tryParse(record.updated)?.toUtc(),
+        ));
+      }
+    } catch (_) {
+      // Online history stays visible if the thread index is temporarily down.
+    }
+    for (final item in _pending) {
+      if (item.owner != owner || item.thread == mainConversation ||
+          threads.any((thread) => thread.id == item.thread)) continue;
+      threads.add(ViktorThread(id: item.thread,
+          title: item.body.length > 90
+              ? item.body.substring(0, 90) : item.body));
+    }
+    if (activeConversationId != mainConversation &&
+        !threads.any((thread) => thread.id == activeConversationId)) {
+      threads.add(ViktorThread(id: activeConversationId,
+          title: 'Новый разговор'));
+    }
+    return threads;
   }
 
   /// Every successful remote write is removed from the encrypted queue.
@@ -266,12 +383,16 @@ class ViktorConversationStore {
         throw StateError('Нельзя отправлять историю другого аккаунта.');
       }
       try {
+        await _ensureThread(owner, item.thread, item.body);
         await collection.create(body: {
           'user_id': owner,
-          'conversation_id': mainConversation,
+          'conversation_id': item.thread,
           'client_turn_id': item.id,
           'role': item.role,
           'body': item.body,
+          if (item.sentUtc != null) 'sent_at_utc': item.sentUtc,
+          if (item.messageDay != null) 'message_day': item.messageDay,
+          if (item.timezone != null) 'message_timezone': item.timezone,
         });
       } catch (_) {
         final existing = await collection.getList(
@@ -301,6 +422,7 @@ class ViktorConversationStore {
 
   Future<List<ViktorDialogueTurn>> load() async {
     final owner = _owner();
+    final activeThread = activeConversationId;
     await _restoreOutbox(owner);
     // Restore local turns even when the network is unavailable.
     try {
@@ -312,9 +434,9 @@ class ViktorConversationStore {
       await db.ensurePocketBaseReady();
       final rows = await db.pocketBase.collection(collectionName).getList(
         page: 1,
-        perPage: 60,
+        perPage: 200,
         sort: '-created,-id',
-        filter: 'user_id = "$owner" && conversation_id = "main"',
+        filter: 'user_id = "$owner" && conversation_id = "$activeThread"',
       );
       final serverIds = <String>{};
       final turns = <ViktorDialogueTurn>[];
@@ -325,19 +447,39 @@ class ViktorConversationStore {
         if (role != 'user' && role != 'assistant') continue;
         if (body.trim().isEmpty) continue;
         serverIds.add(data['client_turn_id']?.toString() ?? '');
-        turns.add(ViktorDialogueTurn(role: role, content: body));
+        turns.add(ViktorDialogueTurn(role: role, content: body,
+          sentAtUtc: DateTime.tryParse(
+            (data['sent_at_utc'] ?? '').toString())?.toUtc() ??
+            DateTime.tryParse(record.created)?.toUtc(),
+          messageDay: (data['message_day'] ?? '').toString().isEmpty
+              ? null : data['message_day'].toString(),
+          messageTimezone: (data['message_timezone'] ?? '').toString().isEmpty
+              ? null : data['message_timezone'].toString(),
+        ));
       }
       for (final item in _pending) {
-        if (!serverIds.contains(item.id)) {
-          turns.add(ViktorDialogueTurn(role: item.role, content: item.body));
+        if (item.thread == activeThread && !serverIds.contains(item.id)) {
+          turns.add(ViktorDialogueTurn(
+            role: item.role, content: item.body,
+            sentAtUtc: DateTime.tryParse(item.sentUtc ?? '')?.toUtc(),
+            messageDay: item.messageDay, messageTimezone: item.timezone));
         }
       }
+      turns.sort((a, b) {
+        final x = a.sentAtUtc;
+        final y = b.sentAtUtc;
+        if (x == null || y == null) return 0;
+        return x.compareTo(y);
+      });
       return turns;
     } catch (_) {
       if (_pending.isEmpty) rethrow;
       return [
         for (final item in _pending)
-          ViktorDialogueTurn(role: item.role, content: item.body),
+          if (item.thread == activeThread) ViktorDialogueTurn(
+            role: item.role, content: item.body,
+            sentAtUtc: DateTime.tryParse(item.sentUtc ?? '')?.toUtc(),
+            messageDay: item.messageDay, messageTimezone: item.timezone),
       ];
     }
   }
@@ -362,6 +504,8 @@ class ViktorConversationStore {
     }
     if (turn.content.trim().isEmpty) return Future<void>.value();
     final ownerAtSubmission = _owner();
+    final threadAtSubmission = activeConversationId;
+    final sentAt = turn.sentAtUtc ?? DateTime.now().toUtc();
     final text = turn.content.length <= 6000 ? turn.content
         : '${turn.content.substring(0, 5950)}\n[Сообщение обрезано при сохранении]';
     final id = 'turn_${DateTime.now().microsecondsSinceEpoch}_${++_sequence}';
@@ -372,7 +516,9 @@ class ViktorConversationStore {
             'Синхронизируйте её перед отправкой новых сообщений.');
       }
       _pending.add((owner: ownerAtSubmission, id: id,
-          role: turn.role, body: text));
+          role: turn.role, body: text, thread: threadAtSubmission,
+          sentUtc: sentAt.toIso8601String(),
+          messageDay: turn.messageDay, timezone: turn.messageTimezone));
       try {
         await _saveOutbox();
       } catch (_) {

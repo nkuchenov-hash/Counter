@@ -31,7 +31,12 @@ class ViktorHistoricalRecordIntent {
     }
     for (final turn in history.reversed) {
       if (turn['role'] != 'user') continue;
-      final parsed = _parseStatement(turn['content'] ?? '', today);
+      final originalDay = turn['message_day'];
+      // Never reinterpret an older "сегодня" as today's date merely because
+      // the user refers back to that message after midnight.
+      final anchor = originalDay == null ? null : DateTime.tryParse(originalDay);
+      if (anchor == null) continue;
+      final parsed = _parseStatement(turn['content'] ?? '', anchor);
       if (parsed != null) return parsed;
     }
     return null;
