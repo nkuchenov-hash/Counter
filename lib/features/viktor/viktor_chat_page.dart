@@ -13,6 +13,7 @@ import 'package:counter/data/ai/viktor_voice_error.dart';
 import 'package:counter/data/ai/viktor_read_answer.dart';
 import 'package:counter/data/ai/viktor_date_scope.dart';
 import 'package:counter/data/ai/viktor_conversation_store.dart';
+import 'package:counter/data/ai/viktor_thread_router.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -21,6 +22,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 part 'viktor_dialogue_ui_state.dart';
 part 'viktor_composer.dart';
+part 'viktor_chat_layout.dart';
+part 'viktor_threads_ui.dart';
 const double kViktorChatContentMaxWidth = 840;
 class ViktorChatPage extends StatefulWidget {
   const ViktorChatPage({super.key, required this.wallDay,
@@ -32,6 +35,7 @@ class ViktorChatPage extends StatefulWidget {
 }
 class _ViktorChatPageState extends State<ViktorChatPage>
     with _ViktorDialogueUiState {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _controller = TextEditingController();
   final _messagesScrollController = ScrollController();
   final _recorder = ViktorVoiceRecorder();
@@ -72,6 +76,12 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     if (input.isEmpty) return;
     if (!_settingsReady) return;
     final db = DatabaseService.instance;
+    if (_dialogueLoaded && ViktorThreadRouter.shouldOpenNew(
+      input: input, previous: _messages.skip(1).toList(),
+      nowUtc: DateTime.now().toUtc(),
+    )) {
+      _startNewConversation();
+    }
     final profileToday = db.getProjectedToday();
     final dialogContext = ViktorDialogueTurn.modelContext(_messages.skip(1));
     final historical = ViktorHistoricalRecordIntent.parse(
