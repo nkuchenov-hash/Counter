@@ -210,7 +210,62 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
   }
 
   final _dialogueStore = ViktorConversationStore(DatabaseService.instance);
+  List<ViktorThread> _threads = const [
+    ViktorThread(id: ViktorConversationStore.mainConversation,
+        title: 'Общий чат'),
+  ];
+  bool _desktopThreadsVisible = true;
+  int _historyLoadEpoch = 0;
   bool _dialogueLoaded = false;
+
+  Future<void> _refreshThreadIndex() async {
+    try {
+      final threads = await _dialogueStore.loadThreads();
+      if (mounted) setState(() => _threads = threads);
+    } catch (_) {
+      // Keep current conversation available through outages.
+    }
+  }
+
+  Future<void> _selectConversation(String id,
+      {bool locallyNew = false}) async {
+    if (_busy || _transcribing || _listening) return;
+    final epoch = ++_historyLoadEpoch;
+    _dialogueStore.selectConversation(id);
+    final intro = _messages.isNotEmpty ? _messages.first
+        : const ViktorDialogueTurn(role: 'assistant',
+            content: 'Расскажите, что нужно сделать в LIFE OS.');
+    setState(() {
+      _messages..clear()..add(intro);
+      _historyNotice = null;
+      _dialogueLoaded = locallyNew;
+    });
+    if (locallyNew) return;
+    try {
+      final turns = await _dialogueStore.load();
+      if (!mounted || epoch != _historyLoadEpoch) return;
+      setState(() {
+        _messages..clear()..add(intro)..addAll(turns);
+        _dialogueLoaded = _dialogueStore.pendingCount == 0;
+      });
+    } catch (_) {
+      if (mounted && epoch == _historyLoadEpoch) {
+        setState(() => _historyNotice =
+            'Не удалось загрузить выбранный диалог. Повторяем синхронизацию.');
+        _scheduleHistoryRetry();
+      }
+    }
+  }
+
+  void _startNewConversation() {
+    if (_busy || _transcribing || _listening) return;
+    final id = ViktorConversationStore.newConversationId();
+    setState(() => _threads = [
+      ..._threads, ViktorThread(id: id, title: 'Новый разговор'),
+    ]);
+    unawaited(_selectConversation(id, locallyNew: true));
+  }
+
   String? _historyNotice;
   Timer? _historyRetryTimer;
   bool _historyRetryInFlight = false;
@@ -259,7 +314,9 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     }
     try {
       final earlier = await _dialogueStore.load();
+      final threads = await _dialogueStore.loadThreads();
       if (mounted) setState(() {
+        _threads = threads;
         _messages.addAll(earlier);
         _dialogueLoaded = _dialogueStore.pendingCount == 0;
         _historyNotice = !_dialogueLoaded
@@ -285,6 +342,7 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     try {
       await _dialogueStore.append(turn);
       if (!mounted) return;
+      if (turn.isUser) unawaited(_refreshThreadIndex());
       if (_dialogueLoaded && _dialogueStore.pendingCount == 0 &&
           !_dialogueStore.localOutboxUnreadable) {
         if (_historyNotice != null) {
@@ -316,8 +374,9 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
       await _dialogueStore.retryPending();
       // A successful send is not proof that earlier history was loaded:
       // re-fetch the server conversation, even with an empty local outbox.
+      final threadAtStart = _dialogueStore.activeConversationId;
       final serverHistory = await _dialogueStore.load();
-      if (mounted) {
+      if (mounted && _dialogueStore.activeConversationId == threadAtStart) {
         setState(() {
           final introduction = _messages.isEmpty ? null : _messages.first;
           final visible = _messages.skip(1).toList();
