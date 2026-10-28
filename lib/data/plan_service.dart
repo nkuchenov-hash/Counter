@@ -777,11 +777,7 @@ extension PlanServiceExtension on DatabaseService {
     );
     await offlineSync.refreshPendingCount();
     if (writeAheadReceipt == null) return _rejectUnstagedPlanCreate(optimisticId);
-    // Safely queued: replay resolves the category before the remote POST.
-    if (!categoryRelationReady) {
-      DatabaseService._log('ADD_PLAN: queued pending category relation repair');
-      return true;
-    }
+    if (!categoryRelationReady) return true; // queued for relation repair
     try {
       final record = await _pb
           .collection(PbCollections.plans)
@@ -858,15 +854,11 @@ extension PlanServiceExtension on DatabaseService {
         AppSnack.failed();
         return false;
       }
-      // Fast agent writes can be durably staged with a legacy category key;
-      // the outbox will resolve the real relation before remote create.
+      // Agent writes stage a business key; replay resolves the PB relation.
       final categoryRelation = allowDeferredCategoryRelation
           ? categoryRelationIdForPlanCreate(catRule.id)
           : await resolvePlanCategoryRelationForCreate(catRule);
-      if (categoryRelation == null && !allowDeferredCategoryRelation) {
-        DatabaseService._log('ADD_PLAN: category relation unavailable');
-        return false;
-      }
+      if (categoryRelation == null && !allowDeferredCategoryRelation) return false;
       final businessKey = _categoryStringPkForApi(catRule)?.trim();
       final categoryFieldForPlan = categoryRelation ??
           ((businessKey?.isNotEmpty ?? false) ? businessKey! : catRule.id.toString());
