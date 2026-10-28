@@ -36,6 +36,13 @@ abstract final class ViktorAgentCapabilities {
     ViktorToolCapability('bulk_replan', 'planning',
         'Reschedule plan sets with server ownership and collision checks',
         ViktorToolRisk.consequential),
+    ViktorToolCapability('read_day_records', 'records',
+        'Read real owned Timeline entries and UTC times for a day',
+        ViktorToolRisk.read),
+    ViktorToolCapability('create_completed_records', 'records',
+        'Create 1–12 completed Timeline records with explicit UTC intervals '
+        'after verified preview and approval',
+        ViktorToolRisk.consequential),
     ViktorToolCapability('create_completed_records_between', 'records',
         'Backfill completed Timeline records inside a confirmed interval '
         'between two existing recorded activities; preview before saving',
