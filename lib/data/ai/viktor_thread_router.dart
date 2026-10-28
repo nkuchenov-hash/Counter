@@ -6,6 +6,15 @@ class ViktorThreadRouter {
   static bool isFollowUp(String value) {
     final q = value.toLowerCase().trim();
     if (q.startsWith('а ') || q.startsWith('ну ')) return true;
+    // Cross-domain work can still refer to the current thread. An action
+    // verb alone does not turn "create a note from these records" into a
+    // separate conversation without its referenced records.
+    if (RegExp(
+      r'(?:^|\s)(?:по|из|на\s+основе|к)\s+'
+      r'(?:этим|этих|этой|тех|того|той)\s+'
+      r'(?:запис|план|задач|замет|событ)',
+      caseSensitive: false,
+    ).hasMatch(q)) return true;
     return RegExp(
       r'^(?:да|нет|ок|хорошо|ага|почему|а\s+|ну\s+|'
       r'исправь|переделай|повтори|продолжи|'
@@ -51,9 +60,20 @@ class ViktorThreadRouter {
     if (users.isEmpty) return false;
     final current = topic(input);
     final last = topic(users.last.content);
+    final independentImperative = RegExp(
+      r'^(?:создай|добавь|запиши|запланируй|покажи|найди|'
+      r'объясни|составь|как\s+мне)(?=\s|$|[.!?,—])',
+    ).hasMatch(q);
+    // A new activity is often reported in natural language, not phrased as
+    // an imperative. In particular, a morning backfill must not inherit the
+    // old itinerary context solely because it starts with "между".
+    final independentReport = RegExp(
+      r'^(?:между\s+.+?\s+и\s+.+?\s+(?:сегодня|вчера)|'
+      r'(?:сегодня|вчера)\s+(?:утром|дн[её]м|вечером|у\s+меня|я\s+))',
+      caseSensitive: false, dotAll: true,
+    ).hasMatch(q);
     if (current != null && last != null && current != last &&
-        RegExp(r'^(?:создай|добавь|запиши|запланируй|'
-            r'покажи|найди|объясни|составь|как\s+мне)(?=\s|$|[.!?,—])').hasMatch(q)) {
+        (independentImperative || independentReport)) {
       return true;
     }
     // Clear day boundary: start a new independent activity, preserving direct
@@ -61,8 +81,7 @@ class ViktorThreadRouter {
     final lastAt = users.last.sentAtUtc;
     if (current != null && lastAt != null &&
         nowUtc.difference(lastAt.toUtc()) > const Duration(hours: 18) &&
-        RegExp(r'^(?:создай|добавь|запиши|запланируй|'
-            r'покажи|найди|составь)(?=\s|$|[.!?,—])').hasMatch(q)) return true;
+        (independentImperative || independentReport)) return true;
     return false;
   }
 }
