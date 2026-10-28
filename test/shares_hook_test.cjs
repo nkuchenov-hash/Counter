@@ -191,4 +191,21 @@ assert.equal(call('POST',decisionRoute,owner,
   {accept:true},decisionParams).status,409);
 assert.equal(db.plans[0].getString('title'), 'Walk',
   'Collaborative draft must not silently mutate personal Plans');
+const revoke = '/api/shares/{id}/members/{userId}/revoke';
+const revokeParams = {id:shareId, userId:recipient};
+assert.equal(call('POST',revoke, outsider,{},revokeParams).status,403);
+assert.equal(call('POST',revoke,recipient,{},revokeParams).status,403);
+assert.equal(call('POST',revoke,owner,{},revokeParams).status,200);
+assert.equal(call('GET','/api/shares/{id}',recipient,{},idParam).status,404);
+assert.equal(call('POST','/api/shares/day',recipient,
+  {wall_day:'2026-10-31'}).data.shares.length,0);
+assert.equal(call('POST','/api/shares/{id}/messages',recipient,
+  {kind:'comment',body:'No access'},idParam).status,404);
+assert.equal(call('POST','/api/shares/{id}/invite',owner,
+  {person_record_id:personId},idParam).status,200);
+assert.equal(call('POST','/api/shares/{id}/respond',recipient,
+  {accept:true},idParam).status,200);
+assert.equal(call('POST','/api/shares/{id}/leave',recipient,{},idParam).status,200);
+assert.equal(call('GET','/api/shares/{id}',recipient,{},idParam).status,404);
+
 process.stdout.write('Shares collaboration route contracts: PASS\n');
