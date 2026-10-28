@@ -2,6 +2,7 @@
 ## 2026-10-28 — Date-only plans visible on their assigned day
 
 - Show date-only plans (no start clock) in their requested Planning day using the stored date key, without inventing a start time.
+- Persist new date-only plans without a fabricated midnight start; restore their day from the original date anchor when the server has no start clock.
 - Keep timezone-projected timed plans unchanged and add a regression for Viktor's November 2 LS Screening request.
 
 
