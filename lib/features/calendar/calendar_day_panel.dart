@@ -8,6 +8,7 @@ import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/widgets/plan_time_task_card.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/data/sharing/sharing_flags.dart';
 import 'package:counter/features/sharing/shared_planning_day_section.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -90,7 +91,8 @@ class CalendarSelectedDayTaskPanel extends StatelessWidget {
                   expand: true,
                 ),
         ),
-        SharedPlanningDaySection(
+        if (kSharedPlansEnabled)
+          SharedPlanningDaySection(
           wallDay: '${selectedDay.year.toString().padLeft(4, '0')}-'
               '${selectedDay.month.toString().padLeft(2, '0')}-'
               '${selectedDay.day.toString().padLeft(2, '0')}',
