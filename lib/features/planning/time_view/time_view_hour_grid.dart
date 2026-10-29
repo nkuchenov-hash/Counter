@@ -29,7 +29,7 @@ extension PlanningTimeViewTimeViewHourGrid on PlanningTimeViewCoordinator {
     return TickerMode(
       enabled: false,
       child: IgnorePointer(
-        child: RepaintBoundary(child: buildHourGridView(tasks, actualByPlanId)),
+        child: RepaintBoundary(child: buildHourGridView(tasks, actualByPlanId, includeShared: false)),
       ),
     );
   }
@@ -138,8 +138,9 @@ extension PlanningTimeViewTimeViewHourGrid on PlanningTimeViewCoordinator {
 
   Widget buildHourGridView(
     List<PlanningTask> tasks,
-    Map<String, int> planActualByPbId,
-  ) {
+    Map<String, int> planActualByPbId, {
+    bool includeShared = true,
+  }) {
     final scheme = Theme.of(host.context).colorScheme;
     final loc = currentLocale.value;
     final rangeStart = timelineHourStart;
@@ -227,6 +228,7 @@ extension PlanningTimeViewTimeViewHourGrid on PlanningTimeViewCoordinator {
         projections: projections,
         selectedDayKey: selectedDayKey,
         planActualByPbId: planActualByPbId,
+        includeShared: includeShared,
       ),
     );
 
