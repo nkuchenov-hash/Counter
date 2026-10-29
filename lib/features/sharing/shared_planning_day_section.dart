@@ -30,6 +30,10 @@ class SharedPlanningDaySection extends StatefulWidget {
 
 class _SharedPlanningDaySectionState extends State<SharedPlanningDaySection> {
   List<SharedObject> _shares = const <SharedObject>[];
+  // Overrides are keyed by shared object AND source plan: the same source task
+  // can occur in several independently shared days.
+  final Map<String, bool> _completionOverride = <String, bool>{};
+  final Set<String> _pendingCompletion = <String>{};
   Timer? _refreshTimer;
   bool _requestInFlight = false;
   int _requestGeneration = 0;
@@ -54,6 +58,8 @@ class _SharedPlanningDaySectionState extends State<SharedPlanningDaySection> {
       // Discard responses fetched for a previous selected day or inactive tab.
       _requestGeneration++;
       _shares = const <SharedObject>[];
+      _completionOverride.clear();
+      _pendingCompletion.clear();
       _error = null;
       _loaded = false;
       _requestInFlight = false;
@@ -86,6 +92,17 @@ class _SharedPlanningDaySectionState extends State<SharedPlanningDaySection> {
           widget.wallDay != day) return;
       setState(() {
         _shares = result;
+        // Do not let a poll that began before a checkbox write erase its
+        // optimistic state. Reconcile when the server confirms that value.
+        for (final share in result) {
+          for (final item in share.items) {
+            final key = _completionKey(share, item);
+            if (!_pendingCompletion.contains(key) &&
+                _completionOverride[key] == share.myCompleted[item.planId]) {
+              _completionOverride.remove(key);
+            }
+          }
+        }
         _loaded = true;
         _error = null;
       });
@@ -97,6 +114,49 @@ class _SharedPlanningDaySectionState extends State<SharedPlanningDaySection> {
       });
     } finally {
       if (_requestGeneration == generation) _requestInFlight = false;
+    }
+  }
+
+  String _completionKey(SharedObject share, SharedPlanItem item) =>
+      '${share.id}/${item.planId}';
+
+  bool _isCompleted(SharedObject share, SharedPlanItem item) =>
+      _completionOverride[_completionKey(share, item)] ??
+      (share.myCompleted[item.planId] == true);
+
+  Future<void> _toggleCompletion(SharedObject share, SharedPlanItem item) async {
+    final key = _completionKey(share, item);
+    if (_pendingCompletion.contains(key)) return;
+    final next = !_isCompleted(share, item);
+    final generation = _requestGeneration;
+    final day = widget.wallDay;
+    setState(() {
+      _completionOverride[key] = next;
+      _pendingCompletion.add(key);
+    });
+    try {
+      await ShareService.instance.setMyCompletion(
+        shareId: share.id,
+        planId: item.planId,
+        completed: next,
+      );
+      if (!mounted || !widget.active ||
+          _requestGeneration != generation || widget.wallDay != day) return;
+      setState(() => _pendingCompletion.remove(key));
+      // The completed write has already been acknowledged; retain local
+      // feedback until a fresh server snapshot confirms it.
+      unawaited(_refresh());
+    } catch (_) {
+      if (!mounted || !widget.active ||
+          _requestGeneration != generation || widget.wallDay != day) return;
+      setState(() {
+        _completionOverride.remove(key);
+        _pendingCompletion.remove(key);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(l('Не удалось сохранить личный статус.',
+            'Could not save your personal status.')),
+      ));
     }
   }
 
@@ -179,47 +239,57 @@ class _SharedPlanningDaySectionState extends State<SharedPlanningDaySection> {
                           const SizedBox(width: 4),
                           const Icon(Icons.chevron_right_rounded, size: 19),
                         ]),
-                        if (share.status != 'owner') ...[
-                          for (final item in share.items.take(2))
-                            Padding(
-                              padding: const EdgeInsets.only(top: 6, left: 27),
-                              child: Row(children: [
-                                if (_clockLabel(item.startTime).isNotEmpty) ...[
-                                  Text(_clockLabel(item.startTime),
-                                    style: Theme.of(context).textTheme.labelMedium
-                                      ?.copyWith(color: scheme.onSurfaceVariant)),
-                                  const SizedBox(width: 8),
-                                ],
-                                Icon(
-                                  share.myCompleted[item.planId] == true
-                                      ? Icons.check_circle_rounded
-                                      : Icons.radio_button_unchecked_rounded,
-                                  size: 17, color: scheme.onSurfaceVariant,
-                                ),
-                                const SizedBox(width: 6),
-                                Expanded(child: Text(item.title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: share.myCompleted[item.planId] == true
-                                      ? const TextStyle(
-                                          decoration: TextDecoration.lineThrough)
-                                      : null)),
-                              ]),
-                            ),
-                          if (share.items.length > 2)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4, left: 27),
-                              child: Text(l('И ещё ${share.items.length - 2}',
-                                           'And ${share.items.length - 2} more'),
-                                  style: Theme.of(context).textTheme.labelSmall),
-                            ),
-                        ] else
+                        for (final item in share.items.take(3))
                           Padding(
-                            padding: const EdgeInsets.only(top: 3, left: 27),
-                            child: Text(l('Участники видят ${share.items.length} задач',
-                                          'Participants see ${share.items.length} tasks'),
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(color: scheme.onSurfaceVariant)),
+                            padding: const EdgeInsets.only(top: 3, left: 22),
+                            child: Row(children: [
+                              SizedBox(
+                                width: 36,
+                                height: 36,
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  tooltip: _isCompleted(share, item)
+                                      ? l('Отметить невыполненной',
+                                          'Mark incomplete')
+                                      : l('Отметить выполненной',
+                                          'Mark complete'),
+                                  onPressed: _pendingCompletion.contains(
+                                          _completionKey(share, item))
+                                      ? null
+                                      : () => unawaited(
+                                          _toggleCompletion(share, item)),
+                                  icon: Icon(
+                                    _isCompleted(share, item)
+                                        ? Icons.check_circle_rounded
+                                        : Icons.radio_button_unchecked_rounded,
+                                    size: 22,
+                                    color: _isCompleted(share, item)
+                                        ? scheme.primary
+                                        : scheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                              if (_clockLabel(item.startTime).isNotEmpty) ...[
+                                Text(_clockLabel(item.startTime),
+                                  style: Theme.of(context).textTheme.labelMedium
+                                    ?.copyWith(color: scheme.onSurfaceVariant)),
+                                const SizedBox(width: 8),
+                              ],
+                              Expanded(child: Text(item.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: _isCompleted(share, item)
+                                    ? const TextStyle(
+                                        decoration: TextDecoration.lineThrough)
+                                    : null)),
+                            ]),
+                          ),
+                        if (share.items.length > 3)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4, left: 27),
+                            child: Text(l('И ещё ${share.items.length - 3}',
+                                         'And ${share.items.length - 3} more'),
+                                style: Theme.of(context).textTheme.labelSmall),
                           ),
                       ],
                     ),
