@@ -506,6 +506,22 @@ void main() {
         'if (!created.accepted && !created.pendingSync)'));
   });
 
+  test('Viktor requires owned server readback and visible day before success', () {
+    final outbox = File('lib/data/plans/plan_outbox_helpers.dart')
+        .readAsStringSync();
+    final cache = File('lib/data/plans/plan_cache_helpers.dart')
+        .readAsStringSync();
+    final dialogue = File('lib/data/ai/viktor_executor.dart')
+        .readAsStringSync();
+    expect(outbox, contains('_confirmAgentPlanOnRequestedDay(task, clientPlanId)'));
+    expect(outbox, contains('getFirstListItem(\'plan_id = "$id" && user_id = "$uid"\')'));
+    expect(outbox, contains('planningDayTasksSnapshot(day)'));
+    expect(outbox, contains("'initial_date_key': targetDay"));
+    expect(cache, contains('preserveLocalConfirmedPlansInSnapshot('));
+    expect(cache, contains('_plansLocalCommitsDuringFullFetch.values.toList()'));
+    expect(dialogue, contains('отображение пока не подтверждено'));
+  });
+
   test('Viktor direct POST and queued replay never race for a new plan', () {
     final plan = File('lib/data/plan_service.dart').readAsStringSync();
     final replay = File('lib/data/plans/plan_outbox_helpers.dart')
