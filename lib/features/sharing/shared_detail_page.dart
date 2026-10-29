@@ -29,6 +29,7 @@ class _SharedDetailPageState extends State<SharedDetailPage> {
   String? _error;
   bool _loading = true;
   bool _sending = false;
+  int _refreshGeneration = 0;
   Timer? _poll;
 
   bool get _ru => currentLocale.value == 'ru';
@@ -48,22 +49,59 @@ class _SharedDetailPageState extends State<SharedDetailPage> {
 
   @override
   void dispose() {
+    _refreshGeneration++;
     _poll?.cancel();
     _composer.dispose();
     super.dispose();
   }
 
   Future<void> _reload({bool silent = false}) async {
-    if (!silent) setState(() {_loading = true; _error = null;});
+    // The detail page may poll while a checkbox or proposal request is in
+    // flight. The most recently started read is the only one allowed to
+    // replace state; older HTTP snapshots can never roll back new data.
+    final generation = ++_refreshGeneration;
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final data = await _service.detail(widget.shareId);
-      if (!mounted) return;
-      setState(() {_detail = data; _loading = false; _error = null;});
+      if (!mounted || generation != _refreshGeneration) return;
+      setState(() {
+        _detail = data;
+        _loading = false;
+        _error = null;
+        // An optimistic checkbox stays visible until a *fresh server read*
+        // confirms its value. A failed refresh must never undo an acknowledged
+        // write or pretend that it failed.
+        for (final entry in _doneOverride.entries.toList()) {
+          if (!_pendingCompletion.contains(entry.key) &&
+              data.myCompleted[entry.key] == entry.value) {
+            _doneOverride.remove(entry.key);
+          }
+        }
+      });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || generation != _refreshGeneration) return;
+      final accessLost = error is ShareApiException &&
+          (error.statusCode == 401 ||
+              error.statusCode == 403 ||
+              error.statusCode == 404);
       setState(() {
         _loading = false;
-        if (!silent) _error = '$error';
+        if (accessLost) {
+          // Revoking access must remove formerly visible shared data instead
+          // of leaving it on screen indefinitely during silent polling.
+          _detail = null;
+          _doneOverride.clear();
+          _pendingCompletion.clear();
+          _error = l('Доступ к общему плану закрыт.',
+              'Access to this shared plan is no longer available.');
+        } else if (!silent) {
+          _error = '$error';
+        }
       });
     }
   }
@@ -181,9 +219,11 @@ class _SharedDetailPageState extends State<SharedDetailPage> {
       await _service.setMyCompletion(
         shareId: widget.shareId, planId: id, completed: value);
       if (!mounted) return;
-      // Keep optimistic value visible until the authoritative refresh ends.
+      // Server has acknowledged the write. Keep the optimistic checkmark
+      // until an authoritative refresh confirms it (including across a
+      // temporary read failure). Do not wait for HTTP before showing feedback.
+      setState(() => _pendingCompletion.remove(id));
       await _reload(silent: true);
-      if (mounted) setState(() => _doneOverride.remove(id));
     } catch (error) {
       if (!mounted) return;
       setState(() => _doneOverride.remove(id));
