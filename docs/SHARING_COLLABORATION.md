@@ -12,7 +12,8 @@ The canonical **Settings → People** domain already owns contacts, Circles, imp
 2. `POST /api/shares` reads selected plans **on the server** under the authenticated owner; only title, start/end, order and original system plan id enter the shared projection. Notes, tags, category tree, private records and actual time **do not** leave the owner.
 3. Shared Detail allows owner to invite an existing People contact with a verified LIFE OS email. The existing People header's **Shared plans** action lists incoming invitations, accepted shared objects and owned objects.
 4. Accepted members can comment and propose task-title or time changes in profile timezone against a specific object revision. Only the owner can accept/reject; acceptance updates the shared projection atomically with the proposal decision. A stale proposal yields HTTP 409.
-5. An owner or accepted member sees the canonical shared-day projection in the visible Planning day and focused Calendar day. The active Planning subview polls every 12 seconds; Calendar loads on focus. Private native plan cards are not altered.\n6. Owner can revoke a member and invite again; an accepted member can leave. Server denies subsequent reads and proposals.
+5. An owner or accepted member sees the canonical shared-day projection in the visible Planning day and focused Calendar day. The active Planning subview polls every 12 seconds; Calendar loads on focus. Preview tasks are visible to both owners and accepted members, with independent optimistic completion checkboxes. The shared preview only updates `shared_personal_state` via the authorized route; private native plan cards are not altered.
+6. Owner can revoke a member and invite again; an accepted member can leave. Server denies subsequent reads and proposals.
 
 ## Not yet implemented; do not claim completed
 
@@ -22,7 +23,14 @@ The canonical **Settings → People** domain already owns contacts, Circles, imp
 - Final People-contact linkage as a permanent verified profile relation, shared-tag mapping and participant-specific timezone projection.
 - Two-real-account Web/Android E2E + schema deployment verification and production release.
 
-## Participant-local completion\n\n- `pb_migrations/1793193000_shared_personal_state.js` adds a closed `shared_personal_state` collection, unique per object, participant, and source plan ID.\n- `POST /api/shares/{id}/completion` validates accepted membership and source plan inclusion; owners can separately track their own shared-task completion. `GET /api/shares/{id}` and `POST /api/shares/day` return **only the requesting account's** `my_completed` map, never other members' progress.\n- Flutter Shared Detail exposes immediate local checkbox feedback, then saves asynchronously. On network/server failure, it restores the known server value with an explicit error; **offline durability is not claimed** and remains a planned separate outbox step.\n- Neither person’s private `plans.is_done` changes.\n\n## Server schema
+## Participant-local completion
+
+- `pb_migrations/1793193000_shared_personal_state.js` adds a closed `shared_personal_state` collection, unique per object, participant, and source plan ID.
+- `POST /api/shares/{id}/completion` validates accepted membership and source plan inclusion; owners can separately track their own shared-task completion. `GET /api/shares/{id}` and `POST /api/shares/day` return **only the requesting account's** `my_completed` map, never other members' progress.
+- Flutter Shared Detail and Planning/Calendar shared-day previews expose immediate local checkbox feedback, then save asynchronously. A failed/unauthorized write restores the prior status and reports one error; stale polling responses do not overwrite pending optimistic feedback. **Offline durability is not claimed** and remains a planned separate outbox step.
+- Neither person’s private `plans.is_done` changes.
+
+## Server schema
 
 Migration `pb_migrations/1793188800_shared_collaboration.js` creates:
 
@@ -32,7 +40,7 @@ Migration `pb_migrations/1793188800_shared_collaboration.js` creates:
 
 **All five direct REST rules are `null` on all three collections.** App-owned routes in `pb_hooks/shares.pb.js` are the only authorization path. The server checks the authenticated account on **every** route, owner for invites/decisions and accepted membership for discussions. No raw email/profile ID invite API.
 
-API: `POST /api/shares`, `GET /api/shares`, `POST /api/shares/day`, `GET /api/shares/{id}`, `POST /api/shares/{id}/invite`, `POST /api/shares/{id}/respond`, `POST /api/shares/{id}/messages`, `POST /api/shares/{id}/proposals/{messageId}/decide`, `POST /api/shares/{id}/members/{userId}/revoke`, `POST /api/shares/{id}/leave`.
+API: `POST /api/shares/{id}/completion`, `POST /api/shares`, `GET /api/shares`, `POST /api/shares/day`, `GET /api/shares/{id}`, `POST /api/shares/{id}/invite`, `POST /api/shares/{id}/respond`, `POST /api/shares/{id}/messages`, `POST /api/shares/{id}/proposals/{messageId}/decide`, `POST /api/shares/{id}/members/{userId}/revoke`, `POST /api/shares/{id}/leave`.
 
 ## Acceptance / rollout gates
 
