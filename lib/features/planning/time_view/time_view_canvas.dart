@@ -29,6 +29,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
     required List<TimeModeProjectedPlan> projections,
     required String selectedDayKey,
     required Map<String, int> planActualByPbId,
+    bool includeShared = true,
   }) {
     final durationResult = computeTimelineDurationLayout(
       projections,
@@ -385,7 +386,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                           );
                           }
 
-                          if (!kSharedPlansEnabled) {
+                          if (!kSharedPlansEnabled || !includeShared) {
                             return buildPrivateCanvas(constraints.maxWidth);
                           }
                           return SharedTimeViewLane(
