@@ -341,7 +341,8 @@ class _SharedTimeViewLaneState extends State<SharedTimeViewLane> {
                   child: Row(
                     children: [
                       Container(width: 4, color: scheme.primary),
-                      SizedBox(
+                      if (slot.laneCount <= 2)
+                        SizedBox(
                         width: 40,
                         child: IconButton(
                           constraints: const BoxConstraints(
