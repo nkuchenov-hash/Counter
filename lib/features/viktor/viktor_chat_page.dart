@@ -75,11 +75,12 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     if (_busy) return;
     final input = _resolveRepeatCommand(_controller.text.trim());
     if (input.isEmpty) return;
-    if (!_settingsReady) return;
     final db = DatabaseService.instance;
     final profileToday = db.getProjectedToday();
     final independentPlan =
         ViktorDateScope.independentDateOnlyPlan(input, profileToday);
+    // Standalone dated plans are deterministic and do not need AI settings.
+    if (independentPlan == null && !_settingsReady) return;
     // A fresh self-contained dated plan must never inherit an unrelated
     // unfinished itinerary, even when remote chat history is still syncing.
     final hadPreviousRequest = _messages.skip(1).any((turn) => turn.isUser);
