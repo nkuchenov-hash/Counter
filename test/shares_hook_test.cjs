@@ -206,6 +206,31 @@ assert.equal(call('POST','/api/shares/day',recipient,
   {wall_day:'2026-10-31'}).data.shares[0].my_completed[ownerPlan],false);
 assert.equal(db.plans[0].getBool('is_done'),false,
   'Shared personal completion never writes private owner plan');
+  
+// A source plan reused by two separate shares gets two isolated completion
+// states. A checkbox in one preview must never change the other preview.
+const secondCreated = call('POST', '/api/shares', owner, {
+  kind:'plan_day', wall_day:'2026-10-31',
+  plan_ids:[ownerPlan], title:'Saturday alternative',
+});
+assert.equal(secondCreated.status,201);
+const secondId = secondCreated.data.share.id;
+assert.equal(call('POST',completion,owner,{
+  plan_id:ownerPlan,completed:true,
+},{id:secondId}).status,200);
+const ownerWithTwoShares = call('POST','/api/shares/day',owner,{
+  wall_day:'2026-10-31',
+}).data.shares;
+assert.equal(ownerWithTwoShares.length,2);
+assert.equal(ownerWithTwoShares.find(s => s.id === secondId)
+  .my_completed[ownerPlan],true);
+assert.equal(ownerWithTwoShares.find(s => s.id === shareId)
+  .my_completed[ownerPlan],false);
+assert.equal(call('GET','/api/shares/{id}',recipient,
+  {},{id:secondId}).status,404,
+  'A recipient accepted on another share cannot read this one');
+assert.equal(db.shared_personal_state.length,3);
+
 
 
 assert.equal(call('POST','/api/shares/{id}/respond',outsider,
