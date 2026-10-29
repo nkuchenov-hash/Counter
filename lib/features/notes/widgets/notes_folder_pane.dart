@@ -25,10 +25,13 @@ class NotesFolderPane extends StatelessWidget {
     super.key,
     required this.categoryId,
     required this.child,
+    this.edgeToEdge = false,
   });
 
   final int? categoryId;
   final Widget child;
+  /// Mobile notes use the folder tint as a full-bleed section background.
+  final bool edgeToEdge;
 
   @override
   Widget build(BuildContext context) {
@@ -38,14 +41,18 @@ class NotesFolderPane extends StatelessWidget {
       curve: Curves.easeInOutCubic,
       decoration: BoxDecoration(
         color: notesFolderPaper(context, categoryId),
-        borderRadius: const BorderRadius.only(
-          topRight: Radius.circular(15),
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(16),
-        ),
+        borderRadius: edgeToEdge
+            ? BorderRadius.zero
+            : const BorderRadius.only(
+                topRight: Radius.circular(15),
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(16),
+              ),
       ),
       clipBehavior: Clip.antiAlias,
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+      padding: edgeToEdge
+          ? const EdgeInsets.fromLTRB(12, 12, 12, 12)
+          : const EdgeInsets.fromLTRB(16, 18, 16, 16),
       child: child,
     );
   }
@@ -143,11 +150,11 @@ class NotesFolderTabStrip extends StatelessWidget {
     final allTab = _PhysicalNotesTab(
       key: const ValueKey('notes-tab-all'),
       label: allLabel,
-      icon: Icons.format_list_bulleted_rounded,
+      icon: null,
       paper: allPaper,
       accent: const Color(0xFF8591A3),
       selected: selectedId == null,
-      width: 90,
+      width: 68,
       onTap: () => onSelect(null),
     );
     final addTab = _PhysicalNotesTab(
@@ -303,22 +310,8 @@ class NotesPhysicalFolderShape extends ShapeBorder {
   @override
   void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
     final slope = (rect.width * 0.14).clamp(14.0, 21.0).toDouble();
-    // Physical paper catches light on the TOP edge only. Do not shadow the
-    // top-right hook: that previously formed an ugly dark corner on every tab.
-    final upperEdge = Path()
-      ..moveTo(rect.left + 1, rect.top + 9)
-      ..quadraticBezierTo(
-        rect.left + 1, rect.top + 1,
-        rect.left + 10, rect.top + 1,
-      )
-      ..lineTo(rect.right - slope - 5, rect.top + 1);
-    canvas.drawPath(
-      upperEdge,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.1
-        ..color = const Color(0xAFFFFFFF),
-    );
+    // No painted white leading/top glint: it reads as a disconnected stripe
+    // on mobile. The overlapping shoulder carries the folder depth instead.
     // Fine contact seam STARTS BELOW the upper corner; the preceding folder
     // overlaps this tab and casts a little paper-edge shade down the curve.
     final trailingEdge = Path()
@@ -364,7 +357,7 @@ class _PhysicalNotesTab extends StatefulWidget {
   });
 
   final String label;
-  final IconData icon;
+  final IconData? icon;
   final Color paper;
   final Color? accent;
   final bool selected;
@@ -421,8 +414,8 @@ class _PhysicalNotesTabState extends State<_PhysicalNotesTab> {
             : NotesFolderTabStrip.height - (_hovered ? 1 : 3),
         child: Material(
           color: Colors.transparent,
-          elevation: _hovered ? 0.42 : (widget.selected ? 0.35 : 0.15),
-          shadowColor: Colors.black.withValues(alpha: dark ? 0.10 : 0.05),
+          elevation: widget.selected ? 1.8 : (_hovered ? 0.65 : 0),
+          shadowColor: Colors.black.withValues(alpha: dark ? 0.24 : 0.18),
           shape: const NotesPhysicalFolderShape(),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
@@ -445,13 +438,15 @@ class _PhysicalNotesTabState extends State<_PhysicalNotesTab> {
                 ),
               ),
               child: widget.compact
-                  ? Icon(widget.icon, color: foreground, size: 21)
+                  ? Icon(widget.icon!, color: foreground, size: 21)
                   : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(widget.icon, size: 16,
-                            color: foreground.withValues(alpha: 0.82)),
-                        const SizedBox(width: 7),
+                        if (widget.icon != null) ...[
+                          Icon(widget.icon!, size: 16,
+                              color: foreground.withValues(alpha: 0.82)),
+                          const SizedBox(width: 7),
+                        ],
                         Expanded(
                           child: Tooltip(
                             message: widget.label,
