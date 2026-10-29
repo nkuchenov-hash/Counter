@@ -38,6 +38,27 @@ void main() {
       expect(entry.knownEmpty, isTrue);
     });
 
+    test('Viktor readback survives later empty user-list snapshots', () {
+      final verified = PlanningTask(
+        id: 0,
+        planRowId: 'verified-viktor-2026-11-02',
+        pocketRecordId: '1234567890abcde',
+        title: 'LS Screening remind John to sign the Cover Letter',
+        categoryId: 3,
+        dateKey: '2026-11-02',
+      );
+      final laterServerFetch = mergeVerifiedPlansIntoList([], [verified]);
+      final visible = DatabaseService.instance.filterPlansForWallDayForTest(
+        laterServerFetch, DateTime(2026, 11, 2));
+      expect(visible, hasLength(1));
+      expect(visible.single.title, verified.title);
+      expect(visible.single.startTime, isNull);
+      // An authoritative server row wins once it appears in the list.
+      final returned = verified.copyWith(title: 'Server confirmed');
+      expect(mergeVerifiedPlansIntoList([returned], [verified]).single.title,
+        'Server confirmed');
+    });
+
     test('date-only local commit survives a stale full-list snapshot', () {
       const dayKey = '2026-11-02';
       final confirmed = PlanningTask(
