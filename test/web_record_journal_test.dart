@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:counter/data/local_sync/record_mutation_outbox.dart';
+import 'package:counter/data/local_sync/plan_mutation_outbox.dart';
 import 'package:counter/data/local_sync/web_record_journal.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +10,47 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('plans migrate to IndexedDB and save without localStorage writes', () async {
+    final legacy = PlanMutationOutbox.newPlanCreateItem(
+      businessId: 'viktor-migrated-plan',
+      payload: {'plan_id': 'viktor-migrated-plan', 'title': 'Old plan'},
+    );
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'plan_mutation_outbox_v1': jsonEncode([legacy]),
+    });
+    final prefs = await SharedPreferences.getInstance();
+    final initial = await PlanMutationOutbox.load(prefs);
+    expect(initial.map((e) => e['businessId']), contains('viktor-migrated-plan'));
+    expect(prefs.getString('plan_mutation_outbox_v1'), isNull);
+
+    final fresh = PlanMutationOutbox.newPlanCreateItem(
+      businessId: 'viktor-plan-with-full-local-storage',
+      payload: {'plan_id': 'viktor-plan-with-full-local-storage',
+        'title': 'LS Screening remind John to sign the Cover Letter',
+        'initial_date_key': '2026-11-02'},
+    );
+    final receipt = await PlanMutationOutbox.enqueue(prefs, fresh);
+    expect(receipt, isNotNull);
+    expect(prefs.getString('plan_mutation_outbox_v1'), isNull,
+        reason: 'Web must never write to localStorage for plan mutations');
+    final raw = await WebRecordJournal.readPlanRaw();
+    expect(raw, isNotNull);
+    expect(jsonDecode(raw!) as List, hasLength(2));
+
+    final reopened = await SharedPreferences.getInstance();
+    expect((await PlanMutationOutbox.load(reopened)).length, 2);
+    expect(await PlanMutationOutbox.markRetryIfCurrent(reopened, receipt,
+      lastError: 'offline'), isTrue);
+    final afterRetry = await PlanMutationOutbox.load(reopened);
+    expect(afterRetry.any((e) => e['businessId'] == receipt!.businessId &&
+      e['retryCount'] == 1), isTrue);
+    expect(await PlanMutationOutbox.acknowledge(reopened, receipt), isTrue);
+    expect((await PlanMutationOutbox.load(reopened)).length, 1);
+    await PlanMutationOutbox.removePendingForBusinessId(reopened,
+      'viktor-migrated-plan');
+    expect(await PlanMutationOutbox.load(reopened), isEmpty);
+  });
 
   test('web IndexedDB migrates existing captures and survives reload', () async {
     final legacy = RecordMutationOutbox.newHighlanderStartItem(
