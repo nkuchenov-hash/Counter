@@ -5,6 +5,8 @@ const String _plansToTagsLinkColumnSystemId = 'cnmo43ed26h293n';
 bool get _isPlansTableConfigured => true;
 
 bool _planMutationOutboxFlushInFlight = false;
+// A new plan cannot be replayed while its direct POST is still in flight.
+final Set<String> _directPlanCreatesInFlight = <String>{};
 final Map<String, int> _pendingPlanMutationRevisionByBusinessId =
     <String, int>{};
 
@@ -768,6 +770,8 @@ extension PlanServiceExtension on DatabaseService {
       notifyPlanningRefresh(scheduleNetworkRefresh: false);
       return false;
     }
+    _directPlanCreatesInFlight.add(clientPlanId);
+    try {
     // Write-ahead: persist the create intent before the asynchronous POST.
     final writeAheadReceipt = await _enqueuePlanCreateMutation(
       body, businessId: clientPlanId, tags: task.tags,
@@ -824,6 +828,9 @@ extension PlanServiceExtension on DatabaseService {
       DatabaseService._log(st.toString());
       offlineSync.setConnectivityOffline(true);
       return true;
+    }
+    } finally {
+      _directPlanCreatesInFlight.remove(clientPlanId);
     }
   }
   Future<bool> addPlanningTask(
