@@ -146,9 +146,8 @@ class ViktorExecutor {
     final name = action.arguments['title'] as String;
     final day = action.arguments['wall_day'] as String;
     if (result.pendingSync) {
-      return 'Добавляю план «$name» на $day. '
-          'Сохранение пока не подтверждено; приложение продолжит '
-          'автоматически. Повторять запрос не нужно.';
+      return 'План «$name» на $day принят к сохранению, но его '
+          'отображение пока не подтверждено. Повторять команду не нужно.';
     }
     return 'План «$name» добавлен на $day.';
   }
