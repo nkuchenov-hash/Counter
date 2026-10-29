@@ -253,8 +253,7 @@ class _MobileNotesLibrary extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    // The header and tab strip have one screen gutter. Folder paper fills
-    // the width below them; its note cards use that same single gutter.
+    // One screen gutter for tabs and cards; full-width folder paper.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -267,8 +266,7 @@ class _MobileNotesLibrary extends StatelessWidget {
                 children: [
                   _MobileRoundAction(
                     icon: Icons.space_dashboard_outlined,
-                    onTap: () => unawaited(_openFolders(context)),
-                  ),
+                    onTap: () => unawaited(_openFolders(context))),
                   const Spacer(),
                   _MobileNotesModePill(locale: header.locale),
                   const Spacer(),
@@ -281,16 +279,12 @@ class _MobileNotesLibrary extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 34,
-                  height: 1.02,
-                  letterSpacing: -0.9,
-                  fontWeight: FontWeight.w700,
-                  color: scheme.onSurface,
+                  fontSize: 34, height: 1.02, letterSpacing: -0.9,
+                  fontWeight: FontWeight.w700, color: scheme.onSurface,
                 ),
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                height: NotesFolderTabStrip.height,
+              SizedBox(height: NotesFolderTabStrip.height,
                 child: _NotesPhysicalFolderTabs(
                   adapter: category,
                   onOpenSettings: header.onOpenSettings,
@@ -303,12 +297,9 @@ class _MobileNotesLibrary extends StatelessWidget {
         Expanded(
           child: NotesFolderPane(
             categoryId: category.filterCategoryId,
-            edgeToEdge: true,
-            child: content,
-          ),
+            edgeToEdge: true, child: content),
         ),
-        // Search is a separate bottom control, not an overlay inside the
-        // color-tinted category folder. It never consumes note-list height.
+        // Search is a neutral footer, never overlaid on category paper.
         ColoredBox(
           color: scheme.surface,
           child: Padding(
@@ -325,10 +316,8 @@ class _MobileNotesLibrary extends StatelessWidget {
                     onChanged: header.onSearchChanged,
                     glass: false,
                     suffixIcon: header.searchQuery.trim().isNotEmpty
-                        ? IconButton(
-                            onPressed: header.onClearSearch,
-                            icon: const Icon(Icons.close_rounded, size: 18),
-                          )
+                        ? IconButton(onPressed: header.onClearSearch,
+                            icon: const Icon(Icons.close_rounded, size: 18))
                         : null,
                   ),
                 ),
