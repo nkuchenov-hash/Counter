@@ -25,9 +25,7 @@ Timer? _planAlarmRescheduleDebounceTimer;
 final Random _random = Random();
 
 extension PlanServiceExtension on DatabaseService {
-  /// Plans and Lists share the `plans.tags_link` relation but isolate chips by `tags.domain`.
-  /// Use the full cached catalog when hydrating plan/list rows so plain `tags_link` ids
-  /// can resolve whether the row is a dated plan (`plan`) or an undated list item (`list`).
+  /// Resolve Plan/List tag chips from the shared catalog and domain.
 
   void _notifyTimelineAfterRecordCacheMutation() {
     if (_recordCacheTimelineNotifyBatchDepth > 0) return;
@@ -166,8 +164,7 @@ extension PlanServiceExtension on DatabaseService {
     }
   }
 
-  /// Next `order` for a new plan on this wall day (for optimistic + POST).
-  /// Plans for a wall day (same source as Planning tab). For UI manual `source_plan_id` linking.
+  /// Wall-day plans used by Planning and source-plan linking.
   Future<List<PlanningTask>> getPlanningTasksForWallDate(DateTime wallDay) =>
       _fetchPlanningTasksForDate(wallDay);
 
@@ -244,10 +241,16 @@ extension PlanServiceExtension on DatabaseService {
               '${selectedDate.year}-${_two(selectedDate.month)}-${_two(selectedDate.day)}';
           try {
             await _ensureAllPlansUserCacheFresh();
-            final plans = _filterPlansForWallDay(
+            var plans = _filterPlansForWallDay(
               _allPlansUserCache,
               selectedDate,
             );
+            if (plans.isEmpty) {
+              // Day fallback protects Planning and Viktor duplicate checks.
+              await _fetchOwnedUntimedPlansForDay(targetDayStr);
+              plans = _filterPlansForWallDay(
+                _allPlansUserCache, selectedDate);
+            }
             final merged = _mergePlanningOptimistic(targetDayStr, plans);
             await _persistPlanningTasksDayCache(targetDayStr, merged);
             return merged;
@@ -282,8 +285,7 @@ extension PlanServiceExtension on DatabaseService {
     return newScheduleKey.compareTo(anchorKey) > 0;
   }
 
-  /// Undated plans (`start_time` unset): backlog / Lists tab. Excludes virtual, optimistic rows.
-  /// When [includeCompleted] is false (default), excludes [PlanningTask.isDone] (e.g. chip counts).
+  /// Backlog rows for Lists; optionally excludes completed/optimistic rows.
   Future<List<PlanningTask>> fetchBacklogPlans({
     int? categoryId,
     bool includeCompleted = false,
@@ -319,10 +321,7 @@ extension PlanServiceExtension on DatabaseService {
     final endDisplay = endUtc != null
         ? _profileWallFromUtc(endUtc.toUtc())
         : null;
-    // No start_time means no clock. A newly committed date-only plan
-    // carries its day in initial_date_key, without a fabricated midnight.
-    // A postponed plan needs its actual scheduled day; the original audit
-    // anchor must not be mistaken for that new day.
+    // Untimed day uses its audit anchor, except postponed rows.
     final anchor = (d['initial_date_key'] ?? '').toString().trim();
     final dateOnlyKey = d['is_postponed'] != true && anchor.length >= 10
         ? anchor.substring(0, 10)
@@ -792,6 +791,7 @@ extension PlanServiceExtension on DatabaseService {
         pocketTagCatalog: tagCatalog,
       );
       _upsertPlanInUserCache(fromServer);
+      _rememberVerifiedPlanUntilListed(fromServer);
       _allPlansUserCacheFetchedAt = DateTime.now();
       await _acknowledgePlanMutation(writeAheadReceipt);
       if (!_hasPendingPlanMutationForBusinessId(clientPlanId)) {

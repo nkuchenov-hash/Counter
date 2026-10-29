@@ -506,6 +506,21 @@ void main() {
         'if (!created.accepted && !created.pendingSync)'));
   });
 
+  test('Selected day has independent owned-plan fallback and list errors surface', () {
+    final plans = File('lib/data/plan_service.dart').readAsStringSync();
+    final cache = File('lib/data/plans/plan_cache_helpers.dart')
+        .readAsStringSync();
+    final fetch = plans.substring(
+      plans.indexOf('Future<List<PlanningTask>> _fetchPlanningTasksForDate('),
+      plans.indexOf('/// Audit anchor:'));
+    expect(fetch, contains('_fetchOwnedUntimedPlansForDay(targetDayStr)'));
+    expect(cache, contains("initial_date_key = \"\$day\""));
+    expect(cache, contains('PLANS_FULL_EXPAND_RETRY'));
+    expect(cache, contains('PLANS_FULL_LIST_FETCH'));
+    expect(cache, contains('_plansVerifiedAwaitingList.values'));
+    expect(plans, contains('_rememberVerifiedPlanUntilListed(fromServer)'));
+  });
+
   test('Viktor requires owned server readback and visible day before success', () {
     final outbox = File('lib/data/plans/plan_outbox_helpers.dart')
         .readAsStringSync();
@@ -518,7 +533,8 @@ void main() {
     expect(outbox, contains('planningDayTasksSnapshot(day)'));
     expect(outbox, contains("'initial_date_key': targetDay"));
     expect(cache, contains('preserveLocalConfirmedPlansInSnapshot('));
-    expect(cache, contains('_plansLocalCommitsDuringFullFetch.values.toList()'));
+    expect(cache, contains('_plansLocalCommitsDuringFullFetch.values'));
+    expect(cache, contains('_plansVerifiedAwaitingList.values'));
     expect(dialogue, contains('отображение пока не подтверждено'));
   });
 

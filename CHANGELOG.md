@@ -1,3 +1,10 @@
+## 2026-10-29 — P0: date-scoped recovery for plans missing from Planner [CI pending]
+
+- Selected-day reads now independently query authenticated PocketBase by `initial_date_key` if the cached all-plan projection is empty. This also protects Viktor from re-creating an existing day-only plan because a global list query failed.
+- Full plan list retries without tags expansion if the relation expansion fails; tag catalog failure no longer prevents fetching plan rows. All-list failures now log an explicit diagnostic instead of being silently swallowed.
+- Server-confirmed new plans remain visible across later stale/empty full-list responses until the authoritative list includes their business ID; the owner guard prevents cross-account cache retention.
+- Added functional stale-snapshot test and source contract coverage. Does not modify existing user plans or fabricate scheduling times.
+
 ## 2026-10-29 — Viktor: verify server day visibility, survive late REST snapshots [awaiting CI]
 
 - A PocketBase create response alone is no longer a sufficient Viktor success receipt: verify the owned plan by plan_id and requested day, then project it into Planning before replying.
