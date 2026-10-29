@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'web_record_journal.dart';
 
 final class PlanMutationReceipt {
   const PlanMutationReceipt({
@@ -66,19 +68,39 @@ abstract final class PlanMutationOutbox {
     }
   }
 
+  /// Move BOTH old plan queues to IndexedDB atomically before removing any
+  /// localStorage key. The marker prevents importing the same plans twice.
+  static Future<void> _ensureWebMigration(SharedPreferences prefs) async {
+    final current = prefs.getString(_prefsKey);
+    final legacy = prefs.getString(_legacyCreateKey);
+    await WebRecordJournal.transactPlan<void>((raw, imported, put) async {
+      if (imported) return;
+      final merged = coalesceQueue([
+        ..._decode(raw),
+        ..._decode(current),
+        ..._legacyCreates(_decode(legacy)),
+      ]);
+      await put(jsonEncode(merged), true);
+    });
+    for (final key in [_prefsKey, _legacyCreateKey]) {
+      try { await prefs.remove(key); } catch (_) {}
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> load(
     SharedPreferences prefs,
   ) async {
+    if (kIsWeb) {
+      await _ensureWebMigration(prefs);
+      return _decode(await WebRecordJournal.readPlanRaw());
+    }
     final current = _decode(prefs.getString(_prefsKey));
     if (current.isNotEmpty) return current;
     return _migrateLegacyCreates(prefs);
   }
 
-  static Future<List<Map<String, dynamic>>> _migrateLegacyCreates(
-    SharedPreferences prefs,
-  ) async {
-    final legacy = _decode(prefs.getString(_legacyCreateKey));
-    if (legacy.isEmpty) return [];
+  static List<Map<String, dynamic>> _legacyCreates(
+      List<Map<String, dynamic>> legacy) {
     final migrated = <Map<String, dynamic>>[];
     for (final item in legacy) {
       final wrapped = item['body'];
@@ -86,14 +108,21 @@ abstract final class PlanMutationOutbox {
       final body = Map<String, dynamic>.from(wrapped);
       final biz = (body['plan_id'] ?? '').toString().trim();
       if (biz.isEmpty) continue;
-      migrated.add(
-        newPlanCreateItem(
-          businessId: biz,
-          payload: body,
-          createdAt: (item['enqueuedAt'] as num?)?.toInt(),
-        ),
-      );
+      migrated.add(newPlanCreateItem(
+        businessId: biz,
+        payload: body,
+        createdAt: (item['enqueuedAt'] as num?)?.toInt(),
+      ));
     }
+    return migrated;
+  }
+
+  static Future<List<Map<String, dynamic>>> _migrateLegacyCreates(
+    SharedPreferences prefs,
+  ) async {
+    final legacy = _decode(prefs.getString(_legacyCreateKey));
+    if (legacy.isEmpty) return [];
+    final migrated = _legacyCreates(legacy);
     if (migrated.isNotEmpty) {
       await save(prefs, migrated);
       await prefs.remove(_legacyCreateKey);
@@ -105,6 +134,12 @@ abstract final class PlanMutationOutbox {
     SharedPreferences prefs,
     List<Map<String, dynamic>> items,
   ) async {
+    if (kIsWeb) {
+      await _ensureWebMigration(prefs);
+      await WebRecordJournal.transactPlan<void>((_, imported, put) =>
+          put(jsonEncode(items), imported));
+      return;
+    }
     final saved = await prefs.setString(_prefsKey, jsonEncode(items));
     if (!saved) {
       throw StateError('Unable to persist plan mutation outbox');
@@ -341,19 +376,29 @@ abstract final class PlanMutationOutbox {
     SharedPreferences prefs,
     Map<String, dynamic> item,
   ) => _withWriteLock(() async {
-    final q = await load(prefs);
-    q.add(item);
-    final next = coalesceQueue(q);
-    await save(prefs, next);
-    final businessId = _bizKey(item);
-    final kind = (item['kind'] ?? '').toString();
-    for (final candidate in next.reversed) {
-      if (_bizKey(candidate) == businessId &&
-          (candidate['kind'] ?? '').toString() == kind) {
-        return receiptForItem(candidate);
-      }
+    PlanMutationReceipt? append(List<Map<String, dynamic>> q) {
+      q.add(item);
+      final next = coalesceQueue(q);
+      return next.reversed
+          .where((candidate) => _bizKey(candidate) == _bizKey(item) &&
+              candidate['kind'] == item['kind'])
+          .map(receiptForItem)
+          .firstOrNull;
     }
-    return null;
+    if (kIsWeb) {
+      await _ensureWebMigration(prefs);
+      return WebRecordJournal.transactPlan<PlanMutationReceipt?>(
+          (raw, imported, put) async {
+        final q = _decode(raw);
+        final receipt = append(q);
+        await put(jsonEncode(coalesceQueue(q)), imported);
+        return receipt;
+      });
+    }
+    final q = await load(prefs);
+    final receipt = append(q);
+    await save(prefs, coalesceQueue(q));
+    return receipt;
   });
 
   static Future<bool> acknowledge(
@@ -361,6 +406,16 @@ abstract final class PlanMutationOutbox {
     PlanMutationReceipt? receipt,
   ) => _withWriteLock(() async {
     if (receipt == null) return false;
+    if (kIsWeb) {
+      await _ensureWebMigration(prefs);
+      return WebRecordJournal.transactPlan<bool>((raw, imported, put) async {
+        final q = _decode(raw);
+        final next = q.where((item) => !_matchesReceipt(item, receipt)).toList();
+        if (next.length == q.length) return false;
+        await put(jsonEncode(next), imported);
+        return true;
+      });
+    }
     final q = await load(prefs);
     final next = q.where((item) => !_matchesReceipt(item, receipt)).toList();
     if (next.length == q.length) return false;
@@ -375,21 +430,25 @@ abstract final class PlanMutationOutbox {
     String? syncStatus,
   }) => _withWriteLock(() async {
     if (receipt == null) return false;
-    final q = await load(prefs);
-    var changed = false;
-    final next = <Map<String, dynamic>>[];
-    for (final raw in q) {
-      final item = Map<String, dynamic>.from(raw);
-      if (_matchesReceipt(item, receipt)) {
+    Future<bool> update(List<Map<String, dynamic>> q,
+        Future<void> Function(List<Map<String, dynamic>>) persist) async {
+      var changed = false;
+      for (final item in q) {
+        if (!_matchesReceipt(item, receipt)) continue;
         item['retryCount'] = ((item['retryCount'] as num?)?.toInt() ?? 0) + 1;
         item['lastError'] = lastError;
         if (syncStatus != null) item['syncStatus'] = syncStatus;
         changed = true;
       }
-      next.add(item);
+      if (changed) await persist(q);
+      return changed;
     }
-    if (changed) await save(prefs, next);
-    return changed;
+    if (kIsWeb) {
+      await _ensureWebMigration(prefs);
+      return WebRecordJournal.transactPlan<bool>((raw, imported, put) =>
+          update(_decode(raw), (q) => put(jsonEncode(q), imported)));
+    }
+    return update(await load(prefs), (q) => save(prefs, q));
   });
 
   static Future<void> removePendingForBusinessId(
@@ -398,11 +457,17 @@ abstract final class PlanMutationOutbox {
   ) => _withWriteLock(() async {
     final biz = businessId.trim();
     if (biz.isEmpty) return;
-    final q = await load(prefs);
-    if (q.isEmpty) return;
-    final next = q.where((e) => _bizKey(e) != biz).toList();
-    if (next.length != q.length) {
-      await save(prefs, next);
+    if (kIsWeb) {
+      await _ensureWebMigration(prefs);
+      await WebRecordJournal.transactPlan<void>((raw, imported, put) async {
+        final q = _decode(raw);
+        final next = q.where((e) => _bizKey(e) != biz).toList();
+        if (next.length != q.length) await put(jsonEncode(next), imported);
+      });
+      return;
     }
+    final q = await load(prefs);
+    final next = q.where((e) => _bizKey(e) != biz).toList();
+    if (next.length != q.length) await save(prefs, next);
   });
 }
