@@ -28,6 +28,7 @@ The canonical **Settings → People** domain already owns contacts, Circles, imp
 - `pb_migrations/1793193000_shared_personal_state.js` adds a closed `shared_personal_state` collection, unique per object, participant, and source plan ID.
 - `POST /api/shares/{id}/completion` validates accepted membership and source plan inclusion; owners can separately track their own shared-task completion. `GET /api/shares/{id}` and `POST /api/shares/day` return **only the requesting account's** `my_completed` map, never other members' progress.
 - Flutter Shared Detail and Planning/Calendar shared-day previews expose immediate local checkbox feedback, then save asynchronously. A failed/unauthorized write restores the prior status and reports one error; stale polling responses do not overwrite pending optimistic feedback. **Offline durability is not claimed** and remains a planned separate outbox step.
+- Shared Detail fences concurrent poll responses, keeps acknowledged checkboxes visible until server confirmation even if a follow-up read fails, and clears previously loaded shared content if access is revoked (401/403/404). This avoids displaying a withdrawn share indefinitely.
 - Neither person’s private `plans.is_done` changes.
 
 ## Server schema
