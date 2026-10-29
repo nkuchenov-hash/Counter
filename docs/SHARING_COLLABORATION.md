@@ -38,7 +38,7 @@ Migration `pb_migrations/1793188800_shared_collaboration.js` creates:
 - `shared_members`: unique (object_id,user_id), invited_by, invited/accepted/declined/revoked, role.
 - `shared_messages`: author_id, kind=comment/proposal, body, allowlisted patch, base_revision, status.
 
-**All five direct REST rules are `null` on all three collections.** App-owned routes in `pb_hooks/shares.pb.js` are the only authorization path. The server checks the authenticated account on **every** route, owner for invites/decisions and accepted membership for discussions. No raw email/profile ID invite API.
+**All five direct REST rules are `null` on all four sharing collections, including `shared_personal_state`.** App-owned routes in `pb_hooks/shares.pb.js` are the only authorization path. The server checks the authenticated account on **every** route, owner for invites/decisions and accepted membership for discussions. No raw email/profile ID invite API.
 
 API: `POST /api/shares/{id}/completion`, `POST /api/shares`, `GET /api/shares`, `POST /api/shares/day`, `GET /api/shares/{id}`, `POST /api/shares/{id}/invite`, `POST /api/shares/{id}/respond`, `POST /api/shares/{id}/messages`, `POST /api/shares/{id}/proposals/{messageId}/decide`, `POST /api/shares/{id}/members/{userId}/revoke`, `POST /api/shares/{id}/leave`.
 
