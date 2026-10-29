@@ -444,7 +444,7 @@ void main() {
     expect(manager, contains('_stalledDrainAttempts'));
     expect(manager, contains('db.flushPendingLocalMutations()'));
     expect(manager, contains('_schedulePendingDrain(delay: stalled'));
-    expect(status, contains('Сохранение пока не подтверждено'));
+    expect(status, contains('отображение пока не подтверждено'));
     expect(status, contains(r'План «$name» добавлен на $day.'));
     expect(status, isNot(contains('PocketBase')));
   });
@@ -498,8 +498,8 @@ void main() {
     expect(outbox, contains('if (!saved) {'));
     final receipts = File('lib/data/plans/plan_outbox_helpers.dart')
         .readAsStringSync();
-    expect(receipts, contains(
-        'pendingSync: _hasPendingPlanMutationForBusinessId(clientPlanId)'));
+    expect(receipts, contains('final queued = _hasPendingPlanMutationForBusinessId(clientPlanId)'));
+    expect(receipts, contains('pendingSync: queued || (accepted && !confirmed)'));
     final executor = File('lib/data/ai/viktor_executor.dart')
         .readAsStringSync();
     expect(executor, contains(
@@ -600,7 +600,8 @@ void main() {
     final receipt = File('lib/data/plans/plan_outbox_helpers.dart')
         .readAsStringSync();
     expect(receipt, contains('allowDeferredCategoryRelation: true'));
-    expect(receipt, contains('pendingSync: _hasPendingPlanMutationForBusinessId('));
+    expect(receipt, contains('final queued = _hasPendingPlanMutationForBusinessId(clientPlanId)'));
+    expect(receipt, contains('pendingSync: queued || (accepted && !confirmed)'));
   });
 
 }
