@@ -514,7 +514,7 @@ void main() {
     final dialogue = File('lib/data/ai/viktor_executor.dart')
         .readAsStringSync();
     expect(outbox, contains('_confirmAgentPlanOnRequestedDay(task, clientPlanId)'));
-    expect(outbox, contains('getFirstListItem(\'plan_id = "$id" && user_id = "$uid"\')'));
+    expect(outbox, contains('getFirstListItem(\'plan_id = "\$id" && user_id = "\$uid"\')'));
     expect(outbox, contains('planningDayTasksSnapshot(day)'));
     expect(outbox, contains("'initial_date_key': targetDay"));
     expect(cache, contains('preserveLocalConfirmedPlansInSnapshot('));
