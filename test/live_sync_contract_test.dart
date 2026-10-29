@@ -527,6 +527,11 @@ void main() {
     final send = chat.substring(chat.indexOf('Future<void> _send() async {'));
     expect(send.indexOf('independentPlan == null && !_settingsReady'),
         greaterThan(send.indexOf('independentDateOnlyPlan(input, profileToday)')));
+    final composer = File('lib/features/viktor/viktor_composer.dart')
+        .readAsStringSync();
+    expect(composer, contains('bool _canSubmitWithoutAiSettings('));
+    expect(composer, contains('!_canSubmitWithoutAiSettings(_controller.text)'));
+    expect(composer, contains('_canSubmitWithoutAiSettings(value.text)'));
   });
 
   test('Viktor one-date plan does not double preview or reload the day', () {
