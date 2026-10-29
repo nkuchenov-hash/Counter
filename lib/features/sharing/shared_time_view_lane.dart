@@ -268,6 +268,36 @@ class _SharedTimeViewLaneState extends State<SharedTimeViewLane> {
       final c = a.top.compareTo(b.top);
       return c != 0 ? c : a.item.planId.compareTo(b.item.planId);
     });
+    // Shared tasks may overlap independently of the owner's sequential
+    // private schedule. Partition each intersecting group into horizontal
+    // lanes, so no shared item is hidden behind a later one.
+    var groupStart = 0;
+    while (groupStart < slots.length) {
+      var groupEnd = groupStart;
+      var groupBottom = slots[groupStart].top + slots[groupStart].height;
+      while (groupEnd + 1 < slots.length &&
+          slots[groupEnd + 1].top < groupBottom) {
+        groupEnd++;
+        groupBottom = math.max(
+          groupBottom, slots[groupEnd].top + slots[groupEnd].height,
+        );
+      }
+      final ends = <double>[];
+      for (var i = groupStart; i <= groupEnd; i++) {
+        final slot = slots[i];
+        var lane = ends.indexWhere((end) => end <= slot.top);
+        if (lane < 0) {
+          lane = ends.length;
+          ends.add(0);
+        }
+        ends[lane] = slot.top + slot.height;
+        slot.laneIndex = lane;
+      }
+      for (var i = groupStart; i <= groupEnd; i++) {
+        slots[i].laneCount = ends.length;
+      }
+      groupStart = groupEnd + 1;
+    }
     return slots;
   }
 
@@ -285,14 +315,19 @@ class _SharedTimeViewLaneState extends State<SharedTimeViewLane> {
     // Never put shared content into the private drag-and-drop Stack.
     return SizedBox(
       height: widget.canvasHeight,
-      child: Stack(
+      child: LayoutBuilder(builder: (context, constraints) {
+        return Stack(
         clipBehavior: Clip.hardEdge,
         children: [
           for (final slot in slots)
             Positioned(
               top: slot.top,
-              left: 4,
-              right: 4,
+              left: 4 + slot.laneIndex *
+                  ((constraints.maxWidth - 8 -
+                      math.max(0, slot.laneCount - 1) * 2) /
+                      slot.laneCount + 2),
+              width: math.max(1.0, (constraints.maxWidth - 8 -
+                  math.max(0, slot.laneCount - 1) * 2) / slot.laneCount),
               height: slot.height,
               child: Material(
                 color: scheme.surface,
@@ -367,7 +402,8 @@ class _SharedTimeViewLaneState extends State<SharedTimeViewLane> {
               ),
             ),
         ],
-      ),
+        );
+      }),
     );
   }
 
@@ -487,4 +523,6 @@ class _SharedTimeSlot {
   final double top;
   final double height;
   final String label;
+  int laneIndex = 0;
+  int laneCount = 1;
 }
