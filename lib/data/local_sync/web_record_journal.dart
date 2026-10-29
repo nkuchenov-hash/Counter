@@ -8,6 +8,7 @@ import 'package:sembast_web/sembast_web.dart';
 /// use their established SharedPreferences outbox.
 abstract final class WebRecordJournal {
   static final _store = stringMapStoreFactory.store('record_mutations');
+  static final _planStore = stringMapStoreFactory.store('plan_mutations');
   static Future<Database>? _opening;
 
   static Future<Database> _database() =>
@@ -31,6 +32,38 @@ abstract final class WebRecordJournal {
     final db = await _database();
     return db.transaction<T>((txn) async {
       final ref = _store.record('queue');
+      final row = await ref.get(txn);
+      final raw = row?['raw'] as String?;
+      final migrated = row?['legacy_imported'] == true;
+      Future<void> put(String value, bool imported) async {
+        await ref.put(txn, <String, Object?>{
+          'raw': value,
+          'legacy_imported': imported,
+        });
+      }
+      return action(raw, migrated, put);
+    });
+  }
+
+  /// Independent durable plan outbox, using the same cross-tab transaction
+  /// guarantees as the records journal. Never store plan mutations in web
+  /// localStorage, which may be full with cached application data.
+  static Future<String?> readPlanRaw() async {
+    final db = await _database();
+    final row = await _planStore.record('queue').get(db);
+    return row?['raw'] as String?;
+  }
+
+  static Future<T> transactPlan<T>(
+    Future<T> Function(
+      String? current,
+      bool legacyImported,
+      Future<void> Function(String raw, bool legacyImported) put,
+    ) action,
+  ) async {
+    final db = await _database();
+    return db.transaction<T>((txn) async {
+      final ref = _planStore.record('queue');
       final row = await ref.get(txn);
       final raw = row?['raw'] as String?;
       final migrated = row?['legacy_imported'] == true;
