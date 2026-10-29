@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/health/cloud_sleep_sync_service.dart';
 import 'package:counter/data/health/health_sleep_sync_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 /// App-lifecycle coordinator for sleep ingestion.
@@ -56,25 +57,35 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
     if (_reconcileRunning) return;
     _reconcileRunning = true;
     try {
-      await _syncDeviceSleep();
-
+      // PocketBase is the authoritative, shared sleep source on every
+      // platform. Never wait for Android Health Connect permission, a device
+      // plugin, or a local import before displaying server-backed sleep.
       final db = DatabaseService.instance;
-      if (!db.isInitialized || (db.currentProfileId?.isNotEmpty != true)) {
-        return;
+      if (db.isInitialized && (db.currentProfileId?.isNotEmpty == true)) {
+        try {
+          await db.getRecords(forceNetwork: true);
+
+          final localNow = db.applyUserOffset(DatabaseService.getPlanetaryNow());
+          if (!await _hasTodayXiaomiSleep(db, localNow)) {
+            // A missing current Xiaomi night can trigger a server sync now;
+            // syncNow itself refreshes PocketBase records on success.
+            await _syncCloudSleepNow();
+          }
+        } catch (error) {
+          if (kDebugMode) {
+            debugPrint('Sleep PocketBase reconciliation failed: $error');
+          }
+        }
       }
 
-      // Always begin with authoritative PocketBase state. The server may have
-      // already imported sleep while this client was open and a realtime event
-      // may have been missed.
-      await db.getRecords(forceNetwork: true);
-
-      final localNow = db.applyUserOffset(DatabaseService.getPlanetaryNow());
-      if (!await _hasTodayXiaomiSleep(db, localNow)) {
-        // Opening or resuming LIFE OS must not wait for the next server cron.
-        // If today's Xiaomi sleep is still absent, request one immediate server
-        // sync, then re-read authoritative records.
-        await _syncCloudSleepNow();
-        await db.getRecords(forceNetwork: true);
+      // Device imports are optional, device-local enrichment. Their
+      // availability or errors must not gate the shared PocketBase read.
+      try {
+        await _syncDeviceSleep();
+      } catch (error) {
+        if (kDebugMode) {
+          debugPrint('Optional device sleep sync failed: $error');
+        }
       }
     } finally {
       _reconcileRunning = false;
