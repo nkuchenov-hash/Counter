@@ -9,6 +9,16 @@ int _plansLastAppliedFetchSequence = 0;
 final Map<String, PlanningTask?> _plansRealtimeDuringFullFetch = {};
 // Local confirmed creates must survive a REST list started before their POST.
 final Map<String, PlanningTask> _plansLocalCommitsDuringFullFetch = {};
+// A confirmed POST must remain visible until an authoritative list includes it.
+// A later (not just overlapping) empty/stale GET must never erase it.
+final Map<String, PlanningTask> _plansVerifiedAwaitingList = {};
+String? _plansVerifiedOwnerId;
+
+/// Pure merge used by both REST reconciliation and regression tests.
+List<PlanningTask> mergeVerifiedPlansIntoList(
+  List<PlanningTask> serverRows,
+  Iterable<PlanningTask> verifiedRows,
+) => preserveLocalConfirmedPlansInSnapshot(serverRows, verifiedRows);
 
 /// A full-list response that started before a POST cannot erase the POST.
 /// Prefer the server row when already present, and retain only missing local
@@ -77,24 +87,86 @@ double titlePlanLinkScore(String a, String b) {
   }
 
 extension PlanCacheProjectionExtension on DatabaseService {
+  void _rememberVerifiedPlanUntilListed(PlanningTask task) {
+    final owner = _userIdForWhere;
+    if (owner == null || owner.isEmpty) return;
+    if (_plansVerifiedOwnerId != owner) {
+      _plansVerifiedAwaitingList.clear();
+      _plansVerifiedOwnerId = owner;
+    }
+    final id = (task.planRowId ?? '').trim();
+    if (id.isNotEmpty) _plansVerifiedAwaitingList[id] = task;
+  }
+
+  /// A selected day can recover independently of the all-user GET.
+  /// Use the exact authenticated owner used for writes/readback, and never
+  /// synthesize a clock for untimed plans.
+  Future<List<PlanningTask>> _fetchOwnedUntimedPlansForDay(
+      String dayKey) async {
+    final owner = _userIdForWhere;
+    if (owner == null || owner.isEmpty || dayKey.length != 10) return [];
+    try {
+      final uid = _escapeForPbFilter(owner);
+      final day = _escapeForPbFilter(dayKey);
+      final rows = await _pb.collection(PbCollections.plans).getFullList(
+        filter: 'user_id = "$uid" && initial_date_key = "$day"',
+        batch: 100,
+      );
+      final fetched = <PlanningTask>[];
+      for (final row in rows) {
+        final task = _planningTaskFromPocketRecord(
+          row, pocketTagCatalog: const <Tag>[]);
+        if (unscheduledPlanMatchesWallDay(task, dayKey)) {
+          fetched.add(task);
+        }
+      }
+      for (final task in fetched) _upsertPlanInUserCache(task);
+      return fetched;
+    } catch (e) {
+      DatabaseService._log('PLANS_DAY_SCOPED_FETCH: $e');
+      offlineSync.setLastError(
+        'Не удалось проверить планы за $dayKey на сервере.');
+      return [];
+    }
+  }
+
   Future<List<PlanningTask>> _fetchAllPlanningTasksForCurrentUser() async {
     if (!_isPlansTableConfigured) return [];
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return [];
     final ownerFilter = _pocketBaseOwnerFilterClauseForRecords();
     if (ownerFilter == null || ownerFilter.isEmpty) return [];
     final fetchProfileId = currentProfileId;
+    final ownerId = _userIdForWhere;
+    if (_plansVerifiedOwnerId != ownerId) {
+      _plansVerifiedAwaitingList.clear();
+      _plansVerifiedOwnerId = ownerId;
+    }
     final requestSequence = ++_plansNetworkFetchSequence;
     final sw = Stopwatch()..start();
     _plansFullFetchesInFlight++;
     try {
-      final tagCatalog = await _fetchPlanAndListTagCatalog();
-      final list = await _pb
-          .collection(PbCollections.plans)
-          .getFullList(
-            expand: kPbPlanTagsExpand,
-            filter: ownerFilter,
-            batch: 200,
-          );
+      List<Tag> tagCatalog;
+      try {
+        tagCatalog = await _fetchPlanAndListTagCatalog();
+      } catch (e) {
+        DatabaseService._log('PLANS_TAG_CATALOG_FETCH: $e');
+        tagCatalog = <Tag>[];
+      }
+      List<RecordModel> list;
+      try {
+        list = await _pb.collection(PbCollections.plans).getFullList(
+          expand: kPbPlanTagsExpand,
+          filter: ownerFilter,
+          batch: 200,
+        );
+      } on ClientException catch (e) {
+        DatabaseService._log('PLANS_FULL_EXPAND_RETRY: $e');
+        // A broken tags expansion must not make all dated plans disappear.
+        list = await _pb.collection(PbCollections.plans).getFullList(
+          filter: ownerFilter,
+          batch: 200,
+        );
+      }
       sw.stop();
       RebuildMetrics.instance.pbDuringSwipe(
         collection: 'plans',
@@ -111,9 +183,19 @@ extension PlanCacheProjectionExtension on DatabaseService {
         return _allPlansUserCache;
       }
       _plansLastAppliedFetchSequence = requestSequence;
-      _allPlansUserCache = preserveLocalConfirmedPlansInSnapshot(
+      final incomingIds = <String>{
+        for (final task in out)
+          if ((task.planRowId ?? '').trim().isNotEmpty)
+            task.planRowId!.trim(),
+      };
+      _plansVerifiedAwaitingList.removeWhere(
+        (businessId, _) => incomingIds.contains(businessId));
+      _allPlansUserCache = mergeVerifiedPlansIntoList(
         scrubPlanningTasksForLocalCache(out),
-        _plansLocalCommitsDuringFullFetch.values.toList(),
+        <PlanningTask>[
+          ..._plansLocalCommitsDuringFullFetch.values,
+          ..._plansVerifiedAwaitingList.values,
+        ],
       );
       _scrubJitVirtualRowsFromUserCache();
       // A late REST response must never undo an SSE create/update/delete
@@ -127,7 +209,9 @@ extension PlanCacheProjectionExtension on DatabaseService {
       }
       _allPlansUserCacheFetchedAt = DateTime.now();
       return _allPlansUserCache;
-    } catch (_) {
+    } catch (e) {
+      DatabaseService._log('PLANS_FULL_LIST_FETCH: $e');
+      offlineSync.setLastError('Не удалось обновить список планов с сервера.');
       return _allPlansUserCache;
     } finally {
       _plansFullFetchesInFlight--;
