@@ -5,7 +5,6 @@ const String _plansToTagsLinkColumnSystemId = 'cnmo43ed26h293n';
 bool get _isPlansTableConfigured => true;
 
 bool _planMutationOutboxFlushInFlight = false;
-// A new plan cannot be replayed while its direct POST is still in flight.
 final Set<String> _directPlanCreatesInFlight = <String>{};
 final Map<String, int> _pendingPlanMutationRevisionByBusinessId =
     <String, int>{};
@@ -653,8 +652,7 @@ extension PlanServiceExtension on DatabaseService {
           : <dynamic>[],
       'order': task.order,
     };
-    // A date-only plan is stored without a fabricated midnight timestamp.
-    // initial_date_key below persists the requested day for first placement.
+    // Untimed plans keep their wall day in initial_date_key, not midnight.
     if (task.startTime != null) {
       final instants = _planUtcInstantsFromWall(task)!;
       body['start_time'] = instants.startUtc.toIso8601String();
@@ -747,10 +745,7 @@ extension PlanServiceExtension on DatabaseService {
         isSynced: false,
       ),
     );
-    // Creation is not a reorder operation. Existing plans must never be shifted
-    // just to make the new row fit; only createTask may be repositioned above.
-    // P0: all visible Planning subscribers see the local overlay right now,
-    // before create-body building, the offline queue or PocketBase requests.
+    // Only move the new plan; notify live Planning before any network I/O.
     notifyPlanningRefresh(
       scheduleNetworkRefresh: false,
       immediateLocal: true,
@@ -816,9 +811,7 @@ extension PlanServiceExtension on DatabaseService {
         offlineSync.setConnectivityOffline(true);
         return true;
       }
-      // A server rejection is not successful delivery. Keep the durable
-      // intent and its optimistic row for recovery after catalog refresh.
-      // Replays back off; never delete the only copy of the plan on HTTP 400.
+      // Keep the durable pending intent on HTTP 400 for background recovery.
       offlineSync.setLastError('План пока не сохранён. Повторю автоматически.');
       _debugPrintPocketBaseClientException(
         operation: 'plan create', e: e, payload: body);
