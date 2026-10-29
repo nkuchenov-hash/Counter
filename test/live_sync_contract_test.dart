@@ -533,7 +533,8 @@ void main() {
     expect(outbox, contains('planningDayTasksSnapshot(day)'));
     expect(outbox, contains("'initial_date_key': targetDay"));
     expect(cache, contains('preserveLocalConfirmedPlansInSnapshot('));
-    expect(cache, contains('_plansLocalCommitsDuringFullFetch.values.toList()'));
+    expect(cache, contains('_plansLocalCommitsDuringFullFetch.values'));
+    expect(cache, contains('_plansVerifiedAwaitingList.values'));
     expect(dialogue, contains('отображение пока не подтверждено'));
   });
 
