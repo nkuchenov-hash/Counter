@@ -2,9 +2,9 @@ import 'package:counter/data/database_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 
-/// A single folder-paper surface shared by the active tab and Notes contents.
-/// The tab sits flush on top; the 18px inset belongs INSIDE the folder, so the
-/// note cards are visually separated without breaking the tab-to-paper seam.
+/// One category-tinted folder-paper surface for Notes.
+/// Desktop retains the 18px interior gap under the tabs; mobile uses an
+/// edge-to-edge tint with only a single 12px inset for the note cards.
 Color notesFolderPaper(BuildContext context, int? categoryId) {
   final scheme = Theme.of(context).colorScheme;
   final dark = Theme.of(context).brightness == Brightness.dark;
