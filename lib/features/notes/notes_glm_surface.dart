@@ -81,9 +81,12 @@ class NotesGlmLibraryFrame extends StatelessWidget {
   const NotesGlmLibraryFrame({
     super.key,
     required this.child,
+    this.mobileEdgeToEdge = false,
   });
 
   final Widget child;
+  /// Remove the outer gutter only for the mobile Notes folder surface.
+  final bool mobileEdgeToEdge;
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +99,9 @@ class NotesGlmLibraryFrame extends StatelessWidget {
             final width = constraints.maxWidth;
             final EdgeInsets pagePadding;
             if (width <= 520) {
-              pagePadding = const EdgeInsets.fromLTRB(12, 10, 12, 20);
+              pagePadding = mobileEdgeToEdge
+                  ? const EdgeInsets.fromLTRB(0, 10, 0, 0)
+                  : const EdgeInsets.fromLTRB(12, 10, 12, 20);
             } else if (width <= 1023) {
               pagePadding = const EdgeInsets.symmetric(horizontal: 18);
             } else {
