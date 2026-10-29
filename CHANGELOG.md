@@ -1,3 +1,9 @@
+## 2026-10-29 — Viktor: prevent duplicate POST/replay and remove AI settings gate [verification pending]
+
+- Guard direct plan POSTs against simultaneous automatic outbox replay by business plan id; release the guard after every success or failure so retries still run.
+- Standalone explicit day-only plan commands no longer wait for AI settings hydration; date-only duplicate detection now excludes appointments with a start clock but no end time.
+- Added functional idempotency coverage and source-level persistence-race regression checks. No PocketBase schema or live account data changed.
+
 ## [2026-10-28] — Global header opens inline calendar immediately
 
 ## 2026-10-29 — Mobile Notes edge-to-edge and shared sleep refresh [pending verification]
