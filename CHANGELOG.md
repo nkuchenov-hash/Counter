@@ -2,6 +2,7 @@
 
 - Added per-participant completion checkboxes directly to shared-day previews in Planning and Calendar, including the owner's preview. Optimistic UI is scoped by shared-object/task identity and survives stale polling while writes are pending; permission or network errors roll back without modifying private Plans.
 - Extended shared-route contract coverage for independent completion across separate shares of the same source plan. PR remains draft, feature default-off, and requires staging/two-account validation before release.
+- Hardened Shared Detail polling: stale responses cannot overwrite a newer snapshot, acknowledged completion stays visible during failed refreshes, and revoked/expired access clears previously displayed shared data on 401/403/404.
 
 ## [2026-10-28] — Shared plans using existing People (candidate, unmerged)
 
