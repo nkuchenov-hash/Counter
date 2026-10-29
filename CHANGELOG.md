@@ -1,5 +1,11 @@
 ## [2026-10-28] — Global header opens inline calendar immediately
 
+## 2026-10-29 — Mobile Notes edge-to-edge and shared sleep refresh [pending verification]
+
+- Android Notes: the category-tinted folder paper fills the available screen width; note cards have one 12px gutter instead of stacked outer/inner card margins. Search/new-note controls now sit in a separate neutral bottom footer, not over folder paper.
+- Notes folder tabs: compact text-only 68px “All / Все” tab; removed the detached white top-edge glint and strengthened selected-tab separation. Existing category colors, stable tab order, selection, scroll and add actions remain unchanged.
+- Sleep: on every authenticated app start/resume, refresh canonical PocketBase records before optional Health Connect reads; local device failures no longer prevent the server-side read. Xiaomi Cloud remains the server-owned primary source. Pending CI and physical Android verification; no production claim until the APK is tested.
+
 ## 2026-10-28 — Viktor one-plan fast execution after failing 16:26 screenshot
 
 - Single explicit day-only plan commands use one direct authenticated Brain operation rather than `describe` + `apply` + repeated schedule reads. Exactly one duplicate lookup is kept to avoid duplicate creates.

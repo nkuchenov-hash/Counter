@@ -616,4 +616,51 @@ void main() {
     final card = tester.getRect(find.text('First note'));
     expect(card.top - rect.top, greaterThanOrEqualTo(18));
   });
+
+  testWidgets('mobile folder paper uses a single inset and no frame radius',
+      (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          height: 320,
+          child: NotesFolderPane(
+            categoryId: null,
+            edgeToEdge: true,
+            child: SizedBox.expand(),
+          ),
+        ),
+      ),
+    ));
+    final pane = tester.widget<AnimatedContainer>(
+      find.byKey(const ValueKey('notes-folder-paper')),
+    );
+    expect(pane.padding, const EdgeInsets.fromLTRB(12, 12, 12, 12));
+    expect((pane.decoration! as BoxDecoration).borderRadius,
+        BorderRadius.zero);
+  });
+
+  testWidgets('fixed Все folder tab is 68px and text-only', (tester) async {
+    final scroll = ScrollController();
+    addTearDown(scroll.dispose);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          height: NotesFolderTabStrip.height,
+          child: NotesFolderTabStrip(
+            tabs: const [],
+            selectedId: null,
+            scrollController: scroll,
+            allLabel: 'Все',
+            allPaper: const Color(0xFFF2F4F7),
+            onSelect: (_) {},
+            onAdd: () {},
+          ),
+        ),
+      ),
+    ));
+    expect(tester.getSize(find.byKey(const ValueKey('notes-tab-all'))).width,
+        68);
+    expect(find.text('Все'), findsOneWidget);
+    expect(find.byIcon(Icons.format_list_bulleted_rounded), findsNothing);
+  });
 }

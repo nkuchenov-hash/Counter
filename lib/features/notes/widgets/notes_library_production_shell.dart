@@ -114,6 +114,7 @@ class NotesLibraryProductionShell extends StatelessWidget {
 
     if (mobile && headerAdapter != null && category != null) {
       return NotesGlmLibraryFrame(
+        mobileEdgeToEdge: true,
         child: _MobileNotesLibrary(
           header: headerAdapter,
           category: category,
@@ -252,88 +253,84 @@ class _MobileNotesLibrary extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return Stack(
+    // One screen gutter for tabs and cards; full-width folder paper.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                _MobileRoundAction(
-                  icon: Icons.space_dashboard_outlined,
-                  onTap: () => unawaited(_openFolders(context)),
-                ),
-                const Spacer(),
-                _MobileNotesModePill(locale: header.locale),
-                const Spacer(),
-                _MobileNotesViewMenu(adapter: header),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Text(
-              _activeTitle(),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 34,
-                height: 1.02,
-                letterSpacing: -0.9,
-                fontWeight: FontWeight.w700,
-                color: scheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: NotesFolderTabStrip.height,
-              child: _NotesPhysicalFolderTabs(
-                adapter: category,
-                onOpenSettings: header.onOpenSettings,
-                onChanged: onFolderTabsChanged,
-              ),
-            ),
-            Expanded(
-              child: NotesFolderPane(
-                categoryId: category.filterCategoryId,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 86),
-                  child: content,
-                ),
-              ),
-            ),
-          ],
-        ),
-        Positioned(
-          left: 8,
-          right: 8,
-          bottom: 10,
-          child: Row(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: NotesGlmLibraryInput(
-                  controller: header.searchController,
-                  focusNode: header.searchFocus,
-                  hintText: t(header.locale, 'notes_v3_search_hint'),
-                  textInputAction: TextInputAction.search,
-                  textCapitalization: TextCapitalization.sentences,
-                  onChanged: header.onSearchChanged,
-                  glass: true,
-                  suffixIcon: header.searchQuery.trim().isNotEmpty
-                      ? IconButton(
-                          onPressed: header.onClearSearch,
-                          icon: const Icon(Icons.close_rounded, size: 18),
-                        )
-                      : null,
+              Row(
+                children: [
+                  _MobileRoundAction(
+                    icon: Icons.space_dashboard_outlined,
+                    onTap: () => unawaited(_openFolders(context))),
+                  const Spacer(),
+                  _MobileNotesModePill(locale: header.locale),
+                  const Spacer(),
+                  _MobileNotesViewMenu(adapter: header),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                _activeTitle(),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 34, height: 1.02, letterSpacing: -0.9,
+                  fontWeight: FontWeight.w700, color: scheme.onSurface,
                 ),
               ),
-              const SizedBox(width: 10),
-              _MobileRoundAction(
-                icon: Icons.edit_outlined,
-                size: 54,
-                enabled: !creatingNewNote,
-                loading: creatingNewNote,
-                onTap: onNewNote,
+              const SizedBox(height: 16),
+              SizedBox(height: NotesFolderTabStrip.height,
+                child: _NotesPhysicalFolderTabs(
+                  adapter: category,
+                  onOpenSettings: header.onOpenSettings,
+                  onChanged: onFolderTabsChanged,
+                ),
               ),
             ],
+          ),
+        ),
+        Expanded(
+          child: NotesFolderPane(
+            categoryId: category.filterCategoryId,
+            edgeToEdge: true, child: content),
+        ),
+        // Search is a neutral footer, never overlaid on category paper.
+        ColoredBox(
+          color: scheme.surface,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: NotesGlmLibraryInput(
+                    controller: header.searchController,
+                    focusNode: header.searchFocus,
+                    hintText: t(header.locale, 'notes_v3_search_hint'),
+                    textInputAction: TextInputAction.search,
+                    textCapitalization: TextCapitalization.sentences,
+                    onChanged: header.onSearchChanged,
+                    glass: false,
+                    suffixIcon: header.searchQuery.trim().isNotEmpty
+                        ? IconButton(onPressed: header.onClearSearch,
+                            icon: const Icon(Icons.close_rounded, size: 18))
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                _MobileRoundAction(
+                  icon: Icons.edit_outlined,
+                  size: 54,
+                  enabled: !creatingNewNote,
+                  loading: creatingNewNote,
+                  onTap: onNewNote,
+                ),
+              ],
+            ),
           ),
         ),
       ],
