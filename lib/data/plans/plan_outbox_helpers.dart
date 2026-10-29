@@ -27,7 +27,8 @@ extension PlanOutboxSyncExtension on DatabaseService {
         _rememberPendingPlanMutation(receipt);
         // The direct creation path owns this business ID until POST finishes.
         // Never race its write-ahead outbox replay against the original POST.
-        if (item['kind'] == PlanMutationOutbox.kindPlanCreate &&
+        if (receipt != null &&
+            item['kind'] == PlanMutationOutbox.kindPlanCreate &&
             _directPlanCreatesInFlight.contains(receipt.businessId)) {
           allSynced = false;
           break; // normal in-flight work, not a failed mutation
