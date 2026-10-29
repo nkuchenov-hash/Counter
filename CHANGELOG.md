@@ -1,3 +1,10 @@
+## 2026-10-29 — Viktor: verify server day visibility, survive late REST snapshots [awaiting CI]
+
+- A PocketBase create response alone is no longer a sufficient Viktor success receipt: verify the owned plan by plan_id and requested day, then project it into Planning before replying.
+- Recover missing `initial_date_key` for a newly created date-only row by patching the owned PocketBase row, without inventing a time.
+- Retain locally confirmed creations if a previously started full-list GET returns a stale snapshot; preserve existing newer server/realtime rows.
+- Add date-only stale-snapshot regression coverage. Pending/uncertain readback is reported as unconfirmed, never as a successful save.
+
 ## 2026-10-29 — Viktor: prevent duplicate POST/replay and remove AI settings gate [verification pending]
 
 - Guard direct plan POSTs against simultaneous automatic outbox replay by business plan id; release the guard after every success or failure so retries still run.
