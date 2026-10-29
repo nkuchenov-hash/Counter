@@ -951,6 +951,7 @@ extension PlanOutboxSyncExtension on DatabaseService {
         return false;
       }
       _upsertPlanInUserCache(confirmed);
+      _rememberVerifiedPlanUntilListed(confirmed);
       notifyPlanningRefresh(
         scheduleNetworkRefresh: false, immediateLocal: true);
       final day = DateTime.parse(targetDay);
