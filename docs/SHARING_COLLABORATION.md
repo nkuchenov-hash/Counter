@@ -12,12 +12,12 @@ The canonical **Settings → People** domain already owns contacts, Circles, imp
 2. `POST /api/shares` reads selected plans **on the server** under the authenticated owner; only title, start/end, order and original system plan id enter the shared projection. Notes, tags, category tree, private records and actual time **do not** leave the owner.
 3. Shared Detail allows owner to invite an existing People contact with a verified LIFE OS email. The existing People header's **Shared plans** action lists incoming invitations, accepted shared objects and owned objects.
 4. Accepted members can comment and propose task-title or time changes in profile timezone against a specific object revision. Only the owner can accept/reject; acceptance updates the shared projection atomically with the proposal decision. A stale proposal yields HTTP 409.
-5. An owner or accepted member sees the canonical shared-day projection in the visible Planning day and focused Calendar day. The active Planning subview polls every 12 seconds; Calendar loads on focus. Preview tasks are visible to both owners and accepted members, with independent optimistic completion checkboxes. The shared preview only updates `shared_personal_state` via the authorized route; private native plan cards are not altered.
+5. An owner or accepted member sees the canonical shared-day projection in the visible Planning day and focused Calendar day, including a read-only, profile-timezone lane aligned with the personal Time View Y-axis. The active Planning subview polls every 12 seconds; Calendar loads on focus. Preview tasks are visible to both owners and accepted members, with independent optimistic completion checkboxes. The shared preview only updates `shared_personal_state` via the authorized route; private native plan cards are not altered.
 6. Owner can revoke a member and invite again; an accepted member can leave. Server denies subsequent reads and proposals.
 
 ## Not yet implemented; do not claim completed
 
-- Agreed edits **do not yet modify** any participant's personal `plans` rows or reminders; accepted shared drafts are displayed separately in Planning and the Calendar focused-day panel, not native Time View blocks. This first slice is a **shared projection**. The UI explicitly says so.
+- Agreed edits **do not yet modify** any participant's personal `plans` rows or reminders; accepted shared drafts are displayed separately in Planning, the Calendar focused-day panel, and a read-only Time View lane—not native, draggable Time View task blocks. This first slice is a **shared projection**. The UI explicitly says so.
 - Full multi-task alternatives, per-task comments, multi-user realtime subscriptions, offline collaboration outbox, iOS/Android deep links and push notifications. Collaboration currently uses on-demand HTTP and active Planning polling; it does not promise instant realtime.
 - Generic sharing for Notes, Lists, Paths (schema `kind` reserves types, but API currently accepts only `plan_day`).
 - Final People-contact linkage as a permanent verified profile relation, shared-tag mapping and participant-specific timezone projection.
@@ -30,6 +30,7 @@ The canonical **Settings → People** domain already owns contacts, Circles, imp
 - Flutter Shared Detail and Planning/Calendar shared-day previews expose immediate local checkbox feedback, then save asynchronously. A failed/unauthorized write restores the prior status and reports one error; stale polling responses do not overwrite pending optimistic feedback. **Offline durability is not claimed** and remains a planned separate outbox step.
 - Shared Detail fences concurrent poll responses, keeps acknowledged checkboxes visible until server confirmation even if a follow-up read fails, and clears previously loaded shared content if access is revoked (401/403/404). This avoids displaying a withdrawn share indefinitely.
 - Neither person’s private `plans.is_done` changes.
+- The Time View shared lane uses the native piecewise Y coordinate system, a parallel desktop column and mobile full-width switch. Read-only cards open Shared Detail; participant-local checkbox writes use the same scoped endpoint. It is excluded from frozen swipe previews, and unchanged 12-second polls do not rebuild the private timeline. Dense overlapping shared items and real-device layout need acceptance checks.
 
 ## Server schema
 
