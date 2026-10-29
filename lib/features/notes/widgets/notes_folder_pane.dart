@@ -414,8 +414,10 @@ class _PhysicalNotesTabState extends State<_PhysicalNotesTab> {
             : NotesFolderTabStrip.height - (_hovered ? 1 : 3),
         child: Material(
           color: Colors.transparent,
-          elevation: widget.selected ? 1.8 : (_hovered ? 0.65 : 0),
-          shadowColor: Colors.black.withValues(alpha: dark ? 0.24 : 0.18),
+          elevation: _hovered ? 0.46 : (widget.selected ? 0.35 : 0.15),
+          shadowColor: Colors.black.withValues(
+            alpha: dark ? 0.10 : (widget.selected ? 0.14 : 0.05),
+          ),
           shape: const NotesPhysicalFolderShape(),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
