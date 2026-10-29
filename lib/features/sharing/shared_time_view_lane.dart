@@ -78,6 +78,36 @@ class _SharedTimeViewLaneState extends State<SharedTimeViewLane> {
     super.dispose();
   }
 
+  bool _sameShares(List<SharedObject> next) {
+    if (_shares.length != next.length) return false;
+    for (var i = 0; i < next.length; i++) {
+      final old = _shares[i];
+      final fresh = next[i];
+      if (old.id != fresh.id ||
+          old.revision != fresh.revision ||
+          old.status != fresh.status ||
+          old.title != fresh.title ||
+          old.items.length != fresh.items.length ||
+          old.myCompleted.length != fresh.myCompleted.length) {
+        return false;
+      }
+      for (final entry in fresh.myCompleted.entries) {
+        if (old.myCompleted[entry.key] != entry.value) return false;
+      }
+      for (var j = 0; j < fresh.items.length; j++) {
+        final before = old.items[j];
+        final after = fresh.items[j];
+        if (before.planId != after.planId ||
+            before.title != after.title ||
+            before.startTime != after.startTime ||
+            before.endTime != after.endTime) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   Future<void> _refresh() async {
     if (_inFlight) return;
     final generation = _generation;
@@ -88,6 +118,9 @@ class _SharedTimeViewLaneState extends State<SharedTimeViewLane> {
       if (!mounted || generation != _generation || day != widget.wallDay) {
         return;
       }
+      // Polling must not rebuild all the native cards or reset active
+      // private card gestures when the shared projection is unchanged.
+      if (_sameShares(fresh) && _error == null) return;
       setState(() {
         _shares = fresh;
         _error = null;
@@ -266,7 +299,22 @@ class _SharedTimeViewLaneState extends State<SharedTimeViewLane> {
     return LayoutBuilder(builder: (context, constraints) {
       final width = constraints.maxWidth;
       final slots = _visibleSlots();
-      if (slots.isEmpty) return widget.personalCanvasBuilder(width);
+      if (slots.isEmpty) {
+        if (_error == null) return widget.personalCanvasBuilder(width);
+        return Stack(children: [
+          widget.personalCanvasBuilder(width),
+          Positioned(
+            top: 3,
+            right: 4,
+            child: IconButton(
+              icon: const Icon(Icons.sync_problem_outlined, size: 19),
+              tooltip: _l('Общие планы: повторить загрузку',
+                  'Shared plans: retry loading'),
+              onPressed: _inFlight ? null : () => unawaited(_refresh()),
+            ),
+          ),
+        ]);
+      }
       final scheme = Theme.of(context).colorScheme;
 
       if (width < 640) {
