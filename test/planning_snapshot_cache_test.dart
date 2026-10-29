@@ -38,6 +38,35 @@ void main() {
       expect(entry.knownEmpty, isTrue);
     });
 
+    test('date-only local commit survives a stale full-list snapshot', () {
+      const dayKey = '2026-11-02';
+      final confirmed = PlanningTask(
+        id: 0,
+        planRowId: 'viktor-server-confirmed-1',
+        pocketRecordId: 'abcdefghijklmno',
+        title: 'LS Screening remind John to sign the Cover Letter',
+        categoryId: 1,
+        dateKey: dayKey,
+      );
+      final unrelated = PlanningTask(
+        id: 0, planRowId: 'older-existing-plan',
+        title: 'Previously fetched plan', categoryId: 1,
+        dateKey: '2026-11-01',
+      );
+      final reconciled = preserveLocalConfirmedPlansInSnapshot(
+        [unrelated], [confirmed]);
+      expect(reconciled, hasLength(2));
+      expect(
+        DatabaseService.instance.filterPlansForWallDayForTest(
+          reconciled, DateTime(2026, 11, 2)),
+        contains(confirmed),
+      );
+      // A fresh server result wins over the temporary commit.
+      final fromServer = confirmed.copyWith(title: 'Server title');
+      expect(preserveLocalConfirmedPlansInSnapshot(
+        [fromServer], [confirmed]).single.title, 'Server title');
+    });
+
     test('date-only Viktor plans belong to the intended day without time', () {
       final plan = PlanningTask(
         id: 12,
