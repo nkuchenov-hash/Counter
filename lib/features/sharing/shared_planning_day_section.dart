@@ -142,7 +142,9 @@ class _SharedPlanningDaySectionState extends State<SharedPlanningDaySection> {
       );
       if (!mounted || !widget.active ||
           _requestGeneration != generation || widget.wallDay != day) return;
-      setState(() => _pendingCompletion.remove(key));
+      setState(() {
+        _pendingCompletion.remove(key);
+      });
       // The completed write has already been acknowledged; retain local
       // feedback until a fresh server snapshot confirms it.
       unawaited(_refresh());
@@ -244,8 +246,8 @@ class _SharedPlanningDaySectionState extends State<SharedPlanningDaySection> {
                             padding: const EdgeInsets.only(top: 3, left: 22),
                             child: Row(children: [
                               SizedBox(
-                                width: 36,
-                                height: 36,
+                                width: 44,
+                                height: 44,
                                 child: IconButton(
                                   padding: EdgeInsets.zero,
                                   tooltip: _isCompleted(share, item)
