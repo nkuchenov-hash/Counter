@@ -444,7 +444,7 @@ void main() {
     expect(manager, contains('_stalledDrainAttempts'));
     expect(manager, contains('db.flushPendingLocalMutations()'));
     expect(manager, contains('_schedulePendingDrain(delay: stalled'));
-    expect(status, contains('Сохранение пока не подтверждено'));
+    expect(status, contains('отображение пока не подтверждено'));
     expect(status, contains(r'План «$name» добавлен на $day.'));
     expect(status, isNot(contains('PocketBase')));
   });
@@ -498,12 +498,28 @@ void main() {
     expect(outbox, contains('if (!saved) {'));
     final receipts = File('lib/data/plans/plan_outbox_helpers.dart')
         .readAsStringSync();
-    expect(receipts, contains(
-        'pendingSync: _hasPendingPlanMutationForBusinessId(clientPlanId)'));
+    expect(receipts, contains('final queued = _hasPendingPlanMutationForBusinessId(clientPlanId)'));
+    expect(receipts, contains('pendingSync: queued || (accepted && !confirmed)'));
     final executor = File('lib/data/ai/viktor_executor.dart')
         .readAsStringSync();
     expect(executor, contains(
         'if (!created.accepted && !created.pendingSync)'));
+  });
+
+  test('Viktor requires owned server readback and visible day before success', () {
+    final outbox = File('lib/data/plans/plan_outbox_helpers.dart')
+        .readAsStringSync();
+    final cache = File('lib/data/plans/plan_cache_helpers.dart')
+        .readAsStringSync();
+    final dialogue = File('lib/data/ai/viktor_executor.dart')
+        .readAsStringSync();
+    expect(outbox, contains('_confirmAgentPlanOnRequestedDay(task, clientPlanId)'));
+    expect(outbox, contains('getFirstListItem(\'plan_id = "\$id" && user_id = "\$uid"\')'));
+    expect(outbox, contains('planningDayTasksSnapshot(day)'));
+    expect(outbox, contains("'initial_date_key': targetDay"));
+    expect(cache, contains('preserveLocalConfirmedPlansInSnapshot('));
+    expect(cache, contains('_plansLocalCommitsDuringFullFetch.values.toList()'));
+    expect(dialogue, contains('отображение пока не подтверждено'));
   });
 
   test('Viktor direct POST and queued replay never race for a new plan', () {
@@ -584,7 +600,8 @@ void main() {
     final receipt = File('lib/data/plans/plan_outbox_helpers.dart')
         .readAsStringSync();
     expect(receipt, contains('allowDeferredCategoryRelation: true'));
-    expect(receipt, contains('pendingSync: _hasPendingPlanMutationForBusinessId('));
+    expect(receipt, contains('final queued = _hasPendingPlanMutationForBusinessId(clientPlanId)'));
+    expect(receipt, contains('pendingSync: queued || (accepted && !confirmed)'));
   });
 
 }

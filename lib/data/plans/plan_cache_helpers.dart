@@ -7,6 +7,27 @@ int _plansFullFetchesInFlight = 0;
 int _plansNetworkFetchSequence = 0;
 int _plansLastAppliedFetchSequence = 0;
 final Map<String, PlanningTask?> _plansRealtimeDuringFullFetch = {};
+// Local confirmed creates must survive a REST list started before their POST.
+final Map<String, PlanningTask> _plansLocalCommitsDuringFullFetch = {};
+
+/// A full-list response that started before a POST cannot erase the POST.
+/// Prefer the server row when already present, and retain only missing local
+/// confirmed business IDs until the next authoritative fetch includes them.
+List<PlanningTask> preserveLocalConfirmedPlansInSnapshot(
+  List<PlanningTask> fetched,
+  Iterable<PlanningTask> committed,
+) {
+  final merged = List<PlanningTask>.from(fetched);
+  final ids = <String>{
+    for (final t in fetched)
+      if ((t.planRowId ?? '').trim().isNotEmpty) t.planRowId!.trim(),
+  };
+  for (final t in committed) {
+    final id = (t.planRowId ?? '').trim();
+    if (id.isNotEmpty && ids.add(id)) merged.add(t);
+  }
+  return merged;
+}
 
 double titleSimilarityForPlanLink(String a, String b) {
     final na = a.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
@@ -90,7 +111,10 @@ extension PlanCacheProjectionExtension on DatabaseService {
         return _allPlansUserCache;
       }
       _plansLastAppliedFetchSequence = requestSequence;
-      _allPlansUserCache = scrubPlanningTasksForLocalCache(out);
+      _allPlansUserCache = preserveLocalConfirmedPlansInSnapshot(
+        scrubPlanningTasksForLocalCache(out),
+        _plansLocalCommitsDuringFullFetch.values.toList(),
+      );
       _scrubJitVirtualRowsFromUserCache();
       // A late REST response must never undo an SSE create/update/delete
       // that was already applied while this request was in flight.
@@ -109,6 +133,7 @@ extension PlanCacheProjectionExtension on DatabaseService {
       _plansFullFetchesInFlight--;
       if (_plansFullFetchesInFlight == 0) {
         _plansRealtimeDuringFullFetch.clear();
+        _plansLocalCommitsDuringFullFetch.clear();
       }
     }
   }
@@ -182,6 +207,9 @@ extension PlanCacheProjectionExtension on DatabaseService {
       _allPlansUserCache.add(task);
     }
     if (bizId != null && bizId.isNotEmpty && !_isOptimisticPlanningTask(task)) {
+      if (_plansFullFetchesInFlight > 0) {
+        _plansLocalCommitsDuringFullFetch[bizId] = task;
+      }
       _purgeOptimisticPlanRowsFromUserCache(bizId);
     }
   }

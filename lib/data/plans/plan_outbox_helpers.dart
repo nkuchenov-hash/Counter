@@ -910,11 +910,57 @@ extension PlanOutboxSyncExtension on DatabaseService {
     final accepted = await this.addPlanningTask(
       task, clientPlanId: clientPlanId,
       allowDeferredCategoryRelation: true);
+    final queued = _hasPendingPlanMutationForBusinessId(clientPlanId);
+    // A POST/ACK alone is not proof that the intended day is visible.
+    // Read back the owned server row, repair a missing wall-day anchor and
+    // reconcile the cache BEFORE telling Viktor the plan was added.
+    final confirmed = accepted && !queued
+        ? await _confirmAgentPlanOnRequestedDay(task, clientPlanId)
+        : false;
     return (
       accepted: accepted,
-      pendingSync: _hasPendingPlanMutationForBusinessId(clientPlanId),
+      pendingSync: queued || (accepted && !confirmed),
       clientPlanId: clientPlanId,
     );
+  }
+
+  Future<bool> _confirmAgentPlanOnRequestedDay(
+      PlanningTask requested, String clientPlanId) async {
+    final key = requested.dateKey.trim();
+    if (key.length < 10) return false;
+    final targetDay = key.substring(0, 10);
+    try {
+      final id = _escapeForPbFilter(clientPlanId);
+      final uid = _escapeForPbFilter(_pidForPbFilter);
+      var row = await _pb.collection(PbCollections.plans)
+          .getFirstListItem('plan_id = "$id" && user_id = "$uid"');
+      // An untimed creation must retain a real day, not land in Lists.
+      final rawStart = (row.data['start_time'] ?? '').toString().trim();
+      final rawEnd = (row.data['end_time'] ?? '').toString().trim();
+      final anchor = (row.data['initial_date_key'] ?? '').toString().trim();
+      if (requested.startTime == null && rawStart.isEmpty &&
+          rawEnd.isEmpty && anchor != targetDay) {
+        row = await _pb.collection(PbCollections.plans).update(
+          row.id, body: {'initial_date_key': targetDay, 'is_postponed': false});
+      }
+      final confirmed = _planningTaskFromPocketRecord(
+        row, pocketTagCatalog: const <Tag>[]);
+      if (confirmed.dateKey != targetDay ||
+          (confirmed.planRowId ?? '').trim() != clientPlanId) {
+        offlineSync.setLastError('План сохранён, но дата в Планировщике не подтверждена.');
+        return false;
+      }
+      _upsertPlanInUserCache(confirmed);
+      notifyPlanningRefresh(
+        scheduleNetworkRefresh: false, immediateLocal: true);
+      final day = DateTime.parse(targetDay);
+      return planningDayTasksSnapshot(day)
+          .any((p) => (p.planRowId ?? '').trim() == clientPlanId);
+    } catch (e) {
+      DatabaseService._log('VIKTOR_PLAN_READBACK: $e');
+      offlineSync.setLastError('План отправлен, но отображение пока не подтверждено.');
+      return false;
+    }
   }
 
 
