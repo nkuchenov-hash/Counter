@@ -4,6 +4,8 @@ import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/shared/diagnostics/performance/shell_flags.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/data/sharing/sharing_flags.dart';
+import 'package:counter/features/sharing/shared_time_view_lane.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -198,7 +200,8 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                       height: canvasHeight,
                       child: LayoutBuilder(
                         builder: (context, constraints) {
-                          return Stack(
+                          Widget buildPrivateCanvas(double canvasWidth) {
+                            return Stack(
                             clipBehavior: Clip.none,
                             children: [
                               for (var i = 0; i < visibleHours.length; i++)
@@ -334,7 +337,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                                       (layout) => buildTimelinePlanStackLayer(
                                         layout: layout,
                                         canvasHeight: canvasHeight,
-                                        canvasWidth: constraints.maxWidth,
+                                        canvasWidth: canvasWidth,
                                         scheme: scheme,
                                         planWallDay: planWallDay,
                                         rangeStart: rangeStart,
@@ -354,7 +357,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                                       (layout) => buildTimelinePlanStackLayer(
                                         layout: layout,
                                         canvasHeight: canvasHeight,
-                                        canvasWidth: constraints.maxWidth,
+                                        canvasWidth: canvasWidth,
                                         scheme: scheme,
                                         planWallDay: planWallDay,
                                         rangeStart: rangeStart,
@@ -379,6 +382,19 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                                   ),
                                 ),
                             ],
+                          );
+                          }
+
+                          if (!kSharedPlansEnabled) {
+                            return buildPrivateCanvas(constraints.maxWidth);
+                          }
+                          return SharedTimeViewLane(
+                            wallDay: selectedDayKey,
+                            grid: grid,
+                            rangeStart: rangeStart,
+                            rangeEnd: rangeEnd,
+                            canvasHeight: canvasHeight,
+                            personalCanvasBuilder: buildPrivateCanvas,
                           );
                         },
                       ),
