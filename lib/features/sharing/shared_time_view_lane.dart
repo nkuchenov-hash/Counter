@@ -39,6 +39,8 @@ class SharedTimeViewLane extends StatefulWidget {
 }
 
 class _SharedTimeViewLaneState extends State<SharedTimeViewLane> {
+  final Map<String, bool> _completionOverride = <String, bool>{};
+  final Set<String> _pendingCompletion = <String>{};
   List<SharedObject> _shares = const <SharedObject>[];
   Timer? _timer;
   int _generation = 0;
@@ -64,6 +66,8 @@ class _SharedTimeViewLaneState extends State<SharedTimeViewLane> {
     if (oldWidget.wallDay != widget.wallDay) {
       ++_generation;
       _shares = const <SharedObject>[];
+      _completionOverride.clear();
+      _pendingCompletion.clear();
       _mobileShowShared = false;
       _error = null;
       _inFlight = false;
@@ -118,12 +122,26 @@ class _SharedTimeViewLaneState extends State<SharedTimeViewLane> {
       if (!mounted || generation != _generation || day != widget.wallDay) {
         return;
       }
+      final confirmed = <String>[];
+      for (final share in fresh) {
+        for (final item in share.items) {
+          final key = '${share.id}/${item.planId}';
+          if (!_pendingCompletion.contains(key) &&
+              _completionOverride.containsKey(key) &&
+              _completionOverride[key] == share.myCompleted[item.planId]) {
+            confirmed.add(key);
+          }
+        }
+      }
       // Polling must not rebuild all the native cards or reset active
       // private card gestures when the shared projection is unchanged.
-      if (_sameShares(fresh) && _error == null) return;
+      if (_sameShares(fresh) && _error == null && confirmed.isEmpty) return;
       setState(() {
         _shares = fresh;
         _error = null;
+        for (final key in confirmed) {
+          _completionOverride.remove(key);
+        }
         if (fresh.every((share) => share.items.isEmpty)) {
           _mobileShowShared = false;
         }
@@ -137,12 +155,49 @@ class _SharedTimeViewLaneState extends State<SharedTimeViewLane> {
       setState(() {
         if (revoked) {
           _shares = const <SharedObject>[];
+          _completionOverride.clear();
+          _pendingCompletion.clear();
           _mobileShowShared = false;
         }
         _error = error.toString();
       });
     } finally {
       if (generation == _generation) _inFlight = false;
+    }
+  }
+
+  bool _completed(_SharedTimeSlot slot) =>
+      _completionOverride['${slot.share.id}/${slot.item.planId}'] ??
+      (slot.share.myCompleted[slot.item.planId] == true);
+
+  Future<void> _toggleCompleted(_SharedTimeSlot slot) async {
+    final key = '${slot.share.id}/${slot.item.planId}';
+    if (_pendingCompletion.contains(key)) return;
+    final next = !_completed(slot);
+    final generation = _generation;
+    setState(() {
+      _completionOverride[key] = next;
+      _pendingCompletion.add(key);
+    });
+    try {
+      await ShareService.instance.setMyCompletion(
+        shareId: slot.share.id,
+        planId: slot.item.planId,
+        completed: next,
+      );
+      if (!mounted || generation != _generation) return;
+      setState(() => _pendingCompletion.remove(key));
+      unawaited(_refresh());
+    } catch (_) {
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _completionOverride.remove(key);
+        _pendingCompletion.remove(key);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(_l('Не удалось сохранить личный статус.',
+            'Could not save your personal status.')),
+      ));
     }
   }
 
@@ -251,6 +306,29 @@ class _SharedTimeViewLaneState extends State<SharedTimeViewLane> {
                   child: Row(
                     children: [
                       Container(width: 4, color: scheme.primary),
+                      SizedBox(
+                        width: 40,
+                        child: IconButton(
+                          constraints: const BoxConstraints(
+                            minWidth: 40, minHeight: 38,
+                          ),
+                          padding: EdgeInsets.zero,
+                          tooltip: _completed(slot)
+                              ? _l('Отметить невыполненной', 'Mark incomplete')
+                              : _l('Отметить выполненной', 'Mark complete'),
+                          onPressed: _pendingCompletion.contains(
+                            '${slot.share.id}/${slot.item.planId}')
+                              ? null : () => unawaited(_toggleCompleted(slot)),
+                          icon: Icon(
+                            _completed(slot)
+                                ? Icons.check_circle_rounded
+                                : Icons.radio_button_unchecked_rounded,
+                            size: 21,
+                            color: _completed(slot)
+                                ? scheme.primary : scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -274,7 +352,7 @@ class _SharedTimeViewLaneState extends State<SharedTimeViewLane> {
                                 style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(
                                       decoration:
-                                          slot.share.myCompleted[slot.item.planId] == true
+                                          _completed(slot)
                                           ? TextDecoration.lineThrough : null,
                                     ),
                               ),
@@ -282,8 +360,7 @@ class _SharedTimeViewLaneState extends State<SharedTimeViewLane> {
                           ),
                         ),
                       ),
-                      const Icon(Icons.group_outlined, size: 16),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 4),
                     ],
                   ),
                 ),
