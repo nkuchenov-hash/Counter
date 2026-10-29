@@ -244,10 +244,17 @@ extension PlanServiceExtension on DatabaseService {
               '${selectedDate.year}-${_two(selectedDate.month)}-${_two(selectedDate.day)}';
           try {
             await _ensureAllPlansUserCacheFresh();
-            final plans = _filterPlansForWallDay(
+            var plans = _filterPlansForWallDay(
               _allPlansUserCache,
               selectedDate,
             );
+            if (plans.isEmpty) {
+              // Independent day query protects against failed/stale all-plan
+              // list requests and also makes Viktor duplicate checks accurate.
+              await _fetchOwnedUntimedPlansForDay(targetDayStr);
+              plans = _filterPlansForWallDay(
+                _allPlansUserCache, selectedDate);
+            }
             final merged = _mergePlanningOptimistic(targetDayStr, plans);
             await _persistPlanningTasksDayCache(targetDayStr, merged);
             return merged;
@@ -792,6 +799,7 @@ extension PlanServiceExtension on DatabaseService {
         pocketTagCatalog: tagCatalog,
       );
       _upsertPlanInUserCache(fromServer);
+      _rememberVerifiedPlanUntilListed(fromServer);
       _allPlansUserCacheFetchedAt = DateTime.now();
       await _acknowledgePlanMutation(writeAheadReceipt);
       if (!_hasPendingPlanMutationForBusinessId(clientPlanId)) {
