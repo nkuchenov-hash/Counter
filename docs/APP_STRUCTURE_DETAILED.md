@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `380a76a9` on 2026-10-28.**
+**Generated from input HEAD `5a6f6939` on 2026-10-29.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -20029,8 +20029,8 @@ EN:
 - **Human purpose:** `notes_library_production_shell.dart` on notes area — Production Notes shell, physical slanted overlapping folder-edge tabs with fixed All/+ and scrollable category middle on mobile/desktop. Users see `notes_library_production_shell.dart` when using notes area.
 - **What this is:** `notes_library_production_shell.dart` on notes area — Production Notes shell, physical slanted overlapping folder-edge tabs with fixed All/+ and scrollable category middle on mobile/desktop.
 - **Why needed:** Users see `notes_library_production_shell.dart` when using notes area.
-- **Contents:** Primary symbols: `NotesLibraryProductionShell`, `_MobileNotesLibrary`, `_MobileNotesModePill`, `_MobileRoundAction`.
-- **Key code names:** `NotesLibraryProductionShell`, `_MobileNotesLibrary`, `_MobileNotesModePill`, `_MobileRoundAction`
+- **Contents:** Primary symbols: `NotesLibraryProductionShell`, `_MobileNotesLibrary`, `_MobileNotesModePill`.
+- **Key code names:** `NotesLibraryProductionShell`, `_MobileNotesLibrary`, `_MobileNotesModePill`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED

@@ -506,6 +506,34 @@ void main() {
         'if (!created.accepted && !created.pendingSync)'));
   });
 
+  test('Viktor direct POST and queued replay never race for a new plan', () {
+    final plan = File('lib/data/plan_service.dart').readAsStringSync();
+    final replay = File('lib/data/plans/plan_outbox_helpers.dart')
+        .readAsStringSync();
+    final direct = plan.substring(
+      plan.indexOf('Future<bool> _addPlanningTaskPocket('),
+      plan.indexOf('Future<bool> addPlanningTask('),
+    );
+    final lock = direct.indexOf('_directPlanCreatesInFlight.add(clientPlanId)');
+    final enqueue = direct.indexOf('final writeAheadReceipt =');
+    final release = direct.indexOf('_directPlanCreatesInFlight.remove(clientPlanId)');
+    expect(lock, greaterThanOrEqualTo(0));
+    expect(enqueue, greaterThan(lock));
+    expect(release, greaterThan(enqueue));
+    expect(replay, contains('_directPlanCreatesInFlight.contains(receipt.businessId)'));
+    expect(replay, contains('break; // normal in-flight work'));
+    final chat = File('lib/features/viktor/viktor_chat_page.dart')
+        .readAsStringSync();
+    final send = chat.substring(chat.indexOf('Future<void> _send() async {'));
+    expect(send.indexOf('independentPlan == null && !_settingsReady'),
+        greaterThan(send.indexOf('independentDateOnlyPlan(input, profileToday)')));
+    final composer = File('lib/features/viktor/viktor_composer.dart')
+        .readAsStringSync();
+    expect(composer, contains('bool _canSubmitWithoutAiSettings('));
+    expect(composer, contains('!_canSubmitWithoutAiSettings(_controller.text)'));
+    expect(composer, contains('_canSubmitWithoutAiSettings(value.text)'));
+  });
+
   test('Viktor one-date plan does not double preview or reload the day', () {
     final ui = File('lib/features/viktor/viktor_dialogue_ui_state.dart')
         .readAsStringSync();

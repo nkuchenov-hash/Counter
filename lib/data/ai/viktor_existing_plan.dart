@@ -40,7 +40,8 @@ class ViktorExistingPlan {
     final target = normalize(title);
     if (target.isEmpty) return null;
     for (final plan in plans) {
-      if (plan.dateKey != wallDay || plan.endDateTime != null) continue;
+      if (plan.dateKey != wallDay ||
+          plan.startTime != null || plan.endDateTime != null) continue;
       if (normalize(plan.title) == target) return plan;
     }
     return null;
