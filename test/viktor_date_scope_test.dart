@@ -1,4 +1,6 @@
 import 'package:counter/data/ai/viktor_date_scope.dart';
+import 'package:counter/data/ai/viktor_existing_plan.dart';
+import 'package:counter/data/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 
@@ -181,6 +183,22 @@ void main() {
     final january = ViktorDateScope.independentDateOnlyPlan(
       'January 5 - new plan Review contract', DateTime(2026, 12, 30));
     expect(ViktorDateScope.key(january!.day), '2027-01-05');
+  });
+
+  test('Date-only idempotency does not swallow a timed plan without an end', () {
+    const title = 'LS Screening remind John to sign the Cover Letter';
+    const day = '2026-11-02';
+    final timed = PlanningTask(
+      id: 1, categoryId: 2, title: title, dateKey: day,
+      startTime: DateTime(2026, 11, 2, 9),
+    );
+    final untimed = PlanningTask(
+      id: 2, categoryId: 2, title: title, dateKey: day,
+    );
+    expect(ViktorExistingPlan.findDateOnly(
+      title: title, wallDay: day, plans: [timed]), isNull);
+    expect(ViktorExistingPlan.findDateOnly(
+      title: title, wallDay: day, plans: [untimed]), same(untimed));
   });
 
   test('Single-plan parser does not invent a clock or erase other intents', () {
