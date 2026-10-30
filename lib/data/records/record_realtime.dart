@@ -2,6 +2,7 @@ part of '../database_service.dart';
 
 Future<void> Function()? _realtimeRecoveryConnectUnsubscribe;
 Future<void>? _realtimeRecoveryConnectSubscribeFuture;
+Timer? _realtimeRecoverySubscribeRetryTimer;
 bool _realtimeTransportGapDetected = false;
 Timer? _realtimeGapCatchUpTimer;
 Future<void>? _realtimeGapCatchUpInFlight;
@@ -219,12 +220,28 @@ extension RecordRealtimeExtension on DatabaseService {
           _onPocketBaseRealtimeConnect,
         );
         _realtimeRecoveryConnectUnsubscribe = unsubscribe;
+        _realtimeRecoverySubscribeRetryTimer?.cancel();
+        _realtimeRecoverySubscribeRetryTimer = null;
         if (_realtimeTransportGapDetected) {
           _scheduleRealtimeGapCatchUp();
         }
       } catch (error) {
         _realtimeTransportGapDetected = true;
         _logRecordsRealtimeSubscribeQuiet(error);
+        // PB_CONNECT is the recovery trigger after an SSE transport gap.
+        // If registering it fails, retry independently of normal collection
+        // topics; otherwise a quiet connection could remain stale forever.
+        _realtimeRecoverySubscribeRetryTimer?.cancel();
+        _realtimeRecoverySubscribeRetryTimer = Timer(
+          const Duration(seconds: 10),
+          () {
+            _realtimeRecoverySubscribeRetryTimer = null;
+            if (_isInitialized && _hasAuthenticatedUserId &&
+                !isPbRealtimeUnavailable) {
+              unawaited(_ensureRealtimeRecoverySubscription());
+            }
+          },
+        );
       }
     }();
     _realtimeRecoveryConnectSubscribeFuture = run;
@@ -238,6 +255,8 @@ extension RecordRealtimeExtension on DatabaseService {
   }
 
   Future<void> _cancelRealtimeRecoverySubscription() async {
+    _realtimeRecoverySubscribeRetryTimer?.cancel();
+    _realtimeRecoverySubscribeRetryTimer = null;
     _realtimeGapCatchUpTimer?.cancel();
     _realtimeGapCatchUpTimer = null;
     _realtimeTransportGapDetected = false;
