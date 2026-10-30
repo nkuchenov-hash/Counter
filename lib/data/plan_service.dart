@@ -1603,6 +1603,7 @@ extension PlanServiceExtension on DatabaseService {
       final action = e.action.toLowerCase().trim();
       if (action == 'delete') {
         final id = e.record?.id.trim() ?? '';
+        if (id.isEmpty) _reconcileUnappliedRealtimeEvent();
         if (id.isNotEmpty) {
           if (_plansFullFetchesInFlight > 0) {
             _plansRealtimeDuringFullFetch[id] = null;
@@ -1610,18 +1611,12 @@ extension PlanServiceExtension on DatabaseService {
           _removePlanFromUserCache(id);
           clearOptimisticPlanningForPlanRow(id);
           notifyPlanningRefresh(scheduleNetworkRefresh: false);
-        } else {
-          _reconcileUnappliedRealtimeEvent();
         }
         return;
       }
       final rec = e.record;
-      if (rec == null) {
-        _reconcileUnappliedRealtimeEvent();
-        return;
-      }
-      // Realtime delivery must never wait for another HTTP request. The event
-      // is merged immediately using the current tag catalog/expand payload.
+      if (rec == null) { _reconcileUnappliedRealtimeEvent(); return; }
+      // Merge SSE immediately with the cached tag catalog, without HTTP.
       try {
         final task = _planningTaskFromPocketRecord(
           rec,
@@ -1646,10 +1641,7 @@ extension PlanServiceExtension on DatabaseService {
         }
         _reconcileUnappliedRealtimeEvent();
       }
-    } catch (error) {
-      if (kDebugMode) debugPrint('plans realtime event failed: $error');
-      _reconcileUnappliedRealtimeEvent();
-    }
+    } catch (_) { _reconcileUnappliedRealtimeEvent(); }
   }
 
   Future<void> _cancelPlansRealtimeSubscription() async {
