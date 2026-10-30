@@ -112,6 +112,8 @@ mixin ShellDashboardBase on State<LifeOSDashboard> {
 
   final titleController = TextEditingController();
   final titleFocus = FocusNode();
+  /// Submission state is local UI only; the Brain owns the durable outbox.
+  final ValueNotifier<bool> quickEntryStartPending = ValueNotifier(false);
   Timer? quickEntryDraftWriteTimer;
   Future<void> quickEntryDraftWriteBarrier = Future<void>.value();
 
