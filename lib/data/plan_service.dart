@@ -1610,11 +1610,16 @@ extension PlanServiceExtension on DatabaseService {
           _removePlanFromUserCache(id);
           clearOptimisticPlanningForPlanRow(id);
           notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        } else {
+          _reconcileUnappliedRealtimeEvent();
         }
         return;
       }
       final rec = e.record;
-      if (rec == null) return;
+      if (rec == null) {
+        _reconcileUnappliedRealtimeEvent();
+        return;
+      }
       // Realtime delivery must never wait for another HTTP request. The event
       // is merged immediately using the current tag catalog/expand payload.
       try {
@@ -1639,8 +1644,12 @@ extension PlanServiceExtension on DatabaseService {
         if (kDebugMode) {
           debugPrint('plans realtime merge failed: $error\n$stackTrace');
         }
+        _reconcileUnappliedRealtimeEvent();
       }
-    } catch (_) {}
+    } catch (error) {
+      if (kDebugMode) debugPrint('plans realtime event failed: $error');
+      _reconcileUnappliedRealtimeEvent();
+    }
   }
 
   Future<void> _cancelPlansRealtimeSubscription() async {
