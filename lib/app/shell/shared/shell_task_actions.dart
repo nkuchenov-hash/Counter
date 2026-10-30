@@ -149,16 +149,20 @@ mixin ShellTaskActions on ShellCoreLogic {
     final title = titleController.text.trim();
     if (title.isEmpty || quickEntryStartPending.value) return;
 
-    // Do not silently discard a click during a previous draft write or while
-    // PocketBase is slow. Disable duplicate submissions immediately.
-    quickEntryStartPending.value = true;
     final now = DatabaseService.getPlanetaryNow();
     final attemptId = const Uuid().v4();
     final cid = effectiveCategoryId;
-    final pathTag = cid != null
-        ? DatabaseService.instance.getCategoryPath(cid)
-        : 'Life';
+    // A temporarily unhydrated category catalog must never disable Start.
+    var pathTag = 'Life';
+    if (cid != null) {
+      try {
+        pathTag = DatabaseService.instance.getCategoryPath(cid);
+      } catch (_) {}
+    }
 
+    // Guard only once all synchronous setup has completed. The finally block
+    // always restores the Start button after the durability attempt.
+    quickEntryStartPending.value = true;
     try {
       // Draft persistence is a backup, not a prerequisite to writing a
       // record. The Brain first applies the local shadow and then durably
