@@ -164,3 +164,36 @@ jobs:
             git fetch --no-tags --prune origin main
             git diff --check "origin/main...HEAD"
           fi
+
+  quick-entry-flutter-regression:
+    name: quick-entry-flutter-regression
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Provide ignored environment file
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze Flutter code
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Verify quick-entry and realtime recovery contracts
+        run: flutter test test/p0_quick_entry_and_realtime_recovery_test.dart
+
+      - name: Compile Flutter web for release
+        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none --no-web-resources-cdn
