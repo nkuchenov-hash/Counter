@@ -15,6 +15,7 @@ mixin ShellTabHost on ShellTaskActions, ShellEditHosts {
       tasksLoading: tasksLoading,
       titleController: titleController,
       titleFocus: titleFocus,
+      quickEntryStartPending: quickEntryStartPending,
       selectedCategoryId: selectedCategoryId,
       onCategoryChanged: (id) => setState(() => selectedCategoryId = id),
       onStart: startTaskFromInput,
