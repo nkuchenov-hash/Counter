@@ -1616,7 +1616,6 @@ extension PlanServiceExtension on DatabaseService {
       }
       final rec = e.record;
       if (rec == null) { _reconcileUnappliedRealtimeEvent(); return; }
-      // Merge SSE immediately with the cached tag catalog, without HTTP.
       try {
         final task = _planningTaskFromPocketRecord(
           rec,
