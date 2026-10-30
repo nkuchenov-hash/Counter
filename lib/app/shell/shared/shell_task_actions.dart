@@ -15,7 +15,7 @@ mixin ShellTaskActions on ShellCoreLogic {
     final startTime = capturedStartTime ?? DatabaseService.getPlanetaryNow();
     final attemptId = createBusinessId ?? const Uuid().v4();
     try {
-      if (!await persistQuickEntryDraft(title)) return;
+      unawaited(persistQuickEntryDraft(title));
       final serverId = await DatabaseService.instance.writeRecord(
         selectedDateString,
         title,
@@ -42,8 +42,8 @@ mixin ShellTaskActions on ShellCoreLogic {
         return;
       }
       if (titleController.text.trim() == title) {
-        await persistQuickEntryDraft('');
         titleController.clear();
+        unawaited(persistQuickEntryDraft(''));
       }
       setState(() {
         for (final old in tasks.where((t) => t.isRunning)) {
@@ -147,19 +147,11 @@ mixin ShellTaskActions on ShellCoreLogic {
 
   Future<void> startTaskFromInput() async {
     final title = titleController.text.trim();
-    if (title.isEmpty) return;
+    if (title.isEmpty || quickEntryStartPending.value) return;
 
-    final tick = DateTime.now();
-    if (lastPlayOrStartAction != null &&
-        tick.difference(lastPlayOrStartAction!) <
-            ShellDashboardBase.playStartDebounce) {
-      return;
-    }
-    lastPlayOrStartAction = tick;
-
-    // The Brain performs an atomic start handoff only after a durable create.
-    // Do not stop the old recording before the new one is accepted.
-
+    // Do not silently discard a click during a previous draft write or while
+    // PocketBase is slow. Disable duplicate submissions immediately.
+    quickEntryStartPending.value = true;
     final now = DatabaseService.getPlanetaryNow();
     final attemptId = const Uuid().v4();
     final cid = effectiveCategoryId;
@@ -167,18 +159,12 @@ mixin ShellTaskActions on ShellCoreLogic {
         ? DatabaseService.instance.getCategoryPath(cid)
         : 'Life';
 
-    // Persist the raw text before validation/auth can reject the write.
-    // A page reload must never erase a failed submission.
-    if (!await persistQuickEntryDraft(title)) {
-      // Storage is unavailable: keep editable input, never claim acceptance.
-      return;
-    }
-
-    // Keep the editable draft until the Brain confirms durable local staging.
-    // Slow network activity must never clear input before it is accepted.
-    titleFocus.requestFocus();
-
     try {
+      // Draft persistence is a backup, not a prerequisite to writing a
+      // record. The Brain first applies the local shadow and then durably
+      // stages the outbox. A delayed browser draft transaction must never
+      // prevent Start from reaching that path.
+      unawaited(persistQuickEntryDraft(title));
       final serverId = await DatabaseService.instance.writeRecord(
         selectedDateString,
         title,
@@ -204,13 +190,12 @@ mixin ShellTaskActions on ShellCoreLogic {
         );
         return;
       }
-      // Do not erase new text entered while this save was in progress.
+      // Once the outbox has accepted this record, clear the input without
+      // awaiting a second IndexedDB draft write. Never erase newer typing.
       if (titleController.text.trim() == title) {
-        await persistQuickEntryDraft('');
         titleController.clear();
-      } else {
-        await persistQuickEntryDraft(titleController.text);
       }
+      unawaited(persistQuickEntryDraft(titleController.text));
       setState(() {
         for (final old in tasks.where((t) => t.isRunning)) {
           old.isActive = false;
@@ -221,8 +206,8 @@ mixin ShellTaskActions on ShellCoreLogic {
             Task(
               title: title,
               startTime: now,
-            endTime: null,
-            tags: [pathTag],
+              endTime: null,
+              tags: [pathTag],
               isActive: true,
             ),
           );
@@ -230,17 +215,15 @@ mixin ShellTaskActions on ShellCoreLogic {
         tasks.sort((a, b) => a.startTime.compareTo(b.startTime));
       });
       unawaited(saveTasks());
-      if (mounted) {
-        unawaited(
-          deferSourcePlanLinkAfterFreeStart(
-            title: title,
-            dateKey: selectedDateString,
-            recordBusinessId: serverId,
-          ),
-        );
-      }
+      unawaited(
+        deferSourcePlanLinkAfterFreeStart(
+          title: title,
+          dateKey: selectedDateString,
+          recordBusinessId: serverId,
+        ),
+      );
     } catch (e) {
-      debugPrint('UI ERROR: $e');
+      if (kDebugMode) debugPrint('Quick entry start failed: $e');
       if (mounted) {
         showSyncFailedSnackBar(
           message: t(currentLocale.value, 'record_create_not_saved'),
@@ -256,6 +239,8 @@ mixin ShellTaskActions on ShellCoreLogic {
           ),
         );
       }
+    } finally {
+      if (mounted) quickEntryStartPending.value = false;
     }
   }
 
