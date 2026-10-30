@@ -105,6 +105,7 @@ mixin ShellLifecycle
     titleController.removeListener(scheduleQuickEntryDraftWrite);
     titleController.dispose();
     titleFocus.dispose();
+    quickEntryStartPending.dispose();
     shellLayout.dispose();
     selectedDateListenable.dispose();
     timelineTasksRevision.dispose();

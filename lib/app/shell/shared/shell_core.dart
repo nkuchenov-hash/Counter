@@ -13,11 +13,13 @@ mixin ShellCoreLogic on ShellDashboardBase {
     quickEntryDraftWriteTimer?.cancel();
     final write = quickEntryDraftWriteBarrier.then((_) async {
       try {
-        final prefs = await SharedPreferences.getInstance();
         final key = quickEntryDraftStorageKey;
+        // Web drafts use IndexedDB. Do not make every keystroke wait for
+        // SharedPreferences/localStorage, which can be blocked or full.
         if (kIsWeb) {
           return WebRecordJournal.writeDraft(key, text);
         }
+        final prefs = await SharedPreferences.getInstance();
         return text.isEmpty
             ? await prefs.remove(key)
             : await prefs.setString(key, text);

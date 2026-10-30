@@ -13,6 +13,9 @@ class TimelineHeaderControls extends StatelessWidget {
     required this.visibleIsFuture,
     required this.titleController,
     required this.titleFocus,
+    required this.isActivePage,
+    required this.shellTabActive,
+    required this.quickEntryStartPending,
     required this.onShowStatsViewChanged,
     required this.onStart,
     required this.onPlan,
@@ -24,6 +27,9 @@ class TimelineHeaderControls extends StatelessWidget {
   final bool visibleIsFuture;
   final TextEditingController titleController;
   final FocusNode titleFocus;
+  final bool isActivePage;
+  final bool shellTabActive;
+  final ValueListenable<bool> quickEntryStartPending;
   final ValueChanged<bool> onShowStatsViewChanged;
   final VoidCallback onStart;
   final VoidCallback onPlan;
@@ -98,7 +104,9 @@ class TimelineHeaderControls extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: selector,
           ),
-        if (!showStatsView) ...[
+        // One TextField/FocusNode attachment only. PageView may keep adjacent
+        // dates mounted during swipes; duplicate attachments break web focus.
+        if (!showStatsView && isActivePage && shellTabActive) ...[
           Padding(
             padding: EdgeInsets.fromLTRB(
               desktopShell ? kShellDesktopContentHorizontalPadding : 16,
@@ -106,14 +114,20 @@ class TimelineHeaderControls extends StatelessWidget {
               desktopShell ? kShellDesktopContentHorizontalPadding : 16,
               8,
             ),
-            child: AppQuickEntryRow(
-              controller: titleController,
-              focusNode: titleFocus,
-              hintText: t(loc, 'input_placeholder_record'),
-              actionLabel: actionLabel,
-              actionIcon: actionIcon,
-              onAction: submit,
-              onSubmitted: (_) => submit(),
+            child: ValueListenableBuilder<bool>(
+              valueListenable: quickEntryStartPending,
+              builder: (context, starting, _) => AppQuickEntryRow(
+                controller: titleController,
+                focusNode: titleFocus,
+                hintText: t(loc, 'input_placeholder_record'),
+                actionLabel: actionLabel,
+                actionIcon: actionIcon,
+                loading: starting,
+                onAction: starting ? null : submit,
+                onSubmitted: (_) {
+                  if (!starting) submit();
+                },
+              ),
             ),
           ),
           const SizedBox(height: 8),

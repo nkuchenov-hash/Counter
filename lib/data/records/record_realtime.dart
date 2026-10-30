@@ -2,6 +2,7 @@ part of '../database_service.dart';
 
 Future<void> Function()? _realtimeRecoveryConnectUnsubscribe;
 Future<void>? _realtimeRecoveryConnectSubscribeFuture;
+Timer? _realtimeRecoverySubscribeRetryTimer;
 bool _realtimeTransportGapDetected = false;
 Timer? _realtimeGapCatchUpTimer;
 Future<void>? _realtimeGapCatchUpInFlight;
@@ -15,6 +16,15 @@ final Map<String, RecordModel?> _recordsRealtimeDuringFullFetch = {};
 
 
 extension RecordRealtimeExtension on DatabaseService {
+  /// A malformed or incomplete SSE event is a missed update, never a silent
+  /// success. Recover the authoritative snapshot without polling or blocking
+  /// the active screen; the existing gap recovery coalesces multiple events.
+  void _reconcileUnappliedRealtimeEvent() {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
+    _realtimeTransportGapDetected = true;
+    _scheduleRealtimeGapCatchUp();
+  }
+
   void _onPbRecordsSubscriptionEvent(RecordSubscriptionEvent e) {
     if (!_isInitialized || !_hasAuthenticatedUserId) return;
     final action = e.action.toLowerCase().trim();
@@ -25,11 +35,16 @@ extension RecordRealtimeExtension on DatabaseService {
           _recordsRealtimeDuringFullFetch[id] = null;
         }
         _removeCachedFlatRecordByPk(id);
+      } else {
+        _reconcileUnappliedRealtimeEvent();
       }
       return;
     }
     final rec = e.record;
-    if (rec == null) return;
+    if (rec == null) {
+      _reconcileUnappliedRealtimeEvent();
+      return;
+    }
     try {
       if (_recordsFullFetchesInFlight > 0) {
         _recordsRealtimeDuringFullFetch[rec.id] = rec;
@@ -40,7 +55,10 @@ extension RecordRealtimeExtension on DatabaseService {
         suppressTimelineNotify: false,
         logSuccessLine: false,
       );
-    } catch (_) {}
+    } catch (error) {
+      if (kDebugMode) debugPrint('records realtime merge failed: $error');
+      _reconcileUnappliedRealtimeEvent();
+    }
   }
 
   // Replay newest pushes on top of a potentially stale full-list snapshot.
@@ -202,12 +220,28 @@ extension RecordRealtimeExtension on DatabaseService {
           _onPocketBaseRealtimeConnect,
         );
         _realtimeRecoveryConnectUnsubscribe = unsubscribe;
+        _realtimeRecoverySubscribeRetryTimer?.cancel();
+        _realtimeRecoverySubscribeRetryTimer = null;
         if (_realtimeTransportGapDetected) {
           _scheduleRealtimeGapCatchUp();
         }
       } catch (error) {
         _realtimeTransportGapDetected = true;
         _logRecordsRealtimeSubscribeQuiet(error);
+        // PB_CONNECT is the recovery trigger after an SSE transport gap.
+        // If registering it fails, retry independently of normal collection
+        // topics; otherwise a quiet connection could remain stale forever.
+        _realtimeRecoverySubscribeRetryTimer?.cancel();
+        _realtimeRecoverySubscribeRetryTimer = Timer(
+          const Duration(seconds: 10),
+          () {
+            _realtimeRecoverySubscribeRetryTimer = null;
+            if (_isInitialized && _hasAuthenticatedUserId &&
+                !isPbRealtimeUnavailable) {
+              unawaited(_ensureRealtimeRecoverySubscription());
+            }
+          },
+        );
       }
     }();
     _realtimeRecoveryConnectSubscribeFuture = run;
@@ -221,6 +255,8 @@ extension RecordRealtimeExtension on DatabaseService {
   }
 
   Future<void> _cancelRealtimeRecoverySubscription() async {
+    _realtimeRecoverySubscribeRetryTimer?.cancel();
+    _realtimeRecoverySubscribeRetryTimer = null;
     _realtimeGapCatchUpTimer?.cancel();
     _realtimeGapCatchUpTimer = null;
     _realtimeTransportGapDetected = false;

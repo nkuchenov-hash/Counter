@@ -1603,6 +1603,7 @@ extension PlanServiceExtension on DatabaseService {
       final action = e.action.toLowerCase().trim();
       if (action == 'delete') {
         final id = e.record?.id.trim() ?? '';
+        if (id.isEmpty) _reconcileUnappliedRealtimeEvent();
         if (id.isNotEmpty) {
           if (_plansFullFetchesInFlight > 0) {
             _plansRealtimeDuringFullFetch[id] = null;
@@ -1614,9 +1615,7 @@ extension PlanServiceExtension on DatabaseService {
         return;
       }
       final rec = e.record;
-      if (rec == null) return;
-      // Realtime delivery must never wait for another HTTP request. The event
-      // is merged immediately using the current tag catalog/expand payload.
+      if (rec == null) { _reconcileUnappliedRealtimeEvent(); return; }
       try {
         final task = _planningTaskFromPocketRecord(
           rec,
@@ -1639,8 +1638,9 @@ extension PlanServiceExtension on DatabaseService {
         if (kDebugMode) {
           debugPrint('plans realtime merge failed: $error\n$stackTrace');
         }
+        _reconcileUnappliedRealtimeEvent();
       }
-    } catch (_) {}
+    } catch (_) { _reconcileUnappliedRealtimeEvent(); }
   }
 
   Future<void> _cancelPlansRealtimeSubscription() async {
