@@ -15,6 +15,15 @@ final Map<String, RecordModel?> _recordsRealtimeDuringFullFetch = {};
 
 
 extension RecordRealtimeExtension on DatabaseService {
+  /// A malformed or incomplete SSE event is a missed update, never a silent
+  /// success. Recover the authoritative snapshot without polling or blocking
+  /// the active screen; the existing gap recovery coalesces multiple events.
+  void _reconcileUnappliedRealtimeEvent() {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
+    _realtimeTransportGapDetected = true;
+    _scheduleRealtimeGapCatchUp();
+  }
+
   void _onPbRecordsSubscriptionEvent(RecordSubscriptionEvent e) {
     if (!_isInitialized || !_hasAuthenticatedUserId) return;
     final action = e.action.toLowerCase().trim();
@@ -25,11 +34,16 @@ extension RecordRealtimeExtension on DatabaseService {
           _recordsRealtimeDuringFullFetch[id] = null;
         }
         _removeCachedFlatRecordByPk(id);
+      } else {
+        _reconcileUnappliedRealtimeEvent();
       }
       return;
     }
     final rec = e.record;
-    if (rec == null) return;
+    if (rec == null) {
+      _reconcileUnappliedRealtimeEvent();
+      return;
+    }
     try {
       if (_recordsFullFetchesInFlight > 0) {
         _recordsRealtimeDuringFullFetch[rec.id] = rec;
@@ -40,7 +54,10 @@ extension RecordRealtimeExtension on DatabaseService {
         suppressTimelineNotify: false,
         logSuccessLine: false,
       );
-    } catch (_) {}
+    } catch (error) {
+      if (kDebugMode) debugPrint('records realtime merge failed: $error');
+      _reconcileUnappliedRealtimeEvent();
+    }
   }
 
   // Replay newest pushes on top of a potentially stale full-list snapshot.
