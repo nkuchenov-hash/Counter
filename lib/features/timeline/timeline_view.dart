@@ -60,6 +60,7 @@ class TimelineSwipeWrapper extends StatefulWidget {
     required this.tasksLoading,
     required this.titleController,
     required this.titleFocus,
+    required this.quickEntryStartPending,
     required this.selectedCategoryId,
     required this.onCategoryChanged,
     required this.onStart,
@@ -79,6 +80,7 @@ class TimelineSwipeWrapper extends StatefulWidget {
   final bool tasksLoading;
   final TextEditingController titleController;
   final FocusNode titleFocus;
+  final ValueListenable<bool> quickEntryStartPending;
   final int? selectedCategoryId;
   final void Function(int? categoryId) onCategoryChanged;
   final Future<void> Function() onStart;
@@ -334,6 +336,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
                 shellTabActive: widget.shellTabActive,
                 titleController: widget.titleController,
                 titleFocus: widget.titleFocus,
+                quickEntryStartPending: widget.quickEntryStartPending,
                 selectedCategoryId: widget.selectedCategoryId,
                 onCategoryChanged: widget.onCategoryChanged,
                 onStart: widget.onStart,
@@ -379,6 +382,7 @@ class TimelinePage extends StatefulWidget {
     this.onScrollTick,
     required this.titleController,
     required this.titleFocus,
+    required this.quickEntryStartPending,
     required this.selectedCategoryId,
     required this.onCategoryChanged,
     required this.onStart,
@@ -414,6 +418,7 @@ class TimelinePage extends StatefulWidget {
 
   final TextEditingController titleController;
   final FocusNode titleFocus;
+  final ValueListenable<bool> quickEntryStartPending;
   final int? selectedCategoryId;
   final void Function(int? categoryId) onCategoryChanged;
   final Future<void> Function() onStart;
@@ -507,6 +512,9 @@ class _TimelinePageState extends State<TimelinePage> {
               visibleIsFuture: _visibleIsFuture,
               titleController: widget.titleController,
               titleFocus: widget.titleFocus,
+              isActivePage: widget.isActivePage,
+              shellTabActive: widget.shellTabActive,
+              quickEntryStartPending: widget.quickEntryStartPending,
               onShowStatsViewChanged: widget.onShowStatsViewChanged,
               onStart: widget.onStart,
               onPlan: widget.onPlan,
