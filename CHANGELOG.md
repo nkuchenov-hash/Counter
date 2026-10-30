@@ -1,3 +1,11 @@
+## 2026-10-30 — P0: Timeline input responsiveness and realtime event recovery [awaiting CI]
+
+- Only the active Timeline page mounts the quick-entry TextField; adjacent swipe pages no longer attach the same FocusNode/controller.
+- Record Start immediately enters a visible busy state with duplicate-submit protection. It does not await browser draft backup before calling the Brain's optimistic/durable outbox path; draft clearing does not gate UI.
+- Web draft writes bypass SharedPreferences/localStorage; browser journal remains the draft backup.
+- PocketBase record/plan realtime events that cannot be applied trigger authoritative reconciliation instead of being silently lost; recovery-subscription registration retries if it fails.
+- Added widget and source-contract regressions for Start/Enter, editable busy input, active-page focus ownership, and realtime fallback. Production cross-device verification is still required before claiming full reliability.
+
 ## 2026-10-29 — P0: date-scoped recovery for plans missing from Planner [CI pending]
 
 - Selected-day reads now independently query authenticated PocketBase by `initial_date_key` if the cached all-plan projection is empty. This also protects Viktor from re-creating an existing day-only plan because a global list query failed.
