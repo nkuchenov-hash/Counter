@@ -8,6 +8,8 @@ on:
       - 'scripts/audit/pocketbase_recovery_api_test.py'
       - 'scripts/recovery/backup_stage.sh'
       - 'scripts/recovery/install_stage_backups.sh'
+      - 'scripts/recovery/setup_https_health_only.sh'
+      - 'scripts/recovery/Caddyfile.health-only'
       - '.github/workflows/pocketbase-recovery-test.yml'
   workflow_dispatch:
 permissions:
@@ -56,3 +58,13 @@ jobs:
           sudo tar -xOzf "$FILE" './pb_data/data.db' > "$RUNNER_TEMP/restored-staging.db"
           test "$(sqlite3 "$RUNNER_TEMP/restored-staging.db" 'PRAGMA integrity_check;')" = ok
           echo 'PASS: staged backup can be read back; DB integrity maintained.'
+      - name: Validate HTTPS health-only Caddy configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n scripts/recovery/setup_https_health_only.sh
+          sudo apt-get install -y caddy
+          caddy validate --config scripts/recovery/Caddyfile.health-only --adapter caddyfile
+          grep -Fq 'reverse_proxy 127.0.0.1:8099' scripts/recovery/Caddyfile.health-only
+          grep -Fq 'respond "LIFE OS recovery staging: user data API is not public" 503' scripts/recovery/Caddyfile.health-only
+          echo 'PASS: HTTPS health-only Caddy config validates; other URLs deny requests.'
