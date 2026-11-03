@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # Runs against a disposable SQLite database; never point at production.
-if [ -z "\${GITHUB_WORKSPACE:-}" ]; then
+if [ -z "${GITHUB_WORKSPACE:-}" ]; then
   echo "Only run in an isolated GitHub Actions runner." >&2
   exit 2
 fi
