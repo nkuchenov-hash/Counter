@@ -4,8 +4,15 @@ library;
 import 'package:counter/core/constants.dart';
 import 'package:flutter/foundation.dart';
 
-/// Remote PocketBase (HTTPS). Used for release mobile builds and production web.
-const String kPocketBaseProductionUrl = 'https://217-114-0-201.sslip.io';
+/// Remote PocketBase for release Android and production web.
+///
+/// Override at build time with --dart-define=POCKETBASE_URL=https://api.example.com
+/// only after the replacement backend has passed recovery checks. Leaving this
+/// value unset preserves the existing production endpoint and installed clients.
+const String kPocketBaseProductionUrl = String.fromEnvironment(
+  'POCKETBASE_URL',
+  defaultValue: 'https://217-114-0-201.sslip.io',
+);
 
 String _pocketBaseUrlForWeb() {
   final host = Uri.base.host;
