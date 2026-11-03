@@ -70,6 +70,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Verify production and disaster-recovery endpoint selection
+        shell: bash
+        run: |
+          flutter test test/pocketbase_endpoint_config_test.dart
+          flutter test test/pocketbase_endpoint_config_test.dart --dart-define=POCKETBASE_URL=https://lifeos-recovery.example.org
+
       - name: Analyze runtime app
         run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 
