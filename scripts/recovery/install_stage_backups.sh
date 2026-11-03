@@ -32,6 +32,7 @@ UNIT
 systemctl daemon-reload
 systemctl enable --now lifeos-stage-backup.timer
 systemctl start lifeos-stage-backup.service
-systemctl --no-pager --full status lifeos-stage-backup.service | head -n 14
+systemctl is-active lifeos-stage-backup.timer
+systemctl show -p Result lifeos-stage-backup.service
 systemctl list-timers --all lifeos-stage-backup.timer
 echo 'NOTE: Staging backup is local to this VPS, not an offsite copy.'
