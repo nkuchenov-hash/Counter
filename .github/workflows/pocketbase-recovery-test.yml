@@ -1,0 +1,22 @@
+name: PocketBase Disaster Recovery — Fresh Schema
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'pb_migrations/**'
+      - 'scripts/audit/pocketbase_recovery_check.sh'
+      - '.github/workflows/pocketbase-recovery-test.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fresh-db:
+    name: Fresh PocketBase 0.40.6 + every migration
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SQLite CLI
+        run: sudo apt-get update && sudo apt-get install -y sqlite3 unzip curl
+      - name: Boot and validate isolated PocketBase
+        run: bash scripts/audit/pocketbase_recovery_check.sh
