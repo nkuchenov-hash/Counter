@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `68c2bf89` on 2026-11-03.**
+**Generated from input HEAD `e4c9bc11` on 2026-11-03.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 971 — each appears **exactly once** below.
+**Tracked files:** 973 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -30,7 +30,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `test` | 137 |
 | `Brain/data` | 114 |
 | `platform build` | 83 |
-| `developer tool` | 66 |
+| `developer tool` | 68 |
 | `shared foundation` | 65 |
 | `governing documentation` | 44 |
 | `platform resource` | 44 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 521 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 261 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 263 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 44 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 887 |
-| `MEDIUM` | 84 |
+| `HIGH` | 888 |
+| `MEDIUM` | 85 |
 
 ---
 
@@ -33434,6 +33434,43 @@ RU:
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
 
+### `scripts/recovery/Caddyfile.health-only`
+
+EN:
+
+- **Human purpose:** Developer script `Caddyfile.health-only` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `Caddyfile.health-only` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `Caddyfile.health-only`.
+- **Repository role:** developer tool
+- **Evidence of use:** Documented manual developer/audit script under `scripts/`; run from repo docs or AGENTS.md workflows.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** MEDIUM
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `Caddyfile.health-only` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `caddyfile.health-only` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `caddyfile.health-only` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `caddyfile.health-only`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Ручной dev/audit скрипт в `scripts/`; запускается по инструкции в docs/AGENTS.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `caddyfile.health-only` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
 ### `scripts/recovery/backup_stage.sh`
 
 EN:
@@ -33504,6 +33541,43 @@ RU:
 - **Владелец / слой:** инструменты разработчика
 - **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
 - **Когда открывать:** Owner или CI запускает `install_stage_backups.sh` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/setup_https_health_only.sh`
+
+EN:
+
+- **Human purpose:** Developer script `setup_https_health_only.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `setup_https_health_only.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `setup_https_health_only.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `setup_https_health_only.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `setup_https_health_only.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `setup_https_health_only.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `setup_https_health_only.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `setup_https_health_only.sh` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
