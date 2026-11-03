@@ -28,20 +28,7 @@ install -d -m 0755 /etc/caddy
 if [ -f /etc/caddy/Caddyfile ]; then
   cp -a /etc/caddy/Caddyfile "/etc/caddy/Caddyfile.pre-lifeos-$(date -u +%Y%m%dT%H%M%SZ)"
 fi
-cat >/etc/caddy/Caddyfile <<'CADDY'
-137-22-146-109.sslip.io {
-    @health {
-        method GET
-        path /api/health
-    }
-    handle @health {
-        reverse_proxy 127.0.0.1:8099
-    }
-    handle {
-        respond "LIFE OS recovery staging: user data API is not public" 503
-    }
-}
-CADDY
+install -m 0644 /opt/lifeos/source/scripts/recovery/Caddyfile.health-only /etc/caddy/Caddyfile
 
 caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 # Preserve SSH when the host uses UFW. Never auto-enable a previously disabled firewall.
