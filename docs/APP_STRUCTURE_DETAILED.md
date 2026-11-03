@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `c5b062a4` on 2026-10-29.**
+**Generated from input HEAD `e8ae0536` on 2026-11-03.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 961 — each appears **exactly once** below.
+**Tracked files:** 968 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,28 +27,28 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 186 |
-| `test` | 136 |
+| `test` | 137 |
 | `Brain/data` | 114 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
-| `developer tool` | 63 |
+| `developer tool` | 64 |
+| `governing documentation` | 44 |
 | `platform resource` | 44 |
-| `governing documentation` | 43 |
 | `Desktop Voice runtime` | 36 |
 | `test fixture` | 30 |
 | `PocketBase backend` | 24 |
-| `PocketBase migration` | 21 |
+| `PocketBase migration` | 22 |
 | `shared Voice system` | 20 |
 | `historical engineering record` | 17 |
+| `CI/deployment` | 13 |
 | `localization` | 13 |
 | `installer` | 12 |
-| `CI/deployment` | 11 |
 | `Brain Voice` | 10 |
 | `shared time` | 7 |
+| `audit tool` | 6 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
 | `asset` | 5 |
-| `audit tool` | 5 |
 | `mobile/web Voice adapters` | 2 |
 | `generated documentation` | 1 |
 | `runtime entry point` | 1 |
@@ -57,10 +57,10 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 518 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 255 |
+| `PROVEN_REQUIRED` | 521 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 258 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
-| `GOVERNING_DOCUMENTATION` | 43 |
+| `GOVERNING_DOCUMENTATION` | 44 |
 | `HISTORICAL_RECORD` | 17 |
 | `GENERATED_CANONICAL_OUTPUT` | 1 |
 
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 878 |
-| `MEDIUM` | 83 |
+| `HIGH` | 884 |
+| `MEDIUM` | 84 |
 
 ---
 
@@ -196,6 +196,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`scripts/`](#folder-scripts)
 - [`scripts/audit/`](#folder-scriptsaudit)
 - [`scripts/manual/`](#folder-scriptsmanual)
+- [`scripts/recovery/`](#folder-scriptsrecovery)
 
 ### Platform folders
 
@@ -1509,6 +1510,30 @@ RU:
 - **Когда открывать:** Открывать при запуске или изменении соответствующей автоматизированной процедуры.
 - **Можно удалить?** Нет — пока на эти сценарии опираются задокументированные процессы.
 - **Связанные пути:** `update.ps1`, `docs/DEPLOY.md`.
+
+---
+
+## Folder: `scripts/recovery/`
+
+EN:
+
+- **What this folder is:** Automation scripts under `scripts/recovery/` — developer/CI maintenance commands.
+- **Why it exists:** Repeatable audits, deploy helpers, and doc generation live here instead of ad-hoc notes.
+- **What lives here:** PowerShell, Python, or Dart scripts (see files below).
+- **What part of the app it affects:** Build, deploy, audit, and doc workflows — not end-user app screens.
+- **When to open it:** Running documented workflow that uses `recovery`.
+- **Can it be deleted?** No — required for documented repo workflows.
+- **Main related paths:** `docs/DEPLOY.md`, `docs/APP_STRUCTURE.md` §6.
+
+RU:
+
+- **Что это за папка:** Каталог автоматизации `scripts/recovery/`.
+- **Зачем нужна:** Хранит воспроизводимые команды для проверки, сборки, публикации или обслуживания репозитория.
+- **Что здесь лежит:** Скрипты PowerShell, Python, Dart или вспомогательные файлы; конкретный состав описан ниже.
+- **На что влияет в приложении:** Влияет на процессы разработки и CI, но не является пользовательским экраном приложения.
+- **Когда открывать:** Открывать при запуске или изменении соответствующей автоматизированной процедуры.
+- **Можно удалить?** Нет — нужен для documented repo workflows.
+- **Связанные пути:** `docs/DEPLOY.md`, `docs/APP_STRUCTURE.md` §6.
 
 ---
 
@@ -4721,7 +4746,7 @@ EN:
 - **Why needed:** The CI system loads `.github/workflows/deploy-pocketbase.yml` to run its declared triggers, permissions, jobs, and checks.
 - **Contents:** YAML workflow definition specific to `deploy-pocketbase.yml`.
 - **Repository role:** CI/deployment
-- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `.github/workflows/deploy.yml`, `docs/DEPLOY.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`, `docs/reports/GOOGLE_HEALTH_SLEEP_SYNC_2026-08-11.md`.
+- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `.github/workflows/deploy.yml`, `docs/DEPLOY.md`, `docs/DISASTER_RECOVERY_2026-11.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
 - **Confidence:** HIGH
@@ -4758,7 +4783,7 @@ EN:
 - **Why needed:** The CI system loads `.github/workflows/deploy.yml` to run its declared triggers, permissions, jobs, and checks.
 - **Contents:** YAML workflow definition specific to `deploy.yml`.
 - **Repository role:** CI/deployment
-- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `docs/APP_STRUCTURE.md`, `docs/DEPLOY.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`, `docs/website/WEBSITE_IMPLEMENTATION_OPTIONS.md`.
+- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `docs/APP_STRUCTURE.md`, `docs/DEPLOY.md`, `docs/DISASTER_RECOVERY_2026-11.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
 - **Confidence:** HIGH
@@ -4893,6 +4918,80 @@ RU:
 - **Владелец / слой:** CI
 - **Обязанности:** Управляет CI-сценарием `pocketbase-health-watch.yml` и его границами выполнения.
 - **Когда открывать:** Когда ломается поведение, связанное с `pocketbase-health-watch.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
+### `.github/workflows/pocketbase-recovery-test.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/pocketbase-recovery-test.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/pocketbase-recovery-test.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/pocketbase-recovery-test.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/pocketbase-recovery-test.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `pocketbase-recovery-test.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `pocketbase-recovery-test.yml`.
+- **When to open:** When behavior tied to `pocketbase-recovery-test.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `pocketbase-recovery-test.yml` для CI и операций репозитория. GitHub Actions читает `pocketbase-recovery-test.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `pocketbase-recovery-test.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `pocketbase-recovery-test.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `pocketbase-recovery-test.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `pocketbase-recovery-test.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `pocketbase-recovery-test.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
+### `.github/workflows/recovery-docs-sync.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/recovery-docs-sync.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/recovery-docs-sync.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/recovery-docs-sync.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/recovery-docs-sync.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `recovery-docs-sync.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `recovery-docs-sync.yml`.
+- **When to open:** When behavior tied to `recovery-docs-sync.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `recovery-docs-sync.yml` для CI и операций репозитория. GitHub Actions читает `recovery-docs-sync.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `recovery-docs-sync.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `recovery-docs-sync.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `recovery-docs-sync.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `recovery-docs-sync.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `recovery-docs-sync.yml`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `.github/`, Flutter tooling.
 
@@ -6708,6 +6807,43 @@ RU:
 - **Когда открывать:** Миграция UI на canonical widgets; pixel QA.
 - **Можно удалить?** Нет — governing документация.
 - **Связано с:** `lib/core/widgets/`, `docs/reports/DESIGN_SYSTEM_INVENTORY.md`, Component Lab.
+
+
+### `docs/DISASTER_RECOVERY_2026-11.md`
+
+EN:
+
+- **Human purpose:** Markdown document `DISASTER_RECOVERY_2026-11.md` in `docs` — repo tooling or config. Tracked because `docs` needs `DISASTER_RECOVERY_2026-11.md` for build, CI, or maintenance.
+- **What this is:** Markdown document `DISASTER_RECOVERY_2026-11.md` in `docs` — repo tooling or config.
+- **Why needed:** Tracked because `docs` needs `DISASTER_RECOVERY_2026-11.md` for build, CI, or maintenance.
+- **Contents:** Open `DISASTER_RECOVERY_2026-11.md` when working on `docs` (see folder section above).
+- **Repository role:** governing documentation
+- **Evidence of use:** Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing).
+- **Necessity status:** GOVERNING_DOCUMENTATION
+- **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
+- **Confidence:** HIGH
+- **Owner / layer:** documentation
+- **Responsibilities:** Supports `docs` workflow for `DISASTER_RECOVERY_2026-11.md`.
+- **When to open:** When build output or maintenance cites `DISASTER_RECOVERY_2026-11.md`.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** Текстовая спецификация `DISASTER_RECOVERY_2026-11.md` в разделе `docs`. Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Что это:** Текстовая спецификация `DISASTER_RECOVERY_2026-11.md` в разделе `docs`.
+- **Зачем:** Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Содержимое:** Структурированный Markdown-текст по теме `DISASTER_RECOVERY_2026-11.md` без runtime-логики приложения.
+- **Роль в репозитории:** governing documentation
+- **Доказательства использования:** Управляющая/операционная документация для людей и агентов (см. Project Knowledge / AGENTS).
+- **Статус необходимости:** GOVERNING_DOCUMENTATION
+- **Что будет, если удалить:** Пропадёт архитектурное/операционное правило.
+- **Уверенность:** HIGH
+- **Владелец / слой:** документация
+- **Обязанности:** Хранит актуальную документацию по назначению `DISASTER_RECOVERY_2026-11.md`.
+- **Когда открывать:** When результат сборки or maintenance cites `DISASTER_RECOVERY_2026-11.md`.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`.
 
 
 ### `docs/FUNCTIONS.md`
@@ -30781,6 +30917,43 @@ RU:
 - **Связано с:** PocketBase Admin, Flutter auth/records client.
 
 
+### `pb_migrations/1785000000_bootstrap_core_collections.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `1785000000_bootstrap_core_collections.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1785000000_bootstrap_core_collections.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1785000000_bootstrap_core_collections.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1785000000_bootstrap_core_collections.js` for build, CI, or maintenance.
+- **Contents:** Open `1785000000_bootstrap_core_collections.js` when working on `pb_migrations` (see folder section above).
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Supports `pb_migrations` workflow for `1785000000_bootstrap_core_collections.js`.
+- **When to open:** When build output or maintenance cites `1785000000_bootstrap_core_collections.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `1785000000_bootstrap_core_collections.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1785000000_bootstrap_core_collections.js`.
+- **Что это:** `1785000000_bootstrap_core_collections.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1785000000_bootstrap_core_collections.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1785000000_bootstrap_core_collections.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Реализует JavaScript-часть сценария `1785000000_bootstrap_core_collections.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1785000000_bootstrap_core_collections.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+
 ### `pb_migrations/1785390000_server_sleep_sync.js`
 
 EN:
@@ -31743,6 +31916,43 @@ RU:
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
 
+### `scripts/audit/pocketbase_recovery_check.sh`
+
+EN:
+
+- **Human purpose:** Developer script `pocketbase_recovery_check.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `pocketbase_recovery_check.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `pocketbase_recovery_check.sh`.
+- **Repository role:** audit tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** audit tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `pocketbase_recovery_check.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `pocketbase_recovery_check.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `pocketbase_recovery_check.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `pocketbase_recovery_check.sh`.
+- **Роль в репозитории:** audit tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** аудит
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `pocketbase_recovery_check.sh` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
 ### `scripts/audit/pocketbase_schema_contract.py`
 
 EN:
@@ -32197,7 +32407,7 @@ EN:
 - **Why needed:** Maintains owner-readable structure guide in sync with repo after changes.
 - **Contents:** Python generator + curated folder/file descriptions.
 - **Repository role:** developer tool
-- **Evidence of use:** (1) Invoked or documented by: `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
+- **Evidence of use:** (1) Invoked or documented by: `.github/workflows/recovery-docs-sync.yml`, `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -32214,7 +32424,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `generate_app_structure_detailed.py`.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** (1) Вызывается или описан в: `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
+- **Доказательства использования:** (1) Вызывается или описан в: `.github/workflows/recovery-docs-sync.yml`, `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
@@ -33183,6 +33393,43 @@ RU:
 - **Владелец / слой:** инструменты разработчика
 - **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
 - **Когда открывать:** Owner или CI запускает `td.ps1` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/stage_pocketbase_ubuntu.sh`
+
+EN:
+
+- **Human purpose:** Developer script `stage_pocketbase_ubuntu.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `stage_pocketbase_ubuntu.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `stage_pocketbase_ubuntu.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Documented manual developer/audit script under `scripts/`; run from repo docs or AGENTS.md workflows.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** MEDIUM
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `stage_pocketbase_ubuntu.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `stage_pocketbase_ubuntu.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `stage_pocketbase_ubuntu.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `stage_pocketbase_ubuntu.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Ручной dev/audit скрипт в `scripts/`; запускается по инструкции в docs/AGENTS.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `stage_pocketbase_ubuntu.sh` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
@@ -37873,6 +38120,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `plans_time_performance_contract`.
 - **Когда открывать:** Падение CI или правка кода рядом с `plans_time_performance_contract`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/pocketbase_endpoint_config_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `pocketbase_endpoint_config_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `pocketbase_endpoint_config_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/pocketbase_endpoint_config_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `pocketbase_endpoint_config_test` scenario.
+- **When to open:** CI failure or changing code near `pocketbase_endpoint_config`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `pocketbase_endpoint_config`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `pocketbase_endpoint_config` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `pocketbase_endpoint_config` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `pocketbase_endpoint_config`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/pocketbase_endpoint_config_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `pocketbase_endpoint_config`.
+- **Когда открывать:** Падение CI или правка кода рядом с `pocketbase_endpoint_config`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
