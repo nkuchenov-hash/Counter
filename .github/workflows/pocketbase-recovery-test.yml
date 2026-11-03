@@ -5,6 +5,7 @@ on:
     paths:
       - 'pb_migrations/**'
       - 'scripts/audit/pocketbase_recovery_check.sh'
+      - 'scripts/audit/pocketbase_recovery_api_test.py'
       - '.github/workflows/pocketbase-recovery-test.yml'
   workflow_dispatch:
 permissions:
@@ -20,3 +21,21 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y sqlite3 unzip curl
       - name: Boot and validate isolated PocketBase
         run: bash scripts/audit/pocketbase_recovery_check.sh
+      - name: Probe API auth and cross-user ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          PB="$RUNNER_TEMP/lifeos-pb-recovery-check/bin/pocketbase"
+          DATADIR="$RUNNER_TEMP/lifeos-pb-recovery-check/data"
+          "$PB" serve --http=127.0.0.1:18099 --dir="$DATADIR" --migrationsDir="$GITHUB_WORKSPACE/pb_migrations" --hooksDir="$GITHUB_WORKSPACE/pb_hooks" > "$RUNNER_TEMP/lifeos-pb-server.log" 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in {1..15}; do
+            if curl -fsS http://127.0.0.1:18099/api/health >/dev/null; then break; fi
+            sleep 1
+          done
+          if ! kill -0 "$pid" 2>/dev/null; then
+            tail -n 50 "$RUNNER_TEMP/lifeos-pb-server.log"
+            exit 1
+          fi
+          python3 scripts/audit/pocketbase_recovery_api_test.py
