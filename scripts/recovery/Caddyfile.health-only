@@ -1,0 +1,12 @@
+137-22-146-109.sslip.io {
+    @health {
+        method GET
+        path /api/health
+    }
+    handle @health {
+        reverse_proxy 127.0.0.1:8099
+    }
+    handle {
+        respond "LIFE OS recovery staging: user data API is not public" 503
+    }
+}
