@@ -38,7 +38,7 @@ sha256sum "$archive" > "$archive.sha256"
 chmod 0600 "$archive.sha256"
 # Retain the newest seven staging archives.
 mapfile -t old < <(find "$backup_dir" -maxdepth 1 -type f -name 'stage-*.tar.gz' -printf '%f\n' | sort -r | tail -n +8)
-for old_file in \${old[@]}; do
+for old_file in "${old[@]}"; do
   rm -f "$backup_dir/$old_file" "$backup_dir/$old_file.sha256"
 done
 echo "STAGING BACKUP OK: $archive"
