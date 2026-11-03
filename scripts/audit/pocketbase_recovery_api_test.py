@@ -41,6 +41,12 @@ def require_ok(name, response):
     return body
 
 
+def require_empty_list(name, response):
+    code, body = response
+    if code != 200 or body.get("items") != []:
+        raise AssertionError(f"{name}: expected empty list, got HTTP {code}; {body!r}")
+
+
 def require_denied(name, response):
     code, _ = response
     if code < 400:
@@ -67,8 +73,8 @@ for index in (1, 2):
 alice_id, alice_token = users[0]
 bob_id, bob_token = users[1]
 
-require_denied("anonymous profiles list", request("/api/collections/profiles/records"))
-require_denied("anonymous categories list", request("/api/collections/categories/records"))
+require_empty_list("anonymous profiles list", request("/api/collections/profiles/records"))
+require_empty_list("anonymous categories list", request("/api/collections/categories/records"))
 require_denied("anonymous category create", request(
     "/api/collections/categories/records", "POST",
     {"name": "Unauthorized", "category_id": "anon"}
@@ -131,6 +137,6 @@ require_denied("cross-user record update", request(
     "/api/collections/records/records/" + record["id"], "PATCH",
     {"title": "Tampered"}, bob_token
 ))
-require_denied("anonymous records list", request("/api/collections/records/records"))
+require_empty_list("anonymous records list", request("/api/collections/records/records"))
 
 print("PASS: two-user auth, owned category/plan/record, anonymous isolation, cross-tenant rejection, tier protection")
