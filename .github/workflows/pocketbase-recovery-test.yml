@@ -6,6 +6,8 @@ on:
       - 'pb_migrations/**'
       - 'scripts/audit/pocketbase_recovery_check.sh'
       - 'scripts/audit/pocketbase_recovery_api_test.py'
+      - 'scripts/recovery/backup_stage.sh'
+      - 'scripts/recovery/install_stage_backups.sh'
       - '.github/workflows/pocketbase-recovery-test.yml'
   workflow_dispatch:
 permissions:
@@ -39,3 +41,18 @@ jobs:
             exit 1
           fi
           python3 scripts/audit/pocketbase_recovery_api_test.py
+      - name: Validate daily backup archive on disposable database
+        shell: bash
+        run: |
+          set -euo pipefail
+          STAGING=/opt/lifeos/recovery-stage
+          sudo mkdir -p "$STAGING/pb_data"
+          sudo cp "$RUNNER_TEMP/lifeos-pb-recovery-check/data/data.db" "$STAGING/pb_data/data.db"
+          sudo cp -a pb_hooks pb_migrations "$STAGING/"
+          sudo bash scripts/recovery/backup_stage.sh
+          FILE="$(sudo find /var/backups/lifeos-stage -maxdepth 1 -name 'stage-*.tar.gz' -type f -print -quit)"
+          [ -n "$FILE" ]
+          sudo sha256sum --check "$FILE.sha256"
+          sudo tar -xOzf "$FILE" './pb_data/data.db' > "$RUNNER_TEMP/restored-staging.db"
+          test "$(sqlite3 "$RUNNER_TEMP/restored-staging.db" 'PRAGMA integrity_check;')" = ok
+          echo 'PASS: staged backup can be read back; DB integrity maintained.'
