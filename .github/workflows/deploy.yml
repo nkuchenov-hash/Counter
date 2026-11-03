@@ -25,6 +25,9 @@ jobs:
       github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # Set this repository variable only after the replacement backend is ready.
+      LIFEOS_POCKETBASE_URL: ${{ vars.LIFEOS_POCKETBASE_URL || 'https://217-114-0-201.sslip.io' }}
     steps:
       - name: Reject stale validated revision
         id: freshness
@@ -95,7 +98,9 @@ jobs:
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
           BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          [[ "$LIFEOS_POCKETBASE_URL" =~ ^https://[^/]+$ ]] || { echo "::error::LIFEOS_POCKETBASE_URL must be an HTTPS origin without a path"; exit 1; }
           flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none --no-web-resources-cdn \
+            --dart-define=POCKETBASE_URL="$LIFEOS_POCKETBASE_URL" \
             --dart-define=GIT_COMMIT="$SHORT_SHA" \
             --dart-define=BUILD_TIME="$BUILD_TIME"
 
