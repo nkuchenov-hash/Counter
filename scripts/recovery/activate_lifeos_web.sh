@@ -152,6 +152,42 @@ print('PASS: original LIFE OS Flutter web assets point to the recovered PocketBa
 PY
   chmod -R a+rX "$SITE"
 fi
+# Patch the already published gh-pages HTML in place. Its original 12-second
+# "app failed" timer can fire while downloading multi-megabyte Flutter assets.
+# The original web build remains otherwise untouched (especially local caches).
+python3 - "$SITE/Counter/index.html" <<'PY'
+from pathlib import Path
+import sys
+p=Path(sys.argv[1])
+html=p.read_text(encoding='utf-8')
+old='      window.setTimeout(showBootFailure, 12000);'
+new='      window.setTimeout(showBootFailure, 90000);'
+if old in html:
+    assert html.count(old)==1
+    hint='''      window.setTimeout(function () {
+        if (statusShown || document.querySelector('flutter-view, flt-glass-pane')) return;
+        var hint = document.createElement('div');
+        hint.id = 'lifeos-loading-hint';
+        hint.textContent = 'Загрузка LIFE OS…';
+        hint.style.cssText =
+          'position:fixed;bottom:24px;left:0;right:0;text-align:center;' +
+          'font:16px/1.5 Arial,sans-serif;color:#111;pointer-events:none;';
+        document.body.appendChild(hint);
+      }, 4000);
+'''
+    html=html.replace(old,hint+new)
+    cleanup='        if (panel) panel.remove();'
+    assert html.count(cleanup)==1
+    html=html.replace(cleanup,cleanup+'''
+        var hint = document.getElementById('lifeos-loading-hint');
+        if (hint) hint.remove();''')
+    p.write_text(html,encoding='utf-8')
+    print('PASS: slow first-load displays progress; no misleading failure after 12 seconds')
+elif new in html:
+    print('PASS: slow-load HTML fix already installed')
+else:
+    raise SystemExit('BLOCKED: unexpected web loader layout; refusing to patch')
+PY
 # Caddy needs to traverse /var/www to serve $SITE/Counter, but the host
 # originally had /var/www mode 0700 (root only). Grant traverse ONLY, not
 # listing or write access, and leave all other children unchanged.
@@ -236,6 +272,28 @@ for entry in 'HEALTH:/api/health' 'WEB:/Counter/' 'BOOTSTRAP:/Counter/flutter_bo
     namei -l "$SITE/Counter/index.html" || true
     exit 1
   fi
+done
+# A 200 on a URL can be an HTML fallback instead of the actual JS/WASM file.
+# Probe type, transfer size and elapsed time for the large first-load assets.
+for spec in 'MAIN:/Counter/main.dart.js:100000:javascript' 'CANVASKIT:/Counter/canvaskit/canvaskit.wasm:100000:wasm' 'CHROMIUM_CANVASKIT:/Counter/canvaskit/chromium/canvaskit.wasm:100000:wasm'; do
+  name="${spec%%:*}"
+  rest="${spec#*:}"
+  route="${rest%%:*}"
+  rest="${rest#*:}"
+  min="${rest%%:*}"
+  kind="${rest##*:}"
+  response=$(curl -fsS --max-time 60 -o /dev/null -w '%{http_code} %{content_type} %{size_download} %{time_total}' "https://$DOMAIN$route") || {
+    echo "FAILED: $name download request"; exit 1;
+  }
+  read -r code mime bytes seconds <<<"$response"
+  echo "ASSET_$name: HTTP $code, type=$mime, bytes=$bytes, seconds=$seconds"
+  if [ "$code" != 200 ] || [ "$bytes" -lt "$min" ]; then
+    echo "FAILED: $name missing or unexpectedly small"; exit 1
+  fi
+  case "$kind:$mime" in
+    javascript:*javascript*|javascript:*ecmascript*|wasm:application/wasm) ;;
+    *) echo "FAILED: $name returned wrong media type (HTML fallback?)"; exit 1 ;;
+  esac
 done
 python3 - "$DOMAIN" <<'PY'
 import json,sys,urllib.request,urllib.error
