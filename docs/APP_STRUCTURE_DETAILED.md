@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `5cec3241` on 2026-11-04.**
+**Generated from input HEAD `d98fae89` on 2026-11-04.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 986 — each appears **exactly once** below.
+**Tracked files:** 988 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,8 +27,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 186 |
-| `test` | 137 |
-| `Brain/data` | 114 |
+| `test` | 138 |
+| `Brain/data` | 115 |
 | `platform build` | 83 |
 | `developer tool` | 80 |
 | `shared foundation` | 65 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 521 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 275 |
+| `PROVEN_REQUIRED` | 522 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 276 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 901 |
+| `HIGH` | 903 |
 | `MEDIUM` | 85 |
 
 ---
@@ -15302,6 +15302,44 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `sleep_foreground_reconcile_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/local_sync/android_recovery_export.dart`
+
+EN:
+
+- **Human purpose:** Focused brain module for offline sync: android recovery export. Maintains offline sync consistency between PocketBase and the UI cache.
+- **What this is:** Focused brain module for offline sync: android recovery export.
+- **Why needed:** Maintains offline sync consistency between PocketBase and the UI cache.
+- **Contents:** Dart helpers and extensions (`LifeOsAndroidRecoveryExport`).
+- **Key code names:** `LifeOsAndroidRecoveryExport`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/settings/account_settings_section.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** android recovery export
+- **When to open:** When behavior tied to `android_recovery_export.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; Offline banner in shell, reconnect flush; APP_STRUCTURE role: android recovery export
+
+RU:
+
+- **Зачем файл человеку:** Сфокусированный модуль данных для offline sync — файл `android_recovery_export`. Держит offline sync согласованным с PocketBase и экранами.
+- **Что это:** Сфокусированный модуль данных для offline sync — файл `android_recovery_export`.
+- **Зачем:** Держит offline sync согласованным с PocketBase и экранами.
+- **Содержимое:** Dart-код (`LifeOsAndroidRecoveryExport`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/settings/account_settings_section.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Реализует назначение `android_recovery_export.dart` для области `lib/data/local_sync`.
+- **Когда открывать:** Когда ломается поведение, связанное с `android_recovery_export.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`; Offline banner в shell, flush при reconnect
 
 
 ### `lib/data/local_sync/category_mutation_outbox.dart`
@@ -34136,6 +34174,44 @@ RU:
 - **Когда открывать:** Owner или CI запускает `sync_locales.dart` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `lib/l10n/langs/HELP HOW TO UPDATE the languages`.
+
+
+### `test/android_recovery_export_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `android_recovery_export_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `android_recovery_export_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/android_recovery_export_test.dart` / CI when enabled. (2) Namesake production subject: `lib/data/local_sync/android_recovery_export.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `android_recovery_export_test` scenario.
+- **When to open:** CI failure or changing code near `android_recovery_export`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `android_recovery_export`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `android_recovery_export` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `android_recovery_export` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `android_recovery_export`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/android_recovery_export_test.dart`. (2) Парный production-файл: `lib/data/local_sync/android_recovery_export.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `android_recovery_export`.
+- **Когда открывать:** Падение CI или правка кода рядом с `android_recovery_export`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
 
 
 ### `test/app_hotkey_keycaps_test.dart`
