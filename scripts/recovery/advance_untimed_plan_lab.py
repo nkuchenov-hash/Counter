@@ -45,7 +45,7 @@ def main(inventory_file,base_file,output_file):
         for c in categories:
             biz_to_cat[str(c.get("category_id") or "")].add(c.get("id"))
 
-        source_to_cat={}
+        source_to_cat=[]
         for r in records:
             if r.get("id") not in imported_records:continue
             cat=r.get("category_link") or r.get("category_id")
@@ -54,16 +54,18 @@ def main(inventory_file,base_file,output_file):
                 if len(choices)!=1:continue
                 cat=next(iter(choices))
             if cat in cat_ids and r.get("source_plan_id"):
-                source_to_cat[r["source_plan_id"]]=cat
+                source_to_cat.append((r["id"],r["source_plan_id"],cat))
 
         versions=collections.defaultdict(list)
         for p in plans:versions[p.get("pocketRecordId")].append(p)
         local_evidence=collections.defaultdict(lambda:collections.Counter())
-        for pid,cat in source_to_cat.items():
-            for v in versions.get(pid,()):
-                local=v.get("categoryId")
-                if isinstance(local,int) and local>0:
-                    local_evidence[local][cat]+=1
+        # Require evidence from distinct *records*. Duplicate cached versions
+        # of one plan must never be miscounted as independent witnesses.
+        for record_id,pid,cat in source_to_cat:
+            distinct_locals={v.get("categoryId") for v in versions.get(pid,())
+                             if isinstance(v.get("categoryId"),int) and v.get("categoryId")>0}
+            for local in distinct_locals:
+                local_evidence[local][cat]+=1
         local_to_cat={k:next(iter(v)) for k,v in local_evidence.items()
                       if len(v)==1 and sum(v.values())>=2}
         existing_pb={x[0] for x in db.execute("SELECT id FROM plans")}
