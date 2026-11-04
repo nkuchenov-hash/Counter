@@ -30,14 +30,15 @@ jobs:
           ssh-keyscan -T 8 -p "$SSH_PORT" -H "$host" >> ~/.ssh/known_hosts
           ssh -o BatchMode=yes -o ConnectTimeout=12 -i ~/.ssh/lifeos-plan-check -p "$SSH_PORT" "$user@$host" 'bash -s' <<'REMOTE'
           set -euo pipefail
-          test -f /root/pb/pb_data/data.db
-          python3 - <<'PY'
-          import sqlite3
-          db=sqlite3.connect('file:/root/pb/pb_data/data.db?mode=ro', uri=True)
-          for table in ('profiles','plans','categories'):
-              count=db.execute('SELECT COUNT(*) FROM "'+table+'"').fetchone()[0]
-              print(table+'_count='+str(count))
-          db.close()
-          print('restored_server_access=ok')
-          PY
+          echo "ssh_auth_success=true"
+          echo "remote_user=$(whoami)"
+          echo "pb_processes:"
+          (pgrep -af '[p]ocketbase.*serve' || true) | head -8
+          echo "candidate_db_files:"
+          for base in /root /opt /srv /var/lib /home; do
+            if test -d "$base"; then
+              find "$base" -maxdepth 7 -type f -path '*/pb_data/data.db' -print 2>/dev/null || true
+            fi
+          done
+          echo "host_probe_complete=true"
           REMOTE
