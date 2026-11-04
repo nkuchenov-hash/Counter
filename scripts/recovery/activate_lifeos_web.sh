@@ -98,6 +98,21 @@ for n in $(seq 1 20); do
   sleep 1
 done
 curl -fsS --max-time 5 http://127.0.0.1:8102/api/health >/dev/null
+# Every rerun must confirm the recovered profile exists, even after initial credential
+# setup (when the original plaintext password is intentionally no longer available).
+python3 - "$BASE/pb_data/data.db" "$LIFEOS_RECOVERY_OWNER_ID" <<'PY'
+import sqlite3,sys
+db=sqlite3.connect('file:'+sys.argv[1]+'?mode=ro',uri=True)
+assert db.execute('PRAGMA quick_check').fetchone()[0]=='ok','Recovered SQLite quick_check failed'
+owner=db.execute('SELECT email,password FROM profiles WHERE id=?',(sys.argv[2],)).fetchone()
+assert owner and '@' in (owner[0] or '') and bool(owner[1]),'Recovered login missing'
+for table,minimum in [('profiles',1),('records',3276),('categories',125),('plans',1102),('tags',8)]:
+    count=db.execute('SELECT COUNT(*) FROM '+table).fetchone()[0]
+    assert count>=minimum,(table,count)
+    print('VERIFIED',table,count)
+db.close()
+print('PASS: recovery login exists and recovered database remains intact')
+PY
 if [ -n "$(printenv LIFEOS_OWNER_PASSWORD || true)" ]; then
 python3 - <<'PY'
 import json,os,urllib.request
@@ -148,14 +163,24 @@ os.chmod(sys.argv[2],0o600)
 PY
 systemctl start lifeos-stage-offsite.service
 cp -a /etc/caddy/Caddyfile "/etc/caddy/Caddyfile.before-lifeos-$(date -u +%Y%m%dT%H%M%SZ)"
-# Preserve unrelated Caddy sites; the recovery domain must not be preconfigured.
+# The domain was previously reserved by our exact, health-only staging Caddyfile.
+# Replace that known staging configuration ONLY; retain unrelated Caddy sites.
+# Any unknown domain configuration remains blocked, never overwritten.
+CADDY_STAGE="$SRC/scripts/recovery/Caddyfile.health-only"
+CADDY_NEXT=/etc/caddy/Caddyfile.new-lifeos
 if grep -Fq "$DOMAIN" /etc/caddy/Caddyfile; then
-  echo "BLOCKED: recovery domain already exists in Caddyfile. Inspect before editing."
-  exit 1
+  if cmp -s "$CADDY_STAGE" /etc/caddy/Caddyfile; then
+    echo 'PASS: recognized original LIFE OS health-only staging Caddyfile; upgrading it to live app.'
+    : > "$CADDY_NEXT"
+  else
+    echo 'BLOCKED: recovery domain exists in a nonstandard Caddyfile; refusing to modify existing routes.'
+    exit 1
+  fi
+else
+  cp /etc/caddy/Caddyfile "$CADDY_NEXT"
 fi
-cp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.new-lifeos
-printf '\n' >> /etc/caddy/Caddyfile.new-lifeos
-cat >>/etc/caddy/Caddyfile.new-lifeos <<CADDY
+printf '\n' >> "$CADDY_NEXT"
+cat >>"$CADDY_NEXT" <<CADDY
 $DOMAIN {
     encode gzip zstd
     @admin path /_/ /_/*
