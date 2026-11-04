@@ -13,6 +13,7 @@ on:
       - 'scripts/recovery/sync_offsite_stage.sh'
       - 'scripts/recovery/install_offsite_stage.sh'
       - 'scripts/recovery/configure_yandex_offsite.sh'
+      - 'scripts/recovery/verify_offsite_restore.sh'
       - '.github/workflows/pocketbase-recovery-test.yml'
   workflow_dispatch:
 permissions:
@@ -78,6 +79,7 @@ jobs:
           bash -n scripts/recovery/sync_offsite_stage.sh
           bash -n scripts/recovery/install_offsite_stage.sh
           bash -n scripts/recovery/configure_yandex_offsite.sh
+          bash -n scripts/recovery/verify_offsite_restore.sh
           grep -Fq 'read -r -s secret_key' scripts/recovery/configure_yandex_offsite.sh
           grep -Fq 'storage.yandexcloud.net/lifeos-backups-2026-nk47/lifeos-stage' scripts/recovery/configure_yandex_offsite.sh
           sudo apt-get install -y restic
@@ -96,4 +98,5 @@ jobs:
           sudo chown root:root /etc/lifeos/offsite-backup.env
           sudo bash scripts/recovery/sync_offsite_stage.sh
           sudo env RESTIC_REPOSITORY="$REPO" RESTIC_PASSWORD_FILE=/etc/lifeos/offsite-repository-password restic snapshots --latest 1
+          sudo bash scripts/recovery/verify_offsite_restore.sh
           echo 'PASS: archives uploaded to independently located test repository and restic check succeeded.'
