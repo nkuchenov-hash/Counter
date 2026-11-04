@@ -12,6 +12,7 @@ on:
       - 'scripts/recovery/Caddyfile.health-only'
       - 'scripts/recovery/sync_offsite_stage.sh'
       - 'scripts/recovery/install_offsite_stage.sh'
+      - 'scripts/recovery/configure_yandex_offsite.sh'
       - '.github/workflows/pocketbase-recovery-test.yml'
   workflow_dispatch:
 permissions:
@@ -76,6 +77,9 @@ jobs:
           set -euo pipefail
           bash -n scripts/recovery/sync_offsite_stage.sh
           bash -n scripts/recovery/install_offsite_stage.sh
+          bash -n scripts/recovery/configure_yandex_offsite.sh
+          grep -Fq 'read -r -s secret_key' scripts/recovery/configure_yandex_offsite.sh
+          grep -Fq 'storage.yandexcloud.net/lifeos-backups-2026-nk47/lifeos-stage' scripts/recovery/configure_yandex_offsite.sh
           sudo apt-get install -y restic
           sudo install -d -m 0700 /etc/lifeos
           sudo sh -c 'printf "test-restic-password-for-disposable-ci-only\n" > /etc/lifeos/offsite-repository-password'
