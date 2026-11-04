@@ -210,6 +210,7 @@ def main(inventory_path, existing_lab, output_path):
         os.close(fd)
         try:
             work=sqlite3.connect(tmp)
+            work.row_factory=sqlite3.Row
             lab.backup(work)
             try:
                 work.execute("PRAGMA foreign_keys=ON")
