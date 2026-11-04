@@ -161,7 +161,17 @@ systemctl reload caddy
 curl -fsS --max-time 15 "https://$DOMAIN/api/health" >/dev/null
 curl -fsS --max-time 15 "https://$DOMAIN/Counter/" >/dev/null
 curl -fsS --max-time 15 "https://$DOMAIN/Counter/flutter_bootstrap.js" >/dev/null
-[ "$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "https://$DOMAIN/api/collections/records/records")" != 200 ]
+python3 - "$DOMAIN" <<'PY'
+import json,sys,urllib.request,urllib.error
+url='https://'+sys.argv[1]+'/api/collections/records/records?perPage=1'
+try:
+  with urllib.request.urlopen(url,timeout=15) as response:
+    payload=json.load(response)
+  assert payload.get('items')==[], 'Anonymous users must never see private record contents'
+except urllib.error.HTTPError as e:
+  assert e.code in (401,403,404),('Unexpected public API response',e.code)
+print('PASS: anonymous record access exposes no user data')
+PY
 echo "SUCCESS: https://$DOMAIN/Counter/"
 echo 'Sign in with the email and new password chosen in this SSH session.'
 echo 'Old Android app and original backup archives remain untouched.'
