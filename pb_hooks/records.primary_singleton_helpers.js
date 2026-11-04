@@ -62,7 +62,7 @@ function handoff(txApp, incoming) {
     // Prevent a queued historical "start" from becoming active after newer
     // finished records. Query only next later start (bounded DB query).
     const newer = txApp.findRecordsByFilter(
-        "records", "user_id = {:owner} && start_time > {:start}",
+        "records", "user_id = {:owner} && start_time > {:start} && parent_id = ''",
         "+start_time", 1, 0, { owner: owner, start: iso(subjectStart) }
     );
     const laterStart = newer.length ? startMs(newer[0]) : null;
