@@ -34,9 +34,10 @@ def main(pb_executable,empty_pb):
                         f"--migrationsDir={migrations}",f"--hooksDir={hooks}"],
                        check=True,env=env,timeout=35,stdout=subprocess.DEVNULL)
         conn=sqlite3.connect(data/"data.db")
-        row=conn.execute("SELECT email,password FROM profiles WHERE id=?",("xhjy54inue73piz",)).fetchone()
+        row=conn.execute("SELECT email,password,user_id FROM profiles WHERE id=?",("xhjy54inue73piz",)).fetchone()
         assert row[0]=="recovery-fixture@example.invalid"
         assert row[1] and "NotARealPasswordForCI!2026" not in row[1]
+        assert row[2]=="xhjy54inue73piz", "profile user_id must match the restored owner ID"
         conn.close()
         # Assert same original user ID actually signs in via PocketBase API.
         port=18105
@@ -55,6 +56,7 @@ def main(pb_executable,empty_pb):
                        headers={"Content-Type":"application/json"},method="POST")
             with urllib.request.urlopen(request,timeout=8) as resp: result=json.load(resp)
             assert result["record"]["id"]=="xhjy54inue73piz"
+            assert result["record"]["user_id"]=="xhjy54inue73piz"
             assert result["token"]
         finally:
             proc.terminate()
