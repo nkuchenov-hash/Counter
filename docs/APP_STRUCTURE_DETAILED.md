@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `d98fae89` on 2026-11-04.**
+**Generated from input HEAD `9218aa17` on 2026-11-04.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 988 — each appears **exactly once** below.
+**Tracked files:** 991 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -36,8 +36,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | `platform resource` | 44 |
 | `Desktop Voice runtime` | 36 |
 | `test fixture` | 30 |
-| `PocketBase backend` | 24 |
-| `PocketBase migration` | 22 |
+| `PocketBase backend` | 26 |
+| `PocketBase migration` | 23 |
 | `shared Voice system` | 20 |
 | `historical engineering record` | 17 |
 | `CI/deployment` | 13 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 522 |
+| `PROVEN_REQUIRED` | 525 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 276 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 903 |
+| `HIGH` | 906 |
 | `MEDIUM` | 85 |
 
 ---
@@ -30511,6 +30511,80 @@ RU:
 - **Связано с:** `pb_hooks/`, Flutter embedder.
 
 
+### `pb_hooks/records.primary_singleton.pb.js`
+
+EN:
+
+- **Human purpose:** PocketBase server hook `records.primary_singleton` — runs on VPS when specific API events fire. Some rules (password reset email, overlapping records) must be enforced server-side.
+- **What this is:** PocketBase server hook `records.primary_singleton` — runs on VPS when specific API events fire.
+- **Why needed:** Some rules (password reset email, overlapping records) must be enforced server-side.
+- **Contents:** JavaScript hook handler copied to PocketBase `pb_hooks/` on server.
+- **Repository role:** PocketBase backend
+- **Evidence of use:** Server-side PocketBase hook; deployed with the PB instance (see `docs/POCKETBASE_MANIFEST.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken server-side validation/automation for PB collections.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase backend
+- **Responsibilities:** Server-side logic for `records.primary_singleton` (see `docs/POCKETBASE_MANIFEST.md`).
+- **When to open:** Server behavior differs from app expectations for auth/records.
+- **Can it be deleted?** No — production PocketBase deployment.
+- **Connected to:** PocketBase Admin, Flutter auth/records client.
+
+RU:
+
+- **Зачем файл человеку:** PocketBase hook `records.primary_singleton` — серверная логика при API-событиях на VPS. Часть правил (reset пароля, overlap записей) должна выполняться на сервере, не в APK.
+- **Что это:** PocketBase hook `records.primary_singleton` — серверная логика при API-событиях на VPS.
+- **Зачем:** Часть правил (reset пароля, overlap записей) должна выполняться на сервере, не в APK.
+- **Содержимое:** JavaScript handler `records.primary_singleton.pb.js` — копируется в PocketBase `pb_hooks/` на VPS.
+- **Роль в репозитории:** PocketBase backend
+- **Доказательства использования:** Серверный hook PocketBase; деплоится вместе с PB (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается серверная логика PocketBase.
+- **Уверенность:** HIGH
+- **Владелец / слой:** PocketBase backend
+- **Обязанности:** Серверная логика для `records.primary_singleton` (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Когда открывать:** Поведение auth/records на сервере не совпадает с ожиданиями приложения.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** PocketBase Admin, Flutter auth/records client.
+
+
+### `pb_hooks/records.primary_singleton_helpers.js`
+
+EN:
+
+- **Human purpose:** pb_hooks build file `records.primary_singleton_helpers.js` in `pb_hooks` — required by Flutter/native toolchain. Without `records.primary_singleton_helpers.js`, pb_hooks compile or packaging step for this folder may fail.
+- **What this is:** pb_hooks build file `records.primary_singleton_helpers.js` in `pb_hooks` — required by Flutter/native toolchain.
+- **Why needed:** Without `records.primary_singleton_helpers.js`, pb_hooks compile or packaging step for this folder may fail.
+- **Contents:** Native/config source for `pb_hooks` (open file only when build errors cite it).
+- **Repository role:** PocketBase backend
+- **Evidence of use:** Server-side PocketBase hook; deployed with the PB instance (see `docs/POCKETBASE_MANIFEST.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken server-side validation/automation for PB collections.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase backend
+- **Responsibilities:** Support pb_hooks embedder build for `pb_hooks` — not Dart business logic.
+- **When to open:** Build log mentions `records.primary_singleton_helpers.js` or `pb_hooks`.
+- **Can it be deleted?** Broken server-side validation/automation for PB collections.
+- **Connected to:** `pb_hooks/` platform folder, Flutter embedder.
+
+RU:
+
+- **Зачем файл человеку:** Platform file `records.primary_singleton_helpers.js` в `pb_hooks` — читает Flutter platform tool при сборке pb_hooks build. Без этого файла Flutter platform tool может не собрать или упаковать pb_hooks build.
+- **Что это:** Platform file `records.primary_singleton_helpers.js` в `pb_hooks` — читает Flutter platform tool при сборке pb_hooks build.
+- **Зачем:** Без этого файла Flutter platform tool может не собрать или упаковать pb_hooks build.
+- **Содержимое:** Содержимое native/config слоя `pb_hooks` (смотреть файл при build errors).
+- **Роль в репозитории:** PocketBase backend
+- **Доказательства использования:** Серверный hook PocketBase; деплоится вместе с PB (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается серверная логика PocketBase.
+- **Уверенность:** HIGH
+- **Владелец / слой:** PocketBase backend
+- **Обязанности:** Участвует в Flutter platform tool pipeline для pb_hooks build — не Dart business logic.
+- **Когда открывать:** Build log pb_hooks ссылается на `records.primary_singleton_helpers.js` или `pb_hooks`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `pb_hooks/`, Flutter embedder.
+
+
 ### `pb_hooks/sleep_sync.pb.js`
 
 EN:
@@ -31802,6 +31876,43 @@ RU:
 - **Владелец / слой:** миграции PocketBase
 - **Обязанности:** Реализует JavaScript-часть сценария `1793190000_viktor_thread_context.js` в своём каталоге.
 - **Когда открывать:** When результат сборки or maintenance cites `1793190000_viktor_thread_context.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+
+### `pb_migrations/1793832000_primary_record_singleton.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `1793832000_primary_record_singleton.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1793832000_primary_record_singleton.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1793832000_primary_record_singleton.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1793832000_primary_record_singleton.js` for build, CI, or maintenance.
+- **Contents:** Open `1793832000_primary_record_singleton.js` when working on `pb_migrations` (see folder section above).
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Supports `pb_migrations` workflow for `1793832000_primary_record_singleton.js`.
+- **When to open:** When build output or maintenance cites `1793832000_primary_record_singleton.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `1793832000_primary_record_singleton.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1793832000_primary_record_singleton.js`.
+- **Что это:** `1793832000_primary_record_singleton.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1793832000_primary_record_singleton.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1793832000_primary_record_singleton.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Реализует JavaScript-часть сценария `1793832000_primary_record_singleton.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1793832000_primary_record_singleton.js`.
 - **Можно удалить?** Нет — конфигурация/инструмент репозитория.
 - **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
