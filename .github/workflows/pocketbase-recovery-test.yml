@@ -1,5 +1,7 @@
 name: PocketBase Disaster Recovery — Fresh Schema
 on:
+  push:
+    branches: [recovery/pocketbase-relocation-20261103]
   pull_request:
     branches: [main]
     paths:
