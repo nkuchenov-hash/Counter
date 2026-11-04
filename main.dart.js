@@ -12019,7 +12019,7 @@ return A.i($async$Pz,r)},
 GS(a,b){return A.cyn(a,b)},
 cyn(a,b){var s=0,r=A.j(t.H),q=1,p=[],o,n,m,l,k,j,i,h,g,f
 var $async$GS=A.e(function(c,d){if(c===1){p.push(d)
-s=q}for(;;)switch(s){case 0:g=B.b.j(a)
+s=q}for(;;)switch(s){case 0:g=B.b.j(a).toLowerCase()
 if(J.a4(g)===0)throw A.k(A.h7("empty_email",null))
 if(b.length===0)throw A.k(A.h7("empty_password",null))
 q=3
@@ -12060,7 +12060,7 @@ return A.i($async$GS,r)},
 Py(a,b,c){return A.cyo(a,b,c)},
 cyo(a,b,c){var s=0,r=A.j(t.H),q=1,p=[],o,n,m,l,k,j,i,h,g,f
 var $async$Py=A.e(function(d,e){if(d===1){p.push(e)
-s=q}for(;;)switch(s){case 0:g=B.b.j(a)
+s=q}for(;;)switch(s){case 0:g=B.b.j(a).toLowerCase()
 if(J.a4(g)===0)throw A.k(A.h7("empty_email",null))
 if(b.length===0)throw A.k(A.h7("empty_password",null))
 if(b!==c)throw A.k(A.h7("password_mismatch",null))
@@ -67806,7 +67806,7 @@ s=a.b
 r=s==null?null:B.b.j(s)
 return(r==null?"":r).length===0},
 cfN(a){var s=B.b.j(a)
-return"APP_BUILD commit=badeb819 builtAt=2026-10-29T13:15:58Z"+(s.length!==0?" route="+s:"")},
+return"APP_BUILD commit=b6dc5c5c builtAt=2026-11-04T18:43:15Z"+(s.length!==0?" route="+s:"")},
 bT(a,b){var s,r=null,q=$.aGT().gai()
 if(q==null)return
 q.om()
@@ -67936,7 +67936,7 @@ if(b==="capture")return"\u041e\u0448\u0438\u0431\u043a\u0430 \u043f\u0440\u0438 
 return"\u041d\u0435\u043f\u0440\u0435\u0434\u0432\u0438\u0434\u0435\u043d\u043d\u044b\u0439 \u0441\u0431\u043e\u0439 \u043d\u0430 \u044d\u0442\u0430\u043f\u0435 \u0440\u0430\u0441\u043f\u043e\u0437\u043d\u0430\u0432\u0430\u043d\u0438\u044f \u0440\u0435\u0447\u0438. \u041a\u043e\u043c\u0430\u043d\u0434\u0430 \u043d\u0435 \u0431\u044b\u043b\u0430 \u043e\u0442\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0430 \u0412\u0438\u043a\u0442\u043e\u0440\u0443."},
 cRd(){var s=A.nL(),r=s.gw3(s)
 if(r.length===0||r==="localhost"||r==="127.0.0.1")return"http://localhost:8090"
-return"https://217-114-0-201.sslip.io"},
+return"https://137-22-146-109.sslip.io"},
 fy(){return A.cRd()},
 cVx(a){return},
 r4(a){return},
@@ -114922,7 +114922,7 @@ e=A.n(a2).ok.z
 if(e==null)e=a
 else{d=A.n(a2).ax
 c=d.rx
-e=e.aR(c==null?d.k3:c)}return A.ij(a0,a,new A.GQ(A.b([new A.ia(q,a,o,a),new A.ia(n,a,new A.Ke(!0,a),a),new A.ia("\u0412\u0438\u043a\u0442\u043e\u0440 \xb7 \u0418\u0418",a,m,a),new A.ia(l,a,k,a),new A.ia(j,a,i,a),new A.ia(h,a,B.X7,a),new A.ia(g,a,A.w(f+" badeb819 \xb7 2026-10-29T13:15:58Z",a,a,a,a,a,a,e,a,a,a,a),a)],p),a),a,a,a,a,!0)},
+e=e.aR(c==null?d.k3:c)}return A.ij(a0,a,new A.GQ(A.b([new A.ia(q,a,o,a),new A.ia(n,a,new A.Ke(!0,a),a),new A.ia("\u0412\u0438\u043a\u0442\u043e\u0440 \xb7 \u0418\u0418",a,m,a),new A.ia(l,a,k,a),new A.ia(j,a,i,a),new A.ia(h,a,B.X7,a),new A.ia(g,a,A.w(f+" b6dc5c5c \xb7 2026-11-04T18:43:15Z",a,a,a,a,a,a,e,a,a,a,a),a)],p),a),a,a,a,a,!0)},
 aIT(a,b,c){var s,r,q,p,o,n=this,m=null,l=A.a5([B.EA,A.p(b,"settings_tab_account"),B.EB,A.p(b,"settings_tab_preferences"),B.xA,"\u0412\u0438\u043a\u0442\u043e\u0440 \xb7 \u0418\u0418",B.EC,A.p(b,"settings_tab_notifications"),B.ED,A.p(b,"settings_tab_appearance"),B.EE,A.p(b,"settings_tab_about")],t.OS,t.N),k=n.ax,j=A.c0(m,m,B.n,B.aaH,m,m,m,1,m,B.B,m,m,m,m)
 switch(k.a){case 0:s=A.p(b,"account_security")
 n.a.toString
@@ -114942,7 +114942,7 @@ q=A.n(a).ok.z
 if(q==null)q=m
 else{p=A.n(a).ax
 o=p.rx
-q=q.aR(o==null?p.k3:o)}q=new A.ia(s,m,A.w(r+" badeb819 \xb7 2026-10-29T13:15:58Z",m,m,m,m,m,m,q,m,m,m,m),m)
+q=q.aR(o==null?p.k3:o)}q=new A.ia(s,m,A.w(r+" b6dc5c5c \xb7 2026-11-04T18:43:15Z",m,m,m,m,m,m,q,m,m,m,m),m)
 s=q
 break
 default:s=m}return new A.GQ(A.b([new A.a7y(k,new A.bQn(n),l,m),j,B.eg,s],t.p),m)},
