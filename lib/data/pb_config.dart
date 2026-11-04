@@ -4,8 +4,11 @@ library;
 import 'package:counter/core/constants.dart';
 import 'package:flutter/foundation.dart';
 
-/// Remote PocketBase (HTTPS). Used for release mobile builds and production web.
+/// Legacy native-app origin; do not silently change offline Android clients.
 const String kPocketBaseProductionUrl = 'https://217-114-0-201.sslip.io';
+
+/// Restored server for the *existing* GitHub Pages web address.
+const String kPocketBaseRecoveredWebUrl = 'https://137-22-146-109.sslip.io';
 
 String _pocketBaseUrlForWeb() {
   final host = Uri.base.host;
@@ -14,7 +17,7 @@ String _pocketBaseUrlForWeb() {
   if (isLocalHost) {
     return 'http://localhost:8090';
   }
-  return kPocketBaseProductionUrl;
+  return kPocketBaseRecoveredWebUrl;
 }
 
 /// Resolves the PocketBase base URL (no trailing slash) for the current platform and build mode.

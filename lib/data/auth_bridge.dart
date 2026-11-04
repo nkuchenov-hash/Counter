@@ -238,7 +238,7 @@ class AuthBridge {
   /// Email + password against [PbCollections.profiles] (never `users`).
   /// Throws [AuthBridgeException] on failure.
   static Future<void> loginWithPassword(String email, String password) async {
-    final cleanEmail = email.trim();
+    final cleanEmail = email.trim().toLowerCase();
     if (cleanEmail.isEmpty) {
       throw AuthBridgeException('empty_email');
     }
@@ -271,7 +271,7 @@ class AuthBridge {
     String password,
     String passwordConfirm,
   ) async {
-    final trimmedEmail = email.trim();
+    final trimmedEmail = email.trim().toLowerCase();
     if (trimmedEmail.isEmpty) {
       throw AuthBridgeException('empty_email');
     }

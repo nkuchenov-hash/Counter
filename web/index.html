@@ -107,6 +107,8 @@
       function removeBootFailure() {
         var panel = document.getElementById('lifeos-boot-recovery');
         if (panel) panel.remove();
+        var hint = document.getElementById('lifeos-loading-hint');
+        if (hint) hint.remove();
       }
       window.addEventListener('flutter-first-frame', removeBootFailure);
       // If the engine attaches after the timeout, never leave the failure
@@ -116,7 +118,17 @@
           removeBootFailure();
         }
       }).observe(document.body, {childList: true, subtree: true});
-      window.setTimeout(showBootFailure, 12000);
+      window.setTimeout(function () {
+        if (statusShown || document.querySelector('flutter-view, flt-glass-pane')) return;
+        var hint = document.createElement('div');
+        hint.id = 'lifeos-loading-hint';
+        hint.textContent = 'Загрузка LIFE OS…';
+        hint.style.cssText =
+          'position:fixed;bottom:24px;left:0;right:0;text-align:center;' +
+          'font:16px/1.5 Arial,sans-serif;color:#111;pointer-events:none;';
+        document.body.appendChild(hint);
+      }, 4000);
+      window.setTimeout(showBootFailure, 90000);
     })();
   </script>
   <script src="flutter_bootstrap.js" async
