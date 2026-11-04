@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `9a4aced5` on 2026-11-04.**
+**Generated from input HEAD `c39f5509` on 2026-11-04.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 976 — each appears **exactly once** below.
+**Tracked files:** 977 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -30,7 +30,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `test` | 137 |
 | `Brain/data` | 114 |
 | `platform build` | 83 |
-| `developer tool` | 70 |
+| `developer tool` | 71 |
 | `shared foundation` | 65 |
 | `governing documentation` | 45 |
 | `platform resource` | 44 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 521 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 265 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 266 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 891 |
+| `HIGH` | 892 |
 | `MEDIUM` | 85 |
 
 ---
@@ -33545,6 +33545,43 @@ RU:
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
 
+### `scripts/recovery/configure_yandex_offsite.sh`
+
+EN:
+
+- **Human purpose:** Developer script `configure_yandex_offsite.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `configure_yandex_offsite.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `configure_yandex_offsite.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `configure_yandex_offsite.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `configure_yandex_offsite.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `configure_yandex_offsite.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `configure_yandex_offsite.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `configure_yandex_offsite.sh` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
 ### `scripts/recovery/install_offsite_stage.sh`
 
 EN:
@@ -33554,7 +33591,7 @@ EN:
 - **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
 - **Contents:** PowerShell, Python, or Dart commands for `install_offsite_stage.sh`.
 - **Repository role:** developer tool
-- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`, `docs/RECOVERY_OFFSITE_BACKUPS.md`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`, `docs/RECOVERY_OFFSITE_BACKUPS.md`, `scripts/recovery/configure_yandex_offsite.sh`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -33571,7 +33608,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `install_offsite_stage.sh`.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`, `docs/RECOVERY_OFFSITE_BACKUPS.md`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`, `docs/RECOVERY_OFFSITE_BACKUPS.md`, `scripts/recovery/configure_yandex_offsite.sh`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
