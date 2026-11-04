@@ -132,7 +132,7 @@ def main(inventory_path, source_db, target_db):
         for table in ("profiles","categories","tags","plans","records"):
             require(source.execute("SELECT COUNT(*) FROM "+ident(table)).fetchone()[0]==0,
                     "source PocketBase schema contains data; refusing clone import")
-        require(source.execute("PRAGMA integrity_check").fetchone()[0][0]=="ok",
+        require(source.execute("PRAGMA integrity_check").fetchone()[0]=="ok",
                 "input schema failed SQLite integrity_check")
 
         fd,tmp=tempfile.mkstemp(prefix=".lifeos-lab-",suffix=".sqlite",dir=target_db.parent)
@@ -154,7 +154,7 @@ def main(inventory_path, source_db, target_db):
                     for r in accepted_records.values():
                         entry={k:v for k,v in r.items() if not k.startswith("_") and k!="expand"}
                         insert(work,"records",entry)
-                require(work.execute("PRAGMA integrity_check").fetchone()[0][0]=="ok",
+                require(work.execute("PRAGMA integrity_check").fetchone()[0]=="ok",
                         "recovery clone failed SQLite integrity check")
                 require(work.execute("PRAGMA foreign_key_check").fetchall()==[],
                         "recovery clone failed SQLite foreign-key check")
