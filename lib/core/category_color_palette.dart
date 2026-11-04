@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:counter/core/tag_contrast.dart' show kTagYellowGold;
+import 'package:counter/core/life_color_compat.dart';
+export 'package:counter/core/life_color_compat.dart' show kNordicPeople, canonicalLifeColorValue;
 
 // LIFE OS semantic color families. Shared by every category screen and by
 // the tag creation palette; persisted custom colors always remain authoritative.
@@ -56,12 +58,6 @@ const MaterialColor kNordicEntertainment = MaterialColor(0xFFD64F55, <int, Color
   600: Color(0xFFC03F46), 700: Color(0xFFA2353B), 800: Color(0xFF842F34),
   900: Color(0xFF6D2A2E),
 });
-const MaterialColor kNordicPeople = MaterialColor(0xFFD05C7D, <int, Color>{
-  50: Color(0xFFFCF2F5), 100: Color(0xFFF8E2E9), 200: Color(0xFFF0C6D2),
-  300: Color(0xFFE49DB1), 400: Color(0xFFD87995), 500: Color(0xFFD05C7D),
-  600: Color(0xFFB94C6B), 700: Color(0xFF9B405B), 800: Color(0xFF7F374D),
-  900: Color(0xFF693040),
-});
 // Achromatic neutral: R == G == B at every tone (no blue or beige cast).
 const MaterialColor kCategoryNeutral = MaterialColor(0xFF949494, <int, Color>{
   50: Color(0xFFFAFAFA), 100: Color(0xFFF5F5F5), 200: Color(0xFFEBEBEB),
@@ -110,6 +106,7 @@ List<int> categoryMaterialShadeValues(MaterialColor c) =>
 
 MaterialColor categoryMaterialPrimaryForValue(int? v) {
   if (v == null) return kNordicWork;
+  v = canonicalLifeColorValue(v);
   for (final family in kCategoryPickerMaterialColors) {
     if (categoryMaterialShadeValues(family).contains(v)) return family;
   }
@@ -147,6 +144,9 @@ int categoryNordicRootColorValue(int siblingIndex) {
 /// position no longer alters color. At 400 we stop: lighter is illegible.
 int categoryNordicChildColorValue(int? parentColorValue, int siblingIndex) {
   final family = categoryMaterialPrimaryForValue(parentColorValue);
+  if (parentColorValue != null) {
+    parentColorValue = canonicalLifeColorValue(parentColorValue);
+  }
   final shade = _categoryTones.firstWhere(
     (tone) => family[tone]!.toARGB32() == parentColorValue,
     orElse: () => 600,
