@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/data/database_service.dart';
+import 'package:counter/data/local_sync/android_recovery_export.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/auth/oauth_session.dart';
 import 'package:counter/features/profile/calendar_integrations/calendar_integrations_section.dart';
@@ -9,6 +10,7 @@ import 'package:counter/features/settings/people/people_settings_page.dart';
 import 'package:counter/features/settings/people/people_strings.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 /// Account: current user, People, connected calendars, and logout.
 class AccountSecuritySection extends StatelessWidget {
@@ -103,10 +105,62 @@ class AccountSecuritySection extends StatelessWidget {
             ),
             const Divider(height: 24),
             const CalendarIntegrationsSection(),
+            if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) ...[
+              const Divider(height: 24),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.save_alt_rounded),
+                title: Text(
+                  loc.startsWith('ru')
+                      ? 'Экспортировать данные для восстановления'
+                      : 'Export local recovery data',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  loc.startsWith('ru')
+                      ? 'Сохранить локальные записи, планы и категории в JSON без подключения к серверу'
+                      : 'Save locally cached records, plans and categories to JSON, without the server',
+                ),
+                onTap: () => _exportLocalRecoveryData(context),
+              ),
+            ],
           ],
         );
       },
     );
+  }
+
+  Future<void> _exportLocalRecoveryData(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ru = currentLocale.value.startsWith('ru');
+    try {
+      final location = await LifeOsAndroidRecoveryExport.exportToChosenFile();
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            location == null
+                ? (ru ? 'Сохранение отменено' : 'Export cancelled')
+                : (ru
+                    ? 'Копия сохранена. Не удаляйте приложение до завершения восстановления.'
+                    : 'Recovery copy saved. Keep the app installed until recovery is complete.'),
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            ru
+                ? 'Не удалось сохранить данные. Ничего не было удалено.'
+                : 'Could not save the recovery copy. No app data was deleted.',
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _logout(BuildContext context) async {
