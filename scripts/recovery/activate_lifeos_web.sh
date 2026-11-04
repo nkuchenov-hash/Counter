@@ -48,6 +48,9 @@ migrate((app) => {
   if (String(profile.get('email') || '').trim()) {
     throw new Error('Refusing to overwrite a real account');
   }
+  // The preserved owner ID is also the value used by records/categories/plans.
+  // Without this field, Flutter rejects the recovered profile after successful login.
+  profile.set('user_id', id);
   profile.set('email', email);
   if (String(profile.get('email') || '') !== email) {
     throw new Error('Recovery email did not survive PocketBase field normalization');
@@ -93,6 +96,9 @@ WantedBy=multi-user.target
 UNIT
 systemctl daemon-reload
 systemctl enable --now lifeos-recovery-live.service
+# Older recovered candidates claimed auth without populating profiles.user_id.
+# Repair only this specific, verified one-owner recovery; the script is idempotent.
+bash "$SRC/scripts/recovery/repair_profile_user_id.sh"
 for n in $(seq 1 20); do
   if curl -fsS --max-time 2 http://127.0.0.1:8102/api/health >/dev/null 2>&1; then break; fi
   sleep 1
@@ -104,8 +110,9 @@ python3 - "$BASE/pb_data/data.db" "$LIFEOS_RECOVERY_OWNER_ID" <<'PY'
 import sqlite3,sys
 db=sqlite3.connect('file:'+sys.argv[1]+'?mode=ro',uri=True)
 assert db.execute('PRAGMA quick_check').fetchone()[0]=='ok','Recovered SQLite quick_check failed'
-owner=db.execute('SELECT email,password FROM profiles WHERE id=?',(sys.argv[2],)).fetchone()
+owner=db.execute('SELECT email,password,user_id FROM profiles WHERE id=?',(sys.argv[2],)).fetchone()
 assert owner and '@' in (owner[0] or '') and bool(owner[1]),'Recovered login missing'
+assert owner[2]==sys.argv[2], 'Recovered profile user_id missing or mismatched'
 for table,minimum in [('profiles',1),('records',3276),('categories',125),('plans',1102),('tags',8)]:
     count=db.execute('SELECT COUNT(*) FROM '+table).fetchone()[0]
     assert count>=minimum,(table,count)
