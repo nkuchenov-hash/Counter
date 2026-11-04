@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `b72f6839` on 2026-11-04.**
+**Generated from input HEAD `078b628b` on 2026-11-04.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 994 — each appears **exactly once** below.
+**Tracked files:** 995 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -29,7 +29,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `production UI` | 186 |
 | `test` | 138 |
 | `Brain/data` | 115 |
-| `developer tool` | 83 |
+| `developer tool` | 84 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
 | `governing documentation` | 45 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 525 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 279 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 280 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 17 |
@@ -69,7 +69,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Confidence | Count |
 | :--- | ---: |
 | `HIGH` | 908 |
-| `MEDIUM` | 86 |
+| `MEDIUM` | 87 |
 
 ---
 
@@ -33740,7 +33740,7 @@ EN:
 - **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
 - **Contents:** PowerShell, Python, or Dart commands for `advance_untimed_plan_lab.py`.
 - **Repository role:** developer tool
-- **Evidence of use:** Documented manual developer/audit script under `scripts/`; run from repo docs or AGENTS.md workflows.
+- **Evidence of use:** Invoked or documented by: `scripts/recovery/consolidate_private_recovery_labs.sh`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** MEDIUM
@@ -33757,7 +33757,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `advance_untimed_plan_lab.py`.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Ручной dev/audit скрипт в `scripts/`; запускается по инструкции в docs/AGENTS.
+- **Доказательства использования:** Вызывается или описан в: `scripts/recovery/consolidate_private_recovery_labs.sh`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** MEDIUM
@@ -33916,6 +33916,43 @@ RU:
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
 
+### `scripts/recovery/consolidate_private_recovery_labs.sh`
+
+EN:
+
+- **Human purpose:** Developer script `consolidate_private_recovery_labs.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `consolidate_private_recovery_labs.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `consolidate_private_recovery_labs.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Documented manual developer/audit script under `scripts/`; run from repo docs or AGENTS.md workflows.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** MEDIUM
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `consolidate_private_recovery_labs.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `consolidate_private_recovery_labs.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `consolidate_private_recovery_labs.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `consolidate_private_recovery_labs.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Ручной dev/audit скрипт в `scripts/`; запускается по инструкции в docs/AGENTS.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `consolidate_private_recovery_labs.sh` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
 ### `scripts/recovery/import_video_evidence_lab.py`
 
 EN:
@@ -33925,7 +33962,7 @@ EN:
 - **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
 - **Contents:** PowerShell, Python, or Dart commands for `import_video_evidence_lab.py`.
 - **Repository role:** developer tool
-- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/import_video_evidence_lab_test.py`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/consolidate_private_recovery_labs.sh`, `scripts/recovery/import_video_evidence_lab_test.py`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -33942,7 +33979,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `import_video_evidence_lab.py`.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/import_video_evidence_lab_test.py`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/consolidate_private_recovery_labs.sh`, `scripts/recovery/import_video_evidence_lab_test.py`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
