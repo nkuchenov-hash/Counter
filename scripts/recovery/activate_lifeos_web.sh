@@ -62,9 +62,13 @@ JS
   chmod 600 "$BASE/owner-provisioned.marker"
 fi
 
-# Keep code/migrations root-owned; allow service account to traverse candidate folder.
+# Keep code/migrations root-owned while allowing PocketBase's lifeos service to read them.
+# The newly generated owner-recovery migration is created under umask 077.
+# Without granting group access, PocketBase panics on registration and auto-restarts.
 chown root:lifeos "$BASE"
 chmod 750 "$BASE"
+chgrp -R lifeos "$BASE/pb_migrations" "$BASE/pb_hooks"
+chmod -R g+rX "$BASE/pb_migrations" "$BASE/pb_hooks"
 chown -R lifeos:lifeos "$BASE/pb_data"
 chmod 700 "$BASE/pb_data"
 cat >/etc/systemd/system/lifeos-recovery-live.service <<UNIT
