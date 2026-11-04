@@ -20,6 +20,7 @@ import 'dart:math' as math;
 import 'dart:math' show max;
 
 import 'package:counter/data/category_fuzzy_match.dart';
+import 'package:counter/core/life_color_compat.dart' show canonicalLifeColorValue;
 import 'package:counter/l10n/app_locales.dart';
 import 'package:flutter/material.dart';
 
