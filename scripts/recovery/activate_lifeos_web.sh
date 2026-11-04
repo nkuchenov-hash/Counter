@@ -31,14 +31,16 @@ if [ ! -f "$BASE/owner-provisioned.marker" ]; then
   read -r -p 'LIFE OS login email: ' LIFEOS_OWNER_EMAIL < /dev/tty
   read -r -s -p 'NEW LIFE OS password (12+ characters): ' LIFEOS_OWNER_PASSWORD < /dev/tty
   printf '\n'
-  [[ "$LIFEOS_OWNER_EMAIL" == *@*.* ]]
-  [ "$(printf %s "$LIFEOS_OWNER_PASSWORD" | wc -c)" -ge 12 ]
+  # SSH/Windows terminals may leave a CR or invisible whitespace after the email.
+  LIFEOS_OWNER_EMAIL=$(printf '%s' "$LIFEOS_OWNER_EMAIL" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]')
+  [[ "$LIFEOS_OWNER_EMAIL" =~ ^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$ ]] || { echo 'Invalid login email format (after normalization).'; exit 2; }
+  [ "$(printf %s "$LIFEOS_OWNER_PASSWORD" | wc -c)" -ge 12 ] || { echo 'Password must contain at least 12 characters.'; exit 2; }
   export LIFEOS_OWNER_EMAIL LIFEOS_OWNER_PASSWORD
   cat > "$BASE/pb_migrations/1793832010_claim_recovery_owner.js" <<'JS'
 migrate((app) => {
   const id = $os.getenv('LIFEOS_RECOVERY_OWNER_ID');
-  const email = $os.getenv('LIFEOS_OWNER_EMAIL');
-  const password = $os.getenv('LIFEOS_OWNER_PASSWORD');
+  const email = String($os.getenv('LIFEOS_OWNER_EMAIL') || '').trim().toLowerCase();
+  const password = String($os.getenv('LIFEOS_OWNER_PASSWORD') || '');
   if (!/^[a-z0-9]{15}$/.test(id) || !email.includes('@') || password.length < 12) {
     throw new Error('Recovery login credentials missing');
   }
@@ -47,6 +49,9 @@ migrate((app) => {
     throw new Error('Refusing to overwrite a real account');
   }
   profile.set('email', email);
+  if (String(profile.get('email') || '') !== email) {
+    throw new Error('Recovery email did not survive PocketBase field normalization');
+  }
   profile.setPassword(password);
   profile.setVerified(true);
   app.save(profile);
@@ -57,6 +62,9 @@ JS
   chmod 600 "$BASE/owner-provisioned.marker"
 fi
 
+# Keep code/migrations root-owned; allow service account to traverse candidate folder.
+chown root:lifeos "$BASE"
+chmod 750 "$BASE"
 chown -R lifeos:lifeos "$BASE/pb_data"
 chmod 700 "$BASE/pb_data"
 cat >/etc/systemd/system/lifeos-recovery-live.service <<UNIT
@@ -136,7 +144,14 @@ os.chmod(sys.argv[2],0o600)
 PY
 systemctl start lifeos-stage-offsite.service
 cp -a /etc/caddy/Caddyfile "/etc/caddy/Caddyfile.before-lifeos-$(date -u +%Y%m%dT%H%M%SZ)"
-cat >/etc/caddy/Caddyfile.new-lifeos <<CADDY
+# Preserve unrelated Caddy sites; the recovery domain must not be preconfigured.
+if grep -Fq "$DOMAIN" /etc/caddy/Caddyfile; then
+  echo "BLOCKED: recovery domain already exists in Caddyfile. Inspect before editing."
+  exit 1
+fi
+cp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.new-lifeos
+printf '\n' >> /etc/caddy/Caddyfile.new-lifeos
+cat >>/etc/caddy/Caddyfile.new-lifeos <<CADDY
 $DOMAIN {
     encode gzip zstd
     @admin path /_/ /_/*
