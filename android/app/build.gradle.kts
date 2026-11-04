@@ -9,6 +9,12 @@ kotlin {
     jvmToolchain(17)
 }
 
+// An isolated rescue APK can be installed alongside the old Beget-signed
+// application WITHOUT uninstalling it or erasing its private Android cache.
+// Only opt in after the new PocketBase origin and independent signing key are
+// verified. Standard production builds keep their original package identity.
+val lifeOsParallelRecoveryApk = System.getenv("LIFEOS_SAFE_PARALLEL_INSTALL") == "1"
+
 val lifeOsKeystorePath = System.getenv("LIFE_OS_KEYSTORE_PATH")
 val lifeOsKeystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
 val lifeOsKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
@@ -58,10 +64,15 @@ android {
         multiDexEnabled = true
         // BUILD_STABILITY (§10): Satisfy manifest placeholders required by flutter_login_yandex. Replace with your Yandex OAuth client ID from Yandex Developer Console.
         manifestPlaceholders["YANDEX_CLIENT_ID"] = "your_yandex_client_id_here"
+        manifestPlaceholders["lifeOsAppLabel"] =
+            if (lifeOsParallelRecoveryApk) "LIFE OS Recovery" else "Life OS"
     }
 
     buildTypes {
         release {
+            if (lifeOsParallelRecoveryApk) {
+                applicationIdSuffix = ".recovery"
+            }
             // CI uses the persistent LIFE OS release key from repository secrets.
             // Local builds without those secrets keep the debug fallback so development
             // remains possible, but published CI releases must use lifeOsRelease.
