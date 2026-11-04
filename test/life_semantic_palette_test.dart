@@ -20,9 +20,9 @@ void main() {
 
   test('old official People colors render as the new shared family', () {
     expect(parseTagHexColor('#D05C7D'), kNordicPeople[500]);
-    const category = Category(
-      id: 'legacy-people',
-      userId: 1,
+    final category = CategoryRule(
+      id: 1,
+      name: 'Legacy People',
       colorValue: 0xFFD05C7D,
     );
     expect(category.colorOrDefault, kNordicPeople[500]);
