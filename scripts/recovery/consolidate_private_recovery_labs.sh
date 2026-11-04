@@ -30,7 +30,7 @@ python3 "$src/import_video_evidence_lab.py" "$export_json" "$untimed_lab" "$full
   exit 1
 }
 chmod 600 "$export_json" "$untimed_lab" "$full_lab" \
-  "$untimed_lab.manifest.json" "$full_lab.evidence.json"
+  "${untimed_lab%.sqlite}.manifest.json" "${full_lab%.sqlite}.evidence.json"
 systemctl start lifeos-stage-offsite.service
 systemctl show lifeos-stage-offsite.service -p Result -p ExecMainStatus --no-pager
 echo 'RECOVERY CONSOLIDATED AND BACKED UP IN PRIVATE OFFSITE; NO LIVE DB CUTOVER'
