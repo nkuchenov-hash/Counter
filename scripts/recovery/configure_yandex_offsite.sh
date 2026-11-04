@@ -24,7 +24,7 @@ printf '\n'
 [[ "$access_key" =~ ^[[:alnum:]_-]{12,128}$ ]] || {
   echo "ERROR: invalid S3 access key ID." >&2; exit 1;
 }
-[ "\${#secret_key}" -ge 20 ] || {
+[ "${#secret_key}" -ge 20 ] || {
   echo "ERROR: S3 secret is unexpectedly short." >&2; exit 1;
 }
 # Escape values as shell literals; no user-supplied code can be executed.
