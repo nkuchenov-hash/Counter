@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `5d94da26` on 2026-11-04.**
+**Generated from input HEAD `c519f458` on 2026-11-04.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 997 — each appears **exactly once** below.
+**Tracked files:** 999 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -29,7 +29,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `production UI` | 186 |
 | `test` | 138 |
 | `Brain/data` | 115 |
-| `developer tool` | 85 |
+| `developer tool` | 86 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
 | `governing documentation` | 45 |
@@ -40,7 +40,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `PocketBase migration` | 23 |
 | `shared Voice system` | 20 |
 | `historical engineering record` | 17 |
-| `CI/deployment` | 14 |
+| `CI/deployment` | 15 |
 | `localization` | 13 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 526 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 281 |
+| `PROVEN_REQUIRED` | 527 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 282 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 909 |
-| `MEDIUM` | 88 |
+| `HIGH` | 910 |
+| `MEDIUM` | 89 |
 
 ---
 
@@ -5029,6 +5029,43 @@ RU:
 - **Владелец / слой:** CI
 - **Обязанности:** Управляет CI-сценарием `recovery-lifeos2-access-probe.yml` и его границами выполнения.
 - **Когда открывать:** Когда ломается поведение, связанное с `recovery-lifeos2-access-probe.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
+### `.github/workflows/recovery-lifeos2-diagnostics.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/recovery-lifeos2-diagnostics.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/recovery-lifeos2-diagnostics.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/recovery-lifeos2-diagnostics.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/recovery-lifeos2-diagnostics.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `recovery-lifeos2-diagnostics.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `recovery-lifeos2-diagnostics.yml`.
+- **When to open:** When behavior tied to `recovery-lifeos2-diagnostics.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `recovery-lifeos2-diagnostics.yml` для CI и операций репозитория. GitHub Actions читает `recovery-lifeos2-diagnostics.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `recovery-lifeos2-diagnostics.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `recovery-lifeos2-diagnostics.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `recovery-lifeos2-diagnostics.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `recovery-lifeos2-diagnostics.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `recovery-lifeos2-diagnostics.yml`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `.github/`, Flutter tooling.
 
@@ -33777,7 +33814,7 @@ EN:
 - **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
 - **Contents:** PowerShell, Python, or Dart commands for `advance_untimed_plan_lab.py`.
 - **Repository role:** developer tool
-- **Evidence of use:** Invoked or documented by: `scripts/recovery/consolidate_private_recovery_labs.sh`.
+- **Evidence of use:** Invoked or documented by: `scripts/recovery/build_live_candidate.sh`, `scripts/recovery/consolidate_private_recovery_labs.sh`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** MEDIUM
@@ -33794,7 +33831,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `advance_untimed_plan_lab.py`.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Вызывается или описан в: `scripts/recovery/consolidate_private_recovery_labs.sh`.
+- **Доказательства использования:** Вызывается или описан в: `scripts/recovery/build_live_candidate.sh`, `scripts/recovery/consolidate_private_recovery_labs.sh`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** MEDIUM
@@ -33949,6 +33986,43 @@ RU:
 - **Владелец / слой:** инструменты разработчика
 - **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
 - **Когда открывать:** Owner или CI запускает `browser_cache_export.test.cjs` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/build_live_candidate.sh`
+
+EN:
+
+- **Human purpose:** Developer script `build_live_candidate.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `build_live_candidate.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `build_live_candidate.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Documented manual developer/audit script under `scripts/`; run from repo docs or AGENTS.md workflows.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** MEDIUM
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `build_live_candidate.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `build_live_candidate.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `build_live_candidate.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `build_live_candidate.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Ручной dev/audit скрипт в `scripts/`; запускается по инструкции в docs/AGENTS.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `build_live_candidate.sh` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
