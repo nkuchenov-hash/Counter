@@ -19,7 +19,7 @@ def main(pb_executable,empty_pb):
         src.backup(dst);src.close()
         dst.row_factory=sqlite3.Row
         with dst:
-            insert(dst,"profiles",{"id":"xhjy54inue73piz","email":"","verified":False,"tokenKey":"b"*64})
+            insert(dst,"profiles",{"id":"xhjy54inue73piz","email":"","verified":False,"tokenKey":"b"*48})
         dst.close()
 
         launcher=pathlib.Path(__file__).with_name("activate_lifeos_web.sh").read_text()
