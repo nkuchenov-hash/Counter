@@ -1,0 +1,43 @@
+name: Verify restored PocketBase SSH for LIFE OS plan backfill
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/lifeos-plan-backfill-20261104.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-restored-server:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    environment: production
+    env:
+      SSH_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+    steps:
+      - name: Read-only connection and database presence check
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$SSH_KEY" ]] || { echo "NO_SSH_KEY"; exit 1; }
+          user="${SSH_USER:-root}"
+          host='137.22.146.109'
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/lifeos-plan-check
+          chmod 600 ~/.ssh/lifeos-plan-check
+          ssh-keyscan -T 8 -p "$SSH_PORT" -H "$host" >> ~/.ssh/known_hosts
+          ssh -o BatchMode=yes -o ConnectTimeout=12 -i ~/.ssh/lifeos-plan-check -p "$SSH_PORT" "$user@$host" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          test -f /root/pb/pb_data/data.db
+          python3 - <<'PY'
+          import sqlite3
+          db=sqlite3.connect('file:/root/pb/pb_data/data.db?mode=ro', uri=True)
+          for table in ('profiles','plans','categories'):
+              count=db.execute('SELECT COUNT(*) FROM "'+table+'"').fetchone()[0]
+              print(table+'_count='+str(count))
+          db.close()
+          print('restored_server_access=ok')
+          PY
+          REMOTE
