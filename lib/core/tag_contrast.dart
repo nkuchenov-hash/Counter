@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:counter/core/life_color_compat.dart' show canonicalLifeColorValue;
 
 /// Exact yellow-tag palette (text, icon, stroke). No black/grey/orange overrides.
 const Color kTagYellowGold = Color(0xFFF6C500);
@@ -145,5 +146,7 @@ Color? parseTagHexColor(String? hex) {
   if (h.length != 6) return null;
   final v = int.tryParse(h, radix: 16);
   if (v == null) return null;
-  return Color(0xFF000000 | v);
+  // Old official presets paint using the updated canonical palette.
+  // The persisted HEX remains intact until the tag is explicitly edited.
+  return Color(canonicalLifeColorValue(0xFF000000 | v));
 }
