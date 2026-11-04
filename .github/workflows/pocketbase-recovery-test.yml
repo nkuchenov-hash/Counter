@@ -16,6 +16,8 @@ on:
       - 'scripts/recovery/verify_offsite_restore.sh'
       - 'scripts/recovery/browser_cache_export.js'
       - 'scripts/recovery/browser_cache_export.test.cjs'
+      - 'scripts/recovery/prepare_browser_salvage.py'
+      - 'scripts/recovery/prepare_browser_salvage_test.py'
       - '.github/workflows/pocketbase-recovery-test.yml'
   workflow_dispatch:
 permissions:
@@ -28,7 +30,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate browser rescue export and ensure no auth leakage
-        run: node scripts/recovery/browser_cache_export.test.cjs
+        run: |
+          node scripts/recovery/browser_cache_export.test.cjs
+          python3 scripts/recovery/prepare_browser_salvage_test.py
       - name: Install SQLite CLI
         run: sudo apt-get update && sudo apt-get install -y sqlite3 unzip curl
       - name: Boot and validate isolated PocketBase
