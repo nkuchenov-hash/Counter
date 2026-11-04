@@ -18,6 +18,8 @@ on:
       - 'scripts/recovery/browser_cache_export.test.cjs'
       - 'scripts/recovery/prepare_browser_salvage.py'
       - 'scripts/recovery/prepare_browser_salvage_test.py'
+      - 'scripts/recovery/restore_browser_clone.py'
+      - 'scripts/recovery/restore_browser_clone_test.py'
       - '.github/workflows/pocketbase-recovery-test.yml'
   workflow_dispatch:
 permissions:
@@ -37,6 +39,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y sqlite3 unzip curl
       - name: Boot and validate isolated PocketBase
         run: bash scripts/audit/pocketbase_recovery_check.sh
+      - name: Test isolated browser rescue into real PocketBase schema
+        run: python3 scripts/recovery/restore_browser_clone_test.py "$RUNNER_TEMP/lifeos-pb-recovery-check/data/data.db"
       - name: Probe API auth and cross-user ownership
         shell: bash
         run: |
