@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `c5b062a4` on 2026-10-29.**
+**Generated from input HEAD `266fb001` on 2026-11-04.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 961 — each appears **exactly once** below.
+**Tracked files:** 1002 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,28 +27,28 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 186 |
-| `test` | 136 |
-| `Brain/data` | 114 |
+| `test` | 138 |
+| `Brain/data` | 115 |
+| `developer tool` | 89 |
 | `platform build` | 83 |
 | `shared foundation` | 65 |
-| `developer tool` | 63 |
+| `governing documentation` | 45 |
 | `platform resource` | 44 |
-| `governing documentation` | 43 |
 | `Desktop Voice runtime` | 36 |
 | `test fixture` | 30 |
-| `PocketBase backend` | 24 |
-| `PocketBase migration` | 21 |
+| `PocketBase backend` | 26 |
+| `PocketBase migration` | 23 |
 | `shared Voice system` | 20 |
 | `historical engineering record` | 17 |
+| `CI/deployment` | 15 |
 | `localization` | 13 |
 | `installer` | 12 |
-| `CI/deployment` | 11 |
 | `Brain Voice` | 10 |
+| `audit tool` | 7 |
 | `shared time` | 7 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
 | `asset` | 5 |
-| `audit tool` | 5 |
 | `mobile/web Voice adapters` | 2 |
 | `generated documentation` | 1 |
 | `runtime entry point` | 1 |
@@ -57,10 +57,10 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 518 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 255 |
+| `PROVEN_REQUIRED` | 527 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 285 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
-| `GOVERNING_DOCUMENTATION` | 43 |
+| `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 17 |
 | `GENERATED_CANONICAL_OUTPUT` | 1 |
 
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 878 |
-| `MEDIUM` | 83 |
+| `HIGH` | 913 |
+| `MEDIUM` | 89 |
 
 ---
 
@@ -196,6 +196,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`scripts/`](#folder-scripts)
 - [`scripts/audit/`](#folder-scriptsaudit)
 - [`scripts/manual/`](#folder-scriptsmanual)
+- [`scripts/recovery/`](#folder-scriptsrecovery)
 
 ### Platform folders
 
@@ -1509,6 +1510,30 @@ RU:
 - **Когда открывать:** Открывать при запуске или изменении соответствующей автоматизированной процедуры.
 - **Можно удалить?** Нет — пока на эти сценарии опираются задокументированные процессы.
 - **Связанные пути:** `update.ps1`, `docs/DEPLOY.md`.
+
+---
+
+## Folder: `scripts/recovery/`
+
+EN:
+
+- **What this folder is:** Automation scripts under `scripts/recovery/` — developer/CI maintenance commands.
+- **Why it exists:** Repeatable audits, deploy helpers, and doc generation live here instead of ad-hoc notes.
+- **What lives here:** PowerShell, Python, or Dart scripts (see files below).
+- **What part of the app it affects:** Build, deploy, audit, and doc workflows — not end-user app screens.
+- **When to open it:** Running documented workflow that uses `recovery`.
+- **Can it be deleted?** No — required for documented repo workflows.
+- **Main related paths:** `docs/DEPLOY.md`, `docs/APP_STRUCTURE.md` §6.
+
+RU:
+
+- **Что это за папка:** Каталог автоматизации `scripts/recovery/`.
+- **Зачем нужна:** Хранит воспроизводимые команды для проверки, сборки, публикации или обслуживания репозитория.
+- **Что здесь лежит:** Скрипты PowerShell, Python, Dart или вспомогательные файлы; конкретный состав описан ниже.
+- **На что влияет в приложении:** Влияет на процессы разработки и CI, но не является пользовательским экраном приложения.
+- **Когда открывать:** Открывать при запуске или изменении соответствующей автоматизированной процедуры.
+- **Можно удалить?** Нет — нужен для documented repo workflows.
+- **Связанные пути:** `docs/DEPLOY.md`, `docs/APP_STRUCTURE.md` §6.
 
 ---
 
@@ -4721,7 +4746,7 @@ EN:
 - **Why needed:** The CI system loads `.github/workflows/deploy-pocketbase.yml` to run its declared triggers, permissions, jobs, and checks.
 - **Contents:** YAML workflow definition specific to `deploy-pocketbase.yml`.
 - **Repository role:** CI/deployment
-- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `.github/workflows/deploy.yml`, `docs/DEPLOY.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`, `docs/reports/GOOGLE_HEALTH_SLEEP_SYNC_2026-08-11.md`.
+- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `.github/workflows/deploy.yml`, `docs/DEPLOY.md`, `docs/DISASTER_RECOVERY_2026-11.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
 - **Confidence:** HIGH
@@ -4758,7 +4783,7 @@ EN:
 - **Why needed:** The CI system loads `.github/workflows/deploy.yml` to run its declared triggers, permissions, jobs, and checks.
 - **Contents:** YAML workflow definition specific to `deploy.yml`.
 - **Repository role:** CI/deployment
-- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `docs/APP_STRUCTURE.md`, `docs/DEPLOY.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`, `docs/website/WEBSITE_IMPLEMENTATION_OPTIONS.md`.
+- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `docs/APP_STRUCTURE.md`, `docs/DEPLOY.md`, `docs/DISASTER_RECOVERY_2026-11.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
 - **Confidence:** HIGH
@@ -4893,6 +4918,154 @@ RU:
 - **Владелец / слой:** CI
 - **Обязанности:** Управляет CI-сценарием `pocketbase-health-watch.yml` и его границами выполнения.
 - **Когда открывать:** Когда ломается поведение, связанное с `pocketbase-health-watch.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
+### `.github/workflows/pocketbase-recovery-test.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/pocketbase-recovery-test.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/pocketbase-recovery-test.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/pocketbase-recovery-test.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/pocketbase-recovery-test.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `pocketbase-recovery-test.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `pocketbase-recovery-test.yml`.
+- **When to open:** When behavior tied to `pocketbase-recovery-test.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `pocketbase-recovery-test.yml` для CI и операций репозитория. GitHub Actions читает `pocketbase-recovery-test.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `pocketbase-recovery-test.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `pocketbase-recovery-test.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `pocketbase-recovery-test.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `pocketbase-recovery-test.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `pocketbase-recovery-test.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
+### `.github/workflows/recovery-docs-sync.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/recovery-docs-sync.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/recovery-docs-sync.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/recovery-docs-sync.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/recovery-docs-sync.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `recovery-docs-sync.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `recovery-docs-sync.yml`.
+- **When to open:** When behavior tied to `recovery-docs-sync.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `recovery-docs-sync.yml` для CI и операций репозитория. GitHub Actions читает `recovery-docs-sync.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `recovery-docs-sync.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `recovery-docs-sync.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `recovery-docs-sync.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `recovery-docs-sync.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `recovery-docs-sync.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
+### `.github/workflows/recovery-lifeos2-access-probe.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/recovery-lifeos2-access-probe.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/recovery-lifeos2-access-probe.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/recovery-lifeos2-access-probe.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/recovery-lifeos2-access-probe.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `recovery-lifeos2-access-probe.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `recovery-lifeos2-access-probe.yml`.
+- **When to open:** When behavior tied to `recovery-lifeos2-access-probe.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `recovery-lifeos2-access-probe.yml` для CI и операций репозитория. GitHub Actions читает `recovery-lifeos2-access-probe.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `recovery-lifeos2-access-probe.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `recovery-lifeos2-access-probe.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `recovery-lifeos2-access-probe.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `recovery-lifeos2-access-probe.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `recovery-lifeos2-access-probe.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
+### `.github/workflows/recovery-lifeos2-diagnostics.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/recovery-lifeos2-diagnostics.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/recovery-lifeos2-diagnostics.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/recovery-lifeos2-diagnostics.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/recovery-lifeos2-diagnostics.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `recovery-lifeos2-diagnostics.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `recovery-lifeos2-diagnostics.yml`.
+- **When to open:** When behavior tied to `recovery-lifeos2-diagnostics.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `recovery-lifeos2-diagnostics.yml` для CI и операций репозитория. GitHub Actions читает `recovery-lifeos2-diagnostics.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `recovery-lifeos2-diagnostics.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `recovery-lifeos2-diagnostics.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `recovery-lifeos2-diagnostics.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `recovery-lifeos2-diagnostics.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `recovery-lifeos2-diagnostics.yml`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `.github/`, Flutter tooling.
 
@@ -6710,6 +6883,43 @@ RU:
 - **Связано с:** `lib/core/widgets/`, `docs/reports/DESIGN_SYSTEM_INVENTORY.md`, Component Lab.
 
 
+### `docs/DISASTER_RECOVERY_2026-11.md`
+
+EN:
+
+- **Human purpose:** Markdown document `DISASTER_RECOVERY_2026-11.md` in `docs` — repo tooling or config. Tracked because `docs` needs `DISASTER_RECOVERY_2026-11.md` for build, CI, or maintenance.
+- **What this is:** Markdown document `DISASTER_RECOVERY_2026-11.md` in `docs` — repo tooling or config.
+- **Why needed:** Tracked because `docs` needs `DISASTER_RECOVERY_2026-11.md` for build, CI, or maintenance.
+- **Contents:** Open `DISASTER_RECOVERY_2026-11.md` when working on `docs` (see folder section above).
+- **Repository role:** governing documentation
+- **Evidence of use:** Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing).
+- **Necessity status:** GOVERNING_DOCUMENTATION
+- **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
+- **Confidence:** HIGH
+- **Owner / layer:** documentation
+- **Responsibilities:** Supports `docs` workflow for `DISASTER_RECOVERY_2026-11.md`.
+- **When to open:** When build output or maintenance cites `DISASTER_RECOVERY_2026-11.md`.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** Текстовая спецификация `DISASTER_RECOVERY_2026-11.md` в разделе `docs`. Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Что это:** Текстовая спецификация `DISASTER_RECOVERY_2026-11.md` в разделе `docs`.
+- **Зачем:** Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Содержимое:** Структурированный Markdown-текст по теме `DISASTER_RECOVERY_2026-11.md` без runtime-логики приложения.
+- **Роль в репозитории:** governing documentation
+- **Доказательства использования:** Управляющая/операционная документация для людей и агентов (см. Project Knowledge / AGENTS).
+- **Статус необходимости:** GOVERNING_DOCUMENTATION
+- **Что будет, если удалить:** Пропадёт архитектурное/операционное правило.
+- **Уверенность:** HIGH
+- **Владелец / слой:** документация
+- **Обязанности:** Хранит актуальную документацию по назначению `DISASTER_RECOVERY_2026-11.md`.
+- **Когда открывать:** When результат сборки or maintenance cites `DISASTER_RECOVERY_2026-11.md`.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+
 ### `docs/FUNCTIONS.md`
 
 EN:
@@ -6930,6 +7140,43 @@ RU:
 - **Когда открывать:** Обновление Project Knowledge или спор «какой doc канонический».
 - **Можно удалить?** Нет — актуальный отчёт или чеклист.
 - **Связано с:** 14 governing docs внутри файла; `docs/APP_STRUCTURE.md`.
+
+
+### `docs/RECOVERY_OFFSITE_BACKUPS.md`
+
+EN:
+
+- **Human purpose:** Markdown document `RECOVERY_OFFSITE_BACKUPS.md` in `docs` — repo tooling or config. Tracked because `docs` needs `RECOVERY_OFFSITE_BACKUPS.md` for build, CI, or maintenance.
+- **What this is:** Markdown document `RECOVERY_OFFSITE_BACKUPS.md` in `docs` — repo tooling or config.
+- **Why needed:** Tracked because `docs` needs `RECOVERY_OFFSITE_BACKUPS.md` for build, CI, or maintenance.
+- **Contents:** Open `RECOVERY_OFFSITE_BACKUPS.md` when working on `docs` (see folder section above).
+- **Repository role:** governing documentation
+- **Evidence of use:** Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing).
+- **Necessity status:** GOVERNING_DOCUMENTATION
+- **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
+- **Confidence:** HIGH
+- **Owner / layer:** documentation
+- **Responsibilities:** Supports `docs` workflow for `RECOVERY_OFFSITE_BACKUPS.md`.
+- **When to open:** When build output or maintenance cites `RECOVERY_OFFSITE_BACKUPS.md`.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** Текстовая спецификация `RECOVERY_OFFSITE_BACKUPS.md` в разделе `docs`. Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Что это:** Текстовая спецификация `RECOVERY_OFFSITE_BACKUPS.md` в разделе `docs`.
+- **Зачем:** Фиксирует правила, состояние или справочную информацию, относящуюся к `docs`.
+- **Содержимое:** Структурированный Markdown-текст по теме `RECOVERY_OFFSITE_BACKUPS.md` без runtime-логики приложения.
+- **Роль в репозитории:** governing documentation
+- **Доказательства использования:** Управляющая/операционная документация для людей и агентов (см. Project Knowledge / AGENTS).
+- **Статус необходимости:** GOVERNING_DOCUMENTATION
+- **Что будет, если удалить:** Пропадёт архитектурное/операционное правило.
+- **Уверенность:** HIGH
+- **Владелец / слой:** документация
+- **Обязанности:** Хранит актуальную документацию по назначению `RECOVERY_OFFSITE_BACKUPS.md`.
+- **Когда открывать:** When результат сборки or maintenance cites `RECOVERY_OFFSITE_BACKUPS.md`.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`.
 
 
 ### `docs/ROADMAP.md`
@@ -15129,6 +15376,44 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `sleep_foreground_reconcile_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/local_sync/android_recovery_export.dart`
+
+EN:
+
+- **Human purpose:** Focused brain module for offline sync: android recovery export. Maintains offline sync consistency between PocketBase and the UI cache.
+- **What this is:** Focused brain module for offline sync: android recovery export.
+- **Why needed:** Maintains offline sync consistency between PocketBase and the UI cache.
+- **Contents:** Dart helpers and extensions (`LifeOsAndroidRecoveryExport`).
+- **Key code names:** `LifeOsAndroidRecoveryExport`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/settings/account_settings_section.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** android recovery export
+- **When to open:** When behavior tied to `android_recovery_export.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; Offline banner in shell, reconnect flush; APP_STRUCTURE role: android recovery export
+
+RU:
+
+- **Зачем файл человеку:** Сфокусированный модуль данных для offline sync — файл `android_recovery_export`. Держит offline sync согласованным с PocketBase и экранами.
+- **Что это:** Сфокусированный модуль данных для offline sync — файл `android_recovery_export`.
+- **Зачем:** Держит offline sync согласованным с PocketBase и экранами.
+- **Содержимое:** Dart-код (`LifeOsAndroidRecoveryExport`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/settings/account_settings_section.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Реализует назначение `android_recovery_export.dart` для области `lib/data/local_sync`.
+- **Когда открывать:** Когда ломается поведение, связанное с `android_recovery_export.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`; Offline banner в shell, flush при reconnect
 
 
 ### `lib/data/local_sync/category_mutation_outbox.dart`
@@ -30300,6 +30585,80 @@ RU:
 - **Связано с:** `pb_hooks/`, Flutter embedder.
 
 
+### `pb_hooks/records.primary_singleton.pb.js`
+
+EN:
+
+- **Human purpose:** PocketBase server hook `records.primary_singleton` — runs on VPS when specific API events fire. Some rules (password reset email, overlapping records) must be enforced server-side.
+- **What this is:** PocketBase server hook `records.primary_singleton` — runs on VPS when specific API events fire.
+- **Why needed:** Some rules (password reset email, overlapping records) must be enforced server-side.
+- **Contents:** JavaScript hook handler copied to PocketBase `pb_hooks/` on server.
+- **Repository role:** PocketBase backend
+- **Evidence of use:** Server-side PocketBase hook; deployed with the PB instance (see `docs/POCKETBASE_MANIFEST.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken server-side validation/automation for PB collections.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase backend
+- **Responsibilities:** Server-side logic for `records.primary_singleton` (see `docs/POCKETBASE_MANIFEST.md`).
+- **When to open:** Server behavior differs from app expectations for auth/records.
+- **Can it be deleted?** No — production PocketBase deployment.
+- **Connected to:** PocketBase Admin, Flutter auth/records client.
+
+RU:
+
+- **Зачем файл человеку:** PocketBase hook `records.primary_singleton` — серверная логика при API-событиях на VPS. Часть правил (reset пароля, overlap записей) должна выполняться на сервере, не в APK.
+- **Что это:** PocketBase hook `records.primary_singleton` — серверная логика при API-событиях на VPS.
+- **Зачем:** Часть правил (reset пароля, overlap записей) должна выполняться на сервере, не в APK.
+- **Содержимое:** JavaScript handler `records.primary_singleton.pb.js` — копируется в PocketBase `pb_hooks/` на VPS.
+- **Роль в репозитории:** PocketBase backend
+- **Доказательства использования:** Серверный hook PocketBase; деплоится вместе с PB (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается серверная логика PocketBase.
+- **Уверенность:** HIGH
+- **Владелец / слой:** PocketBase backend
+- **Обязанности:** Серверная логика для `records.primary_singleton` (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Когда открывать:** Поведение auth/records на сервере не совпадает с ожиданиями приложения.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** PocketBase Admin, Flutter auth/records client.
+
+
+### `pb_hooks/records.primary_singleton_helpers.js`
+
+EN:
+
+- **Human purpose:** pb_hooks build file `records.primary_singleton_helpers.js` in `pb_hooks` — required by Flutter/native toolchain. Without `records.primary_singleton_helpers.js`, pb_hooks compile or packaging step for this folder may fail.
+- **What this is:** pb_hooks build file `records.primary_singleton_helpers.js` in `pb_hooks` — required by Flutter/native toolchain.
+- **Why needed:** Without `records.primary_singleton_helpers.js`, pb_hooks compile or packaging step for this folder may fail.
+- **Contents:** Native/config source for `pb_hooks` (open file only when build errors cite it).
+- **Repository role:** PocketBase backend
+- **Evidence of use:** Server-side PocketBase hook; deployed with the PB instance (see `docs/POCKETBASE_MANIFEST.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken server-side validation/automation for PB collections.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase backend
+- **Responsibilities:** Support pb_hooks embedder build for `pb_hooks` — not Dart business logic.
+- **When to open:** Build log mentions `records.primary_singleton_helpers.js` or `pb_hooks`.
+- **Can it be deleted?** Broken server-side validation/automation for PB collections.
+- **Connected to:** `pb_hooks/` platform folder, Flutter embedder.
+
+RU:
+
+- **Зачем файл человеку:** Platform file `records.primary_singleton_helpers.js` в `pb_hooks` — читает Flutter platform tool при сборке pb_hooks build. Без этого файла Flutter platform tool может не собрать или упаковать pb_hooks build.
+- **Что это:** Platform file `records.primary_singleton_helpers.js` в `pb_hooks` — читает Flutter platform tool при сборке pb_hooks build.
+- **Зачем:** Без этого файла Flutter platform tool может не собрать или упаковать pb_hooks build.
+- **Содержимое:** Содержимое native/config слоя `pb_hooks` (смотреть файл при build errors).
+- **Роль в репозитории:** PocketBase backend
+- **Доказательства использования:** Серверный hook PocketBase; деплоится вместе с PB (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается серверная логика PocketBase.
+- **Уверенность:** HIGH
+- **Владелец / слой:** PocketBase backend
+- **Обязанности:** Участвует в Flutter platform tool pipeline для pb_hooks build — не Dart business logic.
+- **Когда открывать:** Build log pb_hooks ссылается на `records.primary_singleton_helpers.js` или `pb_hooks`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `pb_hooks/`, Flutter embedder.
+
+
 ### `pb_hooks/sleep_sync.pb.js`
 
 EN:
@@ -30779,6 +31138,43 @@ RU:
 - **Когда открывать:** Поведение auth/records на сервере не совпадает с ожиданиями приложения.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** PocketBase Admin, Flutter auth/records client.
+
+
+### `pb_migrations/1785000000_bootstrap_core_collections.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `1785000000_bootstrap_core_collections.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1785000000_bootstrap_core_collections.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1785000000_bootstrap_core_collections.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1785000000_bootstrap_core_collections.js` for build, CI, or maintenance.
+- **Contents:** Open `1785000000_bootstrap_core_collections.js` when working on `pb_migrations` (see folder section above).
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Supports `pb_migrations` workflow for `1785000000_bootstrap_core_collections.js`.
+- **When to open:** When build output or maintenance cites `1785000000_bootstrap_core_collections.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `1785000000_bootstrap_core_collections.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1785000000_bootstrap_core_collections.js`.
+- **Что это:** `1785000000_bootstrap_core_collections.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1785000000_bootstrap_core_collections.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1785000000_bootstrap_core_collections.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Реализует JavaScript-часть сценария `1785000000_bootstrap_core_collections.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1785000000_bootstrap_core_collections.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 
 ### `pb_migrations/1785390000_server_sleep_sync.js`
@@ -31558,6 +31954,43 @@ RU:
 - **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 
+### `pb_migrations/1793832000_primary_record_singleton.js`
+
+EN:
+
+- **Human purpose:** JavaScript source `1793832000_primary_record_singleton.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1793832000_primary_record_singleton.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1793832000_primary_record_singleton.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1793832000_primary_record_singleton.js` for build, CI, or maintenance.
+- **Contents:** Open `1793832000_primary_record_singleton.js` when working on `pb_migrations` (see folder section above).
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Supports `pb_migrations` workflow for `1793832000_primary_record_singleton.js`.
+- **When to open:** When build output or maintenance cites `1793832000_primary_record_singleton.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `1793832000_primary_record_singleton.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1793832000_primary_record_singleton.js`.
+- **Что это:** `1793832000_primary_record_singleton.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1793832000_primary_record_singleton.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1793832000_primary_record_singleton.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Реализует JavaScript-часть сценария `1793832000_primary_record_singleton.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1793832000_primary_record_singleton.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+
 ### `pubspec.lock`
 
 EN:
@@ -31739,6 +32172,80 @@ RU:
 - **Владелец / слой:** аудит
 - **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
 - **Когда открывать:** Owner или CI запускает `documentation_parity.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/audit/pocketbase_recovery_api_test.py`
+
+EN:
+
+- **Human purpose:** Developer script `pocketbase_recovery_api_test.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `pocketbase_recovery_api_test.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `pocketbase_recovery_api_test.py`.
+- **Repository role:** audit tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** audit tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `pocketbase_recovery_api_test.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `pocketbase_recovery_api_test.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `pocketbase_recovery_api_test.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `pocketbase_recovery_api_test.py`.
+- **Роль в репозитории:** audit tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** аудит
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `pocketbase_recovery_api_test.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/audit/pocketbase_recovery_check.sh`
+
+EN:
+
+- **Human purpose:** Developer script `pocketbase_recovery_check.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `pocketbase_recovery_check.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `pocketbase_recovery_check.sh`.
+- **Repository role:** audit tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** audit tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `pocketbase_recovery_check.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `pocketbase_recovery_check.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `pocketbase_recovery_check.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `pocketbase_recovery_check.sh`.
+- **Роль в репозитории:** audit tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** аудит
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `pocketbase_recovery_check.sh` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
@@ -32197,7 +32704,7 @@ EN:
 - **Why needed:** Maintains owner-readable structure guide in sync with repo after changes.
 - **Contents:** Python generator + curated folder/file descriptions.
 - **Repository role:** developer tool
-- **Evidence of use:** (1) Invoked or documented by: `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
+- **Evidence of use:** (1) Invoked or documented by: `.github/workflows/recovery-docs-sync.yml`, `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -32214,7 +32721,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `generate_app_structure_detailed.py`.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** (1) Вызывается или описан в: `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
+- **Доказательства использования:** (1) Вызывается или описан в: `.github/workflows/recovery-docs-sync.yml`, `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
@@ -33187,6 +33694,968 @@ RU:
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
 
+### `scripts/recovery/Caddyfile.health-only`
+
+EN:
+
+- **Human purpose:** Developer script `Caddyfile.health-only` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `Caddyfile.health-only` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `Caddyfile.health-only`.
+- **Repository role:** developer tool
+- **Evidence of use:** Documented manual developer/audit script under `scripts/`; run from repo docs or AGENTS.md workflows.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** MEDIUM
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `Caddyfile.health-only` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `caddyfile.health-only` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `caddyfile.health-only` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `caddyfile.health-only`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Ручной dev/audit скрипт в `scripts/`; запускается по инструкции в docs/AGENTS.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `caddyfile.health-only` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/activate_lifeos_web.sh`
+
+EN:
+
+- **Human purpose:** Developer script `activate_lifeos_web.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `activate_lifeos_web.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `activate_lifeos_web.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/test_interactive_owner_claim.py`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `activate_lifeos_web.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `activate_lifeos_web.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `activate_lifeos_web.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `activate_lifeos_web.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/test_interactive_owner_claim.py`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `activate_lifeos_web.sh` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/advance_plan_recovery_lab.py`
+
+EN:
+
+- **Human purpose:** Developer script `advance_plan_recovery_lab.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `advance_plan_recovery_lab.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `advance_plan_recovery_lab.py`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/advance_plan_recovery_lab_test.py`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `advance_plan_recovery_lab.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `advance_plan_recovery_lab.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `advance_plan_recovery_lab.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `advance_plan_recovery_lab.py`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/advance_plan_recovery_lab_test.py`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `advance_plan_recovery_lab.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/advance_plan_recovery_lab_test.py`
+
+EN:
+
+- **Human purpose:** Developer script `advance_plan_recovery_lab_test.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `advance_plan_recovery_lab_test.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `advance_plan_recovery_lab_test.py`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `advance_plan_recovery_lab_test.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `advance_plan_recovery_lab_test.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `advance_plan_recovery_lab_test.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `advance_plan_recovery_lab_test.py`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `advance_plan_recovery_lab_test.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/advance_untimed_plan_lab.py`
+
+EN:
+
+- **Human purpose:** Developer script `advance_untimed_plan_lab.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `advance_untimed_plan_lab.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `advance_untimed_plan_lab.py`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `scripts/recovery/build_live_candidate.sh`, `scripts/recovery/consolidate_private_recovery_labs.sh`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** MEDIUM
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `advance_untimed_plan_lab.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `advance_untimed_plan_lab.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `advance_untimed_plan_lab.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `advance_untimed_plan_lab.py`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `scripts/recovery/build_live_candidate.sh`, `scripts/recovery/consolidate_private_recovery_labs.sh`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `advance_untimed_plan_lab.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/audit_recovery_cutover.py`
+
+EN:
+
+- **Human purpose:** Developer script `audit_recovery_cutover.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `audit_recovery_cutover.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `audit_recovery_cutover.py`.
+- **Repository role:** developer tool
+- **Evidence of use:** Documented manual developer/audit script under `scripts/`; run from repo docs or AGENTS.md workflows.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** MEDIUM
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `audit_recovery_cutover.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `audit_recovery_cutover.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `audit_recovery_cutover.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `audit_recovery_cutover.py`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Ручной dev/audit скрипт в `scripts/`; запускается по инструкции в docs/AGENTS.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `audit_recovery_cutover.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/backup_stage.sh`
+
+EN:
+
+- **Human purpose:** Developer script `backup_stage.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `backup_stage.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `backup_stage.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/install_stage_backups.sh`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `backup_stage.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `backup_stage.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `backup_stage.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `backup_stage.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/install_stage_backups.sh`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `backup_stage.sh` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/browser_cache_export.js`
+
+EN:
+
+- **Human purpose:** Developer script `browser_cache_export.js` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `browser_cache_export.js` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `browser_cache_export.js`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `browser_cache_export.js` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `browser_cache_export.js` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `browser_cache_export.js` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `browser_cache_export.js`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `browser_cache_export.js` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/browser_cache_export.test.cjs`
+
+EN:
+
+- **Human purpose:** Developer script `browser_cache_export.test.cjs` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `browser_cache_export.test.cjs` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `browser_cache_export.test.cjs`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `browser_cache_export.test.cjs` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `browser_cache_export.test.cjs` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `browser_cache_export.test.cjs` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `browser_cache_export.test.cjs`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `browser_cache_export.test.cjs` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/build_live_candidate.sh`
+
+EN:
+
+- **Human purpose:** Developer script `build_live_candidate.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `build_live_candidate.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `build_live_candidate.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/activate_lifeos_web.sh`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `build_live_candidate.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `build_live_candidate.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `build_live_candidate.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `build_live_candidate.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/activate_lifeos_web.sh`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `build_live_candidate.sh` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/configure_yandex_offsite.sh`
+
+EN:
+
+- **Human purpose:** Developer script `configure_yandex_offsite.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `configure_yandex_offsite.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `configure_yandex_offsite.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `configure_yandex_offsite.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `configure_yandex_offsite.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `configure_yandex_offsite.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `configure_yandex_offsite.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `configure_yandex_offsite.sh` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/consolidate_private_recovery_labs.sh`
+
+EN:
+
+- **Human purpose:** Developer script `consolidate_private_recovery_labs.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `consolidate_private_recovery_labs.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `consolidate_private_recovery_labs.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Documented manual developer/audit script under `scripts/`; run from repo docs or AGENTS.md workflows.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** MEDIUM
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `consolidate_private_recovery_labs.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `consolidate_private_recovery_labs.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `consolidate_private_recovery_labs.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `consolidate_private_recovery_labs.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Ручной dev/audit скрипт в `scripts/`; запускается по инструкции в docs/AGENTS.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `consolidate_private_recovery_labs.sh` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/import_video_evidence_lab.py`
+
+EN:
+
+- **Human purpose:** Developer script `import_video_evidence_lab.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `import_video_evidence_lab.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `import_video_evidence_lab.py`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/consolidate_private_recovery_labs.sh`, `scripts/recovery/import_video_evidence_lab_test.py`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `import_video_evidence_lab.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `import_video_evidence_lab.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `import_video_evidence_lab.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `import_video_evidence_lab.py`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/consolidate_private_recovery_labs.sh`, `scripts/recovery/import_video_evidence_lab_test.py`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `import_video_evidence_lab.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/import_video_evidence_lab_test.py`
+
+EN:
+
+- **Human purpose:** Developer script `import_video_evidence_lab_test.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `import_video_evidence_lab_test.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `import_video_evidence_lab_test.py`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `import_video_evidence_lab_test.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `import_video_evidence_lab_test.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `import_video_evidence_lab_test.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `import_video_evidence_lab_test.py`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `import_video_evidence_lab_test.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/install_offsite_stage.sh`
+
+EN:
+
+- **Human purpose:** Developer script `install_offsite_stage.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `install_offsite_stage.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `install_offsite_stage.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`, `docs/RECOVERY_OFFSITE_BACKUPS.md`, `scripts/recovery/configure_yandex_offsite.sh`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `install_offsite_stage.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `install_offsite_stage.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `install_offsite_stage.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `install_offsite_stage.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`, `docs/RECOVERY_OFFSITE_BACKUPS.md`, `scripts/recovery/configure_yandex_offsite.sh`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `install_offsite_stage.sh` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/install_stage_backups.sh`
+
+EN:
+
+- **Human purpose:** Developer script `install_stage_backups.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `install_stage_backups.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `install_stage_backups.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `install_stage_backups.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `install_stage_backups.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `install_stage_backups.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `install_stage_backups.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `install_stage_backups.sh` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/prepare_browser_salvage.py`
+
+EN:
+
+- **Human purpose:** Developer script `prepare_browser_salvage.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `prepare_browser_salvage.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `prepare_browser_salvage.py`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/prepare_browser_salvage_test.py`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `prepare_browser_salvage.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `prepare_browser_salvage.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `prepare_browser_salvage.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `prepare_browser_salvage.py`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/prepare_browser_salvage_test.py`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `prepare_browser_salvage.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/prepare_browser_salvage_test.py`
+
+EN:
+
+- **Human purpose:** Developer script `prepare_browser_salvage_test.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `prepare_browser_salvage_test.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `prepare_browser_salvage_test.py`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `prepare_browser_salvage_test.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `prepare_browser_salvage_test.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `prepare_browser_salvage_test.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `prepare_browser_salvage_test.py`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `prepare_browser_salvage_test.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/repair_profile_user_id.sh`
+
+EN:
+
+- **Human purpose:** Developer script `repair_profile_user_id.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `repair_profile_user_id.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `repair_profile_user_id.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `scripts/recovery/activate_lifeos_web.sh`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** MEDIUM
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `repair_profile_user_id.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `repair_profile_user_id.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `repair_profile_user_id.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `repair_profile_user_id.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `scripts/recovery/activate_lifeos_web.sh`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `repair_profile_user_id.sh` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/restore_browser_clone.py`
+
+EN:
+
+- **Human purpose:** Developer script `restore_browser_clone.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `restore_browser_clone.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `restore_browser_clone.py`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/advance_plan_recovery_lab_test.py`, `scripts/recovery/restore_browser_clone_test.py`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `restore_browser_clone.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `restore_browser_clone.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `restore_browser_clone.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `restore_browser_clone.py`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`, `scripts/recovery/advance_plan_recovery_lab_test.py`, `scripts/recovery/restore_browser_clone_test.py`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `restore_browser_clone.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/restore_browser_clone_test.py`
+
+EN:
+
+- **Human purpose:** Developer script `restore_browser_clone_test.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `restore_browser_clone_test.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `restore_browser_clone_test.py`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `restore_browser_clone_test.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `restore_browser_clone_test.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `restore_browser_clone_test.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `restore_browser_clone_test.py`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `restore_browser_clone_test.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/setup_https_health_only.sh`
+
+EN:
+
+- **Human purpose:** Developer script `setup_https_health_only.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `setup_https_health_only.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `setup_https_health_only.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `setup_https_health_only.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `setup_https_health_only.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `setup_https_health_only.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `setup_https_health_only.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `setup_https_health_only.sh` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/stage_pocketbase_ubuntu.sh`
+
+EN:
+
+- **Human purpose:** Developer script `stage_pocketbase_ubuntu.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `stage_pocketbase_ubuntu.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `stage_pocketbase_ubuntu.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Documented manual developer/audit script under `scripts/`; run from repo docs or AGENTS.md workflows.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** MEDIUM
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `stage_pocketbase_ubuntu.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `stage_pocketbase_ubuntu.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `stage_pocketbase_ubuntu.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `stage_pocketbase_ubuntu.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Ручной dev/audit скрипт в `scripts/`; запускается по инструкции в docs/AGENTS.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `stage_pocketbase_ubuntu.sh` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/sync_offsite_stage.sh`
+
+EN:
+
+- **Human purpose:** Developer script `sync_offsite_stage.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `sync_offsite_stage.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `sync_offsite_stage.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`, `docs/RECOVERY_OFFSITE_BACKUPS.md`, `scripts/recovery/install_offsite_stage.sh`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `sync_offsite_stage.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `sync_offsite_stage.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `sync_offsite_stage.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `sync_offsite_stage.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`, `docs/RECOVERY_OFFSITE_BACKUPS.md`, `scripts/recovery/install_offsite_stage.sh`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `sync_offsite_stage.sh` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/test_interactive_owner_claim.py`
+
+EN:
+
+- **Human purpose:** Developer script `test_interactive_owner_claim.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `test_interactive_owner_claim.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `test_interactive_owner_claim.py`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `test_interactive_owner_claim.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `test_interactive_owner_claim.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `test_interactive_owner_claim.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `test_interactive_owner_claim.py`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `test_interactive_owner_claim.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/recovery/verify_offsite_restore.sh`
+
+EN:
+
+- **Human purpose:** Developer script `verify_offsite_restore.sh` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `verify_offsite_restore.sh` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `verify_offsite_restore.sh`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `verify_offsite_restore.sh` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `verify_offsite_restore.sh` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `verify_offsite_restore.sh` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `verify_offsite_restore.sh`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/pocketbase-recovery-test.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `verify_offsite_restore.sh` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
 ### `scripts/sync_locales.dart`
 
 EN:
@@ -33223,6 +34692,44 @@ RU:
 - **Когда открывать:** Owner или CI запускает `sync_locales.dart` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `lib/l10n/langs/HELP HOW TO UPDATE the languages`.
+
+
+### `test/android_recovery_export_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `android_recovery_export_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `android_recovery_export_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/android_recovery_export_test.dart` / CI when enabled. (2) Namesake production subject: `lib/data/local_sync/android_recovery_export.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `android_recovery_export_test` scenario.
+- **When to open:** CI failure or changing code near `android_recovery_export`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `android_recovery_export`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `android_recovery_export` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `android_recovery_export` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `android_recovery_export`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/android_recovery_export_test.dart`. (2) Парный production-файл: `lib/data/local_sync/android_recovery_export.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `android_recovery_export`.
+- **Когда открывать:** Падение CI или правка кода рядом с `android_recovery_export`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
 
 
 ### `test/app_hotkey_keycaps_test.dart`
@@ -37873,6 +39380,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `plans_time_performance_contract`.
 - **Когда открывать:** Падение CI или правка кода рядом с `plans_time_performance_contract`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/pocketbase_endpoint_config_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `pocketbase_endpoint_config_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `pocketbase_endpoint_config_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/pocketbase_endpoint_config_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `pocketbase_endpoint_config_test` scenario.
+- **When to open:** CI failure or changing code near `pocketbase_endpoint_config`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `pocketbase_endpoint_config`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `pocketbase_endpoint_config` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `pocketbase_endpoint_config` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `pocketbase_endpoint_config`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/pocketbase_endpoint_config_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `pocketbase_endpoint_config`.
+- **Когда открывать:** Падение CI или правка кода рядом с `pocketbase_endpoint_config`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 

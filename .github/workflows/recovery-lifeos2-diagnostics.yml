@@ -1,0 +1,88 @@
+name: LIFEOS2 recovery read-only diagnostics
+on:
+  push:
+    branches: [recovery/pocketbase-relocation-20261103]
+    paths:
+      - '.github/workflows/recovery-lifeos2-diagnostics.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 5
+    env:
+      RECOVERY_SSH_KEY: ${{ secrets.LIFEOS2_SSH_PRIVATE_KEY || secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+    steps:
+      - name: Probe LIFEOS2 without modifying server
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          [[ -n "$RECOVERY_SSH_KEY" ]]
+          mkdir -p "$RUNNER_TEMP/ssh"
+          printf '%s\n' "$RECOVERY_SSH_KEY" > "$RUNNER_TEMP/ssh/id"
+          chmod 600 "$RUNNER_TEMP/ssh/id"
+          ssh -i "$RUNNER_TEMP/ssh/id" -T \
+            -o BatchMode=yes -o PasswordAuthentication=no \
+            -o PreferredAuthentications=publickey -o IdentitiesOnly=yes \
+            -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
+            -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" root@137.22.146.109 \
+            'bash -s' <<'REMOTE'
+          set -euo pipefail
+          echo "SERVER_ACCESS=OK"
+          date -u +SERVER_UTC=%Y-%m-%dT%H:%M:%SZ
+          df -h /opt/lifeos | tail -n 1
+          printf 'GIT_HEAD='
+          git -C /opt/lifeos/source rev-parse --short HEAD || true
+          echo "POCKETBASE_VERSION:"
+          /opt/lifeos/pocketbase --version || true
+          echo "SERVICES:"
+          for s in lifeos-recovery-live.service lifeos-recovery-stage.service lifeos-stage-offsite.service caddy.service; do
+            echo "$s: $(systemctl is-active "$s" || true)"
+          done
+          echo "RECOVERY_LIVE_SERVICE:"
+          systemctl show lifeos-recovery-live.service -p ActiveState -p SubState -p Result -p ExecMainCode -p ExecMainStatus -p NRestarts --no-pager || true
+          echo "RECOVERY_LIVE_PERMISSIONS:"
+          id lifeos || true
+          namei -l /opt/lifeos/recovery-candidate/pb_data/data.db || true
+          echo "RECOVERY_LIVE_ERRORS (only failure lines; secrets redacted):"
+          journalctl -u lifeos-recovery-live.service -n 60 --no-pager -o cat 2>/dev/null \
+            | grep -Ei 'error|fatal|panic|permission|denied|failed|exit status|migration|cannot|no such|database|bind|unrecognized' \
+            | sed -E 's/(password|token|secret|key)[=:][^[:space:]]+/\1=[REDACTED]/Ig' \
+            | tail -n 15 || true
+          echo "HEALTH:"
+          curl -sS --max-time 5 -o /dev/null -w 'LOCAL_HTTP=%{http_code}\n' http://127.0.0.1:8099/api/health || true
+          curl -sS --max-time 5 -o /dev/null -w 'PUBLIC_HTTPS=%{http_code}\n' https://137-22-146-109.sslip.io/api/health || true
+          for p in \
+            /opt/lifeos/recovery-stage/pb_data/data.db \
+            /var/backups/lifeos-stage/browser-salvage-20261104.sqlite \
+            /var/backups/lifeos-stage/browser-recovered-plans-lab-20261104.sqlite \
+            /var/backups/lifeos-stage/browser-recovered-dated-lab-20261104.sqlite \
+            /var/backups/lifeos-stage/LIFEOS_VIDEO_RECOVERY_REVIEWED_2026-11-04.json; do
+              if test -f "$p"; then echo "EXISTS $(basename "$p")"; else echo "MISSING $(basename "$p")"; fi
+          done
+          python3 - <<'PY'
+          import sqlite3,os
+          for p in ['/opt/lifeos/recovery-stage/pb_data/data.db','/var/backups/lifeos-stage/browser-recovered-plans-lab-20261104.sqlite','/var/backups/lifeos-stage/browser-recovered-dated-lab-20261104.sqlite']:
+              if not os.path.isfile(p):continue
+              db=sqlite3.connect('file:'+p+'?mode=ro',uri=True)
+              try:
+                  print('DB:',os.path.basename(p))
+                  print('INTEGRITY:',db.execute('PRAGMA integrity_check').fetchone()[0])
+                  for name in ['profiles','categories','tags','plans','records']:
+                      print(name.upper(),db.execute('SELECT COUNT(*) FROM '+name).fetchone()[0])
+                  open_count=db.execute("""SELECT COUNT(*) FROM records WHERE status='running' AND (parent_id='' OR parent_id IS NULL) AND (end_time='' OR end_time IS NULL)""").fetchone()[0]
+                  print('OPEN_PRIMARY_COUNT',open_count)
+                  print('USER_ID_COUNT',db.execute('SELECT COUNT(DISTINCT id) FROM profiles').fetchone()[0])
+                  print('AUTH_SETUP',db.execute("SELECT COUNT(*) FROM profiles WHERE email != '' AND password != ''").fetchone()[0])
+              except Exception as e: print('DB_INSPECTION_ERROR',str(e))
+              finally:db.close()
+          PY
+          echo "CADDY_CONFIG:"
+          grep -E '^(.*sslip.io|[[:space:]]+reverse_proxy|[[:space:]]+respond)' /etc/caddy/Caddyfile || true
+          echo "LIVE_SERVICE_UNIT:"
+          systemctl cat lifeos-recovery-stage.service | grep -E '^(ExecStart|WorkingDirectory|User|Group)=' || true
+          echo "DIAGNOSTIC_READ_ONLY_COMPLETE"
+          REMOTE

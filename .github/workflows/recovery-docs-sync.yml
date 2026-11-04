@@ -1,0 +1,25 @@
+name: Recovery documentation sync
+on:
+  push:
+    branches: [recovery/pocketbase-relocation-20261103]
+permissions:
+  contents: write
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Regenerate detailed tracked-file documentation
+        run: python scripts/manual/generate_app_structure_detailed.py
+      - name: Commit generated map when it changed
+        run: |
+          if ! git diff --quiet -- docs/APP_STRUCTURE_DETAILED.md; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/APP_STRUCTURE_DETAILED.md
+            git commit -m "docs: sync detailed structure for recovery changes"
+            git push origin HEAD:recovery/pocketbase-relocation-20261103
+          fi

@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'lib/**'
+      - 'test/android_recovery_export_test.dart'
       - 'test/viktor_multiday_agent_test.dart'
       - 'test/viktor_priority_insertion_test.dart'
       - 'test/viktor_plan_category_test.dart'
@@ -49,6 +50,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 45
+    env:
+      # Keep the existing address unless a tested replacement is explicitly set.
+      LIFEOS_POCKETBASE_URL: ${{ vars.LIFEOS_POCKETBASE_URL || 'https://217-114-0-201.sslip.io' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -67,11 +71,20 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Verify production and disaster-recovery endpoint selection
+        shell: bash
+        run: |
+          flutter test test/pocketbase_endpoint_config_test.dart
+          flutter test test/pocketbase_endpoint_config_test.dart --dart-define=POCKETBASE_URL=https://lifeos-recovery.example.org
+
       - name: Analyze runtime app
         run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 
       - name: Run live-sync and recurrence regression tests
         run: flutter test test/viktor_read_answer_test.dart test/viktor_date_scope_test.dart test/viktor_existing_plan_voice_timezone_test.dart test/viktor_plan_category_test.dart test/viktor_priority_insertion_test.dart test/viktor_multiday_agent_test.dart test/viktor_general_agent_contract_test.dart test/viktor_conversation_store_test.dart test/viktor_action_contract_test.dart test/viktor_historical_records_test.dart test/viktor_thread_context_test.dart test/viktor_record_tools_test.dart test/viktor_schedule_planner_test.dart test/viktor_chat_layout_test.dart test/live_sync_contract_test.dart test/plan_recurrence_scope_test.dart test/record_write_durability_test.dart test/planning_edit_sheet_layout_test.dart test/auto_plan_nearest_free_slot_test.dart test/calendar_week_grouping_test.dart test/calendar_drag_and_reschedule_test.dart test/calendar_week_timeview_drag_test.dart test/plan_time_bulk_drag_test.dart test/notes_canonical_components_test.dart test/notes_category_plus_sheet_test.dart test/notes_folder_tabs_contract_test.dart test/category_mutation_outbox_test.dart test/category_order_sync_test.dart test/profile_timezone_catalog_test.dart test/plan_time_sequential_cascade_test.dart test/plan_time_fixed_time_policy_test.dart test/planning_snapshot_cache_test.dart test/plan_time_timezone_projection_test.dart
+
+      - name: Test Android offline recovery export safety
+        run: flutter test test/android_recovery_export_test.dart
 
       - name: Time View overlap-lane regression
         run: flutter test test/plan_time_view_layout_test.dart --plain-name "Time View overlap lanes preserve every card"
@@ -201,7 +214,12 @@ jobs:
           done
 
       - name: Build arm64 release APK
-        run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$LIFEOS_POCKETBASE_URL" =~ ^https://[^/]+$ ]] || { echo "::error::LIFEOS_POCKETBASE_URL must be an HTTPS origin without a path"; exit 1; }
+          flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons \
+            --dart-define=POCKETBASE_URL="$LIFEOS_POCKETBASE_URL"
 
       - name: Prepare public APK name
         run: cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk LIFE-OS-Android-arm64.apk
