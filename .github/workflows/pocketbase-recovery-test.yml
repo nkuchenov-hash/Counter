@@ -10,6 +10,8 @@ on:
       - 'scripts/recovery/install_stage_backups.sh'
       - 'scripts/recovery/setup_https_health_only.sh'
       - 'scripts/recovery/Caddyfile.health-only'
+      - 'scripts/recovery/sync_offsite_stage.sh'
+      - 'scripts/recovery/install_offsite_stage.sh'
       - '.github/workflows/pocketbase-recovery-test.yml'
   workflow_dispatch:
 permissions:
@@ -68,3 +70,26 @@ jobs:
           grep -Fq 'reverse_proxy 127.0.0.1:8099' scripts/recovery/Caddyfile.health-only
           grep -Fq 'respond "LIFE OS recovery staging: user data API is not public" 503' scripts/recovery/Caddyfile.health-only
           echo 'PASS: HTTPS health-only Caddy config validates; other URLs deny requests.'
+      - name: Verify encrypted offsite sync with disposable restic repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n scripts/recovery/sync_offsite_stage.sh
+          bash -n scripts/recovery/install_offsite_stage.sh
+          sudo apt-get install -y restic
+          sudo install -d -m 0700 /etc/lifeos
+          sudo sh -c 'printf "test-restic-password-for-disposable-ci-only\n" > /etc/lifeos/offsite-repository-password'
+          sudo chmod 0600 /etc/lifeos/offsite-repository-password
+          sudo chown root:root /etc/lifeos/offsite-repository-password
+          REPO="$RUNNER_TEMP/restic-ci-offsite"
+          sudo restic -r "$REPO" -p /etc/lifeos/offsite-repository-password init
+          sudo tee /etc/lifeos/offsite-backup.env >/dev/null <<EOF
+          RESTIC_REPOSITORY='$REPO'
+          RESTIC_PASSWORD_FILE='/etc/lifeos/offsite-repository-password'
+          LIFEOS_ALLOW_LOCAL_RESTIC_TEST='1'
+          EOF
+          sudo chmod 0600 /etc/lifeos/offsite-backup.env
+          sudo chown root:root /etc/lifeos/offsite-backup.env
+          sudo bash scripts/recovery/sync_offsite_stage.sh
+          sudo env RESTIC_REPOSITORY="$REPO" RESTIC_PASSWORD_FILE=/etc/lifeos/offsite-repository-password restic snapshots --latest 1
+          echo 'PASS: archives uploaded to independently located test repository and restic check succeeded.'
