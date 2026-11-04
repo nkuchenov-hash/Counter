@@ -30,6 +30,9 @@ jobs:
           mkdir -p "$RUNNER_TEMP/lifeos2-ssh"
           printf '%s\n' "$RECOVERY_SSH_KEY" > "$RUNNER_TEMP/lifeos2-ssh/id"
           chmod 600 "$RUNNER_TEMP/lifeos2-ssh/id"
+          echo "PUBLIC_KEY_BEGIN (public key only, safe to install in authorized_keys)"
+          ssh-keygen -y -f "$RUNNER_TEMP/lifeos2-ssh/id"
+          echo "PUBLIC_KEY_END"
           ssh -T -n -i "$RUNNER_TEMP/lifeos2-ssh/id" \
             -o BatchMode=yes -o PreferredAuthentications=publickey \
             -o PasswordAuthentication=no -o IdentitiesOnly=yes \
