@@ -1,0 +1,40 @@
+name: LIFEOS2 recovery access probe
+on:
+  push:
+    branches: [recovery/pocketbase-relocation-20261103]
+    paths: ['.github/workflows/recovery-lifeos2-access-probe.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  read-only-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      RECOVERY_SSH_KEY: ${{ secrets.LIFEOS2_SSH_PRIVATE_KEY || secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+    steps:
+      - name: Check if an SSH key is configured (never print key)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${RECOVERY_SSH_KEY}" ]]; then
+            echo "ACCESS_BLOCKER: no SSH private key is accessible to GitHub Actions"
+            exit 2
+          fi
+          echo "ACCESS_TEST: SSH secret is configured; testing LIFEOS2 (no writes)"
+      - name: Probe independent replacement server via SSH public key
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$RUNNER_TEMP/lifeos2-ssh"
+          printf '%s\n' "$RECOVERY_SSH_KEY" > "$RUNNER_TEMP/lifeos2-ssh/id"
+          chmod 600 "$RUNNER_TEMP/lifeos2-ssh/id"
+          ssh -T -n -i "$RUNNER_TEMP/lifeos2-ssh/id" \
+            -o BatchMode=yes -o PreferredAuthentications=publickey \
+            -o PasswordAuthentication=no -o IdentitiesOnly=yes \
+            -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new \
+            -o UserKnownHostsFile="$RUNNER_TEMP/lifeos2-ssh/known_hosts" \
+            root@137.22.146.109 \
+            'printf "LIFEOS2_SSH_OK\n"; test -r /opt/lifeos/recovery-stage/pb_data/data.db && echo STAGE_DB_PRESENT; test -r /var/backups/lifeos-stage/browser-recovered-plans-lab-20261104.sqlite && echo RECOVERY_LAB_PRESENT; systemctl is-active lifeos-recovery-stage.service || true'
+          echo "READ_ONLY_PROBE_COMPLETE"
