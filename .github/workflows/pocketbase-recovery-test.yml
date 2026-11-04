@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'pb_migrations/**'
+      - 'pb_hooks/records.primary_singleton.pb.js'
+      - 'pb_hooks/records.primary_singleton_helpers.js'
       - 'scripts/audit/pocketbase_recovery_check.sh'
       - 'scripts/audit/pocketbase_recovery_api_test.py'
       - 'scripts/recovery/backup_stage.sh'
