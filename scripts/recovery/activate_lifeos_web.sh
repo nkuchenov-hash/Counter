@@ -163,15 +163,19 @@ os.chmod(sys.argv[2],0o600)
 PY
 systemctl start lifeos-stage-offsite.service
 cp -a /etc/caddy/Caddyfile "/etc/caddy/Caddyfile.before-lifeos-$(date -u +%Y%m%dT%H%M%SZ)"
-# The domain was previously reserved by our exact, health-only staging Caddyfile.
-# Replace that known staging configuration ONLY; retain unrelated Caddy sites.
-# Any unknown domain configuration remains blocked, never overwritten.
+# Permit only our two known configurations: original health-only staging,
+# or the exact live Caddyfile produced by this recovery script on a prior run.
+# Never overwrite unknown domain configuration or unrelated Caddy sites.
 CADDY_STAGE="$SRC/scripts/recovery/Caddyfile.health-only"
 CADDY_NEXT=/etc/caddy/Caddyfile.new-lifeos
+CADDY_ALREADY_LIVE=0
 if grep -Fq "$DOMAIN" /etc/caddy/Caddyfile; then
   if cmp -s "$CADDY_STAGE" /etc/caddy/Caddyfile; then
     echo 'PASS: recognized original LIFE OS health-only staging Caddyfile; upgrading it to live app.'
     : > "$CADDY_NEXT"
+  elif [ -f "$CADDY_NEXT" ] && cmp -s "$CADDY_NEXT" /etc/caddy/Caddyfile; then
+    echo 'PASS: recognized previously installed LIFE OS live Caddyfile; retrying failed public checks.'
+    CADDY_ALREADY_LIVE=1
   else
     echo 'BLOCKED: recovery domain exists in a nonstandard Caddyfile; refusing to modify existing routes.'
     exit 1
@@ -179,8 +183,9 @@ if grep -Fq "$DOMAIN" /etc/caddy/Caddyfile; then
 else
   cp /etc/caddy/Caddyfile "$CADDY_NEXT"
 fi
-printf '\n' >> "$CADDY_NEXT"
-cat >>"$CADDY_NEXT" <<CADDY
+if [ "$CADDY_ALREADY_LIVE" -eq 0 ]; then
+  printf '\n' >> "$CADDY_NEXT"
+  cat >>"$CADDY_NEXT" <<CADDY
 $DOMAIN {
     encode gzip zstd
     @admin path /_/ /_/*
@@ -199,12 +204,26 @@ $DOMAIN {
     }
 }
 CADDY
+fi
 caddy validate --config /etc/caddy/Caddyfile.new-lifeos --adapter caddyfile
 cp /etc/caddy/Caddyfile.new-lifeos /etc/caddy/Caddyfile
 systemctl reload caddy
-curl -fsS --max-time 15 "https://$DOMAIN/api/health" >/dev/null
-curl -fsS --max-time 15 "https://$DOMAIN/Counter/" >/dev/null
-curl -fsS --max-time 15 "https://$DOMAIN/Counter/flutter_bootstrap.js" >/dev/null
+# Report which route fails instead of a bare "curl: HTTP 403".
+for entry in 'HEALTH:/api/health' 'WEB:/Counter/' 'BOOTSTRAP:/Counter/flutter_bootstrap.js'; do
+  label="${entry%%:*}"
+  route="${entry#*:}"
+  code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "https://$DOMAIN$route") || {
+    echo "FAILED: $label ($route) transport failure"
+    exit 1
+  }
+  echo "PUBLIC_$label HTTP $code ($route)"
+  if [ "$code" != 200 ]; then
+    echo "FAILED: public $label check; inspect Caddy routes and file permissions before retrying."
+    echo 'WEB FILE ACCESS:'
+    namei -l "$SITE/Counter/index.html" || true
+    exit 1
+  fi
+done
 python3 - "$DOMAIN" <<'PY'
 import json,sys,urllib.request,urllib.error
 url='https://'+sys.argv[1]+'/api/collections/records/records?perPage=1'
