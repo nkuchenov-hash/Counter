@@ -24,7 +24,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/ssh"
           printf '%s\n' "$RECOVERY_SSH_KEY" > "$RUNNER_TEMP/ssh/id"
           chmod 600 "$RUNNER_TEMP/ssh/id"
-          ssh -i "$RUNNER_TEMP/ssh/id" -T -n \
+          ssh -i "$RUNNER_TEMP/ssh/id" -T \
             -o BatchMode=yes -o PasswordAuthentication=no \
             -o PreferredAuthentications=publickey -o IdentitiesOnly=yes \
             -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
