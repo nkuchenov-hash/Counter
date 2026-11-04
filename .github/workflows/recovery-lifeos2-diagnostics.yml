@@ -39,9 +39,19 @@ jobs:
           echo "POCKETBASE_VERSION:"
           /opt/lifeos/pocketbase --version || true
           echo "SERVICES:"
-          for s in lifeos-recovery-stage.service lifeos-stage-offsite.service caddy.service; do
+          for s in lifeos-recovery-live.service lifeos-recovery-stage.service lifeos-stage-offsite.service caddy.service; do
             echo "$s: $(systemctl is-active "$s" || true)"
           done
+          echo "RECOVERY_LIVE_SERVICE:"
+          systemctl show lifeos-recovery-live.service -p ActiveState -p SubState -p Result -p ExecMainCode -p ExecMainStatus -p NRestarts --no-pager || true
+          echo "RECOVERY_LIVE_PERMISSIONS:"
+          id lifeos || true
+          namei -l /opt/lifeos/recovery-candidate/pb_data/data.db || true
+          echo "RECOVERY_LIVE_ERRORS (only failure lines; secrets redacted):"
+          journalctl -u lifeos-recovery-live.service -n 60 --no-pager -o cat 2>/dev/null \
+            | grep -Ei 'error|fatal|panic|permission|denied|failed|exit status|migration|cannot|no such|database|bind|unrecognized' \
+            | sed -E 's/(password|token|secret|key)[=:][^[:space:]]+/\1=[REDACTED]/Ig' \
+            | tail -n 15 || true
           echo "HEALTH:"
           curl -sS --max-time 5 -o /dev/null -w 'LOCAL_HTTP=%{http_code}\n' http://127.0.0.1:8099/api/health || true
           curl -sS --max-time 5 -o /dev/null -w 'PUBLIC_HTTPS=%{http_code}\n' https://137-22-146-109.sslip.io/api/health || true
