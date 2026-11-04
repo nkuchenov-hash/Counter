@@ -139,4 +139,74 @@ require_denied("cross-user record update", request(
 ))
 require_empty_list("anonymous records list", request("/api/collections/records/records"))
 
+
+# Atomic running-primary invariant: requests from two clients cannot leave
+# multiple primary records open, even after out-of-order offline replay.
+def make_running(key, when):
+    return require_ok("create running " + key, request(
+        "/api/collections/records/records", "POST",
+        {"user_id": alice_id, "record_id": "run-" + key + "-" + seed,
+         "title": "Running " + key, "start_time": when,
+         "category_id": category_id, "category_link": category_id,
+         "status": "running", "type": "record"},
+        alice_token
+    ))
+
+first = make_running("first", "2026-11-03 12:00:00.000Z")
+second = make_running("second", "2026-11-03 13:00:00.000Z")
+assert require_ok("read stopped predecessor", request(
+    "/api/collections/records/records/" + first["id"], token=alice_token
+))["status"] == "stopped"
+assert require_ok("read current running", request(
+    "/api/collections/records/records/" + second["id"], token=alice_token
+))["status"] == "running"
+assert require_ok("read previous end", request(
+    "/api/collections/records/records/" + first["id"], token=alice_token
+))["end_time"].startswith("2026-11-03 13:00:00")
+
+# Late/offline arrival may not re-activate a record that predates a newer one.
+late = make_running("out-of-order", "2026-11-03 11:30:00.000Z")
+late_actual = require_ok("read late create", request(
+    "/api/collections/records/records/" + late["id"], token=alice_token
+))
+assert late_actual["status"] == "stopped", late_actual
+assert late_actual["end_time"].startswith("2026-11-03 12:00:00")
+assert require_ok("current still running", request(
+    "/api/collections/records/records/" + second["id"], token=alice_token
+))["status"] == "running"
+
+from concurrent.futures import ThreadPoolExecutor
+with ThreadPoolExecutor(max_workers=2) as pool:
+    pending = [
+        pool.submit(make_running, "concurrent" + str(i),
+                    f"2026-11-03 {14+i}:00:00.000Z")
+        for i in (0, 1)
+    ]
+    [f.result() for f in pending]
+
+running = require_ok("single running primary", request(
+    "/api/collections/records/records?filter=status%3D%22running%22",
+    token=alice_token
+))
+open_primaries = [
+    x for x in running["items"]
+    if x["user_id"] == alice_id and not x.get("parent_id") and
+    not x.get("end_time")
+]
+assert len(open_primaries) == 1, open_primaries
+
+# Re-activating an older record is likewise refused/closed by the timeline.
+reactivated = require_ok("historic status reactivation", request(
+    "/api/collections/records/records/" + first["id"], "PATCH",
+    {"status": "running", "end_time": ""}, alice_token
+))
+assert reactivated["status"] == "stopped", reactivated
+running = require_ok("single running after historical edit", request(
+    "/api/collections/records/records?filter=status%3D%22running%22",
+    token=alice_token
+))
+assert len([x for x in running["items"] if x["user_id"] == alice_id
+            and not x.get("parent_id") and not x.get("end_time")]) == 1
+print("PASS: server serializes simultaneous starts, handoffs, backdated offline replays, and record updates")
+
 print("PASS: two-user auth, owned category/plan/record, anonymous isolation, cross-tenant rejection, tier protection")
