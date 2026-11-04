@@ -152,6 +152,19 @@ print('PASS: original LIFE OS Flutter web assets point to the recovered PocketBa
 PY
   chmod -R a+rX "$SITE"
 fi
+# Caddy needs to traverse /var/www to serve $SITE/Counter, but the host
+# originally had /var/www mode 0700 (root only). Grant traverse ONLY, not
+# listing or write access, and leave all other children unchanged.
+[ -d /var/www ] || { echo 'ERROR: expected /var/www missing'; exit 1; }
+chmod o+x /var/www
+chmod a+rx "$SITE" "$SITE/Counter"
+if id caddy >/dev/null 2>&1 && command -v runuser >/dev/null 2>&1; then
+  runuser -u caddy -- test -r "$SITE/Counter/index.html" || {
+    echo 'ERROR: Caddy service account cannot read Flutter index.html'
+    namei -l "$SITE/Counter/index.html"
+    exit 1
+  }
+fi
 # Consistent SQLite backup from live candidate BEFORE making API accessible.
 python3 - "$BASE/pb_data/data.db" "$ARCH/recovered-live-ready-$(date -u +%Y%m%dT%H%M%SZ).sqlite" <<'PY'
 import sqlite3,sys,os
