@@ -26,8 +26,6 @@ String _pocketBaseUrlForWeb() {
 
 /// Resolves the PocketBase base URL (no trailing slash) for the current platform and build mode.
 String resolvePocketBaseUrl() {
-  final recovery = _verifiedRecoveryBaseUrl();
-  if (recovery != null) return recovery;
   if (kIsWeb) {
     return _pocketBaseUrlForWeb();
   }
