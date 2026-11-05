@@ -8,6 +8,15 @@ const Color kTagYellowText = Color(0xFFE1B400);
 const double kTagYellowPlateOpacity = 0.13;
 const double kTagYellowBorderOpacity = 0.74;
 
+/// Approved warm-pink tag style: independent from neighboring red/purple.
+/// All pink tag surfaces use the canonical #FF79AA hue, but a lighter plate.
+const Color kTagPinkText = Color(0xFFD25888);
+const double kTagPinkPlateOpacity = 0.16;
+const double kTagPinkBorderOpacity = 0.60;
+
+bool tagColorIsCanonicalPink(Color color) =>
+    color.toARGB32() == kNordicPeople[500]!.toARGB32();
+
 /// Current/previous yellow presets, plus saturated gold hue (45°–60°).
 bool tagColorIsYellowFamily(Color tagColor) {
   final rgb = tagColor.toARGB32() & 0xFFFFFF;
@@ -32,12 +41,17 @@ Color tagCategoryBreadcrumbPlate(Color accentColor, Color surface) {
   );
 }
 
-/// Tag manager list avatar background: 26% tag; yellow uses approved 13% tint.
+/// Tag manager avatar: 26% for most hues; yellow 13%, pink 16%.
 Color tagManagerAvatarPlate(Color tagColor, Color surface) {
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
       kTagYellowGold.withValues(alpha: kTagYellowPlateOpacity),
       surface,
+    );
+  }
+  if (tagColorIsCanonicalPink(tagColor)) {
+    return Color.alphaBlend(
+      tagColor.withValues(alpha: kTagPinkPlateOpacity), surface,
     );
   }
   return Color.alphaBlend(tagColor.withValues(alpha: 0.26), surface);
@@ -52,6 +66,7 @@ Color tagManagerAvatarPlate(Color tagColor, Color surface) {
 Color tagVibrantForeground(Color tagBaseColor, {Color? surface}) {
   if (tagColorIsYellowFamily(tagBaseColor)) return kTagYellowText;
   if (surface == null) return tagBaseColor;
+  if (tagColorIsCanonicalPink(tagBaseColor)) return kTagPinkText;
 
   // Keep official red RED and official warm pink PINK in small chips.
   // The generic 4.5:1 automatic darkening turns their text into burgundy
@@ -60,9 +75,6 @@ Color tagVibrantForeground(Color tagBaseColor, {Color? surface}) {
   final lightSurface = surface.computeLuminance() > 0.35;
   if (tagBaseColor.toARGB32() == kNordicEntertainment[500]!.toARGB32()) {
     return lightSurface ? kNordicEntertainment[600]! : kNordicEntertainment[400]!;
-  }
-  if (tagBaseColor.toARGB32() == kNordicPeople[500]!.toARGB32()) {
-    return lightSurface ? kNordicPeople[700]! : kNordicPeople[400]!;
   }
 
   final background = tagLetterChipPlate(tagBaseColor, surface);
@@ -128,7 +140,7 @@ Color tagIconOnFilledTagColor(Color tagFill, {bool syntheticNoTags = false}) {
   return tagFill;
 }
 
-/// Letter chip plate: 26% tint for most hues; yellow uses 13%.
+/// Letter chip plate: 26% generally; yellow 13%, pink 16%.
 Color tagLetterChipPlate(Color tagColor, Color surface) {
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
@@ -136,20 +148,30 @@ Color tagLetterChipPlate(Color tagColor, Color surface) {
       surface,
     );
   }
+  if (tagColorIsCanonicalPink(tagColor)) {
+    return Color.alphaBlend(
+      tagColor.withValues(alpha: kTagPinkPlateOpacity), surface,
+    );
+  }
   return Color.alphaBlend(tagColor.withValues(alpha: 0.26), surface);
 }
 
-/// Letter chip border: yellow at 74% overlay; other families at 55%.
+/// Letter chip border: yellow 74%; pink 60%; others 55%.
 Color tagLetterChipBorder(Color tagColor, Color surface) {
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
       kTagYellowGold.withValues(alpha: kTagYellowBorderOpacity), surface,
     );
   }
+  if (tagColorIsCanonicalPink(tagColor)) {
+    return Color.alphaBlend(
+      tagColor.withValues(alpha: kTagPinkBorderOpacity), surface,
+    );
+  }
   return Color.alphaBlend(tagColor.withValues(alpha: 0.55), surface);
 }
 
-/// Empty chip stadium fill: yellow uses 13% gold; other hues use 26%.
+/// Empty chip stadium fill: yellow 13%; pink 16%; others 26%.
 Color tagEmptyChipFill(Color tagColor, Color surface) {
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
@@ -157,12 +179,18 @@ Color tagEmptyChipFill(Color tagColor, Color surface) {
       surface,
     );
   }
+  if (tagColorIsCanonicalPink(tagColor)) {
+    return tagColor.withValues(alpha: kTagPinkPlateOpacity);
+  }
   return tagColor.withValues(alpha: 0.26);
 }
 
 Color tagEmptyChipBorderColor(Color tagColor) {
   if (tagColorIsYellowFamily(tagColor)) {
     return kTagYellowGold.withValues(alpha: kTagYellowBorderOpacity);
+  }
+  if (tagColorIsCanonicalPink(tagColor)) {
+    return tagColor.withValues(alpha: kTagPinkBorderOpacity);
   }
   return tagColor.withValues(alpha: 0.55);
 }
