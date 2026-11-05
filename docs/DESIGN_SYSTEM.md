@@ -326,3 +326,28 @@ On wide desktop layouts, the shell owns the global LIFE OS header and the side-n
 - The first desktop section row starts at `kShellDesktopContentTopPadding = 6px`. Do not add feature-local top padding above it.
 - Section headers, quick-entry rows, calendar surfaces, Timeline/Stats, list/card bodies, Paths folders/detail, Categories bands, Notes/Lists library and Profile settings must align to this same outer gutter. Desktop library/settings shells must not add a narrower centered max-width on top of that gutter.
 - Phone/tablet spacing is form-factor-owned and is not changed by this desktop contract.
+
+
+## Grouped Settings and Unified Menu Surfaces (2026-11-05)
+
+LIFE OS settings must use a neutral grouped-navigation layout inspired by the
+reference Android screenshots without copying device branding or colors.
+Each mobile top-level group is a rounded surface with clear hierarchy,
+semantically labelled icon-leading rows, quiet dividers, and chevrons.
+Each destination opens or reveals functional controls; do not present
+decorative or fictitious connection toggles. Desktop uses the same canonical
+row and surface tokens, adapted to available width.
+
+- Canonical components: `AppSettingsNavigationRow`,
+  `AppSettingsSectionCard`, `AppMenuActionTile`,
+  and `AppSettingsPageBody` in `lib/core/widgets/app_settings_layout.dart`.
+- Appearance uses the existing saved system/light/dark theme mode.
+- Language, time zone, notification permission, morning prompts and account
+  actions must retain existing save/permission/error semantics.
+- Calendar integration controls must reflect server-provided status; only
+  supported providers with working server OAuth and synchronization may show
+  a Connect action.
+- Shared sheets and menus must respect device insets, allow scrolling on
+  small screens, avoid internal debug flags, and preserve touch hit targets.
+- Black/neutral accents only; no copied TECNO orange, beige, or purple.
+- Do not claim a new app release until web, Android and desktop CI succeed.
