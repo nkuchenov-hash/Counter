@@ -36,9 +36,9 @@ void main() {
     }
   });
 
-  test('quick defaults are smaller than the available semantic catalog', () {
-    expect(kDefaultCategoryIconKeys, hasLength(26));
-    expect(kDefaultCategoryIconKeys.toSet().length, 26);
+  test('all audited icon pairs are included in the default library', () {
+    expect(kDefaultCategoryIconKeys, hasLength(kMatchedCategoryIcons.length));
+    expect(kDefaultCategoryIconKeys.toSet(), kMatchedCategoryIcons.keys.toSet());
     expect(kDefaultCategoryIconKeys.every(CategoryIconStore.isValidKey), isTrue);
     expect(kDefaultCategoryIconKeys, containsAll(['home', 'folder', 'heart']));
   });
@@ -65,6 +65,9 @@ void main() {
       'lib/features/settings/categories/category_icon_picker.dart',
     ).readAsStringSync();
     expect(picker, contains('store.quickCatalog'));
+    expect(picker, contains('...approved.where'));
+    expect(picker, contains('Tooltip('));
+    expect(picker, contains('maxCrossAxisExtent: 58'));
     expect(picker, contains('CategoryIconStore.isValidKey'));
     expect(picker, contains('category-icon-style-toggle'));
     expect(picker, contains('category-icon-apply'));
@@ -105,12 +108,12 @@ void main() {
     expect(screen, contains('save-icon-collection'));
   });
 
-  testWidgets('Settings initially shows only user icons, never all matched icons',
+  testWidgets('Settings respects custom icon favorites and offers other icons',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.runAsync(() async {
       await CategoryIconStore.instance.ensureLoaded();
-      await CategoryIconStore.instance.setQuickKeys(kDefaultCategoryIconKeys);
+      await CategoryIconStore.instance.setQuickKeys(['home', 'folder', 'heart']);
       await CategoryIconStore.instance.setPack(CategoryIconPack.fluent);
     });
     await tester.pumpWidget(const MaterialApp(
@@ -123,20 +126,20 @@ void main() {
     final grid = find.byKey(const ValueKey('matched-icon-collection-grid'));
     final defaultGrid = tester.widget<GridView>(grid);
     expect((defaultGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
-        kDefaultCategoryIconKeys.length);
+        3);
     expect(find.textContaining('in my collection'), findsOneWidget);
     expect(find.byKey(const ValueKey('toggle-icon-catalog')), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('toggle-icon-catalog')));
     await tester.pumpAndSettle();
     final availableGrid = tester.widget<GridView>(grid);
     expect((availableGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
-        kMatchedCategoryIcons.length - kDefaultCategoryIconKeys.length);
+        kMatchedCategoryIcons.length - 3);
     expect(find.textContaining('matching icons available'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('toggle-icon-catalog')));
     await tester.pumpAndSettle();
     final restoredGrid = tester.widget<GridView>(grid);
     expect((restoredGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
-        kDefaultCategoryIconKeys.length);
+        3);
   });
 
   test('published picker exposes actual build and selected icon count', () {

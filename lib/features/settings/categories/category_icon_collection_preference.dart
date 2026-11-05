@@ -33,8 +33,8 @@ class CategoryIconCollectionPreference extends StatelessWidget {
           const SizedBox(height: 5),
           Text(
             isRussian
-                ? 'Только выбранные значки отображаются в категориях. Все доступны в обоих стилях.'
-                : 'Only your chosen icons appear in the category picker. Every choice exists in both icon families.',
+                ? 'Выбранные иконки отображаются первыми. Остальные доступны в полном каталоге.'
+                : 'Your chosen icons appear first. The complete icon library remains available.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: cs.onSurfaceVariant),
           ),
@@ -107,7 +107,7 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
   late final Set<String> _picked;
   final TextEditingController _search = TextEditingController();
   bool _saving = false;
-  bool _browsing = false; // Always start with the user's small collection.
+  bool _browsing = false; // Start with the user's preferred collection.
   String _group = 'Все';
   static const groups = [
     'Все', 'Личное', 'Работа', 'Организация',
@@ -176,9 +176,8 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
       ...store.quickKeys.where(_picked.contains),
       ..._picked.where((key) => !store.quickKeys.contains(key)),
     ];
-    // Important: never show the entire approved catalog by default.
-    // "My icons" contains only selected keys; the larger matched catalog is
-    // reached exclusively through the explicit "Add icons" button.
+    // This preference editor shows the selected favorites; the category
+    // picker separately exposes every approved icon, favorites first.
     final entries = _browsing
         ? approved.where((icon) => !_picked.contains(icon.key)).where((item) {
             if (_group != 'Все' && item.group != _group) return false;
