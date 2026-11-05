@@ -119,7 +119,8 @@ class TimelineRecordCardState extends State<TimelineRecordCard> {
     final categoryAccent =
         Color(canonicalLifeColorValue(widget.vm.categoryColor.toARGB32()));
 
-    final runningFill = isRunning ? scheme.surfaceContainerHighest : null;
+    // Timeline cards and planning cards use the same white/neutral surface.
+    final cardFill = scheme.surfaceContainerHighest;
     final runningBorder = isRunning ? scheme.primary : Colors.transparent;
     final runningTextColor = isRunning ? scheme.onSurface : null;
 
@@ -219,7 +220,7 @@ class TimelineRecordCardState extends State<TimelineRecordCard> {
 
     return Material(
       elevation: isRunning ? 2 : 1,
-      color: runningFill ?? scheme.surface,
+      color: cardFill,
       shadowColor: scheme.shadow.withValues(alpha: 0.12),
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
