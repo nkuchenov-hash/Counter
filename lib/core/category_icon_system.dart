@@ -47,6 +47,47 @@ String _iconGroup(String key) {
   return 'Прочее';
 }
 
+/// Safe migration from previous family-specific icon keys to stable semantic IDs.
+/// Unknown older choices are kept in local storage without a misleading remap.
+const Map<String, String> kPreviousIconAliases = {
+  'add': 'plus',
+  'alert': 'bell',
+  'book_open': 'book',
+  'chat': 'chat_bubble_left',
+  'checkmark_circle': 'check_circle',
+  'data_bar_vertical': 'chart_bar',
+  'data_pie': 'chart_pie',
+  'delete': 'trash',
+  'dismiss': 'x_mark',
+  'document_copy': 'document_duplicate',
+  'edit': 'pencil',
+  'emoji_smile_slight': 'face_smile',
+  'food_cake': 'cake',
+  'globe': 'globe_alt',
+  'hat_graduation': 'academic_cap',
+  'image': 'photo',
+  'lightbulb': 'light_bulb',
+  'location': 'map_pin',
+  'lock_closed': 'lock',
+  'mail': 'envelope',
+  'mic': 'microphone',
+  'music_note_1': 'musical_note',
+  'people': 'users',
+  'person': 'user',
+  'print': 'printer',
+  'question_circle': 'question_mark_circle',
+  'rocket': 'rocket_launch',
+  'search': 'magnifying_glass',
+  'settings': 'cog',
+  'shield_checkmark': 'shield_check',
+  'shopping_cart': 'cart',
+  'text_bullet_list': 'list_bullet',
+  'vehicle_truck': 'truck',
+  'video': 'video_camera',
+  'weather_moon': 'moon',
+  'weather_sunny': 'sun',
+};
+
 /// Initial quick collection stays small. Users can customize it in Appearance.
 const List<String> kDefaultCategoryIconKeys = [
   'home', 'heart', 'briefcase', 'calendar', 'folder', 'clock', 'star',
@@ -74,7 +115,8 @@ class CategoryIconSelection {
     final key = value['key'] as String;
     // Retain older device-local keys. Unmatched artwork renders as a folder,
     // but the original saved value is not silently replaced or deleted.
-    return CategoryIconSelection(key, filled: value['filled'] == true);
+    return CategoryIconSelection(CategoryIconStore.canonicalKey(key) ?? key,
+        filled: value['filled'] == true);
   }
   @override
   bool operator ==(Object other) =>
@@ -98,6 +140,8 @@ class CategoryIconStore extends ChangeNotifier {
   static List<CategoryIconChoice> catalogFor(CategoryIconPack family) =>
       _approvedCatalog; // Exactly the same semantic keys in both families.
   static bool isValidKey(String key) => kMatchedCategoryIcons.containsKey(key);
+  static String? canonicalKey(String key) => isValidKey(key)
+      ? key : kPreviousIconAliases[key];
 
   static const _quickKey = 'takto.category.icon_quick_collection.v1';
   List<String> _quickKeys = List<String>.from(kDefaultCategoryIconKeys);
@@ -274,7 +318,8 @@ class CategorySvgIcon extends StatelessWidget {
     final tint = color ?? Theme.of(context).colorScheme.onSurface;
     // Unsupported previously saved keys do not become a different concept:
     // they display as the neutral folder until explicitly reselected.
-    final matched = kMatchedCategoryIcons[selection.key] ??
+    final canonical = CategoryIconStore.canonicalKey(selection.key);
+    final matched = kMatchedCategoryIcons[canonical] ??
         kMatchedCategoryIcons['folder']!;
     if (family == CategoryIconPack.fluent) {
       return Icon(selection.filled ? matched.fluentFilled : matched.fluentOutline,
