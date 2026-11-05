@@ -493,6 +493,10 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
             fontSize: 35, fontWeight: FontWeight.w700)),
         const SizedBox(height: 21),
+        if (!searching) ...[
+          _profileCard(context),
+          const SizedBox(height: 18),
+        ],
         _searchField(),
         const SizedBox(height: 16),
         if (searching) ...[
@@ -510,8 +514,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
                     : _detailRow(entry, subtitle: section.title(_ru)),
             ]),
         ] else ...[
-          _profileCard(context),
-          const SizedBox(height: 12),
+          _heading(context, _ru ? 'БЫСТРЫЙ ДОСТУП' : 'QUICK ACCESS'),
           Row(
             children: [
               _quickTile(context, _ru ? 'Виктор' : 'Viktor',
@@ -648,13 +651,13 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
                 color: scheme.surfaceContainerLowest,
                 child: Row(
                   children: [
-                    if (wide) _sideRail(context),
+                    // Primary navigation lives in ShellSideNavigation. No second rail.
                     Expanded(
                       child: ListView(
                         key: ValueKey(active ?? 'home'),
                         padding: EdgeInsets.fromLTRB(
-                          wide ? 40 : 20, wide ? 34 : 22,
-                          wide ? 40 : 20, 48),
+                          wide ? 52 : 20, wide ? 38 : 22,
+                          wide ? 32 : 20, 48),
                         children: [
                           ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 680),

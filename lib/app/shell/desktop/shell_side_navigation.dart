@@ -1,108 +1,124 @@
 import 'package:counter/features/timeline/unfilled_time_gap_banner.dart';
+import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
-/// Desktop/web left navigation rail (replaces bottom nav at wide breakpoints).
+/// App-wide desktop navigation. The menu content must not draw a second rail.
 class ShellSideNavigation extends StatelessWidget {
   const ShellSideNavigation({
     required this.width,
     required this.selectedIndex,
     required this.onTabSelected,
+    super.key,
   });
 
   final double width;
   final int selectedIndex;
   final ValueChanged<int> onTabSelected;
 
+  Widget _sectionLabel(BuildContext context, String label) => Padding(
+    padding: const EdgeInsets.fromLTRB(12, 23, 8, 11),
+    child: Text(
+      label,
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.8,
+      ),
+    ),
+  );
+
+  Widget _entry(
+    AppMenuIconRole role,
+    String label,
+    int index,
+  ) => Padding(
+    padding: const EdgeInsets.only(bottom: 2),
+    child: Builder(
+      builder: (context) => ShellSideNavItem(
+        icon: AppMenuIcons.icon(role),
+        selectedIcon: AppMenuIcons.icon(role),
+        label: label,
+        selected: selectedIndex == index,
+        onTap: () => onTabSelected(index),
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final loc = currentLocale.value;
-    final isRu = loc.toLowerCase().startsWith('ru');
-    final items =
-        <({IconData icon, IconData selectedIcon, String label, int index})>[
-          (
-            icon: Icons.timeline_outlined,
-            selectedIcon: Icons.timeline_rounded,
-            label: t(loc, 'tab_timeline'),
-            index: 0,
-          ),
-          (
-            icon: Icons.checklist_outlined,
-            selectedIcon: Icons.checklist_rounded,
-            label: t(loc, 'tab_planning'),
-            index: 1,
-          ),
-          (
-            icon: Icons.calendar_month_outlined,
-            selectedIcon: Icons.calendar_month_rounded,
-            label: t(loc, 'calendar'),
-            index: 2,
-          ),
-          (
-            icon: Icons.format_list_bulleted_outlined,
-            selectedIcon: Icons.format_list_bulleted_rounded,
-            label: t(loc, 'tab_lists'),
-            index: 3,
-          ),
-          (
-            icon: Icons.alt_route_outlined,
-            selectedIcon: Icons.alt_route_rounded,
-            label: isRu ? 'Пути' : 'Paths',
-            index: 6,
-          ),
-          (
-            icon: Icons.label_outlined,
-            selectedIcon: Icons.label_rounded,
-            label: t(loc, 'more_menu_categories'),
-            index: 4,
-          ),
-          (
-            icon: Icons.person_outline_rounded,
-            selectedIcon: Icons.person_rounded,
-            label: t(loc, 'more_menu_profile'),
-            index: 5,
-          ),
-          (
-            icon: Icons.more_horiz_rounded,
-            selectedIcon: Icons.more_horiz_rounded,
-            label: t(loc, 'tab_more'),
-            index: 7,
-          ),
-        ];
+    final locale = currentLocale.value;
+    final ru = locale.toLowerCase().startsWith('ru');
     return Material(
-      color: scheme.surfaceContainerLow.withValues(alpha: 0.55),
+      color: scheme.surfaceContainerHigh,
       shape: Border(
-        right: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.9)),
+        right: BorderSide(
+          color: scheme.outlineVariant.withValues(alpha: 0.75),
+        ),
       ),
       child: SizedBox(
         width: width,
         child: SafeArea(
           right: false,
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 2, 0, 16),
+                  child: Row(
+                    children: [
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: scheme.onSurface,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: Icon(
+                            AppMenuIcons.icon(AppMenuIconRole.viktor),
+                            size: 19,
+                            color: scheme.surfaceContainerHigh,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text('LIFE OS',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        )),
+                    ],
+                  ),
+                ),
                 Expanded(
                   child: ListView(
                     padding: EdgeInsets.zero,
                     children: [
-                      for (final item in items)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: ShellSideNavItem(
-                            icon: item.icon,
-                            selectedIcon: item.selectedIcon,
-                            label: item.label,
-                            selected: selectedIndex == item.index,
-                            onTap: () => onTabSelected(item.index),
-                          ),
-                        ),
+                      _sectionLabel(context,
+                        ru ? 'РАБОЧЕЕ ПРОСТРАНСТВО' : 'WORKSPACE'),
+                      _entry(AppMenuIconRole.timeline, t(locale, 'tab_timeline'), 0),
+                      _entry(AppMenuIconRole.planning, t(locale, 'tab_planning'), 1),
+                      _entry(AppMenuIconRole.calendar, t(locale, 'calendar'), 2),
+                      _entry(AppMenuIconRole.notes, t(locale, 'tab_lists'), 3),
+                      _sectionLabel(context,
+                        ru ? 'ДОПОЛНИТЕЛЬНО' : 'MORE'),
+                      _entry(AppMenuIconRole.paths, ru ? 'Пути' : 'Paths', 6),
+                      _entry(AppMenuIconRole.people, ru ? 'Люди' : 'People', 8),
+                      _entry(AppMenuIconRole.menu,
+                        ru ? 'Меню и настройки' : 'Menu & settings', 7),
                     ],
                   ),
                 ),
                 const UnfilledTimeGapSidebarCard(),
+                const SizedBox(height: 12),
+                Divider(height: 1,
+                  color: scheme.outlineVariant.withValues(alpha: 0.7)),
+                const SizedBox(height: 7),
+                _entry(AppMenuIconRole.account,
+                  ru ? 'Профиль' : 'Profile', 5),
               ],
             ),
           ),
@@ -130,23 +146,23 @@ class ShellSideNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final bg = selected ? scheme.surfaceContainerHighest : Colors.transparent;
+    final bg = selected ? scheme.surfaceContainer : Colors.transparent;
     final fg = selected ? scheme.onSurface : scheme.onSurfaceVariant;
-    final indicator = selected ? scheme.primary : Colors.transparent;
+    final indicator = Colors.transparent;
     return Material(
       color: bg,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(13),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
             border: Border(
-              left: BorderSide(color: indicator, width: selected ? 3 : 0),
+              left: BorderSide(color: indicator, width: 0),
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
             child: Row(
               children: [
                 Icon(selected ? selectedIcon : icon, size: 22, color: fg),

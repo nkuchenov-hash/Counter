@@ -199,7 +199,18 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
   }
 
   void onDesktopSideNavSelected(int navIndex) {
-    // 0–3 primary tabs, 4 Categories, 5 Profile, 6 Paths, 7 More.
+    // 0–3 workspace tabs, 6 Paths, 8 People, 7 Menu, 5 Account.
+    if (navIndex == 8) {
+      onLifeOsMenuAction(LifeOsMenuAction.people);
+      return;
+    }
+    if (navIndex == 5) {
+      openMoreMenu();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openProfileDestination(ProfileSettingsDestination.account);
+      });
+      return;
+    }
     if (navIndex == 6) {
       openProjectPaths();
       return;

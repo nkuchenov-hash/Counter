@@ -1,4 +1,5 @@
 import 'package:counter/core/shell_adaptive.dart';
+import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -63,9 +64,9 @@ class ShellCompactBottomNav extends StatelessWidget {
         index: 3,
       ),
       (
-        icon: Icons.menu_rounded,
-        selectedIcon: Icons.menu_rounded,
-        label: _navLabel(loc, 'tab_more', 'tab_more_compact'),
+        icon: AppMenuIcons.icon(AppMenuIconRole.menu),
+        selectedIcon: AppMenuIcons.icon(AppMenuIconRole.menu),
+        label: loc.toLowerCase().startsWith('ru') ? 'Меню' : 'Menu',
         index: 4,
       ),
     ];
