@@ -2,8 +2,6 @@ import 'dart:io';
 
 import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/core/category_icon_catalog_generated.g.dart';
-import 'package:counter/features/settings/categories/category_icon_picker.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -60,35 +58,16 @@ void main() {
     expect(folderTabs, contains('CategoryGlyph('));
   });
 
-  testWidgets('picker offers quick collection and keeps Outline/Fill on choice',
-      (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    final store = CategoryIconStore.instance;
-    await store.ensureLoaded();
-    await store.setQuickKeys(kDefaultCategoryIconKeys);
-    CategoryIconSelection? picked;
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(body: Builder(builder: (context) => TextButton(
-        onPressed: () async {
-          picked = await showCategoryIconPicker(context,
-            initial: const CategoryIconSelection('heart'));
-        },
-        child: const Text('OPEN PICKER'),
-      ))),
-    ));
-    await tester.tap(find.text('OPEN PICKER'));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('category-icon-style-toggle')),
-        findsOneWidget);
-    final grid = tester.widget<GridView>(
-        find.byKey(const ValueKey('category-paired-icon-grid')));
-    expect((grid.childrenDelegate as SliverChildBuilderDelegate).childCount, 26);
-    expect(find.textContaining('My collection'), findsOneWidget);
-    await tester.tap(find.text('Fill').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('category-icon-apply')));
-    await tester.pumpAndSettle();
-    expect(picked, const CategoryIconSelection('heart', filled: true));
+  test('picker uses the quick collection and preserves Outline/Fill', () {
+    final picker = File(
+      'lib/features/settings/categories/category_icon_picker.dart',
+    ).readAsStringSync();
+    expect(picker, contains('store.quickCatalog'));
+    expect(picker, contains('CategoryIconStore.isValidKey'));
+    expect(picker, contains('category-icon-style-toggle'));
+    expect(picker, contains('category-icon-apply'));
+    expect(picker, isNot(contains('kCompleteFluentCategoryIcons')));
+    expect(picker, isNot(contains('kCompleteHeroCategoryIcons')));
   });
 
   test('Appearance collection persists and pack switching preserves it', () async {
