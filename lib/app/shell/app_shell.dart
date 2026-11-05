@@ -29,6 +29,7 @@ import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/core/widgets/lazy_indexed_stack.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
+import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/tag_display_mode_scope.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/local_sync/sync_manager.dart';
