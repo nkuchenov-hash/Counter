@@ -12,9 +12,27 @@ export 'package:counter/core/life_color_compat.dart' show kNordicWork, kNordicEr
 
 // Neutral gray and black stay achromatic at every shade.
 
-/// Ordered for category creation and the appearance picker.
-/// Black and gray are explicit user choices, not automatic root-category colors.
+/// Visual color-picker order: rainbow spectrum, then the non-spectral pink,
+/// then achromatic gray and black. Shared by category and tag color pickers.
+/// Only the picker order changes; existing data/automatically assigned colors
+/// must not be affected by rearranging the swatches.
 const List<MaterialColor> kCategoryPickerMaterialColors = <MaterialColor>[
+  kNordicEntertainment, // red
+  kNordicErrands,       // orange
+  kNordicFood,          // yellow
+  kNordicMovement,      // green
+  kNordicHealth,        // teal
+  kNordicTransport,     // sky blue
+  kNordicWork,          // blue
+  kNordicStudy,         // violet
+  kNordicPeople,        // pink (non-spectral)
+  kCategoryNeutral,     // gray
+  kCategoryBlack,       // black
+];
+
+/// Stable historical root-category allocation. Keep independent from the
+/// picker order, otherwise rearranging UI swatches changes auto-colors.
+const List<MaterialColor> _defaultRootCategoryFamilies = <MaterialColor>[
   kNordicWork,
   kNordicErrands,
   kNordicFood,
@@ -24,8 +42,6 @@ const List<MaterialColor> kCategoryPickerMaterialColors = <MaterialColor>[
   kNordicStudy,
   kNordicEntertainment,
   kNordicPeople,
-  kCategoryBlack,
-  kCategoryNeutral,
 ];
 
 /// The only user-selectable intensities. More levels reuse 400 rather than
@@ -80,11 +96,10 @@ MaterialColor categoryMaterialPrimaryForValue(int? v) {
 /// New root categories cycle only through nine chromatic families.
 /// Black and neutral gray remain explicit, non-automatic choices.
 int categoryNordicRootColorValue(int siblingIndex) {
-  final families = kCategoryPickerMaterialColors.sublist(
+  return categoryColorAtDepth(
+    _defaultRootCategoryFamilies[siblingIndex % _defaultRootCategoryFamilies.length],
     0,
-    kCategoryPickerMaterialColors.length - 2,
   );
-  return categoryColorAtDepth(families[siblingIndex % families.length], 0);
 }
 
 /// Inherit the parent hue and descend ONE step of visible intensity; sibling
