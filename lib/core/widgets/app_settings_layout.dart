@@ -6,8 +6,7 @@ import 'package:flutter/material.dart';
 /// Max content width for settings screens by form factor.
 double settingsContentMaxWidth(BuildContext context) {
   final w = MediaQuery.sizeOf(context).width;
-  if (w >= 1100) return 960;
-  if (w >= 760) return 840;
+  if (w >= 760) return 760;
   return w;
 }
 
@@ -252,9 +251,7 @@ class AppSettingsPageBody extends StatelessWidget {
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxWidth: desktop
-                ? double.infinity
-                : settingsContentMaxWidth(context),
+            maxWidth: settingsContentMaxWidth(context),
           ),
           child: ListView(
             padding: EdgeInsets.fromLTRB(
