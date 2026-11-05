@@ -59,6 +59,7 @@ enum ProfileSettingsDestination {
   appearance,
   appearanceRegion,
   notifications,
+  notificationsRoutines,
   morning,
   viktor,
   about,
@@ -454,6 +455,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ProfileSettingsDestination.appearance => t(locale, 'appearance'),
       ProfileSettingsDestination.appearanceRegion => locale.startsWith('ru') ? 'Оформление и язык' : 'Appearance & region',
       ProfileSettingsDestination.notifications => t(locale, 'profile_notifications_section'),
+      ProfileSettingsDestination.notificationsRoutines => locale.startsWith('ru') ? 'Уведомления и ритуалы' : 'Notifications & routines',
       ProfileSettingsDestination.morning => t(locale, 'morning_prompt_section'),
       ProfileSettingsDestination.viktor => locale.startsWith('ru') ? 'Виктор · ИИ' : 'Viktor · AI',
       ProfileSettingsDestination.about => t(locale, 'profile_about_section'),
@@ -518,6 +520,27 @@ class _ProfilePageState extends State<ProfilePage> {
     final title = _mobileSectionTitle(locale, section);
     // The approved Appearance screen combines theme previews and locale options.
     // Render it as two independent white groups, not one legacy preference tab.
+    if (section == ProfileSettingsDestination.notificationsRoutines) {
+      return AppSettingsPageBody(children: [
+        Text(
+          locale.startsWith('ru')
+              ? 'Напоминания, разрешения и утренний сценарий.'
+              : 'Reminders, permissions and the morning routine.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 20),
+        AppSettingsSectionCard(
+          title: locale.startsWith('ru') ? 'УВЕДОМЛЕНИЯ' : 'NOTIFICATIONS',
+          child: const ProfileNotificationsSection(embedded: true),
+        ),
+        AppSettingsSectionCard(
+          title: locale.startsWith('ru') ? 'НАЧАЛО ДНЯ' : 'MORNING ROUTINE',
+          child: const MorningStartSettingsSection(),
+        ),
+      ]);
+    }
     if (section == ProfileSettingsDestination.appearanceRegion) {
       return AppSettingsPageBody(
         children: [
@@ -567,6 +590,8 @@ class _ProfilePageState extends State<ProfilePage> {
       ProfileSettingsDestination.appearance => _buildAppearanceFields(context, locale),
       ProfileSettingsDestination.appearanceRegion => _buildAppearanceFields(context, locale),
       ProfileSettingsDestination.notifications =>
+          ProfileNotificationsSection(embedded: true),
+      ProfileSettingsDestination.notificationsRoutines =>
           ProfileNotificationsSection(embedded: true),
       ProfileSettingsDestination.morning => const MorningStartSettingsSection(),
       ProfileSettingsDestination.viktor => AppButton.primary(

@@ -145,10 +145,8 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
         _openProfileDestination(ProfileSettingsDestination.calendars);
         break;
       case LifeOsMenuAction.notifications:
-        _openProfileDestination(ProfileSettingsDestination.notifications);
-        break;
       case LifeOsMenuAction.morning:
-        _openProfileDestination(ProfileSettingsDestination.morning);
+        _openProfileDestination(ProfileSettingsDestination.notificationsRoutines);
         break;
       case LifeOsMenuAction.sleep:
         _openProfileDestination(ProfileSettingsDestination.sleep);
