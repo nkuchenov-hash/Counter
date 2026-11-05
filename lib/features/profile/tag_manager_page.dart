@@ -361,7 +361,7 @@ class _TagManagerPageState extends State<TagManagerPage> {
                               parseTagHexColor(tag.color) ?? scheme.primary;
                           final avatarPlate =
                               tagManagerAvatarPlate(c, scheme.surface);
-                          final avatarFg = tagVibrantForeground(c);
+                          final avatarFg = tagVibrantForeground(c, surface: scheme.surface);
                           return ReorderableDragStartListener(
                             key: ValueKey<Object>(
                               tag.pbRecordId ?? 'tag-${tag.tagId}',
