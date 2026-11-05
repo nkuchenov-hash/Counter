@@ -5,39 +5,29 @@ import 'package:counter/core/category_icon_catalog_generated.g.dart';
 import 'package:counter/features/settings/categories/category_icon_collection_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:heroicons/heroicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('only matched semantic IDs are selectable in both families', () {
+  test('human category subjects are curated independently of UI icons', () {
     final keys = kMatchedCategoryIcons.keys.toSet();
-    expect(keys.length, greaterThan(103));
+    expect(keys.length, greaterThan(200));
     final selectable = keys.where(isSelectableCategoryIconKey).toSet();
-    expect(CategoryIconStore.catalogFor(CategoryIconPack.fluent)
-        .map((e) => e.key).toSet(), selectable);
-    expect(CategoryIconStore.catalogFor(CategoryIconPack.heroicons)
-        .map((e) => e.key).toSet(), selectable);
+    expect(CategoryIconStore.catalogFor().map((e) => e.key).toSet(),
+        selectable);
+    expect(selectable, containsAll([
+      'person', 'dog', 'cat', 'tree', 'bicycle', 'car', 'taxi', 'bed',
+      'couch', 'washer', 'dishwasher', 'tv', 'dumbbell', 'soccer',
+      'clothes_hanger', 'chair', 'fridge', 'microwave', 'book_open',
+    ]));
     expect(selectable, isNot(contains('arrow_down')));
     expect(selectable, isNot(contains('chevron_left')));
     expect(selectable, isNot(contains('plus')));
-    expect(selectable, containsAll(['banknotes', 'credit_card',
-        'building_storefront', 'film', 'ticket', 'wifi']));
-    expect(keys, containsAll(['home', 'cart', 'cake', 'moon', 'bell', 'book']));
-    expect(CategoryIconStore.isValidKey('home'), isTrue);
-    expect(CategoryIconStore.isValidKey('academic_cap'), isTrue);
-    expect(CategoryIconStore.isValidKey('shopping_cart'), isFalse,
-        reason: 'Heroicons-specific names must not leak into saved semantic IDs.');
-    expect(CategoryIconStore.isValidKey('unmatched_fluent_icon'), isFalse);
-    expect(kMatchedCategoryIcons['cart']!.hero, HeroIcons.shoppingCart);
-    expect(kMatchedCategoryIcons['moon']!.hero, HeroIcons.moon);
-    expect(kMatchedCategoryIcons['book']!.hero, HeroIcons.bookOpen);
-    expect(kMatchedCategoryIcons['lock']!.hero, HeroIcons.lockClosed);
-    expect(kMatchedCategoryIcons['home']!.hero, HeroIcons.home);
+    expect(selectable, isNot(contains('currency_euro')));
     for (final entry in kMatchedCategoryIcons.entries) {
       expect(entry.value.fluentOutline, isNot(entry.value.fluentFilled),
-          reason: '${entry.key} must have a real Regular/Fill pair');
+          reason: '${entry.key} must have separate Outline/Fill styles');
       expect(CategoryIconStore.isValidKey(entry.key), isTrue);
     }
   });
@@ -68,12 +58,12 @@ void main() {
     expect(folderTabs, contains('CategoryGlyph('));
   });
 
-  test('picker uses the quick collection and preserves Outline/Fill', () {
+  test('picker prioritizes real-life subjects and preserves Outline/Fill', () {
     final picker = File(
       'lib/features/settings/categories/category_icon_picker.dart',
     ).readAsStringSync();
     expect(picker, contains('store.quickCatalog'));
-    expect(picker, contains('...approved.where'));
+    expect(picker, contains('final essentials = approved.take(47)'));
     expect(picker, contains('Tooltip('));
     expect(picker, contains('maxCrossAxisExtent: 58'));
     expect(picker, contains('CategoryIconStore.isValidKey'));
@@ -90,15 +80,13 @@ void main() {
       final store = CategoryIconStore.instance;
       await store.ensureLoaded();
       await store.setQuickKeys(kDefaultCategoryIconKeys);
-      expect(store.quickKeys.contains('academic_cap'), isFalse);
-      await store.setQuickKeys([...kDefaultCategoryIconKeys, 'academic_cap']);
-      expect(store.quickKeys, contains('academic_cap'));
+      await store.setQuickKeys(['home', 'tree', 'dog']);
+      expect(store.quickKeys, ['home', 'tree', 'dog']);
+      await store.setQuickKeys(['home', 'tree', 'dog', 'taxi']);
+      expect(store.quickKeys, contains('taxi'));
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('takto.category.icon_quick_collection.v1'),
-          contains('academic_cap'));
-      await store.setPack(CategoryIconPack.heroicons);
-      expect(store.quickKeys, contains('academic_cap'));
-      await store.setPack(CategoryIconPack.fluent);
+          contains('taxi'));
       await store.setQuickKeys(kDefaultCategoryIconKeys);
     });
   });
@@ -122,7 +110,6 @@ void main() {
     await tester.runAsync(() async {
       await CategoryIconStore.instance.ensureLoaded();
       await CategoryIconStore.instance.setQuickKeys(['home', 'folder', 'heart']);
-      await CategoryIconStore.instance.setPack(CategoryIconPack.fluent);
     });
     await tester.pumpWidget(const MaterialApp(
       home: Scaffold(body: SingleChildScrollView(
@@ -141,8 +128,8 @@ void main() {
     await tester.pumpAndSettle();
     final availableGrid = tester.widget<GridView>(grid);
     expect((availableGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
-        CategoryIconStore.catalogFor(CategoryIconPack.fluent).length - 3);
-    expect(find.textContaining('matching icons available'), findsOneWidget);
+        CategoryIconStore.catalogFor().length - 3);
+    expect(find.textContaining('category icons available'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('toggle-icon-catalog')));
     await tester.pumpAndSettle();
     final restoredGrid = tester.widget<GridView>(grid);
@@ -150,12 +137,15 @@ void main() {
         3);
   });
 
-  test('full cross-family Heroicons audit covers every upstream icon', () {
-    final file = File('docs/reports/HEROICONS_FLUENT_324_MAPPING.csv')
-        .readAsLinesSync();
-    expect(file.length - 1, 324);
-    expect(File('docs/reports/HEROICONS_FLUENT_MAPPING_REVIEW.md')
-        .existsSync(), isTrue);
+  test('human-first catalog covers everyday life and keeps legacy art', () {
+    expect(kHumanCategorySubjects.length, greaterThanOrEqualTo(110));
+    expect(kDefaultCategoryIconKeys.take(5),
+        ['person', 'family', 'friends', 'coworkers', 'walking']);
+    expect(kDefaultCategoryIconKeys.indexOf('dog'),
+        lessThan(kDefaultCategoryIconKeys.indexOf('wallet')));
+    expect(isSelectableCategoryIconKey('arrow_left'), isFalse);
+    expect(CategoryIconStore.isValidKey('arrow_left'), isTrue,
+        reason: 'Previously saved controls must remain renderable.');
   });
 
   test('published picker exposes actual build and selected icon count', () {
@@ -180,7 +170,7 @@ void main() {
     expect(migrated, const CategoryIconSelection('cart', filled: true));
     expect(CategoryIconStore.canonicalKey('food_cake'), 'cake');
     expect(CategoryIconStore.canonicalKey('weather_moon'), 'moon');
-    expect(CategoryIconStore.canonicalKey('book_open'), 'book');
+    expect(CategoryIconStore.canonicalKey('book_open'), 'book_open');
     expect(CategoryIconStore.canonicalKey('unmapped_icon'), isNull);
     // Unsupported old choices are not discarded from local storage.
     expect(CategoryIconSelection.fromJson({'key': 'unmapped_icon'})?.key,
