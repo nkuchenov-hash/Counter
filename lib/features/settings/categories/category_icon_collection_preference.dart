@@ -107,6 +107,7 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
   late final Set<String> _picked;
   final TextEditingController _search = TextEditingController();
   bool _saving = false;
+  bool _browsing = false; // Always start with the user's small collection.
   String _group = 'Все';
   static const groups = [
     'Все', 'Личное', 'Работа', 'Организация',
@@ -169,12 +170,26 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
     final store = CategoryIconStore.instance;
     final cs = Theme.of(context).colorScheme;
     final query = _search.text.trim().toLowerCase();
-    final entries = CategoryIconStore.catalogFor(store.pack).where((item) {
-      if (_group != 'Все' && item.group != _group) return false;
-      return query.isEmpty || [
-        item.key, item.en, item.ru, item.synonyms
-      ].join(' ').toLowerCase().contains(query);
-    }).toList();
+    final approved = CategoryIconStore.catalogFor(store.pack);
+    final byKey = {for (final icon in approved) icon.key: icon};
+    final selectedOrder = <String>[
+      ...store.quickKeys.where(_picked.contains),
+      ..._picked.where((key) => !store.quickKeys.contains(key)),
+    ];
+    // Important: never show the entire approved catalog by default.
+    // "My icons" contains only selected keys; the larger matched catalog is
+    // reached exclusively through the explicit "Add icons" button.
+    final entries = _browsing
+        ? approved.where((icon) => !_picked.contains(icon.key)).where((item) {
+            if (_group != 'Все' && item.group != _group) return false;
+            return query.isEmpty ||
+                [item.key, item.en, item.ru, item.synonyms]
+                    .join(' ').toLowerCase().contains(query);
+          }).toList()
+        : <CategoryIconChoice>[
+            for (final key in selectedOrder)
+              if (byKey.containsKey(key)) byKey[key]!,
+          ];
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Padding(
@@ -183,11 +198,17 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
           Expanded(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(widget.isRussian ? 'Мой набор иконок' : 'My icon collection',
+              Text(_browsing
+                  ? (widget.isRussian ? 'Добавить иконки' : 'Add icons')
+                  : (widget.isRussian ? 'Мой набор иконок' : 'My icon collection'),
                 style: Theme.of(context).textTheme.titleLarge),
-              Text(widget.isRussian
-                  ? 'Выбрано ${_picked.length} из ${CategoryIconStore.catalogFor(store.pack).length}'
-                  : '${_picked.length} selected · ${CategoryIconStore.catalogFor(store.pack).length} verified pairs',
+              Text(_browsing
+                  ? (widget.isRussian
+                      ? 'Доступно ${entries.length} парных иконок'
+                      : '${entries.length} matching icons available')
+                  : (widget.isRussian
+                      ? 'В моём наборе: ${_picked.length}'
+                      : '${_picked.length} in my collection'),
                 style: Theme.of(context).textTheme.bodySmall),
             ],
           )),
@@ -198,36 +219,60 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
         ]),
       ),
       Padding(
-        padding: const EdgeInsets.fromLTRB(18, 10, 18, 2),
-        child: TextField(
-          controller: _search,
-          decoration: InputDecoration(
-            isDense: true,
-            prefixIcon: const Icon(Icons.search),
-            hintText: widget.isRussian
-                ? 'Поиск по совпадающим иконкам'
-                : 'Search matched icons',
-            border: const OutlineInputBorder(),
-            suffixIcon: query.isEmpty ? null : IconButton(
-              onPressed: _search.clear,
-              icon: const Icon(Icons.close),
-            ),
+        padding: const EdgeInsets.fromLTRB(18, 4, 18, 4),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: OutlinedButton.icon(
+            key: const ValueKey('toggle-icon-catalog'),
+            onPressed: _saving ? null : () => setState(() {
+              _browsing = !_browsing;
+              _group = 'Все';
+              _search.clear();
+            }),
+            icon: Icon(_browsing ? Icons.arrow_back_rounded : Icons.add_rounded),
+            label: Text(_browsing
+                ? (widget.isRussian ? 'Мои иконки' : 'Back to my icons')
+                : (widget.isRussian ? 'Добавить иконки' : 'Add icons')),
           ),
         ),
       ),
-      SizedBox(height: 49, child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(18, 7, 18, 0),
-        itemCount: groups.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 6),
-        itemBuilder: (_, i) => ChoiceChip(
-          label: Text(groups[i]),
-          selected: groups[i] == _group,
-          showCheckmark: false,
-          onSelected: (_) => setState(() => _group = groups[i]),
+      if (_browsing) ...[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 10, 18, 2),
+          child: TextField(
+            controller: _search,
+            decoration: InputDecoration(
+              isDense: true,
+              prefixIcon: const Icon(Icons.search),
+              hintText: widget.isRussian
+                  ? 'Поиск по совпадающим иконкам'
+                  : 'Search matched icons',
+              border: const OutlineInputBorder(),
+              suffixIcon: query.isEmpty ? null : IconButton(
+                onPressed: _search.clear,
+                icon: const Icon(Icons.close),
+              ),
+            ),
+          ),
         ),
-      )),
-      Expanded(child: GridView.builder(
+        SizedBox(height: 49, child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.fromLTRB(18, 7, 18, 0),
+          itemCount: groups.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 6),
+          itemBuilder: (_, i) => ChoiceChip(
+            label: Text(groups[i]),
+            selected: groups[i] == _group,
+            showCheckmark: false,
+            onSelected: (_) => setState(() => _group = groups[i]),
+          ),
+        )),
+      ],
+      Expanded(child: entries.isEmpty
+          ? Center(child: Text(_browsing
+              ? (widget.isRussian ? 'Все доступные иконки уже добавлены' : 'All matching icons added')
+              : (widget.isRussian ? 'Нет иконок' : 'No icons')))
+          : GridView.builder(
         key: const ValueKey('matched-icon-collection-grid'),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -243,10 +288,10 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
           return InkWell(
             key: ValueKey('custom-icon-${item.key}'),
             onTap: () => setState(() {
-              if (picked) {
-                _picked.remove(item.key);
-              } else {
+              if (_browsing) {
                 _picked.add(item.key);
+              } else if (_picked.length > 1) {
+                _picked.remove(item.key);
               }
             }),
             borderRadius: BorderRadius.circular(11),
@@ -282,9 +327,11 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
                     ),
                   ],
                 )),
-                if (picked) Positioned(
+                Positioned(
                   top: 5, right: 5,
-                  child: Icon(Icons.check_circle, size: 17, color: cs.primary),
+                  child: Icon(_browsing ? Icons.add_circle_outline
+                      : Icons.check_circle,
+                    size: 17, color: _browsing ? cs.onSurfaceVariant : cs.primary),
                 ),
               ]),
             ),
