@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 /// Max content width for settings screens by form factor.
 double settingsContentMaxWidth(BuildContext context) {
   final w = MediaQuery.sizeOf(context).width;
-  if (w >= 1100) return 1120;
-  if (w >= 760) return 960;
+  if (w >= 1100) return 960;
+  if (w >= 760) return 840;
   return w;
 }
 
@@ -232,9 +232,9 @@ class AppSettingsPageBody extends StatelessWidget {
           child: ListView(
             padding: EdgeInsets.fromLTRB(
               desktop ? kShellDesktopContentHorizontalPadding : 16,
-              desktop ? 0 : 16,
-              desktop ? kShellDesktopContentHorizontalPadding : 16,
-              16 + MediaQuery.viewPaddingOf(context).bottom,
+              desktop ? 16 : 20,
+              desktop ? kShellDesktopContentHorizontalPadding : 20,
+              24 + MediaQuery.viewPaddingOf(context).bottom,
             ),
             children: children,
           ),
@@ -263,14 +263,13 @@ class AppSettingsSectionCard extends StatelessWidget {
     final scheme = theme.colorScheme;
     return Card(
       elevation: 0,
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 20),
       color: scheme.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.55)),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -291,7 +290,7 @@ class AppSettingsSectionCard extends StatelessWidget {
                 ),
               ),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             child,
           ],
         ),
@@ -317,8 +316,8 @@ class AppSettingsSwitchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SwitchListTile(
-      contentPadding: EdgeInsets.zero,
+    return SwitchListTile.adaptive(
+      contentPadding: const EdgeInsets.symmetric(vertical: 4),
       title: Text(title, style: Theme.of(context).textTheme.bodyLarge),
       subtitle: subtitle == null
           ? null
