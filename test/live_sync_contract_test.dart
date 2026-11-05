@@ -227,7 +227,8 @@ void main() {
   });
 
   test('late plans full-list response preserves newer SSE changes', () {
-    final plans = File('lib/data/plan_service.dart').readAsStringSync();
+    final plans =
+        File('lib/data/plans/plan_stream_helpers.dart').readAsStringSync();
     final cache = File('lib/data/plans/plan_cache_helpers.dart')
         .readAsStringSync();
     expect(cache, contains('_plansFullFetchesInFlight++'));
