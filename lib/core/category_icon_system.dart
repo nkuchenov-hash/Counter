@@ -29,6 +29,47 @@ const List<CategoryIconChoice> kCategoryIconCatalog = [
   CategoryIconChoice('camera', 'Камера', 'Camera', 'Творчество', 'фото photography'),
   CategoryIconChoice('cart', 'Покупки', 'Shopping cart', 'Финансы', 'магазин расходы shopping'),
   CategoryIconChoice('lock', 'Замок', 'Lock', 'Организация', 'пароль безопасность security'),
+  CategoryIconChoice('archive_box', 'Архив', 'Archive', 'Организация', 'хранение архив'),
+  CategoryIconChoice('banknotes', 'Деньги', 'Cash', 'Финансы', 'наличные доход зарплата деньги'),
+  CategoryIconChoice('bell_alert', 'Тревога', 'Alert bell', 'Организация', 'уведомление сигнал'),
+  CategoryIconChoice('bell_snooze', 'Отложенное уведомление', 'Snoozed bell', 'Организация', 'напоминание'),
+  CategoryIconChoice('bolt', 'Энергия', 'Energy', 'Личное', 'электричество молния'),
+  CategoryIconChoice('bug_ant', 'Ошибка', 'Bug', 'Работа', 'насекомое баг разработка'),
+  CategoryIconChoice('building_office', 'Офис', 'Office building', 'Работа', 'здание бизнес'),
+  CategoryIconChoice('building_office_2', 'Небоскрёб', 'Skyscraper', 'Работа', 'город офис'),
+  CategoryIconChoice('building_storefront', 'Магазин', 'Storefront', 'Финансы', 'торговля покупки'),
+  CategoryIconChoice('calendar_date_range', 'Период', 'Date range', 'Организация', 'календарь даты'),
+  CategoryIconChoice('calendar_days', 'День', 'Calendar day', 'Организация', 'расписание'),
+  CategoryIconChoice('check_badge', 'Достижение', 'Verified badge', 'Организация', 'успех награда выполнено'),
+  CategoryIconChoice('code_bracket', 'Код', 'Code', 'Работа', 'разработка программирование'),
+  CategoryIconChoice('computer_desktop', 'Компьютер', 'Computer', 'Работа', 'пк ноутбук техника'),
+  CategoryIconChoice('credit_card', 'Банковская карта', 'Credit card', 'Финансы', 'оплата платеж'),
+  CategoryIconChoice('device_tablet', 'Планшет', 'Tablet', 'Работа', 'устройство техника'),
+  CategoryIconChoice('document_chart_bar', 'Отчёт', 'Report', 'Работа', 'аналитика диаграмма'),
+  CategoryIconChoice('document_check', 'Подписанный документ', 'Approved document', 'Работа', 'проверка документ'),
+  CategoryIconChoice('envelope_open', 'Прочитанное письмо', 'Read mail', 'Организация', 'почта письма'),
+  CategoryIconChoice('exclamation_triangle', 'Предупреждение', 'Warning', 'Организация', 'опасность ошибка'),
+  CategoryIconChoice('eye_dropper', 'Пипетка', 'Eyedropper', 'Творчество', 'цвет дизайн'),
+  CategoryIconChoice('face_frown', 'Грусть', 'Sad face', 'Личное', 'настроение эмоции'),
+  CategoryIconChoice('film', 'Кино', 'Film', 'Творчество', 'фильм видео'),
+  CategoryIconChoice('finger_print', 'Отпечаток', 'Fingerprint', 'Личное', 'биометрия безопасность'),
+  CategoryIconChoice('hand_raised', 'Рука', 'Raised hand', 'Личное', 'волонтёр помощь'),
+  CategoryIconChoice('hand_thumb_up', 'Нравится', 'Thumbs up', 'Личное', 'одобрение'),
+  CategoryIconChoice('hand_thumb_down', 'Не нравится', 'Thumbs down', 'Личное', 'отзыв'),
+  CategoryIconChoice('home_modern', 'Жилой дом', 'Residential building', 'Личное', 'дом жильё недвижимость'),
+  CategoryIconChoice('inbox', 'Входящие', 'Inbox', 'Организация', 'почта'),
+  CategoryIconChoice('language', 'Языки', 'Languages', 'Учёба', 'перевод иностранные'),
+  CategoryIconChoice('newspaper', 'Новости', 'News', 'Организация', 'газета статьи'),
+  CategoryIconChoice('paper_airplane', 'Отправка', 'Send', 'Организация', 'сообщения'),
+  CategoryIconChoice('paper_clip', 'Вложения', 'Attachments', 'Организация', 'файлы скрепка'),
+  CategoryIconChoice('presentation_chart_line', 'График', 'Line chart', 'Работа', 'рост статистика'),
+  CategoryIconChoice('receipt_percent', 'Чек', 'Receipt', 'Финансы', 'скидка процент'),
+  CategoryIconChoice('receipt_refund', 'Возврат', 'Refund', 'Финансы', 'покупки чек'),
+  CategoryIconChoice('shield_exclamation', 'Безопасность', 'Security alert', 'Работа', 'защита'),
+  CategoryIconChoice('sparkles', 'Идеи', 'Sparkles', 'Творчество', 'творчество магия'),
+  CategoryIconChoice('speaker_wave', 'Звук', 'Audio', 'Творчество', 'музыка колонка'),
+  CategoryIconChoice('ticket', 'Билет', 'Ticket', 'Личное', 'кино поездка'),
+  CategoryIconChoice('wifi', 'Wi-Fi', 'Wi-Fi', 'Работа', 'сеть интернет'),
 ];
 
 /// One curated semantic identifier has an authentic icon in both families.
@@ -88,17 +129,34 @@ const Map<String, String> kPreviousIconAliases = {
   'weather_sunny': 'sun',
 };
 
-/// All vetted icon pairs are available by default. Frequently-used icons
-/// appear first; the remaining semantic matches follow alphabetically.
-/// A saved custom quick collection is still respected and ordered first.
-final List<String> kDefaultCategoryIconKeys =
-    List<String>.unmodifiable(<String>{
-  'home', 'heart', 'briefcase', 'calendar', 'folder', 'clock', 'star',
-  'book', 'cart', 'cake', 'moon', 'bell', 'lock', 'camera', 'wallet',
-  'gift', 'phone', 'document', 'cloud', 'tag', 'trophy', 'map',
-  'key', 'light_bulb', 'pencil', 'musical_note',
-  ...(kMatchedCategoryIcons.keys.toList()..sort()),
-});
+/// The technical mapping includes legacy navigation/control icons for
+/// backwards-compatible rendering, but those do not belong in categories.
+bool isSelectableCategoryIconKey(String key) {
+  if (key.startsWith('arrow_') || key.startsWith('chevron_')) return false;
+  const controls = <String>{
+    'backspace', 'x_mark', 'check', 'plus', 'power', 'trash',
+    'magnifying_glass', 'printer', 'pencil', 'cog', 'play', 'pause',
+    'stop', 'pause_circle', 'play_circle', 'question_mark_circle',
+    'document_arrow_down', 'document_arrow_up', 'document_duplicate',
+    'document_arrow_up', 'cloud_arrow_up', 'cloud_arrow_down',
+  };
+  return !controls.contains(key);
+}
+
+/// Popular category subjects first; then the remaining curated subjects.
+/// Explicit user favorites are retained and continue to appear first.
+final List<String> kDefaultCategoryIconKeys = List<String>.unmodifiable(
+  <String>{
+    ...<String>[
+      'home', 'heart', 'briefcase', 'calendar', 'folder', 'clock', 'star',
+      'book', 'cart', 'cake', 'moon', 'bell', 'lock', 'camera', 'wallet',
+      'gift', 'phone', 'document', 'cloud', 'tag', 'trophy', 'map',
+      'key', 'light_bulb', 'musical_note',
+    ].where(isSelectableCategoryIconKey),
+    ...(kMatchedCategoryIcons.keys.toList()..sort())
+        .where(isSelectableCategoryIconKey),
+  },
+);
 
 List<CategoryIconChoice> _buildSharedCatalog() {
   final metadata = {for (final item in kCategoryIconCatalog) item.key: item};
@@ -142,8 +200,11 @@ class CategoryIconStore extends ChangeNotifier {
   Future<void>? _loadFuture;
   CategoryIconPack get pack => _pack;
   static final List<CategoryIconChoice> _approvedCatalog = _buildSharedCatalog();
+  static final List<CategoryIconChoice> _selectableCatalog =
+      List<CategoryIconChoice>.unmodifiable(_approvedCatalog.where(
+          (entry) => isSelectableCategoryIconKey(entry.key)));
   static List<CategoryIconChoice> catalogFor(CategoryIconPack family) =>
-      _approvedCatalog; // Exactly the same semantic keys in both families.
+      _selectableCatalog; // Identical meaningful category icons in both packs.
   static bool isValidKey(String key) => kMatchedCategoryIcons.containsKey(key);
   static String? canonicalKey(String key) => isValidKey(key)
       ? key : kPreviousIconAliases[key];
@@ -152,7 +213,7 @@ class CategoryIconStore extends ChangeNotifier {
   List<String> _quickKeys = List<String>.from(kDefaultCategoryIconKeys);
   List<String> get quickKeys => List<String>.unmodifiable(_quickKeys);
   List<CategoryIconChoice> get quickCatalog {
-    final byKey = {for (final icon in _approvedCatalog) icon.key: icon};
+    final byKey = {for (final icon in _selectableCatalog) icon.key: icon};
     return List<CategoryIconChoice>.unmodifiable([
       for (final key in _quickKeys)
         if (byKey.containsKey(key)) byKey[key]!,
@@ -161,7 +222,9 @@ class CategoryIconStore extends ChangeNotifier {
 
   Future<void> setQuickKeys(Iterable<String> values) async {
     await ensureLoaded();
-    final next = values.toSet().where(isValidKey).toList();
+    final next = values.toSet()
+        .where((key) => isValidKey(key) && isSelectableCategoryIconKey(key))
+        .toList();
     if (next.isEmpty) throw ArgumentError('Select at least one paired icon');
     if (_sameStrings(_quickKeys, next)) return;
     final previous = List<String>.from(_quickKeys);
@@ -202,7 +265,9 @@ class CategoryIconStore extends ChangeNotifier {
       try {
         final raw = jsonDecode(savedQuick);
         if (raw is List) {
-          final keys = raw.whereType<String>().where(isValidKey).toSet().toList();
+          final keys = raw.whereType<String>()
+              .where((key) => isValidKey(key) && isSelectableCategoryIconKey(key))
+              .toSet().toList();
           if (keys.isNotEmpty) _quickKeys = keys;
         }
       } on FormatException {
