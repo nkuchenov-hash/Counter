@@ -281,7 +281,6 @@ class _CalendarViewState extends State<CalendarView>
       if (dayCmp != 0) return dayCmp;
       return a.title.toLowerCase().compareTo(b.title.toLowerCase());
     });
-
     var query = '';
     await showModalBottomSheet<void>(
       context: context,
@@ -333,12 +332,8 @@ class _CalendarViewState extends State<CalendarView>
                                 borderRadius: BorderRadius.circular(16),
                                 child: AppSettingsNavigationRow(
                                   title: task.title,
-                                  subtitle: DateFormat.yMMMd(
-                                    currentLocale.value,
-                                  ).format(day),
-                                  leading: const AppSettingsMenuIcon(
-                                    icon: Icons.event_outlined,
-                                  ),
+                                  subtitle: DateFormat.yMMMd(currentLocale.value).format(day),
+                                  leading: const AppSettingsMenuIcon(icon: Icons.event_outlined),
                                   onTap: () {
                                     Navigator.of(sheetContext).pop();
                                     _onDayTapped(day, createPlan: false);
@@ -357,7 +352,6 @@ class _CalendarViewState extends State<CalendarView>
       ),
     );
   }
-
   String _calendarPageKey() {
     if (_dayFocusActive) return 'day-${calendarDayKey(_selectedDay)}';
     return switch (_mode) {
@@ -407,7 +401,6 @@ class _CalendarViewState extends State<CalendarView>
       ),
     );
   }
-
   void _openAddPlanForSelectedDay([String initialTitle = '', DateTime? startTime]) {
     final d = _selectedDay;
     final dateKey = calendarDayKey(d);
@@ -435,8 +428,6 @@ class _CalendarViewState extends State<CalendarView>
     );
     widget.onEditTask(draft);
   }
-
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -613,7 +604,6 @@ class _CalendarViewState extends State<CalendarView>
   }
 }
 
-
 class _CalendarFloatingTextButton extends StatelessWidget {
   const _CalendarFloatingTextButton({
     required this.label,
@@ -673,7 +663,6 @@ class _CalendarFloatingAddButton extends StatelessWidget {
     );
   }
 }
-
 
 class _CalendarYearGrid extends StatelessWidget {
   const _CalendarYearGrid({
