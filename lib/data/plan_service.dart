@@ -1603,18 +1603,30 @@ extension PlanServiceExtension on DatabaseService {
       final action = e.action.toLowerCase().trim();
       if (action == 'delete') {
         final id = e.record?.id.trim() ?? '';
-        if (id.isNotEmpty) {
-          if (_plansFullFetchesInFlight > 0) {
-            _plansRealtimeDuringFullFetch[id] = null;
-          }
-          _removePlanFromUserCache(id);
-          clearOptimisticPlanningForPlanRow(id);
-          notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        if (id.isEmpty) {
+          _recoverDroppedRealtimeEvent('plans_delete_missing_id');
+          return;
         }
+        if (_plansFullFetchesInFlight > 0) {
+          _plansRealtimeDuringFullFetch[id] = null;
+        }
+        _removePlanFromUserCache(id);
+        clearOptimisticPlanningForPlanRow(id);
+        notifyPlanningRefresh(
+          scheduleNetworkRefresh: false,
+          immediateLocal: true,
+        );
+        return;
+      }
+      if (action != 'create' && action != 'update') {
+        _recoverDroppedRealtimeEvent('plans_unexpected_action');
         return;
       }
       final rec = e.record;
-      if (rec == null) return;
+      if (rec == null) {
+        _recoverDroppedRealtimeEvent('plans_missing_payload');
+        return;
+      }
       // Realtime delivery must never wait for another HTTP request. The event
       // is merged immediately using the current tag catalog/expand payload.
       try {
@@ -1634,13 +1646,19 @@ extension PlanServiceExtension on DatabaseService {
           }
           clearOptimisticPlanningForPlanRow(task.planRowIdForBackend);
         }
-        notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        notifyPlanningRefresh(
+          scheduleNetworkRefresh: false,
+          immediateLocal: true,
+        );
       } catch (error, stackTrace) {
+        _recoverDroppedRealtimeEvent('plans_apply_failed');
         if (kDebugMode) {
           debugPrint('plans realtime merge failed: $error\n$stackTrace');
         }
       }
-    } catch (_) {}
+    } catch (_) {
+      _recoverDroppedRealtimeEvent('plans_handler_failed');
+    }
   }
 
   Future<void> _cancelPlansRealtimeSubscription() async {
