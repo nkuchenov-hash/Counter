@@ -1,9 +1,26 @@
 part of '../app_shell.dart';
 
 mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
+  /// Timeline and Plans share Menu's readable desktop column. Other pages
+  /// retain their existing widths; do not constrain the entire shell.
+  Widget _readableWorkPage(Widget page) {
+    if (!shellUsesSideNavigation(MediaQuery.sizeOf(context).width)) {
+      return page;
+    }
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: settingsContentMaxWidth(context),
+        ),
+        child: page,
+      ),
+    );
+  }
+
   List<Widget> buildShellPages() => <Widget>[
-    timelineTabHost,
-    planningTabHost,
+    _readableWorkPage(timelineTabHost),
+    _readableWorkPage(planningTabHost),
     calendarTabHost,
     listsTabHost,
     StreamBuilder<List<CategoryRule>>(
