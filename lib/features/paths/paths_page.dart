@@ -821,7 +821,7 @@ class _PathsPageState extends State<PathsPage> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 6, 12, 14),
       child: Material(
-        color: scheme.surface,
+        color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(18),
         child: AppSettingsNavigationRow(
           title: _ru ? 'Путь' : 'Path',
@@ -863,7 +863,7 @@ class _PathsPageState extends State<PathsPage> {
                   const SizedBox(height: 16),
                   Expanded(
                     child: Material(
-                      color: scheme.surface,
+                      color: scheme.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(20),
                       clipBehavior: Clip.antiAlias,
                       child: ListView.separated(

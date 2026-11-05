@@ -328,7 +328,7 @@ class _CalendarViewState extends State<CalendarView>
                               final task = filtered[index];
                               final day = _taskDay(task);
                               return Material(
-                                color: Theme.of(context).colorScheme.surface,
+                                color: Theme.of(context).colorScheme.surfaceContainerHigh,
                                 borderRadius: BorderRadius.circular(16),
                                 child: AppSettingsNavigationRow(
                                   title: task.title,

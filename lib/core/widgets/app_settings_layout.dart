@@ -265,7 +265,7 @@ class AppSettingsSectionCard extends StatelessWidget {
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 20),
-      color: scheme.surface,
+      color: scheme.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
       ),
@@ -443,7 +443,7 @@ class AppSettingsGridCard extends StatelessWidget {
     return Card(
       elevation: 0,
       margin: EdgeInsets.zero,
-      color: scheme.surface,
+      color: scheme.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.55)),
@@ -630,7 +630,7 @@ class AppSettingsNavigationGroup extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Material(
-        color: scheme.surface,
+        color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(22),
         clipBehavior: Clip.antiAlias,
         child: Padding(
@@ -672,7 +672,7 @@ class AppSettingsMenuIcon extends StatelessWidget {
       height: 44,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: scheme.surfaceContainerHigh,
+          color: scheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(13),
         ),
         child: Icon(icon, size: 23, color: scheme.onSurface),
@@ -781,7 +781,7 @@ class _AppSettingsThemeChoice extends StatelessWidget {
             duration: const Duration(milliseconds: 170),
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: scheme.surface,
+              color: scheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: selected

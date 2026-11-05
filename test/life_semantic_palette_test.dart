@@ -158,6 +158,12 @@ void main() {
       ),
     );
     await tester.tap(find.text('Calendars'));
+    final group = find.byType(AppSettingsNavigationGroup);
+    final materials = tester.widgetList<Material>(
+      find.descendant(of: group, matching: find.byType(Material)),
+    );
+    expect(materials.any((material) =>
+        material.color == const Color(0xFFFFFFFF)), isTrue);
     expect(taps, 1);
     expect(tester.takeException(), isNull);
   });
