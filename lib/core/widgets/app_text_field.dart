@@ -1,5 +1,7 @@
 import 'dart:ui' as ui;
 
+import 'package:counter/core/app_control_tokens.dart';
+
 import 'package:flutter/material.dart';
 
 /// Canonical single-line text/search input for Life OS.
@@ -24,8 +26,8 @@ class AppTextField extends StatelessWidget {
     this.surface = AppTextFieldSurface.standard,
   });
 
-  static const double height = 42;
-  static const double radius = 18;
+  static const double height = AppControlTokens.height;
+  static const double radius = AppControlTokens.radius;
 
   final TextEditingController controller;
   final FocusNode focusNode;
@@ -46,12 +48,8 @@ class AppTextField extends StatelessWidget {
     final meta = dark
         ? scheme.onSurfaceVariant.withValues(alpha: 0.92)
         : scheme.onSurfaceVariant;
-    final fill = dark
-        ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
-        : scheme.surfaceContainerLow.withValues(alpha: 0.78);
-    final borderColor = dark
-        ? scheme.outlineVariant.withValues(alpha: 0.78)
-        : scheme.outlineVariant.withValues(alpha: 0.76);
+    final fill = scheme.surfaceContainerHighest;
+    final borderColor = scheme.outline.withValues(alpha: 0.86);
 
     final glass = surface == AppTextFieldSurface.glass;
     final field = TextField(
@@ -62,11 +60,11 @@ class AppTextField extends StatelessWidget {
       textAlignVertical: TextAlignVertical.center,
       onChanged: onChanged,
       onSubmitted: onSubmitted,
-      style: TextStyle(fontSize: 13.5, color: scheme.onSurface),
+      style: TextStyle(fontSize: AppControlTokens.fontSize, color: scheme.onSurface),
       decoration: InputDecoration(
         constraints: const BoxConstraints.tightFor(height: height),
         hintText: hintText,
-        hintStyle: TextStyle(fontSize: 13.5, color: meta),
+        hintStyle: TextStyle(fontSize: AppControlTokens.fontSize, color: meta),
         prefixIcon: showSearchIcon
             ? Icon(Icons.search_rounded, size: 18, color: meta)
             : null,
@@ -83,10 +81,10 @@ class AppTextField extends StatelessWidget {
             : fill,
         isDense: true,
         contentPadding: EdgeInsets.fromLTRB(
-          showSearchIcon ? 0 : 13,
-          11,
-          13,
-          11,
+          showSearchIcon ? 0 : AppControlTokens.horizontalPadding,
+          0,
+          AppControlTokens.horizontalPadding,
+          0,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius),
