@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: life-os-android-apk
@@ -47,8 +47,8 @@ jobs:
       - name: Prepare downloadable APK
         run: |
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-release.apk dist/LIFE-OS-arm64.apk
-          sha256sum dist/LIFE-OS-arm64.apk > dist/SHA256SUMS.txt
+          cp build/app/outputs/flutter-apk/app-release.apk dist/LIFE-OS-Android-arm64.apk
+          sha256sum dist/LIFE-OS-Android-arm64.apk > dist/SHA256SUMS.txt
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
@@ -56,3 +56,14 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 90
+
+      - name: Publish latest public Android release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG=life-os-latest
+          SHA="${GITHUB_SHA}"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "LIFE OS Android (latest)" --notes "Latest ARM64 Android build."
+          gh release upload "$TAG" dist/LIFE-OS-Android-arm64.apk dist/SHA256SUMS.txt --clobber
+          gh release edit "$TAG" --title "LIFE OS Android (latest)" --notes "ARM64 Android build from commit $SHA."
