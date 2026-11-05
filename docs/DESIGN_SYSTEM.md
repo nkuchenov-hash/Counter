@@ -12,11 +12,33 @@ The Life OS design system makes Figma the visual source of truth and Flutter can
 
 ## Semantic palette contract (categories, tags, UI chrome)
 
-- **One palette owner:** `lib/core/category_color_palette.dart` defines the nine semantic category hues plus neutral grey (lists/rest/system). Category creation, the appearance editor and the tag color chooser use these same families. `lib/core/app_colors.dart` owns the shared cool-white/dark neutral surfaces and action/status roles used across the app.
+- **One palette owner:** `lib/core/life_color_compat.dart` defines all nine semantic hues plus neutral grey (lists/rest/system); `lib/core/category_color_palette.dart` exposes their ordering and hierarchy. Category creation, the appearance editor and the tag color chooser use these same families. `lib/core/app_colors.dart` owns the shared cool-white/dark neutral surfaces and action/status roles used across the app.
 - **Hierarchy:** new root category = shade 600, child = 500, grandchild and deeper = 400, without sibling-order variation. Children inherit their parent's color **family**, not a separate random hue; cap at 400 to avoid invisible pale colors. The chooser offers only 400/500/600 instead of ten near-white/near-black choices.
-- **Backwards compatibility:** do not batch-update PocketBase `categories.color_value` or `tags.color`. Existing saved colors and manually customized category colors remain intact. New defaults apply only to new categories; manual category color selection is retained. The tag picker shows legacy/custom hex as a selectable swatch.
-- **Tags:** stored tag colors remain the authoritative display colors across Timeline, Plans, Lists and tag manager. Preserve the established exact yellow-gold **#F6C500** / yellow-family contrast and plate-opacity rules in `tag_contrast.dart`. The semantic hue catalogue supplies *new* tag options; it does not reinterpret existing colors.
+- **Backwards compatibility:** do not batch-update PocketBase `categories.color_value` or `tags.color`. Existing saved colors and manually customized category colors remain stored intact. The exact historical **official palette shades** render through the corresponding new family colors (without a database write); other custom values are not remapped. New choices use canonical colors, and the tag picker retains custom HEX values.
+- **Tags:** stored tag colors determine their semantic family across Timeline, Plans, Lists and tag manager. Previous official shade values are resolved to the current canonical family for display, while unrelated custom HEX colors stay exact. Keep the established exact yellow-gold **#F6C500** exception and 15% gold plate in `tag_contrast.dart`. It is an explicit inherited exception to the small-text contrast target.
 - **Semantic roles are distinct:** primary actions remain dark/neutral; success, danger, disabled, active and selection states preserve their meaning. Do not repurpose the green success color or red error color as a generic surface fill. Dark mode uses the same hue identities with contrast-appropriate surfaces, not the literal light-mode background.
+
+## Canonical balanced palette (November 2026)
+
+| Family | Shade 500 | Usage |
+| :--- | :--- | :--- |
+| Work / Blue | `#286BE3` | Blue |
+| Errands / Orange | `#E8700A` | Orange |
+| Food / Gold | `#F6C500` | Gold / exact yellow token |
+| Movement / Green | `#56A235` | Green |
+| Health / Teal | `#008B83` | Turquoise |
+| Transport / Sky | `#55BCE7` | Sky blue |
+| Study / Deep blue | `#242B5D` | Dark navy (not purple) |
+| Entertainment / Red | `#C82332` | Scarlet red |
+| People / Pink | `#E65EA5` | Actual pink, never purple |
+| Neutral / Gray | `#606060` | Achromatic gray |
+
+- These ten family constants are the **only** category/tag preset owners. The category picker and tag palette enumerate the same 500 tones; category hierarchy still selects 600/500/400.
+- Independent full-opacity shade-500 swatches have minimum CIEDE2000 color difference ≈25 across all 45 pairs (independent static numerical check, not a guarantee for all vision conditions). Never optimize by shifting pink toward purple.
+- Shared compact tag chip plates use **26%** color tint; translucent outlines use **55%**; category breadcrumb plates use **22%**. Exact gold keeps its pre-existing **15%** tint and foreground policy.
+- Text on tinted chips should achieve ≥4.5:1 contrast by lightening/darkening *within the original color family*, and solid icon/dot accents ≥3:1 against the theme surface. The historical exact-gold behavior is a documented exception.
+- Use the identical hue identity in desktop, web, and mobile. Light/dark themes may adjust display lightness for contrast but must not change the stored color or turn the selected state into another hue.
+- Official historical category/tag shade values are mapped in `canonicalLifeColorValue`; no migration, no client-side write-back. Do not replace this exact-match map with hue-nearest rewriting of arbitrary custom colors.
 
 ## Palette clarity and offline category color edits
 
