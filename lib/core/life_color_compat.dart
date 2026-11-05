@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// LIFE OS canonical color system. All ten families are declared here.
+/// LIFE OS canonical color system. All eleven families are declared here.
 /// The category and tag palettes use these same MaterialColor instances.
 /// Existing persisted colors are translated for display without data migration.
 
@@ -11,53 +11,95 @@ const MaterialColor kNordicWork = MaterialColor(0xFF286BE3, <int, Color>{
   900: Color(0xFF122F64),
 });
 
-const MaterialColor kNordicFood = MaterialColor(0xFFF6C500, <int, Color>{
-  50: Color(0xFFFEFCF0),   100: Color(0xFFFEF7DE),   200: Color(0xFFFDF0BD),
-  300: Color(0xFFFBE58C),   400: Color(0xFFF9D74F),   500: Color(0xFFF6C500),
-  600: Color(0xFFD8AD00),   700: Color(0xFFB49000),   800: Color(0xFF917400),
-  900: Color(0xFF6C5700),
+const MaterialColor kNordicFood = MaterialColor(0xFFFFD000, <int, Color>{
+  50: Color(0xFFFFFDF0),
+  100: Color(0xFFFFF8D9),
+  200: Color(0xFFFFF0AB),
+  300: Color(0xFFFFE978),
+  400: Color(0xFFFFDF40),
+  500: Color(0xFFFFD000),
+  600: Color(0xFFE5BB00),
+  700: Color(0xFFC49E00),
+  800: Color(0xFF997B00),
+  900: Color(0xFF745C00),
 });
 
-const MaterialColor kNordicMovement = MaterialColor(0xFF56A235, <int, Color>{
-  50: Color(0xFFF5F9F3),   100: Color(0xFFE9F3E5),   200: Color(0xFFD3E7CA),
-  300: Color(0xFFB3D5A4),   400: Color(0xFF8ABF74),   500: Color(0xFF56A235),
-  600: Color(0xFF4C8F2F),   700: Color(0xFF3F7627),   800: Color(0xFF33601F),
-  900: Color(0xFF264717),
+const MaterialColor kNordicMovement = MaterialColor(0xFF48A130, <int, Color>{
+  50: Color(0xFFF4F9F1),
+  100: Color(0xFFE6F2E0),
+  200: Color(0xFFCDE7C4),
+  300: Color(0xFFA9D49C),
+  400: Color(0xFF7CBE68),
+  500: Color(0xFF48A130),
+  600: Color(0xFF3D8D28),
+  700: Color(0xFF327221),
+  800: Color(0xFF285C1B),
+  900: Color(0xFF204716),
 });
 
-const MaterialColor kNordicHealth = MaterialColor(0xFF008B83, <int, Color>{
-  50: Color(0xFFF0F8F8),   100: Color(0xFFDEF0EF),   200: Color(0xFFBDE1DF),
-  300: Color(0xFF8CCBC7),   400: Color(0xFF4FAFA9),   500: Color(0xFF008B83),
-  600: Color(0xFF007A73),   700: Color(0xFF006560),   800: Color(0xFF00524D),
-  900: Color(0xFF003D3A),
+const MaterialColor kNordicHealth = MaterialColor(0xFF008F87, <int, Color>{
+  50: Color(0xFFF0F9F8),
+  100: Color(0xFFD8F0EE),
+  200: Color(0xFFB0E0DD),
+  300: Color(0xFF80CEC9),
+  400: Color(0xFF45B6AF),
+  500: Color(0xFF008F87),
+  600: Color(0xFF007B74),
+  700: Color(0xFF006660),
+  800: Color(0xFF00534E),
+  900: Color(0xFF00403C),
 });
 
-const MaterialColor kNordicTransport = MaterialColor(0xFF55BCE7, <int, Color>{
-  50: Color(0xFFF5FBFE),   100: Color(0xFFE9F6FC),   200: Color(0xFFD3EEF9),
-  300: Color(0xFFB3E1F4),   400: Color(0xFF8AD1EE),   500: Color(0xFF55BCE7),
-  600: Color(0xFF4BA5CB),   700: Color(0xFF3E89A9),   800: Color(0xFF326F88),
-  900: Color(0xFF255366),
+const MaterialColor kNordicTransport = MaterialColor(0xFF47BCE9, <int, Color>{
+  50: Color(0xFFF2FBFE),
+  100: Color(0xFFE0F4FC),
+  200: Color(0xFFBFE9F9),
+  300: Color(0xFF96DCF4),
+  400: Color(0xFF71CEEF),
+  500: Color(0xFF47BCE9),
+  600: Color(0xFF3BA4CD),
+  700: Color(0xFF3086A9),
+  800: Color(0xFF286B87),
+  900: Color(0xFF20556B),
 });
 
-const MaterialColor kNordicStudy = MaterialColor(0xFF242B5D, <int, Color>{
-  50: Color(0xFFF2F2F5),   100: Color(0xFFE3E3EA),   200: Color(0xFFC6C8D5),
-  300: Color(0xFF9CA0B6),   400: Color(0xFF686D8F),   500: Color(0xFF242B5D),
-  600: Color(0xFF202652),   700: Color(0xFF1A1F44),   800: Color(0xFF151937),
-  900: Color(0xFF101329),
+const MaterialColor kNordicStudy = MaterialColor(0xFF725EB5, <int, Color>{
+  50: Color(0xFFF5F3FA),
+  100: Color(0xFFEAE6F5),
+  200: Color(0xFFD6CEEA),
+  300: Color(0xFFB9ACDB),
+  400: Color(0xFF9685C9),
+  500: Color(0xFF725EB5),
+  600: Color(0xFF6552A3),
+  700: Color(0xFF55458A),
+  800: Color(0xFF473A70),
+  900: Color(0xFF3B305D),
 });
 
-const MaterialColor kCategoryNeutral = MaterialColor(0xFF606060, <int, Color>{
-  50: Color(0xFFF7F7F7),   100: Color(0xFFEAEAEA),   200: Color(0xFFD6D6D6),
-  300: Color(0xFFB7B7B7),   400: Color(0xFF919191),   500: Color(0xFF606060),
-  600: Color(0xFF545454),   700: Color(0xFF464646),   800: Color(0xFF393939),
-  900: Color(0xFF2A2A2A),
+const MaterialColor kCategoryNeutral = MaterialColor(0xFF9A9A9A, <int, Color>{
+  50: Color(0xFFFBFBFB),
+  100: Color(0xFFF6F6F6),
+  200: Color(0xFFEAEAEA),
+  300: Color(0xFFD5D5D5),
+  400: Color(0xFFB9B9B9),
+  500: Color(0xFF9A9A9A),
+  600: Color(0xFF828282),
+  700: Color(0xFF686868),
+  800: Color(0xFF505050),
+  900: Color(0xFF393939),
 });
 
-const MaterialColor kNordicErrands = MaterialColor(0xFFE8700A, <int, Color>{
-  50: Color(0xFFFEF7EE), 100: Color(0xFFFCE8D2), 200: Color(0xFFF9CE9F),
-  300: Color(0xFFF3AC6A), 400: Color(0xFFED903A), 500: Color(0xFFE8700A),
-  600: Color(0xFFCC6309), 700: Color(0xFFAA5207), 800: Color(0xFF8A4306),
-  900: Color(0xFF663105),
+const MaterialColor kNordicErrands = MaterialColor(0xFFF26900, <int, Color>{
+  50: Color(0xFFFFF7EF),
+  100: Color(0xFFFFE8CF),
+  200: Color(0xFFFFD0A1),
+  300: Color(0xFFFFAE66),
+  400: Color(0xFFFF8E35),
+  500: Color(0xFFF26900),
+  600: Color(0xFFD95C00),
+  700: Color(0xFFB34C00),
+  800: Color(0xFF913D00),
+  900: Color(0xFF6E2E00),
 });
 
 const MaterialColor kNordicEntertainment = MaterialColor(0xFFC82332, <int, Color>{
@@ -67,11 +109,28 @@ const MaterialColor kNordicEntertainment = MaterialColor(0xFFC82332, <int, Color
   900: Color(0xFF621D24),
 });
 
-const MaterialColor kNordicPeople = MaterialColor(0xFFE65EA5, <int, Color>{
-  50: Color(0xFFFEF3F9), 100: Color(0xFFFCE4F0), 200: Color(0xFFF8C9E1),
-  300: Color(0xFFF1A1CA), 400: Color(0xFFEB7CB6), 500: Color(0xFFE65EA5),
-  600: Color(0xFFC9438D), 700: Color(0xFFA93476), 800: Color(0xFF892C63),
-  900: Color(0xFF702653),
+const MaterialColor kNordicPeople = MaterialColor(0xFFF56AB9, <int, Color>{
+  50: Color(0xFFFEF3FA),
+  100: Color(0xFFFCE6F3),
+  200: Color(0xFFF9CDE8),
+  300: Color(0xFFF5AED7),
+  400: Color(0xFFF28CCB),
+  500: Color(0xFFF56AB9),
+  600: Color(0xFFD44F9E),
+  700: Color(0xFFAF3B81),
+  800: Color(0xFF8E326C),
+  900: Color(0xFF712A57),
+});
+
+
+/// User-defined urgent/critical identity. Unlike neutral gray, its 500 tone
+/// is pure black and should be available explicitly in the tag color picker.
+const MaterialColor kCategoryBlack = MaterialColor(0xFF000000, <int, Color>{
+  50: Color(0xFFF3F3F3), 100: Color(0xFFE2E2E2),
+  200: Color(0xFFBDBDBD), 300: Color(0xFF888888),
+  400: Color(0xFF424242), 500: Color(0xFF000000),
+  600: Color(0xFF000000), 700: Color(0xFF000000),
+  800: Color(0xFF000000), 900: Color(0xFF000000),
 });
 
 /// Official previous semantic-family shades. Compatibility is visual only:
@@ -150,7 +209,148 @@ const Map<int, int> _legacyCategoryNeutralTones = <int, int>{
   0xFF333333: 900
 };
 
+const Map<int, int> _legacyNovemberNordicErrandsTones = <int, int>{
+  0xFFFEF7EE: 50,
+  0xFFFCE8D2: 100,
+  0xFFF9CE9F: 200,
+  0xFFF3AC6A: 300,
+  0xFFED903A: 400,
+  0xFFE8700A: 500,
+  0xFFCC6309: 600,
+  0xFFAA5207: 700,
+  0xFF8A4306: 800,
+  0xFF663105: 900,
+};
+
+const Map<int, int> _legacyNovemberNordicFoodTones = <int, int>{
+  0xFFFEFCF0: 50,
+  0xFFFEF7DE: 100,
+  0xFFFDF0BD: 200,
+  0xFFFBE58C: 300,
+  0xFFF9D74F: 400,
+  0xFFF6C500: 500,
+  0xFFD8AD00: 600,
+  0xFFB49000: 700,
+  0xFF917400: 800,
+  0xFF6C5700: 900,
+};
+
+const Map<int, int> _legacyNovemberNordicMovementTones = <int, int>{
+  0xFFF5F9F3: 50,
+  0xFFE9F3E5: 100,
+  0xFFD3E7CA: 200,
+  0xFFB3D5A4: 300,
+  0xFF8ABF74: 400,
+  0xFF56A235: 500,
+  0xFF4C8F2F: 600,
+  0xFF3F7627: 700,
+  0xFF33601F: 800,
+  0xFF264717: 900,
+};
+
+const Map<int, int> _legacyNovemberNordicHealthTones = <int, int>{
+  0xFFF0F8F8: 50,
+  0xFFDEF0EF: 100,
+  0xFFBDE1DF: 200,
+  0xFF8CCBC7: 300,
+  0xFF4FAFA9: 400,
+  0xFF008B83: 500,
+  0xFF007A73: 600,
+  0xFF006560: 700,
+  0xFF00524D: 800,
+  0xFF003D3A: 900,
+};
+
+const Map<int, int> _legacyNovemberNordicTransportTones = <int, int>{
+  0xFFF5FBFE: 50,
+  0xFFE9F6FC: 100,
+  0xFFD3EEF9: 200,
+  0xFFB3E1F4: 300,
+  0xFF8AD1EE: 400,
+  0xFF55BCE7: 500,
+  0xFF4BA5CB: 600,
+  0xFF3E89A9: 700,
+  0xFF326F88: 800,
+  0xFF255366: 900,
+};
+
+const Map<int, int> _legacyNovemberNordicStudyTones = <int, int>{
+  0xFFF2F2F5: 50,
+  0xFFE3E3EA: 100,
+  0xFFC6C8D5: 200,
+  0xFF9CA0B6: 300,
+  0xFF686D8F: 400,
+  0xFF242B5D: 500,
+  0xFF202652: 600,
+  0xFF1A1F44: 700,
+  0xFF151937: 800,
+  0xFF101329: 900,
+};
+
+const Map<int, int> _legacyNovemberNordicPeopleTones = <int, int>{
+  0xFFFEF3F9: 50,
+  0xFFFCE4F0: 100,
+  0xFFF8C9E1: 200,
+  0xFFF1A1CA: 300,
+  0xFFEB7CB6: 400,
+  0xFFE65EA5: 500,
+  0xFFC9438D: 600,
+  0xFFA93476: 700,
+  0xFF892C63: 800,
+  0xFF702653: 900,
+};
+
+const Map<int, int> _legacyNovemberCategoryNeutralTones = <int, int>{
+  0xFFF7F7F7: 50,
+  0xFFEAEAEA: 100,
+  0xFFD6D6D6: 200,
+  0xFFB7B7B7: 300,
+  0xFF919191: 400,
+  0xFF606060: 500,
+  0xFF545454: 600,
+  0xFF464646: 700,
+  0xFF393939: 800,
+  0xFF2A2A2A: 900,
+};
+
 int canonicalLifeColorValue(int savedArgb) {
+
+  // Current values must be stable. Exact-match historical remapping never
+  // changes a freshly selected current preset or descendant shade.
+  for (final family in <MaterialColor>[
+    kNordicWork,
+    kNordicErrands,
+    kNordicFood,
+    kNordicMovement,
+    kNordicHealth,
+    kNordicTransport,
+    kNordicStudy,
+    kNordicEntertainment,
+    kNordicPeople,
+    kCategoryBlack,
+    kCategoryNeutral,
+  ]) {
+    for (final tone in <int>[50, 100, 200, 300, 400, 500, 600, 700, 800, 900]) {
+      if (family[tone]!.toARGB32() == savedArgb) return savedArgb;
+    }
+  }
+  final historicalNordicErrands = _legacyNovemberNordicErrandsTones[savedArgb];
+  if (historicalNordicErrands != null) return kNordicErrands[historicalNordicErrands]!.toARGB32();
+  final historicalNordicFood = _legacyNovemberNordicFoodTones[savedArgb];
+  if (historicalNordicFood != null) return kNordicFood[historicalNordicFood]!.toARGB32();
+  final historicalNordicMovement = _legacyNovemberNordicMovementTones[savedArgb];
+  if (historicalNordicMovement != null) return kNordicMovement[historicalNordicMovement]!.toARGB32();
+  final historicalNordicHealth = _legacyNovemberNordicHealthTones[savedArgb];
+  if (historicalNordicHealth != null) return kNordicHealth[historicalNordicHealth]!.toARGB32();
+  final historicalNordicTransport = _legacyNovemberNordicTransportTones[savedArgb];
+  if (historicalNordicTransport != null) return kNordicTransport[historicalNordicTransport]!.toARGB32();
+  final historicalNordicStudy = _legacyNovemberNordicStudyTones[savedArgb];
+  if (historicalNordicStudy != null) return kNordicStudy[historicalNordicStudy]!.toARGB32();
+  final historicalNordicPeople = _legacyNovemberNordicPeopleTones[savedArgb];
+  if (historicalNordicPeople != null) return kNordicPeople[historicalNordicPeople]!.toARGB32();
+  final historicalCategoryNeutral = _legacyNovemberCategoryNeutralTones[savedArgb];
+  if (historicalCategoryNeutral != null) return kCategoryNeutral[historicalCategoryNeutral]!.toARGB32();
+
   final tonekNordicWork = _legacyNordicWorkTones[savedArgb];
   if (tonekNordicWork != null) return kNordicWork[tonekNordicWork]!.toARGB32();
   final tonekNordicFood = _legacyNordicFoodTones[savedArgb];
