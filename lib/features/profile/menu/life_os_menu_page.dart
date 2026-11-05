@@ -38,8 +38,16 @@ enum LifeOsMenuAction {
 }
 
 class LifeOsMenuPage extends StatefulWidget {
-  const LifeOsMenuPage({super.key, required this.onAction});
+  const LifeOsMenuPage({
+    super.key,
+    required this.onAction,
+    required this.activeTab,
+  });
   final ValueChanged<LifeOsMenuAction> onAction;
+
+  /// The shell keeps visited tabs offstage. An inactive menu must never
+  /// intercept system Back from Timeline, Planning or another tab.
+  final ValueListenable<int> activeTab;
 
   @override
   State<LifeOsMenuPage> createState() => _LifeOsMenuPageState();
@@ -620,10 +628,14 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
       data: settingsNeutralTheme(context),
       child: Builder(builder: (context) {
         final scheme = Theme.of(context).colorScheme;
-        return PopScope(
-          canPop: _activeSection == null,
+        return ValueListenableBuilder<int>(
+          valueListenable: widget.activeTab,
+          builder: (context, selectedTab, _) => PopScope(
+          canPop: selectedTab != 7 || _activeSection == null,
           onPopInvokedWithResult: (didPop, _) {
-            if (!didPop && _activeSection != null) _back();
+            if (!didPop && selectedTab == 7 && _activeSection != null) {
+              _back();
+            }
           },
           child: LayoutBuilder(
             builder: (context, size) {
@@ -654,6 +666,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
                 ),
               );
             },
+          ),
           ),
         );
       }),

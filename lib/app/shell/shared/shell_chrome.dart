@@ -33,7 +33,10 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
       onTestDesktopVoice: () => unawaited(openViktor()),
     ),
     const PathsPage(),
-    LifeOsMenuPage(onAction: onLifeOsMenuAction),
+    LifeOsMenuPage(
+      onAction: onLifeOsMenuAction,
+      activeTab: shellPageIndexListenable,
+    ),
   ];
 
   String _desktopSectionTitle(String loc) => switch (shellPageIndex) {
