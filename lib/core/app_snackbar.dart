@@ -25,7 +25,7 @@ class AppSnack {
       ..showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: error ? Colors.red.shade800 : AppColors.success,
+          backgroundColor: error ? AppColors.error : AppColors.success,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 2),
         ),
@@ -57,7 +57,7 @@ class AppSnack {
       ..showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: Colors.orange.shade900,
+          backgroundColor: AppColors.warning,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 4),
         ),

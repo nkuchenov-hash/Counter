@@ -580,9 +580,9 @@ class _NotesPhysicalToolPainter extends CustomPainter {
     final left = Path()..moveTo(5, _bandTop)..lineTo(15, 4)..lineTo(11.6, _bandTop)..close();
     final mid = Path()..moveTo(11.6, _bandTop)..lineTo(15, 4)..lineTo(18.4, _bandTop)..close();
     final right = Path()..moveTo(18.4, _bandTop)..lineTo(15, 4)..lineTo(25, 30)..lineTo(25, _bandTop)..close();
-    canvas.drawPath(left, Paint()..color = const Color(0xffead6b2));
-    canvas.drawPath(mid, Paint()..color = const Color(0xfff2e4c5));
-    canvas.drawPath(right, Paint()..color = const Color(0xffe1c79c));
+    canvas.drawPath(left, Paint()..color = AppIllustrationColors.pencilWoodLight);
+    canvas.drawPath(mid, Paint()..color = AppIllustrationColors.pencilWoodMiddle);
+    canvas.drawPath(right, Paint()..color = AppIllustrationColors.pencilWoodShadow);
     final graphite = Path()..moveTo(15, 4)..lineTo(19.4, 17.2)..lineTo(10.6, 17.2)..close();
     _shade(canvas, graphite, inkPaint, edge);
   }
@@ -623,7 +623,7 @@ class _NotesPhysicalToolPainter extends CustomPainter {
   void _fountain(Canvas canvas, Paint collar, Paint edge) {
     final nib = Path()..moveTo(11, 25)..lineTo(11.7, 11)..lineTo(15, 4)..lineTo(18.3, 11)..lineTo(19, 25)..close();
     final gold = Paint()..shader = const LinearGradient(
-      colors: [Color(0xff9d761c), Color(0xffffeaa0), Color(0xffd0a233), Color(0xff8f6b16)],
+      colors: [AppIllustrationColors.fountainGoldShadow, AppIllustrationColors.fountainGoldHighlight, AppIllustrationColors.fountainGoldMiddle, AppIllustrationColors.fountainGoldDeep],
       stops: [0, 0.34, 0.72, 1],
     ).createShader(const Rect.fromLTRB(11, 4, 19, 25));
     _shade(canvas, nib, gold, edge);
@@ -636,7 +636,7 @@ class _NotesPhysicalToolPainter extends CustomPainter {
   void _eraser(Canvas canvas, Paint metal, Paint edge) {
     final rubberRect = RRect.fromRectAndRadius(const Rect.fromLTRB(6.8, 9, 23.2, 34), const Radius.circular(4.8));
     final rubber = Paint()..shader = const LinearGradient(
-      colors: [Color(0xffc9806f), Color(0xfff8ccbe), Color(0xffe5a091), Color(0xffb97264)],
+      colors: [AppIllustrationColors.eraserRubberDark, AppIllustrationColors.eraserRubberHighlight, AppIllustrationColors.eraserRubberMiddle, AppIllustrationColors.eraserRubberShadow],
       stops: [0, 0.42, 0.78, 1],
     ).createShader(const Rect.fromLTRB(6.8, 9, 23.2, 34));
     canvas.drawRRect(rubberRect, rubber);

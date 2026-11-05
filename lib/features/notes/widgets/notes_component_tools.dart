@@ -388,15 +388,15 @@ class NotesEditorToolbar extends StatelessWidget {
                           scheme.surface.withValues(alpha: 0.35),
                         ]
                       : [
-                          const Color(0xFFEAF3FC).withValues(alpha: 0.48),
-                          const Color(0xFFF8FBFF).withValues(alpha: 0.32),
+                          scheme.surfaceContainerHighest.withValues(alpha: 0.48),
+                          scheme.surface.withValues(alpha: 0.32),
                         ],
                 ),
                 borderRadius: radius,
                 border: Border.all(
                   color: dark
                       ? Colors.white.withValues(alpha: 0.24)
-                      : const Color(0xFF778DA8).withValues(alpha: 0.23),
+                      : scheme.outlineVariant.withValues(alpha: 0.23),
                   width: 0.8,
                 ),
               ),
