@@ -39,6 +39,17 @@ abstract final class AppColors {
   // --- Semantic (success only — not default action color) ---
   static const Color success = Color(0xFF2E7D32);
   static const Color onSuccess = AppNeutralTones.white;
+  static const Color warning = Color(0xFFB0700A);
+  static const Color onWarning = AppNeutralTones.white;
+  static const Color information = Color(0xFF286BE3);
+  static const Color onInformation = AppNeutralTones.white;
+  static const Color error = Color(0xFFB3261E);
+  static const Color onError = AppNeutralTones.white;
+
+  // Approved tag typography values, separate from the family root color.
+  static const Color yellowTagText = Color(0xFFB18900);
+  static const Color pinkTagText = Color(0xFFD25888);
+  static const Color orangeTagText = Color(0xFFD95400);
 
   // --- Dark surfaces ---
   static const Color darkAppBackground = Color(0xFF121820);
@@ -62,8 +73,8 @@ abstract final class AppColors {
         onTertiary: onActionPrimary,
         tertiaryContainer: surfaceMuted,
         onTertiaryContainer: actionPrimary,
-        error: Color(0xFFB3261E),
-        onError: onActionPrimary,
+        error: error,
+        onError: onError,
         errorContainer: Color(0xFFF9DEDC),
         onErrorContainer: Color(0xFF410E0B),
         surface: appBackground,
