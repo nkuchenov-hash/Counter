@@ -72,18 +72,17 @@ class _IconPickerState extends State<_IconPicker> {
       builder: (context, _) {
         final query = _search.text.trim().toLowerCase();
         final approved = CategoryIconStore.catalogFor(store.pack);
-        final catalog = store.quickCatalog;
+        // Show the full audited library, even for existing users who saved an
+        // older 26-icon quick collection. Keep their favorites at the front.
+        final quickKeys = store.quickKeys.toSet();
+        final catalog = <CategoryIconChoice>[
+          ...store.quickCatalog,
+          ...approved.where((item) => !quickKeys.contains(item.key)),
+        ];
         final current = approved.where((e) => e.key == _selection.key)
             .firstOrNull ?? CategoryIconChoice(
               _selection.key, _selection.key, _selection.key, 'Прочее', '');
-        final choices = [...catalog];
-        // Keep the current category icon visible for editing even if it
-        // was removed from the user's preferred quick collection.
-        if (CategoryIconStore.isValidKey(_selection.key) &&
-            !choices.any((item) => item.key == _selection.key)) {
-          choices.insert(0, current);
-        }
-        final icons = choices.where((item) {
+        final icons = catalog.where((item) {
           if (_group != 'Все' && item.group != _group) return false;
           return query.isEmpty ||
               (item.key + ' ' + item.ru + ' ' + item.en + ' ' + item.synonyms)
@@ -103,37 +102,27 @@ class _IconPickerState extends State<_IconPicker> {
             ]),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(18, 8, 18, 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.all(12),
-              child: Row(children: [
-                CategorySvgIcon(selection: _selection, color: widget.color ?? cs.primary, size: 37),
-                const SizedBox(width: 12),
-                Expanded(child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(ru ? current.ru : current.en,
-                        style: Theme.of(context).textTheme.titleMedium),
-                    Text(store.pack == CategoryIconPack.fluent ? 'Fluent UI' : 'Heroicons',
-                        style: Theme.of(context).textTheme.bodySmall),
-                  ],
-                )),
-                SegmentedButton<bool>(
-                  key: const ValueKey('category-icon-style-toggle'),
-                  showSelectedIcon: false,
-                  segments: [
-                    ButtonSegment(value: false, label: Text(ru ? 'Контур' : 'Outline')),
-                    ButtonSegment(value: true, label: Text(ru ? 'Заливка' : 'Fill')),
-                  ],
-                  selected: {_selection.filled},
-                  onSelectionChanged: (value) => setState(() {
-                    _selection = CategoryIconSelection(_selection.key, filled: value.first);
-                  }),
-                ),
-              ]),
-            ),
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
+            child: Row(children: [
+              CategorySvgIcon(selection: _selection,
+                  color: widget.color ?? cs.primary, size: 30),
+              const SizedBox(width: 10),
+              Expanded(child: Text(ru ? current.ru : current.en,
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium)),
+              SegmentedButton<bool>(
+                key: const ValueKey('category-icon-style-toggle'),
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment(value: false, label: Text(ru ? 'Контур' : 'Outline')),
+                  ButtonSegment(value: true, label: Text(ru ? 'Заливка' : 'Fill')),
+                ],
+                selected: {_selection.filled},
+                onSelectionChanged: (value) => setState(() {
+                  _selection = CategoryIconSelection(_selection.key, filled: value.first);
+                }),
+              ),
+            ]),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -147,14 +136,6 @@ class _IconPickerState extends State<_IconPicker> {
                   onPressed: _search.clear, icon: const Icon(Icons.close)),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 6, 18, 0),
-            child: Text(ru
-                ? 'Мой набор · изменяется в Настройках → Оформление'
-                : 'My collection · edit in Settings → Appearance',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: cs.onSurfaceVariant)),
           ),
           SizedBox(height: 52, child: ListView.separated(
             scrollDirection: Axis.horizontal,
@@ -173,38 +154,45 @@ class _IconPickerState extends State<_IconPicker> {
                 key: const ValueKey('category-paired-icon-grid'),
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 15),
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 93, mainAxisExtent: 81,
-                  mainAxisSpacing: 9, crossAxisSpacing: 9,
+                  maxCrossAxisExtent: 58, mainAxisExtent: 52,
+                  mainAxisSpacing: 5, crossAxisSpacing: 5,
                 ),
                 itemCount: icons.length,
                 itemBuilder: (_, i) {
                   final item = icons[i];
                   final active = item.key == _selection.key;
-                  return InkWell(
-                    key: ValueKey('category-icon-' + item.key),
-                    onTap: () => setState(() {
-                      _selection = CategoryIconSelection(item.key, filled: _selection.filled);
-                    }),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: active ? cs.primaryContainer.withValues(alpha: 0.3) : cs.surface,
+                  final label = ru ? item.ru : item.en;
+                  return Tooltip(
+                    message: label,
+                    child: Semantics(
+                      label: label, button: true, selected: active,
+                      child: InkWell(
+                        key: ValueKey('category-icon-' + item.key),
+                        onTap: () => setState(() {
+                          _selection = CategoryIconSelection(item.key,
+                              filled: _selection.filled);
+                        }),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: active ? cs.primary : cs.outlineVariant,
-                          width: active ? 2 : 1,
-                        ),
+                        child: Center(child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 120),
+                          width: 44, height: 44,
+                          decoration: BoxDecoration(
+                            color: active
+                                ? cs.primaryContainer.withValues(alpha: 0.5)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            border: active
+                                ? Border.all(color: cs.primary, width: 2)
+                                : null,
+                          ),
+                          child: Center(child: CategorySvgIcon(
+                            selection: CategoryIconSelection(item.key,
+                                filled: _selection.filled),
+                            size: 26,
+                            color: active ? cs.primary : cs.onSurface,
+                          )),
+                        )),
                       ),
-                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        CategorySvgIcon(
-                          selection: CategoryIconSelection(
-                            item.key, filled: _selection.filled),
-                          size: 27, color: active ? cs.primary : cs.onSurface),
-                        const SizedBox(height: 7),
-                        Text(ru ? item.ru : item.en,
-                          style: const TextStyle(fontSize: 11),
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                      ]),
                     ),
                   );
                 },
