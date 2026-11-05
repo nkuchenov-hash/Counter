@@ -29,6 +29,8 @@ on:
     branches: [main]
     paths:
       - 'lib/**'
+      - 'test/live_sync_contract_test.dart'
+      - 'test/record_write_durability_test.dart'
       - 'test/plan_recurrence_scope_test.dart'
       - 'test/planning_snapshot_cache_test.dart'
       - 'test/plan_time_timezone_projection_test.dart'
