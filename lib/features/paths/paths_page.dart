@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_loading.dart';
@@ -816,25 +817,86 @@ class _PathsPageState extends State<PathsPage> {
     ProjectPathSnapshot selected,
     List<ProjectPathSnapshot> paths,
   ) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.all(12),
-      child: DropdownButtonFormField<String>(
-        initialValue: selected.pathId,
-        decoration: InputDecoration(
-          labelText: _ru ? 'Путь' : 'Path',
-          border: const OutlineInputBorder(),
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 14),
+      child: Material(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        child: AppSettingsNavigationRow(
+          title: _ru ? 'Путь' : 'Path',
+          subtitle: _pathName(selected),
+          leading: const AppSettingsMenuIcon(
+            icon: Icons.alt_route_rounded,
+          ),
+          onTap: () => _showMobilePathPicker(paths),
         ),
-        items: [
-          for (final path in paths)
-            DropdownMenuItem<String>(
-              value: path.pathId,
-              child: Text(_pathName(path), overflow: TextOverflow.ellipsis),
-            ),
-        ],
-        onChanged: (id) {
-          if (id != null) setState(() => _selectedPathId = id);
-        },
       ),
+    );
+  }
+
+  Future<void> _showMobilePathPicker(
+    List<ProjectPathSnapshot> paths,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+      builder: (sheetContext) {
+        final scheme = Theme.of(sheetContext).colorScheme;
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.sizeOf(sheetContext).height * 0.76,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 4, 18, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    _ru ? 'Выберите путь' : 'Select a path',
+                    style: Theme.of(sheetContext)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: Material(
+                      color: scheme.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      clipBehavior: Clip.antiAlias,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        itemCount: paths.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final path = paths[index];
+                          return AppSettingsSelectionRow(
+                            title: _pathName(path),
+                            selected: path.pathId == _selectedPathId,
+                            leading: Icon(
+                              path.category.iconOrDefault,
+                              color: path.category.colorOrDefault,
+                            ),
+                            onTap: () {
+                              Navigator.of(sheetContext).pop();
+                              setState(() => _selectedPathId = path.pathId);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -5,6 +5,7 @@
 
 import 'dart:async';
 
+import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -287,6 +288,7 @@ class _CalendarViewState extends State<CalendarView>
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) {
           final q = query.trim().toLowerCase();
@@ -322,18 +324,27 @@ class _CalendarViewState extends State<CalendarView>
                           )
                         : ListView.separated(
                             itemCount: filtered.length,
-                            separatorBuilder: (_, __) => const Divider(height: 1),
+                            separatorBuilder: (_, __) => const SizedBox(height: 8),
                             itemBuilder: (context, index) {
                               final task = filtered[index];
                               final day = _taskDay(task);
-                              return ListTile(
-                                title: Text(task.title),
-                                subtitle: Text(DateFormat.yMMMd(currentLocale.value).format(day)),
-                                onTap: () {
-                                  Navigator.of(sheetContext).pop();
-                                  _onDayTapped(day, createPlan: false);
-                                  widget.onEditTask(task);
-                                },
+                              return Material(
+                                color: Theme.of(context).colorScheme.surface,
+                                borderRadius: BorderRadius.circular(16),
+                                child: AppSettingsNavigationRow(
+                                  title: task.title,
+                                  subtitle: DateFormat.yMMMd(
+                                    currentLocale.value,
+                                  ).format(day),
+                                  leading: const AppSettingsMenuIcon(
+                                    icon: Icons.event_outlined,
+                                  ),
+                                  onTap: () {
+                                    Navigator.of(sheetContext).pop();
+                                    _onDayTapped(day, createPlan: false);
+                                    widget.onEditTask(task);
+                                  },
+                                ),
                               );
                             },
                           ),
