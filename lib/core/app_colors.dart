@@ -22,6 +22,25 @@ abstract final class AppNeutralTones {
   static const Color black = Color(0xFF000000);
 }
 
+/// Only representational material colors (pencil wood, fountain-pen gold,
+/// eraser rubber). These belong to drawings of physical objects, NOT to UI
+/// states, categories, tags, brand colors or the drawing tool color picker.
+abstract final class AppIllustrationColors {
+  static const Color pencilWoodLight = Color(0xFFEAD6B2);
+  static const Color pencilWoodMiddle = Color(0xFFF2E4C5);
+  static const Color pencilWoodShadow = Color(0xFFE1C79C);
+
+  static const Color fountainGoldShadow = Color(0xFF9D761C);
+  static const Color fountainGoldHighlight = Color(0xFFFFEAA0);
+  static const Color fountainGoldMiddle = Color(0xFFD0A233);
+  static const Color fountainGoldDeep = Color(0xFF8F6B16);
+
+  static const Color eraserRubberDark = Color(0xFFC9806F);
+  static const Color eraserRubberHighlight = Color(0xFFF8CCBE);
+  static const Color eraserRubberMiddle = Color(0xFFE5A091);
+  static const Color eraserRubberShadow = Color(0xFFB97264);
+}
+
 abstract final class AppColors {
   // --- Action / brand (default UI chrome, not category data) ---
   static const Color actionPrimary = Color(0xFF111111);
