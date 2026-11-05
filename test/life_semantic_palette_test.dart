@@ -46,7 +46,7 @@ void main() {
       }
     }
     expect(kLifeTagColorPresets, containsAll(<String>[
-      '#286BE3', '#F26900', '#FFD000', '#48A130', '#008F87',
+      '#286BE3', '#FF7900', '#FFD000', '#48A130', '#008F87',
       '#47BCE9', '#725EB5', '#EF3B3B', '#FF79AA', '#000000', '#9A9A9A',
     ]));
   });
