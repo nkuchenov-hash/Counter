@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `9a4f223d` on 2026-11-05.**
+**Generated from input HEAD `5a19d0ca` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -11956,8 +11956,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Foundation module `category_icon_svg_data.dart` (core) — Legacy 14-key SVG fallback for old locally saved categories (both icon families and styles). Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `category_icon_svg_data.dart` (core) — Legacy 14-key SVG fallback for old locally saved categories (both icon families and styles).
+- **Human purpose:** Foundation module `category_icon_svg_data.dart` (core) — Previous 14-key SVG fallback for old locally saved categories (both icon families and styles). Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What this is:** Foundation module `category_icon_svg_data.dart` (core) — Previous 14-key SVG fallback for old locally saved categories (both icon families and styles).
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Primary symbols: `CategorySvgPair`.
 - **Key code names:** `CategorySvgPair`
@@ -11967,15 +11967,15 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared foundation
-- **Responsibilities:** Legacy 14-key SVG fallback for old locally saved categories (both icon families and styles)
+- **Responsibilities:** Previous 14-key SVG fallback for old locally saved categories (both icon families and styles)
 - **When to open:** When behavior tied to `category_icon_svg_data.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Legacy 14-key SVG fallback for old locally saved categories (both icon families and styles)
+- **Connected to:** APP_STRUCTURE role: Previous 14-key SVG fallback for old locally saved categories (both icon families and styles)
 
 RU:
 
-- **Зачем файл человеку:** Foundation-модуль `category_icon_svg_data.dart` (core) — Legacy 14-key SVG fallback for old locally saved categories (both icon families and styles). Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `category_icon_svg_data.dart` (core) — Legacy 14-key SVG fallback for old locally saved categories (both icon families and styles).
+- **Зачем файл человеку:** Foundation-модуль `category_icon_svg_data.dart` (core) — Previous 14-key SVG fallback for old locally saved categories (both icon families and styles). Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Что это:** Foundation-модуль `category_icon_svg_data.dart` (core) — Previous 14-key SVG fallback for old locally saved categories (both icon families and styles).
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `category_icon_svg_data.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
@@ -11984,7 +11984,7 @@ RU:
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Legacy 14-key SVG fallback for old locally saved categories (both icon families and styles).
+- **Обязанности:** Foundation-логика: Previous 14-key SVG fallback for old locally saved categories (both icon families and styles).
 - **Когда открывать:** Когда ломается поведение, связанное с `category_icon_svg_data.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
