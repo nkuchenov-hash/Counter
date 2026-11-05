@@ -569,3 +569,45 @@ class AppSettingsNavigationRow extends StatelessWidget {
     );
   }
 }
+
+
+/// Shared action row for overflow menus and modal sheets.
+class AppMenuActionTile extends StatelessWidget {
+  const AppMenuActionTile({
+    super.key,
+    required this.title,
+    required this.onTap,
+    this.subtitle,
+    this.leading,
+    this.destructive = false,
+  });
+
+  final Widget title;
+  final Widget? subtitle;
+  final Widget? leading;
+  final VoidCallback? onTap;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final foreground = destructive ? scheme.error : scheme.onSurface;
+    return ListTile(
+      minVerticalPadding: 12,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 3),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      leading: leading == null
+          ? null
+          : IconTheme(
+              data: IconThemeData(color: foreground, size: 23),
+              child: leading!,
+            ),
+      title: DefaultTextStyle.merge(
+        style: TextStyle(color: foreground, fontWeight: FontWeight.w500),
+        child: title,
+      ),
+      subtitle: subtitle,
+      onTap: onTap,
+    );
+  }
+}
