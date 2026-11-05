@@ -107,6 +107,8 @@ def _normalize_reference(raw: str) -> str | None:
         return None
     if "#" in value:
         value = value.split("#", 1)[0]
+    if not value.strip():
+        return None
     value = value.split()[0]
     value = value.rstrip(".,;:")
     if not value or any(token in value for token in ("*", "…", "<", ">", "${")):
