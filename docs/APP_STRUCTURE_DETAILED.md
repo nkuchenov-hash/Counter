@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `cd02c0a0` on 2026-11-05.**
+**Generated from input HEAD `00e2f1bf` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 963 — each appears **exactly once** below.
+**Tracked files:** 964 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -41,8 +41,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | `shared Voice system` | 20 |
 | `historical engineering record` | 17 |
 | `localization` | 13 |
+| `CI/deployment` | 12 |
 | `installer` | 12 |
-| `CI/deployment` | 11 |
 | `Brain Voice` | 10 |
 | `shared time` | 7 |
 | `package metadata` | 6 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 519 |
+| `PROVEN_REQUIRED` | 520 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 256 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 880 |
+| `HIGH` | 881 |
 | `MEDIUM` | 83 |
 
 ---
@@ -4634,6 +4634,43 @@ RU:
 - **Владелец / слой:** CI
 - **Обязанности:** Управляет CI-сценарием `android-apk-build.yml` и его границами выполнения.
 - **Когда открывать:** Когда ломается поведение, связанное с `android-apk-build.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
+### `.github/workflows/android-apk.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/android-apk.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/android-apk.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/android-apk.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/android-apk.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `android-apk.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `android-apk.yml`.
+- **When to open:** When behavior tied to `android-apk.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `android-apk.yml` для CI и операций репозитория. GitHub Actions читает `android-apk.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `android-apk.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `android-apk.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `android-apk.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `android-apk.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `android-apk.yml`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `.github/`, Flutter tooling.
 
@@ -11883,8 +11920,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Foundation module `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only historical color compatibility. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only historical color compatibility.
+- **Human purpose:** Foundation module `life_color_compat.dart` (core) — Canonical 11-family semantic palette and display-only historical color compatibility. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What this is:** Foundation module `life_color_compat.dart` (core) — Canonical 11-family semantic palette and display-only historical color compatibility.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `life_color_compat.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
@@ -11893,15 +11930,15 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared foundation
-- **Responsibilities:** Canonical 10-family semantic palette and display-only historical color compatibility
+- **Responsibilities:** Canonical 11-family semantic palette and display-only historical color compatibility
 - **When to open:** When behavior tied to `life_color_compat.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Canonical 10-family semantic palette and display-only historical color compatibility
+- **Connected to:** APP_STRUCTURE role: Canonical 11-family semantic palette and display-only historical color compatibility
 
 RU:
 
-- **Зачем файл человеку:** Foundation-модуль `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only historical color compatibility. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only historical color compatibility.
+- **Зачем файл человеку:** Foundation-модуль `life_color_compat.dart` (core) — Canonical 11-family semantic palette and display-only historical color compatibility. Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Что это:** Foundation-модуль `life_color_compat.dart` (core) — Canonical 11-family semantic palette and display-only historical color compatibility.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `life_color_compat.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
@@ -11910,7 +11947,7 @@ RU:
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Canonical 10-family semantic palette and display-only historical color compatibility.
+- **Обязанности:** Foundation-логика: Canonical 11-family semantic palette and display-only historical color compatibility.
 - **Когда открывать:** Когда ломается поведение, связанное с `life_color_compat.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
