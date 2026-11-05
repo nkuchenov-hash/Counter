@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `df82ffe8` on 2026-11-05.**
+**Generated from input HEAD `2b343d57` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -11997,8 +11997,8 @@ EN:
 - **Human purpose:** Foundation module `category_icon_system.dart` (core) — Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon choices. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **What this is:** Foundation module `category_icon_system.dart` (core) — Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon choices.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `CategoryIconPack`, `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`, `CategorySvgIcon`.
-- **Key code names:** `CategoryIconPack`, `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`, `CategorySvgIcon`
+- **Contents:** Primary symbols: `CategoryIconPack`, `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`.
+- **Key code names:** `CategoryIconPack`, `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/widgets/notes_folder_pane.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/profile_view.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
