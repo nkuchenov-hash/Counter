@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 977 — each appears **exactly once** below.
+**Tracked files:** 978 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -11951,43 +11951,6 @@ RU:
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
 
-
-### `lib/core/category_icon_svg_data.dart`
-
-EN:
-
-- **Human purpose:** Foundation module `category_icon_svg_data.dart` (core) — Previous 14-key SVG fallback for old locally saved categories (both icon families and styles). Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `category_icon_svg_data.dart` (core) — Previous 14-key SVG fallback for old locally saved categories (both icon families and styles).
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `CategorySvgPair`.
-- **Key code names:** `CategorySvgPair`
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_icon_system.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared foundation
-- **Responsibilities:** Previous 14-key SVG fallback for old locally saved categories (both icon families and styles)
-- **When to open:** When behavior tied to `category_icon_svg_data.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Previous 14-key SVG fallback for old locally saved categories (both icon families and styles)
-
-RU:
-
-- **Зачем файл человеку:** Foundation-модуль `category_icon_svg_data.dart` (core) — Previous 14-key SVG fallback for old locally saved categories (both icon families and styles). Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `category_icon_svg_data.dart` (core) — Previous 14-key SVG fallback for old locally saved categories (both icon families and styles).
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-модуль `category_icon_svg_data.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/category_icon_system.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Previous 14-key SVG fallback for old locally saved categories (both icon families and styles).
-- **Когда открывать:** Когда ломается поведение, связанное с `category_icon_svg_data.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
 
 
 ### `lib/core/category_icon_system.dart`
@@ -41252,3 +41215,78 @@ RU:
 - **Когда открывать:** Ошибка native compile ссылается на `win32_window.h`.
 - **Можно удалить?** Нет — без него не соберётся Windows `.exe`/runner.
 - **Связано с:** `windows/runner/`, `windows/flutter/`.
+
+
+### `docs/reports/CATEGORY_ICON_INTERSECTION_2026-11-05.md`
+
+EN:
+
+- **Human purpose:** Engineering report `CATEGORY_ICON_INTERSECTION_2026-11-05.md` — dated findings under `docs/reports/`. Preserves audit/parity decisions so later work does not re-litigate the same findings.
+- **What this is:** Engineering report `CATEGORY_ICON_INTERSECTION_2026-11-05.md` — dated findings under `docs/reports/`.
+- **Why needed:** Preserves audit/parity decisions so later work does not re-litigate the same findings.
+- **Contents:** Markdown report body for `CATEGORY ICON INTERSECTION 2026-11-05`.
+- **Repository role:** historical engineering record
+- **Evidence of use:** (1) Dated engineering report retained as decision history; linked from structure/changelog audits — not runtime code. (2) Referenced by: `docs/APP_STRUCTURE.md`, `lib/core/category_icon_catalog_generated.g.dart`.
+- **Necessity status:** HISTORICAL_RECORD
+- **Deletion consequence:** Lost historical decision evidence for that investigation.
+- **Confidence:** MEDIUM
+- **Owner / layer:** documentation
+- **Responsibilities:** Document evidence and outcomes for this investigation topic.
+- **When to open:** Reviewing history related to `CATEGORY ICON INTERSECTION 2026-11-05` before repeating the work.
+- **Can it be deleted?** Lost historical decision evidence for that investigation.
+- **Connected to:** `docs/ROADMAP.md`, `CHANGELOG.md`, related governing docs.
+
+RU:
+
+- **Зачем файл человеку:** Инженерный отчёт `CATEGORY_ICON_INTERSECTION_2026-11-05.md` — dated findings в `docs/reports/`. Сохраняет решения audit/parity, чтобы позже не переобсуждать те же findings.
+- **Что это:** Инженерный отчёт `CATEGORY_ICON_INTERSECTION_2026-11-05.md` — dated findings в `docs/reports/`.
+- **Зачем:** Сохраняет решения audit/parity, чтобы позже не переобсуждать те же findings.
+- **Содержимое:** Markdown-тело отчёта `CATEGORY ICON INTERSECTION 2026-11-05`.
+- **Роль в репозитории:** historical engineering record
+- **Доказательства использования:** Отчёт с датой — история решений; не runtime-код.
+- **Статус необходимости:** HISTORICAL_RECORD
+- **Что будет, если удалить:** Пропадёт история решения по тому расследованию.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** документация
+- **Обязанности:** Фиксирует evidence и итоги по теме этого расследования.
+- **Когда открывать:** Смотрите историю по `CATEGORY ICON INTERSECTION 2026-11-05` перед повторением той же работы.
+- **Можно удалить?** Пропадёт история решения по тому расследованию.
+- **Связано с:** `docs/ROADMAP.md`, `CHANGELOG.md`, связанные governing docs.
+
+
+### `lib/features/settings/categories/category_icon_collection_preference.dart`
+
+EN:
+
+- **Human purpose:** `category_icon_collection_preference.dart` on settings area — category icon collection preference. Users see `category_icon_collection_preference.dart` when using settings area.
+- **What this is:** `category_icon_collection_preference.dart` on settings area — category icon collection preference.
+- **Why needed:** Users see `category_icon_collection_preference.dart` when using settings area.
+- **Contents:** Primary symbols: `CategoryIconCollectionPreference`, `_IconCollectionEditor`, `_IconCollectionEditorState`.
+- **Key code names:** `CategoryIconCollectionPreference`, `_IconCollectionEditor`, `_IconCollectionEditorState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/profile_view.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Categories settings UI
+- **Responsibilities:** Implements `CategoryIconCollectionPreference` and related API in `category_icon_collection_preference.dart`.
+- **When to open:** When behavior tied to `category_icon_collection_preference.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: category icon collection preference
+
+RU:
+
+- **Зачем файл человеку:** `category_icon_collection_preference.dart` на settings — Поддерживает поведение `category_icon_collection_preference` в этой feature-зоне.. Пользователь видит UI из `category_icon_collection_preference.dart` на settings.
+- **Что это:** `category_icon_collection_preference.dart` на settings — Поддерживает поведение `category_icon_collection_preference` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `category_icon_collection_preference.dart` на settings.
+- **Содержимое:** Dart-модуль `category_icon_collection_preference.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/profile_view.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI настроек категорий
+- **Обязанности:** Поддерживает поведение `category_icon_collection_preference` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_icon_collection_preference.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/settings/categories/`, `docs/APP_STRUCTURE.md`

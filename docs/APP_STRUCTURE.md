@@ -254,9 +254,8 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 | `app_snackbar.dart` | `AppSnack` toasts |
 | `app_build_info.dart` | Build metadata |
 | `app_icons.dart` | Canonical icon tokens (timezone family, shared glyphs) |
-| `category_icon_svg_data.dart` | Previous 14-key SVG fallback for old locally saved categories (both icon families and styles) |
-| `category_icon_catalog_generated.g.dart` | Generated complete native icon registries: 2,244 Fluent 24px Regular/Filled pairs and all Heroicons Outline/Solid enum entries |
-| `category_icon_system.dart` | Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved) |
+| `category_icon_catalog_generated.g.dart` | Reviewed semantic intersection: 103 concepts available in both Fluent UI and Heroicons (Outline/Fill) |
+| `category_icon_system.dart` | Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon choices |
 | `category_color_palette.dart` | Category tile palette |
 | `life_color_compat.dart` | Canonical 11-family semantic palette and display-only historical color compatibility |
 | `date_pager_settle_gate.dart` | Shared date `PageView` settle coordinator |
@@ -830,8 +829,10 @@ One-off Pass 3/Pass 2 extraction scripts (`scripts/pass3_*`, `scripts/extract_*`
 
 ## Category icon families — first implementation phase (2026-11-05, PR #417)
 
-- `lib/core/category_icon_system.dart` is the **single renderer and preference owner** for category SVGs. Fluent UI (Regular/Filled) is the default; Heroicons (Outline/Solid) is selectable from the existing Profile → Appearance screen on mobile and desktop. It is separate from the existing menu icon token ownership.
-- `lib/core/category_icon_svg_data.dart` contains the pinned original SVG payloads; the 14 earlier keys remain available as fallback; every verified native Regular/Filled or Outline/Solid pair in **each individual family** is selectable independently. See `test/category_icon_pack_test.dart` for the pair-coverage contract. Copyright/license notices are bundled in `assets/licenses/FLUENT_HEROICONS_LICENSES.txt`.
+- `lib/core/category_icon_system.dart` renders identical semantic IDs from either icon family. Fluent UI is default; switching to Heroicons in Profile → Appearance changes artwork only, never category meaning. The quick picker initially contains 26 curated concepts and is customizable in Settings. The intersection audit is in `docs/reports/CATEGORY_ICON_INTERSECTION_2026-11-05.md`.
+- `lib/core/category_icon_catalog_generated.g.dart` maps **103 reviewed concepts** to native paired variants in both icon libraries. All unmatched icons are excluded from the app's selectable catalog. Previously saved unsupported identifiers remain stored but display as a neutral folder, not a misleading substitute. See `test/category_icon_pack_test.dart`. Copyright/license notices remain in `assets/licenses/FLUENT_HEROICONS_LICENSES.txt`.
+
+- `lib/features/settings/categories/category_icon_collection_preference.dart` manages the user's quick icon selection with search, add/remove, reset, and local persistence. The Categories and Notes editors only offer that quick selection plus the category's currently assigned compatible icon.
 - `lib/features/settings/categories/category_icon_picker.dart` is the responsive shared selector used by `category_appearance_sheet.dart` and `category_editor_sheet.dart`, with bilingual search, groups, preview, Outline/Fill switch, and confirmation/cancel.
 - Existing `icon_code_point` data is not modified by icon picker choices. **Current SVG key/style storage is device-local SharedPreferences**. This is intentionally not marked as fully released: migration of PocketBase category schema, offline outbox and cross-device synchronization is still required; likewise full-app icon renderer adoption beyond the category tree, and catalog expansion beyond the verified starter 14 keys.
 - Dedicated GitHub Actions `.github/workflows/icon-packs-qa.yml` uses the **same Flutter 3.41.6 as production** to gate Flutter tests, analyzer errors and a web build. All new native icon registries must compile and their independent catalogs pass tests before publication.
