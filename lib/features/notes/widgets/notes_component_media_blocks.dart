@@ -580,9 +580,9 @@ class _NotesPhysicalToolPainter extends CustomPainter {
     final left = Path()..moveTo(5, _bandTop)..lineTo(15, 4)..lineTo(11.6, _bandTop)..close();
     final mid = Path()..moveTo(11.6, _bandTop)..lineTo(15, 4)..lineTo(18.4, _bandTop)..close();
     final right = Path()..moveTo(18.4, _bandTop)..lineTo(15, 4)..lineTo(25, 30)..lineTo(25, _bandTop)..close();
-    canvas.drawPath(left, Paint()..color = const AppIllustrationColors.pencilWoodLight);
-    canvas.drawPath(mid, Paint()..color = const AppIllustrationColors.pencilWoodMiddle);
-    canvas.drawPath(right, Paint()..color = const AppIllustrationColors.pencilWoodShadow);
+    canvas.drawPath(left, Paint()..color = AppIllustrationColors.pencilWoodLight);
+    canvas.drawPath(mid, Paint()..color = AppIllustrationColors.pencilWoodMiddle);
+    canvas.drawPath(right, Paint()..color = AppIllustrationColors.pencilWoodShadow);
     final graphite = Path()..moveTo(15, 4)..lineTo(19.4, 17.2)..lineTo(10.6, 17.2)..close();
     _shade(canvas, graphite, inkPaint, edge);
   }
