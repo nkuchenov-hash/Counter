@@ -29,8 +29,8 @@ The Life OS design system makes Figma the visual source of truth and Flutter can
 | Health / Teal | #008F87 | Turquoise |
 | Transport / Sky | #47BCE9 | Sky blue |
 | Study / Purple | #725EB5 | Violet, restored instead of navy |
-| Entertainment / Red | #C82332 | Scarlet red |
-| People / Pink | #F75CC5 | Distinct bright pink, not red |
+| Entertainment / Red | #EF3B3B | Clean bright red; avoids burgundy |
+| People / Pink | #FF79AA | Warm classic pink without lilac undertone |
 | Special / Black | #000000 | Explicit user tag, e.g. urgent |
 | Neutral / Gray | #9A9A9A | Light neutral gray |
 
@@ -38,7 +38,7 @@ The Life OS design system makes Figma the visual source of truth and Flutter can
 - Category nesting remains shade 600 / 500 / 400 (root / child / descendants); category stripe and tag icon contrast adapt in dark mode without rewriting saved colors.
 - **Approved yellow settings:** base #FFD000, background plate 13% alpha over the actual app surface, text and foreground #E1B400, and yellow border 74% alpha over surface. All yellow tag modes use these same approved choices; neither brown text nor a solid yellow chip is permitted. This user-approved bright-gold foreground is a deliberate exception to the 4.5:1 small-text contrast target on white.
 - For other chromatic families, compact tag chips have 26% translucent fill and 55% border alpha. The hue identity must match the palette swatch across Timeline, Plans, Lists, tag manager and category screens.
-- Pink is hue-separated from red by more than 30 degrees (HSV). Both remain distinguishable after 26% alpha compositing in the chip UI, without repurposing violet as pink.
+- Pink and red differ in both hue and lightness. Warm pink #FF79AA and vivid red #EF3B3B must remain recognizable after 26% alpha compositing. Do not achieve separation by shifting pink to lilac or darkening red to burgundy.
 - Preserve exact historical official swatches by mapping to the new canonical family *at display time*; never migrate stored PocketBase category/tag colors. Other custom colors remain unchanged, including user-defined pure black.
 - Current shade tokens must not be altered by backward-compatibility maps; regression tests cover idempotence, historical mapping, black tags, approved yellow attributes, and pink-versus-red label hue separation.
 
