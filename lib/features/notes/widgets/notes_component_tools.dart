@@ -388,8 +388,8 @@ class NotesEditorToolbar extends StatelessWidget {
                           scheme.surface.withValues(alpha: 0.35),
                         ]
                       : [
-                          const Color(0xFFEAF3FC).withValues(alpha: 0.48),
-                          const Color(0xFFF8FBFF).withValues(alpha: 0.32),
+                          scheme.surfaceContainerHighest.withValues(alpha: 0.48),
+                          scheme.surface.withValues(alpha: 0.32),
                         ],
                 ),
                 borderRadius: radius,
