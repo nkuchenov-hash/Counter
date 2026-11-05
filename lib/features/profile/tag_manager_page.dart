@@ -65,7 +65,12 @@ class _TagManagerPageState extends State<TagManagerPage> {
 
   String _initialColorHex(Tag? existing) {
     final c = existing?.color?.trim();
-    if (c != null && c.length >= 7 && c.startsWith('#')) return c;
+    if (c != null && c.length >= 7 && c.startsWith('#')) {
+      final color = parseTagHexColor(c);
+      if (color != null) {
+        return '#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
+      }
+    }
     return kTagManagerPalette.first;
   }
 
@@ -119,10 +124,10 @@ class _TagManagerPageState extends State<TagManagerPage> {
                         // An existing legacy/custom tag retains its exact
                         // saved color, even when it is outside new presets.
                         if (existing?.color != null &&
-                            !kTagManagerPalette.contains(existing!.color))
+                            !kTagManagerPalette.contains(_initialColorHex(existing)))
                           InkWell(
                             key: const ValueKey('tag-legacy-color-choice'),
-                            onTap: () => setD(() => pickedColor = existing!.color!),
+                            onTap: () => setD(() => pickedColor = _initialColorHex(existing)),
                             child: Container(
                               width: 40,
                               height: 40,
@@ -356,7 +361,7 @@ class _TagManagerPageState extends State<TagManagerPage> {
                               parseTagHexColor(tag.color) ?? scheme.primary;
                           final avatarPlate =
                               tagManagerAvatarPlate(c, scheme.surface);
-                          final avatarFg = tagVibrantForeground(c);
+                          final avatarFg = tagVibrantForeground(c, surface: scheme.surface);
                           return ReorderableDragStartListener(
                             key: ValueKey<Object>(
                               tag.pbRecordId ?? 'tag-${tag.tagId}',

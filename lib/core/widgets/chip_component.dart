@@ -42,7 +42,7 @@ class CategoryBreadcrumb extends StatelessWidget {
 
     final scheme = Theme.of(context).colorScheme;
     final plate = tagCategoryBreadcrumbPlate(accentColor, scheme.surface);
-    final fg = tagVibrantForeground(accentColor);
+    final fg = tagVibrantForeground(accentColor, surface: scheme.surface);
     final sepStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
       color: fg.withValues(alpha: 0.58),
       fontWeight: FontWeight.w700,
@@ -143,6 +143,7 @@ class CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final solidColor = tagSolidAccentOnSurface(color, scheme.surface);
     final large =
         variant == CategoryChipVariant.largePicker || prominentVisuals;
     final displayLabel = localizeCategoryBreadcrumbPath(
@@ -157,15 +158,15 @@ class CategoryChip extends StatelessWidget {
         syntheticNoTagsMonochrome: syntheticNoTagsMonochrome,
       ),
       CategoryDisplayMode.chip => _chipPlanStyle(context),
-      CategoryDisplayMode.round => _tagRoundDot(),
+      CategoryDisplayMode.round => _tagRoundDot(solidColor),
       CategoryDisplayMode.icon => Center(
         child: Icon(
           icon,
-          color: selected ? scheme.primary : tagGlyphOnCanvas(color),
+          color: tagGlyphOnCanvas(solidColor),
           size: large ? 34 : 26,
         ),
       ),
-      CategoryDisplayMode.iconCircle => _iconInCircle(),
+      CategoryDisplayMode.iconCircle => _iconInCircle(solidColor),
     };
     final visual = mode != CategoryDisplayMode.letterChip
         ? Tooltip(message: displayLabel, child: child)
@@ -317,7 +318,7 @@ class CategoryChip extends StatelessWidget {
       );
     }
     final plate = tagLetterChipPlate(color, scheme.surface);
-    final fg = tagVibrantForeground(color);
+    final fg = tagVibrantForeground(color, surface: scheme.surface);
     final stroke = tagLetterChipBorder(color, scheme.surface);
     return _letterChipPillShell(
       context: context,
@@ -351,7 +352,7 @@ class CategoryChip extends StatelessWidget {
   /// Dot: fixed square box so [BoxShape.circle] is never stretched by flex/list layout.
   static const double _dotDiameter = 12;
 
-  Widget _tagRoundDot() {
+  Widget _tagRoundDot(Color solidColor) {
     final large =
         variant == CategoryChipVariant.largePicker || prominentVisuals;
     return SizedBox(
@@ -359,10 +360,10 @@ class CategoryChip extends StatelessWidget {
       height: large ? 22 : _dotDiameter,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: color,
+          color: solidColor,
           shape: BoxShape.circle,
           border: selected
-              ? Border.all(color: tagVibrantForeground(color), width: 2)
+              ? Border.all(color: solidColor, width: 2)
               : null,
         ),
       ),
@@ -372,7 +373,7 @@ class CategoryChip extends StatelessWidget {
   static const double _iconCircleDiameter = 32;
 
   /// Filled circle + icon; explicit square [SizedBox] avoids zero/invisible layout in horizontal lists.
-  Widget _iconInCircle() {
+  Widget _iconInCircle(Color solidColor) {
     final large =
         variant == CategoryChipVariant.largePicker || prominentVisuals;
     return SizedBox(
@@ -380,17 +381,17 @@ class CategoryChip extends StatelessWidget {
       height: large ? 42 : _iconCircleDiameter,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: color,
+          color: solidColor,
           shape: BoxShape.circle,
           border: selected
-              ? Border.all(color: tagVibrantForeground(color), width: 2)
+              ? Border.all(color: solidColor, width: 2)
               : null,
         ),
         child: Center(
           child: Icon(
             icon,
             color: tagIconOnFilledTagColor(
-              color,
+              solidColor,
               syntheticNoTags: syntheticNoTagsMonochrome,
             ),
             size: large ? 24 : 18,

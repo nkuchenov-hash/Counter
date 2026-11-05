@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `c5b062a4` on 2026-10-29.**
+**Generated from input HEAD `cd02c0a0` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 961 — each appears **exactly once** below.
+**Tracked files:** 963 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,10 +27,10 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 186 |
-| `test` | 136 |
+| `test` | 137 |
 | `Brain/data` | 114 |
 | `platform build` | 83 |
-| `shared foundation` | 65 |
+| `shared foundation` | 66 |
 | `developer tool` | 63 |
 | `platform resource` | 44 |
 | `governing documentation` | 43 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 518 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 255 |
+| `PROVEN_REQUIRED` | 519 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 256 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 878 |
+| `HIGH` | 880 |
 | `MEDIUM` | 83 |
 
 ---
@@ -11699,7 +11699,7 @@ EN:
 - **Human purpose:** Foundation module `category_color_palette.dart` (core) — Category tile palette. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **What this is:** Foundation module `category_color_palette.dart` (core) — Category tile palette.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Dart module `category_color_palette.dart` — open file for classes and helpers.
+- **Contents:** Barrel `export` lines: `life_color_compat.dart`.
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/profile/tag_manager_page.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/create_category_dialog.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -11877,6 +11877,43 @@ RU:
 - **Когда открывать:** Новый разработчик не знает какие ключи нужны в `env.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/env/`, `docs/APP_STRUCTURE.md`.
+
+
+### `lib/core/life_color_compat.dart`
+
+EN:
+
+- **Human purpose:** Foundation module `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only historical color compatibility. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What this is:** Foundation module `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only historical color compatibility.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **Contents:** Dart module `life_color_compat.dart` — open file for classes and helpers.
+- **Repository role:** shared foundation
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_color_palette.dart`, `lib/core/tag_contrast.dart`, `lib/data/models.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared foundation
+- **Responsibilities:** Canonical 10-family semantic palette and display-only historical color compatibility
+- **When to open:** When behavior tied to `life_color_compat.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Canonical 10-family semantic palette and display-only historical color compatibility
+
+RU:
+
+- **Зачем файл человеку:** Foundation-модуль `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only historical color compatibility. Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Что это:** Foundation-модуль `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only historical color compatibility.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `life_color_compat.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Импортируется production Dart: `lib/core/category_color_palette.dart`, `lib/core/tag_contrast.dart`, `lib/data/models.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общая foundation
+- **Обязанности:** Foundation-логика: Canonical 10-family semantic palette and display-only historical color compatibility.
+- **Когда открывать:** Когда ломается поведение, связанное с `life_color_compat.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
 
 
 ### `lib/core/link_scalar.dart`
@@ -36355,6 +36392,44 @@ RU:
 - **Когда открывать:** Обновление кадров capture Notes GLM после UI-правок вокруг `notes_glm_production_library_capture`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** `capture_notes_glm_parity.ps1`, `test/notes/fixtures/`.
+
+
+### `test/life_semantic_palette_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `life_semantic_palette_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `life_semantic_palette_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/life_semantic_palette_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `life_semantic_palette_test` scenario.
+- **When to open:** CI failure or changing code near `life_semantic_palette`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `life_semantic_palette`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `life_semantic_palette` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `life_semantic_palette` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `life_semantic_palette`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/life_semantic_palette_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `life_semantic_palette`.
+- **Когда открывать:** Падение CI или правка кода рядом с `life_semantic_palette`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
 
 
 ### `test/live_sync_contract_test.dart`

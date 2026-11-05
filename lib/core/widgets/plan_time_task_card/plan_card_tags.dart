@@ -91,7 +91,7 @@ class TimeViewCompactTagPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = parseTagHexColor(tag.color) ?? scheme.primary;
     final plate = tagLetterChipPlate(color, scheme.surface);
-    final fg = tagVibrantForeground(color);
+    final fg = tagVibrantForeground(color, surface: scheme.surface);
     final label = tag.name.trim().isNotEmpty
         ? tag.name.trim()
         : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}';

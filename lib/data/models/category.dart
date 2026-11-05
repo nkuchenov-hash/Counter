@@ -341,7 +341,7 @@ class CategoryRule {
       : [];
 
   Color get colorOrDefault {
-    if (colorValue != null) return Color(colorValue!);
+    if (colorValue != null) return Color(canonicalLifeColorValue(colorValue!));
     return Colors.grey;
   }
 

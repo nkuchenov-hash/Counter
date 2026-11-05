@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:counter/core/life_color_compat.dart' show canonicalLifeColorValue;
 
 /// Exact yellow-tag palette (text, icon, stroke). No black/grey/orange overrides.
 const Color kTagYellowGold = Color(0xFFF6C500);
@@ -15,7 +16,7 @@ bool tagColorIsYellowFamily(Color tagColor) {
   return h >= 45.0 && h < 60.0;
 }
 
-/// Timeline breadcrumb stadium: default ~13% accent; yellow → 15% [kTagYellowGold].
+/// Timeline breadcrumb stadium: 22% accent; yellow stays 15% gold.
 Color tagCategoryBreadcrumbPlate(Color accentColor, Color surface) {
   if (tagColorIsYellowFamily(accentColor)) {
     return Color.alphaBlend(
@@ -24,12 +25,12 @@ Color tagCategoryBreadcrumbPlate(Color accentColor, Color surface) {
     );
   }
   return Color.alphaBlend(
-    accentColor.withValues(alpha: 0.13),
+    accentColor.withValues(alpha: 0.22),
     surface,
   );
 }
 
-/// Tag manager list avatar background: default 20% tag; yellow → 15% gold.
+/// Tag manager list avatar background: 26% tag; yellow remains 15% gold.
 Color tagManagerAvatarPlate(Color tagColor, Color surface) {
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
@@ -37,13 +38,60 @@ Color tagManagerAvatarPlate(Color tagColor, Color surface) {
       surface,
     );
   }
-  return Color.alphaBlend(tagColor.withValues(alpha: 0.2), surface);
+  return Color.alphaBlend(tagColor.withValues(alpha: 0.26), surface);
 }
 
-/// Vibrant text/icon on pale plates & avatars: full [tagBaseColor], except yellow → [kTagYellowGold].
-Color tagVibrantForeground(Color tagBaseColor) {
+/// Shared foreground for translucent category/tag chips.
+///
+/// When [surface] is supplied, maintain the original hue but select enough
+/// lightness contrast for small text on that surface (light *or* dark mode).
+/// Solid color icons/rings still use the unmodified family color when
+/// [surface] is omitted. Yellow retains its existing exact-gold policy.
+Color tagVibrantForeground(Color tagBaseColor, {Color? surface}) {
   if (tagColorIsYellowFamily(tagBaseColor)) return kTagYellowGold;
-  return tagBaseColor;
+  if (surface == null) return tagBaseColor;
+
+  final background = tagLetterChipPlate(tagBaseColor, surface);
+  final backgroundLuminance = background.computeLuminance();
+  final useDarkerText = backgroundLuminance > 0.35;
+  var hsl = HSLColor.fromColor(tagBaseColor);
+  var foreground = tagBaseColor;
+  for (var step = 0; step <= 20; step++) {
+    final a = foreground.computeLuminance();
+    final higher = a > backgroundLuminance ? a : backgroundLuminance;
+    final lower = a > backgroundLuminance ? backgroundLuminance : a;
+    if ((higher + 0.05) / (lower + 0.05) >= 4.5) return foreground;
+    final nextLightness =
+        (hsl.lightness + (useDarkerText ? -0.025 : 0.025))
+            .clamp(0.0, 1.0).toDouble();
+    if (nextLightness == hsl.lightness) break;
+    hsl = hsl.withLightness(nextLightness);
+    foreground = hsl.toColor();
+  }
+  return foreground;
+}
+
+/// Color for solid 12px dots and colored icons, preserving the hue but
+/// ensuring sufficient separation from a dark or light app surface.
+/// Tag fills and colors stored in PocketBase are not modified.
+Color tagSolidAccentOnSurface(Color base, Color surface) {
+  if (tagColorIsYellowFamily(base)) return kTagYellowGold;
+  final backgroundLum = surface.computeLuminance();
+  final lightSurface = backgroundLum > 0.35;
+  var color = base;
+  var hsl = HSLColor.fromColor(base);
+  for (var i = 0; i < 28; i++) {
+    final foregroundLum = color.computeLuminance();
+    final high = foregroundLum > backgroundLum ? foregroundLum : backgroundLum;
+    final low = foregroundLum > backgroundLum ? backgroundLum : foregroundLum;
+    if ((high + 0.05) / (low + 0.05) >= 3.0) return color;
+    final lightness = (hsl.lightness + (lightSurface ? -0.025 : 0.025))
+        .clamp(0.0, 1.0).toDouble();
+    if (lightness == hsl.lightness) break;
+    hsl = hsl.withLightness(lightness);
+    color = hsl.toColor();
+  }
+  return color;
 }
 
 /// Icon/glyph without a filled tag circle.
@@ -66,7 +114,7 @@ Color tagIconOnFilledTagColor(Color tagFill, {bool syntheticNoTags = false}) {
   return tagFill;
 }
 
-/// Letter chip plate: yellow uses [kTagYellowGold] @ [kTagYellowPlateOpacity]; else prior behavior.
+/// Letter chip plate: 26% tint distinguishes adjacent families; yellow stays 15% gold.
 Color tagLetterChipPlate(Color tagColor, Color surface) {
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
@@ -74,16 +122,16 @@ Color tagLetterChipPlate(Color tagColor, Color surface) {
       surface,
     );
   }
-  return Color.alphaBlend(tagColor.withValues(alpha: 0.16), surface);
+  return Color.alphaBlend(tagColor.withValues(alpha: 0.26), surface);
 }
 
 /// Letter chip border: yellow → solid [kTagYellowGold]; else tinted category stroke.
 Color tagLetterChipBorder(Color tagColor, Color surface) {
   if (tagColorIsYellowFamily(tagColor)) return kTagYellowGold;
-  return Color.alphaBlend(tagColor.withValues(alpha: 0.42), surface);
+  return Color.alphaBlend(tagColor.withValues(alpha: 0.55), surface);
 }
 
-/// Empty chip stadium fill: yellow → 15% gold blended on [surface]; else legacy translucent tag.
+/// Empty chip stadium fill: yellow stays 15% gold; others use the same 26% accent tint.
 Color tagEmptyChipFill(Color tagColor, Color surface) {
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
@@ -91,12 +139,12 @@ Color tagEmptyChipFill(Color tagColor, Color surface) {
       surface,
     );
   }
-  return tagColor.withValues(alpha: 0.16);
+  return tagColor.withValues(alpha: 0.26);
 }
 
 Color tagEmptyChipBorderColor(Color tagColor) {
   if (tagColorIsYellowFamily(tagColor)) return kTagYellowGold;
-  return tagColor.withValues(alpha: 0.42);
+  return tagColor.withValues(alpha: 0.55);
 }
 
 /// Ten Material icon keys (`tags.icon`).
@@ -145,5 +193,7 @@ Color? parseTagHexColor(String? hex) {
   if (h.length != 6) return null;
   final v = int.tryParse(h, radix: 16);
   if (v == null) return null;
-  return Color(0xFF000000 | v);
+  // Old official presets paint using the updated canonical palette.
+  // The persisted HEX remains intact until the tag is explicitly edited.
+  return Color(canonicalLifeColorValue(0xFF000000 | v));
 }

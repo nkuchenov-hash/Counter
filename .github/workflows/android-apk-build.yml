@@ -67,6 +67,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Verify shared LIFE OS semantic palette
+        run: flutter test test/life_semantic_palette_test.dart
+
       - name: Analyze runtime app
         run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 

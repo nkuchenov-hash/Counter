@@ -34,7 +34,9 @@ class _CategoryAppearanceSheetState extends State<CategoryAppearanceSheet> {
   @override
   void initState() {
     super.initState();
-    _colorValue = widget.category.colorValue;
+    _colorValue = widget.category.colorValue == null
+        ? null
+        : canonicalLifeColorValue(widget.category.colorValue!);
     _iconCodePoint =
         widget.category.iconCodePoint ?? Icons.folder_rounded.codePoint;
   }
