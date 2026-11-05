@@ -1,3 +1,10 @@
+## Canonical Menu / settings composition (2026-11-05)
+
+- `ShellSideNavigation` is the sole desktop primary navigation; `LifeOsMenuPage` supplies a **single content column** and settings category index, not its own sidebar.
+- `AppSettingsPageBody` owns the responsive content width and padding for Menu and settings destinations. A wide desktop viewport must not stretch form groups into full-width panels.
+- `AppSettingsNavigationGroup`, `AppSettingsNavigationRow`, `AppSettingsMenuIcon`, and `AppSettingsSectionCard` are the shared settings building blocks. Category navigation consistently opens a category detail; leaf controls keep their existing persistence owner.
+- Profile content reuses those same components; do not add a second desktop preferences tab hub or duplicate shell headings/branding. Different settings destinations must not share a misleading generic route.
+
 # Design System
 
 The Life OS design system makes Figma the visual source of truth and Flutter canonical components the executable source of truth. Feature screens must compose shared components, not recreate local copies.
