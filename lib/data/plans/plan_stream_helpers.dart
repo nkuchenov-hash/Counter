@@ -120,6 +120,9 @@ final class _PlanningDayStreamHub {
   }
 
   void _logPlanningStreamEmit(List<PlanningTask> merged) {
+    // Duplicate tracing is diagnostic only; avoid an O(n) scan and allocation
+    // on every incoming realtime event in production builds.
+    if (kReleaseMode) return;
     final ids = merged.map((t) => t.planRowIdForBackend).toList();
     final unique = ids.toSet().length;
     planStreamLifecycleLog(
