@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:counter/core/life_color_compat.dart' show canonicalLifeColorValue;
+import 'package:counter/core/life_color_compat.dart' show canonicalLifeColorValue, kNordicEntertainment, kNordicPeople;
 
 /// Approved sunny-yellow tag identity. These values come from the yellow
 /// preview controls; they are shared by every tag display mode and screen.
@@ -52,6 +52,18 @@ Color tagManagerAvatarPlate(Color tagColor, Color surface) {
 Color tagVibrantForeground(Color tagBaseColor, {Color? surface}) {
   if (tagColorIsYellowFamily(tagBaseColor)) return kTagYellowText;
   if (surface == null) return tagBaseColor;
+
+  // Keep official red RED and official warm pink PINK in small chips.
+  // The generic 4.5:1 automatic darkening turns their text into burgundy
+  // and purple-red respectively. Their approved chromatic typography targets
+  // at least 3:1 on pale tint plates, with stronger contrast in dark mode.
+  final lightSurface = surface.computeLuminance() > 0.35;
+  if (tagBaseColor.toARGB32() == kNordicEntertainment[500]!.toARGB32()) {
+    return lightSurface ? kNordicEntertainment[600]! : kNordicEntertainment[400]!;
+  }
+  if (tagBaseColor.toARGB32() == kNordicPeople[500]!.toARGB32()) {
+    return lightSurface ? kNordicPeople[700]! : kNordicPeople[400]!;
+  }
 
   final background = tagLetterChipPlate(tagBaseColor, surface);
   final backgroundLuminance = background.computeLuminance();
