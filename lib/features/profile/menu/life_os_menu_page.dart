@@ -33,6 +33,8 @@ enum LifeOsMenuAction {
   about,
   syncStatus,
   diagnostics,
+  componentLab,
+  voiceDiagnostics,
 }
 
 class LifeOsMenuPage extends StatefulWidget {
@@ -515,6 +517,17 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
             _heading(context, _ru ? group.ru : group.en),
             _group(context, [
               for (final id in group.ids) _sectionRow(_section(id)),
+            ]),
+          ],
+          if (DatabaseService.instance.settings.isAdmin) ...[
+            _heading(context, _ru ? 'РАЗРАБОТКА' : 'DEVELOPMENT'),
+            _group(context, [
+              AppSettingsNavigationRow(
+                title: 'Dev / Design Lab',
+                leading: AppSettingsMenuIcon(
+                  icon: AppMenuIcons.icon(AppMenuIconRole.filter)),
+                onTap: () => widget.onAction(LifeOsMenuAction.componentLab),
+              ),
             ]),
           ],
         ],

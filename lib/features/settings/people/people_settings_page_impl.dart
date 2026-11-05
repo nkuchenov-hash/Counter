@@ -12,10 +12,12 @@ import 'package:counter/features/settings/people/people_strings.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
-enum _PeopleSection { people, circles, sources }
+enum PeopleSettingsDestination { people, circles, sources }
 
 class PeopleSettingsPage extends StatefulWidget {
-  const PeopleSettingsPage({super.key});
+  const PeopleSettingsPage({super.key, this.initialSection = PeopleSettingsDestination.people});
+
+  final PeopleSettingsDestination initialSection;
 
   @override
   State<PeopleSettingsPage> createState() => _PeopleSettingsPageState();
@@ -25,7 +27,7 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
   final PeopleService _service = PeopleService.instance;
   List<LifePerson> _people = const <LifePerson>[];
   List<PeopleCircle> _circles = const <PeopleCircle>[];
-  _PeopleSection _section = _PeopleSection.people;
+  PeopleSettingsDestination _section = PeopleSettingsDestination.people;
   bool _loading = true;
   String? _error;
 
@@ -34,6 +36,7 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
   @override
   void initState() {
     super.initState();
+    _section = widget.initialSection;
     unawaited(_loadHome());
   }
 
@@ -146,25 +149,25 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
                   ),
             ),
             const SizedBox(height: 16),
-            SegmentedButton<_PeopleSection>(
-              segments: <ButtonSegment<_PeopleSection>>[
-                ButtonSegment<_PeopleSection>(
-                  value: _PeopleSection.people,
+            SegmentedButton<PeopleSettingsDestination>(
+              segments: <ButtonSegment<PeopleSettingsDestination>>[
+                ButtonSegment<PeopleSettingsDestination>(
+                  value: PeopleSettingsDestination.people,
                   icon: const Icon(Icons.people_alt_rounded),
                   label: Text(peopleT(_locale, 'tab_people')),
                 ),
-                ButtonSegment<_PeopleSection>(
-                  value: _PeopleSection.circles,
+                ButtonSegment<PeopleSettingsDestination>(
+                  value: PeopleSettingsDestination.circles,
                   icon: const Icon(Icons.hub_rounded),
                   label: Text(peopleT(_locale, 'tab_circles')),
                 ),
-                ButtonSegment<_PeopleSection>(
-                  value: _PeopleSection.sources,
+                ButtonSegment<PeopleSettingsDestination>(
+                  value: PeopleSettingsDestination.sources,
                   icon: const Icon(Icons.sync_alt_rounded),
                   label: Text(peopleT(_locale, 'tab_sources')),
                 ),
               ],
-              selected: <_PeopleSection>{_section},
+              selected: <PeopleSettingsDestination>{_section},
               onSelectionChanged: (selected) {
                 if (selected.isNotEmpty) {
                   setState(() => _section = selected.first);
@@ -185,9 +188,9 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
               )
             else
               switch (_section) {
-                _PeopleSection.people => _buildPeople(context),
-                _PeopleSection.circles => _buildCircles(context),
-                _PeopleSection.sources => PeopleSourcesSection(
+                PeopleSettingsDestination.people => _buildPeople(context),
+                PeopleSettingsDestination.circles => _buildCircles(context),
+                PeopleSettingsDestination.sources => PeopleSourcesSection(
                     locale: _locale,
                     people: _people,
                     onPersonLinked: _upsertPerson,
