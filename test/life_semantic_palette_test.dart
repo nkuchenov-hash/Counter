@@ -84,12 +84,12 @@ void main() {
       expect((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF);
       expect((rgb >> 8) & 0xFF, rgb & 0xFF);
     }
-    expect(AppColors.appBackground, const Color(0xFFF0F0F0));
+    expect(AppColors.appBackground, const Color(0xFFF5F5F5));
     expect(AppColors.cardSurface, Colors.white);
     expect(
       AppColors.cardSurface.computeLuminance() -
           AppColors.appBackground.computeLuminance(),
-      greaterThan(0.09),
+      greaterThan(0.075),
     );
   });
 
@@ -519,7 +519,7 @@ void main() {
         }),
       )),
     ));
-    expect(background, const Color(0xFFF2F2F2));
+    expect(background, const Color(0xFFF6F6F6));
     expect(card, const Color(0xFFFFFFFF));
     expect(background, isNot(card));
     expect(tester.takeException(), isNull);

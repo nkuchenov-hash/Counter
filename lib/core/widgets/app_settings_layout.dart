@@ -22,11 +22,11 @@ ThemeData settingsNeutralTheme(BuildContext context) {
     primary: base.colorScheme.onSurface,
     onPrimary: dark ? AppColors.darkAppBackground : Colors.white,
     // Neutral TECNO-inspired surfaces: distinct white cards, no blue tint.
-    surface: dark ? const Color(0xFF161616) : const Color(0xFFF2F2F2),
+    surface: dark ? const Color(0xFF161616) : const Color(0xFFF6F6F6),
     surfaceContainerLowest:
-        dark ? const Color(0xFF161616) : const Color(0xFFF2F2F2),
+        dark ? const Color(0xFF161616) : const Color(0xFFF6F6F6),
     surfaceContainerLow:
-        dark ? const Color(0xFF222222) : const Color(0xFFF2F2F2),
+        dark ? const Color(0xFF222222) : const Color(0xFFF6F6F6),
     surfaceContainer:
         dark ? const Color(0xFF303030) : const Color(0xFFF1F1F1),
     surfaceContainerHigh:
@@ -498,9 +498,9 @@ class AppSettingsNavigationRow extends StatelessWidget {
           // full-bleed through the rounded corners, not below a dead margin.
           contentPadding: EdgeInsets.fromLTRB(
             24,
-            _AppSettingsRowPosition.maybeOf(context)?.first == true ? 18 : 2,
+            _AppSettingsRowPosition.maybeOf(context)?.first == true ? 16 : 10,
             24,
-            _AppSettingsRowPosition.maybeOf(context)?.last == true ? 18 : 2,
+            _AppSettingsRowPosition.maybeOf(context)?.last == true ? 16 : 10,
           ),
           minVerticalPadding: 8,
           leading: leading,
@@ -543,10 +543,13 @@ class AppSettingsNavigationRow extends StatelessWidget {
           ),
           onTap: onTap,
           enabled: onTap != null,
-          // Hover the complete menu item, not the group or an inset rectangle.
-          hoverColor: scheme.brightness == Brightness.dark
-              ? scheme.onSurface.withValues(alpha: 0.06)
-              : const Color(0xFFF5F5F5),
+          // Grouped rows use the full-width background owned by the group,
+          // so InkWell cannot paint a second rectangle over the separator.
+          hoverColor: _AppSettingsRowPosition.maybeOf(context) != null
+              ? Colors.transparent
+              : (scheme.brightness == Brightness.dark
+                  ? scheme.onSurface.withValues(alpha: 0.06)
+                  : const Color(0xFFEDEDED)),
           splashColor: Colors.transparent,
           shape: const RoundedRectangleBorder(),
         ),
@@ -669,9 +672,12 @@ class _AppSettingsRowPosition extends InheritedWidget {
       first != oldWidget.first || last != oldWidget.last;
 }
 
-/// A white grouped surface without borders or group-wide hover. Each menu
-/// item owns its entire hoverable row, including outer top/bottom whitespace.
-class AppSettingsNavigationGroup extends StatelessWidget {
+/// Borderless white group with independently hoverable full-width rows.
+///
+/// The divider is painted as part of the same visual surface. When the pointer
+/// is on either neighboring item, that divider gently disappears into the
+/// hover shade instead of showing as a separate line.
+class AppSettingsNavigationGroup extends StatefulWidget {
   const AppSettingsNavigationGroup({
     super.key,
     required this.children,
@@ -680,8 +686,23 @@ class AppSettingsNavigationGroup extends StatelessWidget {
   final List<Widget> children;
 
   @override
+  State<AppSettingsNavigationGroup> createState() =>
+      _AppSettingsNavigationGroupState();
+}
+
+class _AppSettingsNavigationGroupState
+    extends State<AppSettingsNavigationGroup> {
+  int? _hoveredIndex;
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final dark = scheme.brightness == Brightness.dark;
+    final hoverFill = dark
+        ? scheme.onSurface.withValues(alpha: 0.06)
+        : const Color(0xFFEDEDED);
+    const dividerFill = Color(0xFFE9E9E9);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Material(
@@ -691,24 +712,58 @@ class AppSettingsNavigationGroup extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            for (var index = 0; index < children.length; index++) ...[
-              _AppSettingsRowPosition(
-                first: index == 0,
-                last: index == children.length - 1,
-                child: children[index],
-              ),
-              if (index != children.length - 1)
-                Padding(
-                  padding: const EdgeInsets.only(left: 78, right: 20),
-                  child: Divider(
-                    height: 1,
-                    thickness: 0.8,
-                    color: scheme.brightness == Brightness.dark
-                        ? scheme.outlineVariant
-                        : const Color(0xFFE7E7E7),
-                  ),
+            for (var index = 0; index < widget.children.length; index++)
+              MouseRegion(
+                onEnter: (_) => setState(() => _hoveredIndex = index),
+                onExit: (_) {
+                  if (_hoveredIndex == index) {
+                    setState(() => _hoveredIndex = null);
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedContainer(
+                      key: ValueKey('settings-row-$index'),
+                      duration: const Duration(milliseconds: 140),
+                      curve: Curves.easeOutCubic,
+                      color: _hoveredIndex == index
+                          ? hoverFill
+                          : Colors.transparent,
+                      child: _AppSettingsRowPosition(
+                        first: index == 0,
+                        last: index == widget.children.length - 1,
+                        child: widget.children[index],
+                      ),
+                    ),
+                    if (index != widget.children.length - 1)
+                      AnimatedContainer(
+                        key: ValueKey('settings-divider-$index'),
+                        height: 1,
+                        duration: const Duration(milliseconds: 140),
+                        curve: Curves.easeOutCubic,
+                        color: _hoveredIndex == index ||
+                                _hoveredIndex == index + 1
+                            ? hoverFill
+                            : scheme.surfaceContainerHigh,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 78, right: 20),
+                          child: AnimatedContainer(
+                            key: ValueKey('settings-divider-line-$index'),
+                            duration: const Duration(milliseconds: 140),
+                            curve: Curves.easeOutCubic,
+                            color: _hoveredIndex == index ||
+                                    _hoveredIndex == index + 1
+                                ? hoverFill
+                                : (dark
+                                    ? scheme.outlineVariant
+                                    : dividerFill),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-            ],
+              ),
           ],
         ),
       ),

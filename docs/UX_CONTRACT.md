@@ -1,9 +1,9 @@
-## Consistent Profile and menu chrome (corrected 2026-11-05)
+## Consistent Profile and menu chrome (refined 2026-11-05)
 
-- Use one LIFE OS brand mark in the persistent top desktop header. The primary sidebar remains a light neutral `#ECECEC` with no duplicated logo.
-- Settings canvas is light gray `#F2F2F2`, card groups are white and **borderless**. Between rows use light `#E7E7E7` separators 0.8 px. Hover applies to **exactly one full-width row**, not the full group; first and last row own their outer vertical padding to keep the hover continuous and icon-to-edge distances balanced with their horizontal 24 px padding.
-- Keep Onest and refine weights/colors only. Do not alter app-wide typography or unrelated category/timeline/list color semantics.
-- Profile is the account section of the canonical menu and leaf settings remain embedded in the desktop shell.
+- Preserve Onest, existing navigation and app data. Global light surfaces must not have a blue cast: application `#F7F7F7`, settings `#F6F6F6`, white cards `#FFFFFF`, neutral sidebar `#ECECEC`.
+- Grouped menu cards are borderless. Every menu item is separately interactive over the complete width. The pointer highlights **exactly one row** with `#EDEDED`; first/last edge padding of 16 px and inner rows 10 px keeps icons, labels, and touch targets evenly spaced.
+- Dividers (`#E9E9E9` / 1 px) are inset and fade to the hover fill if either adjacent item is hovered. No extra visible divider inside the hover block and no group-wide hover.
+- One LIFE OS logo in the persistent top header; Profile remains a unified settings destination inside desktop chrome.
 
 ## Persistent desktop navigation across People and Menu (2026-11-05)
 
