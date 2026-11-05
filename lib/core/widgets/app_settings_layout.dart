@@ -598,6 +598,49 @@ class AppSettingsNavigationRow extends StatelessWidget {
 }
 
 
+/// Icon-leading switch row for the approved grouped Settings surfaces.
+/// Unlike a navigation row, its trailing switch changes the persisted setting.
+class AppSettingsControlRow extends StatelessWidget {
+  const AppSettingsControlRow({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.onChanged,
+    this.subtitle,
+    this.leading,
+  });
+
+  final String title;
+  final String? subtitle;
+  final Widget? leading;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SwitchListTile.adaptive(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 5),
+      minVerticalPadding: 12,
+      secondary: leading,
+      title: Text(
+        title,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: subtitle == null ? null : Text(
+        subtitle!,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      value: value,
+      onChanged: onChanged,
+    );
+  }
+}
+
 /// Shared action row for overflow menus and modal sheets.
 class AppMenuActionTile extends StatelessWidget {
   const AppMenuActionTile({
