@@ -199,4 +199,29 @@ void main() {
     }
   });
 
+  testWidgets('settings choice rows have selectable accessible actions', (
+    tester,
+  ) async {
+    var picked = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: appDarkTheme,
+        home: Scaffold(
+          body: AppSettingsNavigationGroup(
+            children: [
+              AppSettingsSelectionRow(
+                title: 'Circular tag',
+                selected: false,
+                onTap: () => picked = true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Circular tag'));
+    expect(picked, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
 }

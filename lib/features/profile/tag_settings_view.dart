@@ -7,6 +7,7 @@ import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/core/widgets/chip_component.dart';
+import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:counter/core/widgets/app_loading.dart';
@@ -132,21 +133,24 @@ class _TagSettingsViewState extends State<TagSettingsView> {
             builder: (context, snap) {
               final active =
                   snap.data?.tagDisplayMode ?? CategoryDisplayMode.letterChip;
-              return Column(
+              return AppSettingsNavigationGroup(
                 children: [
-                  for (final m in CategoryDisplayMode.values)
-                    RadioListTile<CategoryDisplayMode>(
-                      contentPadding: EdgeInsets.zero,
-                      value: m,
-                      groupValue: active,
-                      onChanged: _saving
-                          ? null
-                          : (CategoryDisplayMode? v) {
-                              if (v != null) {
-                                _setMode(v);
-                              }
-                            },
-                      title: Text(_modeLabel(loc, m)),
+                  for (final mode in CategoryDisplayMode.values)
+                    AppSettingsSelectionRow(
+                      title: _modeLabel(loc, mode),
+                      selected: active == mode,
+                      leading: SizedBox(
+                        width: 52,
+                        child: Center(
+                          child: CategoryChip(
+                            mode: mode,
+                            label: mockName,
+                            color: _previewColor,
+                            icon: _previewIcon,
+                          ),
+                        ),
+                      ),
+                      onTap: _saving ? null : () => _setMode(mode),
                     ),
                 ],
               );

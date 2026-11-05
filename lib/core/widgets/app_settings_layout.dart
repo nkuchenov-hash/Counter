@@ -858,3 +858,60 @@ class _AppSettingsThemeChoice extends StatelessWidget {
     );
   }
 }
+
+
+/// Single-select option inside a grouped settings surface.
+class AppSettingsSelectionRow extends StatelessWidget {
+  const AppSettingsSelectionRow({
+    super.key,
+    required this.title,
+    required this.selected,
+    required this.onTap,
+    this.leading,
+    this.subtitle,
+  });
+
+  final String title;
+  final String? subtitle;
+  final bool selected;
+  final Widget? leading;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      selected: selected,
+      inMutuallyExclusiveGroup: true,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+        minVerticalPadding: 12,
+        leading: leading,
+        title: Text(
+          title,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+        subtitle: subtitle == null
+            ? null
+            : Text(
+                subtitle!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+        trailing: Icon(
+          selected
+              ? Icons.radio_button_checked_rounded
+              : Icons.radio_button_unchecked_rounded,
+          color: selected
+              ? theme.colorScheme.onSurface
+              : theme.colorScheme.outline,
+        ),
+        onTap: onTap,
+        enabled: onTap != null,
+      ),
+    );
+  }
+}
