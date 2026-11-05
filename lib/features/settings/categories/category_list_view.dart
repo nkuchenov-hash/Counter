@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/tag_contrast.dart' show tagSolidAccentOnSurface;
 import 'package:counter/core/widgets/app_icon_button.dart';
+import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -487,6 +488,69 @@ class _CategoriesPageState extends State<CategoriesPage> {
     unawaited(widget.onChanged());
   }
 
+  void _performCategoryAction(String action, CategoryRule category, bool wide) {
+    if (action == 'add') {
+      unawaited(_create(parentId: category.id));
+    } else if (action == 'edit') {
+      if (wide) {
+        _select(category, true);
+      } else {
+        _editOnPhone(category);
+      }
+    } else if (action == 'move') {
+      unawaited(_moveCategoryWithPicker(category));
+    } else if (action == 'delete') {
+      unawaited(_deleteCategory(category));
+    }
+  }
+
+  void _showCategoryActionSheet(CategoryRule category) {
+    final loc = currentLocale.value;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+      builder: (sheetContext) {
+        void choose(String action) {
+          Navigator.of(sheetContext).pop();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _performCategoryAction(action, category, false);
+          });
+        }
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
+            child: AppSettingsNavigationGroup(
+              children: [
+                AppMenuActionTile(
+                  title: Text(t(loc, 'edit_category')),
+                  leading: const Icon(Icons.edit_outlined),
+                  onTap: () => choose('edit'),
+                ),
+                AppMenuActionTile(
+                  title: Text(t(loc, 'add_subcategory')),
+                  leading: const Icon(Icons.create_new_folder_outlined),
+                  onTap: () => choose('add'),
+                ),
+                AppMenuActionTile(
+                  title: Text(t(loc, 'category_move_to')),
+                  leading: const Icon(Icons.folder_open_rounded),
+                  onTap: () => choose('move'),
+                ),
+                AppMenuActionTile(
+                  title: Text(t(loc, 'delete_category')),
+                  leading: const Icon(Icons.delete_outline_rounded),
+                  destructive: true,
+                  onTap: () => choose('delete'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _row(
     BuildContext context,
     _CategoryTreeRow item,
@@ -548,27 +612,21 @@ class _CategoriesPageState extends State<CategoriesPage> {
                       tooltip: t(loc, 'category_expand_children'),
                       onPressed: () => _toggle(r.id),
                     ),
+                  if (!wide)
+                    AppIconButton(
+                      icon: Icons.more_horiz_rounded,
+                      tooltip: t(loc, 'category_actions'),
+                      onPressed: () => _showCategoryActionSheet(r),
+                    )
+                  else
                   PopupMenuButton<String>(
                     tooltip: t(loc, 'category_actions'),
                     icon: Icon(
                       Icons.more_horiz_rounded,
                       color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
                     ),
-                    onSelected: (action) {
-                      if (action == 'add') {
-                        unawaited(_create(parentId: r.id));
-                      } else if (action == 'edit') {
-                        if (wide) {
-                          _select(r, true);
-                        } else {
-                          _editOnPhone(r);
-                        }
-                      } else if (action == 'move') {
-                        unawaited(_moveCategoryWithPicker(r));
-                      } else if (action == 'delete') {
-                        unawaited(_deleteCategory(r));
-                      }
-                    },
+                    onSelected: (action) =>
+                        _performCategoryAction(action, r, true),
                     itemBuilder: (_) => <PopupMenuEntry<String>>[
                       PopupMenuItem(
                         value: 'edit',
