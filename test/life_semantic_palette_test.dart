@@ -34,6 +34,15 @@ void main() {
             family);
       }
     }
+    // The compatibility resolver must not remap any NEW canonical shade a
+    // second time (including the neutral light end of the scale).
+    for (final family in kCategoryPickerMaterialColors) {
+      for (final shade in <int>[50, 100, 200, 300, 400, 500, 600, 700, 800, 900]) {
+        final argb = family[shade]!.toARGB32();
+        expect(canonicalLifeColorValue(argb), argb,
+            reason: 'New shades must be stable: ${family[shade]}');
+      }
+    }
     expect(kLifeTagColorPresets, containsAll(<String>[
       '#286BE3', '#E8700A', '#F6C500', '#56A235', '#008B83',
       '#55BCE7', '#242B5D', '#C82332', '#E65EA5', '#606060',
