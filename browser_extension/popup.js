@@ -18,6 +18,7 @@ const REQUEST_TIMEOUT_MS = 15000;
 const RECORDS_REALTIME_TOPIC = 'records/*';
 
 const ru = (navigator.language || '').toLowerCase().startsWith('ru');
+document.documentElement.lang = ru ? 'ru' : 'en';
 const copy = ru
   ? {
       current: 'Текущая запись',
