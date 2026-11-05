@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `9fb931ea` on 2026-11-05.**
+**Generated from input HEAD `02aef838` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -11772,7 +11772,7 @@ EN:
 - **What this is:** Design-system color tokens (V3/V7) — action primary, surfaces, semantic success, dark scheme.
 - **Why needed:** Change `actionPrimary` once to retint buttons, tabs, and nav chrome app-wide.
 - **Contents:** `AppColors` constants; `lightColorScheme()` / `darkColorScheme()` factories.
-- **Key code names:** `AppColors`
+- **Key code names:** `AppNeutralTones`, `AppColors`
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/core/widgets/life_card.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`.
 - **Necessity status:** PROVEN_REQUIRED
