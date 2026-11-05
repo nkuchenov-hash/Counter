@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `36d1ceab` on 2026-11-05.**
+**Generated from input HEAD `9539810c` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -11909,7 +11909,7 @@ EN:
 - **Contents:** `AppBuildInfo` — `gitCommit`, `builtAt`, `bootLogLine()`, perf test markers.
 - **Key code names:** `AppBuildInfo`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/profile_view.dart`, `lib/main.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_installed_identity.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_last_attempt_store.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/profile_view.dart`, `lib/features/settings/categories/category_icon_collection_preference.dart`, `lib/features/settings/categories/category_icon_picker.dart`, `lib/main.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_installed_identity.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -11926,7 +11926,7 @@ RU:
 - **Зачем:** Маркеры logcat/console (`APP_BUILD`, P0N/P0O) показывают, какой APK на устройстве.
 - **Содержимое:** `AppBuildInfo` — `gitCommit`, `builtAt`, `bootLogLine()`, perf-маркеры.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/profile_view.dart`, `lib/main.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_installed_identity.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_last_attempt_store.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/profile_view.dart`, `lib/features/settings/categories/category_icon_collection_preference.dart`, `lib/features/settings/categories/category_icon_picker.dart`, `lib/main.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_installed_identity.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
