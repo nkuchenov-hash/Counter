@@ -41,7 +41,7 @@ class _ComponentLabNotesDemoState extends State<ComponentLabNotesDemo> {
   NotesAudioState _audioState = NotesAudioState.ready;
   NotesRecorderState _recorderState = NotesRecorderState.ready;
   NotesDrawingTool _drawingTool = NotesDrawingTool.pen;
-  Color _drawingColor = const Color(0xFF0F172A);
+  Color _drawingColor = kCategoryBlack;
   double _strokeWidth = 4;
   Set<NotesInlineFormat> _formats = const {NotesInlineFormat.bold};
 
