@@ -23,14 +23,11 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
         );
       },
     ),
-    ProfilePage(
-      onSaved: () {
-        if (mounted) setState(() {});
-        unawaited(refreshDesktopTrayMenu());
-      },
-      onDesktopVoiceHotkeyChanged: (_) => reattachDesktopVoiceHotkey(),
-      onOpenViktor: () => unawaited(openViktor()),
-      onTestDesktopVoice: () => unawaited(openViktor()),
+    LifeOsMenuPage(
+      onAction: onLifeOsMenuAction,
+      activeTab: shellPageIndexListenable,
+      initialSection: 'account',
+      onBackToMenu: () => setState(() => setShellPageIndex(7)),
     ),
     const PathsPage(),
     LifeOsMenuPage(
@@ -43,20 +40,25 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
       activeTab: shellPageIndexListenable,
       onBackToMenu: () => setState(() => setShellPageIndex(7)),
     ),
+    ProfilePage(
+      key: ValueKey(profileDestination),
+      initialDestination: profileDestination,
+      embeddedInShell: true,
+      onBackToMenu: () => setState(() => setShellPageIndex(
+          profileDestination == ProfileSettingsDestination.account ||
+                  profileDestination == ProfileSettingsDestination.security ||
+                  profileDestination == ProfileSettingsDestination.session
+              ? 5
+              : 7)),
+      onSaved: () {
+        if (mounted) setState(() {});
+        unawaited(refreshDesktopTrayMenu());
+      },
+      onDesktopVoiceHotkeyChanged: (_) => reattachDesktopVoiceHotkey(),
+      onOpenViktor: () => unawaited(openViktor()),
+      onTestDesktopVoice: () => unawaited(openViktor()),
+    ),
   ];
-
-  String _desktopSectionTitle(String loc) => switch (shellPageIndex) {
-    0 => t(loc, 'tab_timeline'),
-    1 => t(loc, 'tab_planning'),
-    2 => t(loc, 'calendar'),
-    3 => t(loc, 'tab_lists'),
-    4 => t(loc, 'more_menu_categories'),
-    5 => loc.toLowerCase().startsWith('ru') ? 'Профиль' : 'Profile',
-    6 => loc.toLowerCase().startsWith('ru') ? 'Пути' : 'Paths',
-    7 => loc.toLowerCase().startsWith('ru') ? 'Меню' : 'Menu',
-    8 => loc.toLowerCase().startsWith('ru') ? 'Люди' : 'People',
-    _ => t(loc, 'app_title'),
-  };
 
   Widget buildShellDashboard(BuildContext context) {
     rebuildMetricsTick('AppShell');
@@ -114,7 +116,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                               ? AppBar(
                                   toolbarHeight: kGlobalCompactHeaderHeight,
                                   backgroundColor: desktopShell
-                                      ? scheme.surface
+                                      ? const Color(0xFFFFFFFF)
                                       : kGlobalCompactHeaderColor,
                                   foregroundColor: desktopShell
                                       ? scheme.onSurface
@@ -134,10 +136,28 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                                       : null,
                                   title: Row(
                                     children: [
-                                      if (!desktopShell &&
+                                      if (desktopShell ||
                                           MediaQuery.sizeOf(context).width >= 430) ...[
+                                      if (desktopShell) ...[
+                                        DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            color: scheme.onSurface,
+                                            borderRadius: BorderRadius.circular(9),
+                                          ),
+                                          child: const SizedBox(
+                                            height: 28,
+                                            width: 28,
+                                            child: Icon(
+                                              Icons.auto_awesome_rounded,
+                                              size: 17,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                      ],
                                       Text(
-                                        t(loc, 'app_title'),
+                                        desktopShell ? 'LIFE OS' : t(loc, 'app_title'),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: Theme.of(context)
@@ -192,32 +212,6 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                               final mainColumn = Column(
                                 children: [
                                   const ShellTopStatusBars(),
-                                  if (formFactor == ShellFormFactor.desktop &&
-                                      shellPageIndex == 5)
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                        kShellDesktopContentHorizontalPadding,
-                                        kShellDesktopContentTopPadding,
-                                        kShellDesktopContentHorizontalPadding,
-                                        12,
-                                      ),
-                                      child: Align(
-                                        alignment:
-                                            AlignmentDirectional.centerStart,
-                                        child: Text(
-                                          _desktopSectionTitle(loc),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headlineSmall
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w800,
-                                                height: 1.1,
-                                              ),
-                                        ),
-                                      ),
-                                    ),
                                   Expanded(
                                     child: kShellDeferHiddenTabsUntilFirstFrame
                                         ? LazyIndexedStack(

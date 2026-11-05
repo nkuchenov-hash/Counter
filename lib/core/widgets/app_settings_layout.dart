@@ -21,28 +21,32 @@ ThemeData settingsNeutralTheme(BuildContext context) {
   final scheme = base.colorScheme.copyWith(
     primary: base.colorScheme.onSurface,
     onPrimary: dark ? AppColors.darkAppBackground : Colors.white,
-    // Use the existing near-white app canvas instead of flat #F2F2F2 gray.
-    surface: dark ? const Color(0xFF161616) : AppColors.appBackground,
-    surfaceContainerLowest: dark
-        ? const Color(0xFF161616)
-        : AppColors.appBackground,
-    surfaceContainerLow: dark
-        ? const Color(0xFF222222)
-        : AppColors.appBackground,
-    surfaceContainer: dark
-        ? const Color(0xFF303030)
-        : AppColors.surfaceMuted,
-    surfaceContainerHigh: dark
-        ? const Color(0xFF252525)
-        : AppColors.cardSurface,
-    surfaceContainerHighest: dark
-        ? const Color(0xFF303030)
-        : AppColors.cardSurface,
-    outlineVariant: dark ? base.colorScheme.outlineVariant : AppColors.borderMuted,
-    onSurfaceVariant: dark ? base.colorScheme.onSurfaceVariant : const Color(0xFF687586),
+    // Neutral TECNO-inspired surfaces: distinct white cards, no blue tint.
+    surface: dark ? const Color(0xFF161616) : const Color(0xFFF0F0F0),
+    surfaceContainerLowest:
+        dark ? const Color(0xFF161616) : const Color(0xFFF0F0F0),
+    surfaceContainerLow:
+        dark ? const Color(0xFF222222) : const Color(0xFFF0F0F0),
+    surfaceContainer:
+        dark ? const Color(0xFF303030) : const Color(0xFFF1F1F1),
+    surfaceContainerHigh:
+        dark ? const Color(0xFF252525) : Colors.white,
+    surfaceContainerHighest:
+        dark ? const Color(0xFF303030) : Colors.white,
+    onSurface: dark ? base.colorScheme.onSurface : const Color(0xFF303030),
+    onSurfaceVariant: dark
+        ? base.colorScheme.onSurfaceVariant
+        : const Color(0xFF777777),
+    outlineVariant: dark
+        ? base.colorScheme.outlineVariant
+        : const Color(0xFFDADADA),
   );
   return base.copyWith(
     colorScheme: scheme,
+    textTheme: base.textTheme.apply(
+      bodyColor: scheme.onSurface,
+      displayColor: scheme.onSurface,
+    ),
     scaffoldBackgroundColor: scheme.surfaceContainerLowest,
     appBarTheme: base.appBarTheme.copyWith(
       backgroundColor: scheme.surfaceContainerLowest,
@@ -490,13 +494,13 @@ class AppSettingsNavigationRow extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
           minVerticalPadding: 8,
           leading: leading,
           title: Text(title, style: theme.textTheme.bodyLarge?.copyWith(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
-            letterSpacing: -0.15,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0,
             height: 1.28,
           )),
           subtitle: subtitle == null ? null : Text(
@@ -504,12 +508,10 @@ class AppSettingsNavigationRow extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodyMedium?.copyWith(
-              fontSize: 13.5,
+              fontSize: 14,
               fontWeight: FontWeight.w400,
-              height: 1.3,
-              color: scheme.brightness == Brightness.dark
-                  ? scheme.onSurfaceVariant
-                  : const Color(0xFF687586),
+              height: 1.35,
+              color: scheme.onSurfaceVariant,
             ),
           ),
           trailing: Row(
@@ -535,17 +537,15 @@ class AppSettingsNavigationRow extends StatelessWidget {
           onTap: onTap,
           enabled: onTap != null,
           hoverColor: scheme.brightness == Brightness.dark
-              ? scheme.onSurface.withValues(alpha: 0.065)
-              : const Color(0xFFF3F6FA),
+              ? scheme.onSurface.withValues(alpha: 0.07)
+              : const Color(0xFFF2F2F2),
           splashColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: const RoundedRectangleBorder(),
         ),
         if (showDivider) Divider(
           height: 1,
           thickness: 0.7,
-          color: scheme.outlineVariant.withValues(alpha: 0.5),
+          color: scheme.outlineVariant,
         ),
       ],
     );
@@ -581,18 +581,16 @@ class AppSettingsControlRow extends StatelessWidget {
         title,
         style: theme.textTheme.bodyLarge?.copyWith(
           fontSize: 16,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.15,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0,
         ),
       ),
       subtitle: subtitle == null ? null : Text(
         subtitle!,
         style: theme.textTheme.bodyMedium?.copyWith(
-          fontSize: 13.5,
+          fontSize: 14,
           fontWeight: FontWeight.w400,
-          color: theme.brightness == Brightness.dark
-              ? theme.colorScheme.onSurfaceVariant
-              : const Color(0xFF687586),
+          color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
       value: value,
@@ -663,7 +661,7 @@ class AppSettingsNavigationGroup extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         clipBehavior: Clip.antiAlias,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 4),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -671,11 +669,11 @@ class AppSettingsNavigationGroup extends StatelessWidget {
                 children[index],
                 if (index != children.length - 1)
                   Padding(
-                    padding: const EdgeInsets.only(left: 58, right: 4),
+                    padding: const EdgeInsets.only(left: 82, right: 24),
                     child: Divider(
                       height: 1,
-                      thickness: 0.7,
-                      color: scheme.outlineVariant.withValues(alpha: 0.6),
+                      thickness: 1,
+                      color: scheme.outlineVariant,
                     ),
                   ),
               ],

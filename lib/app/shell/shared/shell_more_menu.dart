@@ -40,6 +40,14 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
   }
 
   void _openProfileDestination(ProfileSettingsDestination target) {
+    if (shellFormFactorForWidth(MediaQuery.sizeOf(context).width) ==
+        ShellFormFactor.desktop) {
+      setState(() {
+        profileDestination = target;
+        setShellPageIndex(9);
+      });
+      return;
+    }
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (_) => ProfilePage(
@@ -166,12 +174,13 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
         _openProfileDestination(ProfileSettingsDestination.timeLocale);
         break;
       case LifeOsMenuAction.account:
-        if (shellFormFactorForWidth(MediaQuery.sizeOf(context).width) ==
-            ShellFormFactor.desktop) {
-          setState(() => setShellPageIndex(5));
-        } else {
-          _openProfileDestination(ProfileSettingsDestination.account);
-        }
+        _openProfileDestination(ProfileSettingsDestination.account);
+        break;
+      case LifeOsMenuAction.accountSecurity:
+        _openProfileDestination(ProfileSettingsDestination.security);
+        break;
+      case LifeOsMenuAction.accountSession:
+        _openProfileDestination(ProfileSettingsDestination.session);
         break;
       case LifeOsMenuAction.about:
         _openProfileDestination(ProfileSettingsDestination.about);
@@ -237,6 +246,7 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
   int desktopSideNavSelectedIndex(int shellPageIndex) {
     return switch (shellPageIndex) {
       0 || 1 || 2 || 3 || 4 || 5 || 6 || 8 => shellPageIndex,
+      9 => 5,
       _ => 7,
     };
   }

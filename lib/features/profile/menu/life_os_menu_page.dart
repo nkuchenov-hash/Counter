@@ -34,6 +34,8 @@ enum LifeOsMenuAction {
   appearance,
   languageAndTime,
   account,
+  accountSecurity,
+  accountSession,
   about,
   syncStatus,
   diagnostics,
@@ -46,8 +48,12 @@ class LifeOsMenuPage extends StatefulWidget {
     super.key,
     required this.onAction,
     required this.activeTab,
+    this.initialSection,
+    this.onBackToMenu,
   });
   final ValueChanged<LifeOsMenuAction> onAction;
+  final String? initialSection;
+  final VoidCallback? onBackToMenu;
 
   /// The shell keeps visited tabs offstage. An inactive menu must never
   /// intercept system Back from Timeline, Planning or another tab.
@@ -250,9 +256,9 @@ const _sections = <_LifeOsMenuSection>[
     _LifeOsMenuGroup('ЗАЩИТА И ВХОД', 'SECURITY & SIGN-IN', [
       _LifeOsMenuRow('security', 'Пароль и биометрия',
           'Password and biometrics', AppMenuIconRole.shield,
-          LifeOsMenuAction.account),
+          LifeOsMenuAction.accountSecurity),
       _LifeOsMenuRow('session', 'Управление сеансом', 'Session',
-          AppMenuIconRole.account, LifeOsMenuAction.account),
+          AppMenuIconRole.account, LifeOsMenuAction.accountSession),
     ]),
   ]),
   _LifeOsMenuSection('about', 'О приложении', 'About',
@@ -287,6 +293,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
   @override
   void initState() {
     super.initState();
+    _activeSection = widget.initialSection;
     _search.addListener(_refreshSearch);
   }
 
@@ -309,6 +316,10 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
 
   void _back() {
     FocusManager.instance.primaryFocus?.unfocus();
+    if (widget.initialSection != null) {
+      widget.onBackToMenu?.call();
+      return;
+    }
     setState(() => _activeSection = null);
   }
 
@@ -345,7 +356,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
         fontSize: 14,
         color: Theme.of(context).colorScheme.onSurfaceVariant,
         letterSpacing: 0.35,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
       ),
     ),
   );
@@ -404,7 +415,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
                     children: [
                       Text(name.isNotEmpty ? name : (_ru ? 'Мой профиль' : 'My account'),
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700)),
+                          fontWeight: FontWeight.w600)),
                       if (email.isNotEmpty)
                         Text(email, maxLines: 1, overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -462,7 +473,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
       children: [
         Text(_ru ? 'Меню' : 'Menu',
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            fontWeight: FontWeight.w700)),
+            fontWeight: FontWeight.w600)),
         const SizedBox(height: 18),
         _searchField(),
         const SizedBox(height: 16),
@@ -542,7 +553,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
         const SizedBox(height: 14),
         Text(section.title(_ru),
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            fontWeight: FontWeight.w700)),
+            fontWeight: FontWeight.w600)),
         if (section.subtitle(_ru).isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(section.subtitle(_ru),
@@ -567,9 +578,14 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
         return ValueListenableBuilder<int>(
           valueListenable: widget.activeTab,
           builder: (context, selectedTab, _) => PopScope(
-          canPop: selectedTab != 7 || _activeSection == null,
+          canPop: !((selectedTab == 7 ||
+                  (widget.initialSection != null && selectedTab == 5)) &&
+              _activeSection != null),
           onPopInvokedWithResult: (didPop, _) {
-            if (!didPop && selectedTab == 7 && _activeSection != null) {
+            if (!didPop &&
+                (selectedTab == 7 ||
+                    (widget.initialSection != null && selectedTab == 5)) &&
+                _activeSection != null) {
               _back();
             }
           },

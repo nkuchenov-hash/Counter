@@ -108,15 +108,15 @@ void main() {
       expect(people, contains('if (!didPop && selectedTab == 8)'));
     });
 
-    testWidgets('settings use the canonical near-white canvas, not flat gray',
+    testWidgets('settings use neutral gray not blue and clear white cards',
         (tester) async {
       await tester.pumpWidget(MaterialApp(
         home: Builder(builder: (context) {
           final scheme = settingsNeutralTheme(context).colorScheme;
-          expect(scheme.surface, AppColors.appBackground);
-          expect(scheme.surfaceContainerLowest, AppColors.appBackground);
+          expect(scheme.surface, const Color(0xFFF0F0F0));
+          expect(scheme.surfaceContainerLowest, const Color(0xFFF0F0F0));
           expect(scheme.surfaceContainerHigh, AppColors.cardSurface);
-          expect(scheme.surfaceContainer, AppColors.surfaceMuted);
+          expect(scheme.surfaceContainer, const Color(0xFFF1F1F1));
           return const SizedBox.shrink();
         }),
       ));
@@ -138,19 +138,43 @@ void main() {
       ));
       final title = tester.widget<Text>(find.text('Notifications'));
       final subtitle = tester.widget<Text>(find.text('Quiet reminders and alerts'));
-      expect(title.style?.fontWeight, FontWeight.w600);
+      expect(title.style?.fontWeight, FontWeight.w500);
       expect(subtitle.style?.fontWeight, FontWeight.w400);
-      expect(subtitle.style?.color, const Color(0xFF687586));
+      expect(subtitle.style?.color, const Color(0xFF777777));
       expect((title.style?.fontSize ?? 0) > (subtitle.style?.fontSize ?? 0), isTrue);
       final tile = tester.widget<ListTile>(find.byType(ListTile));
-      expect(tile.hoverColor, const Color(0xFFF3F6FA));
+      expect(tile.hoverColor, const Color(0xFFF2F2F2));
       expect(tile.splashColor, Colors.transparent);
       expect(tester.takeException(), isNull);
     });
 
-    test('global typography prefers the native desktop font stack', () {
-      expect(appLightTheme.textTheme.bodyLarge?.fontFamily, 'Segoe UI Variable');
-      expect(appDarkTheme.textTheme.bodyLarge?.fontFamily, 'Segoe UI Variable');
+    test('global typography uses bundled Onest in both themes', () {
+      expect(appLightTheme.textTheme.bodyLarge?.fontFamily, 'Onest');
+      expect(appDarkTheme.textTheme.bodyLarge?.fontFamily, 'Onest');
+    });
+
+    test('desktop brand, sidebar and Profile stay in one shell', () {
+      final chrome = File('lib/app/shell/shared/shell_chrome.dart')
+          .readAsStringSync();
+      final sidebar = File('lib/app/shell/desktop/shell_side_navigation.dart')
+          .readAsStringSync();
+      final routes = File('lib/app/shell/shared/shell_more_menu.dart')
+          .readAsStringSync();
+      expect(chrome, contains("desktopShell ? 'LIFE OS'"));
+      expect(chrome, contains("initialSection: 'account'"));
+      expect(chrome, contains('embeddedInShell: true'));
+      expect(sidebar, contains('Color(0xFFECECEC)'));
+      expect(routes, contains('setShellPageIndex(9)'));
+      expect(routes, contains('9 => 5,'));
+    });
+
+    test('menu groups own full-width hover and visible dividers', () {
+      final layout = File('lib/core/widgets/app_settings_layout.dart')
+          .readAsStringSync();
+      expect(layout, contains('EdgeInsets.symmetric(vertical: 4)'));
+      expect(layout, contains('EdgeInsets.only(left: 82, right: 24)'));
+      expect(layout, contains('thickness: 1,'));
+      expect(layout, contains('shape: const RoundedRectangleBorder()'));
     });
 
     testWidgets('settings stay within a readable desktop content column',

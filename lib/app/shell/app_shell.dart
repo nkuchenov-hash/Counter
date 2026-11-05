@@ -89,6 +89,7 @@ mixin ShellDashboardBase on State<LifeOSDashboard> {
   /// 6 Paths.
   int shellPageIndex = 0;
   PeopleSettingsDestination peopleDestination = PeopleSettingsDestination.people;
+  ProfileSettingsDestination profileDestination = ProfileSettingsDestination.account;
 
   int get navBarSelectedIndex => shellPageIndex <= 3 ? shellPageIndex : 4;
 

@@ -51,7 +51,9 @@ class ShellSideNavigation extends StatelessWidget {
     final locale = currentLocale.value;
     final ru = locale.toLowerCase().startsWith('ru');
     return Material(
-      color: scheme.surfaceContainerHigh,
+      color: scheme.brightness == Brightness.dark
+          ? scheme.surfaceContainerHigh
+          : const Color(0xFFECECEC),
       shape: Border(
         right: BorderSide(
           color: scheme.outlineVariant.withValues(alpha: 0.75),
@@ -66,33 +68,6 @@ class ShellSideNavigation extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 2, 0, 16),
-                  child: Row(
-                    children: [
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: scheme.onSurface,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: SizedBox(
-                          width: 32,
-                          height: 32,
-                          child: Icon(
-                            AppMenuIcons.icon(AppMenuIconRole.viktor),
-                            size: 19,
-                            color: scheme.surfaceContainerHigh,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text('LIFE OS',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        )),
-                    ],
-                  ),
-                ),
                 Expanded(
                   child: ListView(
                     padding: EdgeInsets.zero,
@@ -148,10 +123,14 @@ class ShellSideNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final bg = selected ? scheme.surfaceContainerLow : Colors.transparent;
-    final fg = selected
+    final bg = selected
+        ? (scheme.brightness == Brightness.dark
+            ? scheme.surfaceContainerLow
+            : const Color(0xFFDDDDDD))
+        : Colors.transparent;
+    final fg = scheme.brightness == Brightness.dark
         ? scheme.onSurface
-        : scheme.onSurface.withValues(alpha: 0.86);
+        : const Color(0xFF454545);
     final indicator = selected ? scheme.onSurface : Colors.transparent;
     return Material(
       color: bg,
@@ -161,7 +140,7 @@ class ShellSideNavItem extends StatelessWidget {
         onTap: onTap,
         hoverColor: scheme.brightness == Brightness.dark
             ? scheme.onSurface.withValues(alpha: 0.06)
-            : const Color(0xFFF1F5F9),
+            : const Color(0xFFE1E1E1),
         splashColor: Colors.transparent,
         child: Container(
           decoration: BoxDecoration(
@@ -183,8 +162,8 @@ class ShellSideNavItem extends StatelessWidget {
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: fg,
                       fontSize: 15.5,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                      letterSpacing: -0.1,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                      letterSpacing: 0,
                     ),
                   ),
                 ),

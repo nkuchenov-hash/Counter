@@ -1,8 +1,10 @@
-## Menu and settings visual contract (2026-11-05)
+## Menu and settings visual contract (updated 2026-11-05)
 
-- Light page canvas: `AppColors.appBackground` (`#F8FAFC`) rather than old flat `#F2F2F2`. Grouped cards: white, icon plates `#F1F5F9`, understated hairlines `#E7EDF3`. Dark surfaces retain their independent tokens.
-- Settings navigation rows use semibold 16 px titles, muted smaller regular-weight subtitles (`#687586`), subtle cool-white hover (`#F3F6FA`), no aggressive splash. Desktop nav uses similarly subdued hover and a clear selected state.
-- Global text stack prefers Segoe UI Variable then Segoe UI, Roboto, Arial, without requesting online fonts. Preserve localization and do not override feature-owned data behavior.
+- Light settings/Menu/People canvas is **neutral** `#F0F0F0`, not blue-tinted `#F8FAFC`. Group cards remain pure white, icon plates use neutral `#F1F1F1`, and visible dividers use `#DADADA` at 1 px. The desktop sidebar is neutral `#ECECEC`, distinct from the canvas.
+- Settings rows: 16 px Onest at font weight 500, body text `#303030`, secondary captions 14 px regular `#777777`. Do not use near-black semibold labels. Hover is a **full-width rectangular row interaction** within the rounded white group; never paint an inset rounded rectangle; hover fill `#F2F2F2`, no splash.
+- The global typeface is bundled **Onest variable** (SIL OFL), including Cyrillic; identical on Web, Windows and Android without requiring network access or platform-specific Segoe UI.
+- Desktop header owns LIFE OS branding; sidebar remains gray and contains navigation only. Bottom Profile opens the unified account index; leaf settings stay embedded in the desktop shell. Profile cannot reintroduce old People shortcuts or a parallel preferences hub.
+- Account index separates profile details, password/biometrics and session management into distinct actions; the People screen is a separate primary navigation item, not a duplicate legacy shortcut.
 
 ## Canonical Menu / settings composition (2026-11-05)
 
