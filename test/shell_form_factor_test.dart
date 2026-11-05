@@ -114,8 +114,8 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         home: Builder(builder: (context) {
           final scheme = settingsNeutralTheme(context).colorScheme;
-          expect(scheme.surface, const Color(0xFFE5E5E5));
-          expect(scheme.surfaceContainerLowest, const Color(0xFFE5E5E5));
+          expect(scheme.surface, const Color(0xFFF2F2F2));
+          expect(scheme.surfaceContainerLowest, const Color(0xFFF2F2F2));
           expect(scheme.surfaceContainerHigh, AppColors.cardSurface);
           expect(scheme.surfaceContainer, const Color(0xFFF1F1F1));
           return const SizedBox.shrink();
@@ -144,7 +144,7 @@ void main() {
       expect(subtitle.style?.color, const Color(0xFF818181));
       expect((title.style?.fontSize ?? 0) > (subtitle.style?.fontSize ?? 0), isTrue);
       final tile = tester.widget<ListTile>(find.byType(ListTile));
-      expect(tile.hoverColor, Colors.transparent);
+      expect(tile.hoverColor, const Color(0xFFF5F5F5));
       expect(tile.splashColor, Colors.transparent);
       expect(tester.takeException(), isNull);
     });
@@ -164,23 +164,25 @@ void main() {
       expect(chrome, contains("desktopShell ? 'LIFE OS'"));
       expect(chrome, contains("initialSection: 'account'"));
       expect(chrome, contains('embeddedInShell: true'));
-      expect(sidebar, contains('Color(0xFFDDDDDD)'));
-      expect(sidebar, contains("'LIFE OS'"));
+      expect(sidebar, contains('Color(0xFFECECEC)'));
+      expect(sidebar, isNot(contains("'LIFE OS'")));
       expect(routes, contains('setShellPageIndex(9)'));
       expect(routes, contains('9 => 5,'));
     });
 
-    test('menu groups own full-width hover and visible dividers', () {
+    test('menu items own their full-width hover, not the parent card', () {
       final layout = File('lib/core/widgets/app_settings_layout.dart')
           .readAsStringSync();
-      expect(layout, contains('EdgeInsets.symmetric(vertical: 4)'));
-      expect(layout, contains('EdgeInsets.only(left: 78, right: 20)'));
-      expect(layout, contains('thickness: 1.2,'));
-      expect(layout, contains('onEnter: (_) => setState(() => _hovered = true)'));
-      expect(layout, contains('color: _hovered && !dark'));
+      expect(layout, contains('class AppSettingsNavigationGroup extends StatelessWidget'));
+      expect(layout, contains('clipBehavior: Clip.antiAlias'));
+      expect(layout, contains('borderRadius: BorderRadius.circular(20)'));
+      expect(layout, contains('const Color(0xFFF5F5F5)'));
+      expect(layout, contains('class _AppSettingsRowPosition extends InheritedWidget'));
+      expect(layout, isNot(contains('onEnter: (_) => setState(() => _hovered = true)')));
+      expect(layout, isNot(contains('Color(0xFFB6B6B6)')));
     });
 
-    testWidgets('hover highlights the entire white group not an individual row',
+    testWidgets('card has equal visual outer spacing, no strokes, soft dividers',
         (tester) async {
       await tester.pumpWidget(MaterialApp(
         theme: appLightTheme,
@@ -202,21 +204,39 @@ void main() {
       ));
       final group = find.byType(AppSettingsNavigationGroup);
       final material = find.descendant(
-        of: group, matching: find.byType(Material)).first;
+          of: group, matching: find.byType(Material)).first;
       expect(tester.widget<Material>(material).color, Colors.white);
+      expect(tester.widget<Material>(material).shape, isNull);
       final divider = tester.widget<Divider>(
           find.descendant(of: group, matching: find.byType(Divider)).first);
-      expect(divider.color, const Color(0xFFC4C4C4));
-      expect(divider.thickness, 1.2);
+      expect(divider.color, const Color(0xFFE7E7E7));
+      expect(divider.thickness, 0.8);
 
+      final cardRect = tester.getRect(material);
+      final iconRects = find.descendant(
+          of: group, matching: find.byType(AppSettingsMenuIcon));
+      final firstIcon = tester.getRect(iconRects.first);
+      final lastIcon = tester.getRect(iconRects.last);
+      final left = firstIcon.left - cardRect.left;
+      final top = firstIcon.top - cardRect.top;
+      final bottom = cardRect.bottom - lastIcon.bottom;
+      expect(left, closeTo(24, 2));
+      expect(top, closeTo(left, 5));
+      expect(bottom, closeTo(left, 5));
+
+      final tiles = find.descendant(of: group, matching: find.byType(ListTile));
+      for (final tile in tester.widgetList<ListTile>(tiles)) {
+        expect(tile.hoverColor, const Color(0xFFF5F5F5));
+        expect(tile.shape, const RoundedRectangleBorder());
+      }
       final pointer = await tester.createGesture(kind: PointerDeviceKind.mouse);
       await pointer.addPointer(location: Offset.zero);
       await pointer.moveTo(tester.getCenter(find.text('Second item')));
       await tester.pump();
-      expect(tester.widget<Material>(material).color, const Color(0xFFF7F7F7));
-      await pointer.removePointer();
-      await tester.pump();
+      // Hovering one item never paints the entire white card.
       expect(tester.widget<Material>(material).color, Colors.white);
+      await pointer.removePointer();
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('settings stay within a readable desktop content column',
