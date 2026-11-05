@@ -23,7 +23,7 @@ abstract final class PlanningSettingsNavigationRequests {
 class PlanningTimeViewCoordinator {
   PlanningTimeViewCoordinator(this.host) {
     PlanningSettingsNavigationRequests.openDefaultTimes.addListener(
-      _onOpenDefaultTimesRequested,
+      onOpenDefaultTimesRequested,
     );
     nowLineTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
       if (!host.mounted) {
@@ -45,7 +45,7 @@ class PlanningTimeViewCoordinator {
   }
 
   final PlanningTimeViewHost host;
-  void _onOpenDefaultTimesRequested() {
+  void onOpenDefaultTimesRequested() {
     if (!host.mounted ||
         !host.pageWidget.isActivePlanningDay ||
         !host.pageWidget.shellTabActive) return;
