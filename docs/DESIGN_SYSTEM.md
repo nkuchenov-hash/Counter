@@ -2,7 +2,7 @@
 
 - Settings/Menu/People desktop canvas is **neutral** `#E5E5E5`, not blue-tinted; grouped cards are `#FFFFFF`, idle borders `#CACACA` (1 px), hover borders `#B6B6B6` (1 px). Clearly visible inset separators are `#C4C4C4` at 1.2 px.
 - **The whole grouped white card** responds to hover: `MouseRegion` surrounds the parent `Material`; fill changes to neutral `#F7F7F7` and border becomes clearer. Individual rows do **not** paint hover rectangles or ripples; each row remains separately actionable.
-- App typography: locally bundled **Manrope variable**, SIL OFL, complete Cyrillic support across Web/Android/Windows; regular (400) item labels, `#474747` ink, gray `#818181` secondary captions, restrained 500-weight section headers. Avoid heavy or black text in the settings UI.
+- App typography: locally bundled **Onest variable**, SIL OFL, complete Cyrillic support across Web/Android/Windows; regular (400) item labels, `#474747` ink, gray `#818181` secondary captions, restrained 500-weight section headers. Avoid heavy or black text in the settings UI.
 - Desktop sidebar must have independent `#DDDDDD` fill, not white, and LIFE OS logo/title pinned at its top. Branding is also present in the persistent desktop global header on every section.
 - Profile remains an integrated account/settings destination; never replace the shell with legacy profile UI. Dark theme retains its own semantic surfaces.
 
