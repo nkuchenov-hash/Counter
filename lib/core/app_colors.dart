@@ -51,9 +51,9 @@ abstract final class AppColors {
   static const Color onActionPrimaryContainer = Color(0xFF111111);
 
   // --- Surfaces ---
-  static const Color appBackground = AppNeutralTones.gray100;
+  static const Color appBackground = AppNeutralTones.gray150;
   static const Color cardSurface = AppNeutralTones.white;
-  static const Color borderSubtle = AppNeutralTones.gray200;
+  static const Color borderSubtle = AppNeutralTones.gray300;
   static const Color borderMuted = AppNeutralTones.gray200;
   static const Color surfaceMuted = AppNeutralTones.gray100;
 
