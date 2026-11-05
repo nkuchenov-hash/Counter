@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -43,14 +44,18 @@ Future<CategoryTreeSheetResult?> showCategoryTreeSheet(
     isScrollControlled: true,
     showDragHandle: true,
     useSafeArea: true,
+    backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
     builder: (ctx) {
       final sheetHeight =
           (MediaQuery.sizeOf(ctx).height * 0.82).clamp(320.0, 720.0);
-      return SizedBox(
-        height: sheetHeight,
-        child: _CategoryTreePickerSheet(
+      return Theme(
+        data: settingsNeutralTheme(ctx),
+        child: SizedBox(
+          height: sheetHeight,
+          child: _CategoryTreePickerSheet(
           initialCategoryId: initialCategoryId,
           showAllCategoriesRow: showAllCategoriesRow,
+          ),
         ),
       );
     },
@@ -160,7 +165,9 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
             child: Text(
               t(loc, 'category_label'),
-              style: Theme.of(context).textTheme.titleMedium,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           Padding(
@@ -257,13 +264,17 @@ Future<Set<int>?> showCategoryTreeMultiPicker(
     isScrollControlled: true,
     showDragHandle: true,
     useSafeArea: true,
+    backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
     builder: (ctx) {
       final sheetHeight =
           (MediaQuery.sizeOf(ctx).height * 0.82).clamp(320.0, 720.0);
-      return SizedBox(
-        height: sheetHeight,
-        child: _CategoryTreeMultiPickerSheet(
+      return Theme(
+        data: settingsNeutralTheme(ctx),
+        child: SizedBox(
+          height: sheetHeight,
+          child: _CategoryTreeMultiPickerSheet(
           initialCategoryIds: initialCategoryIds,
+          ),
         ),
       );
     },
@@ -357,7 +368,9 @@ class _CategoryTreeMultiPickerSheetState
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
             child: Text(
               t(loc, 'category_label'),
-              style: Theme.of(context).textTheme.titleMedium,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           Padding(
