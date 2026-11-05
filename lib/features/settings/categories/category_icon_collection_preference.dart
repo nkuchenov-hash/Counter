@@ -5,8 +5,8 @@ import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/core/app_build_info.dart';
 import 'package:flutter/material.dart';
 
-/// User-controlled quick icon collection. The full picker offers only semantic
-/// intersections that exist in both icon families.
+/// Preferred category subjects. All selectable icons are available in the
+/// picker regardless of whether they belong to the quick collection.
 class CategoryIconCollectionPreference extends StatelessWidget {
   const CategoryIconCollectionPreference({super.key, required this.isRussian});
   final bool isRussian;
@@ -33,8 +33,8 @@ class CategoryIconCollectionPreference extends StatelessWidget {
           const SizedBox(height: 5),
           Text(
             isRussian
-                ? 'Выбранные иконки отображаются первыми. Остальные доступны в полном каталоге.'
-                : 'Your chosen icons appear first. The complete icon library remains available.',
+                ? 'Выбранные значки — в начале списка после основных повседневных тем.'
+                : 'Favorites follow everyday essentials; every category icon remains available.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: cs.onSurfaceVariant),
           ),
@@ -109,10 +109,7 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
   bool _saving = false;
   bool _browsing = false; // Start with the user's preferred collection.
   String _group = 'Все';
-  static const groups = [
-    'Все', 'Личное', 'Работа', 'Организация',
-    'Учёба', 'Творчество', 'Финансы', 'Прочее'
-  ];
+  static const groups = kCategorySubjectGroups;
 
   @override
   void initState() {
@@ -146,7 +143,7 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
       // Preserve the user's existing order and append newly chosen concepts.
       final order = [
         ...existing.where(_picked.contains),
-        ...CategoryIconStore.catalogFor(CategoryIconStore.instance.pack)
+        ...CategoryIconStore.catalogFor()
             .map((e) => e.key).where((key) =>
                 _picked.contains(key) && !existing.contains(key)),
       ];
@@ -170,7 +167,7 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
     final store = CategoryIconStore.instance;
     final cs = Theme.of(context).colorScheme;
     final query = _search.text.trim().toLowerCase();
-    final approved = CategoryIconStore.catalogFor(store.pack);
+    final approved = CategoryIconStore.catalogFor();
     final byKey = {for (final icon in approved) icon.key: icon};
     final selectedOrder = <String>[
       ...store.quickKeys.where(_picked.contains),
@@ -203,8 +200,8 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
                 style: Theme.of(context).textTheme.titleLarge),
               Text(_browsing
                   ? (widget.isRussian
-                      ? 'Доступно ${entries.length} парных иконок'
-                      : '${entries.length} matching icons available')
+                      ? 'Доступно ${entries.length} значков'
+                      : '${entries.length} category icons available')
                   : (widget.isRussian
                       ? 'В моём наборе: ${_picked.length} · build ${AppBuildInfo.gitCommit}'
                       : '${_picked.length} in my collection · build ${AppBuildInfo.gitCommit}'),
@@ -244,8 +241,8 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
               isDense: true,
               prefixIcon: const Icon(Icons.search),
               hintText: widget.isRussian
-                  ? 'Поиск по совпадающим иконкам'
-                  : 'Search matched icons',
+                  ? 'Поиск по иконкам'
+                  : 'Search category icons',
               border: const OutlineInputBorder(),
               suffixIcon: query.isEmpty ? null : IconButton(
                 onPressed: _search.clear,
@@ -260,7 +257,8 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
           itemCount: groups.length,
           separatorBuilder: (_, _) => const SizedBox(width: 6),
           itemBuilder: (_, i) => ChoiceChip(
-            label: Text(groups[i]),
+            label: Text(categorySubjectGroupName(groups[i],
+                russian: widget.isRussian)),
             selected: groups[i] == _group,
             showCheckmark: false,
             onSelected: (_) => setState(() => _group = groups[i]),
