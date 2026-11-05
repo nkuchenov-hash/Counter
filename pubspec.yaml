@@ -102,7 +102,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # SIL OFL licensed Onest; bundled for web/Android/Windows with Cyrillic.
+  # SIL OFL licensed Onest; bundled locally for web/Android/Windows and Cyrillic.
   fonts:
     - family: Onest
       fonts:
