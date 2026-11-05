@@ -77,11 +77,8 @@ ThemeData settingsNeutralTheme(BuildContext context) {
 /// Desktop: single [Row] with fixed keycap widths — no [Wrap], no [Expanded].
 class AppHotkeyKeycaps extends StatelessWidget {
   const AppHotkeyKeycaps({super.key, required this.label});
-
   final String label;
-
   static const double _keycapHeight = 48;
-
   static double _keycapWidth(String text) {
     final key = text.trim().toLowerCase();
     if (key == 'ctrl') return 72;
@@ -90,7 +87,6 @@ class AppHotkeyKeycaps extends StatelessWidget {
     if (text.trim().length == 1) return 52;
     return 72;
   }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -99,7 +95,6 @@ class AppHotkeyKeycaps extends StatelessWidget {
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
         .toList(growable: false);
-
     final children = <Widget>[];
     for (var i = 0; i < parts.length; i++) {
       children.add(
@@ -127,7 +122,6 @@ class AppHotkeyKeycaps extends StatelessWidget {
         );
       }
     }
-
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -143,12 +137,10 @@ class _Keycap extends StatelessWidget {
     required this.width,
     required this.height,
   });
-
   final String text;
   final ThemeData theme;
   final double width;
   final double height;
-
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -178,9 +170,7 @@ class _Keycap extends StatelessWidget {
 /// Neutral settings page shell: soft background + centered max width.
 class AppSettingsPageBody extends StatelessWidget {
   const AppSettingsPageBody({super.key, required this.children});
-
   final List<Widget> children;
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -219,11 +209,9 @@ class AppSettingsSectionCard extends StatelessWidget {
     this.subtitle,
     required this.child,
   });
-
   final String title;
   final String? subtitle;
   final Widget child;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -279,12 +267,10 @@ class AppSettingsSwitchRow extends StatelessWidget {
     required this.value,
     required this.onChanged,
   });
-
   final String title;
   final String? subtitle;
   final bool value;
   final ValueChanged<bool>? onChanged;
-
   @override
   Widget build(BuildContext context) {
     return SwitchListTile.adaptive(
@@ -311,10 +297,8 @@ class AppSettingsInfoRow extends StatelessWidget {
     required this.label,
     required this.value,
   });
-
   final String label;
   final String value;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -350,9 +334,7 @@ class AppSettingsInfoRow extends StatelessWidget {
 /// Inline action buttons — content width, not full-width bars.
 class AppSettingsActionRow extends StatelessWidget {
   const AppSettingsActionRow({super.key, required this.children});
-
   final List<Widget> children;
-
   @override
   Widget build(BuildContext context) {
     return Wrap(spacing: 8, runSpacing: 8, children: children);
@@ -362,9 +344,7 @@ class AppSettingsActionRow extends StatelessWidget {
 /// Two-column card grid on wide desktop; single column otherwise.
 class AppSettingsCardGrid extends StatelessWidget {
   const AppSettingsCardGrid({super.key, required this.children});
-
   final List<Widget> children;
-
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 900;
@@ -399,13 +379,11 @@ class AppSettingsGridCard extends StatelessWidget {
     this.trailing,
     required this.child,
   });
-
   final String? title;
   final String? subtitle;
   final Widget? leading;
   final Widget? trailing;
   final Widget child;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -478,14 +456,12 @@ class AppSettingsNavigationRow extends StatelessWidget {
     this.value,
     this.showDivider = false,
   });
-
   final String title;
   final String? subtitle;
   final Widget? leading;
   final String? value;
   final VoidCallback? onTap;
   final bool showDivider;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -575,13 +551,11 @@ class AppSettingsControlRow extends StatelessWidget {
     this.subtitle,
     this.leading,
   });
-
   final String title;
   final String? subtitle;
   final Widget? leading;
   final bool value;
   final ValueChanged<bool>? onChanged;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -620,13 +594,11 @@ class AppMenuActionTile extends StatelessWidget {
     this.leading,
     this.destructive = false,
   });
-
   final Widget title;
   final Widget? subtitle;
   final Widget? leading;
   final VoidCallback? onTap;
   final bool destructive;
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -660,13 +632,10 @@ class _AppSettingsRowPosition extends InheritedWidget {
     required this.last,
     required super.child,
   });
-
   final bool first;
   final bool last;
-
   static _AppSettingsRowPosition? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<_AppSettingsRowPosition>();
-
   @override
   bool updateShouldNotify(_AppSettingsRowPosition oldWidget) =>
       first != oldWidget.first || last != oldWidget.last;
@@ -682,9 +651,7 @@ class AppSettingsNavigationGroup extends StatefulWidget {
     super.key,
     required this.children,
   });
-
   final List<Widget> children;
-
   @override
   State<AppSettingsNavigationGroup> createState() =>
       _AppSettingsNavigationGroupState();
@@ -693,7 +660,6 @@ class AppSettingsNavigationGroup extends StatefulWidget {
 class _AppSettingsNavigationGroupState
     extends State<AppSettingsNavigationGroup> {
   int? _hoveredIndex;
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -702,7 +668,6 @@ class _AppSettingsNavigationGroupState
         ? scheme.onSurface.withValues(alpha: 0.06)
         : const Color(0xFFEDEDED);
     const dividerFill = Color(0xFFE9E9E9);
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Material(
@@ -774,7 +739,6 @@ class _AppSettingsNavigationGroupState
 /// Compact neutral icon treatment shared by settings index destinations.
 class AppSettingsMenuIcon extends StatelessWidget {
   const AppSettingsMenuIcon({super.key, required this.icon});
-
   final IconData icon;
 
   @override
