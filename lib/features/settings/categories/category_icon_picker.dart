@@ -42,7 +42,7 @@ class _IconPickerState extends State<_IconPicker> {
   late CategoryIconSelection _selection;
   final TextEditingController _search = TextEditingController();
   String _group = 'Все';
-  static const groups = ['Все', 'Личное', 'Работа', 'Организация', 'Учёба', 'Творчество', 'Финансы', 'Прочее'];
+  static const groups = kCategorySubjectGroups;
 
   @override
   void initState() {
@@ -71,13 +71,19 @@ class _IconPickerState extends State<_IconPicker> {
       animation: store,
       builder: (context, _) {
         final query = _search.text.trim().toLowerCase();
-        final approved = CategoryIconStore.catalogFor(store.pack);
-        // Show the full audited library, even for existing users who saved an
-        // older 26-icon quick collection. Keep their favorites at the front.
-        final quickKeys = store.quickKeys.toSet();
+        final approved = CategoryIconStore.catalogFor();
+        // Human subjects always come first, even when a saved collection
+        // from an old version contains technical icons.
+        final essentials = approved.take(47).toList();
+        final essentialsKeys = essentials.map((e) => e.key).toSet();
+        final favorites = store.quickCatalog
+            .where((e) => !essentialsKeys.contains(e.key)).toList();
+        final favoriteKeys = favorites.map((e) => e.key).toSet();
         final catalog = <CategoryIconChoice>[
-          ...store.quickCatalog,
-          ...approved.where((item) => !quickKeys.contains(item.key)),
+          ...essentials,
+          ...favorites,
+          ...approved.where((e) =>
+              !essentialsKeys.contains(e.key) && !favoriteKeys.contains(e.key)),
         ];
         final current = approved.where((e) => e.key == _selection.key)
             .firstOrNull ?? CategoryIconChoice(
@@ -143,7 +149,8 @@ class _IconPickerState extends State<_IconPicker> {
             itemCount: groups.length,
             separatorBuilder: (_, _) => const SizedBox(width: 7),
             itemBuilder: (_, i) => ChoiceChip(
-              label: Text(groups[i]), selected: _group == groups[i],
+              label: Text(categorySubjectGroupName(groups[i], russian: ru)),
+              selected: _group == groups[i],
               showCheckmark: false,
               onSelected: (_) => setState(() => _group = groups[i]),
             ),
@@ -200,7 +207,7 @@ class _IconPickerState extends State<_IconPicker> {
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
             child: SafeArea(top: false, child: Row(children: [
-              Text('${icons.length} / ${catalog.length} icons · '
+              Text('${icons.length} / ${catalog.length} · '
                   'build ${AppBuildInfo.gitCommit}',
                   key: const ValueKey('icon-picker-build-and-count'),
                   style: Theme.of(context).textTheme.bodySmall),
