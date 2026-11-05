@@ -88,18 +88,73 @@ class _LifeOsNotesSettingsPageState extends State<LifeOsNotesSettingsPage> {
     super.dispose();
   }
 
+  String _completionLabel(String behavior, bool ru) => switch (behavior) {
+    'bottom' => ru ? 'Перемещать вниз' : 'Move to bottom',
+    'hide' => ru ? 'Скрывать' : 'Hide',
+    'archive' => ru ? 'В архив' : 'Archive',
+    _ => ru ? 'Оставлять на месте' : 'Keep in place',
+  };
+
+  void _showCompletionPicker(String current) {
+    final ru = currentLocale.value.toLowerCase().startsWith('ru');
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: settingsNeutralTheme(context).colorScheme.surfaceContainerLowest,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 0, 16),
+                child: Text(
+                  ru ? 'Завершённые пункты' : 'Completed items',
+                  style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700)),
+              ),
+              AppSettingsNavigationGroup(children: [
+                for (final behavior in const <String>['stay', 'bottom', 'hide', 'archive'])
+                  AppSettingsSelectionRow(
+                    title: _completionLabel(behavior, ru),
+                    selected: current == behavior,
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      unawaited(_setCompletion(behavior));
+                    },
+                  ),
+              ]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _heading(BuildContext context, String title) => Padding(
+    padding: const EdgeInsets.fromLTRB(12, 20, 0, 10),
+    child: Text(title, style: Theme.of(context).textTheme.labelMedium?.copyWith(
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.6,
+    )),
+  );
+
   @override
   Widget build(BuildContext context) {
-    final loc = currentLocale.value;
-    final ru = loc.toLowerCase().startsWith('ru');
+    final locale = currentLocale.value;
+    final ru = locale.toLowerCase().startsWith('ru');
     return Theme(
       data: settingsNeutralTheme(context),
       child: Builder(builder: (context) => Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
         appBar: AppBar(
-          title: Text(ru ? 'Заметки и списки' : 'Notes & lists'),
+          title: Text(ru ? 'Настройки' : 'Settings'),
           backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
           surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
         ),
         body: StreamBuilder<UserSettings>(
           stream: DatabaseService.instance.userSettingsStream,
@@ -107,99 +162,87 @@ class _LifeOsNotesSettingsPageState extends State<LifeOsNotesSettingsPage> {
           builder: (context, snapshot) {
             final settings = snapshot.data ?? DatabaseService.instance.settings;
             final completed = settings.listCompletionBehavior.trim().toLowerCase();
-            return AppSettingsPageBody(
-              children: [
-                AppSettingsSectionCard(
-                  title: ru ? 'Вид заметок' : 'Notes view',
-                  subtitle: ru
-                      ? 'Один и тот же выбор применяется в библиотеке заметок.'
-                      : 'The same choice is used in the Notes library.',
-                  child: SegmentedButton<String>(
-                    selected: {NotesLibraryPreferences.mode.value},
-                    onSelectionChanged: _saving ? null :
-                        (next) => unawaited(_setView(next.first)),
-                    segments: [
-                      ButtonSegment<String>(
-                        value: 'grid',
-                        icon: Icon(AppMenuIcons.icon(AppMenuIconRole.categories)),
-                        label: Text(ru ? 'Сетка' : 'Grid'),
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 780),
+                child: AppSettingsPageBody(children: [
+                  Text(
+                    ru ? 'Заметки и списки' : 'Notes & lists',
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.w800, fontSize: 31)),
+                  const SizedBox(height: 7),
+                  Text(
+                    ru
+                      ? 'Отображение заметок, списков, тегов и категорий.'
+                      : 'Display options for notes, lists, tags and categories.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                  _heading(context, ru ? 'ВИД ЗАМЕТОК' : 'NOTES VIEW'),
+                  AppSettingsNavigationGroup(children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 14),
+                      child: SegmentedButton<String>(
+                        selected: {NotesLibraryPreferences.mode.value},
+                        onSelectionChanged: _saving ? null :
+                            (next) => unawaited(_setView(next.first)),
+                        segments: [
+                          ButtonSegment<String>(
+                            value: 'grid',
+                            icon: Icon(AppMenuIcons.icon(AppMenuIconRole.categories)),
+                            label: Text(ru ? 'Сетка' : 'Grid'),
+                          ),
+                          ButtonSegment<String>(
+                            value: 'list',
+                            icon: Icon(AppMenuIcons.icon(AppMenuIconRole.list)),
+                            label: Text(ru ? 'Список' : 'List'),
+                          ),
+                        ],
                       ),
-                      ButtonSegment<String>(
-                        value: 'list',
-                        icon: Icon(AppMenuIcons.icon(AppMenuIconRole.list)),
-                        label: Text(ru ? 'Список' : 'List'),
-                      ),
-                    ],
-                  ),
-                ),
-                AppSettingsSectionCard(
-                  title: ru ? 'Завершённые пункты' : 'Completed items',
-                  child: AppSettingsNavigationGroup(
-                    children: [
-                      for (final choice in <(String, String, String)>[
-                        ('stay', 'Оставлять на месте', 'Keep in place'),
-                        ('bottom', 'Переносить вниз', 'Move to bottom'),
-                        ('hide', 'Скрывать', 'Hide'),
-                        ('archive', 'В архив', 'Archive'),
-                      ])
-                        AppSettingsSelectionRow(
-                          title: ru ? choice.$2 : choice.$3,
-                          selected: completed == choice.$1,
-                          onTap: _saving ? null :
-                              () => unawaited(_setCompletion(choice.$1)),
-                        ),
-                    ],
-                  ),
-                ),
-                AppSettingsSectionCard(
-                  title: ru ? 'Теги на карточках' : 'Tags on cards',
-                  child: SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(ru ? 'Показывать теги' : 'Show tags'),
-                    value: settings.showListTagsOnCards,
-                    onChanged: _saving ? null :
-                        (v) => unawaited(_setCardTags(v)),
-                  ),
-                ),
-                AppSettingsNavigationGroup(
-                  children: [
+                    ),
+                    AppSettingsControlRow(
+                      title: ru ? 'Показывать теги на карточках' : 'Show tags on cards',
+                      leading: AppSettingsMenuIcon(
+                        icon: AppMenuIcons.icon(AppMenuIconRole.tags)),
+                      value: settings.showListTagsOnCards,
+                      onChanged: _saving ? null :
+                          (v) => unawaited(_setCardTags(v)),
+                    ),
+                  ]),
+                  _heading(context, ru ? 'СПИСКИ' : 'LISTS'),
+                  AppSettingsNavigationGroup(children: [
+                    AppSettingsNavigationRow(
+                      title: ru ? 'Завершённые пункты' : 'Completed items',
+                      subtitle: ru ? 'Что делать с выполненными' : 'What to do with completed items',
+                      value: _completionLabel(completed, ru),
+                      leading: AppSettingsMenuIcon(
+                        icon: AppMenuIcons.icon(AppMenuIconRole.list)),
+                      onTap: _saving ? null : () => _showCompletionPicker(completed),
+                    ),
+                  ]),
+                  _heading(context, ru ? 'КАТЕГОРИИ В ЗАМЕТКАХ' : 'NOTES CATEGORIES'),
+                  AppSettingsNavigationGroup(children: [
                     AppSettingsNavigationRow(
                       title: ru ? 'Панель категорий' : 'Category bar',
                       subtitle: ru
-                          ? 'Закреплённые категории, фильтры, папки'
-                          : 'Pinned categories, filters and folders',
+                        ? 'Закреплённые категории и фильтры'
+                        : 'Pinned categories and filters',
                       leading: AppSettingsMenuIcon(
                         icon: AppMenuIcons.icon(AppMenuIconRole.folder)),
                       onTap: widget.onOpenCategoryBar,
                     ),
-                  ],
-                ),
-                if (_error != null)
-                  Text(_error!, style: TextStyle(
-                    color: Theme.of(context).colorScheme.error)),
-              ],
+                  ]),
+                  if (_saving) const LinearProgressIndicator(minHeight: 2),
+                  if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Text(_error!, style: TextStyle(
+                        color: Theme.of(context).colorScheme.error))),
+                ]),
+              ),
             );
           },
         ),
       )),
     );
   }
-}
-
-/// Opens the canonical settings page without duplicating Notes preferences.
-/// Callers keep their contextual category-bar editor as a separate shortcut.
-void openLifeOsNotesSettings(
-  BuildContext context, {
-  required VoidCallback onOpenCategoryBar,
-}) {
-  Navigator.of(context).push<void>(
-    MaterialPageRoute<void>(
-      builder: (settingsContext) => LifeOsNotesSettingsPage(
-        onOpenCategoryBar: () {
-          Navigator.of(settingsContext).pop();
-          onOpenCategoryBar();
-        },
-      ),
-    ),
-  );
 }
