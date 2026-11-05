@@ -88,13 +88,17 @@ const Map<String, String> kPreviousIconAliases = {
   'weather_sunny': 'sun',
 };
 
-/// Initial quick collection stays small. Users can customize it in Appearance.
-const List<String> kDefaultCategoryIconKeys = [
+/// All vetted icon pairs are available by default. Frequently-used icons
+/// appear first; the remaining semantic matches follow alphabetically.
+/// A saved custom quick collection is still respected and ordered first.
+final List<String> kDefaultCategoryIconKeys =
+    List<String>.unmodifiable(<String>{
   'home', 'heart', 'briefcase', 'calendar', 'folder', 'clock', 'star',
   'book', 'cart', 'cake', 'moon', 'bell', 'lock', 'camera', 'wallet',
   'gift', 'phone', 'document', 'cloud', 'tag', 'trophy', 'map',
   'key', 'light_bulb', 'pencil', 'musical_note',
-];
+  ...(kMatchedCategoryIcons.keys.toList()..sort()),
+});
 
 List<CategoryIconChoice> _buildSharedCatalog() {
   final metadata = {for (final item in kCategoryIconCatalog) item.key: item};
@@ -178,7 +182,17 @@ class CategoryIconStore extends ChangeNotifier {
       a.length == b.length &&
       List.generate(a.length, (i) => a[i] == b[i]).every((same) => same);
 
-  Future<void> ensureLoaded() => _loadFuture ??= _load();
+  /// A transient browser/device storage error must not poison every later
+  /// save attempt with the same cached failed Future.
+  Future<void> ensureLoaded() {
+    if (_loadFuture != null) return _loadFuture!;
+    final pending = _load().catchError((Object error, StackTrace stack) {
+      _loadFuture = null;
+      Error.throwWithStackTrace(error, stack);
+    });
+    _loadFuture = pending;
+    return pending;
+  }
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getString(_packKey) == 'heroicons') _pack = CategoryIconPack.heroicons;
