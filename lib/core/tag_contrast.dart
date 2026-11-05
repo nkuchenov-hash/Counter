@@ -4,8 +4,8 @@ import 'package:counter/core/life_color_compat.dart' show canonicalLifeColorValu
 /// Approved sunny-yellow tag identity. These values come from the yellow
 /// preview controls; they are shared by every tag display mode and screen.
 const Color kTagYellowGold = Color(0xFFFFD000);
-const Color kTagYellowText = Color(0xFFE1B400);
-const double kTagYellowPlateOpacity = 0.13;
+const Color kTagYellowText = Color(0xFFB18900);
+const double kTagYellowPlateOpacity = 0.16;
 const double kTagYellowBorderOpacity = 0.74;
 
 /// Approved warm-pink tag style: independent from neighboring red/purple.
@@ -38,7 +38,7 @@ bool tagColorIsYellowFamily(Color tagColor) {
   return h >= 45.0 && h < 60.0;
 }
 
-/// Timeline breadcrumb stadium: 22% accent; yellow uses approved 13% tint.
+/// Timeline breadcrumb stadium: 22% accent; yellow uses approved 16% tint.
 Color tagCategoryBreadcrumbPlate(Color accentColor, Color surface) {
   if (tagColorIsYellowFamily(accentColor)) {
     return Color.alphaBlend(
@@ -52,7 +52,7 @@ Color tagCategoryBreadcrumbPlate(Color accentColor, Color surface) {
   );
 }
 
-/// Tag manager avatar: black solid; yellow 13%, pink 16%, orange 22%.
+/// Tag manager avatar: black solid; yellow 16%, pink 16%, orange 22%.
 Color tagManagerAvatarPlate(Color tagColor, Color surface) {
   if (tagColorIsBlack(tagColor)) return Colors.black;
   if (tagColorIsYellowFamily(tagColor)) {
@@ -162,7 +162,7 @@ Color tagIconOnFilledTagColor(Color tagFill, {bool syntheticNoTags = false}) {
   return tagFill;
 }
 
-/// Letter chip plate: black solid, yellow 13%, pink 16%, orange 22%.
+/// Letter chip plate: black solid, yellow 16%, pink 16%, orange 22%.
 Color tagLetterChipPlate(Color tagColor, Color surface) {
   if (tagColorIsBlack(tagColor)) return Colors.black;
   if (tagColorIsYellowFamily(tagColor)) {
@@ -205,7 +205,7 @@ Color tagLetterChipBorder(Color tagColor, Color surface) {
   return Color.alphaBlend(tagColor.withValues(alpha: 0.55), surface);
 }
 
-/// Empty chip stadium fill: black solid; yellow 13%; pink 16%; orange 22%; others 26%.
+/// Empty chip stadium fill: black solid; yellow 16%; pink 16%; orange 22%; others 26%.
 Color tagEmptyChipFill(Color tagColor, Color surface) {
   if (tagColorIsBlack(tagColor)) return Colors.black;
   if (tagColorIsYellowFamily(tagColor)) {
