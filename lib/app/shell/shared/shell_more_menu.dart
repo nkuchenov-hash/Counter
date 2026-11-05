@@ -57,8 +57,10 @@ mixin ShellMoreMenu on ShellCoreLogic {
                   children: [
                 AppMenuActionTile(
                   leading: const Icon(Icons.auto_awesome_rounded),
-                  title: const Text('Виктор · ИИ'),
-                  subtitle: const Text('Общение, планы и голосовые команды'),
+                  title: Text(isRu ? 'Виктор · ИИ' : 'Viktor · AI'),
+                  subtitle: Text(isRu
+                      ? 'Общение, планы и голосовые команды'
+                      : 'Chat, planning and voice commands'),
                   onTap: () {
                     Navigator.of(ctx).pop();
                     unawaited(openViktor());
