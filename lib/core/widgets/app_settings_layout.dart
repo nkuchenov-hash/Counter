@@ -251,10 +251,11 @@ class AppSettingsPageBody extends StatelessWidget {
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
+          // Settings and Menu use the same readable content column.
+          // A desktop sidebar must not make settings forms expand across
+          // the entire remaining viewport.
           constraints: BoxConstraints(
-            maxWidth: desktop
-                ? double.infinity
-                : settingsContentMaxWidth(context),
+            maxWidth: settingsContentMaxWidth(context),
           ),
           child: ListView(
             padding: EdgeInsets.fromLTRB(
