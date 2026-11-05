@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `0ab75c7a` on 2026-11-05.**
+**Generated from input HEAD `b22aca58` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -12661,7 +12661,7 @@ EN:
 - **What this is:** Shared design-system widget — `AppSettingsPageBody`, `AppSettingsSectionCard`, settings row helpers.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (`AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`).
-- **Key code names:** `AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`, `AppSettingsSwitchRow`, `AppSettingsInfoRow`, `AppSettingsActionRow`, `AppSettingsCardGrid`
+- **Key code names:** `AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`, `AppSettingsSwitchRow`, `AppSettingsInfoRow`, `AppSettingsActionRow`
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -22137,8 +22137,8 @@ EN:
 - **Human purpose:** `life_os_menu_page.dart` on More → Profile and settings — life os menu page. Users see `life_os_menu_page.dart` when using More → Profile and settings.
 - **What this is:** `life_os_menu_page.dart` on More → Profile and settings — life os menu page.
 - **Why needed:** Users see `life_os_menu_page.dart` when using More → Profile and settings.
-- **Contents:** Primary symbols: `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`.
-- **Key code names:** `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`
+- **Contents:** Primary symbols: `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`, `_LifeOsMenuPageState`.
+- **Key code names:** `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`, `_LifeOsMenuPageState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
