@@ -367,7 +367,21 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
     return AppSettingsNavigationRow(
       title: entry.title(_ru),
       leading: AppSettingsMenuIcon(icon: AppMenuIcons.icon(entry.icon)),
-      onTap: () => _openSection(entry.id),
+      onTap: () {
+        if (entry.id == 'planning') {
+          widget.onAction(LifeOsMenuAction.planningSettings);
+        } else if (entry.id == 'notes') {
+          widget.onAction(LifeOsMenuAction.notesSettings);
+        } else if (entry.id == 'appearance') {
+          widget.onAction(LifeOsMenuAction.appearance);
+        } else if (entry.id == 'notifications') {
+          widget.onAction(LifeOsMenuAction.notifications);
+        } else if (entry.id == 'health') {
+          widget.onAction(LifeOsMenuAction.sleep);
+        } else {
+          _openSection(entry.id);
+        }
+      },
     );
   }
 

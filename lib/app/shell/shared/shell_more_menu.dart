@@ -157,10 +157,10 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
         _openProfileDestination(ProfileSettingsDestination.voice);
         break;
       case LifeOsMenuAction.appearance:
-        _openProfileDestination(ProfileSettingsDestination.appearance);
+        _openProfileDestination(ProfileSettingsDestination.appearanceRegion);
         break;
       case LifeOsMenuAction.languageAndTime:
-        _openProfileDestination(ProfileSettingsDestination.timeLocale);
+        _openProfileDestination(ProfileSettingsDestination.appearanceRegion);
         break;
       case LifeOsMenuAction.account:
         _openProfileDestination(ProfileSettingsDestination.account);

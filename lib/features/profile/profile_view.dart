@@ -57,6 +57,7 @@ enum ProfileSettingsDestination {
   calendars,
   timeLocale,
   appearance,
+  appearanceRegion,
   notifications,
   morning,
   viktor,
@@ -289,7 +290,7 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     }
 
-    if (useDesktopLayout) {
+    if (useDesktopLayout && widget.initialDestination == null) {
       return Theme(
         data: settingsNeutralTheme(context),
         child: Scaffold(
@@ -451,6 +452,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ProfileSettingsDestination.calendars => t(locale, 'calendar_integrations_title'),
       ProfileSettingsDestination.timeLocale => t(locale, 'profile_time_locale_section'),
       ProfileSettingsDestination.appearance => t(locale, 'appearance'),
+      ProfileSettingsDestination.appearanceRegion => locale.startsWith('ru') ? 'Оформление и язык' : 'Appearance & region',
       ProfileSettingsDestination.notifications => t(locale, 'profile_notifications_section'),
       ProfileSettingsDestination.morning => t(locale, 'morning_prompt_section'),
       ProfileSettingsDestination.viktor => locale.startsWith('ru') ? 'Виктор · ИИ' : 'Viktor · AI',
@@ -514,6 +516,31 @@ class _ProfilePageState extends State<ProfilePage> {
     ProfileSettingsDestination section,
   ) {
     final title = _mobileSectionTitle(locale, section);
+    // The approved Appearance screen combines theme previews and locale options.
+    // Render it as two independent white groups, not one legacy preference tab.
+    if (section == ProfileSettingsDestination.appearanceRegion) {
+      return AppSettingsPageBody(
+        children: [
+          Text(
+            locale.startsWith('ru')
+                ? 'Цветовая тема, язык и локальное время.'
+                : 'Color theme, language and local time.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 20),
+          AppSettingsSectionCard(
+            title: locale.startsWith('ru') ? 'ЦВЕТОВАЯ ТЕМА' : 'COLOR THEME',
+            child: _buildAppearanceFields(context, locale),
+          ),
+          AppSettingsSectionCard(
+            title: locale.startsWith('ru') ? 'ЯЗЫК И ВРЕМЯ' : 'LANGUAGE & TIME',
+            child: _buildTimeLocaleFields(context, locale, safeTimeZone),
+          ),
+        ],
+      );
+    }
     final content = switch (section) {
       ProfileSettingsDestination.account => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -538,6 +565,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ProfileSettingsDestination.timeLocale =>
           _buildTimeLocaleFields(context, locale, safeTimeZone),
       ProfileSettingsDestination.appearance => _buildAppearanceFields(context, locale),
+      ProfileSettingsDestination.appearanceRegion => _buildAppearanceFields(context, locale),
       ProfileSettingsDestination.notifications =>
           ProfileNotificationsSection(embedded: true),
       ProfileSettingsDestination.morning => const MorningStartSettingsSection(),
