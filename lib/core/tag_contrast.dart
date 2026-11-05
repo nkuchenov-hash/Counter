@@ -4,7 +4,7 @@ import 'package:counter/core/life_color_compat.dart' show canonicalLifeColorValu
 
 /// Approved sunny-yellow tag identity. These values come from the yellow
 /// preview controls; they are shared by every tag display mode and screen.
-const Color kTagYellowGold = kNordicFood;
+final Color kTagYellowGold = kNordicFood[500]!;
 const Color kTagYellowText = AppColors.yellowTagText;
 const double kTagYellowPlateOpacity = 0.16;
 const double kTagYellowBorderOpacity = 0.74;
