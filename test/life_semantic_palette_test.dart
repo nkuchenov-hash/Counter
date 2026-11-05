@@ -1,6 +1,8 @@
 import 'package:counter/features/notes/drawing_canvas_page.dart';
 import 'package:counter/features/notes/notes_visual_tokens.dart';
 import 'package:counter/core/app_colors.dart';
+import 'package:counter/core/widgets/chip_component.dart';
+import 'package:counter/core/widgets/plan_time_task_card/plan_card_geometry.dart';
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/theme.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
@@ -91,6 +93,56 @@ void main() {
           AppColors.appBackground.computeLuminance(),
       greaterThan(0.075),
     );
+  });
+
+  testWidgets('timeline breadcrumb and planning tag render identical color tokens',
+      (tester) async {
+    final yellow = kNordicFood[500]!;
+    for (final theme in <ThemeData>[appLightTheme, appDarkTheme]) {
+      await tester.pumpWidget(MaterialApp(
+        theme: theme,
+        home: Scaffold(
+          body: Column(children: [
+            CategoryBreadcrumb(
+              breadcrumbPath: 'Personal time > Vibecoding',
+              accentColor: yellow,
+            ),
+            CategoryChip(
+              mode: CategoryDisplayMode.letterChip,
+              label: 'communication',
+              color: yellow,
+              icon: Icons.label,
+            ),
+          ]),
+        ),
+      ));
+
+      final breadcrumb = tester.widgetList<Container>(
+        find.descendant(
+          of: find.byType(CategoryBreadcrumb),
+          matching: find.byType(Container),
+        ),
+      ).first;
+      final planTag = tester.widgetList<Container>(
+        find.descendant(
+          of: find.byType(CategoryChip),
+          matching: find.byType(Container),
+        ),
+      ).first;
+      final breadcrumbDecoration = breadcrumb.decoration! as BoxDecoration;
+      final tagDecoration = planTag.decoration! as BoxDecoration;
+      final surface = theme.colorScheme.surfaceContainerHighest;
+      expect(breadcrumbDecoration.color, tagLetterChipPlate(yellow, surface));
+      expect(breadcrumbDecoration.color, tagDecoration.color);
+      expect(breadcrumbDecoration.border, tagDecoration.border);
+    }
+  });
+
+  test('plan card surfaces derive from the common neutral token system', () {
+    expect(PlanCardTokens.surface, AppColors.cardSurface);
+    expect(PlanCardTokens.titleColor, AppNeutralTones.gray900);
+    expect(PlanCardTokens.menuBg, AppNeutralTones.gray200);
+    expect(PlanCardTokens.dividerColor, AppNeutralTones.gray200);
   });
 
   test('timeline category breadcrumbs share every chip color recipe', () {
