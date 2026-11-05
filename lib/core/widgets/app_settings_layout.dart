@@ -22,24 +22,24 @@ ThemeData settingsNeutralTheme(BuildContext context) {
     primary: base.colorScheme.onSurface,
     onPrimary: dark ? AppColors.darkAppBackground : Colors.white,
     // Use the existing near-white app canvas instead of flat #F2F2F2 gray.
-    surface: dark ? const Color(0xFF161616) : AppColors.appBackground,
+    surface: dark ? AppNeutralTones.gray900 : AppColors.appBackground,
     surfaceContainerLowest: dark
-        ? const Color(0xFF161616)
+        ? AppNeutralTones.gray900
         : AppColors.appBackground,
     surfaceContainerLow: dark
-        ? const Color(0xFF222222)
+        ? AppNeutralTones.gray800
         : AppColors.appBackground,
     surfaceContainer: dark
-        ? const Color(0xFF303030)
+        ? AppNeutralTones.gray700
         : AppColors.surfaceMuted,
     surfaceContainerHigh: dark
-        ? const Color(0xFF252525)
+        ? AppNeutralTones.gray800
         : AppColors.cardSurface,
     surfaceContainerHighest: dark
-        ? const Color(0xFF303030)
+        ? AppNeutralTones.gray700
         : AppColors.cardSurface,
     outlineVariant: dark ? base.colorScheme.outlineVariant : AppColors.borderMuted,
-    onSurfaceVariant: dark ? base.colorScheme.onSurfaceVariant : const Color(0xFF687586),
+    onSurfaceVariant: base.colorScheme.onSurfaceVariant,
   );
   return base.copyWith(
     colorScheme: scheme,
@@ -509,7 +509,7 @@ class AppSettingsNavigationRow extends StatelessWidget {
               height: 1.3,
               color: scheme.brightness == Brightness.dark
                   ? scheme.onSurfaceVariant
-                  : const Color(0xFF687586),
+                  : scheme.onSurfaceVariant,
             ),
           ),
           trailing: Row(
@@ -536,7 +536,7 @@ class AppSettingsNavigationRow extends StatelessWidget {
           enabled: onTap != null,
           hoverColor: scheme.brightness == Brightness.dark
               ? scheme.onSurface.withValues(alpha: 0.065)
-              : const Color(0xFFF3F6FA),
+              : scheme.surfaceContainerLow,
           splashColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -592,7 +592,7 @@ class AppSettingsControlRow extends StatelessWidget {
           fontWeight: FontWeight.w400,
           color: theme.brightness == Brightness.dark
               ? theme.colorScheme.onSurfaceVariant
-              : const Color(0xFF687586),
+              : scheme.onSurfaceVariant,
         ),
       ),
       value: value,
