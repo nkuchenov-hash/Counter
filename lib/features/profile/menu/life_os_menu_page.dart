@@ -602,46 +602,6 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
     );
   }
 
-  Widget _sideRail(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: 226,
-      color: scheme.surfaceContainerHigh,
-      child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(13, 4, 0, 24),
-            child: Text('LIFE OS',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800)),
-          ),
-          ListTile(
-            leading: Icon(AppMenuIcons.icon(AppMenuIconRole.search)),
-            title: Text(_ru ? 'Все настройки' : 'All settings'),
-            selected: _activeSection == null,
-            selectedTileColor: scheme.surfaceContainerLow,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            onTap: _back,
-          ),
-          for (final group in _homeGroups) ...[
-            _heading(context, _ru ? group.ru : group.en),
-            for (final id in group.ids)
-              ListTile(
-                dense: true,
-                leading: Icon(AppMenuIcons.icon(_section(id).icon), size: 21),
-                title: Text(_section(id).title(_ru)),
-                selected: _activeSection == id,
-                selectedTileColor: scheme.surfaceContainerLow,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                onTap: () => _openSection(id),
-              ),
-          ],
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Theme(
