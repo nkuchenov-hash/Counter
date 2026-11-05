@@ -49,6 +49,42 @@ void main() {
     ]));
   });
 
+  test('picker swatches follow rainbow order without changing root defaults', () {
+    const ordered = <MaterialColor>[
+      kNordicEntertainment, // red
+      kNordicErrands,       // orange
+      kNordicFood,          // yellow
+      kNordicMovement,      // green
+      kNordicHealth,        // teal
+      kNordicTransport,     // sky
+      kNordicWork,          // blue
+      kNordicStudy,         // purple
+      kNordicPeople,        // pink
+      kCategoryNeutral,     // gray
+      kCategoryBlack,       // black
+    ];
+    expect(kCategoryPickerMaterialColors, ordered);
+    expect(kLifeTagColorPresets, <String>[
+      '#EF3B3B', '#F26900', '#FFD000', '#48A130', '#008F87',
+      '#47BCE9', '#286BE3', '#725EB5', '#FF79AA', '#9A9A9A',
+      '#000000',
+    ]);
+
+    // A change in the swatch layout must not change automatically assigned
+    // colors for new root categories (or recolor existing categories).
+    const previousDefaultRootSequence = <MaterialColor>[
+      kNordicWork, kNordicErrands, kNordicFood,
+      kNordicMovement, kNordicHealth, kNordicTransport,
+      kNordicStudy, kNordicEntertainment, kNordicPeople,
+    ];
+    for (var i = 0; i < previousDefaultRootSequence.length * 2; i++) {
+      final family = previousDefaultRootSequence[i % previousDefaultRootSequence.length];
+      expect(categoryNordicRootColorValue(i), family[600]!.toARGB32());
+    }
+    expect(categoryNordicChildColorValue(kNordicPeople[600]!.toARGB32(), 0),
+        kNordicPeople[500]!.toARGB32());
+  });
+
   test('pink and red are visually separated without replacing purple or black', () {
     expect(_hueGap(kNordicEntertainment[500]!, kNordicPeople[500]!),
         greaterThan(18));
