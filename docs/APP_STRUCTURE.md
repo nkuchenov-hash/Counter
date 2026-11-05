@@ -605,7 +605,7 @@ People is an on-demand Settings feature. External address books stay in a hidden
 | `windows/`, `linux/`, `macos/` | Desktop embedders | Flutter platform runners |
 | `test/` | Unit/widget tests | `flutter test`; perf and domain tests |
 | `integration_test/` | Device integration tests | Emulator/device only |
-| `scripts/` | Tooling | `audit/architecture_guard.ps1`, `sync_locales.dart`, `manual/td.ps1` (deploy), structure scan/generator, desktop voice smoke scripts |
+| `scripts/` | Tooling | `audit/architecture_guard.ps1`, `audit/semantic_color_tokens.py` (chromatic token audit), `sync_locales.dart`, `manual/td.ps1` (deploy), structure scan/generator, desktop voice smoke scripts |
 | `installer/windows/` | Windows packaging | `counter.iss` (Inno Setup) → CI produces `CounterSetup.exe` |
 | `docs/` | Governing documents | See `docs/PROJECT_KNOWLEDGE_PACK.md` (14-doc upload list) |
 | `pb_migrations/` | PocketBase schema/data migrations | Versioned server migrations; applied before client release |
