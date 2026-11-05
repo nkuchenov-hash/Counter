@@ -6,6 +6,8 @@ on:
     branches: [main]
     paths:
       - 'lib/**'
+      - 'test/life_semantic_palette_test.dart'
+      - 'test/life_semantic_palette_test.dart'
       - 'test/live_sync_contract_test.dart'
       - 'test/planning_snapshot_cache_test.dart'
       - 'test/plan_time_timezone_projection_test.dart'
@@ -129,7 +131,7 @@ jobs:
         with:
           tag: life-os-windows-${{ github.run_number }}-${{ github.sha }}
           name: LIFE OS Windows — build ${{ github.run_number }}
-          body: Windows installer built from the current shared LIFE OS runtime. Realtime reconnects reconcile authoritative PocketBase state so cross-device changes cannot remain stale after an SSE/network gap.
+          body: Windows installer — LIFE OS 1.1.0. Unified grouped settings menus, light/dark theme previews, and responsive menu surfaces.
           artifacts: installer/windows/output/CounterSetup.exe
           immutableCreate: true
           allowUpdates: false

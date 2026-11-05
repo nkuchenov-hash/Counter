@@ -6,6 +6,8 @@ on:
     branches: [main]
     paths:
       - 'lib/**'
+      - 'test/life_semantic_palette_test.dart'
+      - 'test/life_semantic_palette_test.dart'
       - 'test/viktor_multiday_agent_test.dart'
       - 'test/viktor_priority_insertion_test.dart'
       - 'test/viktor_plan_category_test.dart'
@@ -229,7 +231,7 @@ jobs:
         with:
           tag: life-os-android-${{ github.run_number }}-${{ github.sha }}
           name: LIFE OS Android — build ${{ github.run_number }}
-          body: Android ARM64 release built from the current shared LIFE OS runtime. Realtime reconnects reconcile authoritative PocketBase state so cross-device changes cannot remain stale after an SSE/network gap.
+          body: Android ARM64 release — LIFE OS 1.1.0. Unified grouped settings menus, light/dark theme previews, and responsive menu surfaces.
           artifacts: LIFE-OS-Android-arm64.apk
           immutableCreate: true
           makeLatest: true
