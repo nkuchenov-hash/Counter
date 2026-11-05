@@ -494,7 +494,14 @@ class AppSettingsNavigationRow extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
+          // The first/last item owns its outer padding so the hover remains
+          // full-bleed through the rounded corners, not below a dead margin.
+          contentPadding: EdgeInsets.fromLTRB(
+            24,
+            _AppSettingsRowPosition.maybeOf(context)?.first == true ? 18 : 2,
+            24,
+            _AppSettingsRowPosition.maybeOf(context)?.last == true ? 18 : 2,
+          ),
           minVerticalPadding: 8,
           leading: leading,
           title: Text(title, style: theme.textTheme.bodyLarge?.copyWith(
@@ -642,10 +649,28 @@ class AppMenuActionTile extends StatelessWidget {
 }
 
 
-/// A single grouped surface for short settings destinations. Dividers are
-/// inset to the text column, not drawn through the leading icons.
-/// White group has no outline or group-level hover. Each item independently
-/// occupies the full card width, with its ink clipped by the outer corners.
+/// Supplies edge-aware vertical insets without stealing the full-width
+/// hover hit target from the first and last menu items.
+class _AppSettingsRowPosition extends InheritedWidget {
+  const _AppSettingsRowPosition({
+    required this.first,
+    required this.last,
+    required super.child,
+  });
+
+  final bool first;
+  final bool last;
+
+  static _AppSettingsRowPosition? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_AppSettingsRowPosition>();
+
+  @override
+  bool updateShouldNotify(_AppSettingsRowPosition oldWidget) =>
+      first != oldWidget.first || last != oldWidget.last;
+}
+
+/// A white grouped surface without borders or group-wide hover. Each menu
+/// item owns its entire hoverable row, including outer top/bottom whitespace.
 class AppSettingsNavigationGroup extends StatelessWidget {
   const AppSettingsNavigationGroup({
     super.key,
@@ -667,7 +692,11 @@ class AppSettingsNavigationGroup extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             for (var index = 0; index < children.length; index++) ...[
-              children[index],
+              _AppSettingsRowPosition(
+                first: index == 0,
+                last: index == children.length - 1,
+                child: children[index],
+              ),
               if (index != children.length - 1)
                 Padding(
                   padding: const EdgeInsets.only(left: 78, right: 20),
