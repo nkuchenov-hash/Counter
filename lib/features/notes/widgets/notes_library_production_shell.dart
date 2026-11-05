@@ -919,7 +919,7 @@ class _ViewSwitch extends StatelessWidget {
             ? null
             : [
                 BoxShadow(
-                  color: const Color(0xFF415269).withValues(alpha: 0.045),
+                  color: scheme.shadow.withValues(alpha: 0.045),
                   blurRadius: 14,
                   offset: const Offset(0, 4),
                 ),
