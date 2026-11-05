@@ -1,10 +1,9 @@
-## Consistent Profile and menu chrome (2026-11-05)
+## Consistent Profile and menu chrome (corrected 2026-11-05)
 
-- The desktop header contains LIFE OS branding; the neutral gray sidebar persists across People, Menu, Profile, and all settings leaves.
-- Profile is the account section of the **same** `LifeOsMenuPage` settings index, not a legacy tabbed Profile screen. Selecting a specific setting changes only shell content, and Back returns to Profile or Menu as appropriate.
-- Typeface remains **Onest**: refine weight, ink color, spacing, card contrast, and hover without replacing the font family.
-- The **whole white settings group card**, not an individual inset row, responds to pointer hover with a neutral fill and border transition. The card spans its content width; separators are 1.2 px neutral gray and remain visible. Individual rows stay separately tappable without per-row hover rectangles. Captions use clean light-gray Onest and regular-weight body text.
-- In light mode, the clearly non-blue #E5E5E5 canvas must separate from white group cards. The #DDDDDD desktop sidebar stays distinct and permanently shows the LIFE OS mark at its top; the global desktop header also retains branding.
+- Use one LIFE OS brand mark in the persistent top desktop header. The primary sidebar remains a light neutral `#ECECEC` with no duplicated logo.
+- Settings canvas is light gray `#F2F2F2`, card groups are white and **borderless**. Between rows use light `#E7E7E7` separators 0.8 px. Hover applies to **exactly one full-width row**, not the full group; first and last row own their outer vertical padding to keep the hover continuous and icon-to-edge distances balanced with their horizontal 24 px padding.
+- Keep Onest and refine weights/colors only. Do not alter app-wide typography or unrelated category/timeline/list color semantics.
+- Profile is the account section of the canonical menu and leaf settings remain embedded in the desktop shell.
 
 ## Persistent desktop navigation across People and Menu (2026-11-05)
 
