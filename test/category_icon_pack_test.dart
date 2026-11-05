@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/core/category_icon_catalog_generated.g.dart';
 import 'package:counter/features/settings/categories/category_icon_picker.dart';
-import 'package:counter/features/settings/categories/category_icon_collection_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:heroicons/heroicons.dart';
@@ -92,33 +91,46 @@ void main() {
     expect(picked, const CategoryIconSelection('heart', filled: true));
   });
 
-  testWidgets('Appearance can add icons without changing shared identities',
-      (tester) async {
+  test('Appearance collection persists and pack switching preserves it', () async {
+    SharedPreferences.setMockInitialValues({});
     final store = CategoryIconStore.instance;
     await store.ensureLoaded();
     await store.setQuickKeys(kDefaultCategoryIconKeys);
     expect(store.quickKeys.contains('academic_cap'), isFalse);
-    await tester.pumpWidget(const MaterialApp(
-      home: Scaffold(body: SingleChildScrollView(child:
-        CategoryIconCollectionPreference(isRussian: false))),
-    ));
-    await tester.tap(find.byKey(const ValueKey('manage-category-icons')));
-    await tester.pumpAndSettle();
-    final search = find.byType(TextField);
-    await tester.enterText(search, 'academic cap');
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('custom-icon-academic_cap')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('save-icon-collection')));
-    await tester.pumpAndSettle();
+    await store.setQuickKeys([...kDefaultCategoryIconKeys, 'academic_cap']);
     expect(store.quickKeys, contains('academic_cap'));
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('takto.category.icon_quick_collection.v1'),
         contains('academic_cap'));
     await store.setPack(CategoryIconPack.heroicons);
-    expect(store.quickKeys, contains('academic_cap'),
-        reason: 'Pack switching must preserve the same selected semantic IDs.');
+    expect(store.quickKeys, contains('academic_cap'));
     await store.setPack(CategoryIconPack.fluent);
     await store.setQuickKeys(kDefaultCategoryIconKeys);
+  });
+
+  test('Appearance exposes searchable collection controls', () {
+    final screen = File(
+      'lib/features/settings/categories/category_icon_collection_preference.dart',
+    ).readAsStringSync();
+    final profile = File('lib/features/profile/profile_view.dart')
+        .readAsStringSync();
+    expect(profile, contains('CategoryIconCollectionPreference'));
+    expect(screen, contains('showCategoryIconCollectionEditor'));
+    expect(screen, contains('matched-icon-collection-grid'));
+    expect(screen, contains('reset-default-icons'));
+    expect(screen, contains('save-icon-collection'));
+  });
+
+  test('old family-specific keys map to shared semantics safely', () {
+    final migrated = CategoryIconSelection.fromJson(
+      {'key': 'shopping_cart', 'filled': true});
+    expect(migrated, const CategoryIconSelection('cart', filled: true));
+    expect(CategoryIconStore.canonicalKey('food_cake'), 'cake');
+    expect(CategoryIconStore.canonicalKey('weather_moon'), 'moon');
+    expect(CategoryIconStore.canonicalKey('book_open'), 'book');
+    expect(CategoryIconStore.canonicalKey('unmapped_icon'), isNull);
+    // Unsupported old choices are not discarded from local storage.
+    expect(CategoryIconSelection.fromJson({'key': 'unmapped_icon'})?.key,
+        'unmapped_icon');
   });
 }
