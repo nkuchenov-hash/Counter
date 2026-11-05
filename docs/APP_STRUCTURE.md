@@ -813,3 +813,7 @@ One-off Pass 3/Pass 2 extraction scripts (`scripts/pass3_*`, `scripts/extract_*`
 ## Unified menu icon ownership (2026-11-05)
 
 - `lib/core/widgets/app_menu_icons.dart` — canonical app menu icon roles mapped to the existing Flutter Material Symbols collection. All navigation and settings menu screens consume these roles. The final icon library can be selected separately without rewriting menu screens.
+
+## Unified menu navigation (2026-11-05)
+
+- `lib/features/profile/menu/life_os_menu_page.dart` — app-wide searchable, grouped settings navigation for compact and wide shells; all destinations delegate to feature-owned screens.
