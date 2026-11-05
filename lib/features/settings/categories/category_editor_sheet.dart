@@ -1,3 +1,4 @@
+import 'package:counter/core/life_color_compat.dart';
 import 'dart:async';
 
 import 'package:counter/core/category_color_palette.dart';
@@ -195,7 +196,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(c).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(c).colorScheme.error),
             child: Text(t(loc, 'delete')),
           ),
         ],
@@ -250,9 +251,9 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
   Color _chipBackgroundColor(String code, BuildContext context) {
     switch (code) {
       case 'en':
-        return Colors.blue.shade100;
+        return kNordicWork[100]!;
       case 'ru':
-        return Colors.red.shade100;
+        return kNordicEntertainment[100]!;
       default:
         return Theme.of(context).chipTheme.backgroundColor ??
             Colors.grey.shade300;
@@ -262,9 +263,9 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
   Color _chipTextColor(String code, BuildContext context) {
     switch (code) {
       case 'en':
-        return Colors.blue.shade900;
+        return kNordicWork[900]!;
       case 'ru':
-        return Colors.red.shade900;
+        return kNordicEntertainment[900]!;
       default:
         return Theme.of(context).chipTheme.labelStyle?.color ?? Colors.black87;
     }
