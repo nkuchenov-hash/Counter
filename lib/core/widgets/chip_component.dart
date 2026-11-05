@@ -489,7 +489,7 @@ class _TagQuickPickStripState extends State<TagQuickPickStrip> {
     required bool isSel,
     void Function(Tag tag)? onLongPress,
   }) {
-    final c = parseTagHexColor(tag.color) ?? fb;
+    final c = parseTagDisplayColor(tag.color, tagName: tag.name) ?? fb;
     final ic = iconForTagKey(tag.icon);
     final baseChip = CategoryChip(
       mode: mode,
