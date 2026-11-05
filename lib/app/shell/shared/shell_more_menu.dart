@@ -40,20 +40,10 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
   }
 
   void _openProfileDestination(ProfileSettingsDestination target) {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => ProfilePage(
-          initialDestination: target,
-          onSaved: () {
-            if (mounted) setState(() {});
-            unawaited(refreshDesktopTrayMenu());
-          },
-          onDesktopVoiceHotkeyChanged: (_) => reattachDesktopVoiceHotkey(),
-          onTestDesktopVoice: () => unawaited(openViktor()),
-          onOpenViktor: () => unawaited(openViktor()),
-        ),
-      ),
-    );
+    setState(() {
+      activeProfileDestination = target;
+      setShellPageIndex(5);
+    });
   }
 
   void _navigateToWorkspace(int tab) {
@@ -197,16 +187,9 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
   }
 
   void onDesktopSideNavSelected(int navIndex) {
-    // 0–3 workspace tabs, 6 Paths, 8 People, 7 Menu, 5 Account.
+    // 0–3 workspace, 6 Paths, 7 Menu; profile details stay in Menu.
     if (navIndex == 8) {
       onLifeOsMenuAction(LifeOsMenuAction.people);
-      return;
-    }
-    if (navIndex == 5) {
-      openMoreMenu();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _openProfileDestination(ProfileSettingsDestination.account);
-      });
       return;
     }
     if (navIndex == 6) {
@@ -228,7 +211,7 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
 
   int desktopSideNavSelectedIndex(int shellPageIndex) {
     return switch (shellPageIndex) {
-      0 || 1 || 2 || 3 || 4 || 5 || 6 => shellPageIndex,
+      0 || 1 || 2 || 3 || 4 || 6 => shellPageIndex,
       _ => 7,
     };
   }
