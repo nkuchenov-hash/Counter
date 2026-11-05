@@ -123,10 +123,11 @@ void main() {
   test(
     'realtime is push-first and plan events do not perform tag HTTP fetch',
     () {
-      final service = File('lib/data/plan_service.dart').readAsStringSync();
+      final service =
+          File('lib/data/plans/plan_stream_helpers.dart').readAsStringSync();
       final handlerStart = service.indexOf('void _onPbPlansSubscriptionEvent(');
       final handlerEnd = service.indexOf(
-        'Future<void> _cancelPlansRealtimeSubscription()',
+        'void beginNotesEditorSession()',
         handlerStart,
       );
       final handler = service.substring(handlerStart, handlerEnd);
@@ -622,10 +623,11 @@ void main() {
 
 
   test('realtime events paint immediately and recover malformed payloads', () {
-    final plans = File('lib/data/plan_service.dart').readAsStringSync();
+    final plans =
+        File('lib/data/plans/plan_stream_helpers.dart').readAsStringSync();
     final planStart = plans.indexOf('void _onPbPlansSubscriptionEvent(');
     final planEnd = plans.indexOf(
-      'Future<void> _cancelPlansRealtimeSubscription()',
+      'void beginNotesEditorSession()',
       planStart,
     );
     final planHandler = plans.substring(planStart, planEnd);
