@@ -83,10 +83,6 @@ class _TagDefaultDurationSettingsViewState
       return;
     }
     final current = tag.defaultPlanDurationMinutes;
-    // ignore: avoid_print
-    print(
-      'TAG_DURATION_EDIT_OPEN tagId=${tag.tagId} pbId=$rid current=${current ?? 'null'}',
-    );
     final customCtrl = TextEditingController(
       text: current?.toString() ?? '',
     );
@@ -94,6 +90,10 @@ class _TagDefaultDurationSettingsViewState
     final picked = await showModalBottomSheet<int?>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.82,
+      ),
       builder: (ctx) {
         return SafeArea(
           child: Padding(

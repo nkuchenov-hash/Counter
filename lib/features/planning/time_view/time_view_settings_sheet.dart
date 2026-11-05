@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/time_view_fixed_time_policy.dart';
@@ -366,6 +367,11 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
     showModalBottomSheet<void>(
       context: host.context,
       showDragHandle: true,
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(host.context).height * 0.84,
+      ),
+      backgroundColor: Theme.of(host.context).colorScheme.surfaceContainerLowest,
       builder: (sheetCtx) {
         return SafeArea(
           child: Padding(
@@ -414,58 +420,51 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
                     },
                   ),
                   const Divider(height: 24),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.schedule_rounded),
-                    title: Text(t(loc, 'plan_default_times_title')),
-                    subtitle: Text(
-                      t(loc, 'plan_default_times_subtitle'),
-                      style: Theme.of(host.context).textTheme.bodySmall,
-                    ),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () {
-                      Navigator.of(sheetCtx).pop();
-                      showDefaultPlanTimesSheet();
-                    },
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.timer_outlined),
-                    title: Text(t(loc, 'tag_default_durations_title')),
-                    subtitle: Text(
-                      t(loc, 'tag_default_durations_sheet_subtitle'),
-                      style: Theme.of(host.context).textTheme.bodySmall,
-                    ),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () {
-                      Navigator.of(sheetCtx).pop();
-                      Navigator.of(host.context).push<void>(
-                        MaterialPageRoute<void>(
-                          builder: (_) =>
-                              const TagSettingsHub(initialTabIndex: 2),
+                  AppSettingsNavigationGroup(
+                    children: [
+                      AppSettingsNavigationRow(
+                        title: t(loc, 'plan_default_times_title'),
+                        subtitle: t(loc, 'plan_default_times_subtitle'),
+                        leading: const AppSettingsMenuIcon(
+                          icon: Icons.schedule_rounded,
                         ),
-                      );
-                    },
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.label_outline_rounded),
-                    title: Text(t(loc, 'tag_settings_hub_title')),
-                    subtitle: Text(
-                      t(loc, 'tag_settings_sheet_subtitle'),
-                      style: Theme.of(host.context).textTheme.bodySmall,
-                    ),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () {
-                      Navigator.of(sheetCtx).pop();
-                      Navigator.of(host.context).push<void>(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const TagSettingsHub(),
+                        onTap: () {
+                          Navigator.of(sheetCtx).pop();
+                          showDefaultPlanTimesSheet();
+                        },
+                      ),
+                      AppSettingsNavigationRow(
+                        title: t(loc, 'tag_default_durations_title'),
+                        subtitle: t(loc, 'tag_default_durations_sheet_subtitle'),
+                        leading: const AppSettingsMenuIcon(
+                          icon: Icons.timer_outlined,
                         ),
-                      );
-                    },
+                        onTap: () {
+                          Navigator.of(sheetCtx).pop();
+                          Navigator.of(host.context).push<void>(
+                            MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  const TagSettingsHub(initialTabIndex: 2),
+                            ),
+                          );
+                        },
+                      ),
+                      AppSettingsNavigationRow(
+                        title: t(loc, 'tag_settings_hub_title'),
+                        subtitle: t(loc, 'tag_settings_sheet_subtitle'),
+                        leading: const AppSettingsMenuIcon(
+                          icon: Icons.label_outline_rounded,
+                        ),
+                        onTap: () {
+                          Navigator.of(sheetCtx).pop();
+                          Navigator.of(host.context).push<void>(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const TagSettingsHub(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),

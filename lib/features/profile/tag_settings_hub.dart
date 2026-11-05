@@ -2,6 +2,7 @@
 // Unified tag settings: list CRUD + global display mode + default plan durations.
 // ---------------------------------------------------------------------------
 
+import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/features/profile/tag_default_duration_settings_view.dart';
 import 'package:counter/features/profile/tag_manager_page.dart';
 import 'package:counter/features/profile/tag_settings_view.dart';
@@ -49,31 +50,44 @@ class _TagSettingsHubState extends State<TagSettingsHub>
   @override
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(t(loc, 'tag_settings_hub_title')),
-        bottom: TabBar(
+    final scheme = Theme.of(context).colorScheme;
+    return Theme(
+      data: settingsNeutralTheme(context),
+      child: Scaffold(
+        backgroundColor: scheme.surfaceContainerLowest,
+        appBar: AppBar(
+          backgroundColor: scheme.surfaceContainerLowest,
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
+          title: Text(
+            t(loc, 'tag_settings_hub_title'),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          bottom: TabBar(
+            controller: _tabController,
+            isScrollable: _showDurationsTab,
+            tabs: [
+              Tab(text: t(loc, 'tag_settings_tab_tags')),
+              Tab(text: t(loc, 'tag_settings_tab_style')),
+              if (_showDurationsTab)
+                Tab(text: t(loc, 'tag_settings_tab_durations')),
+            ],
+          ),
+        ),
+        body: TabBarView(
           controller: _tabController,
-          isScrollable: _showDurationsTab,
-          tabs: [
-            Tab(text: t(loc, 'tag_settings_tab_tags')),
-            Tab(text: t(loc, 'tag_settings_tab_style')),
+          children: [
+            TagManagerPage(
+              embeddedInHub: true,
+              pocketTagDomain: widget.tagCreateDomain,
+            ),
+            const TagSettingsView(embeddedInHub: true),
             if (_showDurationsTab)
-              Tab(text: t(loc, 'tag_settings_tab_durations')),
+              const TagDefaultDurationSettingsView(embeddedInHub: true),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          TagManagerPage(
-            embeddedInHub: true,
-            pocketTagDomain: widget.tagCreateDomain,
-          ),
-          const TagSettingsView(embeddedInHub: true),
-          if (_showDurationsTab)
-            const TagDefaultDurationSettingsView(embeddedInHub: true),
-        ],
       ),
     );
   }
