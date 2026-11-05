@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/life_color_compat.dart' show canonicalLifeColorValue;
 import 'package:counter/core/widgets/chip_component.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -113,6 +114,10 @@ class TimelineRecordCardState extends State<TimelineRecordCard> {
     final isRunning = widget.vm.isCanonicalRunning;
     final subtitle = _subtitleForBuild();
     final metaIcons = timelineRowMetaIconsFromVm(context, widget.vm);
+    // Use the same canonical stored category shade as the category manager,
+    // plan and calendar. Historical palette colors must not leak through.
+    final categoryAccent =
+        Color(canonicalLifeColorValue(widget.vm.categoryColor.toARGB32()));
 
     final runningFill = isRunning ? scheme.surfaceContainerHighest : null;
     final runningBorder = isRunning ? scheme.primary : Colors.transparent;
@@ -168,7 +173,7 @@ class TimelineRecordCardState extends State<TimelineRecordCard> {
                 const SizedBox(height: 6),
                 CategoryBreadcrumb(
                   breadcrumbPath: widget.vm.categoryPath,
-                  accentColor: widget.vm.categoryColor,
+                  accentColor: categoryAccent,
                 ),
                 if (subtitle.isNotEmpty) ...[
                   const SizedBox(height: 4),
@@ -233,7 +238,7 @@ class TimelineRecordCardState extends State<TimelineRecordCard> {
         child: DecoratedBox(
           decoration: BoxDecoration(
             border: Border(
-              left: BorderSide(color: widget.vm.categoryColor, width: 4),
+              left: BorderSide(color: categoryAccent, width: 4),
             ),
           ),
           child: paddedRow,
