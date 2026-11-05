@@ -1,3 +1,4 @@
+import 'package:counter/core/app_control_tokens.dart';
 import 'package:flutter/material.dart';
 
 enum AppButtonVariant {
@@ -99,14 +100,14 @@ class AppButton extends StatelessWidget {
   final bool? fullWidth;
 
   double get _height => switch (size) {
-        AppButtonSize.s => 36,
-        AppButtonSize.m => 44,
-        AppButtonSize.l => 52,
+        AppButtonSize.s => AppControlTokens.smallHeight,
+        AppButtonSize.m => AppControlTokens.height,
+        AppButtonSize.l => AppControlTokens.largeHeight,
       };
 
   EdgeInsetsGeometry get _padding => switch (size) {
         AppButtonSize.s => const EdgeInsets.symmetric(horizontal: 12),
-        AppButtonSize.m => const EdgeInsets.symmetric(horizontal: 16),
+        AppButtonSize.m => const EdgeInsets.symmetric(horizontal: AppControlTokens.horizontalPadding),
         AppButtonSize.l => const EdgeInsets.symmetric(horizontal: 20),
       };
 
@@ -121,14 +122,17 @@ class AppButton extends StatelessWidget {
         AppButtonSize.m => Theme.of(context).textTheme.labelLarge,
         AppButtonSize.l => Theme.of(context).textTheme.titleSmall,
       }
-          ?.copyWith(fontWeight: FontWeight.w700);
+          ?.copyWith(
+            fontWeight: FontWeight.w700,
+            fontSize: size == AppButtonSize.m ? AppControlTokens.fontSize : null,
+          );
 
   ButtonStyle _baseStyle(BuildContext context) => ButtonStyle(
         minimumSize: WidgetStatePropertyAll(Size(0, _height)),
         padding: WidgetStatePropertyAll(_padding),
-        tapTargetSize: MaterialTapTargetSize.padded,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppControlTokens.radius)),
         ),
         textStyle: WidgetStatePropertyAll(_textStyle(context)),
       );
@@ -198,7 +202,11 @@ class AppButton extends StatelessWidget {
           child: child,
         ),
     };
-    return stretch ? SizedBox(width: double.infinity, child: button) : button;
+    return SizedBox(
+      width: stretch ? double.infinity : null,
+      height: _height,
+      child: button,
+    );
   }
 }
 
