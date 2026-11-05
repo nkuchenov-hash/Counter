@@ -102,7 +102,11 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                         child: Scaffold(
                           backgroundColor: scheme.surface,
                           resizeToAvoidBottomInset: true,
-                          appBar: desktopShell || shellPageIndex <= 3
+                          // The approved Menu owns its full screen, including
+                          // its title. Do not stack the workspace date header
+                          // above it on desktop.
+                          appBar: (desktopShell && shellPageIndex != 7) ||
+                                  (!desktopShell && shellPageIndex <= 3)
                               ? AppBar(
                                   toolbarHeight: kGlobalCompactHeaderHeight,
                                   backgroundColor: desktopShell
