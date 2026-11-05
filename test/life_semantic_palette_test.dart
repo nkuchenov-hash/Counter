@@ -45,13 +45,15 @@ void main() {
     }
     expect(kLifeTagColorPresets, containsAll(<String>[
       '#286BE3', '#F26900', '#FFD000', '#48A130', '#008F87',
-      '#47BCE9', '#725EB5', '#C82332', '#F75CC5', '#000000', '#9A9A9A',
+      '#47BCE9', '#725EB5', '#EF3B3B', '#FF79AA', '#000000', '#9A9A9A',
     ]));
   });
 
   test('pink and red are visually separated without replacing purple or black', () {
     expect(_hueGap(kNordicEntertainment[500]!, kNordicPeople[500]!),
-        greaterThan(30));
+        greaterThan(18));
+    expect((kNordicEntertainment[500]!.computeLuminance() -
+            kNordicPeople[500]!.computeLuminance()).abs(), greaterThan(0.08));
     expect(kNordicStudy[500], const Color(0xFF725EB5));
     expect(kCategoryBlack[500], Colors.black);
     expect(_hueGap(kNordicEntertainment[500]!, kNordicErrands[500]!),
@@ -72,7 +74,8 @@ void main() {
     expect(pinkPlate, isNot(redPlate));
     final pinkFg = tagVibrantForeground(pink, surface: surface);
     final redFg = tagVibrantForeground(red, surface: surface);
-    expect(_hueGap(pinkFg, redFg), greaterThan(30));
+    expect(_hueGap(pinkFg, redFg), greaterThan(18));
+    expect((pinkPlate.b - redPlate.b).abs(), greaterThan(0.07));
   });
 
   test('previous official base colors resolve to new families', () {
@@ -151,6 +154,8 @@ void main() {
     expect(kLifeTagColorPresets, contains('#000000'));
     // Old families remain visually compatible without modifying DB records.
     expect(parseTagHexColor('#E65EA5'), kNordicPeople[500]);
+    expect(parseTagHexColor('#F75CC5'), kNordicPeople[500]);
+    expect(parseTagHexColor('#C82332'), kNordicEntertainment[500]);
     expect(parseTagHexColor('#242B5D'), kNordicStudy[500]);
     expect(parseTagHexColor('#606060'), kCategoryNeutral[500]);
   });
