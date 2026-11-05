@@ -817,3 +817,6 @@ One-off Pass 3/Pass 2 extraction scripts (`scripts/pass3_*`, `scripts/extract_*`
 ## Unified menu navigation (2026-11-05)
 
 - `lib/features/profile/menu/life_os_menu_page.dart` — app-wide searchable, grouped settings navigation for compact and wide shells; all destinations delegate to feature-owned screens.
+
+- `lib/features/profile/menu/life_os_planning_settings_page.dart` — full Planning preference screen sharing Time View preference storage and existing controls.
+- `lib/features/profile/menu/life_os_sync_status_page.dart` — live PocketBase outbox status and retry screen.
