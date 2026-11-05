@@ -1,11 +1,11 @@
 ## Menu and settings visual contract (refined 2026-11-05)
 
-- **Keep bundled Onest.** Menu row title is regular 400 and neutral gray; never substitute another font.
-- Global light chrome is neutral, not blue: app canvas `#F7F7F7`, subtle surface `#F3F3F3`, gentle border tokens `#E5E5E5`/`#EEEEEE`. Only semantic category/tag elements retain their colors. Settings canvas is `#F6F6F6`; grouped menu cards are white, borderless, with a clear light-dark contrast.
-- Each menu item has independent **full-card-width hover** fill `#EDEDED`, which is darker than the `#F6F6F6` canvas; no inset rounded highlight or whole-group hover. The first/last item are clipped to the group's rounded corners.
-- Separate vertical item spacing is increased: content top/bottom 10 px for interior rows, 16 px at the first/last exterior edge, plus ListTile min vertical padding 8 px. Side content inset stays 24 px, making icon-to-outer edge spacing visually equal while allowing a more generous gap between adjacent items.
-- Dividers normally use subtle neutral `#E9E9E9`, 1 px inset to the text column; when either adjacent item is hovered, that divider animates to the same `#EDEDED` hover fill. It should disappear into the hover surface instead of appearing as a line inside or next to the highlight.
-- Sidebar is neutral light gray `#ECECEC`, header remains white; LIFE OS branding appears once in the persistent top header. No extra card borders, no extra sidebar branding, no new routing or data behavior.
+- **Keep bundled Onest.** Menu titles use 16 px / medium 500 with crisp neutral `#282828` ink; captions remain regular 400 / `#707070`. Do not substitute another font.
+- The Menu/settings canvas is neutral `#F7F7F7`, cards are white and **borderless**, and the desktop sidebar uses `#F4F4F4`. The chrome must not introduce blue, beige, extra card strokes or duplicate branding.
+- Each individual menu row has a full-width hover fill `#E8E8E8`, darker than the page and card. Rounded corners belong to the **group clip**; no inset rounded hover plate or whole-group highlight.
+- Grouped navigation rows have a minimum 74 px height with a 42 px leading icon. The first and last row keep an 8 px edge inset *inside* the full-width hover, resulting in 24 px icon-to-card spacing at top, bottom and left. Adjacent icon tiles have at least 30 px vertical separation. Group-to-group gaps are reduced instead of compressing row content.
+- Dividers are 1 px, subtly `#F0F0F0`, inset to the text column; either adjacent row's hover dissolves the divider into the same `#E8E8E8` fill. No separator is painted on top of hovered content.
+- Header stays white; LIFE OS appears once at the top. No changes to navigation routes, settings persistence or app data.
 
 ## Canonical Menu / settings composition (2026-11-05)
 
@@ -378,6 +378,6 @@ row and surface tokens, adapted to available width.
 ## Menu icons and approved grouped Settings UI (2026-11-05)
 
 - The approved LIFE OS menu uses the existing **Flutter Material Symbols** already shipped with the app, via `AppMenuIcons.icon(AppMenuIconRole)` in `lib/core/widgets/app_menu_icons.dart`. This is an icon-role adapter, not a new or finalized icon library. Keep all icon choices in that one mapping until the separately selected collection is approved.
-- Light-mode menu canvas is `#F2F2F2`; grouped cards are `#FFFFFF`; monochrome icons sit inside `#EDEDED` rounded icon containers. Dark mode uses the same surface hierarchy with dark neutral tokens, not hard-coded light fills.
+- Light-mode Menu canvas is `#F7F7F7`; grouped cards are `#FFFFFF`, with subtle `#F4F4F4` icon containers and no card border. Dark mode uses equivalent neutral surfaces, not hard-coded light fills.
 - Search is a real destination index. All menu destinations must open working settings or working feature screens, never a visual-only switch or a fake integration status.
 - Domain settings have one persistence implementation; feature-local quick menus remain accessible but link to the same canonical settings screens.
