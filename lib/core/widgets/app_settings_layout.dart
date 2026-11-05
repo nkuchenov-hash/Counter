@@ -22,24 +22,24 @@ ThemeData settingsNeutralTheme(BuildContext context) {
     primary: base.colorScheme.onSurface,
     onPrimary: dark ? AppColors.darkAppBackground : Colors.white,
     // Neutral TECNO-inspired surfaces: distinct white cards, no blue tint.
-    surface: dark ? const Color(0xFF161616) : const Color(0xFFF6F6F6),
+    surface: dark ? const Color(0xFF161616) : const Color(0xFFF7F7F7),
     surfaceContainerLowest:
-        dark ? const Color(0xFF161616) : const Color(0xFFF6F6F6),
+        dark ? const Color(0xFF161616) : const Color(0xFFF7F7F7),
     surfaceContainerLow:
-        dark ? const Color(0xFF222222) : const Color(0xFFF6F6F6),
+        dark ? const Color(0xFF222222) : const Color(0xFFF7F7F7),
     surfaceContainer:
-        dark ? const Color(0xFF303030) : const Color(0xFFF1F1F1),
+        dark ? const Color(0xFF303030) : const Color(0xFFF4F4F4),
     surfaceContainerHigh:
         dark ? const Color(0xFF252525) : Colors.white,
     surfaceContainerHighest:
         dark ? const Color(0xFF303030) : Colors.white,
-    onSurface: dark ? base.colorScheme.onSurface : const Color(0xFF474747),
+    onSurface: dark ? base.colorScheme.onSurface : const Color(0xFF282828),
     onSurfaceVariant: dark
         ? base.colorScheme.onSurfaceVariant
-        : const Color(0xFF818181),
+        : const Color(0xFF707070),
     outlineVariant: dark
         ? base.colorScheme.outlineVariant
-        : const Color(0xFFE7E7E7),
+        : const Color(0xFFF0F0F0),
   );
   return base.copyWith(
     colorScheme: scheme,
@@ -466,23 +466,22 @@ class AppSettingsNavigationRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final grouped = _AppSettingsRowPosition.maybeOf(context) != null;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         ListTile(
-          // The first/last item owns its outer padding so the hover remains
-          // full-bleed through the rounded corners, not below a dead margin.
-          contentPadding: EdgeInsets.fromLTRB(
-            24,
-            _AppSettingsRowPosition.maybeOf(context)?.first == true ? 16 : 10,
-            24,
-            _AppSettingsRowPosition.maybeOf(context)?.last == true ? 16 : 10,
-          ),
+          // Explicit group height: default ListTile density made adjacent icons
+          // nearly touch. Card-edge breathing room belongs to the group below.
+          contentPadding: grouped
+              ? const EdgeInsets.symmetric(horizontal: 24)
+              : const EdgeInsets.fromLTRB(24, 10, 24, 10),
+          minTileHeight: grouped ? 74 : null,
           minVerticalPadding: 8,
           leading: leading,
           title: Text(title, style: theme.textTheme.bodyLarge?.copyWith(
             fontSize: 16,
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.w500,
             letterSpacing: 0,
             height: 1.38,
           )),
@@ -525,7 +524,7 @@ class AppSettingsNavigationRow extends StatelessWidget {
               ? Colors.transparent
               : (scheme.brightness == Brightness.dark
                   ? scheme.onSurface.withValues(alpha: 0.06)
-                  : const Color(0xFFEDEDED)),
+                  : const Color(0xFFE8E8E8)),
           splashColor: Colors.transparent,
           shape: const RoundedRectangleBorder(),
         ),
@@ -624,8 +623,8 @@ class AppMenuActionTile extends StatelessWidget {
 }
 
 
-/// Supplies edge-aware vertical insets without stealing the full-width
-/// hover hit target from the first and last menu items.
+/// Marks rows belonging to a grouped card so ListTile uses the
+/// canonical menu rhythm rather than its platform-dependent minimum.
 class _AppSettingsRowPosition extends InheritedWidget {
   const _AppSettingsRowPosition({
     required this.first,
@@ -666,10 +665,10 @@ class _AppSettingsNavigationGroupState
     final dark = scheme.brightness == Brightness.dark;
     final hoverFill = dark
         ? scheme.onSurface.withValues(alpha: 0.06)
-        : const Color(0xFFEDEDED);
-    const dividerFill = Color(0xFFE9E9E9);
+        : const Color(0xFFE8E8E8);
+    const dividerFill = Color(0xFFF0F0F0);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Material(
         color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
@@ -690,6 +689,13 @@ class _AppSettingsNavigationGroupState
                   children: [
                     AnimatedContainer(
                       key: ValueKey('settings-row-$index'),
+                      // Edge inset is part of the hover surface, not a dead
+                      // white gutter. 74px rows + 8px edge insets center the
+                      // 42px icons 24px from all four card edges.
+                      padding: EdgeInsets.only(
+                        top: index == 0 ? 8 : 0,
+                        bottom: index == widget.children.length - 1 ? 8 : 0,
+                      ),
                       duration: const Duration(milliseconds: 140),
                       curve: Curves.easeOutCubic,
                       color: _hoveredIndex == index
