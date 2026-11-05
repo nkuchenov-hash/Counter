@@ -146,7 +146,7 @@ extension RecordServiceExtension on DatabaseService {
   }
 
   /// Merge one PocketBase **records** row into [_cachedFlatRecords] without refetching the full list.
-  void _upsertFlatRecordFromPbModel(
+  bool _upsertFlatRecordFromPbModel(
     RecordModel r, {
     bool preserveExpand = true,
     bool suppressTimelineNotify = false,
@@ -155,7 +155,7 @@ extension RecordServiceExtension on DatabaseService {
     try {
       final m = _recordMapFromPb(r);
       final pk = CategoryServiceExtension.recordsTablePk(m);
-      if (pk.isEmpty) return;
+      if (pk.isEmpty) return false;
       final biz = (m['record_id'] ?? '').toString().trim();
       final next = List<Map<String, dynamic>>.from(_cachedFlatRecords);
       for (var i = 0; i < next.length; i++) {
@@ -208,7 +208,7 @@ extension RecordServiceExtension on DatabaseService {
           if (!suppressTimelineNotify && !silent) {
             _notifyTimelineAfterRecordCacheMutation();
           }
-          return;
+          return true;
         }
       }
       next.add(m);
@@ -216,9 +216,11 @@ extension RecordServiceExtension on DatabaseService {
       if (!suppressTimelineNotify) {
         _notifyTimelineAfterRecordCacheMutation();
       }
+      return true;
     } catch (e, st) {
       DatabaseService._log('_upsertFlatRecordFromPbModel failed: $e');
       DatabaseService._log(st.toString());
+      return false;
     }
   }
 
