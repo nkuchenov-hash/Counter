@@ -39,7 +39,6 @@ dependencies:
   # Native Fluent + Heroicons SVGs are bundled locally; no network requests.
   flutter_svg: ^2.3.2
   fluentui_system_icons: 1.1.273
-  heroicons: 0.11.0
   # Web record journal: transactional IndexedDB, independent of localStorage quota.
   sembast_web: 2.4.4+1
   web: ^1.0.0
