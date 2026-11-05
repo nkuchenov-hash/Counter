@@ -49,7 +49,72 @@ const Map<int, int> _legacyPinkTones = <int, int>{
   0xFF693040: 900,
 };
 
+// Historical official shades from all remaining Nordic families are mapped
+// to the current shared palette without changing persisted values.
+const Map<int, int> _legacyNordicWorkTones = <int, int>{
+  0xFFF1F6FC: 50, 0xFFE2ECF8: 100, 0xFFC7DDF2: 200,
+  0xFFA2C6E9: 300, 0xFF72A5D9: 400, 0xFF3978C5: 500,
+  0xFF326BAF: 600, 0xFF2B5C98: 700, 0xFF254D7E: 800,
+  0xFF203F66: 900
+};
+
+const Map<int, int> _legacyNordicFoodTones = <int, int>{
+  0xFFFCF8E9: 50, 0xFFF7EFCB: 100, 0xFFEFE09D: 200,
+  0xFFE5CC68: 300, 0xFFDDB747: 400, 0xFFD5A62E: 500,
+  0xFFBD8F26: 600, 0xFF9D7324: 700, 0xFF805C24: 800,
+  0xFF694B22: 900
+};
+
+const Map<int, int> _legacyNordicMovementTones = <int, int>{
+  0xFFEEF8F3: 50, 0xFFDCEFE5: 100, 0xFFBCE0CC: 200,
+  0xFF91CCAA: 300, 0xFF61B386: 400, 0xFF3A9B6F: 500,
+  0xFF338962: 600, 0xFF2D7455: 700, 0xFF285F49: 800,
+  0xFF224E3D: 900
+};
+
+const Map<int, int> _legacyNordicHealthTones = <int, int>{
+  0xFFEDF9F8: 50, 0xFFD7F1EF: 100, 0xFFAFE2DF: 200,
+  0xFF7BCDC9: 300, 0xFF49B8B4: 400, 0xFF26A5A1: 500,
+  0xFF208F8C: 600, 0xFF207674: 700, 0xFF205F5E: 800,
+  0xFF1D4E4D: 900
+};
+
+const Map<int, int> _legacyNordicTransportTones = <int, int>{
+  0xFFF0F8FC: 50, 0xFFDDEFF8: 100, 0xFFBDE0F0: 200,
+  0xFF91CBE5: 300, 0xFF69B5DA: 400, 0xFF55A6D1: 500,
+  0xFF418EB8: 600, 0xFF39779A: 700, 0xFF33627D: 800,
+  0xFF2D5066: 900
+};
+
+const Map<int, int> _legacyNordicStudyTones = <int, int>{
+  0xFFF5F3FA: 50, 0xFFEAE6F5: 100, 0xFFD6CEEA: 200,
+  0xFFB9ACDB: 300, 0xFF9685C9: 400, 0xFF725EB5: 500,
+  0xFF6552A3: 600, 0xFF55458A: 700, 0xFF473A70: 800,
+  0xFF3B305D: 900
+};
+
+const Map<int, int> _legacyCategoryNeutralTones = <int, int>{
+  0xFFFAFAFA: 50, 0xFFF5F5F5: 100, 0xFFEBEBEB: 200,
+  0xFFD9D9D9: 300, 0xFFB8B8B8: 400, 0xFF949494: 500,
+  0xFF737373: 600, 0xFF5E5E5E: 700, 0xFF484848: 800,
+  0xFF333333: 900
+};
+
 int canonicalLifeColorValue(int savedArgb) {
+  final tonekNordicWork = _legacyNordicWorkTones[savedArgb];
+  if (tonekNordicWork != null) return kNordicWork[tonekNordicWork]!.toARGB32();
+  final tonekNordicFood = _legacyNordicFoodTones[savedArgb];
+  if (tonekNordicFood != null) return kNordicFood[tonekNordicFood]!.toARGB32();
+  final tonekNordicMovement = _legacyNordicMovementTones[savedArgb];
+  if (tonekNordicMovement != null) return kNordicMovement[tonekNordicMovement]!.toARGB32();
+  final tonekNordicHealth = _legacyNordicHealthTones[savedArgb];
+  if (tonekNordicHealth != null) return kNordicHealth[tonekNordicHealth]!.toARGB32();
+  final tonekNordicTransport = _legacyNordicTransportTones[savedArgb];
+  if (tonekNordicTransport != null) return kNordicTransport[tonekNordicTransport]!.toARGB32();
+  final tonekNordicStudy = _legacyNordicStudyTones[savedArgb];
+  if (tonekNordicStudy != null) return kNordicStudy[tonekNordicStudy]!.toARGB32();
+  final tonekCategoryNeutral = _legacyCategoryNeutralTones[savedArgb];
+  if (tonekCategoryNeutral != null) return kCategoryNeutral[tonekCategoryNeutral]!.toARGB32();
   final orangeTone = _legacyOrangeTones[savedArgb];
   if (orangeTone != null) return kNordicErrands[orangeTone]!.toARGB32();
   final redTone = _legacyRedTones[savedArgb];
