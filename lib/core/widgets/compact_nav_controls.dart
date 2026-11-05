@@ -1,10 +1,11 @@
+import 'package:counter/core/app_control_tokens.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
 
 const double kAppCompactControlHeight = 44;
-const double kAppQuickEntryControlHeight = AppTextField.height;
+const double kAppQuickEntryControlHeight = AppControlTokens.height;
 const double kAppCompactControlFontSize = 12;
 
 ButtonStyle appCompactSegmentedButtonStyle(
@@ -188,7 +189,7 @@ class AppQuickEntryRow extends StatelessWidget {
             onSubmitted: onSubmitted,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppControlTokens.horizontalGap),
         SizedBox(
           height: kAppQuickEntryControlHeight,
           child: AppButton.primary(
