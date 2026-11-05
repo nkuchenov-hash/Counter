@@ -255,7 +255,7 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 | `app_build_info.dart` | Build metadata |
 | `app_icons.dart` | Canonical icon tokens (timezone family, shared glyphs) |
 | `category_color_palette.dart` | Category tile palette |
-| `life_color_compat.dart` | Canonical 10-family semantic palette and display-only historical color compatibility |
+| `life_color_compat.dart` | Canonical 11-family semantic palette and display-only historical color compatibility |
 | `date_pager_settle_gate.dart` | Shared date `PageView` settle coordinator |
 | `date_swipe_physics.dart` | Date swipe physics |
 | `link_scalar.dart` | Plan link scalar helper |
