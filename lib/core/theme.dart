@@ -31,9 +31,9 @@ ThemeData _buildAppTheme(ColorScheme scheme) {
 
   return ThemeData(
     useMaterial3: true,
-    // Bundled geometric Manrope typeface with Cyrillic support; no runtime
+    // Bundled geometric Onest typeface with Cyrillic support; no runtime
     // network dependency and consistent metrics on Android, Windows and Web.
-    fontFamily: 'Manrope',
+    fontFamily: 'Onest',
     fontFamilyFallback: const ['Roboto', 'Arial'],
     colorScheme: scheme,
     scaffoldBackgroundColor: scheme.surface,
