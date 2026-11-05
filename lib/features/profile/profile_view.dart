@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:counter/core/app_build_info.dart';
 import 'package:counter/core/app_snackbar.dart';
-import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/timezone_quick_picker.dart';
 import 'package:counter/core/widgets/app_button.dart';
