@@ -4,36 +4,44 @@ import 'package:counter/data/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-void main() {
-  test('People magenta is distinct from Task red in the shared palette', () {
-    final people = kNordicPeople[500]!;
-    final taskRed = kNordicEntertainment[500]!;
-    final peopleHue = HSVColor.fromColor(people).hue;
-    final redHue = HSVColor.fromColor(taskRed).hue;
-    final difference = (peopleHue - redHue).abs();
-    final shortestDifference = difference > 180 ? 360 - difference : difference;
+double hueGap(Color a, Color b) {
+  final gap = (HSVColor.fromColor(a).hue - HSVColor.fromColor(b).hue).abs();
+  return gap > 180 ? 360 - gap : gap;
+}
 
-    expect(shortestDifference, greaterThan(30));
-    expect(kLifeTagColorPresets, contains('#BD4199'));
-    expect(kLifeTagColorPresets, isNot(contains('#D05C7D')));
+void main() {
+  test('shared red, orange and pink identities have distinct hues', () {
+    final red = kNordicEntertainment[500]!;
+    final orange = kNordicErrands[500]!;
+    final pink = kNordicPeople[500]!;
+    expect(hueGap(red, orange), greaterThan(25));
+    expect(hueGap(red, pink), greaterThan(25));
+    expect(hueGap(orange, kTagYellowGold), greaterThan(15));
+    expect(kLifeTagColorPresets, containsAll(<String>[
+      '#C82332', '#E77A10', '#E65EA5',
+    ]));
+    expect(kLifeTagColorPresets, isNot(contains('#BD4199')));
   });
 
-  test('old official People colors render as the new shared family', () {
+  test('old official shades render as current tag and category colors', () {
     expect(parseTagHexColor('#D05C7D'), kNordicPeople[500]);
+    expect(parseTagHexColor('#D64F55'), kNordicEntertainment[500]);
+    expect(parseTagHexColor('#D97841'), kNordicErrands[500]);
+
     final category = CategoryRule(
-      id: 1,
-      name: 'Legacy People',
-      colorValue: 0xFFD05C7D,
+      id: 1, name: 'Legacy meeting', colorValue: 0xFFD05C7D,
     );
     expect(category.colorOrDefault, kNordicPeople[500]);
     expect(categoryMaterialPrimaryForValue(0xFFD05C7D), kNordicPeople);
+    expect(categoryMaterialPrimaryForValue(0xFFD97841), kNordicErrands);
+    expect(categoryMaterialPrimaryForValue(0xFFD64F55), kNordicEntertainment);
     expect(
       categoryNordicChildColorValue(0xFFB94C6B, 0),
       kNordicPeople[500]!.toARGB32(),
     );
   });
 
-  test('other custom colors and the special bright gold remain untouched', () {
+  test('custom tag colors and exact gold stay untouched', () {
     expect(parseTagHexColor('#ABCD12'), const Color(0xFFABCD12));
     expect(parseTagHexColor('#F6C500'), kTagYellowGold);
   });
