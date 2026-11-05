@@ -1,10 +1,11 @@
-## Menu and settings visual contract (refined 2026-11-05)
+## Menu and settings visual contract (corrected 2026-11-05)
 
-- Settings/Menu/People desktop canvas is **neutral** `#E5E5E5`, not blue-tinted; grouped cards are `#FFFFFF`, idle borders `#CACACA` (1 px), hover borders `#B6B6B6` (1 px). Clearly visible inset separators are `#C4C4C4` at 1.2 px.
-- **The whole grouped white card** responds to hover: `MouseRegion` surrounds the parent `Material`; fill changes to neutral `#F7F7F7` and border becomes clearer. Individual rows do **not** paint hover rectangles or ripples; each row remains separately actionable.
-- App typography: locally bundled **Onest variable**, SIL OFL, complete Cyrillic support across Web/Android/Windows; regular (400) item labels, `#474747` ink, gray `#818181` secondary captions, restrained 500-weight section headers. Avoid heavy or black text in the settings UI.
-- Desktop sidebar must have independent `#DDDDDD` fill, not white, and LIFE OS logo/title pinned at its top. Branding is also present in the persistent desktop global header on every section.
-- Profile remains an integrated account/settings destination; never replace the shell with legacy profile UI. Dark theme retains its own semantic surfaces.
+- Menu/Settings/People light canvas: neutral `#F2F2F2` with pure white `#FFFFFF` menu cards and no card strokes. Desktop sidebar is subtly distinct neutral `#ECECEC`; **LIFE OS branding appears exactly once in the desktop top header**, not again in the sidebar.
+- One menu item (one full-width row) owns hover. Each `AppSettingsNavigationRow` highlights only itself with neutral `#F5F5F5`; the entire group does not change. Group clipping rounds the first/last row hover into the white card corners. Never use an inset rounded rectangle or a group-wide hover.
+- The first and last menu items provide **18 px extra edge-aware vertical content padding** plus ListTile's normal vertical spacing so top/bottom icon-to-card gaps visually match the 24 px left/right gaps, including hover hit areas. Do not create short top/bottom gaps beside wide left insets.
+- Dividers between items are visible but delicate: neutral `#E7E7E7`, 0.8 px, inset only after the icon. No group/card outer borders; no gray stroke on hover.
+- Keep the user's approved **Onest** typeface unchanged. Menu row titles use regular 400 and soft `#474747` ink, secondary captions `#818181`, headings restrained. Do not substitute another font or add unnecessary bold weights.
+- Profile remains a unified shell destination, with all app data, routes and persistence behaviors unchanged.
 
 ## Canonical Menu / settings composition (2026-11-05)
 
