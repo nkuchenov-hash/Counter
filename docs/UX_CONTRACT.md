@@ -2,7 +2,8 @@
 
 - The desktop header contains LIFE OS branding; the neutral gray sidebar persists across People, Menu, Profile, and all settings leaves.
 - Profile is the account section of the **same** `LifeOsMenuPage` settings index, not a legacy tabbed Profile screen. Selecting a specific setting changes only shell content, and Back returns to Profile or Menu as appropriate.
-- Menu navigation row hover uses the full width of each grouped item, with distinguishable dividers; captions are gray and lighter than primary labels. The entire light canvas is neutral (no blue tint), with white panels visibly separate.
+- The **whole white settings group card**, not an individual inset row, responds to pointer hover with a neutral fill and border transition. The card spans its content width; separators are 1.2 px neutral gray and remain visible. Individual rows stay separately tappable without per-row hover rectangles. Captions use clean light-gray Manrope and regular-weight body text.
+- In light mode, the clearly non-blue #E5E5E5 canvas must separate from white group cards. The #DDDDDD desktop sidebar stays distinct and permanently shows the LIFE OS mark at its top; the global desktop header also retains branding.
 
 ## Persistent desktop navigation across People and Menu (2026-11-05)
 
