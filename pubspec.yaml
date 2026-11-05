@@ -102,11 +102,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # SIL OFL licensed Manrope; bundled for web/Android/Windows with Cyrillic.
+  # SIL OFL licensed Onest; bundled for web/Android/Windows with Cyrillic.
   fonts:
-    - family: Manrope
+    - family: Onest
       fonts:
-        - asset: assets/fonts/Manrope-Variable.ttf
+        - asset: assets/fonts/Onest-Variable.ttf
 
 
   # To add assets to your application, add an assets section, like this:
