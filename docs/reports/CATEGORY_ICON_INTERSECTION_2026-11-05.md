@@ -1,6 +1,6 @@
 # Verified Fluent UI ↔ Heroicons semantic intersections — 2026-11-05
 
-The app displays **26 default icons**. Users can add/remove from the **103 vetted semantic pairs** in Profile → Appearance. Icons absent in either family are excluded from selection.
+The category picker now displays **all 103 vetted semantic pairs** by default, with the user's preferred icon collection ordered first. Profile → Appearance can customize those favorites. Icons absent in either family are excluded from selection.
 
 Identification rules: native regular/filled and outline/solid variants, stable meaning in both families, canonical semantic ID preserved on style changes. Direct exact-name matches are accepted when their depicted subject/function agrees. Different-name mappings below were manually reviewed for the same recognizable concept; doubtful similarities are omitted rather than guessed.
 
@@ -120,4 +120,4 @@ Unmatched Fluent-only and Heroicons-only icons are not presented in the applicat
 
 `home`, `heart`, `briefcase`, `calendar`, `folder`, `clock`, `star`, `book`, `cart`, `cake`, `moon`, `bell`, `lock`, `camera`, `wallet`, `gift`, `phone`, `document`, `cloud`, `tag`, `trophy`, `map`, `key`, `light_bulb`, `pencil`, `musical_note`.
 
-Collection is device-local until category preference sync is implemented. Changing icon family does not modify any category record or its semantic key.
+Collection is device-local until category preference sync is implemented. Individual category icon selections are stored under separate local preference keys (and legacy aggregate data is read for backwards compatibility). Changing icon family does not modify any category record or its semantic key.
