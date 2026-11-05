@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:counter/core/app_build_info.dart';
+import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/timezone_quick_picker.dart';
@@ -457,16 +458,25 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildAppearanceFields(BuildContext context, String locale) {
-    return AppSettingsThemeModePicker(
-      value: _themeMode,
-      lightLabel: t(locale, 'theme_light'),
-      darkLabel: t(locale, 'theme_dark'),
-      systemLabel: t(locale, 'theme_system'),
-      saving: _savingTheme,
-      onChanged: (next) {
-        if (next == _themeMode || _savingTheme) return;
-        unawaited(_saveTheme(next));
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppSettingsThemeModePicker(
+          value: _themeMode,
+          lightLabel: t(locale, 'theme_light'),
+          darkLabel: t(locale, 'theme_dark'),
+          systemLabel: t(locale, 'theme_system'),
+          saving: _savingTheme,
+          onChanged: (next) {
+            if (next == _themeMode || _savingTheme) return;
+            unawaited(_saveTheme(next));
+          },
+        ),
+        const SizedBox(height: 24),
+        const Divider(),
+        const SizedBox(height: 16),
+        CategoryIconPackPreference(isRussian: locale.startsWith('ru')),
+      ],
     );
   }
 

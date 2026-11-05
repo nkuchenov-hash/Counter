@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:counter/core/category_color_palette.dart';
+import 'package:counter/core/category_icon_system.dart';
+import 'package:counter/features/settings/categories/category_icon_picker.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/settings/categories/category_helpers.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,7 +27,8 @@ class CategoryAppearanceSheet extends StatefulWidget {
 
 class _CategoryAppearanceSheetState extends State<CategoryAppearanceSheet> {
   late int? _colorValue;
-  late int _iconCodePoint;
+  late CategoryIconSelection _choice;
+  late CategoryIconSelection _initialChoice;
   MaterialColor? _selectedPrimary;
   int? _selectedShadeValue;
   bool _busy = false;
@@ -37,34 +39,61 @@ class _CategoryAppearanceSheetState extends State<CategoryAppearanceSheet> {
     _colorValue = widget.category.colorValue == null
         ? null
         : canonicalLifeColorValue(widget.category.colorValue!);
-    _iconCodePoint =
-        widget.category.iconCodePoint ?? Icons.folder_rounded.codePoint;
+    _choice = CategoryIconStore.instance.selectionFor(widget.category);
+    _initialChoice = _choice;
+    unawaited(CategoryIconStore.instance.ensureLoaded().then((_) {
+      if (mounted) setState(() {
+        _choice = CategoryIconStore.instance.selectionFor(widget.category);
+        _initialChoice = _choice;
+      });
+    }));
   }
 
   MaterialColor _primaryForValue(int? v) => categoryMaterialPrimaryForValue(v);
 
-  void _apply() {
+  Future<void> _apply() async {
     if (_busy) return;
-    final db = DatabaseService.instance;
+    setState(() => _busy = true);
     final messenger = ScaffoldMessenger.of(context);
-    final staged = db.stageCategoryDelta(
+    try {
+      if (_choice != _initialChoice) {
+        await CategoryIconStore.instance.setSelection(widget.category, _choice);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _busy = false);
+        messenger.showSnackBar(SnackBar(
+          content: Text(currentLocale.value == 'ru'
+              ? 'Не удалось сохранить иконку на устройстве.'
+              : 'Could not save the icon on this device.'),
+        ));
+      }
+      return;
+    }
+    if (!mounted) return;
+    final staged = DatabaseService.instance.stageCategoryDelta(
       widget.category.id,
-      <String, dynamic>{
-        'color_value': _colorValue ?? 0,
-        'icon_code_point': _iconCodePoint,
-      },
+      <String, dynamic>{'color_value': _colorValue ?? 0},
     );
-    // The local state is already updated by stageCategoryDelta before its
-    // first await. Never wait for network status to dismiss the appearance UI.
     widget.onSaved();
     Navigator.of(context).pop();
     unawaited(staged.catchError((Object _, StackTrace __) {
       messenger.showSnackBar(SnackBar(
         content: Text(currentLocale.value == 'ru'
-            ? 'Не удалось сохранить изменение на устройстве.'
-            : 'Could not save the edit on this device.'),
+            ? 'Не удалось сохранить цвет на устройстве.'
+            : 'Could not save the color on this device.'),
       ));
     }));
+  }
+
+  Future<void> _pickIcon() async {
+    final selection = await showCategoryIconPicker(
+      context,
+      initial: _choice,
+      color: Color(_colorValue ?? widget.category.colorOrDefault.toARGB32()),
+    );
+    if (!mounted || selection == null) return;
+    setState(() => _choice = selection);
   }
 
   @override
@@ -190,39 +219,22 @@ class _CategoryAppearanceSheetState extends State<CategoryAppearanceSheet> {
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: kCategoryIconChoices.map((ic) {
-                final cp = ic.codePoint;
-                final sel = _iconCodePoint == cp;
-                return InkWell(
-                  onTap: () {
-                    setState(() => _iconCodePoint = cp);
-                    HapticFeedback.lightImpact();
-                  },
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: sel
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.outlineVariant,
-                        width: sel ? 2 : 1,
-                      ),
-                    ),
-                    child: Icon(
-                      ic,
-                      color: sel
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                );
-              }).toList(),
+            OutlinedButton(
+              key: const ValueKey('category-quick-icon-picker'),
+              onPressed: _busy ? null : () => unawaited(_pickIcon()),
+              style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(14)),
+              child: Row(children: [
+                CategorySvgIcon(
+                  selection: _choice, size: 28,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 13),
+                Expanded(child: Text(
+                  currentLocale.value == 'ru' ? 'Выбрать иконку · Контур / Заливка'
+                      : 'Choose icon · Outline / Filled',
+                )),
+                const Icon(Icons.chevron_right_rounded),
+              ]),
             ),
             const SizedBox(height: 24),
             FilledButton(

@@ -1,0 +1,61 @@
+name: Fluent and Heroicons icon QA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'lib/core/category_icon_*'
+      - 'lib/features/settings/categories/category_*'
+      - 'lib/features/profile/profile_view.dart'
+      - 'lib/shared/categories/tree/category_tree_body.dart'
+      - 'pubspec.yaml'
+      - 'test/category_icon_pack_test.dart'
+      - '.github/workflows/icon-packs-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  icon-pairs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+      - name: Resolve Flutter dependencies
+        run: flutter pub get
+      - name: Verify both icon families and the Regular/Fill picker
+        run: flutter test --no-pub test/category_icon_pack_test.dart
+      - name: Check changed Flutter code for analyzer errors
+        shell: bash
+        run: |
+          set -euo pipefail
+          paths=(
+            lib/core/category_icon_catalog_generated.g.dart
+            lib/core/category_icon_svg_data.dart
+            lib/core/category_icon_system.dart
+            lib/features/settings/categories/category_icon_picker.dart
+            lib/features/settings/categories/category_appearance_sheet.dart
+            lib/features/settings/categories/category_editor_sheet.dart
+            lib/features/settings/categories/category_row_widget.dart
+            lib/shared/categories/tree/category_tree_body.dart
+            lib/features/profile/profile_view.dart
+          )
+          for path in "${paths[@]}"; do
+            echo "::group::Analyze $path"
+            # Existing repository warnings are not part of this focused gate.
+            output="$(dart analyze --format=machine "$path" 2>&1 || true)"
+            echo "$output"
+            echo "::endgroup::"
+            if grep -q '^ERROR|' <<< "$output"; then
+              echo "::error file=$path::Analyzer errors"
+              exit 1
+            fi
+          done
+      - name: Check Flutter web compilation
+        run: flutter build web --release --base-href=/Counter/ --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none --no-web-resources-cdn

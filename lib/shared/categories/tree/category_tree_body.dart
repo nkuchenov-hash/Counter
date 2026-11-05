@@ -1,6 +1,7 @@
 // Recursive category tree body: expand-in-place hierarchy + active-path opacity.
 
 import 'package:counter/core/widgets/app_icon_button.dart';
+import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -246,7 +247,7 @@ class _CategoryTreeNode extends StatelessWidget {
                       const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                   child: Row(
                     children: [
-                      Icon(rule.iconOrDefault, color: color, size: 22),
+                      CategoryGlyph(category: rule, color: color, size: 22),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(

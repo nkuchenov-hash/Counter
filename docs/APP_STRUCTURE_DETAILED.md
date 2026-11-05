@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `b22aca58` on 2026-11-05.**
+**Generated from input HEAD `07ce9b52` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 970 — each appears **exactly once** below.
+**Tracked files:** 977 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,12 +26,12 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 191 |
-| `test` | 137 |
+| `production UI` | 192 |
+| `test` | 138 |
 | `Brain/data` | 114 |
 | `platform build` | 83 |
-| `shared foundation` | 67 |
-| `developer tool` | 63 |
+| `shared foundation` | 70 |
+| `developer tool` | 64 |
 | `platform resource` | 44 |
 | `governing documentation` | 43 |
 | `Desktop Voice runtime` | 36 |
@@ -40,8 +40,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | `PocketBase migration` | 21 |
 | `shared Voice system` | 20 |
 | `historical engineering record` | 17 |
+| `CI/deployment` | 13 |
 | `localization` | 13 |
-| `CI/deployment` | 12 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
 | `shared time` | 7 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 527 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 255 |
+| `PROVEN_REQUIRED` | 531 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 258 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 888 |
-| `MEDIUM` | 82 |
+| `HIGH` | 893 |
+| `MEDIUM` | 84 |
 
 ---
 
@@ -280,8 +280,10 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 ### Documentation / assets
 
 - [`.cursor/`](#folder-cursor)
+- [`assets/`](#folder-assets)
 - [`docs/`](#folder-docs)
 - [`.cursor/rules/`](#folder-cursorrules)
+- [`assets/licenses/`](#folder-assetslicenses)
 - [`docs/releases/`](#folder-docsreleases)
 - [`docs/reports/`](#folder-docsreports)
 - [`docs/specs/`](#folder-docsspecs)
@@ -358,6 +360,30 @@ RU:
 - **Когда открывать:** Открывать при ошибках сборки Android, разрешений, ресурсов или системного запуска.
 - **Можно удалить?** Нет — если нужна поддержка Android APK.
 - **Связанные пути:** `android.ps1`, `.github/workflows/`.
+
+---
+
+## Folder: `assets/`
+
+EN:
+
+- **What this folder is:** Repository path `assets/` — tracked config, assets, or tooling for Life OS.
+- **Why it exists:** Git tracks `assets` because release, CI, or maintenance workflow depends on these files.
+- **What lives here:** Tracked files listed below with individual explanations.
+- **What part of the app it affects:** Repo workflow or platform build tied to this path — see child file entries.
+- **When to open it:** Maintenance or build work involving `assets`.
+- **Can it be deleted?** No — part of repository tooling or config unless cleanup report says otherwise.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, `CHANGELOG.md`.
+
+RU:
+
+- **Что это за папка:** Служебный каталог репозитория `assets/`.
+- **Зачем нужна:** Хранит файлы, необходимые отдельной части сборки, данных проекта или сопровождения репозитория.
+- **Что здесь лежит:** Отслеживаемые Git файлы и дочерние каталоги; каждый элемент описан ниже.
+- **На что влияет в приложении:** Влияет на ту часть продукта или процесса сборки, которой принадлежит этот путь.
+- **Когда открывать:** Открывать при работе с файлами и процессами, связанными с `assets/`.
+- **Можно удалить?** Нет — part of repository tooling or config если отчёт cleanup не сказал иное.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, `CHANGELOG.md`.
 
 ---
 
@@ -838,6 +864,30 @@ RU:
 - **Когда открывать:** Ошибки несовпадения версии Gradle.
 - **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/settings.gradle.kts`.
+
+---
+
+## Folder: `assets/licenses/`
+
+EN:
+
+- **What this folder is:** Repository path `assets/licenses/` — tracked config, assets, or tooling for Life OS.
+- **Why it exists:** Git tracks `assets/licenses` because release, CI, or maintenance workflow depends on these files.
+- **What lives here:** Tracked files listed below with individual explanations.
+- **What part of the app it affects:** Repo workflow or platform build tied to this path — see child file entries.
+- **When to open it:** Maintenance or build work involving `assets/licenses`.
+- **Can it be deleted?** No — part of repository tooling or config unless cleanup report says otherwise.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, `CHANGELOG.md`.
+
+RU:
+
+- **Что это за папка:** Служебный каталог репозитория `assets/licenses/`.
+- **Зачем нужна:** Хранит файлы, необходимые отдельной части сборки, данных проекта или сопровождения репозитория.
+- **Что здесь лежит:** Отслеживаемые Git файлы и дочерние каталоги; каждый элемент описан ниже.
+- **На что влияет в приложении:** Влияет на ту часть продукта или процесса сборки, которой принадлежит этот путь.
+- **Когда открывать:** Открывать при работе с файлами и процессами, связанными с `assets/licenses/`.
+- **Можно удалить?** Нет — part of repository tooling or config если отчёт cleanup не сказал иное.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, `CHANGELOG.md`.
 
 ---
 
@@ -4811,6 +4861,43 @@ RU:
 - **Связано с:** `.github/`, Flutter tooling.
 
 
+### `.github/workflows/icon-packs-qa.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/icon-packs-qa.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/icon-packs-qa.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/icon-packs-qa.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/icon-packs-qa.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `icon-packs-qa.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `docs/APP_STRUCTURE.md`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `icon-packs-qa.yml`.
+- **When to open:** When behavior tied to `icon-packs-qa.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `icon-packs-qa.yml` для CI и операций репозитория. GitHub Actions читает `icon-packs-qa.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `icon-packs-qa.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `icon-packs-qa.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `icon-packs-qa.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `icon-packs-qa.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `icon-packs-qa.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
 ### `.github/workflows/igropoisk-update.yml`
 
 EN:
@@ -6141,6 +6228,43 @@ RU:
 - **Когда открывать:** Gradle sync падает на settings или не видит `:app` module.
 - **Можно удалить?** Нет — без него не соберётся Android APK.
 - **Связано с:** `android/build.gradle.kts`, `android/app/build.gradle.kts`.
+
+
+### `assets/licenses/FLUENT_HEROICONS_LICENSES.txt`
+
+EN:
+
+- **Human purpose:** txt file `FLUENT_HEROICONS_LICENSES.txt` in `assets/licenses` — repo tooling or config. Tracked because `assets/licenses` needs `FLUENT_HEROICONS_LICENSES.txt` for build, CI, or maintenance.
+- **What this is:** txt file `FLUENT_HEROICONS_LICENSES.txt` in `assets/licenses` — repo tooling or config.
+- **Why needed:** Tracked because `assets/licenses` needs `FLUENT_HEROICONS_LICENSES.txt` for build, CI, or maintenance.
+- **Contents:** Open `FLUENT_HEROICONS_LICENSES.txt` when working on `assets/licenses` (see folder section above).
+- **Repository role:** developer tool
+- **Evidence of use:** Referenced by: `docs/APP_STRUCTURE.md`, `lib/core/category_icon_catalog_generated.g.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `assets/licenses` workflow for `FLUENT_HEROICONS_LICENSES.txt`.
+- **When to open:** When build output or maintenance cites `FLUENT_HEROICONS_LICENSES.txt`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `assets/licenses/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `FLUENT_HEROICONS_LICENSES.txt` — отслеживаемый ресурс области `assets/licenses` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `assets/licenses` для `FLUENT_HEROICONS_LICENSES.txt`.
+- **Что это:** `FLUENT_HEROICONS_LICENSES.txt` — отслеживаемый ресурс области `assets/licenses` с отдельной ролью.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `assets/licenses` для `FLUENT_HEROICONS_LICENSES.txt`.
+- **Содержимое:** Данные или код `FLUENT_HEROICONS_LICENSES.txt`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Упоминается в: `docs/APP_STRUCTURE.md`, `lib/core/category_icon_catalog_generated.g.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `FLUENT_HEROICONS_LICENSES.txt` для области `assets/licenses`.
+- **Когда открывать:** When результат сборки or maintenance cites `FLUENT_HEROICONS_LICENSES.txt`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `assets/licenses/`, `docs/APP_STRUCTURE.md`.
 
 
 ### `branding/life_os_app_icon_master.png`
@@ -11791,6 +11915,119 @@ RU:
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
 
 
+### `lib/core/category_icon_catalog_generated.g.dart`
+
+EN:
+
+- **Human purpose:** Foundation module `category_icon_catalog_generated.g.dart` (core) — Generated complete native icon registries: 2,244 Fluent 24px Regular/Filled pairs and all Heroicons Outline/Solid enum entries. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What this is:** Foundation module `category_icon_catalog_generated.g.dart` (core) — Generated complete native icon registries: 2,244 Fluent 24px Regular/Filled pairs and all Heroicons Outline/Solid enum entries.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **Contents:** Dart module `category_icon_catalog_generated.g.dart` — open file for classes and helpers.
+- **Repository role:** shared foundation
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_icon_system.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared foundation
+- **Responsibilities:** Generated complete native icon registries: 2,244 Fluent 24px Regular/Filled pairs and all Heroicons Outline/Solid enum entries
+- **When to open:** When behavior tied to `category_icon_catalog_generated.g.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Generated complete native icon registries: 2,244 Fluent 24px Regular/Filled pairs and all Heroicons Outline/Solid enum e
+
+RU:
+
+- **Зачем файл человеку:** Foundation-модуль `category_icon_catalog_generated.g.dart` (core) — Generated complete native icon registries: 2,244 Fluent 24px Regular/Filled pairs and all Heroicons Outline/Solid enum entries. Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Что это:** Foundation-модуль `category_icon_catalog_generated.g.dart` (core) — Generated complete native icon registries: 2,244 Fluent 24px Regular/Filled pairs and all Heroicons Outline/Solid enum entries.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `category_icon_catalog_generated.g.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Импортируется production Dart: `lib/core/category_icon_system.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общая foundation
+- **Обязанности:** Foundation-логика: Generated complete native icon registries: 2,244 Fluent 24px Regular/Filled pairs and all Heroicons Outline/Solid enum entries.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_icon_catalog_generated.g.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/core/category_icon_svg_data.dart`
+
+EN:
+
+- **Human purpose:** Foundation module `category_icon_svg_data.dart` (core) — Legacy 14-key SVG fallback for old locally saved categories (both icon families and styles). Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What this is:** Foundation module `category_icon_svg_data.dart` (core) — Legacy 14-key SVG fallback for old locally saved categories (both icon families and styles).
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **Contents:** Primary symbols: `CategorySvgPair`.
+- **Key code names:** `CategorySvgPair`
+- **Repository role:** shared foundation
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_icon_system.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared foundation
+- **Responsibilities:** Legacy 14-key SVG fallback for old locally saved categories (both icon families and styles)
+- **When to open:** When behavior tied to `category_icon_svg_data.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Legacy 14-key SVG fallback for old locally saved categories (both icon families and styles)
+
+RU:
+
+- **Зачем файл человеку:** Foundation-модуль `category_icon_svg_data.dart` (core) — Legacy 14-key SVG fallback for old locally saved categories (both icon families and styles). Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Что это:** Foundation-модуль `category_icon_svg_data.dart` (core) — Legacy 14-key SVG fallback for old locally saved categories (both icon families and styles).
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `category_icon_svg_data.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Импортируется production Dart: `lib/core/category_icon_system.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общая foundation
+- **Обязанности:** Foundation-логика: Legacy 14-key SVG fallback for old locally saved categories (both icon families and styles).
+- **Когда открывать:** Когда ломается поведение, связанное с `category_icon_svg_data.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/core/category_icon_system.dart`
+
+EN:
+
+- **Human purpose:** Foundation module `category_icon_system.dart` (core) — Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved). Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What this is:** Foundation module `category_icon_system.dart` (core) — Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved).
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **Contents:** Primary symbols: `CategoryIconPack`, `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`, `CategorySvgIcon`, `CategoryGlyph`.
+- **Key code names:** `CategoryIconPack`, `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`, `CategorySvgIcon`, `CategoryGlyph`
+- **Repository role:** shared foundation
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/widgets/notes_folder_pane.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/profile_view.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared foundation
+- **Responsibilities:** Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved)
+- **When to open:** When behavior tied to `category_icon_system.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences,
+
+RU:
+
+- **Зачем файл человеку:** Foundation-модуль `category_icon_system.dart` (core) — Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved). Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Что это:** Foundation-модуль `category_icon_system.dart` (core) — Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved).
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `category_icon_system.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/widgets/notes_folder_pane.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/profile_view.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общая foundation
+- **Обязанности:** Foundation-логика: Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved).
+- **Когда открывать:** Когда ломается поведение, связанное с `category_icon_system.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/core/constants.dart`
 
 EN:
@@ -15505,7 +15742,7 @@ EN:
 - **Why needed:** Other code imports `models.dart` once to get `TimelineRecord`, `PlanningTask`, etc.
 - **Contents:** `part` directives only — no logic.
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_card.dart`, `lib/core/widgets/plan_time_task_card/plan_card_controls.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/core/category_icon_system.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_card.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -15522,7 +15759,7 @@ RU:
 - **Зачем:** Один import для всех типов данных.
 - **Содержимое:** Только `part` директивы.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_card.dart`, `lib/core/widgets/plan_time_task_card/plan_card_controls.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/core/category_icon_system.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_card.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22634,7 +22871,7 @@ EN:
 - **Contents:** Primary symbols: `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`.
 - **Key code names:** `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`
 - **Repository role:** production UI
-- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`, `docs/reports/LARGE_FILE_DECOMPOSITION_PLAN_2026-07-06.md`.
+- **Evidence of use:** Mentioned by tracked docs/scripts: `.github/workflows/icon-packs-qa.yml`, `docs/APP_STRUCTURE.md`, `docs/reports/LARGE_FILE_DECOMPOSITION_PLAN_2026-07-06.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Removing it breaks a required repository capability.
 - **Confidence:** MEDIUM
@@ -22651,7 +22888,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `category_appearance_sheet.dart` на settings.
 - **Содержимое:** Основные символы: `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`, `docs/reports/LARGE_FILE_DECOMPOSITION_PLAN_2026-07-06.md`.
+- **Доказательства использования:** Упоминается в docs/scripts: `.github/workflows/icon-packs-qa.yml`, `docs/APP_STRUCTURE.md`, `docs/reports/LARGE_FILE_DECOMPOSITION_PLAN_2026-07-06.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
 - **Уверенность:** MEDIUM
@@ -22709,14 +22946,14 @@ EN:
 - **Why needed:** Users see `category_helpers.dart` when using settings area.
 - **Contents:** Dart module `category_helpers.dart` — open file for classes and helpers.
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** Categories settings UI
 - **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings
 - **When to open:** When behavior tied to `category_helpers.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sle
 
 RU:
@@ -22726,13 +22963,51 @@ RU:
 - **Зачем:** Пользователь видит UI из `category_helpers.dart` на settings.
 - **Содержимое:** Dart-модуль `category_helpers.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** UI настроек категорий
+- **Обязанности:** Поддерживает поведение `category_helpers` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_helpers.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/settings/categories/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/settings/categories/category_icon_picker.dart`
+
+EN:
+
+- **Human purpose:** `category_icon_picker.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings. Users see `category_icon_picker.dart` when using settings area.
+- **What this is:** `category_icon_picker.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings.
+- **Why needed:** Users see `category_icon_picker.dart` when using settings area.
+- **Contents:** Primary symbols: `_IconPicker`, `_IconPickerState`.
+- **Key code names:** `_IconPicker`, `_IconPickerState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Categories settings UI
+- **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings
+- **When to open:** When behavior tied to `category_icon_picker.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sle
+
+RU:
+
+- **Зачем файл человеку:** `category_icon_picker.dart` на settings — Поддерживает поведение `category_icon_picker` в этой feature-зоне.. Пользователь видит UI из `category_icon_picker.dart` на settings.
+- **Что это:** `category_icon_picker.dart` на settings — Поддерживает поведение `category_icon_picker` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `category_icon_picker.dart` на settings.
+- **Содержимое:** Dart-модуль `category_icon_picker.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** UI настроек категорий
-- **Обязанности:** Поддерживает поведение `category_helpers` в этой feature-зоне.
-- **Когда открывать:** Когда ломается поведение, связанное с `category_helpers.dart`.
+- **Обязанности:** Поддерживает поведение `category_icon_picker` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_icon_picker.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/settings/categories/`, `docs/APP_STRUCTURE.md`
 
@@ -33890,6 +34165,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `category_catalog_resilience_contract`.
 - **Когда открывать:** Падение CI или правка кода рядом с `category_catalog_resilience_contract`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/category_icon_pack_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `category_icon_pack_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `category_icon_pack_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/category_icon_pack_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `category_icon_pack_test` scenario.
+- **When to open:** CI failure or changing code near `category_icon_pack`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `category_icon_pack`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `category_icon_pack` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `category_icon_pack` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `category_icon_pack`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/category_icon_pack_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `category_icon_pack`.
+- **Когда открывать:** Падение CI или правка кода рядом с `category_icon_pack`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 

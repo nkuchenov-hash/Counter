@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/tag_contrast.dart' show tagSolidAccentOnSurface;
 import 'package:counter/core/widgets/app_icon_button.dart';
@@ -8,7 +9,6 @@ import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/settings/categories/category_editor_sheet.dart';
-import 'package:counter/features/settings/categories/category_helpers.dart';
 import 'package:counter/features/settings/categories/category_row_widget.dart';
 import 'package:counter/features/settings/categories/create_category_dialog.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
@@ -591,7 +591,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                       borderRadius: BorderRadius.circular(9),
                     ),
                     alignment: Alignment.center,
-                    child: Icon(categoryManagerIconFor(r), color: tint, size: 21),
+                    child: CategoryGlyph(category: r, color: tint, size: 21, selected: selected),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -689,7 +689,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
               border: Border.all(color: tint, width: 2),
             ),
             child: Row(children: [
-              Icon(categoryManagerIconFor(r), color: tint),
+              CategoryGlyph(category: r, color: tint, size: 24, selected: selected),
               const SizedBox(width: 12),
               Expanded(child: Text(
                 categoryTileLabel(r),

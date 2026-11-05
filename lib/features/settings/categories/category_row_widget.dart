@@ -1,6 +1,7 @@
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/tag_contrast.dart' show tagSolidAccentOnSurface;
 import 'package:counter/data/database_service.dart';
+import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -212,10 +213,11 @@ class CategoryRowWidget extends StatelessWidget {
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Icon(
-                      r.iconOrDefault,
+                    child: CategoryGlyph(
+                      category: r,
                       size: layout.iconBrowse,
                       color: color,
+                      selected: isSelected,
                     ),
                   ),
                   Text(
