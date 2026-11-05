@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 /// Canonical red, orange and pink families, shared between category and tag
 /// presets. These three are spaced apart perceptually on both solid swatches
 /// and translucent planner chips. Pink is pink, not magenta/purple.
-const MaterialColor kNordicErrands = MaterialColor(0xFFE77A10, <int, Color>{
-  50: Color(0xFFFEF7EE), 100: Color(0xFFFCE9D4), 200: Color(0xFFF8D0A6),
-  300: Color(0xFFF3AD6C), 400: Color(0xFFED923B), 500: Color(0xFFE77A10),
-  600: Color(0xFFC56A0D), 700: Color(0xFFA45813), 800: Color(0xFF834916),
-  900: Color(0xFF693B17),
+const MaterialColor kNordicErrands = MaterialColor(0xFFE8700A, <int, Color>{
+  50: Color(0xFFFEF7EE), 100: Color(0xFFFCE8D2), 200: Color(0xFFF9CE9F),
+  300: Color(0xFFF3AC6A), 400: Color(0xFFED903A), 500: Color(0xFFE8700A),
+  600: Color(0xFFCC6309), 700: Color(0xFFAA5207), 800: Color(0xFF8A4306),
+  900: Color(0xFF663105),
 });
 
 const MaterialColor kNordicEntertainment = MaterialColor(0xFFC82332, <int, Color>{
