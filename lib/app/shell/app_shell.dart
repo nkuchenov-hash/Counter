@@ -174,9 +174,9 @@ class ShellDashboardState extends State<LifeOSDashboard>
         ShellTaskActions,
         ShellEditHosts,
         ShellTabHost,
-        ShellMoreMenu,
         ShellVoiceRouting,
         ShellVoiceIntegration,
+        ShellMoreMenu,
         ShellBrowserExtensionQuickAdd,
         ShellLifecycle,
         ShellChrome {

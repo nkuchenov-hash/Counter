@@ -1,6 +1,6 @@
 part of '../app_shell.dart';
 
-mixin ShellMoreMenu on ShellCoreLogic {
+mixin ShellMoreMenu on ShellVoiceIntegration {
   static bool _moreMenuDiagnosticsMarkerLogged = false;
 
   bool get _desktopVoiceDevDiagnosticsVisible {
