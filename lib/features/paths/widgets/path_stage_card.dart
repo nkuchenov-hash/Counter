@@ -1,3 +1,4 @@
+import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/core/widgets/plan_time_task_card/plan_card_controls.dart';
@@ -48,8 +49,8 @@ class _PathStageCardState extends State<PathStageCard> {
   static const _htmlMuted = Color(0xFF6F7782);
   static const _htmlOutline = Color(0xFFDDE1E6);
   static const _htmlOutlineSoft = Color(0xFFE9ECEF);
-  static const _htmlGreen = Color(0xFF2E9F58);
-  static const _htmlAmber = Color(0xFFD89614);
+  static const _htmlGreen = AppColors.success;
+  static const _htmlAmber = AppColors.warning;
   static const _htmlNeutral = Color(0xFF8C949E);
 
   late bool _expanded;
