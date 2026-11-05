@@ -623,6 +623,21 @@ void main() {
   });
 
 
+  test('pending writes retry after silent server recovery without Wi-Fi change', () {
+    final manager =
+        File('lib/data/local_sync/sync_manager.dart').readAsStringSync();
+    expect(manager, contains('Timer? _offlineRecoveryTimer;'));
+    expect(manager, contains('void _scheduleOfflineRecovery()'));
+    expect(manager, contains('Future<void> _probeOfflineRecovery() async'));
+    expect(manager, contains('Connectivity().checkConnectivity()'));
+    expect(manager, contains('sync.setConnectivityOffline(false);'));
+    expect(manager, contains('sync.pendingCount <= 0 || !sync.isOffline'));
+    expect(manager, contains('sync.authPaused'));
+    expect(manager, contains('Duration(seconds: 2 * (1 << step))'));
+    expect(manager, contains('_offlineRecoveryTimer?.cancel();'));
+    expect(manager, isNot(contains('Timer.periodic(')));
+  });
+
   test('realtime events paint immediately and recover malformed payloads', () {
     final plans =
         File('lib/data/plans/plan_stream_helpers.dart').readAsStringSync();
