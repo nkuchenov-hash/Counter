@@ -1,4 +1,5 @@
 import 'package:counter/core/shell_adaptive.dart';
+import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/core/app_colors.dart';
 import 'package:flutter/material.dart';
 
@@ -580,7 +581,7 @@ class AppSettingsNavigationRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
               ],
-              Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+              Icon(AppMenuIcons.icon(AppMenuIconRole.arrow), color: scheme.onSurfaceVariant),
             ],
           ),
           onTap: onTap,

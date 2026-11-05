@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
+import 'package:counter/features/profile/menu/life_os_notes_settings_page.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/widgets/notes_category_plus_sheet.dart';
@@ -502,6 +503,25 @@ class _MobileNotesViewMenu extends StatelessWidget {
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 adapter.onOpenSettings();
+              },
+            ),
+            AppMenuActionTile(
+              leading: AppSettingsMenuIcon(
+                icon: AppMenuIcons.icon(AppMenuIconRole.filter)),
+              title: Text(adapter.locale == 'ru'
+                  ? 'Все настройки заметок' : 'All Notes settings'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                Navigator.of(context).push<void>(
+                  MaterialPageRoute<void>(
+                    builder: (settingsContext) => LifeOsNotesSettingsPage(
+                      onOpenCategoryBar: () {
+                        Navigator.of(settingsContext).pop();
+                        adapter.onOpenSettings();
+                      },
+                    ),
+                  ),
+                );
               },
             ),
           ]),
