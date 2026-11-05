@@ -39,6 +39,8 @@ mixin ShellMoreMenu on ShellCoreLogic {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (ctx) => StreamBuilder<UserSettings>(
         stream: DatabaseService.instance.userSettingsStream,
         initialData: DatabaseService.instance.settings,
@@ -46,14 +48,14 @@ mixin ShellMoreMenu on ShellCoreLogic {
           final isAdmin =
               snapshot.data?.isAdmin ??
               DatabaseService.instance.settings.isAdmin;
-          debugPrint(
-            '[ADMIN_FLAG] More bottom sheet settings.isAdmin=$isAdmin renderDevLab=$isAdmin',
-          );
           return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(ctx).height * 0.75),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                AppMenuActionTile(
                   leading: const Icon(Icons.auto_awesome_rounded),
                   title: const Text('Виктор · ИИ'),
                   subtitle: const Text('Общение, планы и голосовые команды'),
@@ -63,7 +65,7 @@ mixin ShellMoreMenu on ShellCoreLogic {
                   },
                 ),
                 if (!secondaryOnly) ...[
-                  ListTile(
+                  AppMenuActionTile(
                     leading: const Icon(Icons.person_rounded),
                     title: Text(t(loc, 'more_menu_profile')),
                     onTap: () {
@@ -71,7 +73,7 @@ mixin ShellMoreMenu on ShellCoreLogic {
                       setState(() => setShellPageIndex(5));
                     },
                   ),
-                  ListTile(
+                  AppMenuActionTile(
                     leading: const Icon(Icons.label_rounded),
                     title: Text(t(loc, 'more_menu_categories')),
                     onTap: () {
@@ -80,7 +82,7 @@ mixin ShellMoreMenu on ShellCoreLogic {
                     },
                   ),
                 ],
-                ListTile(
+                AppMenuActionTile(
                   leading: const Icon(Icons.alt_route_rounded),
                   title: Text(isRu ? 'Пути проектов' : 'Project paths'),
                   subtitle: Text(
@@ -95,7 +97,7 @@ mixin ShellMoreMenu on ShellCoreLogic {
                   },
                 ),
                 if (isAdmin)
-                  ListTile(
+                  AppMenuActionTile(
                     leading: const Icon(Icons.design_services_rounded),
                     title: const Text('Dev / Design Lab'),
                     onTap: () {
@@ -108,7 +110,7 @@ mixin ShellMoreMenu on ShellCoreLogic {
                     },
                   ),
                 if (_desktopVoiceDevDiagnosticsVisible)
-                  ListTile(
+                  AppMenuActionTile(
                     leading: const Icon(Icons.graphic_eq_rounded),
                     title: Text(t(loc, 'more_menu_voice_diagnostics')),
                     subtitle: Text(
@@ -120,16 +122,10 @@ mixin ShellMoreMenu on ShellCoreLogic {
                       showDesktopVoiceAttemptDialog(context);
                     },
                   ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                  child: Text(
-                    'Admin flag: $isAdmin',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                  ),
+
+                  ],
                 ),
-              ],
+              ),
             ),
           );
         },
