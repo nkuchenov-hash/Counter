@@ -7,6 +7,8 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:counter/core/app_colors.dart';
+import 'package:counter/core/life_color_compat.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/models.dart';
@@ -17,14 +19,18 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 const List<NotesDrawingColorOption> kNotesDrawingColors = [
-  NotesDrawingColorOption(color: Color(0xFF0F172A), label: 'Black'),
-  NotesDrawingColorOption(color: Color(0xFFEF4444), label: 'Red'),
-  NotesDrawingColorOption(color: Color(0xFFF59E0B), label: 'Amber'),
-  NotesDrawingColorOption(color: Color(0xFF10B981), label: 'Green'),
-  NotesDrawingColorOption(color: Color(0xFF06B6D4), label: 'Cyan'),
-  NotesDrawingColorOption(color: Color(0xFF6366F1), label: 'Indigo'),
-  NotesDrawingColorOption(color: Color(0xFFEC4899), label: 'Pink'),
-  NotesDrawingColorOption(color: Color(0xFFFFFFFF), label: 'White'),
+  NotesDrawingColorOption(color: kNordicEntertainment, label: 'Red'),
+  NotesDrawingColorOption(color: kNordicErrands, label: 'Orange'),
+  NotesDrawingColorOption(color: kNordicFood, label: 'Yellow'),
+  NotesDrawingColorOption(color: kNordicMovement, label: 'Green'),
+  NotesDrawingColorOption(color: kNordicHealth, label: 'Teal'),
+  NotesDrawingColorOption(color: kNordicTransport, label: 'Sky'),
+  NotesDrawingColorOption(color: kNordicWork, label: 'Blue'),
+  NotesDrawingColorOption(color: kNordicStudy, label: 'Purple'),
+  NotesDrawingColorOption(color: kNordicPeople, label: 'Pink'),
+  NotesDrawingColorOption(color: kCategoryNeutral, label: 'Gray'),
+  NotesDrawingColorOption(color: kCategoryBlack, label: 'Black'),
+  NotesDrawingColorOption(color: AppNeutralTones.white, label: 'White'),
 ];
 
 Future<void> showDrawingCanvas({
@@ -662,7 +668,7 @@ class _DrawingPainter extends CustomPainter {
         canvas.drawRect(
           _strokeBounds(stroke).inflate(stroke.width + 8),
           Paint()
-            ..color = const Color(0xFF6366F1)
+            ..color = kNordicStudy
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1.5,
         );
