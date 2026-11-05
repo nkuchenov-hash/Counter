@@ -4,6 +4,7 @@ import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/tag_contrast.dart' show tagSolidAccentOnSurface;
 import 'package:counter/core/widgets/app_icon_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/data/database_service.dart';
@@ -60,6 +61,7 @@ class CategoriesPage extends StatefulWidget {
 
 class _CategoriesPageState extends State<CategoriesPage> {
   final TextEditingController _search = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
   final Set<int> _expanded = <int>{};
   StreamSubscription<List<CategoryRule>>? _categoriesSubscription;
   int? _selectedId;
@@ -83,6 +85,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     _categoriesSubscription?.cancel();
     _search.removeListener(_redraw);
     _search.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -754,32 +757,30 @@ class _CategoriesPageState extends State<CategoriesPage> {
           child: Row(
             children: [
               Expanded(
-                child: TextField(
+                child: AppTextField(
                   controller: _search,
-                  decoration: InputDecoration(
-                    isDense: true,
-                    hintText: t(loc, 'category_search'),
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    suffixIcon: _search.text.isEmpty
-                        ? null
-                        : IconButton(
-                            tooltip: t(loc, 'clear'),
-                            onPressed: _search.clear,
-                            icon: const Icon(Icons.close_rounded),
-                          ),
-                    border: const OutlineInputBorder(),
-                  ),
+                  focusNode: _searchFocus,
+                  hintText: t(loc, 'category_search'),
+                  textInputAction: TextInputAction.search,
+                  showSearchIcon: true,
+                  suffixIcon: _search.text.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: t(loc, 'clear'),
+                          onPressed: _search.clear,
+                          icon: const Icon(Icons.close_rounded),
+                        ),
                 ),
               ),
               const SizedBox(width: 8),
-              IconButton(
+              AppIconButton(
                 tooltip: t(loc, _expanded.isEmpty && _search.text.isEmpty
                     ? 'category_expand_all' : 'category_collapse_all'),
-                icon: Icon(
-                  _expanded.isEmpty && _search.text.isEmpty
-                      ? Icons.unfold_more_rounded
-                      : Icons.unfold_less_rounded,
-                ),
+                icon: _expanded.isEmpty && _search.text.isEmpty
+                    ? Icons.unfold_more_rounded
+                    : Icons.unfold_less_rounded,
+                onPressed: _toggleAllCategories,
+              ),
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 onPressed: _toggleAllCategories,
               ),
