@@ -1,4 +1,5 @@
 import 'package:counter/core/shell_adaptive.dart';
+import 'package:counter/core/tag_contrast.dart' show tagSolidAccentOnSurface;
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/category_db_display.dart';
@@ -166,7 +167,7 @@ class CategoryRowWidget extends StatelessWidget {
   }) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final color = r.colorOrDefault;
+    final color = tagSolidAccentOnSurface(r.colorOrDefault, scheme.surface);
     final label = categoryTileLabel(r);
     final glassAlpha = isSelected
         ? kCategoryGlassAlphaSelected
@@ -364,8 +365,10 @@ class CategoryRowWidget extends StatelessWidget {
       final parent = DatabaseService.instance.getCategoryRuleById(
         immediateParentId!,
       );
-      final stripeColor =
-          parent?.colorOrDefault ?? Theme.of(context).colorScheme.primary;
+      final stripeColor = tagSolidAccentOnSurface(
+        parent?.colorOrDefault ?? Theme.of(context).colorScheme.primary,
+        Theme.of(context).colorScheme.surface,
+      );
       inner = DecoratedBox(
         decoration: BoxDecoration(
           border: Border(
