@@ -1,3 +1,4 @@
+import 'package:counter/core/life_color_compat.dart';
 // ---------------------------------------------------------------------------
 // TAG / CATEGORY DISPLAY — global chip style (profiles.tag_display_mode).
 // UI_ISOLATION: strings via t(); persistence via DatabaseService.saveSettings.
@@ -26,7 +27,7 @@ class TagSettingsView extends StatefulWidget {
 class _TagSettingsViewState extends State<TagSettingsView> {
   bool _saving = false;
 
-  static const Color _previewColor = Color(0xFF00897B);
+  static const Color _previewColor = kNordicHealth;
   static const IconData _previewIcon = Icons.star_rounded;
 
   String _modeLabel(String loc, CategoryDisplayMode m) {
