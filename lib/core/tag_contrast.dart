@@ -16,7 +16,7 @@ bool tagColorIsYellowFamily(Color tagColor) {
   return h >= 45.0 && h < 60.0;
 }
 
-/// Timeline breadcrumb stadium: default ~13% accent; yellow → 15% [kTagYellowGold].
+/// Timeline breadcrumb stadium: 22% accent; yellow stays 15% gold.
 Color tagCategoryBreadcrumbPlate(Color accentColor, Color surface) {
   if (tagColorIsYellowFamily(accentColor)) {
     return Color.alphaBlend(
@@ -25,12 +25,12 @@ Color tagCategoryBreadcrumbPlate(Color accentColor, Color surface) {
     );
   }
   return Color.alphaBlend(
-    accentColor.withValues(alpha: 0.13),
+    accentColor.withValues(alpha: 0.22),
     surface,
   );
 }
 
-/// Tag manager list avatar background: default 20% tag; yellow → 15% gold.
+/// Tag manager list avatar background: 26% tag; yellow remains 15% gold.
 Color tagManagerAvatarPlate(Color tagColor, Color surface) {
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
@@ -38,7 +38,7 @@ Color tagManagerAvatarPlate(Color tagColor, Color surface) {
       surface,
     );
   }
-  return Color.alphaBlend(tagColor.withValues(alpha: 0.2), surface);
+  return Color.alphaBlend(tagColor.withValues(alpha: 0.26), surface);
 }
 
 /// Shared foreground for translucent category/tag chips.
@@ -71,6 +71,29 @@ Color tagVibrantForeground(Color tagBaseColor, {Color? surface}) {
   return foreground;
 }
 
+/// Color for solid 12px dots and colored icons, preserving the hue but
+/// ensuring sufficient separation from a dark or light app surface.
+/// Tag fills and colors stored in PocketBase are not modified.
+Color tagSolidAccentOnSurface(Color base, Color surface) {
+  if (tagColorIsYellowFamily(base)) return kTagYellowGold;
+  final backgroundLum = surface.computeLuminance();
+  final lightSurface = backgroundLum > 0.35;
+  var color = base;
+  var hsl = HSLColor.fromColor(base);
+  for (var i = 0; i < 28; i++) {
+    final foregroundLum = color.computeLuminance();
+    final high = foregroundLum > backgroundLum ? foregroundLum : backgroundLum;
+    final low = foregroundLum > backgroundLum ? backgroundLum : foregroundLum;
+    if ((high + 0.05) / (low + 0.05) >= 3.0) return color;
+    final lightness = (hsl.lightness + (lightSurface ? -0.025 : 0.025))
+        .clamp(0.0, 1.0).toDouble();
+    if (lightness == hsl.lightness) break;
+    hsl = hsl.withLightness(lightness);
+    color = hsl.toColor();
+  }
+  return color;
+}
+
 /// Icon/glyph without a filled tag circle.
 Color tagGlyphOnCanvas(Color tagColor) {
   if (tagColorIsYellowFamily(tagColor)) return kTagYellowGold;
@@ -91,7 +114,7 @@ Color tagIconOnFilledTagColor(Color tagFill, {bool syntheticNoTags = false}) {
   return tagFill;
 }
 
-/// Letter chip plate: yellow uses [kTagYellowGold] @ [kTagYellowPlateOpacity]; else prior behavior.
+/// Letter chip plate: 26% tint distinguishes adjacent families; yellow stays 15% gold.
 Color tagLetterChipPlate(Color tagColor, Color surface) {
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
@@ -99,16 +122,16 @@ Color tagLetterChipPlate(Color tagColor, Color surface) {
       surface,
     );
   }
-  return Color.alphaBlend(tagColor.withValues(alpha: 0.16), surface);
+  return Color.alphaBlend(tagColor.withValues(alpha: 0.26), surface);
 }
 
 /// Letter chip border: yellow → solid [kTagYellowGold]; else tinted category stroke.
 Color tagLetterChipBorder(Color tagColor, Color surface) {
   if (tagColorIsYellowFamily(tagColor)) return kTagYellowGold;
-  return Color.alphaBlend(tagColor.withValues(alpha: 0.42), surface);
+  return Color.alphaBlend(tagColor.withValues(alpha: 0.55), surface);
 }
 
-/// Empty chip stadium fill: yellow → 15% gold blended on [surface]; else legacy translucent tag.
+/// Empty chip stadium fill: yellow stays 15% gold; others use the same 26% accent tint.
 Color tagEmptyChipFill(Color tagColor, Color surface) {
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
@@ -116,12 +139,12 @@ Color tagEmptyChipFill(Color tagColor, Color surface) {
       surface,
     );
   }
-  return tagColor.withValues(alpha: 0.16);
+  return tagColor.withValues(alpha: 0.26);
 }
 
 Color tagEmptyChipBorderColor(Color tagColor) {
   if (tagColorIsYellowFamily(tagColor)) return kTagYellowGold;
-  return tagColor.withValues(alpha: 0.42);
+  return tagColor.withValues(alpha: 0.55);
 }
 
 /// Ten Material icon keys (`tags.icon`).
