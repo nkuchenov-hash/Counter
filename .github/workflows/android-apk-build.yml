@@ -86,87 +86,116 @@ jobs:
       - name: Browser IndexedDB persistence regression
         run: flutter test --platform chrome test/web_record_journal_test.dart
 
-      - name: Configure persistent Android release signing
+
+      # The original key is unavailable. Create ONE new signing identity and
+      # retain an encrypted backup in a private (draft) GitHub release asset.
+      # Never rotate automatically after a signing backup exists.
+      - name: Configure permanent Android v2 signing
         if: github.event_name != 'pull_request'
         shell: bash
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
-          SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
-          SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+          GH_TOKEN: ${{ github.token }}
+          SIGNING_ENCRYPTION_SECRET: ${{ secrets.LIFE_OS_SIGNING_ENCRYPTION_SECRET || secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
         run: |
           set -euo pipefail
-          [[ -n "${SSH_PRIVATE_KEY:-}" ]]
-          SSH_USER="${SSH_USER:-root}"
-          SSH_HOST="${SSH_HOST:-217.114.0.201}"
-          REMOTE_DIR=".lifeos/android-signing"
-
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_android_signing
-          chmod 600 ~/.ssh/lifeos_android_signing
-          # Transient SSH failures must not block an otherwise healthy Android build.
-          # Never create or rotate the existing production signing key on a network error.
-          HOST_KEY_FOUND=false
-          for attempt in 1 2 3 4 5; do
-            if ssh-keyscan -T 8 -p "$SSH_PORT" -H "$SSH_HOST" > /tmp/lifeos-ssh-hostkey 2>/dev/null &&
-               [[ -s /tmp/lifeos-ssh-hostkey ]]; then
-              cat /tmp/lifeos-ssh-hostkey >> ~/.ssh/known_hosts
-              HOST_KEY_FOUND=true
-              break
-            fi
-            echo "::warning::Release signing SSH host not reachable (attempt $attempt/5)"
-            sleep $((attempt * 4))
-          done
-          if [[ "$HOST_KEY_FOUND" != true ]]; then
-            echo "::error::Cannot reach persistent Android signing-key host on SSH port $SSH_PORT. Refusing to create an incompatible APK."
+          umask 077
+          if [[ -z "$SIGNING_ENCRYPTION_SECRET" ]]; then
+            echo "::error::A long-lived repository secret is needed to encrypt the new signing identity."
             exit 1
           fi
+          BACKUP_TAG="life-os-android-signing-identity-v2"
+          ASSET_NAME="life-os-signing-v2.tar.enc"
+          WORK_DIR="$RUNNER_TEMP/lifeos-android-signing"
+          mkdir -p "$WORK_DIR"
+          # This is a key-encryption password, derived from an existing stable
+          # Actions secret. The secret and derived password never enter the repo.
+          WRAP_KEY="$(printf '%s' "$SIGNING_ENCRYPTION_SECRET" | sha256sum | cut -d ' ' -f1)"
+          export WRAP_KEY
 
-          mkdir -p /tmp/lifeos-signing
-          SIGNING_KEY_FETCHED=false
-          for attempt in 1 2 3 4; do
-            if scp -q -o BatchMode=yes -o ConnectTimeout=12 \
-              -i ~/.ssh/lifeos_android_signing -P "$SSH_PORT" \
-              "$SSH_USER@$SSH_HOST:$REMOTE_DIR/life-os-release.jks" \
-              "$SSH_USER@$SSH_HOST:$REMOTE_DIR/signing.env" \
-              /tmp/lifeos-signing/; then
-              SIGNING_KEY_FETCHED=true
-              break
+          # The draft release remains private to repository collaborators even
+          # when the source repository and application releases are public.
+          # Use the authenticated list API: /releases/tags does not reliably
+          # expose drafts. Paginate to retain the identity beyond 100 releases.
+          RELEASE_IDS="$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq '.[] | select(.tag_name == "life-os-android-signing-identity-v2" and .draft == true) | .id')"
+          RELEASE_ID="$(printf '%s\n' "$RELEASE_IDS" | sed '/^$/d' | head -n1)"
+
+          if [[ -n "$RELEASE_ID" ]]; then
+            echo "Restoring existing v2 signing identity from encrypted private backup."
+            ASSET_ID="$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets" \
+              --jq '.[] | select(.name == "life-os-signing-v2.tar.enc") | .id')"
+            if [[ -z "$ASSET_ID" ]]; then
+              echo "::error::Signing backup release exists but its encrypted asset is missing. Refusing silent key rotation."
+              exit 1
             fi
-            echo "::warning::Cannot retrieve existing Android release key (attempt $attempt/4)"
-            sleep $((attempt * 5))
-          done
-          if [[ "$SIGNING_KEY_FETCHED" != true ]]; then
-            echo "::error::Existing production signing key unavailable. Do not rotate signing keys or publish debug-signed updates."
-            exit 1
-          fi
-          test -s /tmp/lifeos-signing/life-os-release.jks
-          test -s /tmp/lifeos-signing/signing.env
+            curl --fail --silent --show-error --location \
+              --header "Authorization: Bearer $GH_TOKEN" \
+              --header "Accept: application/octet-stream" \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/assets/$ASSET_ID" \
+              --output "$WORK_DIR/$ASSET_NAME"
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 300000 \
+              -in "$WORK_DIR/$ASSET_NAME" -out "$WORK_DIR/signing.tar" \
+              -pass env:WRAP_KEY
+            tar -xf "$WORK_DIR/signing.tar" -C "$WORK_DIR" \
+              life-os-release.jks signing.env
+          else
+            echo "Initializing the replacement signing identity (only once)."
+            STORE_PASSWORD="$(openssl rand -hex 32)"
+            keytool -genkeypair -noprompt \
+              -alias lifeos -keyalg RSA -keysize 3072 -validity 10000 \
+              -storetype PKCS12 -keystore "$WORK_DIR/life-os-release.jks" \
+              -storepass "$STORE_PASSWORD" -keypass "$STORE_PASSWORD" \
+              -dname "CN=LIFE OS, OU=Android, O=LIFE OS, C=US"
+            printf 'ANDROID_KEYSTORE_PASSWORD=%s\nANDROID_KEY_ALIAS=lifeos\nANDROID_KEY_PASSWORD=%s\n' \
+              "$STORE_PASSWORD" "$STORE_PASSWORD" > "$WORK_DIR/signing.env"
+            tar -cf "$WORK_DIR/signing.tar" -C "$WORK_DIR" \
+              life-os-release.jks signing.env
+            openssl enc -aes-256-cbc -salt -pbkdf2 -iter 300000 \
+              -in "$WORK_DIR/signing.tar" -out "$WORK_DIR/$ASSET_NAME" \
+              -pass env:WRAP_KEY
 
-          cp /tmp/lifeos-signing/life-os-release.jks android/app/life-os-release.jks
-          set -a
-          source /tmp/lifeos-signing/signing.env
-          set +a
-          # keytool's default PKCS12 store uses the store password for private-key
-          # entries even when a different -keypass was supplied.
-          ANDROID_KEY_PASSWORD="$ANDROID_KEYSTORE_PASSWORD"
+            # Private draft, not a user-facing release. Actions token has
+            # repository contents:write. Failure here stops the build BEFORE
+            # publishing an APK without a durable signing-key backup.
+            gh release create "$BACKUP_TAG" "$WORK_DIR/$ASSET_NAME" \
+              --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --draft --latest=false \
+              --title "LIFE OS Android signing identity v2 (encrypted backup)" \
+              --notes "Private encrypted recovery backup. Never publish or delete."
+            RELEASE_IDS="$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+              --jq '.[] | select(.tag_name == "life-os-android-signing-identity-v2" and .draft == true) | .id')"
+            RELEASE_ID="$(printf '%s\n' "$RELEASE_IDS" | sed '/^$/d' | head -n1)"
+            if [[ -z "$RELEASE_ID" ]]; then
+              echo "::error::Failed to verify persistent signing backup."
+              exit 1
+            fi
+            ASSET_ID="$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets" \
+              --jq '.[] | select(.name == "life-os-signing-v2.tar.enc") | .id')"
+            if [[ -z "$ASSET_ID" ]]; then
+              echo "::error::Encrypted signing-key asset not persisted."
+              exit 1
+            fi
+          fi
+
+          test -s "$WORK_DIR/life-os-release.jks"
+          test -s "$WORK_DIR/signing.env"
+          # The env file is created solely by this workflow and encrypted at rest.
+          source "$WORK_DIR/signing.env"
+          [[ -n "$ANDROID_KEYSTORE_PASSWORD" && -n "$ANDROID_KEY_ALIAS" && -n "$ANDROID_KEY_PASSWORD" ]]
+          keytool -list -keystore "$WORK_DIR/life-os-release.jks" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
+
+          cp "$WORK_DIR/life-os-release.jks" android/app/life-os-release.jks
+          chmod 600 android/app/life-os-release.jks
+          echo "::add-mask::$ANDROID_KEYSTORE_PASSWORD"
+          echo "::add-mask::$ANDROID_KEY_PASSWORD"
           {
+            printf 'LIFE_OS_KEYSTORE_PATH=%s\n' "$GITHUB_WORKSPACE/android/app/life-os-release.jks"
             printf 'ANDROID_KEYSTORE_PASSWORD=%s\n' "$ANDROID_KEYSTORE_PASSWORD"
             printf 'ANDROID_KEY_ALIAS=%s\n' "$ANDROID_KEY_ALIAS"
             printf 'ANDROID_KEY_PASSWORD=%s\n' "$ANDROID_KEY_PASSWORD"
-          } > /tmp/lifeos-signing/signing.env
-          scp -q -i ~/.ssh/lifeos_android_signing -P "$SSH_PORT" \
-            /tmp/lifeos-signing/signing.env \
-            "$SSH_USER@$SSH_HOST:$REMOTE_DIR/signing.env"
-          ssh -i ~/.ssh/lifeos_android_signing -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            "chmod 600 '$REMOTE_DIR/signing.env'"
-
-          echo "::add-mask::$ANDROID_KEYSTORE_PASSWORD"
-          echo "::add-mask::$ANDROID_KEY_PASSWORD"
-          echo "LIFE_OS_KEYSTORE_PATH=${GITHUB_WORKSPACE}/android/app/life-os-release.jks" >> "$GITHUB_ENV"
-          echo "ANDROID_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
-          echo "ANDROID_KEY_ALIAS=$ANDROID_KEY_ALIAS" >> "$GITHUB_ENV"
-          echo "ANDROID_KEY_PASSWORD=$ANDROID_KEY_PASSWORD" >> "$GITHUB_ENV"
+          } >> "$GITHUB_ENV"
+          echo "Persistent v2 signing identity available and backup verified."
 
       - name: Verify persistent signing is configured
         if: github.event_name != 'pull_request'
