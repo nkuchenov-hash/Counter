@@ -1,3 +1,10 @@
+## Persistent desktop navigation across People and Menu (2026-11-05)
+
+- On desktop, global shell sidebar and header stay mounted and unchanged when switching Timeline, Planning, Calendar, Lists, Categories, Paths, People, Profile, or Menu.
+- People and contact sources are shell-owned destinations rather than full-screen Navigator pushes. People has title/refresh controls in the desktop content area and Back to Menu on phone/tablet.
+- Menu changes the main content only, not global chrome. Its category list uses the existing centered settings layout. The desktop global header is not hidden for Menu.
+- An inactive People or Menu page cannot intercept system Back; People database and sync behavior remain unchanged.
+
 ## Menu and settings navigation (2026-11-05)
 
 - The shell is the **only** primary navigation owner. On desktop it owns the persistent sidebar; Menu never creates a parallel rail. On mobile, Menu may surface shortcuts for destinations not present in the bottom tab bar.

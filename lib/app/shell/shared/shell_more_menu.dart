@@ -73,13 +73,16 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
         openProjectPaths();
         break;
       case LifeOsMenuAction.people:
-        Navigator.of(context).push<void>(MaterialPageRoute<void>(
-          builder: (_) => const PeopleSettingsPage()));
+        setState(() {
+          peopleDestination = PeopleSettingsDestination.people;
+          setShellPageIndex(8);
+        });
         break;
       case LifeOsMenuAction.peopleSources:
-        Navigator.of(context).push<void>(MaterialPageRoute<void>(
-          builder: (_) => const PeopleSettingsPage(
-            initialSection: PeopleSettingsDestination.sources)));
+        setState(() {
+          peopleDestination = PeopleSettingsDestination.sources;
+          setShellPageIndex(8);
+        });
         break;
       case LifeOsMenuAction.categories:
       case LifeOsMenuAction.categoryAppearance:
@@ -233,7 +236,7 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
 
   int desktopSideNavSelectedIndex(int shellPageIndex) {
     return switch (shellPageIndex) {
-      0 || 1 || 2 || 3 || 4 || 5 || 6 => shellPageIndex,
+      0 || 1 || 2 || 3 || 4 || 5 || 6 || 8 => shellPageIndex,
       _ => 7,
     };
   }

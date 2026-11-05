@@ -1,3 +1,9 @@
+## Menu and settings visual contract (2026-11-05)
+
+- Light page canvas: `AppColors.appBackground` (`#F8FAFC`) rather than old flat `#F2F2F2`. Grouped cards: white, icon plates `#F1F5F9`, understated hairlines `#E7EDF3`. Dark surfaces retain their independent tokens.
+- Settings navigation rows use semibold 16 px titles, muted smaller regular-weight subtitles (`#687586`), subtle cool-white hover (`#F3F6FA`), no aggressive splash. Desktop nav uses similarly subdued hover and a clear selected state.
+- Global text stack prefers Segoe UI Variable then Segoe UI, Roboto, Arial, without requesting online fonts. Preserve localization and do not override feature-owned data behavior.
+
 ## Canonical Menu / settings composition (2026-11-05)
 
 - `ShellSideNavigation` is the sole desktop primary navigation; `LifeOsMenuPage` supplies a **single content column** and settings category index, not its own sidebar.

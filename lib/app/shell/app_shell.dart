@@ -88,6 +88,7 @@ mixin ShellDashboardBase on State<LifeOSDashboard> {
   /// 0 Timeline, 1 Planning, 2 Calendar, 3 Lists, 4 Categories, 5 Profile,
   /// 6 Paths.
   int shellPageIndex = 0;
+  PeopleSettingsDestination peopleDestination = PeopleSettingsDestination.people;
 
   int get navBarSelectedIndex => shellPageIndex <= 3 ? shellPageIndex : 4;
 
@@ -100,6 +101,7 @@ mixin ShellDashboardBase on State<LifeOSDashboard> {
       4 => 'categories',
       5 => 'profile',
       6 => 'paths',
+      8 => 'people',
       _ => 'tab$shellPageIndex',
     };
   }

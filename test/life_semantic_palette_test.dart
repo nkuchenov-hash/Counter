@@ -1,3 +1,4 @@
+import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/theme.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
@@ -422,7 +423,7 @@ void main() {
     }
   });
 
-  testWidgets('approved Settings canvas separates white cards from gray background',
+  testWidgets('near-white Settings canvas keeps white cards distinct',
       (tester) async {
     late Color background;
     late Color card;
@@ -447,8 +448,8 @@ void main() {
         }),
       )),
     ));
-    expect(background, const Color(0xFFF2F2F2));
-    expect(card, const Color(0xFFFFFFFF));
+    expect(background, AppColors.appBackground);
+    expect(card, AppColors.cardSurface);
     expect(background, isNot(card));
     expect(tester.takeException(), isNull);
   });
