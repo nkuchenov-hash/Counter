@@ -689,7 +689,7 @@ class AppSettingsMenuIcon extends StatelessWidget {
       height: 44,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: scheme.surfaceContainerLow,
+          color: scheme.surfaceContainer,
           borderRadius: BorderRadius.circular(13),
         ),
         child: Icon(icon, size: 23, color: scheme.onSurface),

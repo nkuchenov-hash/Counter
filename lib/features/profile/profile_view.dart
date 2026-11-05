@@ -268,6 +268,7 @@ class _ProfilePageState extends State<ProfilePage> {
         tz_settings.catalogEntryForStoredTimezone(_timeZone)?.profileValue ??
         (validTimezones.contains(_timeZone) ? _timeZone : 'UTC');
     final locale = currentLocale.value;
+    final menuBackground = settingsNeutralTheme(context).colorScheme.surfaceContainerLowest;
     final useDesktopLayout =
         settingsIsWideDesktop(context) &&
         shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
@@ -276,9 +277,9 @@ class _ProfilePageState extends State<ProfilePage> {
       return Theme(
         data: settingsNeutralTheme(context),
         child: Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+          backgroundColor: menuBackground,
           appBar: AppBar(
-            backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+            backgroundColor: menuBackground,
             surfaceTintColor: Colors.transparent,
             title: Text(_mobileSectionTitle(locale, widget.initialDestination!)),
           ),
@@ -292,7 +293,7 @@ class _ProfilePageState extends State<ProfilePage> {
       return Theme(
         data: settingsNeutralTheme(context),
         child: Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+          backgroundColor: menuBackground,
           body: _buildDesktopSettings(context, locale, safeTimeZone),
         ),
       );
@@ -310,7 +311,7 @@ class _ProfilePageState extends State<ProfilePage> {
         data: settingsNeutralTheme(context),
         child: Scaffold(
           resizeToAvoidBottomInset: true,
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+          backgroundColor: menuBackground,
           appBar: AppBar(
             automaticallyImplyLeading: false,
             leading: section == null
@@ -323,7 +324,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         : () => setState(() => _mobileSection = null),
                   ),
             toolbarHeight: section == null ? 80 : 60,
-            backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+            backgroundColor: menuBackground,
             surfaceTintColor: Colors.transparent,
             scrolledUnderElevation: 0,
             title: Text(

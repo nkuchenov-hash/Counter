@@ -3,6 +3,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/widgets/notes_category_plus_sheet.dart';
@@ -446,87 +448,83 @@ class _MobileRoundActionVisual extends StatelessWidget {
   }
 }
 
-enum _MobileNotesViewAction { list, grid, checkboxes }
-
 class _MobileNotesViewMenu extends StatelessWidget {
   const _MobileNotesViewMenu({required this.adapter});
 
   final _NotesHeaderAdapter adapter;
 
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return PopupMenuButton<_MobileNotesViewAction>(
-      tooltip: t(adapter.locale, 'notes_editor_more_tooltip'),
-      position: PopupMenuPosition.under,
-      onSelected: (action) {
-        switch (action) {
-          case _MobileNotesViewAction.list:
-            adapter.onViewChanged(NotesLibraryView.list);
-          case _MobileNotesViewAction.grid:
-            adapter.onViewChanged(NotesLibraryView.grid);
-          case _MobileNotesViewAction.checkboxes:
-            adapter.onCheckboxModeChanged(!adapter.checkboxesOn);
-        }
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: _MobileNotesViewAction.list,
-          child: Row(
-            children: [
-              Icon(
-                Icons.view_list_rounded,
-                color: adapter.notesView == NotesLibraryView.list
-                    ? scheme.primary
-                    : scheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 12),
-              Text(t(adapter.locale, 'notes_v3_view_list')),
-            ],
-          ),
+  void _show(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: settingsNeutralTheme(context).colorScheme.surfaceContainerLowest,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
+          child: AppSettingsNavigationGroup(children: [
+            AppMenuActionTile(
+              leading: AppSettingsMenuIcon(
+                icon: AppMenuIcons.icon(AppMenuIconRole.list)),
+              title: Text(t(adapter.locale, 'notes_v3_view_list')),
+              subtitle: adapter.notesView == NotesLibraryView.list
+                  ? Text(t(adapter.locale, 'selected')) : null,
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                adapter.onViewChanged(NotesLibraryView.list);
+              },
+            ),
+            AppMenuActionTile(
+              leading: AppSettingsMenuIcon(
+                icon: AppMenuIcons.icon(AppMenuIconRole.categories)),
+              title: Text(t(adapter.locale, 'notes_v3_view_grid')),
+              subtitle: adapter.notesView == NotesLibraryView.grid
+                  ? Text(t(adapter.locale, 'selected')) : null,
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                adapter.onViewChanged(NotesLibraryView.grid);
+              },
+            ),
+            AppMenuActionTile(
+              leading: AppSettingsMenuIcon(
+                icon: AppMenuIcons.icon(AppMenuIconRole.filter)),
+              title: Text(adapter.checkboxesOn
+                  ? t(adapter.locale, 'notes_v3_checkbox_mode_off')
+                  : t(adapter.locale, 'notes_v3_checkbox_mode_on')),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                adapter.onCheckboxModeChanged(!adapter.checkboxesOn);
+              },
+            ),
+            AppMenuActionTile(
+              leading: AppSettingsMenuIcon(
+                icon: AppMenuIcons.icon(AppMenuIconRole.folder)),
+              title: Text(adapter.locale == 'ru' ? 'Панель категорий' : 'Category bar'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                adapter.onOpenSettings();
+              },
+            ),
+          ]),
         ),
-        PopupMenuItem(
-          value: _MobileNotesViewAction.grid,
-          child: Row(
-            children: [
-              Icon(
-                Icons.grid_view_rounded,
-                color: adapter.notesView == NotesLibraryView.grid
-                    ? scheme.primary
-                    : scheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 12),
-              Text(t(adapter.locale, 'notes_v3_view_grid')),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: _MobileNotesViewAction.checkboxes,
-          child: Row(
-            children: [
-              Icon(
-                adapter.checkboxesOn
-                    ? Icons.check_box_rounded
-                    : Icons.check_box_outline_blank_rounded,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                adapter.checkboxesOn
-                    ? t(adapter.locale, 'notes_v3_checkbox_mode_off')
-                    : t(adapter.locale, 'notes_v3_checkbox_mode_on'),
-              ),
-            ],
-          ),
-        ),
-      ],
-      child: _MobileRoundActionVisual(
-        icon: adapter.notesView == NotesLibraryView.grid
-            ? Icons.grid_view_rounded
-            : Icons.view_list_rounded,
-        size: 54,
       ),
     );
   }
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: t(adapter.locale, 'notes_editor_more_tooltip'),
+    child: InkWell(
+      onTap: () => _show(context),
+      borderRadius: BorderRadius.circular(18),
+      child: _MobileRoundActionVisual(
+        icon: adapter.notesView == NotesLibraryView.grid
+            ? AppMenuIcons.icon(AppMenuIconRole.categories)
+            : AppMenuIcons.icon(AppMenuIconRole.list),
+        size: 54,
+      ),
+    ),
+  );
 }
 
 class _MobileNotesFoldersSheet extends StatelessWidget {
