@@ -3,23 +3,42 @@ import 'package:flutter/material.dart';
 /// Life OS design tokens: neutral chrome shared across every feature.
 /// Semantic category/tag color families live in category_color_palette.dart;
 /// success/error controls keep their own meaning and never inherit category hues.
+/// Pure neutral ramp for interface chrome; separate from semantic category
+/// gray (which is a selectable tag/category identity). Keep white/black and
+/// many true grays available without introducing random blue or beige tints.
+abstract final class AppNeutralTones {
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color gray50 = Color(0xFFFAFAFA);
+  static const Color gray100 = Color(0xFFF5F5F5);
+  static const Color gray200 = Color(0xFFE5E5E5);
+  static const Color gray300 = Color(0xFFD4D4D4);
+  static const Color gray400 = Color(0xFFA3A3A3);
+  static const Color gray500 = Color(0xFF737373);
+  static const Color gray600 = Color(0xFF525252);
+  static const Color gray700 = Color(0xFF404040);
+  static const Color gray800 = Color(0xFF262626);
+  static const Color gray900 = Color(0xFF171717);
+  static const Color gray950 = Color(0xFF0A0A0A);
+  static const Color black = Color(0xFF000000);
+}
+
 abstract final class AppColors {
   // --- Action / brand (default UI chrome, not category data) ---
   static const Color actionPrimary = Color(0xFF111111);
-  static const Color onActionPrimary = Color(0xFFFFFFFF);
+  static const Color onActionPrimary = AppNeutralTones.white;
   static const Color actionPrimaryContainer = Color(0xFFF1F5F9);
   static const Color onActionPrimaryContainer = Color(0xFF111111);
 
   // --- Surfaces ---
   static const Color appBackground = Color(0xFFF8FAFC);
-  static const Color cardSurface = Color(0xFFFFFFFF);
+  static const Color cardSurface = AppNeutralTones.white;
   static const Color borderSubtle = Color(0xFFDEE5ED);
   static const Color borderMuted = Color(0xFFE7EDF3);
   static const Color surfaceMuted = Color(0xFFF1F5F9);
 
   // --- Semantic (success only — not default action color) ---
   static const Color success = Color(0xFF2E7D32);
-  static const Color onSuccess = Color(0xFFFFFFFF);
+  static const Color onSuccess = AppNeutralTones.white;
 
   // --- Dark surfaces ---
   static const Color darkAppBackground = Color(0xFF121820);
