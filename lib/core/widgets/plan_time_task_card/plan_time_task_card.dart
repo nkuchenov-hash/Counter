@@ -183,11 +183,8 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
         ? 1.25
         : 1.0;
 
-    final baseSurface = isTimeViewCard
-        ? (scheme.brightness == Brightness.light
-              ? const Color(0xFFFFFFFF)
-              : scheme.surfaceContainerHigh)
-        : PlanCardTokens.surface;
+    // One shared surface for list, calendar and Time View cards in both themes.
+    final baseSurface = scheme.surfaceContainerHigh;
     var surface = selected
         ? Color.alphaBlend(
             scheme.primaryContainer.withValues(alpha: 0.16),
