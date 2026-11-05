@@ -171,7 +171,7 @@ class _ListsPageState extends State<ListsPage>
       await prefs.setBool(_kPrefNotesCheckboxMode, on);
     } catch (_) {}
   }
-GLM v3 sort: unfinished first, pinned first, updated desc, stable fallback.
+  /// GLM v3 sort: unfinished first, pinned first, updated desc, stable fallback.
   void _notesLibrarySort(List<PlanningTask> list) {
     if (_notesCheckboxesOn) return;
     final db = DatabaseService.instance;
