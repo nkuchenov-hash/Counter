@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `fe824e52` on 2026-11-05.**
+**Generated from input HEAD `9fb931ea` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 977 — each appears **exactly once** below.
+**Tracked files:** 978 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -45,10 +45,10 @@ python scripts/manual/generate_app_structure_detailed.py
 | `installer` | 12 |
 | `Brain Voice` | 10 |
 | `shared time` | 7 |
+| `audit tool` | 6 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
 | `asset` | 5 |
-| `audit tool` | 5 |
 | `mobile/web Voice adapters` | 2 |
 | `generated documentation` | 1 |
 | `runtime entry point` | 1 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 531 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 258 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 259 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 893 |
+| `HIGH` | 894 |
 | `MEDIUM` | 84 |
 
 ---
@@ -11774,7 +11774,7 @@ EN:
 - **Contents:** `AppColors` constants; `lightColorScheme()` / `darkColorScheme()` factories.
 - **Key code names:** `AppColors`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/core/widgets/life_card.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/core/widgets/life_card.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -11791,7 +11791,7 @@ RU:
 - **Зачем:** Смена `actionPrimary` перекрашивает кнопки, tabs и nav chrome во всём приложении.
 - **Содержимое:** Константы `AppColors`; фабрики `lightColorScheme()` / `darkColorScheme()`.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/core/widgets/life_card.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/core/widgets/life_card.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12187,7 +12187,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `life_color_compat.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_color_palette.dart`, `lib/core/tag_contrast.dart`, `lib/data/models.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_color_palette.dart`, `lib/core/tag_contrast.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`, `lib/data/models.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12204,7 +12204,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `life_color_compat.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/category_color_palette.dart`, `lib/core/tag_contrast.dart`, `lib/data/models.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/category_color_palette.dart`, `lib/core/tag_contrast.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`, `lib/data/models.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12561,7 +12561,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `tag_contrast.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_color_palette.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_card_tags.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_color_palette.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_card_tags.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12578,7 +12578,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `tag_contrast.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/category_color_palette.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_card_tags.dart`, `lib/core/widgets/plan_time_task_card/plan_time_task_card.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/category_color_palette.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`, `lib/core/widgets/plan_time_task_card/plan_card_sections.dart`, `lib/core/widgets/plan_time_task_card/plan_card_tags.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -32415,6 +32415,43 @@ RU:
 - **Владелец / слой:** аудит
 - **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
 - **Когда открывать:** Owner или CI запускает `repository_hygiene.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+
+### `scripts/audit/semantic_color_tokens.py`
+
+EN:
+
+- **Human purpose:** Developer script `semantic_color_tokens.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `semantic_color_tokens.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `semantic_color_tokens.py`.
+- **Repository role:** audit tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `docs/APP_STRUCTURE.md`, `docs/DESIGN_SYSTEM.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** audit tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `semantic_color_tokens.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `semantic_color_tokens.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `semantic_color_tokens.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `semantic_color_tokens.py`.
+- **Роль в репозитории:** audit tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `docs/APP_STRUCTURE.md`, `docs/DESIGN_SYSTEM.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** аудит
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `semantic_color_tokens.py` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
