@@ -466,7 +466,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
       prefixIcon: Icon(AppMenuIcons.icon(AppMenuIconRole.search)),
       suffixIcon: _search.text.isEmpty ? null : IconButton(
         tooltip: _ru ? 'Очистить поиск' : 'Clear search',
-        icon: const Icon(Icons.close_rounded),
+        icon: Icon(AppMenuIcons.icon(AppMenuIconRole.close)),
         onPressed: _search.clear,
       ),
       filled: true,
@@ -557,7 +557,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Row(
               children: [
-                const Icon(Icons.arrow_back_rounded),
+                Icon(AppMenuIcons.icon(AppMenuIconRole.back)),
                 const SizedBox(width: 9),
                 Text(_ru ? 'Меню' : 'Menu',
                   style: Theme.of(context).textTheme.bodyLarge),

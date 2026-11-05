@@ -1,6 +1,7 @@
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/theme.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/core/tag_contrast.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter/material.dart';
@@ -410,6 +411,45 @@ void main() {
     );
     await tester.tap(find.text('Circular tag'));
     expect(picked, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  test('all LIFE OS menu icon roles resolve through the canonical collection', () {
+    for (final role in AppMenuIconRole.values) {
+      final icon = AppMenuIcons.icon(role);
+      expect(icon.codePoint, greaterThan(0), reason: role.name);
+      expect(icon.fontFamily, isNotNull, reason: role.name);
+    }
+  });
+
+  testWidgets('approved Settings canvas separates white cards from gray background',
+      (tester) async {
+    late Color background;
+    late Color card;
+    await tester.pumpWidget(MaterialApp(
+      theme: appLightTheme,
+      home: Builder(builder: (ctx) => Theme(
+        data: settingsNeutralTheme(ctx),
+        child: Builder(builder: (settingsContext) {
+          final scheme = Theme.of(settingsContext).colorScheme;
+          background = scheme.surfaceContainerLowest;
+          card = scheme.surfaceContainerHigh;
+          return Scaffold(
+            body: AppSettingsNavigationGroup(children: [
+              AppSettingsNavigationRow(
+                title: 'Notes',
+                leading: AppSettingsMenuIcon(
+                  icon: AppMenuIcons.icon(AppMenuIconRole.notes)),
+                onTap: () {},
+              ),
+            ]),
+          );
+        }),
+      )),
+    ));
+    expect(background, const Color(0xFFF2F2F2));
+    expect(card, const Color(0xFFFFFFFF));
+    expect(background, isNot(card));
     expect(tester.takeException(), isNull);
   });
 
