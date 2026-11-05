@@ -381,6 +381,8 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               _buildDisplayNameField(context, locale),
               const SizedBox(height: 16),
+              _buildDisplayNameField(context, locale),
+              const SizedBox(height: 16),
               AccountSecuritySection(),
               const SizedBox(height: 8),
               SecuritySection(onSaved: widget.onSaved, embedded: true),
