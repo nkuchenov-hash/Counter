@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `2211f784` on 2026-11-05.**
+**Generated from input HEAD `c1ffe437` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -19410,7 +19410,7 @@ EN:
 - **Contents:** Primary symbols: `NotesLibraryPreferences`.
 - **Key code names:** `NotesLibraryPreferences`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/lists/lists_view.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -19427,7 +19427,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `notes_library_preferences.dart` на вкладка Lists (четвёртая снизу).
 - **Содержимое:** Dart-модуль `notes_library_preferences.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_view.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/lists/lists_view.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21075,10 +21075,10 @@ EN:
 - **Human purpose:** `planning_time_view_coordinator.dart` on Plans tab (second bottom tab) — Time View state fields. Users see `planning_time_view_coordinator.dart` when using Plans tab (second bottom tab).
 - **What this is:** `planning_time_view_coordinator.dart` on Plans tab (second bottom tab) — Time View state fields.
 - **Why needed:** Users see `planning_time_view_coordinator.dart` when using Plans tab (second bottom tab).
-- **Contents:** Primary symbols: `PlanningTimeViewCoordinator`.
-- **Key code names:** `PlanningTimeViewCoordinator`
+- **Contents:** Primary symbols: `PlanningSettingsNavigationRequests`, `PlanningTimeViewCoordinator`.
+- **Key code names:** `PlanningSettingsNavigationRequests`, `PlanningTimeViewCoordinator`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/planning_page.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21095,7 +21095,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `planning_time_view_coordinator.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `planning_time_view_coordinator.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/planning_page.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21534,7 +21534,7 @@ EN:
 - **Contents:** Primary symbols: `PlanningTimeViewTimeViewSettingsSheet`.
 - **Key code names:** `PlanningTimeViewTimeViewSettingsSheet`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21551,7 +21551,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `time_view_settings_sheet.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Основные символы: `PlanningTimeViewTimeViewSettingsSheet`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22137,8 +22137,8 @@ EN:
 - **Human purpose:** `life_os_menu_page.dart` on More → Profile and settings — life os menu page. Users see `life_os_menu_page.dart` when using More → Profile and settings.
 - **What this is:** `life_os_menu_page.dart` on More → Profile and settings — life os menu page.
 - **Why needed:** Users see `life_os_menu_page.dart` when using More → Profile and settings.
-- **Contents:** Primary symbols: `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`, `_LifeOsMenuPageState`.
-- **Key code names:** `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`, `_LifeOsMenuPageState`
+- **Contents:** Primary symbols: `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`.
+- **Key code names:** `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
