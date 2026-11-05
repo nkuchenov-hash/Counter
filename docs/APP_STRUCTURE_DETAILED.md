@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `02aef838` on 2026-11-05.**
+**Generated from input HEAD `218f4fcb` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -11772,9 +11772,9 @@ EN:
 - **What this is:** Design-system color tokens (V3/V7) — action primary, surfaces, semantic success, dark scheme.
 - **Why needed:** Change `actionPrimary` once to retint buttons, tabs, and nav chrome app-wide.
 - **Contents:** `AppColors` constants; `lightColorScheme()` / `darkColorScheme()` factories.
-- **Key code names:** `AppNeutralTones`, `AppColors`
+- **Key code names:** `AppNeutralTones`, `AppIllustrationColors`, `AppColors`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/core/widgets/life_card.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/app_snackbar.dart`, `lib/core/tag_contrast.dart`, `lib/core/theme.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/core/widgets/life_card.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -11791,7 +11791,7 @@ RU:
 - **Зачем:** Смена `actionPrimary` перекрашивает кнопки, tabs и nav chrome во всём приложении.
 - **Содержимое:** Константы `AppColors`; фабрики `lightColorScheme()` / `darkColorScheme()`.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/core/widgets/life_card.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/app_snackbar.dart`, `lib/core/tag_contrast.dart`, `lib/core/theme.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/core/widgets/life_card.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12187,7 +12187,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `life_color_compat.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_color_palette.dart`, `lib/core/tag_contrast.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`, `lib/data/models.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_color_palette.dart`, `lib/core/tag_contrast.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`, `lib/data/models.dart`, `lib/features/dev/component_lab_notes_demo.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12204,7 +12204,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `life_color_compat.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/category_color_palette.dart`, `lib/core/tag_contrast.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`, `lib/data/models.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/category_color_palette.dart`, `lib/core/tag_contrast.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`, `lib/data/models.dart`, `lib/features/dev/component_lab_notes_demo.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20365,8 +20365,8 @@ EN:
 - **Human purpose:** `notes_folder_pane.dart` on notes area — Subtle pastel folder paper with 18px inset. Users see `notes_folder_pane.dart` when using notes area.
 - **What this is:** `notes_folder_pane.dart` on notes area — Subtle pastel folder paper with 18px inset.
 - **Why needed:** Users see `notes_folder_pane.dart` when using notes area.
-- **Contents:** Primary symbols: `NotesFolderPane`, `NotesFolderTabData`, `NotesFolderTabStrip`, `NotesPhysicalFolderShape`, `_PhysicalNotesTab`.
-- **Key code names:** `NotesFolderPane`, `NotesFolderTabData`, `NotesFolderTabStrip`, `NotesPhysicalFolderShape`, `_PhysicalNotesTab`
+- **Contents:** Primary symbols: `NotesFolderPane`, `NotesFolderTabData`, `NotesFolderTabStrip`, `NotesPhysicalFolderShape`.
+- **Key code names:** `NotesFolderPane`, `NotesFolderTabData`, `NotesFolderTabStrip`, `NotesPhysicalFolderShape`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/widgets/notes_library_production_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
