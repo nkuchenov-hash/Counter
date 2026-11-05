@@ -1,6 +1,6 @@
 // Generated from manually audited semantic intersections of official Fluent UI
 // System Icons 24px Regular/Filled and Heroicons Outline/Solid.
-// Only paired concepts appear here; one semantic key always resolves in both packs.
+// Only category-relevant verified semantic pairs appear here; old mappings are retained for compatibility.
 // Source: Microsoft Fluent UI System Icons (MIT), Tailwind Labs Heroicons (MIT).
 // Source audit: docs/reports/CATEGORY_ICON_INTERSECTION_2026-11-05.md
 // This file deliberately excludes all unmatched icon names.
@@ -119,4 +119,45 @@ const Map<String, MatchedCategoryIcon> kMatchedCategoryIcons = {
   'wrench': MatchedCategoryIcon(FluentIcons.wrench_24_regular, FluentIcons.wrench_24_filled, HeroIcons.wrench),
   'wrench_screwdriver': MatchedCategoryIcon(FluentIcons.wrench_screwdriver_24_regular, FluentIcons.wrench_screwdriver_24_filled, HeroIcons.wrenchScrewdriver),
   'x_mark': MatchedCategoryIcon(FluentIcons.dismiss_24_regular, FluentIcons.dismiss_24_filled, HeroIcons.xMark),
+  'archive_box': MatchedCategoryIcon(FluentIcons.archive_24_regular, FluentIcons.archive_24_filled, HeroIcons.archiveBox),
+  'banknotes': MatchedCategoryIcon(FluentIcons.money_24_regular, FluentIcons.money_24_filled, HeroIcons.banknotes),
+  'bell_alert': MatchedCategoryIcon(FluentIcons.alert_on_24_regular, FluentIcons.alert_on_24_filled, HeroIcons.bellAlert),
+  'bell_snooze': MatchedCategoryIcon(FluentIcons.alert_snooze_24_regular, FluentIcons.alert_snooze_24_filled, HeroIcons.bellSnooze),
+  'bolt': MatchedCategoryIcon(FluentIcons.flash_24_regular, FluentIcons.flash_24_filled, HeroIcons.bolt),
+  'bug_ant': MatchedCategoryIcon(FluentIcons.bug_24_regular, FluentIcons.bug_24_filled, HeroIcons.bugAnt),
+  'building_office': MatchedCategoryIcon(FluentIcons.building_24_regular, FluentIcons.building_24_filled, HeroIcons.buildingOffice),
+  'building_office_2': MatchedCategoryIcon(FluentIcons.building_skyscraper_24_regular, FluentIcons.building_skyscraper_24_filled, HeroIcons.buildingOffice2),
+  'building_storefront': MatchedCategoryIcon(FluentIcons.building_retail_24_regular, FluentIcons.building_retail_24_filled, HeroIcons.buildingStorefront),
+  'calendar_date_range': MatchedCategoryIcon(FluentIcons.calendar_date_24_regular, FluentIcons.calendar_date_24_filled, HeroIcons.calendarDateRange),
+  'calendar_days': MatchedCategoryIcon(FluentIcons.calendar_day_24_regular, FluentIcons.calendar_day_24_filled, HeroIcons.calendarDays),
+  'check_badge': MatchedCategoryIcon(FluentIcons.checkmark_starburst_24_regular, FluentIcons.checkmark_starburst_24_filled, HeroIcons.checkBadge),
+  'code_bracket': MatchedCategoryIcon(FluentIcons.code_24_regular, FluentIcons.code_24_filled, HeroIcons.codeBracket),
+  'computer_desktop': MatchedCategoryIcon(FluentIcons.desktop_24_regular, FluentIcons.desktop_24_filled, HeroIcons.computerDesktop),
+  'credit_card': MatchedCategoryIcon(FluentIcons.payment_24_regular, FluentIcons.payment_24_filled, HeroIcons.creditCard),
+  'device_tablet': MatchedCategoryIcon(FluentIcons.tablet_24_regular, FluentIcons.tablet_24_filled, HeroIcons.deviceTablet),
+  'document_chart_bar': MatchedCategoryIcon(FluentIcons.document_data_24_regular, FluentIcons.document_data_24_filled, HeroIcons.documentChartBar),
+  'document_check': MatchedCategoryIcon(FluentIcons.document_checkmark_24_regular, FluentIcons.document_checkmark_24_filled, HeroIcons.documentCheck),
+  'envelope_open': MatchedCategoryIcon(FluentIcons.mail_read_24_regular, FluentIcons.mail_read_24_filled, HeroIcons.envelopeOpen),
+  'exclamation_triangle': MatchedCategoryIcon(FluentIcons.warning_24_regular, FluentIcons.warning_24_filled, HeroIcons.exclamationTriangle),
+  'eye_dropper': MatchedCategoryIcon(FluentIcons.eyedropper_24_regular, FluentIcons.eyedropper_24_filled, HeroIcons.eyeDropper),
+  'face_frown': MatchedCategoryIcon(FluentIcons.emoji_sad_24_regular, FluentIcons.emoji_sad_24_filled, HeroIcons.faceFrown),
+  'film': MatchedCategoryIcon(FluentIcons.filmstrip_24_regular, FluentIcons.filmstrip_24_filled, HeroIcons.film),
+  'finger_print': MatchedCategoryIcon(FluentIcons.fingerprint_24_regular, FluentIcons.fingerprint_24_filled, HeroIcons.fingerPrint),
+  'hand_raised': MatchedCategoryIcon(FluentIcons.hand_right_24_regular, FluentIcons.hand_right_24_filled, HeroIcons.handRaised),
+  'hand_thumb_up': MatchedCategoryIcon(FluentIcons.thumb_like_24_regular, FluentIcons.thumb_like_24_filled, HeroIcons.handThumbUp),
+  'hand_thumb_down': MatchedCategoryIcon(FluentIcons.thumb_dislike_24_regular, FluentIcons.thumb_dislike_24_filled, HeroIcons.handThumbDown),
+  'home_modern': MatchedCategoryIcon(FluentIcons.building_home_24_regular, FluentIcons.building_home_24_filled, HeroIcons.homeModern),
+  'inbox': MatchedCategoryIcon(FluentIcons.mail_inbox_24_regular, FluentIcons.mail_inbox_24_filled, HeroIcons.inbox),
+  'language': MatchedCategoryIcon(FluentIcons.local_language_24_regular, FluentIcons.local_language_24_filled, HeroIcons.language),
+  'newspaper': MatchedCategoryIcon(FluentIcons.news_24_regular, FluentIcons.news_24_filled, HeroIcons.newspaper),
+  'paper_airplane': MatchedCategoryIcon(FluentIcons.send_24_regular, FluentIcons.send_24_filled, HeroIcons.paperAirplane),
+  'paper_clip': MatchedCategoryIcon(FluentIcons.attach_24_regular, FluentIcons.attach_24_filled, HeroIcons.paperClip),
+  'presentation_chart_line': MatchedCategoryIcon(FluentIcons.data_line_24_regular, FluentIcons.data_line_24_filled, HeroIcons.presentationChartLine),
+  'receipt_percent': MatchedCategoryIcon(FluentIcons.receipt_money_24_regular, FluentIcons.receipt_money_24_filled, HeroIcons.receiptPercent),
+  'receipt_refund': MatchedCategoryIcon(FluentIcons.receipt_24_regular, FluentIcons.receipt_24_filled, HeroIcons.receiptRefund),
+  'shield_exclamation': MatchedCategoryIcon(FluentIcons.shield_error_24_regular, FluentIcons.shield_error_24_filled, HeroIcons.shieldExclamation),
+  'sparkles': MatchedCategoryIcon(FluentIcons.sparkle_24_regular, FluentIcons.sparkle_24_filled, HeroIcons.sparkles),
+  'speaker_wave': MatchedCategoryIcon(FluentIcons.speaker_2_24_regular, FluentIcons.speaker_2_24_filled, HeroIcons.speakerWave),
+  'ticket': MatchedCategoryIcon(FluentIcons.ticket_diagonal_24_regular, FluentIcons.ticket_diagonal_24_filled, HeroIcons.ticket),
+  'wifi': MatchedCategoryIcon(FluentIcons.wifi_4_24_regular, FluentIcons.wifi_4_24_filled, HeroIcons.wifi),
 };
