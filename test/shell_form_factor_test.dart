@@ -149,9 +149,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    test('global typography uses bundled Manrope in both themes', () {
-      expect(appLightTheme.textTheme.bodyLarge?.fontFamily, 'Manrope');
-      expect(appDarkTheme.textTheme.bodyLarge?.fontFamily, 'Manrope');
+    test('global typography uses bundled Onest in both themes', () {
+      expect(appLightTheme.textTheme.bodyLarge?.fontFamily, 'Onest');
+      expect(appDarkTheme.textTheme.bodyLarge?.fontFamily, 'Onest');
     });
 
     test('desktop brand, sidebar and Profile stay in one shell', () {
