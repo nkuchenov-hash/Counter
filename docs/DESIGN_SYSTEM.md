@@ -22,16 +22,16 @@ The Life OS design system makes Figma the visual source of truth and Flutter can
 
 | Family | Shade 500 | Usage |
 | :--- | :--- | :--- |
-| Work / Blue | `#286BE3` | Blue |
-| Errands / Orange | `#E8700A` | Orange |
-| Food / Gold | `#F6C500` | Gold / exact yellow token |
-| Movement / Green | `#56A235` | Green |
-| Health / Teal | `#008B83` | Turquoise |
-| Transport / Sky | `#55BCE7` | Sky blue |
-| Study / Deep blue | `#242B5D` | Dark navy (not purple) |
-| Entertainment / Red | `#C82332` | Scarlet red |
-| People / Pink | `#E65EA5` | Actual pink, never purple |
-| Neutral / Gray | `#606060` | Achromatic gray |
+| Work / Blue | #286BE3 | Blue |
+| Errands / Orange | #E8700A | Orange |
+| Food / Gold | #F6C500 | Gold / exact yellow token |
+| Movement / Green | #56A235 | Green |
+| Health / Teal | #008B83 | Turquoise |
+| Transport / Sky | #55BCE7 | Sky blue |
+| Study / Deep blue | #242B5D | Dark navy (not purple) |
+| Entertainment / Red | #C82332 | Scarlet red |
+| People / Pink | #E65EA5 | Actual pink, never purple |
+| Neutral / Gray | #606060 | Achromatic gray |
 
 - These ten family constants are the **only** category/tag preset owners. The category picker and tag palette enumerate the same 500 tones; category hierarchy still selects 600/500/400.
 - Independent full-opacity shade-500 swatches have minimum CIEDE2000 color difference ≈25 across all 45 pairs (independent static numerical check, not a guarantee for all vision conditions). Never optimize by shifting pink toward purple.
