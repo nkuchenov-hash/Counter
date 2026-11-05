@@ -396,7 +396,7 @@ class NotesEditorToolbar extends StatelessWidget {
                 border: Border.all(
                   color: dark
                       ? Colors.white.withValues(alpha: 0.24)
-                      : const Color(0xFF778DA8).withValues(alpha: 0.23),
+                      : scheme.outlineVariant.withValues(alpha: 0.23),
                   width: 0.8,
                 ),
               ),
