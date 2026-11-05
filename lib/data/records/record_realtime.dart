@@ -15,32 +15,59 @@ final Map<String, RecordModel?> _recordsRealtimeDuringFullFetch = {};
 
 
 extension RecordRealtimeExtension on DatabaseService {
+  /// A malformed realtime push must not be lost silently. Recover only on
+  /// exceptions/invalid events; successful pushes keep the zero-extra-GET path.
+  void _recoverDroppedRealtimeEvent(String source) {
+    if (!_isInitialized || !_hasAuthenticatedUserId || isPbRealtimeUnavailable) {
+      return;
+    }
+    _realtimeTransportGapDetected = true;
+    planStreamLifecycleLog(
+      'realtime event not applied source=$source; authoritative catch-up armed',
+    );
+    _scheduleRealtimeGapCatchUp(delay: Duration.zero);
+  }
+
   void _onPbRecordsSubscriptionEvent(RecordSubscriptionEvent e) {
     if (!_isInitialized || !_hasAuthenticatedUserId) return;
     final action = e.action.toLowerCase().trim();
     if (action == 'delete') {
       final id = e.record?.id.trim() ?? '';
-      if (id.isNotEmpty) {
-        if (_recordsFullFetchesInFlight > 0) {
-          _recordsRealtimeDuringFullFetch[id] = null;
-        }
-        _removeCachedFlatRecordByPk(id);
+      if (id.isEmpty) {
+        _recoverDroppedRealtimeEvent('records_delete_missing_id');
+        return;
       }
+      if (_recordsFullFetchesInFlight > 0) {
+        _recordsRealtimeDuringFullFetch[id] = null;
+      }
+      _removeCachedFlatRecordByPk(id);
+      return;
+    }
+    if (action != 'create' && action != 'update') {
+      _recoverDroppedRealtimeEvent('records_unexpected_action');
       return;
     }
     final rec = e.record;
-    if (rec == null) return;
+    if (rec == null) {
+      _recoverDroppedRealtimeEvent('records_missing_payload');
+      return;
+    }
     try {
       if (_recordsFullFetchesInFlight > 0) {
         _recordsRealtimeDuringFullFetch[rec.id] = rec;
       }
-      _upsertFlatRecordFromPbModel(
+      final applied = _upsertFlatRecordFromPbModel(
         rec,
         preserveExpand: true,
         suppressTimelineNotify: false,
         logSuccessLine: false,
       );
-    } catch (_) {}
+      if (!applied) {
+        _recoverDroppedRealtimeEvent('records_invalid_payload');
+      }
+    } catch (_) {
+      _recoverDroppedRealtimeEvent('records_apply_failed');
+    }
   }
 
   // Replay newest pushes on top of a potentially stale full-list snapshot.
