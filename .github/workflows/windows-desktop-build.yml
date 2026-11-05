@@ -77,6 +77,9 @@ jobs:
       - name: Time View overlap-lane regression
         run: flutter test test/plan_time_view_layout_test.dart --plain-name "Time View overlap lanes preserve every card"
 
+      - name: Verify shared LIFE OS semantic palette
+        run: flutter test test/life_semantic_palette_test.dart
+
       - name: Analyze runtime app
         run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 
