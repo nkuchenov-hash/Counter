@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `fb2ac897` on 2026-11-05.**
+**Generated from input HEAD `f7d98570` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -12625,7 +12625,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppMenuIconRole`, `AppMenuIcons`).
 - **Key code names:** `AppMenuIconRole`, `AppMenuIcons`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/app_settings_layout.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12642,7 +12642,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_menu_icons`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/app_settings_layout.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20926,7 +20926,7 @@ EN:
 - **Contents:** Primary symbols: `PlanRecordLinkSuggestionSettingsBlock`, `PlanRecordLinkSuggestionSettingsBlockState`.
 - **Key code names:** `PlanRecordLinkSuggestionSettingsBlock`, `PlanRecordLinkSuggestionSettingsBlockState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20943,7 +20943,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `plan_record_link_settings.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `plan_record_link_settings.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22216,7 +22216,7 @@ EN:
 - **Contents:** Primary symbols: `LifeOsPlanningSettingsPage`, `_LifeOsPlanningSettingsPageState`.
 - **Key code names:** `LifeOsPlanningSettingsPage`, `_LifeOsPlanningSettingsPageState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22233,7 +22233,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `life_os_planning_settings_page.dart` на More → Profile и настройки.
 - **Содержимое:** Компоновка экрана и state в `life_os_planning_settings_page.dart`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22558,7 +22558,7 @@ EN:
 - **Contents:** Primary symbols: `TagSettingsHub`, `_TagSettingsHubState`.
 - **Key code names:** `TagSettingsHub`, `_TagSettingsHubState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/planning_quick_add_tags_controller.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/planning_quick_add_tags_controller.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22575,7 +22575,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `tag_settings_hub.dart` на More → Profile и настройки.
 - **Содержимое:** Dart-модуль `tag_settings_hub.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/planning_quick_add_tags_controller.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/planning_quick_add_tags_controller.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
