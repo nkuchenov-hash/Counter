@@ -1,3 +1,9 @@
+## 2026-11-05 — Fluent UI / Heroicons category icons
+
+- Added a complete icon picker for both independent families: 2,244 Fluent UI 24-pixel Regular/Filled pairs and all 324 Heroicons Outline/Solid pairs.
+- Switch icon family under Profile → Appearance; select icons from the searchable picker in category editing. Both the Categories manager and Notes categories use the shared glyph renderer.
+- Retained the old Material codepoint and the original 14-key fallback for backward compatibility. New per-category icon choices are currently local to the device; PocketBase cross-device sync is a separate migration.
+
 ## 2026-11-05 — Unify Menu, Profile and Settings navigation [pending verification]
 
 - Removed the parallel desktop settings tab hub from Profile: Profile now renders an account/details destination through the same canonical settings surface used by Menu.
