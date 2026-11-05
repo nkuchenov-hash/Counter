@@ -1,3 +1,6 @@
+import 'package:counter/features/notes/drawing_canvas_page.dart';
+import 'package:counter/features/notes/notes_visual_tokens.dart';
+import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/theme.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
@@ -21,6 +24,47 @@ double _hueGap(Color a, Color b) {
 }
 
 void main() {
+  test('Notes category and drawing palettes use global semantic families', () {
+    expect(NotesSectionPalette.all.accent, kNordicWork[500]);
+    expect(NotesSectionPalette.forCategory('книги', kNordicWork).accent,
+        kNordicStudy[500]);
+    expect(NotesSectionPalette.forCategory('идеи', kNordicWork).accent,
+        kNordicHealth[500]);
+    expect(NotesSectionPalette.forCategory('личное', kNordicWork).accent,
+        kNordicPeople[500]);
+    expect(NotesSectionPalette.forCategory('работа', kNordicPeople).accent,
+        kNordicWork[500]);
+    expect(NotesSectionPalette.forCategory('игры', kNordicPeople).accent,
+        kNordicEntertainment[500]);
+    expect(NotesSectionPalette.forCategory('my custom note', kNordicPeople).accent,
+        kNordicPeople);
+    final drawing = kNotesDrawingColors.take(kCategoryPickerMaterialColors.length)
+        .map((item) => item.color).toList();
+    final expected = kCategoryPickerMaterialColors.map((f) => f[500]!).toList();
+    expect(drawing.map((c) => c.toARGB32()).toList(),
+        expected.map((c) => c.toARGB32()).toList());
+    expect(kNotesDrawingColors.last.color, AppNeutralTones.white);
+  });
+
+  test('complete neutral ramp has only true grays, white and black', () {
+    const grays = <Color>[
+      AppNeutralTones.white, AppNeutralTones.gray50,
+      AppNeutralTones.gray100, AppNeutralTones.gray200,
+      AppNeutralTones.gray300, AppNeutralTones.gray400,
+      AppNeutralTones.gray500, AppNeutralTones.gray600,
+      AppNeutralTones.gray700, AppNeutralTones.gray800,
+      AppNeutralTones.gray900, AppNeutralTones.gray950,
+      AppNeutralTones.black,
+    ];
+    for (final color in grays) {
+      final rgb = color.toARGB32();
+      expect((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF);
+      expect((rgb >> 8) & 0xFF, rgb & 0xFF);
+    }
+    expect(grays.first, Colors.white);
+    expect(grays.last, Colors.black);
+  });
+
   test('one canonical palette feeds both categories and tag presets', () {
     expect(kCategoryPickerMaterialColors, hasLength(11));
     expect(kLifeTagColorPresets, hasLength(11));
