@@ -139,6 +139,22 @@ void main() {
         kDefaultCategoryIconKeys.length);
   });
 
+  test('published picker exposes actual build and selected icon count', () {
+    final picker = File(
+      'lib/features/settings/categories/category_icon_picker.dart',
+    ).readAsStringSync();
+    final collection = File(
+      'lib/features/settings/categories/category_icon_collection_preference.dart',
+    ).readAsStringSync();
+    final html = File('web/index.html').readAsStringSync();
+    final deploy = File('.github/workflows/deploy.yml').readAsStringSync();
+    expect(picker, contains('icon-picker-build-and-count'));
+    expect(picker, contains('AppBuildInfo.gitCommit'));
+    expect(collection, contains('AppBuildInfo.gitCommit'));
+    expect(html, contains('lifeos-legacy-sw-upgraded'));
+    expect(deploy, contains('Retire obsolete Flutter cache-first service worker'));
+  });
+
   test('old family-specific keys map to shared semantics safely', () {
     final migrated = CategoryIconSelection.fromJson(
       {'key': 'shopping_cart', 'filled': true});
