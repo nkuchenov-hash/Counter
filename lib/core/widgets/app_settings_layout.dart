@@ -22,11 +22,11 @@ ThemeData settingsNeutralTheme(BuildContext context) {
     primary: base.colorScheme.onSurface,
     onPrimary: dark ? AppColors.darkAppBackground : Colors.white,
     // Neutral TECNO-inspired surfaces: distinct white cards, no blue tint.
-    surface: dark ? const Color(0xFF161616) : const Color(0xFFE5E5E5),
+    surface: dark ? const Color(0xFF161616) : const Color(0xFFF2F2F2),
     surfaceContainerLowest:
-        dark ? const Color(0xFF161616) : const Color(0xFFE5E5E5),
+        dark ? const Color(0xFF161616) : const Color(0xFFF2F2F2),
     surfaceContainerLow:
-        dark ? const Color(0xFF222222) : const Color(0xFFE5E5E5),
+        dark ? const Color(0xFF222222) : const Color(0xFFF2F2F2),
     surfaceContainer:
         dark ? const Color(0xFF303030) : const Color(0xFFF1F1F1),
     surfaceContainerHigh:
@@ -39,7 +39,7 @@ ThemeData settingsNeutralTheme(BuildContext context) {
         : const Color(0xFF818181),
     outlineVariant: dark
         ? base.colorScheme.outlineVariant
-        : const Color(0xFFC4C4C4),
+        : const Color(0xFFE7E7E7),
   );
   return base.copyWith(
     colorScheme: scheme,
@@ -536,14 +536,16 @@ class AppSettingsNavigationRow extends StatelessWidget {
           ),
           onTap: onTap,
           enabled: onTap != null,
-          // Group-level MouseRegion highlights the entire card; never a row inset.
-          hoverColor: Colors.transparent,
+          // Hover the complete menu item, not the group or an inset rectangle.
+          hoverColor: scheme.brightness == Brightness.dark
+              ? scheme.onSurface.withValues(alpha: 0.06)
+              : const Color(0xFFF5F5F5),
           splashColor: Colors.transparent,
           shape: const RoundedRectangleBorder(),
         ),
         if (showDivider) Divider(
           height: 1,
-          thickness: 0.7,
+          thickness: 0.8,
           color: scheme.outlineVariant,
         ),
       ],
@@ -642,7 +644,9 @@ class AppMenuActionTile extends StatelessWidget {
 
 /// A single grouped surface for short settings destinations. Dividers are
 /// inset to the text column, not drawn through the leading icons.
-class AppSettingsNavigationGroup extends StatefulWidget {
+/// White group has no outline or group-level hover. Each item independently
+/// occupies the full card width, with its ink clipped by the outer corners.
+class AppSettingsNavigationGroup extends StatelessWidget {
   const AppSettingsNavigationGroup({
     super.key,
     required this.children,
@@ -651,63 +655,32 @@ class AppSettingsNavigationGroup extends StatefulWidget {
   final List<Widget> children;
 
   @override
-  State<AppSettingsNavigationGroup> createState() =>
-      _AppSettingsNavigationGroupState();
-}
-
-class _AppSettingsNavigationGroupState
-    extends State<AppSettingsNavigationGroup> {
-  bool _hovered = false;
-
-  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final dark = scheme.brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: Material(
-          // Hover belongs to the whole group, including its edges and icons.
-          color: _hovered && !dark
-              ? const Color(0xFFF7F7F7)
-              : scheme.surfaceContainerHigh,
-          animationDuration: const Duration(milliseconds: 130),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(
-              color: dark
-                  ? scheme.outlineVariant
-                  : _hovered
-                      ? const Color(0xFFB6B6B6)
-                      : const Color(0xFFCACACA),
-              width: 1,
-            ),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (var index = 0; index < widget.children.length; index++) ...[
-                  widget.children[index],
-                  if (index != widget.children.length - 1)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 78, right: 20),
-                      child: Divider(
-                        height: 1,
-                        thickness: 1.2,
-                        color: dark
-                            ? scheme.outlineVariant
-                            : const Color(0xFFC4C4C4),
-                      ),
-                    ),
-                ],
-              ],
-            ),
-          ),
+      child: Material(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var index = 0; index < children.length; index++) ...[
+              children[index],
+              if (index != children.length - 1)
+                Padding(
+                  padding: const EdgeInsets.only(left: 78, right: 20),
+                  child: Divider(
+                    height: 1,
+                    thickness: 0.8,
+                    color: scheme.brightness == Brightness.dark
+                        ? scheme.outlineVariant
+                        : const Color(0xFFE7E7E7),
+                  ),
+                ),
+            ],
+          ],
         ),
       ),
     );
