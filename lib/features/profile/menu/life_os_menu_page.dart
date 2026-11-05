@@ -363,25 +363,12 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
     return AppSettingsNavigationGroup(children: items);
   }
 
+  /// Every category has the same navigation behavior: open its own section.
   Widget _sectionRow(_LifeOsMenuSection entry) {
     return AppSettingsNavigationRow(
       title: entry.title(_ru),
       leading: AppSettingsMenuIcon(icon: AppMenuIcons.icon(entry.icon)),
-      onTap: () {
-        if (entry.id == 'planning') {
-          widget.onAction(LifeOsMenuAction.planningSettings);
-        } else if (entry.id == 'notes') {
-          widget.onAction(LifeOsMenuAction.notesSettings);
-        } else if (entry.id == 'appearance') {
-          widget.onAction(LifeOsMenuAction.appearance);
-        } else if (entry.id == 'notifications') {
-          widget.onAction(LifeOsMenuAction.notifications);
-        } else if (entry.id == 'health') {
-          widget.onAction(LifeOsMenuAction.sleep);
-        } else {
-          _openSection(entry.id);
-        }
-      },
+      onTap: () => _openSection(entry.id),
     );
   }
 
@@ -444,34 +431,6 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
     );
   }
 
-  Widget _quickTile(BuildContext context, String label,
-      AppMenuIconRole role, LifeOsMenuAction action) {
-    return Expanded(
-      child: Material(
-        color: Theme.of(context).colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(18),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => widget.onAction(action),
-          child: SizedBox(
-            height: 88,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(AppMenuIcons.icon(role), size: 25),
-                const SizedBox(height: 8),
-                Text(label,
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w700)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _searchField() => TextField(
     controller: _search,
     textInputAction: TextInputAction.search,
@@ -507,12 +466,12 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
             fontSize: 35, fontWeight: FontWeight.w700)),
         const SizedBox(height: 21),
-        if (!searching) ...[
-          _profileCard(context),
-          const SizedBox(height: 18),
-        ],
         _searchField(),
         const SizedBox(height: 16),
+        if (!searching) ...[
+          _profileCard(context),
+          const SizedBox(height: 12),
+        ],
         if (searching) ...[
           _heading(context, _ru ? 'РЕЗУЛЬТАТЫ ПОИСКА' : 'SEARCH RESULTS'),
           if (result.isEmpty)
@@ -528,19 +487,6 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
                     : _detailRow(entry, subtitle: section.title(_ru)),
             ]),
         ] else ...[
-          _heading(context, _ru ? 'БЫСТРЫЙ ДОСТУП' : 'QUICK ACCESS'),
-          Row(
-            children: [
-              _quickTile(context, _ru ? 'Виктор' : 'Viktor',
-                AppMenuIconRole.viktor, LifeOsMenuAction.viktor),
-              const SizedBox(width: 10),
-              _quickTile(context, _ru ? 'Пути' : 'Paths',
-                AppMenuIconRole.paths, LifeOsMenuAction.paths),
-              const SizedBox(width: 10),
-              _quickTile(context, _ru ? 'Люди' : 'People',
-                AppMenuIconRole.people, LifeOsMenuAction.people),
-            ],
-          ),
           for (final group in _homeGroups) ...[
             _heading(context, _ru ? group.ru : group.en),
             _group(context, [
@@ -633,11 +579,14 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
                           wide ? 52 : 20, wide ? 38 : 22,
                           wide ? 32 : 20, 48),
                         children: [
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 680),
-                            child: active == null
-                                ? _home(context)
-                                : _details(context, _section(active)),
+                          Align(
+                            alignment: Alignment.topCenter,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 760),
+                              child: active == null
+                                  ? _home(context)
+                                  : _details(context, _section(active)),
+                            ),
                           ),
                         ],
                       ),
