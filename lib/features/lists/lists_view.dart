@@ -41,61 +41,49 @@ class ListsPage extends StatefulWidget {
   /// Wall day for the unified global header (Lists content stays backlog / undated).
   final DateTime? selectedDate;
   final ValueChanged<DateTime>? onDateChanged;
-
   /// Opens the shared planning task editor ([ActivityDetailSheet]).
   final ValueChanged<PlanningTask>? onEditTask;
-
   @override
   State<ListsPage> createState() => _ListsPageState();
 }
-
 class _ListsPageState extends State<ListsPage>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-
   static const String _prefsKeyListsCategoryId = 'last_lists_category_id';
   static const String _prefsKeyChipMode = 'list_chip_mode';
   static const String _prefsKeyPinnedIds = 'list_pinned_ids';
   static const String _legacyPrefsKeyPinnedListChipIds = 'pinned_list_chip_ids';
-
   /// Full backlog snapshot for frequency-based chips (same rules as [fetchBacklogPlans] with no filter).
   List<PlanningTask> _allBacklogForFrequency = [];
   bool _loading = true;
   int? _filterCategoryId;
   String? _filterTagPbId;
   List<Tag> _listTagsForFilter = const [];
-
   /// `'manual'` = user-pinned IDs; `'frequent'` = top categories by local backlog counts.
   String _chipMode = 'frequent';
-
   /// Manual mode: category IDs persisted under [_prefsKeyPinnedIds].
   List<int> _pinnedChipIds = [];
   StreamSubscription<void>? _planRefreshSub;
   StreamSubscription<void>? _tagsCatalogSub;
   final ScrollController _chipBarScrollController = ScrollController();
   final ScrollController _tagFilterScrollController = ScrollController();
-
   static const double _kShellBulkBarReservePx = 56;
   static const String _kOptimisticPurgeDateKey = '2099-12-31';
   late final TextEditingController _inlineController;
   final FocusNode _inlineFocus = FocusNode();
-
   bool _listsSelectMode = false;
   final Set<String> _selectedListKeys = <String>{};
   bool _listsArchiveSectionExpanded = true;
-
   // Notes library search (local, in-memory; filters the displayed snapshot).
   String _notesSearchQuery = '';
   final TextEditingController _notesSearchController = TextEditingController();
   final FocusNode _notesSearchFocus = FocusNode();
-
   // GLM Notes v3 library view preferences.
   static const String _kPrefNotesCheckboxMode = 'lifeos.notes.checkboxMode';
   NotesLibraryView _notesView = NotesLibraryView.grid;
   bool _notesCheckboxesOn = false;
   bool _creatingNote = false;
-
   /// Stable key for backlog rows (matches Planning bulk selection).
   static String _listKey(PlanningTask t) {
     final p = t.planRowIdForBackend.trim();
@@ -320,6 +308,9 @@ class _ListsPageState extends State<ListsPage>
     super.initState();
     _inlineController = TextEditingController();
     NotesLibraryPreferences.mode.addListener(_onSharedNotesViewChanged);
+    NotesLibraryPreferences.categoryBarRequests.addListener(
+      _onCategoryBarRequested,
+    );
     final db = DatabaseService.instance;
     _planRefreshSub = db.planningRefreshNotifications.listen((_) {
       if (!mounted) return;
@@ -621,6 +612,12 @@ class _ListsPageState extends State<ListsPage>
     _scrollChipBarToStart();
   }
 
+  void _onCategoryBarRequested() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_openChipBarSettingsSheet());
+    });
+  }
+
   Future<void> _openChipBarSettingsSheet() async {
     await showListsChipBarSettingsSheet(
       context: context,
@@ -651,6 +648,9 @@ class _ListsPageState extends State<ListsPage>
     _planRefreshSub?.cancel();
     _tagsCatalogSub?.cancel();
     NotesLibraryPreferences.mode.removeListener(_onSharedNotesViewChanged);
+    NotesLibraryPreferences.categoryBarRequests.removeListener(
+      _onCategoryBarRequested,
+    );
     _chipBarScrollController.dispose();
     _tagFilterScrollController.dispose();
     _inlineController.dispose();

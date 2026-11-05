@@ -10,8 +10,8 @@ import 'package:flutter/material.dart';
 
 /// Real Notes/List preferences shared with the existing local Notes controls.
 class LifeOsNotesSettingsPage extends StatefulWidget {
-  const LifeOsNotesSettingsPage({super.key, required this.onOpenNotes});
-  final VoidCallback onOpenNotes;
+  const LifeOsNotesSettingsPage({super.key, required this.onOpenCategoryBar});
+  final VoidCallback onOpenCategoryBar;
 
   @override
   State<LifeOsNotesSettingsPage> createState() =>
@@ -170,7 +170,7 @@ class _LifeOsNotesSettingsPageState extends State<LifeOsNotesSettingsPage> {
                           : 'Pinned categories, filters and folders',
                       leading: AppSettingsMenuIcon(
                         icon: AppMenuIcons.icon(AppMenuIconRole.folder)),
-                      onTap: widget.onOpenNotes,
+                      onTap: widget.onOpenCategoryBar,
                     ),
                   ],
                 ),

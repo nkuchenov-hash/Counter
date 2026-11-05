@@ -18,10 +18,10 @@ import 'package:flutter/material.dart';
 class LifeOsPlanningSettingsPage extends StatefulWidget {
   const LifeOsPlanningSettingsPage({
     super.key,
-    required this.onOpenPlanning,
+    required this.onOpenDefaultPlanTimes,
   });
 
-  final VoidCallback onOpenPlanning;
+  final VoidCallback onOpenDefaultPlanTimes;
 
   @override
   State<LifeOsPlanningSettingsPage> createState() =>
@@ -135,13 +135,13 @@ class _LifeOsPlanningSettingsPageState
                             builder: (_) => const TagSettingsHub(initialTabIndex: 2))),
                       ),
                       AppSettingsNavigationRow(
-                        title: ru ? 'Другие параметры Time View' : 'More Time View options',
+                        title: ru ? 'Время новых планов' : 'Default plan times',
                         subtitle: ru
-                            ? 'Время по категориям и настройки отображения'
-                            : 'Category default times and display options',
+                            ? 'Установить время новых планов для категорий'
+                            : 'Set default times for categories',
                         leading: AppSettingsMenuIcon(
                           icon: AppMenuIcons.icon(AppMenuIconRole.schedule)),
-                        onTap: widget.onOpenPlanning,
+                        onTap: widget.onOpenDefaultPlanTimes,
                       ),
                     ],
                   ),

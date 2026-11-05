@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 abstract final class NotesLibraryPreferences {
   static const String key = 'lifeos.notes.view';
   static final ValueNotifier<String> mode = ValueNotifier<String>('grid');
+  static final ValueNotifier<int> categoryBarRequests = ValueNotifier<int>(0);
+  static void requestCategoryBarEditor() => categoryBarRequests.value++;
 
   static Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();

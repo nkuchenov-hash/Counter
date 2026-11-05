@@ -860,6 +860,9 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
   }
 
   void disposeTimeView() {
+    PlanningSettingsNavigationRequests.openDefaultTimes.removeListener(
+      _onOpenDefaultTimesRequested,
+    );
     nowLineTimer?.cancel();
     nowLineTimer = null;
     stopHourGridEdgeScroll();

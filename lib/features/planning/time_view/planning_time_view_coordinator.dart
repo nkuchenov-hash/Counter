@@ -9,12 +9,22 @@ import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/planning_sort_mode.dart';
 import 'package:counter/features/planning/time_view/time_view_drag_state.dart';
 import 'package:flutter/material.dart';
+import 'package:counter/features/planning/time_view/time_view_settings_sheet.dart';
 import 'package:flutter/scheduler.dart' show Ticker;
 
 import 'package:counter/features/planning/time_view/planning_time_view_host.dart';
 
+/// Requests open the existing editor without duplicating plan preferences.
+abstract final class PlanningSettingsNavigationRequests {
+  static final ValueNotifier<int> openDefaultTimes = ValueNotifier<int>(0);
+  static void requestDefaultTimes() => openDefaultTimes.value++;
+}
+
 class PlanningTimeViewCoordinator {
   PlanningTimeViewCoordinator(this.host) {
+    PlanningSettingsNavigationRequests.openDefaultTimes.addListener(
+      _onOpenDefaultTimesRequested,
+    );
     nowLineTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
       if (!host.mounted) {
         timer.cancel();
@@ -35,6 +45,16 @@ class PlanningTimeViewCoordinator {
   }
 
   final PlanningTimeViewHost host;
+  void _onOpenDefaultTimesRequested() {
+    if (!host.mounted ||
+        !host.pageWidget.isActivePlanningDay ||
+        !host.pageWidget.shellTabActive) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (host.mounted &&
+          host.pageWidget.isActivePlanningDay &&
+          host.pageWidget.shellTabActive) showDefaultPlanTimesSheet();
+    });
+  }
   Timer? nowLineTimer;
 
   // --- timeline state (public) ---

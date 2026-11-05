@@ -100,24 +100,44 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
       case LifeOsMenuAction.planning:
         _navigateToWorkspace(1);
         break;
+      case LifeOsMenuAction.defaultPlanTimes:
+        _navigateToWorkspace(1);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) PlanningSettingsNavigationRequests.requestDefaultTimes();
+        });
+        break;
       case LifeOsMenuAction.planningSettings:
         Navigator.of(context).push<void>(MaterialPageRoute<void>(
           builder: (_) => LifeOsPlanningSettingsPage(
-            onOpenPlanning: () {
+            onOpenDefaultPlanTimes: () {
               Navigator.of(context).pop();
               _navigateToWorkspace(1);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  PlanningSettingsNavigationRequests.requestDefaultTimes();
+                }
+              });
             },
           )));
         break;
       case LifeOsMenuAction.notes:
         _navigateToWorkspace(3);
         break;
+      case LifeOsMenuAction.notesCategoryBar:
+        _navigateToWorkspace(3);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) NotesLibraryPreferences.requestCategoryBarEditor();
+        });
+        break;
       case LifeOsMenuAction.notesSettings:
         Navigator.of(context).push<void>(MaterialPageRoute<void>(
           builder: (_) => LifeOsNotesSettingsPage(
-            onOpenNotes: () {
+            onOpenCategoryBar: () {
               Navigator.of(context).pop();
               _navigateToWorkspace(3);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) NotesLibraryPreferences.requestCategoryBarEditor();
+              });
             },
           )));
         break;
