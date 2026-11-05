@@ -37,6 +37,12 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
       onAction: onLifeOsMenuAction,
       activeTab: shellPageIndexListenable,
     ),
+    PeopleSettingsPage(
+      key: ValueKey(peopleDestination),
+      initialSection: peopleDestination,
+      activeTab: shellPageIndexListenable,
+      onBackToMenu: () => setState(() => setShellPageIndex(7)),
+    ),
   ];
 
   String _desktopSectionTitle(String loc) => switch (shellPageIndex) {
@@ -48,6 +54,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
     5 => loc.toLowerCase().startsWith('ru') ? 'Профиль' : 'Profile',
     6 => loc.toLowerCase().startsWith('ru') ? 'Пути' : 'Paths',
     7 => loc.toLowerCase().startsWith('ru') ? 'Меню' : 'Menu',
+    8 => loc.toLowerCase().startsWith('ru') ? 'Люди' : 'People',
     _ => t(loc, 'app_title'),
   };
 
@@ -102,11 +109,8 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                         child: Scaffold(
                           backgroundColor: scheme.surface,
                           resizeToAvoidBottomInset: true,
-                          // The approved Menu owns its full screen, including
-                          // its title. Do not stack the workspace date header
-                          // above it on desktop.
-                          appBar: (desktopShell && shellPageIndex != 7) ||
-                                  (!desktopShell && shellPageIndex <= 3)
+                          // Keep identical app chrome across every desktop destination.
+                          appBar: desktopShell || (!desktopShell && shellPageIndex <= 3)
                               ? AppBar(
                                   toolbarHeight: kGlobalCompactHeaderHeight,
                                   backgroundColor: desktopShell

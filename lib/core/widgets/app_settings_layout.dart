@@ -21,22 +21,25 @@ ThemeData settingsNeutralTheme(BuildContext context) {
   final scheme = base.colorScheme.copyWith(
     primary: base.colorScheme.onSurface,
     onPrimary: dark ? AppColors.darkAppBackground : Colors.white,
-    surface: dark ? const Color(0xFF161616) : const Color(0xFFF2F2F2),
+    // Use the existing near-white app canvas instead of flat #F2F2F2 gray.
+    surface: dark ? const Color(0xFF161616) : AppColors.appBackground,
     surfaceContainerLowest: dark
         ? const Color(0xFF161616)
-        : const Color(0xFFF2F2F2),
+        : AppColors.appBackground,
     surfaceContainerLow: dark
         ? const Color(0xFF222222)
-        : const Color(0xFFF2F2F2),
+        : AppColors.appBackground,
     surfaceContainer: dark
         ? const Color(0xFF303030)
-        : const Color(0xFFEDEDED),
+        : AppColors.surfaceMuted,
     surfaceContainerHigh: dark
         ? const Color(0xFF252525)
-        : Colors.white,
+        : AppColors.cardSurface,
     surfaceContainerHighest: dark
         ? const Color(0xFF303030)
-        : Colors.white,
+        : AppColors.cardSurface,
+    outlineVariant: dark ? base.colorScheme.outlineVariant : AppColors.borderMuted,
+    onSurfaceVariant: dark ? base.colorScheme.onSurfaceVariant : const Color(0xFF687586),
   );
   return base.copyWith(
     colorScheme: scheme,
@@ -63,74 +66,6 @@ ThemeData settingsNeutralTheme(BuildContext context) {
       }),
     ),
   );
-}
-
-enum AppSettingsTab {
-  account,
-  calendars,
-  preferences,
-  desktopVoice,
-  notifications,
-  appearance,
-  about,
-}
-
-/// Horizontal category tabs for desktop settings (Account, Preferences, …).
-class AppSettingsCategoryTabs extends StatelessWidget {
-  const AppSettingsCategoryTabs({
-    super.key,
-    required this.selected,
-    required this.onSelected,
-    required this.labels,
-  });
-
-  final AppSettingsTab selected;
-  final ValueChanged<AppSettingsTab> onSelected;
-  final Map<AppSettingsTab, String> labels;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: AppSettingsTab.values.map((tab) {
-          final active = tab == selected;
-          return Padding(
-            padding: const EdgeInsets.only(right: 20),
-            child: InkWell(
-              onTap: () => onSelected(tab),
-              borderRadius: BorderRadius.circular(4),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      labels[tab] ?? tab.name,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                        color: active
-                            ? theme.colorScheme.onSurface
-                            : theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      height: 2,
-                      width: active ? 28 : 0,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
 }
 
 /// Visual keycap row for hotkey display (Ctrl + Shift + Space).
@@ -294,7 +229,11 @@ class AppSettingsSectionCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 20),
       color: scheme.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(22),
+        side: BorderSide(
+          color: scheme.outlineVariant.withValues(alpha: 0.7),
+          width: 0.7,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
@@ -551,18 +490,26 @@ class AppSettingsNavigationRow extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 5),
-          minVerticalPadding: 12,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+          minVerticalPadding: 8,
           leading: leading,
           title: Text(title, style: theme.textTheme.bodyLarge?.copyWith(
-            fontWeight: FontWeight.w500,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.15,
+            height: 1.28,
           )),
           subtitle: subtitle == null ? null : Text(
             subtitle!,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w400,
+              height: 1.3,
+              color: scheme.brightness == Brightness.dark
+                  ? scheme.onSurfaceVariant
+                  : const Color(0xFF687586),
             ),
           ),
           trailing: Row(
@@ -587,6 +534,13 @@ class AppSettingsNavigationRow extends StatelessWidget {
           ),
           onTap: onTap,
           enabled: onTap != null,
+          hoverColor: scheme.brightness == Brightness.dark
+              ? scheme.onSurface.withValues(alpha: 0.065)
+              : const Color(0xFFF3F6FA),
+          splashColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
         if (showDivider) Divider(
           height: 1,
@@ -626,13 +580,19 @@ class AppSettingsControlRow extends StatelessWidget {
       title: Text(
         title,
         style: theme.textTheme.bodyLarge?.copyWith(
-          fontWeight: FontWeight.w500,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.15,
         ),
       ),
       subtitle: subtitle == null ? null : Text(
         subtitle!,
         style: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
+          fontSize: 13.5,
+          fontWeight: FontWeight.w400,
+          color: theme.brightness == Brightness.dark
+              ? theme.colorScheme.onSurfaceVariant
+              : const Color(0xFF687586),
         ),
       ),
       value: value,
@@ -700,7 +660,7 @@ class AppSettingsNavigationGroup extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16),
       child: Material(
         color: scheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         clipBehavior: Clip.antiAlias,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -737,14 +697,14 @@ class AppSettingsMenuIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return SizedBox(
-      width: 44,
-      height: 44,
+      width: 42,
+      height: 42,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: scheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(13),
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, size: 23, color: scheme.onSurface),
+        child: Icon(icon, size: 22, color: scheme.onSurface),
       ),
     );
   }

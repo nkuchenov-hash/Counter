@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
@@ -10,14 +11,22 @@ import 'package:counter/features/settings/people/people_person_editor.dart';
 import 'package:counter/features/settings/people/people_sources_section.dart';
 import 'package:counter/features/settings/people/people_strings.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
 enum PeopleSettingsDestination { people, circles, sources }
 
 class PeopleSettingsPage extends StatefulWidget {
-  const PeopleSettingsPage({super.key, this.initialSection = PeopleSettingsDestination.people});
+  const PeopleSettingsPage({
+    super.key,
+    this.initialSection = PeopleSettingsDestination.people,
+    this.onBackToMenu,
+    this.activeTab,
+  });
 
   final PeopleSettingsDestination initialSection;
+  final VoidCallback? onBackToMenu;
+  final ValueListenable<int>? activeTab;
 
   @override
   State<PeopleSettingsPage> createState() => _PeopleSettingsPageState();
@@ -126,10 +135,15 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
+    final embeddedInShell = widget.onBackToMenu != null;
+    final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
+    final page = Theme(
       data: settingsNeutralTheme(context),
       child: Scaffold(
-        appBar: AppBar(
+        appBar: embeddedInShell && desktop ? null : AppBar(
+          leading: embeddedInShell
+              ? BackButton(onPressed: widget.onBackToMenu)
+              : null,
           title: Text(peopleT(_locale, 'title')),
           actions: [
             IconButton(
@@ -141,6 +155,24 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
         ),
         body: AppSettingsPageBody(
           children: [
+            if (embeddedInShell && desktop) ...[
+              Row(children: [
+                Expanded(
+                  child: Text(
+                    peopleT(_locale, 'title'),
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: peopleT(_locale, 'refresh'),
+                  onPressed: _loading ? null : () => unawaited(_loadHome()),
+                  icon: const Icon(Icons.refresh_rounded),
+                ),
+              ]),
+              const SizedBox(height: 12),
+            ],
             Text(
               peopleT(_locale, 'subtitle'),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -198,6 +230,19 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
               },
           ],
         ),
+      ),
+    );
+
+    final tab = widget.activeTab;
+    if (tab == null || !embeddedInShell) return page;
+    return ValueListenableBuilder<int>(
+      valueListenable: tab,
+      builder: (context, selectedTab, _) => PopScope(
+        canPop: selectedTab != 8,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop && selectedTab == 8) widget.onBackToMenu?.call();
+        },
+        child: page,
       ),
     );
   }

@@ -338,12 +338,13 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
   }
 
   Widget _heading(BuildContext context, String value) => Padding(
-    padding: const EdgeInsets.fromLTRB(13, 22, 0, 10),
+    padding: const EdgeInsets.fromLTRB(4, 22, 0, 10),
     child: Text(
       value,
-      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        fontSize: 14,
         color: Theme.of(context).colorScheme.onSurfaceVariant,
-        letterSpacing: 0.6,
+        letterSpacing: 0.35,
         fontWeight: FontWeight.w700,
       ),
     ),
@@ -435,12 +436,18 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
       filled: true,
       fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide.none,
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant,
+          width: 0.7,
+        ),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide.none,
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant,
+          width: 0.7,
+        ),
       ),
       contentPadding: const EdgeInsets.symmetric(vertical: 16),
     ),
@@ -456,7 +463,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
         Text(_ru ? 'Меню' : 'Menu',
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
             fontWeight: FontWeight.w700)),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
         _searchField(),
         const SizedBox(height: 16),
         if (searching) ...[

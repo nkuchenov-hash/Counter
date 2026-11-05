@@ -31,6 +31,11 @@ ThemeData _buildAppTheme(ColorScheme scheme) {
 
   return ThemeData(
     useMaterial3: true,
+    // Prefer a native modern Windows font in desktop/Web builds. Android and
+    // other platforms use their local fallback; no external font CDN or
+    // additional application startup request is required.
+    fontFamily: 'Segoe UI Variable',
+    fontFamilyFallback: const ['Segoe UI', 'Roboto', 'Arial'],
     colorScheme: scheme,
     scaffoldBackgroundColor: scheme.surface,
     cardTheme: CardThemeData(

@@ -148,19 +148,25 @@ class ShellSideNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final bg = selected ? scheme.surfaceContainer : Colors.transparent;
-    final fg = selected ? scheme.onSurface : scheme.onSurfaceVariant;
-    final indicator = Colors.transparent;
+    final bg = selected ? scheme.surfaceContainerLow : Colors.transparent;
+    final fg = selected
+        ? scheme.onSurface
+        : scheme.onSurface.withValues(alpha: 0.86);
+    final indicator = selected ? scheme.onSurface : Colors.transparent;
     return Material(
       color: bg,
       borderRadius: BorderRadius.circular(13),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
+        hoverColor: scheme.brightness == Brightness.dark
+            ? scheme.onSurface.withValues(alpha: 0.06)
+            : const Color(0xFFF1F5F9),
+        splashColor: Colors.transparent,
         child: Container(
           decoration: BoxDecoration(
             border: Border(
-              left: BorderSide(color: indicator, width: 0),
+              left: BorderSide(color: indicator, width: 3),
             ),
           ),
           child: Padding(
@@ -176,7 +182,9 @@ class ShellSideNavItem extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: fg,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      fontSize: 15.5,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                      letterSpacing: -0.1,
                     ),
                   ),
                 ),
