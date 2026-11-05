@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `1e48d301` on 2026-11-05.**
+**Generated from input HEAD `2bd14ead` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -11883,8 +11883,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Foundation module `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only legacy color compatibility. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only legacy color compatibility.
+- **Human purpose:** Foundation module `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only historical color compatibility. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What this is:** Foundation module `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only historical color compatibility.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `life_color_compat.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
@@ -11893,15 +11893,15 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared foundation
-- **Responsibilities:** Canonical 10-family semantic palette and display-only legacy color compatibility
+- **Responsibilities:** Canonical 10-family semantic palette and display-only historical color compatibility
 - **When to open:** When behavior tied to `life_color_compat.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Canonical 10-family semantic palette and display-only legacy color compatibility
+- **Connected to:** APP_STRUCTURE role: Canonical 10-family semantic palette and display-only historical color compatibility
 
 RU:
 
-- **Зачем файл человеку:** Foundation-модуль `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only legacy color compatibility. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only legacy color compatibility.
+- **Зачем файл человеку:** Foundation-модуль `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only historical color compatibility. Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Что это:** Foundation-модуль `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only historical color compatibility.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `life_color_compat.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
@@ -11910,7 +11910,7 @@ RU:
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Canonical 10-family semantic palette and display-only legacy color compatibility.
+- **Обязанности:** Foundation-логика: Canonical 10-family semantic palette and display-only historical color compatibility.
 - **Когда открывать:** Когда ломается поведение, связанное с `life_color_compat.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
