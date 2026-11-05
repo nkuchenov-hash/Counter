@@ -67,7 +67,7 @@ void main() {
     ];
     expect(kCategoryPickerMaterialColors, ordered);
     expect(kLifeTagColorPresets, <String>[
-      '#EF3B3B', '#F26900', '#FFD000', '#48A130', '#008F87',
+      '#EF3B3B', '#FF7900', '#FFD000', '#48A130', '#008F87',
       '#47BCE9', '#286BE3', '#725EB5', '#FF79AA', '#9A9A9A',
       '#000000',
     ]);
@@ -165,6 +165,61 @@ void main() {
     expect(kTagYellowBorderOpacity, 0.74);
   });
 
+  test('urgent remains truly black, but custom urgent colors are respected', () {
+    const light = Color(0xFFF8FAFC);
+    for (final oldGray in <String?>[
+      null, '#606060', '#949494', '#9A9A9A', '#9E9E9E',
+    ]) {
+      expect(parseTagDisplayColor(oldGray, tagName: ' urgent '), Colors.black);
+    }
+    expect(parseTagDisplayColor('#9A9A9A', tagName: 'admin'),
+        kCategoryNeutral[500]);
+    expect(parseTagDisplayColor('#FF79AA', tagName: 'urgent'),
+        kNordicPeople[500]);
+    expect(tagLetterChipPlate(Colors.black, light), Colors.black);
+    expect(tagLetterChipBorder(Colors.black, light), Colors.black);
+    expect(tagVibrantForeground(Colors.black, surface: light), Colors.white);
+    expect(tagManagerAvatarPlate(Colors.black, light), Colors.black);
+    expect(tagEmptyChipFill(Colors.black, light), Colors.black);
+    expect(tagEmptyChipBorderColor(Colors.black), Colors.black);
+    expect(_contrast(Colors.white, Colors.black), greaterThan(20));
+  });
+
+  test('orange is saturated and readable, not peach or brown', () {
+    const light = Color(0xFFF8FAFC);
+    const dark = Color(0xFF121820);
+    final orange = kNordicErrands[500]!;
+    expect(orange, const Color(0xFFFF7900));
+    expect(kTagOrangeText, const Color(0xFFD95400));
+    expect(kTagOrangePlateOpacity, 0.22);
+    expect(kTagOrangeBorderOpacity, 0.78);
+    expect(tagVibrantForeground(orange, surface: light), kTagOrangeText);
+    expect(tagVibrantForeground(orange, surface: dark),
+        kNordicErrands[400]);
+    for (final surface in <Color>[light, dark]) {
+      expect(tagLetterChipPlate(orange, surface),
+          Color.alphaBlend(orange.withValues(alpha: 0.22), surface));
+      expect(tagLetterChipBorder(orange, surface),
+          Color.alphaBlend(orange.withValues(alpha: 0.78), surface));
+      expect(tagManagerAvatarPlate(orange, surface),
+          tagLetterChipPlate(orange, surface));
+      expect(tagEmptyChipFill(orange, surface),
+          orange.withValues(alpha: 0.22));
+      expect(tagEmptyChipBorderColor(orange),
+          orange.withValues(alpha: 0.78));
+    }
+    expect(_contrast(kTagOrangeText, tagLetterChipPlate(orange, light)),
+        greaterThanOrEqualTo(3.0));
+    expect(_contrast(kNordicErrands[400]!, tagLetterChipPlate(orange, dark)),
+        greaterThanOrEqualTo(4.5));
+    expect(parseTagHexColor('#F26900'), orange);
+    // Other user-approved colors remain intact.
+    expect(kNordicEntertainment[500], const Color(0xFFEF3B3B));
+    expect(kNordicPeople[500], const Color(0xFFFF79AA));
+    expect(kTagPinkPlateOpacity, 0.16);
+    expect(kTagYellowPlateOpacity, 0.13);
+  });
+
   test('previous official base colors resolve to new families', () {
     final legacyBase = <String, MaterialColor>{
       '#3978C5': kNordicWork,
@@ -199,7 +254,8 @@ void main() {
         // prioritize chromatic fidelity with 3:1 minimum for chips.
         if (family == kNordicFood ||
             family == kNordicEntertainment ||
-            family == kNordicPeople) {
+            family == kNordicPeople ||
+            family == kNordicErrands) {
           continue;
         }
         final color = family[500]!;
@@ -241,6 +297,7 @@ void main() {
       expect(tagVibrantForeground(kTagYellowGold, surface: background),
           kTagYellowText);
     }
+    expect(parseTagHexColor('#F26900'), kNordicErrands[500]);
     expect(parseTagHexColor('#000000'), Colors.black);
     expect(kLifeTagColorPresets, contains('#000000'));
     // Old families remain visually compatible without modifying DB records.
