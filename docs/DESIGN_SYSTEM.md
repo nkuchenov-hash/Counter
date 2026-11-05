@@ -1,5 +1,12 @@
 # Design System
 
+## Menu and settings surfaces (2026-11-05)
+
+- Reuse `AppSettingsNavigationGroup`, `AppSettingsNavigationRow`, `AppSettingsSectionCard` and `AppSettingsPageBody` from `lib/core/widgets/app_settings_layout.dart`; Menu uses the same rows/groups and neutral surfaces.
+- The desktop shell has one primary side rail, one global header, and a centered settings column. Do not embed another navigation rail, duplicate quick-action grid or horizontal category tabs inside profile/settings pages.
+- Menu category rows navigate to their detail listings; selecting a setting opens a focused destination inside the same shell with a Back affordance. Offstage shell pages must not intercept system Back.
+
+
 The Life OS design system makes Figma the visual source of truth and Flutter canonical components the executable source of truth. Feature screens must compose shared components, not recreate local copies.
 
 ## Goal
