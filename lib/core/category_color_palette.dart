@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:counter/core/tag_contrast.dart' show kTagYellowGold;
 import 'package:counter/core/life_color_compat.dart';
-export 'package:counter/core/life_color_compat.dart' show kNordicWork, kNordicErrands, kNordicFood, kNordicMovement, kNordicHealth, kNordicTransport, kNordicStudy, kNordicEntertainment, kNordicPeople, kCategoryNeutral, canonicalLifeColorValue;
+export 'package:counter/core/life_color_compat.dart' show kNordicWork, kNordicErrands, kNordicFood, kNordicMovement, kNordicHealth, kNordicTransport, kNordicStudy, kNordicEntertainment, kNordicPeople, kCategoryBlack, kCategoryNeutral, canonicalLifeColorValue;
 
 // LIFE OS semantic color families. Shared by every category screen and by
 // the tag creation palette; persisted custom colors always remain authoritative.
@@ -10,10 +10,10 @@ export 'package:counter/core/life_color_compat.dart' show kNordicWork, kNordicEr
 // exposes only those three legible tones (not 50..900 near-white/near-black).
 // Existing stored values are still recognized to prevent data migration.
 
-// Achromatic neutral: R == G == B at every tone (no blue or beige cast).
+// Neutral gray and black stay achromatic at every shade.
 
 /// Ordered for category creation and the appearance picker.
-/// Grey is intentionally last: it is neutral/list/system, not a life-domain hue.
+/// Black and gray are explicit user choices, not automatic root-category colors.
 const List<MaterialColor> kCategoryPickerMaterialColors = <MaterialColor>[
   kNordicWork,
   kNordicErrands,
@@ -24,6 +24,7 @@ const List<MaterialColor> kCategoryPickerMaterialColors = <MaterialColor>[
   kNordicStudy,
   kNordicEntertainment,
   kNordicPeople,
+  kCategoryBlack,
   kCategoryNeutral,
 ];
 
@@ -76,12 +77,12 @@ MaterialColor categoryMaterialPrimaryForValue(int? v) {
   return closest;
 }
 
-/// Root categories cycle through semantic families. Neutral is reserved for
-/// lists/system/uncategorized; it is not assigned as a new root automatically.
+/// New root categories cycle only through nine chromatic families.
+/// Black and neutral gray remain explicit, non-automatic choices.
 int categoryNordicRootColorValue(int siblingIndex) {
   final families = kCategoryPickerMaterialColors.sublist(
     0,
-    kCategoryPickerMaterialColors.length - 1,
+    kCategoryPickerMaterialColors.length - 2,
   );
   return categoryColorAtDepth(families[siblingIndex % families.length], 0);
 }
@@ -101,7 +102,7 @@ int categoryNordicChildColorValue(int? parentColorValue, int siblingIndex) {
   return family[childTone]!.toARGB32();
 }
 
-/// Used by tag pickers. Preserves exact gold (#F6C500), its special contrast
+/// Used by tag pickers. Uses vibrant yellow (#FFD000), its custom contrast
 /// treatment, and the existing tag hex strings in PocketBase. Other presets
 /// use the SAME canonical families as category creation. Old tag colors remain
 /// valid; this list only controls NEW color choices.
