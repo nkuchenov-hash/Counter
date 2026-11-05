@@ -39,19 +39,11 @@ bool tagColorIsYellowFamily(Color tagColor) {
   return h >= 45.0 && h < 60.0;
 }
 
-/// Timeline breadcrumb stadium: 22% accent; yellow uses approved 16% tint.
-Color tagCategoryBreadcrumbPlate(Color accentColor, Color surface) {
-  if (tagColorIsYellowFamily(accentColor)) {
-    return Color.alphaBlend(
-      kTagYellowGold.withValues(alpha: kTagYellowPlateOpacity),
-      surface,
-    );
-  }
-  return Color.alphaBlend(
-    accentColor.withValues(alpha: 0.22),
-    surface,
-  );
-}
+/// Timeline category breadcrumbs and planning tag chips use the same
+/// semantic surface recipe from the single Life OS design system.
+/// Keep this name for existing callers; never implement a separate tint.
+Color tagCategoryBreadcrumbPlate(Color accentColor, Color surface) =>
+    tagLetterChipPlate(accentColor, surface);
 
 /// Tag manager avatar: black solid; yellow 16%, pink 16%, orange 22%.
 Color tagManagerAvatarPlate(Color tagColor, Color surface) {
