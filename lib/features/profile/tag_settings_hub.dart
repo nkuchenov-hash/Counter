@@ -50,7 +50,7 @@ class _TagSettingsHubState extends State<TagSettingsHub>
   @override
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = settingsNeutralTheme(context).colorScheme;
     return Theme(
       data: settingsNeutralTheme(context),
       child: Scaffold(

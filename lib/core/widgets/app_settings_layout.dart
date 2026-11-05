@@ -39,6 +39,13 @@ ThemeData settingsNeutralTheme(BuildContext context) {
   );
   return base.copyWith(
     colorScheme: scheme,
+    scaffoldBackgroundColor: scheme.surfaceContainerLowest,
+    appBarTheme: base.appBarTheme.copyWith(
+      backgroundColor: scheme.surfaceContainerLowest,
+      foregroundColor: scheme.onSurface,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+    ),
     tabBarTheme: base.tabBarTheme.copyWith(
       indicatorColor: scheme.onSurface,
       labelColor: scheme.onSurface,
