@@ -42,7 +42,8 @@ void main() {
     final drawing = kNotesDrawingColors.take(kCategoryPickerMaterialColors.length)
         .map((item) => item.color).toList();
     final expected = kCategoryPickerMaterialColors.map((f) => f[500]!).toList();
-    expect(drawing, expected);
+    expect(drawing.map((c) => c.toARGB32()).toList(),
+        expected.map((c) => c.toARGB32()).toList());
     expect(kNotesDrawingColors.last.color, AppNeutralTones.white);
   });
 
