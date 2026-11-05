@@ -41,9 +41,10 @@ class CategoryBreadcrumb extends StatelessWidget {
     }
 
     final scheme = Theme.of(context).colorScheme;
-    final plate = tagCategoryBreadcrumbPlate(accentColor, scheme.surface);
-    final border = tagLetterChipBorder(accentColor, scheme.surface);
-    final fg = tagVibrantForeground(accentColor, surface: scheme.surface);
+    final chipSurface = scheme.surfaceContainerHighest;
+    final plate = tagCategoryBreadcrumbPlate(accentColor, chipSurface);
+    final border = tagLetterChipBorder(accentColor, chipSurface);
+    final fg = tagVibrantForeground(accentColor, surface: chipSurface);
     final sepStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
       color: fg.withValues(alpha: 0.58),
       fontWeight: FontWeight.w700,
@@ -145,7 +146,7 @@ class CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final solidColor = tagSolidAccentOnSurface(color, scheme.surface);
+    final solidColor = tagSolidAccentOnSurface(color, scheme.surfaceContainerHighest);
     final large =
         variant == CategoryChipVariant.largePicker || prominentVisuals;
     final displayLabel = localizeCategoryBreadcrumbPath(
@@ -319,9 +320,10 @@ class CategoryChip extends StatelessWidget {
         ),
       );
     }
-    final plate = tagLetterChipPlate(color, scheme.surface);
-    final fg = tagVibrantForeground(color, surface: scheme.surface);
-    final stroke = tagLetterChipBorder(color, scheme.surface);
+    final chipSurface = scheme.surfaceContainerHighest;
+    final plate = tagLetterChipPlate(color, chipSurface);
+    final fg = tagVibrantForeground(color, surface: chipSurface);
+    final stroke = tagLetterChipBorder(color, chipSurface);
     return _letterChipPillShell(
       context: context,
       displayLabel: displayLabel,
@@ -336,7 +338,7 @@ class CategoryChip extends StatelessWidget {
 
   /// chip: stadium pill; compact on cards, larger in pickers.
   Widget _chipPlanStyle(BuildContext context) {
-    final surface = Theme.of(context).colorScheme.surface;
+    final surface = Theme.of(context).colorScheme.surfaceContainerHighest;
     final large =
         variant == CategoryChipVariant.largePicker || prominentVisuals;
     return Container(
