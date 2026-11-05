@@ -16,6 +16,8 @@ class SyncManager {
 
   StreamSubscription<List<ConnectivityResult>>? _sub;
   Timer? _pendingDrainTimer;
+  Timer? _offlineRecoveryTimer;
+  int _offlineRecoveryAttempts = 0;
   bool _attached = false;
   bool _drainInFlight = false;
   int _stalledDrainAttempts = 0;
@@ -51,21 +53,72 @@ class SyncManager {
     if (onlyOffline) {
       _pendingDrainTimer?.cancel();
       _pendingDrainTimer = null;
+      _scheduleOfflineRecovery();
       return;
     }
+    _offlineRecoveryTimer?.cancel();
+    _offlineRecoveryTimer = null;
+    _offlineRecoveryAttempts = 0;
     _schedulePendingDrain();
   }
 
   void _onSyncStateChanged() {
     final sync = DatabaseService.instance.offlineSync;
-    if (sync.pendingCount <= 0 || sync.isOffline || sync.authPaused) {
-      if (sync.pendingCount <= 0 || sync.isOffline) {
-        _pendingDrainTimer?.cancel();
-        _pendingDrainTimer = null;
-      }
+    if (sync.pendingCount <= 0 || sync.authPaused) {
+      _pendingDrainTimer?.cancel();
+      _pendingDrainTimer = null;
+      _offlineRecoveryTimer?.cancel();
+      _offlineRecoveryTimer = null;
+      if (sync.pendingCount <= 0) _offlineRecoveryAttempts = 0;
       return;
     }
+    if (sync.isOffline) {
+      _pendingDrainTimer?.cancel();
+      _pendingDrainTimer = null;
+      _scheduleOfflineRecovery();
+      return;
+    }
+    _offlineRecoveryTimer?.cancel();
+    _offlineRecoveryTimer = null;
     _schedulePendingDrain();
+  }
+
+  /// Connectivity events only signal interface changes. A failed PocketBase
+  /// write can mark the app offline while Wi-Fi remains connected forever.
+  /// Probe only with durable pending work; never poll full collections.
+  void _scheduleOfflineRecovery() {
+    final sync = DatabaseService.instance.offlineSync;
+    if (!_attached || sync.pendingCount <= 0 || !sync.isOffline ||
+        sync.authPaused || (_offlineRecoveryTimer?.isActive ?? false)) {
+      return;
+    }
+    final step = _offlineRecoveryAttempts > 3 ? 3 : _offlineRecoveryAttempts;
+    _offlineRecoveryTimer = Timer(Duration(seconds: 2 * (1 << step)), () {
+      _offlineRecoveryTimer = null;
+      unawaited(_probeOfflineRecovery());
+    });
+  }
+
+  Future<void> _probeOfflineRecovery() async {
+    final sync = DatabaseService.instance.offlineSync;
+    if (!_attached || sync.pendingCount <= 0 || !sync.isOffline ||
+        sync.authPaused) {
+      return;
+    }
+    if (_offlineRecoveryAttempts < 3) _offlineRecoveryAttempts++;
+    try {
+      final results = await Connectivity().checkConnectivity();
+      final hasNetwork = results.isNotEmpty &&
+          !(results.length == 1 && results.first == ConnectivityResult.none);
+      if (hasNetwork) {
+        // The outbox attempt tests server reachability. If PocketBase is still
+        // down, its failure re-arms this bounded recovery loop.
+        sync.setConnectivityOffline(false);
+        _schedulePendingDrain();
+        return;
+      }
+    } catch (_) {}
+    _scheduleOfflineRecovery();
   }
 
   void _schedulePendingDrain({Duration delay = Duration.zero}) {
@@ -94,9 +147,15 @@ class SyncManager {
 
     if (sync.pendingCount <= 0) {
       _stalledDrainAttempts = 0;
+      _offlineRecoveryAttempts = 0;
       return;
     }
-    if (sync.isOffline || sync.authPaused) return;
+    if (sync.pendingCount < countBefore) _offlineRecoveryAttempts = 0;
+    if (sync.isOffline) {
+      _scheduleOfflineRecovery();
+      return;
+    }
+    if (sync.authPaused) return;
     final stalled = sync.pendingCount >= countBefore &&
         (sync.lastError?.isNotEmpty ?? false);
     _stalledDrainAttempts = stalled
@@ -113,6 +172,9 @@ class SyncManager {
   Future<void> dispose() async {
     _pendingDrainTimer?.cancel();
     _pendingDrainTimer = null;
+    _offlineRecoveryTimer?.cancel();
+    _offlineRecoveryTimer = null;
+    _offlineRecoveryAttempts = 0;
     DatabaseService.instance.offlineSync.removeListener(_onSyncStateChanged);
     await _sub?.cancel();
     _sub = null;
