@@ -317,6 +317,8 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildDisplayNameField(context, locale),
+                const SizedBox(height: 16),
                 AccountSecuritySection(),
                 const SizedBox(height: 8),
                 SecuritySection(onSaved: widget.onSaved, embedded: true),
