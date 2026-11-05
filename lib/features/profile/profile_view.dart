@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/features/profile/settings/account_settings_section.dart';
+import 'package:counter/features/profile/calendar_integrations/calendar_integrations_section.dart';
 import 'package:counter/features/profile/settings/notification_settings_section.dart';
 import 'package:counter/features/profile/settings/security_settings_section.dart';
 
@@ -326,6 +327,10 @@ class _ProfilePageState extends State<ProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               AppSettingsSectionCard(
+                title: t(locale, 'calendar_integrations_title'),
+                child: const CalendarIntegrationsSection(),
+              ),
+              AppSettingsSectionCard(
                 title: t(locale, 'profile_time_locale_section'),
                 child: _buildTimeLocaleFields(context, locale, safeTimeZone),
               ),
@@ -388,6 +393,10 @@ class _ProfilePageState extends State<ProfilePage> {
               SecuritySection(onSaved: widget.onSaved, embedded: true),
             ],
           ),
+        ),
+        AppSettingsSectionCard(
+          title: t(locale, 'calendar_integrations_title'),
+          child: const CalendarIntegrationsSection(),
         ),
         AppSettingsSectionCard(
           title: t(locale, 'profile_time_locale_section'),
