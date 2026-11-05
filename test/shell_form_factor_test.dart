@@ -4,6 +4,7 @@ import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/theme.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:counter/app/shell/shared/shell_form_factor.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -113,8 +114,8 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         home: Builder(builder: (context) {
           final scheme = settingsNeutralTheme(context).colorScheme;
-          expect(scheme.surface, const Color(0xFFF0F0F0));
-          expect(scheme.surfaceContainerLowest, const Color(0xFFF0F0F0));
+          expect(scheme.surface, const Color(0xFFE5E5E5));
+          expect(scheme.surfaceContainerLowest, const Color(0xFFE5E5E5));
           expect(scheme.surfaceContainerHigh, AppColors.cardSurface);
           expect(scheme.surfaceContainer, const Color(0xFFF1F1F1));
           return const SizedBox.shrink();
@@ -138,12 +139,12 @@ void main() {
       ));
       final title = tester.widget<Text>(find.text('Notifications'));
       final subtitle = tester.widget<Text>(find.text('Quiet reminders and alerts'));
-      expect(title.style?.fontWeight, FontWeight.w500);
+      expect(title.style?.fontWeight, FontWeight.w400);
       expect(subtitle.style?.fontWeight, FontWeight.w400);
-      expect(subtitle.style?.color, const Color(0xFF777777));
+      expect(subtitle.style?.color, const Color(0xFF818181));
       expect((title.style?.fontSize ?? 0) > (subtitle.style?.fontSize ?? 0), isTrue);
       final tile = tester.widget<ListTile>(find.byType(ListTile));
-      expect(tile.hoverColor, const Color(0xFFF2F2F2));
+      expect(tile.hoverColor, Colors.transparent);
       expect(tile.splashColor, Colors.transparent);
       expect(tester.takeException(), isNull);
     });
@@ -163,7 +164,8 @@ void main() {
       expect(chrome, contains("desktopShell ? 'LIFE OS'"));
       expect(chrome, contains("initialSection: 'account'"));
       expect(chrome, contains('embeddedInShell: true'));
-      expect(sidebar, contains('Color(0xFFECECEC)'));
+      expect(sidebar, contains('Color(0xFFDDDDDD)'));
+      expect(sidebar, contains("'LIFE OS'"));
       expect(routes, contains('setShellPageIndex(9)'));
       expect(routes, contains('9 => 5,'));
     });
@@ -172,9 +174,49 @@ void main() {
       final layout = File('lib/core/widgets/app_settings_layout.dart')
           .readAsStringSync();
       expect(layout, contains('EdgeInsets.symmetric(vertical: 4)'));
-      expect(layout, contains('EdgeInsets.only(left: 82, right: 24)'));
-      expect(layout, contains('thickness: 1,'));
-      expect(layout, contains('shape: const RoundedRectangleBorder()'));
+      expect(layout, contains('EdgeInsets.only(left: 78, right: 20)'));
+      expect(layout, contains('thickness: 1.2,'));
+      expect(layout, contains('onEnter: (_) => setState(() => _hovered = true)'));
+      expect(layout, contains('color: _hovered && !dark'));
+    });
+
+    testWidgets('hover highlights the entire white group not an individual row',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        theme: appLightTheme,
+        home: Builder(builder: (context) => Theme(
+          data: settingsNeutralTheme(context),
+          child: Scaffold(body: AppSettingsNavigationGroup(children: [
+            AppSettingsNavigationRow(
+              title: 'First item',
+              leading: const AppSettingsMenuIcon(icon: Icons.alarm),
+              onTap: () {},
+            ),
+            AppSettingsNavigationRow(
+              title: 'Second item',
+              leading: const AppSettingsMenuIcon(icon: Icons.person),
+              onTap: () {},
+            ),
+          ])),
+        )),
+      ));
+      final group = find.byType(AppSettingsNavigationGroup);
+      final material = find.descendant(
+        of: group, matching: find.byType(Material)).first;
+      expect(tester.widget<Material>(material).color, Colors.white);
+      final divider = tester.widget<Divider>(
+          find.descendant(of: group, matching: find.byType(Divider)).first);
+      expect(divider.color, const Color(0xFFC4C4C4));
+      expect(divider.thickness, 1.2);
+
+      final pointer = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await pointer.addPointer(location: Offset.zero);
+      await pointer.moveTo(tester.getCenter(find.text('Second item')));
+      await tester.pump();
+      expect(tester.widget<Material>(material).color, const Color(0xFFF7F7F7));
+      await pointer.removePointer();
+      await tester.pump();
+      expect(tester.widget<Material>(material).color, Colors.white);
     });
 
     testWidgets('settings stay within a readable desktop content column',

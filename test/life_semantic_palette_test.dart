@@ -447,7 +447,7 @@ void main() {
         }),
       )),
     ));
-    expect(background, const Color(0xFFF0F0F0));
+    expect(background, const Color(0xFFE5E5E5));
     expect(card, const Color(0xFFFFFFFF));
     expect(background, isNot(card));
     expect(tester.takeException(), isNull);
