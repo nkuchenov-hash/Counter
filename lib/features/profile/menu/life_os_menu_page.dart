@@ -567,6 +567,9 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
             }
           },
           child: AppSettingsPageBody(
+            // Avoid reopening a section/search at the previous menu scroll offset.
+            key: ValueKey(_activeSection ??
+                (_search.text.trim().isEmpty ? 'home' : 'search')),
             children: [
               _activeSection == null
                   ? _home(context)
