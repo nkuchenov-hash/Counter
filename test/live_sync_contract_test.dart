@@ -385,7 +385,7 @@ void main() {
     expect(worker, contains("auth: readBySuffix('pb_auth')"));
     expect(worker, contains("const POCKETBASE_BASE = 'https://217-114-0-201.sslip.io';"));
 
-    expect(manifest, contains('"version": "0.2.4"'));
+    expect(manifest, contains('"version": "0.2.5"'));
     expect(manifest, contains('"https://217-114-0-201.sslip.io/*"'));
     expect(manifest, contains('connect-src \'self\' https://217-114-0-201.sslip.io'));
   });
