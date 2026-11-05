@@ -38,8 +38,8 @@ ThemeData _buildAppTheme(ColorScheme scheme) {
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: scheme.outline.withValues(alpha: 0.85)),
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.55)),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
@@ -103,7 +103,21 @@ ThemeData _buildAppTheme(ColorScheme scheme) {
         return scheme.surfaceContainerHighest;
       }),
     ),
-    dividerTheme: DividerThemeData(color: scheme.outlineVariant, thickness: 1),
+    dividerTheme: DividerThemeData(color: scheme.outlineVariant.withValues(alpha: 0.7), thickness: 0.7),
+    popupMenuTheme: PopupMenuThemeData(
+      color: cardFill,
+      surfaceTintColor: Colors.transparent,
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      textStyle: TextStyle(color: scheme.onSurface, fontSize: 16),
+    ),
+    listTileTheme: ListTileThemeData(
+      iconColor: scheme.onSurfaceVariant,
+      textColor: scheme.onSurface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+      minVerticalPadding: 10,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
     dialogTheme: DialogThemeData(
       backgroundColor: cardFill,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -112,7 +126,7 @@ ThemeData _buildAppTheme(ColorScheme scheme) {
       backgroundColor: cardFill,
       surfaceTintColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
