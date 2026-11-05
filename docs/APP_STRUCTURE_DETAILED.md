@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `e68d7662` on 2026-11-05.**
+**Generated from input HEAD `cb826e35` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 982 — each appears **exactly once** below.
+**Tracked files:** 984 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -32,8 +32,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | `platform build` | 83 |
 | `shared foundation` | 69 |
 | `developer tool` | 65 |
+| `governing documentation` | 45 |
 | `platform resource` | 44 |
-| `governing documentation` | 43 |
 | `Desktop Voice runtime` | 36 |
 | `test fixture` | 30 |
 | `PocketBase backend` | 24 |
@@ -60,7 +60,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `PROVEN_REQUIRED` | 532 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 261 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
-| `GOVERNING_DOCUMENTATION` | 43 |
+| `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
 | `GENERATED_CANONICAL_OUTPUT` | 1 |
 
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 895 |
+| `HIGH` | 897 |
 | `MEDIUM` | 87 |
 
 ---
@@ -8028,6 +8028,80 @@ RU:
 - **Обязанности:** Фиксирует evidence и итоги по теме этого расследования.
 - **Когда открывать:** Смотрите историю по `GOOGLE HEALTH SLEEP SYNC 2026-08-11` перед повторением той же работы.
 - **Можно удалить?** Пропадёт история решения по тому расследованию.
+- **Связано с:** `docs/ROADMAP.md`, `CHANGELOG.md`, связанные governing docs.
+
+
+### `docs/reports/HEROICONS_FLUENT_324_MAPPING.csv`
+
+EN:
+
+- **Human purpose:** csv file `HEROICONS_FLUENT_324_MAPPING.csv` in `docs/reports` — repo tooling or config. Tracked because `docs/reports` needs `HEROICONS_FLUENT_324_MAPPING.csv` for build, CI, or maintenance.
+- **What this is:** csv file `HEROICONS_FLUENT_324_MAPPING.csv` in `docs/reports` — repo tooling or config.
+- **Why needed:** Tracked because `docs/reports` needs `HEROICONS_FLUENT_324_MAPPING.csv` for build, CI, or maintenance.
+- **Contents:** Open `HEROICONS_FLUENT_324_MAPPING.csv` when working on `docs/reports` (see folder section above).
+- **Repository role:** governing documentation
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `docs/APP_STRUCTURE.md`, `docs/reports/HEROICONS_FLUENT_MAPPING_REVIEW.md`, `test/category_icon_pack_test.dart`.
+- **Necessity status:** GOVERNING_DOCUMENTATION
+- **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
+- **Confidence:** HIGH
+- **Owner / layer:** documentation
+- **Responsibilities:** Supports `docs/reports` workflow for `HEROICONS_FLUENT_324_MAPPING.csv`.
+- **When to open:** When build output or maintenance cites `HEROICONS_FLUENT_324_MAPPING.csv`.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/reports/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `HEROICONS_FLUENT_324_MAPPING.csv` — отслеживаемый ресурс области `docs/reports` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `docs/reports` для `HEROICONS_FLUENT_324_MAPPING.csv`.
+- **Что это:** `HEROICONS_FLUENT_324_MAPPING.csv` — отслеживаемый ресурс области `docs/reports` с отдельной ролью.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `docs/reports` для `HEROICONS_FLUENT_324_MAPPING.csv`.
+- **Содержимое:** Данные или код `HEROICONS_FLUENT_324_MAPPING.csv`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** governing documentation
+- **Доказательства использования:** Управляющая/операционная документация для людей и агентов (см. Project Knowledge / AGENTS).
+- **Статус необходимости:** GOVERNING_DOCUMENTATION
+- **Что будет, если удалить:** Пропадёт архитектурное/операционное правило.
+- **Уверенность:** HIGH
+- **Владелец / слой:** документация
+- **Обязанности:** Реализует назначение `HEROICONS_FLUENT_324_MAPPING.csv` для области `docs/reports`.
+- **Когда открывать:** When результат сборки or maintenance cites `HEROICONS_FLUENT_324_MAPPING.csv`.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `docs/reports/`, `docs/APP_STRUCTURE.md`.
+
+
+### `docs/reports/HEROICONS_FLUENT_MAPPING_REVIEW.md`
+
+EN:
+
+- **Human purpose:** Engineering report `HEROICONS_FLUENT_MAPPING_REVIEW.md` — dated findings under `docs/reports/`. Preserves audit/parity decisions so later work does not re-litigate the same findings.
+- **What this is:** Engineering report `HEROICONS_FLUENT_MAPPING_REVIEW.md` — dated findings under `docs/reports/`.
+- **Why needed:** Preserves audit/parity decisions so later work does not re-litigate the same findings.
+- **Contents:** Markdown report body for `HEROICONS FLUENT MAPPING REVIEW`.
+- **Repository role:** governing documentation
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `docs/APP_STRUCTURE.md`, `test/category_icon_pack_test.dart`.
+- **Necessity status:** GOVERNING_DOCUMENTATION
+- **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
+- **Confidence:** HIGH
+- **Owner / layer:** documentation
+- **Responsibilities:** Document evidence and outcomes for this investigation topic.
+- **When to open:** Reviewing history related to `HEROICONS FLUENT MAPPING REVIEW` before repeating the work.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `docs/ROADMAP.md`, `CHANGELOG.md`, related governing docs.
+
+RU:
+
+- **Зачем файл человеку:** Инженерный отчёт `HEROICONS_FLUENT_MAPPING_REVIEW.md` — dated findings в `docs/reports/`. Сохраняет решения audit/parity, чтобы позже не переобсуждать те же findings.
+- **Что это:** Инженерный отчёт `HEROICONS_FLUENT_MAPPING_REVIEW.md` — dated findings в `docs/reports/`.
+- **Зачем:** Сохраняет решения audit/parity, чтобы позже не переобсуждать те же findings.
+- **Содержимое:** Markdown-тело отчёта `HEROICONS FLUENT MAPPING REVIEW`.
+- **Роль в репозитории:** governing documentation
+- **Доказательства использования:** Управляющая/операционная документация для людей и агентов (см. Project Knowledge / AGENTS).
+- **Статус необходимости:** GOVERNING_DOCUMENTATION
+- **Что будет, если удалить:** Пропадёт архитектурное/операционное правило.
+- **Уверенность:** HIGH
+- **Владелец / слой:** документация
+- **Обязанности:** Фиксирует evidence и итоги по теме этого расследования.
+- **Когда открывать:** Смотрите историю по `HEROICONS FLUENT MAPPING REVIEW` перед повторением той же работы.
+- **Можно удалить?** Нет — governing документация.
 - **Связано с:** `docs/ROADMAP.md`, `CHANGELOG.md`, связанные governing docs.
 
 
