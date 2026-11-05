@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:counter/core/life_color_compat.dart' show canonicalLifeColorValue;
 
-/// Exact yellow-tag palette (text, icon, stroke). No black/grey/orange overrides.
-const Color kTagYellowGold = Color(0xFFF6C500);
-/// Pale plate tint for yellow tags (same hex, 15% alpha, blended onto [surface]).
-const double kTagYellowPlateOpacity = 0.15;
+/// Approved sunny-yellow tag identity. These values come from the yellow
+/// preview controls; they are shared by every tag display mode and screen.
+const Color kTagYellowGold = Color(0xFFFFD000);
+const Color kTagYellowText = Color(0xFFE1B400);
+const double kTagYellowPlateOpacity = 0.13;
+const double kTagYellowBorderOpacity = 0.74;
 
-/// Yellow tag: preset hexes (#FDD835, legacy #FDCF00, #F6C500), or saturated hue ~gold (45°–60°).
+/// Current/previous yellow presets, plus saturated gold hue (45°–60°).
 bool tagColorIsYellowFamily(Color tagColor) {
   final rgb = tagColor.toARGB32() & 0xFFFFFF;
-  if (rgb == 0xF6C500 || rgb == 0xFDCF00 || rgb == 0xFDD835) return true;
+  if (rgb == 0xFFD000 || rgb == 0xF6C500 || rgb == 0xFDCF00 || rgb == 0xFDD835) return true;
   final hsl = HSLColor.fromColor(tagColor);
   if (hsl.saturation < 0.12) return false;
   final h = hsl.hue;
   return h >= 45.0 && h < 60.0;
 }
 
-/// Timeline breadcrumb stadium: 22% accent; yellow stays 15% gold.
+/// Timeline breadcrumb stadium: 22% accent; yellow uses approved 13% tint.
 Color tagCategoryBreadcrumbPlate(Color accentColor, Color surface) {
   if (tagColorIsYellowFamily(accentColor)) {
     return Color.alphaBlend(
@@ -30,7 +32,7 @@ Color tagCategoryBreadcrumbPlate(Color accentColor, Color surface) {
   );
 }
 
-/// Tag manager list avatar background: 26% tag; yellow remains 15% gold.
+/// Tag manager list avatar background: 26% tag; yellow uses approved 13% tint.
 Color tagManagerAvatarPlate(Color tagColor, Color surface) {
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
@@ -46,9 +48,9 @@ Color tagManagerAvatarPlate(Color tagColor, Color surface) {
 /// When [surface] is supplied, maintain the original hue but select enough
 /// lightness contrast for small text on that surface (light *or* dark mode).
 /// Solid color icons/rings still use the unmodified family color when
-/// [surface] is omitted. Yellow retains its existing exact-gold policy.
+/// [surface] is omitted. Yellow uses the explicitly approved text color.
 Color tagVibrantForeground(Color tagBaseColor, {Color? surface}) {
-  if (tagColorIsYellowFamily(tagBaseColor)) return kTagYellowGold;
+  if (tagColorIsYellowFamily(tagBaseColor)) return kTagYellowText;
   if (surface == null) return tagBaseColor;
 
   final background = tagLetterChipPlate(tagBaseColor, surface);
@@ -96,7 +98,7 @@ Color tagSolidAccentOnSurface(Color base, Color surface) {
 
 /// Icon/glyph without a filled tag circle.
 Color tagGlyphOnCanvas(Color tagColor) {
-  if (tagColorIsYellowFamily(tagColor)) return kTagYellowGold;
+  if (tagColorIsYellowFamily(tagColor)) return kTagYellowText;
   return tagColor;
 }
 
@@ -104,7 +106,7 @@ Color tagGlyphOnCanvas(Color tagColor) {
 /// Hard pure B/W glyph inversion applies **only** to the synthetic “No Tags” chip
 /// ([syntheticNoTags]); user tags with #000000 / #FFFFFF use luminance / fill color.
 Color tagIconOnFilledTagColor(Color tagFill, {bool syntheticNoTags = false}) {
-  if (tagColorIsYellowFamily(tagFill)) return kTagYellowGold;
+  if (tagColorIsYellowFamily(tagFill)) return kTagYellowText;
   final rgb = tagFill.toARGB32() & 0xFFFFFF;
   if (syntheticNoTags) {
     if (rgb == 0x000000) return Colors.white;
@@ -114,7 +116,7 @@ Color tagIconOnFilledTagColor(Color tagFill, {bool syntheticNoTags = false}) {
   return tagFill;
 }
 
-/// Letter chip plate: 26% tint distinguishes adjacent families; yellow stays 15% gold.
+/// Letter chip plate: 26% tint for most hues; yellow uses 13%.
 Color tagLetterChipPlate(Color tagColor, Color surface) {
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
@@ -125,13 +127,17 @@ Color tagLetterChipPlate(Color tagColor, Color surface) {
   return Color.alphaBlend(tagColor.withValues(alpha: 0.26), surface);
 }
 
-/// Letter chip border: yellow → solid [kTagYellowGold]; else tinted category stroke.
+/// Letter chip border: yellow at 74% overlay; other families at 55%.
 Color tagLetterChipBorder(Color tagColor, Color surface) {
-  if (tagColorIsYellowFamily(tagColor)) return kTagYellowGold;
+  if (tagColorIsYellowFamily(tagColor)) {
+    return Color.alphaBlend(
+      kTagYellowGold.withValues(alpha: kTagYellowBorderOpacity), surface,
+    );
+  }
   return Color.alphaBlend(tagColor.withValues(alpha: 0.55), surface);
 }
 
-/// Empty chip stadium fill: yellow stays 15% gold; others use the same 26% accent tint.
+/// Empty chip stadium fill: yellow uses 13% gold; other hues use 26%.
 Color tagEmptyChipFill(Color tagColor, Color surface) {
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
@@ -143,7 +149,9 @@ Color tagEmptyChipFill(Color tagColor, Color surface) {
 }
 
 Color tagEmptyChipBorderColor(Color tagColor) {
-  if (tagColorIsYellowFamily(tagColor)) return kTagYellowGold;
+  if (tagColorIsYellowFamily(tagColor)) {
+    return kTagYellowGold.withValues(alpha: kTagYellowBorderOpacity);
+  }
   return tagColor.withValues(alpha: 0.55);
 }
 
