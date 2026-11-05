@@ -42,7 +42,7 @@ class CategoryBreadcrumb extends StatelessWidget {
 
     final scheme = Theme.of(context).colorScheme;
     final plate = tagCategoryBreadcrumbPlate(accentColor, scheme.surface);
-    final fg = tagVibrantForeground(accentColor);
+    final fg = tagVibrantForeground(accentColor, surface: scheme.surface);
     final sepStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
       color: fg.withValues(alpha: 0.58),
       fontWeight: FontWeight.w700,
@@ -317,7 +317,7 @@ class CategoryChip extends StatelessWidget {
       );
     }
     final plate = tagLetterChipPlate(color, scheme.surface);
-    final fg = tagVibrantForeground(color);
+    final fg = tagVibrantForeground(color, surface: scheme.surface);
     final stroke = tagLetterChipBorder(color, scheme.surface);
     return _letterChipPillShell(
       context: context,
