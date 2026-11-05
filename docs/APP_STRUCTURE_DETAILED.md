@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `cd45ac42` on 2026-11-05.**
+**Generated from input HEAD `36d1ceab` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -6292,76 +6292,76 @@ RU:
 - **Связано с:** `android/build.gradle.kts`, `android/app/build.gradle.kts`.
 
 
-### `assets/fonts/Manrope-Variable.ttf`
+### `assets/fonts/OFL-Onest.txt`
 
 EN:
 
-- **Human purpose:** Font file `Manrope-Variable.ttf` in `assets/fonts` — repo tooling or config. Tracked because `assets/fonts` needs `Manrope-Variable.ttf` for build, CI, or maintenance.
-- **What this is:** Font file `Manrope-Variable.ttf` in `assets/fonts` — repo tooling or config.
-- **Why needed:** Tracked because `assets/fonts` needs `Manrope-Variable.ttf` for build, CI, or maintenance.
-- **Contents:** Open `Manrope-Variable.ttf` when working on `assets/fonts` (see folder section above).
+- **Human purpose:** txt file `OFL-Onest.txt` in `assets/fonts` — repo tooling or config. Tracked because `assets/fonts` needs `OFL-Onest.txt` for build, CI, or maintenance.
+- **What this is:** txt file `OFL-Onest.txt` in `assets/fonts` — repo tooling or config.
+- **Why needed:** Tracked because `assets/fonts` needs `OFL-Onest.txt` for build, CI, or maintenance.
+- **Contents:** Open `OFL-Onest.txt` when working on `assets/fonts` (see folder section above).
+- **Repository role:** developer tool
+- **Evidence of use:** Tracked repository file `assets/fonts/OFL-Onest.txt` retained for tooling/config.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `assets/fonts` workflow for `OFL-Onest.txt`.
+- **When to open:** When build output or maintenance cites `OFL-Onest.txt`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `assets/fonts/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `OFL-Onest.txt` — отслеживаемый ресурс области `assets/fonts` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `assets/fonts` для `OFL-Onest.txt`.
+- **Что это:** `OFL-Onest.txt` — отслеживаемый ресурс области `assets/fonts` с отдельной ролью.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `assets/fonts` для `OFL-Onest.txt`.
+- **Содержимое:** Данные или код `OFL-Onest.txt`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Отслеживаемый файл `assets/fonts/OFL-Onest.txt` для tooling/config.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `OFL-Onest.txt` для области `assets/fonts`.
+- **Когда открывать:** When результат сборки or maintenance cites `OFL-Onest.txt`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `assets/fonts/`, `docs/APP_STRUCTURE.md`.
+
+
+### `assets/fonts/Onest-Variable.ttf`
+
+EN:
+
+- **Human purpose:** Font file `Onest-Variable.ttf` in `assets/fonts` — repo tooling or config. Tracked because `assets/fonts` needs `Onest-Variable.ttf` for build, CI, or maintenance.
+- **What this is:** Font file `Onest-Variable.ttf` in `assets/fonts` — repo tooling or config.
+- **Why needed:** Tracked because `assets/fonts` needs `Onest-Variable.ttf` for build, CI, or maintenance.
+- **Contents:** Open `Onest-Variable.ttf` when working on `assets/fonts` (see folder section above).
 - **Repository role:** asset
 - **Evidence of use:** Referenced by: `pubspec.yaml`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** May break tooling or configuration; verify before delete.
 - **Confidence:** MEDIUM
 - **Owner / layer:** repository root
-- **Responsibilities:** Supports `assets/fonts` workflow for `Manrope-Variable.ttf`.
-- **When to open:** When build output or maintenance cites `Manrope-Variable.ttf`.
+- **Responsibilities:** Supports `assets/fonts` workflow for `Onest-Variable.ttf`.
+- **When to open:** When build output or maintenance cites `Onest-Variable.ttf`.
 - **Can it be deleted?** No — part of repository tooling or config.
 - **Connected to:** `assets/fonts/`, `docs/APP_STRUCTURE.md`.
 
 RU:
 
-- **Зачем файл человеку:** `Manrope-Variable.ttf` — отслеживаемый ресурс области `assets/fonts` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `assets/fonts` для `Manrope-Variable.ttf`.
-- **Что это:** `Manrope-Variable.ttf` — отслеживаемый ресурс области `assets/fonts` с отдельной ролью.
-- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `assets/fonts` для `Manrope-Variable.ttf`.
-- **Содержимое:** Данные или код `Manrope-Variable.ttf`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Зачем файл человеку:** `Onest-Variable.ttf` — отслеживаемый ресурс области `assets/fonts` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `assets/fonts` для `Onest-Variable.ttf`.
+- **Что это:** `Onest-Variable.ttf` — отслеживаемый ресурс области `assets/fonts` с отдельной ролью.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `assets/fonts` для `Onest-Variable.ttf`.
+- **Содержимое:** Данные или код `Onest-Variable.ttf`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** asset
 - **Доказательства использования:** Упоминается в: `pubspec.yaml`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
 - **Уверенность:** MEDIUM
 - **Владелец / слой:** корень репозитория
-- **Обязанности:** Реализует назначение `Manrope-Variable.ttf` для области `assets/fonts`.
-- **Когда открывать:** When результат сборки or maintenance cites `Manrope-Variable.ttf`.
-- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
-- **Связано с:** `assets/fonts/`, `docs/APP_STRUCTURE.md`.
-
-
-### `assets/fonts/OFL-Manrope.txt`
-
-EN:
-
-- **Human purpose:** txt file `OFL-Manrope.txt` in `assets/fonts` — repo tooling or config. Tracked because `assets/fonts` needs `OFL-Manrope.txt` for build, CI, or maintenance.
-- **What this is:** txt file `OFL-Manrope.txt` in `assets/fonts` — repo tooling or config.
-- **Why needed:** Tracked because `assets/fonts` needs `OFL-Manrope.txt` for build, CI, or maintenance.
-- **Contents:** Open `OFL-Manrope.txt` when working on `assets/fonts` (see folder section above).
-- **Repository role:** developer tool
-- **Evidence of use:** Tracked repository file `assets/fonts/OFL-Manrope.txt` retained for tooling/config.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** May break tooling or configuration; verify before delete.
-- **Confidence:** MEDIUM
-- **Owner / layer:** repository root
-- **Responsibilities:** Supports `assets/fonts` workflow for `OFL-Manrope.txt`.
-- **When to open:** When build output or maintenance cites `OFL-Manrope.txt`.
-- **Can it be deleted?** No — part of repository tooling or config.
-- **Connected to:** `assets/fonts/`, `docs/APP_STRUCTURE.md`.
-
-RU:
-
-- **Зачем файл человеку:** `OFL-Manrope.txt` — отслеживаемый ресурс области `assets/fonts` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `assets/fonts` для `OFL-Manrope.txt`.
-- **Что это:** `OFL-Manrope.txt` — отслеживаемый ресурс области `assets/fonts` с отдельной ролью.
-- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `assets/fonts` для `OFL-Manrope.txt`.
-- **Содержимое:** Данные или код `OFL-Manrope.txt`, необходимые его подтверждённой роли и указанным ниже связям.
-- **Роль в репозитории:** developer tool
-- **Доказательства использования:** Отслеживаемый файл `assets/fonts/OFL-Manrope.txt` для tooling/config.
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
-- **Уверенность:** MEDIUM
-- **Владелец / слой:** корень репозитория
-- **Обязанности:** Реализует назначение `OFL-Manrope.txt` для области `assets/fonts`.
-- **Когда открывать:** When результат сборки or maintenance cites `OFL-Manrope.txt`.
+- **Обязанности:** Реализует назначение `Onest-Variable.ttf` для области `assets/fonts`.
+- **Когда открывать:** When результат сборки or maintenance cites `Onest-Variable.ttf`.
 - **Можно удалить?** Нет — конфигурация/инструмент репозитория.
 - **Связано с:** `assets/fonts/`, `docs/APP_STRUCTURE.md`.
 
