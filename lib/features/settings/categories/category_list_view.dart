@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:counter/core/shell_adaptive.dart';
+import 'package:counter/core/tag_contrast.dart' show tagSolidAccentOnSurface;
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/data/database_service.dart';
@@ -496,7 +497,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     final scheme = Theme.of(context).colorScheme;
     final selected = _selectedId == r.id;
     final hasChildren = (r.children ?? <CategoryRule>[]).isNotEmpty;
-    final tint = r.colorOrDefault;
+    final tint = tagSolidAccentOnSurface(r.colorOrDefault, scheme.surface);
     final loc = currentLocale.value;
     final dropPosition = _dropTargetCategoryId == r.id ? _dropPosition : null;
     final tile = Material(
