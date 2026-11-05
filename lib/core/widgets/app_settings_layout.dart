@@ -22,11 +22,11 @@ ThemeData settingsNeutralTheme(BuildContext context) {
     primary: base.colorScheme.onSurface,
     onPrimary: dark ? AppColors.darkAppBackground : Colors.white,
     // Neutral TECNO-inspired surfaces: distinct white cards, no blue tint.
-    surface: dark ? const Color(0xFF161616) : const Color(0xFFF7F7F7),
+    surface: dark ? const Color(0xFF161616) : AppColors.appBackground,
     surfaceContainerLowest:
-        dark ? const Color(0xFF161616) : const Color(0xFFF7F7F7),
+        dark ? const Color(0xFF161616) : AppColors.appBackground,
     surfaceContainerLow:
-        dark ? const Color(0xFF222222) : const Color(0xFFF7F7F7),
+        dark ? const Color(0xFF222222) : AppColors.appBackground,
     surfaceContainer:
         dark ? const Color(0xFF303030) : const Color(0xFFF4F4F4),
     surfaceContainerHigh:
