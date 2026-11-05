@@ -43,18 +43,6 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
     ),
   ];
 
-  String _desktopSectionTitle(String loc) => switch (shellPageIndex) {
-    0 => t(loc, 'tab_timeline'),
-    1 => t(loc, 'tab_planning'),
-    2 => t(loc, 'calendar'),
-    3 => t(loc, 'tab_lists'),
-    4 => t(loc, 'more_menu_categories'),
-    5 => t(loc, 'more_menu_profile'),
-    6 => loc.toLowerCase().startsWith('ru') ? 'Пути' : 'Paths',
-    7 => loc.toLowerCase().startsWith('ru') ? 'Меню' : 'Menu',
-    _ => t(loc, 'app_title'),
-  };
-
   Widget buildShellDashboard(BuildContext context) {
     rebuildMetricsTick('AppShell');
     final pages = buildShellPages();
