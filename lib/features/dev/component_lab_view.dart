@@ -16,10 +16,9 @@ part 'component_lab_cards_demo.dart';
 part 'component_lab_notes_demo.dart';
 /// Internal visual control surface for canonical components.
 ///
-/// Admin-only, mock data only, and no database writes.
+/// Admin-only; mock data only; no database writes.
 class ComponentLabPage extends StatelessWidget {
   const ComponentLabPage({super.key});
-
   static const routeName = '/internal/component-lab';
 
   @override
