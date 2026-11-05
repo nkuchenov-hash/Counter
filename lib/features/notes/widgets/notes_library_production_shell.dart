@@ -908,12 +908,12 @@ class _ViewSwitch extends StatelessWidget {
       decoration: BoxDecoration(
         color: dark
             ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
-            : const Color(0xFFF7F8FA).withValues(alpha: 0.72),
+            : scheme.surfaceContainerLow.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: dark
               ? scheme.outlineVariant.withValues(alpha: 0.70)
-              : const Color(0xFFDFE3E8).withValues(alpha: 0.72),
+              : scheme.outlineVariant.withValues(alpha: 0.72),
         ),
         boxShadow: dark
             ? null
@@ -998,7 +998,7 @@ class _CheckboxModeButton extends StatelessWidget {
           ? (dark ? scheme.surfaceContainerHigh : Colors.white)
           : (dark
               ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
-              : const Color(0xFFF7F8FA).withValues(alpha: 0.72)),
+              : scheme.surfaceContainerLow.withValues(alpha: 0.72)),
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: () => adapter.onCheckboxModeChanged(!adapter.checkboxesOn),
