@@ -93,6 +93,30 @@ void main() {
     );
   });
 
+  test('timeline category breadcrumbs share every chip color recipe', () {
+    for (final surface in <Color>[
+      AppColors.cardSurface,
+      AppColors.darkCardSurface,
+    ]) {
+      for (final family in kCategoryPickerMaterialColors) {
+        for (final tone in <int>[400, 500, 600]) {
+          final accent = family[tone]!;
+          expect(
+            tagCategoryBreadcrumbPlate(accent, surface),
+            tagLetterChipPlate(accent, surface),
+            reason: 'Breadcrumb and plan tag differ for $accent on $surface',
+          );
+          expect(tagLetterChipBorder(accent, surface), isNotNull);
+          expect(tagVibrantForeground(accent, surface: surface), isNotNull);
+        }
+      }
+    }
+    // The approved vivid yellow remains the only gold on every section.
+    expect(kTagYellowGold, kNordicFood[500]);
+    expect(tagCategoryBreadcrumbPlate(kNordicFood[500]!, Colors.white),
+        tagLetterChipPlate(kNordicFood[500]!, Colors.white));
+  });
+
   test('one canonical palette feeds both categories and tag presets', () {
     expect(kCategoryPickerMaterialColors, hasLength(11));
     expect(kLifeTagColorPresets, hasLength(11));
