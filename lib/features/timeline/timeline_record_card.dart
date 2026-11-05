@@ -73,7 +73,7 @@ class TimelineRecordCardState extends State<TimelineRecordCard> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error),
             child: Text(t(currentLocale.value, 'delete')),
           ),
         ],
@@ -192,8 +192,8 @@ class TimelineRecordCardState extends State<TimelineRecordCard> {
               child: FilledButton.icon(
                 onPressed: () => widget.onStop(widget.vm.systemRowId),
                 style: FilledButton.styleFrom(
-                  backgroundColor: Colors.red.shade600,
-                  foregroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  foregroundColor: Theme.of(context).colorScheme.onError,
                 ),
                 icon: const Icon(Icons.stop_rounded, size: 20),
                 label: Text(t(currentLocale.value, 'stop')),

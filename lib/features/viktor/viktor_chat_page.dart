@@ -1,3 +1,4 @@
+import 'package:counter/core/app_colors.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:counter/core/widgets/app_button.dart';
@@ -682,7 +683,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.error_outline, color: Colors.red),
+                          const Icon(Icons.error_outline, color: AppColors.error),
                           const SizedBox(width: 8),
                           Expanded(child: Text(
                             'Не удалось проверить сохранённое подключение: '
@@ -695,7 +696,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                       const Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.check_circle_outline, color: Colors.green),
+                          Icon(Icons.check_circle_outline, color: AppColors.success),
                           SizedBox(width: 8),
                           Expanded(child: Text(
                             'Подключено. API-ключ сохранён на сервере LIFE OS '
@@ -722,7 +723,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                   if (saveError != null) ...[
                     const SizedBox(height: 16),
                     Text(saveError!, style: const TextStyle(
-                      fontSize: 16, color: Colors.red)),
+                      fontSize: 16, color: AppColors.error)),
                   ],
                 ],
               ),

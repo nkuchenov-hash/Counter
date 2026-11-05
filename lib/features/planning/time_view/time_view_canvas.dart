@@ -47,8 +47,8 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
         : scheme.surfaceContainerLow;
     final gridColor = scheme.outlineVariant.withValues(alpha: 0.30);
     final railColor = scheme.brightness == Brightness.light
-        ? const Color(0xFFA6B1BE)
-        : const Color(0xFF748190);
+        ? scheme.outline
+        : scheme.outlineVariant;
     final nowLineColor = scheme.brightness == Brightness.light
         ? const Color(0xCC000000)
         : scheme.onSurface.withValues(alpha: 0.84);

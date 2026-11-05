@@ -1,3 +1,4 @@
+import 'package:counter/core/life_color_compat.dart';
 // Notes surfaces — shared visual layer for the Notes library and editor.
 // Presentation only. No Brain / PocketBase imports.
 
@@ -25,7 +26,7 @@ const double kNotesLibraryControlHeight = 42;
 // v32-gapfix5 reference palette.
 const Color kNotesInk = Color(0xFF111827);
 const Color kNotesMuted = Color(0xFF6B7280);
-const Color kNotesAccent = Color(0xFF2563EB);
+const Color kNotesAccent = kNordicWork;
 const Color kNotesRule = Color(0xFFDFE3E8);
 const Color kNotesPaper = Color(0xFFF7F8FA);
 const Color kNotesCard = Color(0xFFFCFDFE);
@@ -35,7 +36,7 @@ const Color kNotesFolderPane = Color(0xFFE3ECF8);
 /// Kept for existing editor widgets that use the old public token names.
 const Color kGlmMetaColor = Color(0xFF6B7280);
 const Color kGlmPillTextColor = Color(0xFF475569);
-const Color kGlmActiveBlockWash = Color(0x0A2563EB);
+final Color kGlmActiveBlockWash = kNordicWork.withValues(alpha: 10 / 255);
 
 Color notesGlmMetaColor(BuildContext context) {
   final theme = Theme.of(context);

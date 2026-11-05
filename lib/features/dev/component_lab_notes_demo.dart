@@ -1,3 +1,4 @@
+import 'package:counter/core/life_color_compat.dart';
 part of 'component_lab_view.dart';
 
 class ComponentLabNotesDemo extends StatefulWidget {
@@ -40,7 +41,7 @@ class _ComponentLabNotesDemoState extends State<ComponentLabNotesDemo> {
   NotesAudioState _audioState = NotesAudioState.ready;
   NotesRecorderState _recorderState = NotesRecorderState.ready;
   NotesDrawingTool _drawingTool = NotesDrawingTool.pen;
-  Color _drawingColor = const Color(0xFF0F172A);
+  Color _drawingColor = kCategoryBlack;
   double _strokeWidth = 4;
   Set<NotesInlineFormat> _formats = const {NotesInlineFormat.bold};
 
@@ -224,11 +225,11 @@ class _ComponentLabNotesDemoState extends State<ComponentLabNotesDemo> {
                     label: 'Black',
                   ),
                   NotesDrawingColorOption(
-                    color: Color(0xFFEF4444),
+                    color: kNordicEntertainment,
                     label: 'Red',
                   ),
                   NotesDrawingColorOption(
-                    color: Color(0xFF6366F1),
+                    color: kNordicStudy,
                     label: 'Indigo',
                   ),
                 ],

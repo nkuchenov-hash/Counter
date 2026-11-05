@@ -28,6 +28,9 @@ jobs:
       - name: Run strict architecture guard
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict
 
+      - name: Enforce canonical chromatic UI color tokens
+        run: python scripts/audit/semantic_color_tokens.py --strict
+
       - name: Check governing documentation parity
         run: python scripts/audit/documentation_parity.py
 

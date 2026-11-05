@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:counter/core/life_color_compat.dart' show canonicalLifeColorValue, kNordicEntertainment, kNordicPeople, kNordicErrands;
+import 'package:counter/core/app_colors.dart';
+import 'package:counter/core/life_color_compat.dart' show canonicalLifeColorValue, kNordicEntertainment, kNordicPeople, kNordicErrands, kNordicFood;
 
 /// Approved sunny-yellow tag identity. These values come from the yellow
 /// preview controls; they are shared by every tag display mode and screen.
-const Color kTagYellowGold = Color(0xFFFFD000);
-const Color kTagYellowText = Color(0xFFB18900);
+const Color kTagYellowGold = kNordicFood;
+const Color kTagYellowText = AppColors.yellowTagText;
 const double kTagYellowPlateOpacity = 0.16;
 const double kTagYellowBorderOpacity = 0.74;
 
 /// Approved warm-pink tag style: independent from neighboring red/purple.
 /// All pink tag surfaces use the canonical #FF79AA hue, but a lighter plate.
-const Color kTagPinkText = Color(0xFFD25888);
+const Color kTagPinkText = AppColors.pinkTagText;
 const double kTagPinkPlateOpacity = 0.16;
 const double kTagPinkBorderOpacity = 0.60;
 
 /// Vivid orange remains orange even on transparent light-theme pills.
-const Color kTagOrangeText = Color(0xFFD95400);
+const Color kTagOrangeText = AppColors.orangeTagText;
 const double kTagOrangePlateOpacity = 0.22;
 const double kTagOrangeBorderOpacity = 0.78;
 

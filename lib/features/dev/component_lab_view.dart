@@ -1,3 +1,4 @@
+import 'package:counter/core/life_color_compat.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_loading.dart';
@@ -13,13 +14,11 @@ import 'package:counter/core/widgets/chip_component.dart';
 import 'package:flutter/material.dart';
 part 'component_lab_cards_demo.dart';
 part 'component_lab_notes_demo.dart';
-
 /// Internal visual control surface for canonical components.
 ///
-/// Admin-only, mock data only, and no database writes.
+/// Admin-only; mock data only; no database writes.
 class ComponentLabPage extends StatelessWidget {
   const ComponentLabPage({super.key});
-
   static const routeName = '/internal/component-lab';
 
   @override
@@ -870,7 +869,7 @@ class _ChipsDemo extends StatelessWidget {
           child: CategoryChip(
             mode: CategoryDisplayMode.letterChip,
             label: 'Focus',
-            color: Color(0xFF6750A4),
+            color: kNordicStudy,
             icon: Icons.work_outline_rounded,
             variant: CategoryChipVariant.compactCard,
           ),
@@ -886,7 +885,7 @@ class _ChipsDemo extends StatelessWidget {
           child: CategoryChip(
             mode: CategoryDisplayMode.letterChip,
             label: 'communication',
-            color: Color(0xFFF9A825),
+            color: kNordicFood,
             icon: Icons.work_outline_rounded,
             variant: CategoryChipVariant.largePicker,
             onTap: _mockAction,
@@ -904,7 +903,7 @@ class _ChipsDemo extends StatelessWidget {
           child: CategoryChip(
             mode: CategoryDisplayMode.letterChip,
             label: 'Встречи',
-            color: Color(0xFF1565C0),
+            color: kNordicPeople,
             icon: Icons.groups_rounded,
             selected: true,
             variant: CategoryChipVariant.largePicker,

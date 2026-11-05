@@ -1,3 +1,4 @@
+import 'package:counter/core/app_colors.dart';
 import 'dart:async';
 
 import 'package:counter/core/category_color_palette.dart';
@@ -130,7 +131,7 @@ class _CreateCategoryDialogState extends State<_CreateCategoryDialog> {
           return Text(
             t(loc, 'category_name_available'),
             style: const TextStyle(
-              color: Color(0xFF2E7D32),
+              color: AppColors.success,
               fontWeight: FontWeight.w600,
             ),
           );
@@ -138,7 +139,7 @@ class _CreateCategoryDialogState extends State<_CreateCategoryDialog> {
           return Text(
             t(loc, 'category_name_in_archive'),
             style: TextStyle(
-              color: Colors.amber.shade900,
+              color: AppColors.warning,
               fontWeight: FontWeight.w600,
             ),
           );
@@ -177,7 +178,7 @@ class _CreateCategoryDialogState extends State<_CreateCategoryDialog> {
               Text(
                 t(loc, 'category_name_already_active'),
                 style: const TextStyle(
-                  color: Color(0xFF1565C0),
+                  color: AppColors.information,
                   fontWeight: FontWeight.w600,
                 ),
               )
