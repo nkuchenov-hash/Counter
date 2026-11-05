@@ -246,3 +246,21 @@ class _LifeOsNotesSettingsPageState extends State<LifeOsNotesSettingsPage> {
     );
   }
 }
+
+
+/// One canonical Notes settings page, shared by main Menu and contextual views.
+void openLifeOsNotesSettings(
+  BuildContext context, {
+  required VoidCallback onOpenCategoryBar,
+}) {
+  Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      builder: (settingsContext) => LifeOsNotesSettingsPage(
+        onOpenCategoryBar: () {
+          Navigator.of(settingsContext).pop();
+          onOpenCategoryBar();
+        },
+      ),
+    ),
+  );
+}
