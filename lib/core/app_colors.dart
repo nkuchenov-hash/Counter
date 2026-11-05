@@ -11,6 +11,7 @@ abstract final class AppNeutralTones {
   static const Color white = Color(0xFFFFFFFF);
   static const Color gray50 = Color(0xFFFAFAFA);
   static const Color gray100 = Color(0xFFF5F5F5);
+  static const Color gray150 = Color(0xFFF0F0F0);
   static const Color gray200 = Color(0xFFE5E5E5);
   static const Color gray300 = Color(0xFFD4D4D4);
   static const Color gray400 = Color(0xFFA3A3A3);
@@ -46,15 +47,15 @@ abstract final class AppColors {
   // --- Action / brand (default UI chrome, not category data) ---
   static const Color actionPrimary = Color(0xFF111111);
   static const Color onActionPrimary = AppNeutralTones.white;
-  static const Color actionPrimaryContainer = Color(0xFFF1F5F9);
+  static const Color actionPrimaryContainer = AppNeutralTones.gray100;
   static const Color onActionPrimaryContainer = Color(0xFF111111);
 
   // --- Surfaces ---
-  static const Color appBackground = Color(0xFFF8FAFC);
+  static const Color appBackground = AppNeutralTones.gray150;
   static const Color cardSurface = AppNeutralTones.white;
-  static const Color borderSubtle = Color(0xFFDEE5ED);
-  static const Color borderMuted = Color(0xFFE7EDF3);
-  static const Color surfaceMuted = Color(0xFFF1F5F9);
+  static const Color borderSubtle = AppNeutralTones.gray300;
+  static const Color borderMuted = AppNeutralTones.gray200;
+  static const Color surfaceMuted = AppNeutralTones.gray100;
 
   // --- Semantic (success only — not default action color) ---
   static const Color success = Color(0xFF2E7D32);
@@ -72,12 +73,12 @@ abstract final class AppColors {
   static const Color orangeTagText = Color(0xFFD95400);
 
   // --- Dark surfaces ---
-  static const Color darkAppBackground = Color(0xFF121820);
-  static const Color darkCardSurface = Color(0xFF1E2731);
-  static const Color darkActionPrimary = Color(0xFFE8E8E4);
-  static const Color onDarkActionPrimary = Color(0xFF111111);
-  static const Color darkActionPrimaryContainer = Color(0xFF2A2A2A);
-  static const Color onDarkActionPrimaryContainer = Color(0xFFE8E8E4);
+  static const Color darkAppBackground = Color(0xFF141414);
+  static const Color darkCardSurface = AppNeutralTones.gray800;
+  static const Color darkActionPrimary = AppNeutralTones.gray200;
+  static const Color onDarkActionPrimary = AppNeutralTones.gray900;
+  static const Color darkActionPrimaryContainer = AppNeutralTones.gray800;
+  static const Color onDarkActionPrimaryContainer = AppNeutralTones.gray200;
 
   static ColorScheme lightColorScheme() => const ColorScheme(
         brightness: Brightness.light,
