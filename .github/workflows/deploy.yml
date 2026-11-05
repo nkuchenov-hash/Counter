@@ -26,6 +26,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      # A structure-parity workflow may append a generated documentation
+      # commit after the validated UI commit. Check out the actual main tree
+      # before deciding whether it is safe to publish.
+      - name: Checkout latest main for validation
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
       - name: Reject stale validated revision
         id: freshness
         shell: bash
@@ -33,21 +42,37 @@ jobs:
           TRIGGER_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
-          MAIN_SHA="$(git ls-remote https://github.com/${GITHUB_REPOSITORY}.git refs/heads/main | awk '{print $1}')"
-          [[ -n "$MAIN_SHA" ]]
-          if [[ "$TRIGGER_SHA" == "$MAIN_SHA" ]]; then
+          MAIN_SHA="$(git rev-parse HEAD)"
+          REMOTE_SHA="$(git ls-remote https://github.com/${GITHUB_REPOSITORY}.git refs/heads/main | awk '{print $1}')"
+          [[ -n "$MAIN_SHA" && -n "$REMOTE_SHA" ]]
+          if [[ "$MAIN_SHA" != "$REMOTE_SHA" ]]; then
+            echo 'fresh=false' >> "$GITHUB_OUTPUT"
+            echo "Main advanced during checkout; skip this build"
+          elif [[ "$TRIGGER_SHA" == "$MAIN_SHA" ]]; then
             echo 'fresh=true' >> "$GITHUB_OUTPUT"
-            echo "Publishing current main $TRIGGER_SHA"
+            echo "target_sha=$MAIN_SHA" >> "$GITHUB_OUTPUT"
+            echo "Publishing validated main $MAIN_SHA"
+          elif git merge-base --is-ancestor "$TRIGGER_SHA" "$MAIN_SHA"; then
+            CHANGED="$(git diff --name-only "$TRIGGER_SHA" "$MAIN_SHA")"
+            if [[ -n "$CHANGED" ]] &&
+              ! printf '%s\n' "$CHANGED" | grep -Eqv '^docs/APP_STRUCTURE_DETAILED\.md$'; then
+              echo 'fresh=true' >> "$GITHUB_OUTPUT"
+              echo "target_sha=$MAIN_SHA" >> "$GITHUB_OUTPUT"
+              echo "Only canonical generated structure docs changed after validated $TRIGGER_SHA; publishing $MAIN_SHA"
+            else
+              echo 'fresh=false' >> "$GITHUB_OUTPUT"
+              echo "Code changed after validation: $CHANGED"
+            fi
           else
             echo 'fresh=false' >> "$GITHUB_OUTPUT"
-            echo "Skipping stale trigger $TRIGGER_SHA; current main is $MAIN_SHA"
+            echo "Skip non-ancestor stale trigger $TRIGGER_SHA"
           fi
 
       - name: Checkout validated main revision
         if: steps.freshness.outputs.fresh == 'true'
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ steps.freshness.outputs.target_sha }}
           fetch-depth: 0
 
       - name: Set up Flutter 3.41.6
