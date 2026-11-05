@@ -136,6 +136,7 @@ class CategoryIconStore extends ChangeNotifier {
   static final instance = CategoryIconStore._();
   static const _packKey = 'takto.category.icon_pack.v1';
   static const _selectionKey = 'takto.category.icon_selection.v1';
+  static const _selectionItemPrefix = 'takto.category.icon_selection_item.v1.';
   CategoryIconPack _pack = CategoryIconPack.fluent;
   final Map<String, CategoryIconSelection> _values = {};
   Future<void>? _loadFuture;
@@ -208,6 +209,8 @@ class CategoryIconStore extends ChangeNotifier {
         // Keep the sensible defaults when local data is malformed.
       }
     }
+    // Read the legacy aggregate once for backwards compatibility. Modern
+    // changes are saved per category, avoiding a growing all-icons JSON write.
     final json = prefs.getString(_selectionKey);
     if (json != null) {
       try {
@@ -221,7 +224,20 @@ class CategoryIconStore extends ChangeNotifier {
           }
         }
       } on FormatException {
-        // Ignore a malformed local preference, without touching server records.
+        // Ignore malformed legacy preferences without changing category data.
+      }
+    }
+    for (final prefKey in prefs.getKeys()) {
+      if (!prefKey.startsWith(_selectionItemPrefix)) continue;
+      final value = prefs.getString(prefKey);
+      if (value == null) continue;
+      try {
+        final parsed = CategoryIconSelection.fromJson(jsonDecode(value));
+        if (parsed != null) {
+          _values[prefKey.substring(_selectionItemPrefix.length)] = parsed;
+        }
+      } on FormatException {
+        // One damaged entry must not hide the remaining category icons.
       }
     }
     notifyListeners();
@@ -265,10 +281,11 @@ class CategoryIconStore extends ChangeNotifier {
     _values[key] = choice;
     notifyListeners();
     try {
-      final values = _values.map((key, value) => MapEntry(key, value.toJson()));
-      if (!await (await SharedPreferences.getInstance())
-          .setString(_selectionKey, jsonEncode(values))) {
-        throw StateError('Could not save icon');
+      // Only write the edited category. The previous aggregate was rewritten
+      // on every selection and could grow until browser storage refused it.
+      if (!await (await SharedPreferences.getInstance()).setString(
+          '$_selectionItemPrefix$key', jsonEncode(choice.toJson()))) {
+        throw StateError('Could not save category icon');
       }
     } catch (_) {
       if (previous == null) {
