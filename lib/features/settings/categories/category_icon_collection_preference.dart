@@ -41,14 +41,13 @@ class CategoryIconCollectionPreference extends StatelessWidget {
           const SizedBox(height: 12),
           Wrap(spacing: 10, runSpacing: 9, children: [
             for (final key in store.quickKeys.take(16))
-              Container(
-                width: 34, height: 34,
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: Center(child: CategorySvgIcon(
+              Tooltip(
+                message: key.replaceAll('_', ' '),
+                child: SizedBox(
+                  width: 30, height: 30,
+                  child: Center(child: CategorySvgIcon(
                     selection: CategoryIconSelection(key), size: 22)),
+                ),
               ),
             if (store.quickKeys.length > 16)
               Padding(
@@ -277,64 +276,46 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
         key: const ValueKey('matched-icon-collection-grid'),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 122,
-          mainAxisExtent: 94,
-          mainAxisSpacing: 9,
-          crossAxisSpacing: 9,
+          maxCrossAxisExtent: 58,
+          mainAxisExtent: 52,
+          mainAxisSpacing: 5,
+          crossAxisSpacing: 5,
         ),
         itemCount: entries.length,
         itemBuilder: (context, index) {
           final item = entries[index];
           final picked = _picked.contains(item.key);
-          return InkWell(
-            key: ValueKey('custom-icon-${item.key}'),
-            onTap: () => setState(() {
-              if (_browsing) {
-                _picked.add(item.key);
-              } else if (_picked.length > 1) {
-                _picked.remove(item.key);
-              }
-            }),
-            borderRadius: BorderRadius.circular(11),
-            child: Container(
-              decoration: BoxDecoration(
-                color: picked
-                    ? cs.primaryContainer.withValues(alpha: .2)
-                    : cs.surface,
-                borderRadius: BorderRadius.circular(11),
-                border: Border.all(
-                  color: picked ? cs.primary : cs.outlineVariant,
-                  width: picked ? 2 : 1,
-                ),
-              ),
-              child: Stack(children: [
-                Center(child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CategorySvgIcon(
-                      selection: CategoryIconSelection(item.key),
-                      size: 28,
-                    ),
-                    const SizedBox(height: 7),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Text(
-                        widget.isRussian ? item.ru : item.en,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    ),
-                  ],
+          final label = widget.isRussian ? item.ru : item.en;
+          return Tooltip(
+            message: label,
+            child: Semantics(
+              label: label, selected: picked, button: true,
+              child: InkWell(
+                key: ValueKey('custom-icon-${item.key}'),
+                onTap: () => setState(() {
+                  if (_browsing) {
+                    _picked.add(item.key);
+                  } else if (_picked.length > 1) {
+                    _picked.remove(item.key);
+                  }
+                }),
+                borderRadius: BorderRadius.circular(10),
+                child: Center(child: Container(
+                  width: 44, height: 44,
+                  decoration: BoxDecoration(
+                    color: picked
+                        ? cs.primaryContainer.withValues(alpha: .35)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                    border: picked
+                        ? Border.all(color: cs.primary, width: 2) : null,
+                  ),
+                  child: Center(child: CategorySvgIcon(
+                    selection: CategoryIconSelection(item.key),
+                    size: 26,
+                  )),
                 )),
-                Positioned(
-                  top: 5, right: 5,
-                  child: Icon(_browsing ? Icons.add_circle_outline
-                      : Icons.check_circle,
-                    size: 17, color: _browsing ? cs.onSurfaceVariant : cs.primary),
-                ),
-              ]),
+              ),
             ),
           );
         },
