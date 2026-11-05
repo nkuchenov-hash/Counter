@@ -1,4 +1,5 @@
 import 'package:counter/core/shell_adaptive.dart';
+import 'package:counter/core/app_colors.dart';
 import 'package:flutter/material.dart';
 
 /// Max content width for settings screens by form factor.
@@ -15,9 +16,25 @@ bool settingsIsWideDesktop(BuildContext context) =>
 /// Black/neutral accent theme for settings tabs and toggles.
 ThemeData settingsNeutralTheme(BuildContext context) {
   final base = Theme.of(context);
+  final dark = base.brightness == Brightness.dark;
   final scheme = base.colorScheme.copyWith(
     primary: base.colorScheme.onSurface,
-    onPrimary: base.colorScheme.surface,
+    onPrimary: dark ? AppColors.darkAppBackground : Colors.white,
+    surfaceContainerLowest: dark
+        ? const Color(0xFF161616)
+        : const Color(0xFFF2F2F2),
+    surfaceContainerLow: dark
+        ? const Color(0xFF222222)
+        : const Color(0xFFF2F2F2),
+    surfaceContainer: dark
+        ? const Color(0xFF303030)
+        : const Color(0xFFEDEDED),
+    surfaceContainerHigh: dark
+        ? const Color(0xFF252525)
+        : Colors.white,
+    surfaceContainerHighest: dark
+        ? const Color(0xFF303030)
+        : Colors.white,
   );
   return base.copyWith(
     colorScheme: scheme,

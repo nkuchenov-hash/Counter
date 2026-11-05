@@ -809,3 +809,7 @@ Before implementation, answer: **owner layer?** · **extends which module?** · 
 
 One-off Pass 3/Pass 2 extraction scripts (`scripts/pass3_*`, `scripts/extract_*`, `scripts/split_planning_page.py`) were **removed** 2026-07-03 after decomposition shipped. See `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md` for acceptance summary.
 | `features/paths/widgets/path_edit_sheet.dart` | Path / stage / action editor sheets, item mini-checklist + description editor, and Options-as-delayed-reorder control |
+
+## Unified menu icon ownership (2026-11-05)
+
+- `lib/core/widgets/app_menu_icons.dart` — canonical app menu icon roles mapped to the existing Flutter Material Symbols collection. All navigation and settings menu screens consume these roles. The final icon library can be selected separately without rewriting menu screens.

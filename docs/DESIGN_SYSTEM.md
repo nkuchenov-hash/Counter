@@ -356,3 +356,10 @@ row and surface tokens, adapted to available width.
   small screens, avoid internal debug flags, and preserve touch hit targets.
 - Black/neutral accents only; no copied TECNO orange, beige, or purple.
 - Do not claim a new app release until web, Android and desktop CI succeed.
+
+## Menu icons and approved grouped Settings UI (2026-11-05)
+
+- The approved LIFE OS menu uses the existing **Flutter Material Symbols** already shipped with the app, via `AppMenuIcons.icon(AppMenuIconRole)` in `lib/core/widgets/app_menu_icons.dart`. This is an icon-role adapter, not a new or finalized icon library. Keep all icon choices in that one mapping until the separately selected collection is approved.
+- Light-mode menu canvas is `#F2F2F2`; grouped cards are `#FFFFFF`; monochrome icons sit inside `#EDEDED` rounded icon containers. Dark mode uses the same surface hierarchy with dark neutral tokens, not hard-coded light fills.
+- Search is a real destination index. All menu destinations must open working settings or working feature screens, never a visual-only switch or a fake integration status.
+- Domain settings have one persistence implementation; feature-local quick menus remain accessible but link to the same canonical settings screens.
