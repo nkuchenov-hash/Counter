@@ -1,3 +1,10 @@
+## 2026-11-05 — Unified Menu and settings [verification pending]
+
+- One desktop navigation rail and one Menu catalog; removed duplicated quick-access tiles and horizontal profile/settings tabs.
+- Settings destinations now render in the existing shell with a Back path; offstage profile does not intercept Back.
+- Settings pages have bounded, centered widths and consistent global header. No PocketBase or optimistic data changes.
+- Flutter analyze, web and Android smoke tests still required before release.
+
 ## 2026-10-29 — P0: date-scoped recovery for plans missing from Planner [CI pending]
 
 - Selected-day reads now independently query authenticated PocketBase by `initial_date_key` if the cached all-plan projection is empty. This also protects Viktor from re-creating an existing day-only plan because a global list query failed.
