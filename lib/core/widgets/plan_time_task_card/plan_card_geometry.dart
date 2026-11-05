@@ -116,16 +116,18 @@ final class PlanCardVerticalSpacing {
 // --- Visual tokens (design/CardPlan *.svg fallback) ---------------------------
 
 abstract final class PlanCardTokens {
-  static const Color surface = Color(0xFFF8F8F8);
-  static const Color titleColor = Color(0xFF353535);
-  static const Color checkboxStroke = Color(0xFFCCCCCC);
-  static const Color playFill = Color(0xFF696969);
-  static const Color menuBg = Color(0xFFEBEBEB);
-  static const Color menuStroke = Color(0xFF8E8E8E);
-  static const Color dividerColor = Color(0x61D9D9D9);
+  // Component geometry belongs here; colors come exclusively from the
+  // shared Life OS neutral and semantic design tokens.
+  static const Color surface = AppColors.cardSurface;
+  static const Color titleColor = AppNeutralTones.gray900;
+  static const Color checkboxStroke = AppNeutralTones.gray300;
+  static const Color playFill = AppNeutralTones.gray600;
+  static const Color menuBg = AppNeutralTones.gray200;
+  static const Color menuStroke = AppNeutralTones.gray500;
+  static const Color dividerColor = AppNeutralTones.gray200;
   static const Color breadcrumbColor = kNordicWork;
-  static const Color breadcrumbFallbackColor = Color(0xFF878787);
-  static const Color timeColor = Color(0xB8878787);
+  static const Color breadcrumbFallbackColor = AppNeutralTones.gray500;
+  static const Color timeColor = AppNeutralTones.gray500;
   static final Color tagPinkBg = tagLetterChipPlate(kNordicPeople[500]!, AppColors.appBackground);
   static const Color tagPinkText = kTagPinkText;
   static final Color tagPurpleBg = tagLetterChipPlate(kNordicStudy[500]!, AppColors.appBackground);
