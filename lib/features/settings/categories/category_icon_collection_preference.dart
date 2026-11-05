@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:counter/core/category_icon_system.dart';
+import 'package:counter/core/app_build_info.dart';
 import 'package:flutter/material.dart';
 
 /// User-controlled quick icon collection. The full picker offers only semantic
@@ -207,8 +208,8 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
                       ? 'Доступно ${entries.length} парных иконок'
                       : '${entries.length} matching icons available')
                   : (widget.isRussian
-                      ? 'В моём наборе: ${_picked.length}'
-                      : '${_picked.length} in my collection'),
+                      ? 'В моём наборе: ${_picked.length} · build ${AppBuildInfo.gitCommit}'
+                      : '${_picked.length} in my collection · build ${AppBuildInfo.gitCommit}'),
                 style: Theme.of(context).textTheme.bodySmall),
             ],
           )),

@@ -74,6 +74,33 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
+  <!-- One-time migration from old Flutter's offline asset cache. Keep user
+       IndexedDB, preferences, screenshots and authentication untouched. -->
+  <script>
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
+      navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        var legacy = registrations.filter(function (registration) {
+          var active = registration.active || registration.waiting || registration.installing;
+          return active && /\/flutter_service_worker\.js(?:\?|$)/.test(active.scriptURL || '');
+        });
+        if (!legacy.length) return;
+        Promise.all(legacy.map(function (registration) {
+          return registration.unregister();
+        })).then(function () {
+          // A former controlling worker may still serve stale code in this tab.
+          // Reload once, but never erase local app state or create a loop.
+          if (navigator.serviceWorker.controller &&
+              !sessionStorage.getItem('lifeos-legacy-sw-upgraded')) {
+            sessionStorage.setItem('lifeos-legacy-sw-upgraded', '1');
+            window.location.reload();
+          }
+        });
+      }).catch(function () {
+        // Offline pages remain usable when service-worker access is denied.
+      });
+    })();
+  </script>
   <!-- If the app entrypoint cannot load at all, display a recoverable
        status rather than an indefinitely blank page. Flutter owns the UI
        once its view exists; this never covers an already mounted app. -->

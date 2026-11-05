@@ -124,6 +124,36 @@ jobs:
             --dart-define=GIT_COMMIT="$SHORT_SHA" \
             --dart-define=BUILD_TIME="$BUILD_TIME"
 
+      # Older published versions used Flutter's offline service worker and can
+      # keep showing years-old icon galleries even when the JS URL is versioned.
+      # Serve a new one-shot worker at that SAME script URL so those clients
+      # replace their old cache-first worker, remove only its own app-shell
+      # caches, and fetch the current build. Never touch user IndexedDB.
+      - name: Retire obsolete Flutter cache-first service worker
+        if: steps.freshness.outputs.fresh == 'true'
+        shell: bash
+        run: |
+          cat > build/web/flutter_service_worker.js <<'JS'
+          // One-time legacy Flutter PWA worker retirement.
+          self.addEventListener('install', function () {
+            self.skipWaiting();
+          });
+          self.addEventListener('activate', function (event) {
+            event.waitUntil((async function () {
+              await Promise.all([
+                caches.delete('flutter-app-cache'),
+                caches.delete('flutter-temp-cache'),
+              ]);
+              await self.registration.unregister();
+              const windows = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
+              for (const windowClient of windows) {
+                try { await windowClient.navigate(windowClient.url); }
+                catch (_) { /* A closed tab can be ignored. */ }
+              }
+            })());
+          });
+          JS
+
       - name: Verify bundled Flutter web renderer
         if: steps.freshness.outputs.fresh == 'true'
         shell: bash
