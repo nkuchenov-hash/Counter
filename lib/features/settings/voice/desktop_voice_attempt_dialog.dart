@@ -225,37 +225,37 @@ class _StatusHeader extends StatelessWidget {
       case DesktopVoiceAttemptStatus.taskCreated:
         return (
           Icons.check_circle_rounded,
-          const AppColors.success,
+          AppColors.success,
           isRu ? 'Задача создана' : 'Task created',
         );
       case DesktopVoiceAttemptStatus.inProgress:
         return (
           Icons.graphic_eq_rounded,
-          const AppColors.information,
+          AppColors.information,
           isRu ? 'Выполняется…' : 'In progress…',
         );
       case DesktopVoiceAttemptStatus.notRecognized:
         return (
           Icons.help_outline_rounded,
-          const AppColors.warning,
+          AppColors.warning,
           isRu ? 'Команда не распознана' : 'Not recognized',
         );
       case DesktopVoiceAttemptStatus.micError:
         return (
           Icons.mic_off_rounded,
-          const AppColors.error,
+          AppColors.error,
           isRu ? 'Ошибка микрофона' : 'Microphone error',
         );
       case DesktopVoiceAttemptStatus.sttError:
         return (
           Icons.closed_caption_disabled_rounded,
-          const AppColors.error,
+          AppColors.error,
           isRu ? 'Ошибка распознавания' : 'Recognition error',
         );
       case DesktopVoiceAttemptStatus.saveError:
         return (
           Icons.cloud_off_rounded,
-          const AppColors.error,
+          AppColors.error,
           isRu ? 'Не удалось сохранить' : 'Save failed',
         );
       case DesktopVoiceAttemptStatus.cancelled:
