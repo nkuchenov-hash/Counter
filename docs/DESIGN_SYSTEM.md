@@ -23,7 +23,7 @@ The Life OS design system makes Figma the visual source of truth and Flutter can
 | Family | Shade 500 | Role |
 | :--- | :--- | :--- |
 | Work / Blue | #286BE3 | Blue |
-| Errands / Orange | #F26900 | Orange |
+| Errands / Orange | #FF7900 | Vivid orange; opaque orange text #D95400, not brown |
 | Food / Yellow | #FFD000 | Sunny yellow |
 | Movement / Green | #48A130 | Green |
 | Health / Teal | #008F87 | Turquoise |
@@ -31,14 +31,16 @@ The Life OS design system makes Figma the visual source of truth and Flutter can
 | Study / Purple | #725EB5 | Violet, restored instead of navy |
 | Entertainment / Red | #EF3B3B | Clean bright red; avoids burgundy |
 | People / Pink | #FF79AA | Warm classic pink without lilac undertone |
-| Special / Black | #000000 | Explicit user tag, e.g. urgent |
+| Special / Black | #000000 | Real solid black chip with white text, especially urgent |
 | Neutral / Gray | #9A9A9A | Light neutral gray |
 
 - Eleven families are sourced from the canonical material color tokens, with 50–900 shade ramps. Both the category appearance picker and tag color picker use precisely the same shade-500 palette and **rainbow-order swatches**: red → orange → yellow → green → teal → sky blue → blue → violet → pink → gray → black. Pink is placed after violet because it is non-spectral; gray and black are separate neutral choices. **Changing picker order never changes the existing nine-family automatic root-category allocation**, stored colors, or category hierarchy. Black and gray are never automatically assigned to new root categories.
 - Category nesting remains shade 600 / 500 / 400 (root / child / descendants); category stripe and tag icon contrast adapt in dark mode without rewriting saved colors.
 - **Approved yellow settings:** base #FFD000, background plate 13% alpha over the actual app surface, text and foreground #E1B400, and yellow border 74% alpha over surface. All yellow tag modes use these same approved choices; neither brown text nor a solid yellow chip is permitted. This user-approved bright-gold foreground is a deliberate exception to the 4.5:1 small-text contrast target on white.
 - **Approved pink settings:** base #FF79AA, translucent fill 16% over the real surface, opaque pink text #D25888, and translucent border 60%. These exact settings also apply to the tag-manager avatar and compact empty-chip presentation. Pink is a consciously chosen 3:1+ contrast treatment on light and dark tinted plates, not an automatic dark/light tone substitution.
-- Other chromatic families (except yellow/pink) keep 26% translucent fill and 55% border alpha. The hue identity must match the palette swatch across Timeline, Plans, Lists, tag manager and category screens.
+- **Vivid orange:** base #FF7900, 22% translucent fill, #D95400 opaque foreground on light surfaces, shade 400 on dark, and 78% orange border. No brown foreground or washed-out peach border.
+- **Pure-black tags:** #000000 text chips are solid black with white text; black icon backgrounds likewise display white icons. Old neutral-gray values for the user-defined tag named `urgent` render as black, while custom non-neutral `urgent` colors remain untouched; data is not migrated.
+- Other chromatic families (except yellow/pink/orange) keep 26% translucent fill and 55% border alpha. The hue identity must match the palette swatch across Timeline, Plans, Lists, tag manager and category screens.
 - Pink and red differ in both hue and lightness. Warm pink #FF79AA uses the approved 16% tint and #D25888 text, while vivid red #EF3B3B retains 26% tint and family-tone text (red 600 on light, 400 on dark). Neither may be shifted to lilac/burgundy by generic contrast adjustment. The explicitly approved pink text target is ≥3:1 on light and dark plates; red continues to target ≥3:1 on light and ≥4.5:1 on dark.
 - Preserve exact historical official swatches by mapping to the new canonical family *at display time*; never migrate stored PocketBase category/tag colors. Other custom colors remain unchanged, including user-defined pure black.
 - Current shade tokens must not be altered by backward-compatibility maps; regression tests cover idempotence, historical mapping, black tags, approved yellow attributes, and pink-versus-red label hue separation.
