@@ -507,9 +507,7 @@ class AppSettingsNavigationRow extends StatelessWidget {
               fontSize: 13.5,
               fontWeight: FontWeight.w400,
               height: 1.3,
-              color: scheme.brightness == Brightness.dark
-                  ? scheme.onSurfaceVariant
-                  : scheme.onSurfaceVariant,
+              color: scheme.onSurfaceVariant,
             ),
           ),
           trailing: Row(
@@ -590,9 +588,7 @@ class AppSettingsControlRow extends StatelessWidget {
         style: theme.textTheme.bodyMedium?.copyWith(
           fontSize: 13.5,
           fontWeight: FontWeight.w400,
-          color: theme.brightness == Brightness.dark
-              ? theme.colorScheme.onSurfaceVariant
-              : scheme.onSurfaceVariant,
+          color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
       value: value,
