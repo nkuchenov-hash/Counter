@@ -493,3 +493,79 @@ class AppSettingsGridCard extends StatelessWidget {
     );
   }
 }
+
+
+/// Canonical navigation row for grouped settings and nested menus.
+/// Prefer this over feature-local ListTile variants.
+class AppSettingsNavigationRow extends StatelessWidget {
+  const AppSettingsNavigationRow({
+    super.key,
+    required this.title,
+    required this.onTap,
+    this.subtitle,
+    this.leading,
+    this.value,
+    this.showDivider = false,
+  });
+
+  final String title;
+  final String? subtitle;
+  final Widget? leading;
+  final String? value;
+  final VoidCallback? onTap;
+  final bool showDivider;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 5),
+          minVerticalPadding: 12,
+          leading: leading,
+          title: Text(title, style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w500,
+          )),
+          subtitle: subtitle == null ? null : Text(
+            subtitle!,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (value != null) ...[
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 150),
+                  child: Text(
+                    value!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+            ],
+          ),
+          onTap: onTap,
+          enabled: onTap != null,
+        ),
+        if (showDivider) Divider(
+          height: 1,
+          thickness: 0.7,
+          color: scheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ],
+    );
+  }
+}
