@@ -379,6 +379,8 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildDisplayNameField(context, locale),
+              const SizedBox(height: 16),
               AccountSecuritySection(),
               const SizedBox(height: 8),
               SecuritySection(onSaved: widget.onSaved, embedded: true),
@@ -418,6 +420,37 @@ class _ProfilePageState extends State<ProfilePage> {
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDisplayNameField(BuildContext context, String locale) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _displayNameController,
+          focusNode: _displayNameFocus,
+          style: Theme.of(context).textTheme.bodyLarge,
+          decoration: InputDecoration(
+            labelText: t(locale, 'display_name_label'),
+            hintText: t(locale, 'display_name_hint'),
+            border: const OutlineInputBorder(),
+            suffixIcon: _savingDisplayName
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: AppLoading(size: AppLoadingSize.small),
+                    ),
+                  )
+                : null,
+          ),
+          textCapitalization: TextCapitalization.words,
+          onChanged: (_) => _scheduleDisplayNameSave(),
+          onEditingComplete: _flushDisplayNameSave,
         ),
       ],
     );
@@ -471,30 +504,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
           ],
         ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _displayNameController,
-          focusNode: _displayNameFocus,
-          style: Theme.of(context).textTheme.bodyLarge,
-          decoration: InputDecoration(
-            labelText: t(locale, 'display_name_label'),
-            hintText: t(locale, 'display_name_hint'),
-            border: const OutlineInputBorder(),
-            suffixIcon: _savingDisplayName
-                ? const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: AppLoading(size: AppLoadingSize.small),
-                    ),
-                  )
-                : null,
-          ),
-          textCapitalization: TextCapitalization.words,
-          onChanged: (_) => _scheduleDisplayNameSave(),
-          onEditingComplete: _flushDisplayNameSave,
-        ),
+
       ],
     );
   }
