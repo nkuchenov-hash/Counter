@@ -107,7 +107,10 @@ ThemeData _buildAppTheme(ColorScheme scheme) {
         return scheme.surfaceContainerHighest;
       }),
     ),
-    dividerTheme: DividerThemeData(color: scheme.outlineVariant.withValues(alpha: 0.7), thickness: 0.7),
+    dividerTheme: DividerThemeData(
+      color: scheme.outline.withValues(alpha: 0.9),
+      thickness: 1,
+    ),
     popupMenuTheme: PopupMenuThemeData(
       color: cardFill,
       surfaceTintColor: Colors.transparent,
