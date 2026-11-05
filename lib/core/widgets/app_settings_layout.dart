@@ -621,7 +621,6 @@ class AppSettingsControlRow extends StatelessWidget {
     final theme = Theme.of(context);
     return SwitchListTile.adaptive(
       contentPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 5),
-      minVerticalPadding: 12,
       secondary: leading,
       title: Text(
         title,
