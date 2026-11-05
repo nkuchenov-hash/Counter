@@ -47,7 +47,7 @@ const MaterialColor kNordicStudy = MaterialColor(0xFF242B5D, <int, Color>{
 });
 
 const MaterialColor kCategoryNeutral = MaterialColor(0xFF606060, <int, Color>{
-  50: Color(0xFFF5F5F5),   100: Color(0xFFEAEAEA),   200: Color(0xFFD6D6D6),
+  50: Color(0xFFF7F7F7),   100: Color(0xFFEAEAEA),   200: Color(0xFFD6D6D6),
   300: Color(0xFFB7B7B7),   400: Color(0xFF919191),   500: Color(0xFF606060),
   600: Color(0xFF545454),   700: Color(0xFF464646),   800: Color(0xFF393939),
   900: Color(0xFF2A2A2A),
