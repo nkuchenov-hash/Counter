@@ -637,7 +637,7 @@ void main() {
 
     final realtime =
         File('lib/data/records/record_realtime.dart').readAsStringSync();
-    final recStart = realtime.indexOf('void _onPbRecordsSubscriptionEvent(');
+    final recStart = realtime.indexOf('void _recoverDroppedRealtimeEvent(');
     final recEnd = realtime.indexOf('// Replay newest pushes', recStart);
     final recordHandler = realtime.substring(recStart, recEnd);
     expect(recordHandler, contains('final applied = _upsertFlatRecordFromPbModel('));
