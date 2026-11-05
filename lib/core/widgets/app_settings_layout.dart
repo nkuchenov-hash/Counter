@@ -41,6 +41,7 @@ ThemeData settingsNeutralTheme(BuildContext context) {
 
 enum AppSettingsTab {
   account,
+  calendars,
   preferences,
   desktopVoice,
   notifications,
@@ -608,6 +609,252 @@ class AppMenuActionTile extends StatelessWidget {
       ),
       subtitle: subtitle,
       onTap: onTap,
+    );
+  }
+}
+
+
+/// A single grouped surface for short settings destinations. Dividers are
+/// inset to the text column, not drawn through the leading icons.
+class AppSettingsNavigationGroup extends StatelessWidget {
+  const AppSettingsNavigationGroup({
+    super.key,
+    required this.children,
+  });
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Material(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(22),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var index = 0; index < children.length; index++) ...[
+                children[index],
+                if (index != children.length - 1)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 58, right: 4),
+                    child: Divider(
+                      height: 1,
+                      thickness: 0.7,
+                      color: scheme.outlineVariant.withValues(alpha: 0.6),
+                    ),
+                  ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Compact neutral icon treatment shared by settings index destinations.
+class AppSettingsMenuIcon extends StatelessWidget {
+  const AppSettingsMenuIcon({super.key, required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: 44,
+      height: 44,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(13),
+        ),
+        child: Icon(icon, size: 23, color: scheme.onSurface),
+      ),
+    );
+  }
+}
+
+/// Saved theme selection with clear light/dark previews and a system option.
+/// All modes remain backed by the existing profile setting.
+class AppSettingsThemeModePicker extends StatelessWidget {
+  const AppSettingsThemeModePicker({
+    super.key,
+    required this.value,
+    required this.lightLabel,
+    required this.darkLabel,
+    required this.systemLabel,
+    required this.onChanged,
+    this.saving = false,
+  });
+
+  final String value;
+  final String lightLabel;
+  final String darkLabel;
+  final String systemLabel;
+  final ValueChanged<String>? onChanged;
+  final bool saving;
+
+  @override
+  Widget build(BuildContext context) {
+    final onSelect = saving ? null : onChanged;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _AppSettingsThemeChoice(
+                label: lightLabel,
+                dark: false,
+                selected: value == 'light',
+                onTap: onSelect == null ? null : () => onSelect('light'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _AppSettingsThemeChoice(
+                label: darkLabel,
+                dark: true,
+                selected: value == 'dark',
+                onTap: onSelect == null ? null : () => onSelect('dark'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        AppSettingsNavigationRow(
+          title: systemLabel,
+          leading: const AppSettingsMenuIcon(icon: Icons.settings_suggest_rounded),
+          value: value == 'system' ? '✓' : null,
+          onTap: onSelect == null ? null : () => onSelect('system'),
+        ),
+        if (saving)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: LinearProgressIndicator(minHeight: 2),
+          ),
+      ],
+    );
+  }
+}
+
+class _AppSettingsThemeChoice extends StatelessWidget {
+  const _AppSettingsThemeChoice({
+    required this.label,
+    required this.dark,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool dark;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final previewBg = dark ? const Color(0xFF262626) : const Color(0xFFFFFFFF);
+    final previewPanel = dark ? const Color(0xFF383838) : const Color(0xFFF0F0F0);
+    final previewStroke = dark ? const Color(0xFF646464) : const Color(0xFFE3E3E3);
+    final selectedColor = scheme.onSurface;
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      enabled: onTap != null,
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 170),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: selected
+                    ? selectedColor
+                    : scheme.outlineVariant.withValues(alpha: 0.7),
+                width: selected ? 2 : 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                AspectRatio(
+                  aspectRatio: 1.3,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: previewBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: previewStroke, width: 0.8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: previewPanel,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        const SizedBox(height: 13),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: previewPanel,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(height: 5, width: 70, color: previewStroke),
+                                const SizedBox(height: 7),
+                                Container(height: 5, width: 45, color: previewStroke),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Icon(
+                  selected
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  size: 23,
+                  color: selected ? selectedColor : scheme.outline,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

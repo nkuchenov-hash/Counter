@@ -46,6 +46,17 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
+enum _MobileSettingsSection {
+  account,
+  calendars,
+  timeLocale,
+  appearance,
+  notifications,
+  morning,
+  viktor,
+  about,
+}
+
 class _ProfilePageState extends State<ProfilePage> {
   late String _language;
   late String _timeZone;
@@ -60,7 +71,8 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _savingLanguage = false;
 
   bool _savingTimeZone = false;
-  AppSettingsTab _desktopSettingsTab = AppSettingsTab.desktopVoice;
+  AppSettingsTab _desktopSettingsTab = AppSettingsTab.account;
+  _MobileSettingsSection? _mobileSection;
 
   static const _nameDebounceDuration = Duration(milliseconds: 600);
 
@@ -263,23 +275,46 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     }
 
-    return Theme(
-      data: settingsNeutralTheme(context),
-      child: Scaffold(
-        resizeToAvoidBottomInset: true,
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-        appBar: AppBar(
+    final section = _mobileSection;
+    return PopScope(
+      canPop: section == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _mobileSection != null && mounted) {
+          setState(() => _mobileSection = null);
+        }
+      },
+      child: Theme(
+        data: settingsNeutralTheme(context),
+        child: Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-          surfaceTintColor: Colors.transparent,
-          scrolledUnderElevation: 0,
-          title: Text(
-            t(locale, 'settings'),
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            leading: section == null
+                ? null
+                : IconButton(
+                    tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    onPressed: () => setState(() => _mobileSection = null),
+                  ),
+            toolbarHeight: section == null ? 80 : 60,
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+            surfaceTintColor: Colors.transparent,
+            scrolledUnderElevation: 0,
+            title: Text(
+              section == null
+                  ? t(locale, 'settings')
+                  : _mobileSectionTitle(locale, section),
+              style: (section == null
+                      ? Theme.of(context).textTheme.headlineLarge
+                      : Theme.of(context).textTheme.titleLarge)
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
+          body: section == null
+              ? _buildMobileSettings(context, locale, safeTimeZone)
+              : _buildMobileSettingsDetail(context, locale, safeTimeZone, section),
         ),
-        body: _buildMobileSettings(context, locale, safeTimeZone),
       ),
     );
   }
@@ -291,8 +326,9 @@ class _ProfilePageState extends State<ProfilePage> {
   ) {
     final tabLabels = {
       AppSettingsTab.account: t(locale, 'settings_tab_account'),
+      AppSettingsTab.calendars: t(locale, 'calendar_integrations_title'),
       AppSettingsTab.preferences: t(locale, 'settings_tab_preferences'),
-      AppSettingsTab.desktopVoice: 'Виктор · ИИ',
+      AppSettingsTab.desktopVoice: locale.startsWith('ru') ? 'Виктор · ИИ' : 'Viktor · AI',
       AppSettingsTab.notifications: t(locale, 'settings_tab_notifications'),
       AppSettingsTab.appearance: t(locale, 'settings_tab_appearance'),
       AppSettingsTab.about: t(locale, 'settings_tab_about'),
@@ -300,6 +336,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return AppSettingsPageBody(
       children: [
+        Text(
+          t(locale, 'settings'),
+          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 18),
         AppSettingsCategoryTabs(
           selected: _desktopSettingsTab,
           labels: tabLabels,
@@ -325,13 +368,13 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
           ),
+          AppSettingsTab.calendars => AppSettingsSectionCard(
+            title: t(locale, 'calendar_integrations_title'),
+            child: const CalendarIntegrationsSection(),
+          ),
           AppSettingsTab.preferences => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              AppSettingsSectionCard(
-                title: t(locale, 'calendar_integrations_title'),
-                child: const CalendarIntegrationsSection(),
-              ),
               AppSettingsSectionCard(
                 title: t(locale, 'profile_time_locale_section'),
                 child: _buildTimeLocaleFields(context, locale, safeTimeZone),
@@ -374,63 +417,111 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  String _mobileSectionTitle(String locale, _MobileSettingsSection section) {
+    return switch (section) {
+      _MobileSettingsSection.account => t(locale, 'account_security'),
+      _MobileSettingsSection.calendars => t(locale, 'calendar_integrations_title'),
+      _MobileSettingsSection.timeLocale => t(locale, 'profile_time_locale_section'),
+      _MobileSettingsSection.appearance => t(locale, 'appearance'),
+      _MobileSettingsSection.notifications => t(locale, 'profile_notifications_section'),
+      _MobileSettingsSection.morning => t(locale, 'morning_prompt_section'),
+      _MobileSettingsSection.viktor => locale.startsWith('ru') ? 'Виктор · ИИ' : 'Viktor · AI',
+      _MobileSettingsSection.about => t(locale, 'profile_about_section'),
+    };
+  }
+
   Widget _buildMobileSettings(
     BuildContext context,
     String locale,
     String safeTimeZone,
   ) {
+    AppSettingsNavigationRow destination(
+      _MobileSettingsSection section,
+      IconData icon, {
+      String? subtitle,
+    }) {
+      return AppSettingsNavigationRow(
+        title: _mobileSectionTitle(locale, section),
+        subtitle: subtitle,
+        leading: AppSettingsMenuIcon(icon: icon),
+        onTap: () {
+          FocusScope.of(context).unfocus();
+          setState(() => _mobileSection = section);
+        },
+      );
+    }
+
+    return AppSettingsPageBody(
+      children: [
+        AppSettingsNavigationGroup(
+          children: [
+            destination(_MobileSettingsSection.account, Icons.person_outline_rounded),
+            destination(_MobileSettingsSection.calendars, Icons.calendar_month_outlined),
+          ],
+        ),
+        AppSettingsNavigationGroup(
+          children: [
+            destination(_MobileSettingsSection.appearance, Icons.palette_outlined),
+            destination(_MobileSettingsSection.timeLocale, Icons.language_rounded),
+            destination(_MobileSettingsSection.notifications, Icons.notifications_none_rounded),
+            destination(_MobileSettingsSection.morning, Icons.wb_sunny_outlined),
+          ],
+        ),
+        AppSettingsNavigationGroup(
+          children: [
+            destination(_MobileSettingsSection.viktor, Icons.auto_awesome_outlined),
+            destination(_MobileSettingsSection.about, Icons.info_outline_rounded),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileSettingsDetail(
+    BuildContext context,
+    String locale,
+    String safeTimeZone,
+    _MobileSettingsSection section,
+  ) {
+    final title = _mobileSectionTitle(locale, section);
+    final content = switch (section) {
+      _MobileSettingsSection.account => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildDisplayNameField(context, locale),
+          const SizedBox(height: 16),
+          AccountSecuritySection(),
+          const SizedBox(height: 8),
+          SecuritySection(onSaved: widget.onSaved, embedded: true),
+        ],
+      ),
+      _MobileSettingsSection.calendars => const CalendarIntegrationsSection(),
+      _MobileSettingsSection.timeLocale =>
+          _buildTimeLocaleFields(context, locale, safeTimeZone),
+      _MobileSettingsSection.appearance => _buildAppearanceFields(context, locale),
+      _MobileSettingsSection.notifications =>
+          ProfileNotificationsSection(embedded: true),
+      _MobileSettingsSection.morning => const MorningStartSettingsSection(),
+      _MobileSettingsSection.viktor => AppButton.primary(
+        label: locale.startsWith('ru') ? 'Открыть Виктора' : 'Open Viktor',
+        icon: Icons.auto_awesome_rounded,
+        onPressed: widget.onOpenViktor,
+      ),
+      _MobileSettingsSection.about => Text(
+        '${t(locale, 'profile_build_label')} ${AppBuildInfo.gitCommit} · ${AppBuildInfo.builtAt}',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+    };
     return AppSettingsPageBody(
       children: [
         AppSettingsSectionCard(
-          title: t(locale, 'account_security'),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildDisplayNameField(context, locale),
-              const SizedBox(height: 16),
-              AccountSecuritySection(),
-              const SizedBox(height: 8),
-              SecuritySection(onSaved: widget.onSaved, embedded: true),
-            ],
-          ),
-        ),
-        AppSettingsSectionCard(
-          title: t(locale, 'calendar_integrations_title'),
-          child: const CalendarIntegrationsSection(),
-        ),
-        AppSettingsSectionCard(
-          title: t(locale, 'profile_time_locale_section'),
-          child: _buildTimeLocaleFields(context, locale, safeTimeZone),
-        ),
-        AppSettingsSectionCard(
-          title: t(locale, 'appearance'),
-          child: _buildAppearanceFields(context, locale),
-        ),
-        AppSettingsSectionCard(
-          title: t(locale, 'profile_notifications_section'),
-          subtitle: kIsWeb ? null : t(locale, 'profile_notifications_subtitle'),
-          child: ProfileNotificationsSection(embedded: true),
-        ),
-        AppSettingsSectionCard(
-          title: t(locale, 'morning_prompt_section'),
-          child: const MorningStartSettingsSection(),
-        ),
-        AppSettingsSectionCard(
-          title: 'Виктор · ИИ',
-          child: AppButton.primary(
-            label: 'Открыть Виктора',
-            icon: Icons.auto_awesome_rounded,
-            onPressed: widget.onOpenViktor,
-          ),
-        ),
-        AppSettingsSectionCard(
-          title: t(locale, 'profile_about_section'),
-          child: Text(
-            '${t(locale, 'profile_build_label')} ${AppBuildInfo.gitCommit} · ${AppBuildInfo.builtAt}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
+          title: title,
+          subtitle: section == _MobileSettingsSection.notifications && !kIsWeb
+              ? t(locale, 'profile_notifications_subtitle')
+              : null,
+          child: content,
         ),
       ],
     );
@@ -468,55 +559,16 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildAppearanceFields(BuildContext context, String locale) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            SegmentedButton<String>(
-              segments: [
-                ButtonSegment(
-                  value: 'light',
-                  label: Text(t(locale, 'theme_light')),
-                  icon: const Icon(Icons.light_mode_rounded),
-                ),
-                ButtonSegment(
-                  value: 'dark',
-                  label: Text(t(locale, 'theme_dark')),
-                  icon: const Icon(Icons.dark_mode_rounded),
-                ),
-                ButtonSegment(
-                  value: 'system',
-                  label: Text(t(locale, 'theme_system')),
-                  icon: const Icon(Icons.settings_suggest_rounded),
-                ),
-              ],
-              selected: {_themeMode},
-              onSelectionChanged: (Set<String> next) {
-                if (_savingTheme) return;
-                if (next.isEmpty) return;
-                final v = next.first;
-                if (v == _themeMode) return;
-                unawaited(_saveTheme(v));
-              },
-            ),
-            if (_savingTheme)
-              Positioned(
-                right: 4,
-                child: SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ),
-          ],
-        ),
-
-      ],
+    return AppSettingsThemeModePicker(
+      value: _themeMode,
+      lightLabel: t(locale, 'theme_light'),
+      darkLabel: t(locale, 'theme_dark'),
+      systemLabel: t(locale, 'theme_system'),
+      saving: _savingTheme,
+      onChanged: (next) {
+        if (next == _themeMode || _savingTheme) return;
+        unawaited(_saveTheme(next));
+      },
     );
   }
 
