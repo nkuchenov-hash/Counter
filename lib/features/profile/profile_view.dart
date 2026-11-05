@@ -37,6 +37,7 @@ class ProfilePage extends StatefulWidget {
     this.onTestDesktopVoice,
     this.onOpenViktor,
     this.initialDestination,
+    this.onBackToMenu,
   });
 
   final VoidCallback? onSaved;
@@ -45,6 +46,7 @@ class ProfilePage extends StatefulWidget {
   final VoidCallback? onTestDesktopVoice;
   final VoidCallback? onOpenViktor;
   final ProfileSettingsDestination? initialDestination;
+  final VoidCallback? onBackToMenu;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -79,7 +81,6 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _savingLanguage = false;
 
   bool _savingTimeZone = false;
-  AppSettingsTab _desktopSettingsTab = AppSettingsTab.account;
   ProfileSettingsDestination? _mobileSection;
 
   static const _nameDebounceDuration = Duration(milliseconds: 600);
@@ -264,49 +265,27 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final validTimezones = tz_settings.kProfileTimezoneCatalog
-        .map((e) => e.profileValue)
-        .toList();
+        .map((e) => e.profileValue).toList();
     final safeTimeZone =
         tz_settings.catalogEntryForStoredTimezone(_timeZone)?.profileValue ??
         (validTimezones.contains(_timeZone) ? _timeZone : 'UTC');
     final locale = currentLocale.value;
+    final section = _mobileSection ?? ProfileSettingsDestination.account;
     final menuBackground = settingsNeutralTheme(context).colorScheme.surfaceContainerLowest;
-    final useDesktopLayout =
-        settingsIsWideDesktop(context) &&
-        shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
 
-    if (useDesktopLayout && widget.initialDestination != null) {
-      return Theme(
-        data: settingsNeutralTheme(context),
-        child: Scaffold(
-          backgroundColor: menuBackground,
-          appBar: AppBar(
-            backgroundColor: menuBackground,
-            surfaceTintColor: Colors.transparent,
-            title: Text(_mobileSectionTitle(locale, widget.initialDestination!)),
-          ),
-          body: _buildMobileSettingsDetail(
-              context, locale, safeTimeZone, widget.initialDestination!),
-        ),
-      );
+    void goBack() {
+      if (widget.onBackToMenu != null) {
+        widget.onBackToMenu!();
+      } else {
+        Navigator.of(context).maybePop();
+      }
     }
 
-    if (useDesktopLayout && widget.initialDestination == null) {
-      return Theme(
-        data: settingsNeutralTheme(context),
-        child: Scaffold(
-          backgroundColor: menuBackground,
-          body: _buildDesktopSettings(context, locale, safeTimeZone),
-        ),
-      );
-    }
-
-    final section = _mobileSection;
     return PopScope(
-      canPop: section == null || widget.initialDestination != null,
+      canPop: widget.onBackToMenu == null,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && _mobileSection != null && mounted) {
-          setState(() => _mobileSection = null);
+        if (!didPop && widget.onBackToMenu != null) {
+          widget.onBackToMenu!();
         }
       },
       child: Theme(
@@ -316,138 +295,27 @@ class _ProfilePageState extends State<ProfilePage> {
           backgroundColor: menuBackground,
           appBar: AppBar(
             automaticallyImplyLeading: false,
-            leading: section == null
-                ? null
-                : IconButton(
-                    tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                    icon: const Icon(Icons.arrow_back_rounded),
-                    onPressed: widget.initialDestination != null
-                        ? () => Navigator.of(context).maybePop()
-                        : () => setState(() => _mobileSection = null),
-                  ),
-            toolbarHeight: section == null ? 80 : 60,
+            leading: BackButton(onPressed: goBack),
+            toolbarHeight: 60,
             backgroundColor: menuBackground,
             surfaceTintColor: Colors.transparent,
             scrolledUnderElevation: 0,
             title: Text(
-              section == null
-                  ? t(locale, 'settings')
-                  : _mobileSectionTitle(locale, section),
-              style: (section == null
-                      ? Theme.of(context).textTheme.headlineLarge
-                      : Theme.of(context).textTheme.titleLarge)
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              _mobileSectionTitle(locale, section),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
-          body: section == null
-              ? _buildMobileSettings(context, locale, safeTimeZone)
-              : _buildMobileSettingsDetail(context, locale, safeTimeZone, section),
+          body: _buildMobileSettingsDetail(context, locale, safeTimeZone, section),
         ),
       ),
     );
   }
 
-  Widget _buildDesktopSettings(
-    BuildContext context,
-    String locale,
-    String safeTimeZone,
-  ) {
-    final tabLabels = {
-      AppSettingsTab.account: t(locale, 'settings_tab_account'),
-      AppSettingsTab.calendars: t(locale, 'calendar_integrations_title'),
-      AppSettingsTab.preferences: t(locale, 'settings_tab_preferences'),
-      AppSettingsTab.desktopVoice: locale.startsWith('ru') ? 'Виктор · ИИ' : 'Viktor · AI',
-      AppSettingsTab.notifications: t(locale, 'settings_tab_notifications'),
-      AppSettingsTab.appearance: t(locale, 'settings_tab_appearance'),
-      AppSettingsTab.about: t(locale, 'settings_tab_about'),
-    };
-
-    return AppSettingsPageBody(
-      children: [
-        Text(
-          t(locale, 'settings'),
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 18),
-        AppSettingsCategoryTabs(
-          selected: _desktopSettingsTab,
-          labels: tabLabels,
-          onSelected: (tab) => setState(() => _desktopSettingsTab = tab),
-        ),
-        Container(
-          height: 1,
-          margin: const EdgeInsets.only(top: 0),
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
-        const SizedBox(height: 20),
-        switch (_desktopSettingsTab) {
-          AppSettingsTab.account => AppSettingsSectionCard(
-            title: t(locale, 'account_security'),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildDisplayNameField(context, locale),
-                const SizedBox(height: 16),
-                AccountSecuritySection(),
-                const SizedBox(height: 8),
-                SecuritySection(onSaved: widget.onSaved, embedded: true),
-              ],
-            ),
-          ),
-          AppSettingsTab.calendars => AppSettingsSectionCard(
-            title: t(locale, 'calendar_integrations_title'),
-            child: const CalendarIntegrationsSection(),
-          ),
-          AppSettingsTab.preferences => Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AppSettingsSectionCard(
-                title: t(locale, 'profile_time_locale_section'),
-                child: _buildTimeLocaleFields(context, locale, safeTimeZone),
-              ),
-              const SizedBox(height: 16),
-              AppSettingsSectionCard(
-                title: t(locale, 'morning_prompt_section'),
-                child: const MorningStartSettingsSection(),
-              ),
-            ],
-          ),
-          AppSettingsTab.desktopVoice => AppSettingsSectionCard(
-            title: 'Виктор · ИИ',
-            child: AppButton.primary(
-              label: 'Открыть Виктора',
-              icon: Icons.auto_awesome_rounded,
-              onPressed: widget.onOpenViktor,
-            ),
-          ),
-          AppSettingsTab.notifications => AppSettingsSectionCard(
-            title: t(locale, 'profile_notifications_section'),
-            subtitle: t(locale, 'profile_notifications_subtitle'),
-            child: ProfileNotificationsSection(embedded: true),
-          ),
-          AppSettingsTab.appearance => AppSettingsSectionCard(
-            title: t(locale, 'appearance'),
-            child: _buildAppearanceFields(context, locale),
-          ),
-          AppSettingsTab.about => AppSettingsSectionCard(
-            title: t(locale, 'profile_about_section'),
-            child: Text(
-              '${t(locale, 'profile_build_label')} ${AppBuildInfo.gitCommit} · ${AppBuildInfo.builtAt}',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        },
-      ],
-    );
-  }
-
   String _mobileSectionTitle(String locale, ProfileSettingsDestination section) {
     return switch (section) {
-      ProfileSettingsDestination.account => t(locale, 'account_security'),
+      ProfileSettingsDestination.account => locale.startsWith('ru') ? 'Мой профиль' : 'My profile',
       ProfileSettingsDestination.sleep => locale.startsWith('ru') ? 'Здоровье и сон' : 'Health & sleep',
       ProfileSettingsDestination.voice => t(locale, 'desktop_voice_settings_section'),
       ProfileSettingsDestination.calendars => t(locale, 'calendar_integrations_title'),
@@ -460,55 +328,6 @@ class _ProfilePageState extends State<ProfilePage> {
       ProfileSettingsDestination.viktor => locale.startsWith('ru') ? 'Виктор · ИИ' : 'Viktor · AI',
       ProfileSettingsDestination.about => t(locale, 'profile_about_section'),
     };
-  }
-
-  Widget _buildMobileSettings(
-    BuildContext context,
-    String locale,
-    String safeTimeZone,
-  ) {
-    AppSettingsNavigationRow destination(
-      ProfileSettingsDestination section,
-      IconData icon, {
-      String? subtitle,
-    }) {
-      return AppSettingsNavigationRow(
-        title: _mobileSectionTitle(locale, section),
-        subtitle: subtitle,
-        leading: AppSettingsMenuIcon(icon: icon),
-        onTap: () {
-          FocusScope.of(context).unfocus();
-          setState(() => _mobileSection = section);
-        },
-      );
-    }
-
-    return AppSettingsPageBody(
-      children: [
-        AppSettingsNavigationGroup(
-          children: [
-            destination(ProfileSettingsDestination.account, Icons.person_outline_rounded),
-            destination(ProfileSettingsDestination.sleep, Icons.favorite_border_rounded),
-            destination(ProfileSettingsDestination.calendars, Icons.calendar_month_outlined),
-          ],
-        ),
-        AppSettingsNavigationGroup(
-          children: [
-            destination(ProfileSettingsDestination.appearance, Icons.palette_outlined),
-            destination(ProfileSettingsDestination.timeLocale, Icons.language_rounded),
-            destination(ProfileSettingsDestination.notifications, Icons.notifications_none_rounded),
-            destination(ProfileSettingsDestination.morning, Icons.wb_sunny_outlined),
-          ],
-        ),
-        AppSettingsNavigationGroup(
-          children: [
-            destination(ProfileSettingsDestination.viktor, Icons.auto_awesome_outlined),
-            destination(ProfileSettingsDestination.voice, Icons.mic_none_rounded),
-            destination(ProfileSettingsDestination.about, Icons.info_outline_rounded),
-          ],
-        ),
-      ],
-    );
   }
 
   Widget _buildMobileSettingsDetail(
@@ -609,7 +428,9 @@ class _ProfilePageState extends State<ProfilePage> {
     return AppSettingsPageBody(
       children: [
         AppSettingsSectionCard(
-          title: title,
+          title: section == ProfileSettingsDestination.account
+              ? (locale.startsWith('ru') ? 'Учётная запись и безопасность' : 'Account & security')
+              : title,
           subtitle: section == ProfileSettingsDestination.notifications && !kIsWeb
               ? t(locale, 'profile_notifications_subtitle')
               : null,
