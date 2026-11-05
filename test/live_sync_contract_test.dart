@@ -620,4 +620,39 @@ void main() {
     expect(receipt, contains('pendingSync: queued || (accepted && !confirmed)'));
   });
 
+
+  test('realtime events paint immediately and recover malformed payloads', () {
+    final plans = File('lib/data/plan_service.dart').readAsStringSync();
+    final planStart = plans.indexOf('void _onPbPlansSubscriptionEvent(');
+    final planEnd = plans.indexOf(
+      'Future<void> _cancelPlansRealtimeSubscription()',
+      planStart,
+    );
+    final planHandler = plans.substring(planStart, planEnd);
+    expect(planHandler, contains('immediateLocal: true'));
+    expect(planHandler, contains('scheduleNetworkRefresh: false'));
+    expect(planHandler, contains("_recoverDroppedRealtimeEvent('plans_apply_failed')"));
+    expect(planHandler, contains("_recoverDroppedRealtimeEvent('plans_missing_payload')"));
+    expect(planHandler, isNot(contains('_ensureAllPlansUserCacheFresh(')));
+
+    final realtime =
+        File('lib/data/records/record_realtime.dart').readAsStringSync();
+    final recStart = realtime.indexOf('void _onPbRecordsSubscriptionEvent(');
+    final recEnd = realtime.indexOf('// Replay newest pushes', recStart);
+    final recordHandler = realtime.substring(recStart, recEnd);
+    expect(recordHandler, contains('final applied = _upsertFlatRecordFromPbModel('));
+    expect(recordHandler, contains("records_invalid_payload"));
+    expect(recordHandler, contains("records_missing_payload"));
+    expect(recordHandler, contains('_scheduleRealtimeGapCatchUp(delay: Duration.zero)'));
+    expect(recordHandler, isNot(contains('_fetchRecordsIntoCache(')));
+
+    final recordCache = File('lib/data/record_service.dart').readAsStringSync();
+    final mergeStart = recordCache.indexOf('bool _upsertFlatRecordFromPbModel(');
+    final mergeEnd =
+        recordCache.indexOf('void _removeCachedFlatRecordByPk(', mergeStart);
+    final merge = recordCache.substring(mergeStart, mergeEnd);
+    expect(merge, contains('if (pk.isEmpty) return false;'));
+    expect(merge, contains('return true;'));
+    expect(merge, contains('return false;'));
+  });
 }
