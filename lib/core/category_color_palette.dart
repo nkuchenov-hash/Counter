@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:counter/core/tag_contrast.dart' show kTagYellowGold;
 import 'package:counter/core/life_color_compat.dart';
-export 'package:counter/core/life_color_compat.dart' show kNordicPeople, canonicalLifeColorValue;
+export 'package:counter/core/life_color_compat.dart' show kNordicErrands, kNordicEntertainment, kNordicPeople, canonicalLifeColorValue;
 
 // LIFE OS semantic color families. Shared by every category screen and by
 // the tag creation palette; persisted custom colors always remain authoritative.
@@ -15,12 +15,6 @@ const MaterialColor kNordicWork = MaterialColor(0xFF3978C5, <int, Color>{
   300: Color(0xFFA2C6E9), 400: Color(0xFF72A5D9), 500: Color(0xFF3978C5),
   600: Color(0xFF326BAF), 700: Color(0xFF2B5C98), 800: Color(0xFF254D7E),
   900: Color(0xFF203F66),
-});
-const MaterialColor kNordicErrands = MaterialColor(0xFFD97841, <int, Color>{
-  50: Color(0xFFFDF5F0), 100: Color(0xFFF9E8DD), 200: Color(0xFFF2D0BB),
-  300: Color(0xFFEAB18E), 400: Color(0xFFE09163), 500: Color(0xFFD97841),
-  600: Color(0xFFC66A36), 700: Color(0xFFA95730), 800: Color(0xFF8A482B),
-  900: Color(0xFF713D27),
 });
 const MaterialColor kNordicFood = MaterialColor(0xFFD5A62E, <int, Color>{
   50: Color(0xFFFCF8E9), 100: Color(0xFFF7EFCB), 200: Color(0xFFEFE09D),
@@ -51,12 +45,6 @@ const MaterialColor kNordicStudy = MaterialColor(0xFF725EB5, <int, Color>{
   300: Color(0xFFB9ACDB), 400: Color(0xFF9685C9), 500: Color(0xFF725EB5),
   600: Color(0xFF6552A3), 700: Color(0xFF55458A), 800: Color(0xFF473A70),
   900: Color(0xFF3B305D),
-});
-const MaterialColor kNordicEntertainment = MaterialColor(0xFFD64F55, <int, Color>{
-  50: Color(0xFFFDF2F2), 100: Color(0xFFF9E1E2), 200: Color(0xFFF3C4C6),
-  300: Color(0xFFE99B9F), 400: Color(0xFFDF7277), 500: Color(0xFFD64F55),
-  600: Color(0xFFC03F46), 700: Color(0xFFA2353B), 800: Color(0xFF842F34),
-  900: Color(0xFF6D2A2E),
 });
 // Achromatic neutral: R == G == B at every tone (no blue or beige cast).
 const MaterialColor kCategoryNeutral = MaterialColor(0xFF949494, <int, Color>{
