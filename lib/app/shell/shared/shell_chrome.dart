@@ -25,6 +25,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
     ),
     ProfilePage(
       key: ValueKey(activeProfileDestination),
+      activeTab: shellPageIndexListenable,
       initialDestination: activeProfileDestination,
       onBackToMenu: () => setState(() => setShellPageIndex(7)),
       onSaved: () {
@@ -105,9 +106,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                         child: Scaffold(
                           backgroundColor: scheme.surface,
                           resizeToAvoidBottomInset: true,
-                          // The approved Menu owns its full screen, including
-                          // its title. Do not stack the workspace date header
-                          // above it on desktop.
+                          // One global desktop header, independent of the open section.
                           appBar: desktopShell || (!desktopShell && shellPageIndex <= 3)
                               ? AppBar(
                                   toolbarHeight: kGlobalCompactHeaderHeight,
