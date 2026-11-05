@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:counter/core/life_color_compat.dart' show canonicalLifeColorValue, kNordicEntertainment, kNordicPeople;
+import 'package:counter/core/life_color_compat.dart' show canonicalLifeColorValue, kNordicEntertainment, kNordicPeople, kNordicErrands;
 
 /// Approved sunny-yellow tag identity. These values come from the yellow
 /// preview controls; they are shared by every tag display mode and screen.
@@ -13,6 +13,17 @@ const double kTagYellowBorderOpacity = 0.74;
 const Color kTagPinkText = Color(0xFFD25888);
 const double kTagPinkPlateOpacity = 0.16;
 const double kTagPinkBorderOpacity = 0.60;
+
+/// Vivid orange remains orange even on transparent light-theme pills.
+const Color kTagOrangeText = Color(0xFFD95400);
+const double kTagOrangePlateOpacity = 0.22;
+const double kTagOrangeBorderOpacity = 0.78;
+
+bool tagColorIsCanonicalOrange(Color color) =>
+    color.toARGB32() == kNordicErrands[500]!.toARGB32();
+
+bool tagColorIsBlack(Color color) =>
+    (color.toARGB32() & 0xFFFFFF) == 0x000000;
 
 bool tagColorIsCanonicalPink(Color color) =>
     color.toARGB32() == kNordicPeople[500]!.toARGB32();
@@ -41,8 +52,9 @@ Color tagCategoryBreadcrumbPlate(Color accentColor, Color surface) {
   );
 }
 
-/// Tag manager avatar: 26% for most hues; yellow 13%, pink 16%.
+/// Tag manager avatar: black solid; yellow 13%, pink 16%, orange 22%.
 Color tagManagerAvatarPlate(Color tagColor, Color surface) {
+  if (tagColorIsBlack(tagColor)) return Colors.black;
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
       kTagYellowGold.withValues(alpha: kTagYellowPlateOpacity),
@@ -52,6 +64,11 @@ Color tagManagerAvatarPlate(Color tagColor, Color surface) {
   if (tagColorIsCanonicalPink(tagColor)) {
     return Color.alphaBlend(
       tagColor.withValues(alpha: kTagPinkPlateOpacity), surface,
+    );
+  }
+  if (tagColorIsCanonicalOrange(tagColor)) {
+    return Color.alphaBlend(
+      tagColor.withValues(alpha: kTagOrangePlateOpacity), surface,
     );
   }
   return Color.alphaBlend(tagColor.withValues(alpha: 0.26), surface);
@@ -64,9 +81,14 @@ Color tagManagerAvatarPlate(Color tagColor, Color surface) {
 /// Solid color icons/rings still use the unmodified family color when
 /// [surface] is omitted. Yellow uses the explicitly approved text color.
 Color tagVibrantForeground(Color tagBaseColor, {Color? surface}) {
+  if (tagColorIsBlack(tagBaseColor)) return Colors.white;
   if (tagColorIsYellowFamily(tagBaseColor)) return kTagYellowText;
   if (surface == null) return tagBaseColor;
   if (tagColorIsCanonicalPink(tagBaseColor)) return kTagPinkText;
+  if (tagColorIsCanonicalOrange(tagBaseColor)) {
+    return surface.computeLuminance() > 0.35
+        ? kTagOrangeText : kNordicErrands[400]!;
+  }
 
   // Keep official red RED and official warm pink PINK in small chips.
   // The generic 4.5:1 automatic darkening turns their text into burgundy
@@ -140,8 +162,9 @@ Color tagIconOnFilledTagColor(Color tagFill, {bool syntheticNoTags = false}) {
   return tagFill;
 }
 
-/// Letter chip plate: 26% generally; yellow 13%, pink 16%.
+/// Letter chip plate: black solid, yellow 13%, pink 16%, orange 22%.
 Color tagLetterChipPlate(Color tagColor, Color surface) {
+  if (tagColorIsBlack(tagColor)) return Colors.black;
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
       kTagYellowGold.withValues(alpha: kTagYellowPlateOpacity),
@@ -153,11 +176,17 @@ Color tagLetterChipPlate(Color tagColor, Color surface) {
       tagColor.withValues(alpha: kTagPinkPlateOpacity), surface,
     );
   }
+  if (tagColorIsCanonicalOrange(tagColor)) {
+    return Color.alphaBlend(
+      tagColor.withValues(alpha: kTagOrangePlateOpacity), surface,
+    );
+  }
   return Color.alphaBlend(tagColor.withValues(alpha: 0.26), surface);
 }
 
-/// Letter chip border: yellow 74%; pink 60%; others 55%.
+/// Letter chip border: black solid; yellow 74%; pink 60%; orange 78%; others 55%.
 Color tagLetterChipBorder(Color tagColor, Color surface) {
+  if (tagColorIsBlack(tagColor)) return Colors.black;
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
       kTagYellowGold.withValues(alpha: kTagYellowBorderOpacity), surface,
@@ -168,11 +197,17 @@ Color tagLetterChipBorder(Color tagColor, Color surface) {
       tagColor.withValues(alpha: kTagPinkBorderOpacity), surface,
     );
   }
+  if (tagColorIsCanonicalOrange(tagColor)) {
+    return Color.alphaBlend(
+      tagColor.withValues(alpha: kTagOrangeBorderOpacity), surface,
+    );
+  }
   return Color.alphaBlend(tagColor.withValues(alpha: 0.55), surface);
 }
 
-/// Empty chip stadium fill: yellow 13%; pink 16%; others 26%.
+/// Empty chip stadium fill: black solid; yellow 13%; pink 16%; orange 22%; others 26%.
 Color tagEmptyChipFill(Color tagColor, Color surface) {
+  if (tagColorIsBlack(tagColor)) return Colors.black;
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
       kTagYellowGold.withValues(alpha: kTagYellowPlateOpacity),
@@ -182,15 +217,22 @@ Color tagEmptyChipFill(Color tagColor, Color surface) {
   if (tagColorIsCanonicalPink(tagColor)) {
     return tagColor.withValues(alpha: kTagPinkPlateOpacity);
   }
+  if (tagColorIsCanonicalOrange(tagColor)) {
+    return tagColor.withValues(alpha: kTagOrangePlateOpacity);
+  }
   return tagColor.withValues(alpha: 0.26);
 }
 
 Color tagEmptyChipBorderColor(Color tagColor) {
+  if (tagColorIsBlack(tagColor)) return Colors.black;
   if (tagColorIsYellowFamily(tagColor)) {
     return kTagYellowGold.withValues(alpha: kTagYellowBorderOpacity);
   }
   if (tagColorIsCanonicalPink(tagColor)) {
     return tagColor.withValues(alpha: kTagPinkBorderOpacity);
+  }
+  if (tagColorIsCanonicalOrange(tagColor)) {
+    return tagColor.withValues(alpha: kTagOrangeBorderOpacity);
   }
   return tagColor.withValues(alpha: 0.55);
 }
@@ -244,4 +286,19 @@ Color? parseTagHexColor(String? hex) {
   // Old official presets paint using the updated canonical palette.
   // The persisted HEX remains intact until the tag is explicitly edited.
   return Color(canonicalLifeColorValue(0xFF000000 | v));
+}
+/// Color displayed for an existing Tag. Old planning "urgent" records were
+/// frequently saved as neutral gray before black was a selectable preset.
+/// Restore black only for those neutral/empty values, never for a custom
+/// colored urgent tag. This does not mutate user data in PocketBase.
+Color? parseTagDisplayColor(String? savedHex, {required String tagName}) {
+  final saved = parseTagHexColor(savedHex);
+  if (tagName.trim().toLowerCase() != 'urgent') return saved;
+  if (saved == null) return Colors.black;
+  final argb = saved.toARGB32();
+  final r = (argb >> 16) & 0xFF;
+  final g = (argb >> 8) & 0xFF;
+  final b = argb & 0xFF;
+  final neutral = (r - g).abs() <= 2 && (g - b).abs() <= 2;
+  return neutral && r < 215 ? Colors.black : saved;
 }
