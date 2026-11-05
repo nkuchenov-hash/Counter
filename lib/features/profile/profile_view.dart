@@ -38,6 +38,8 @@ class ProfilePage extends StatefulWidget {
     this.onTestDesktopVoice,
     this.onOpenViktor,
     this.initialDestination,
+    this.embeddedInShell = false,
+    this.onBackToMenu,
   });
 
   final VoidCallback? onSaved;
@@ -46,6 +48,8 @@ class ProfilePage extends StatefulWidget {
   final VoidCallback? onTestDesktopVoice;
   final VoidCallback? onOpenViktor;
   final ProfileSettingsDestination? initialDestination;
+  final bool embeddedInShell;
+  final VoidCallback? onBackToMenu;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -53,6 +57,8 @@ class ProfilePage extends StatefulWidget {
 
 enum ProfileSettingsDestination {
   account,
+  security,
+  session,
   sleep,
   voice,
   calendars,
@@ -280,7 +286,7 @@ class _ProfilePageState extends State<ProfilePage> {
           return Scaffold(
             resizeToAvoidBottomInset: true,
             backgroundColor: scheme.surfaceContainerLowest,
-            appBar: widget.initialDestination == null
+            appBar: widget.embeddedInShell || widget.initialDestination == null
                 ? null
                 : AppBar(
                     toolbarHeight: 60,
@@ -294,8 +300,30 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                   ),
-            body: _buildMobileSettingsDetail(
-                context, locale, safeTimeZone, destination),
+            body: widget.embeddedInShell
+                ? Column(
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 12, 16, 4),
+                          child: TextButton.icon(
+                            onPressed: widget.onBackToMenu,
+                            icon: const Icon(Icons.arrow_back_rounded),
+                            label: Text(locale.startsWith('ru')
+                                ? 'Назад'
+                                : 'Back'),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: _buildMobileSettingsDetail(
+                            context, locale, safeTimeZone, destination),
+                      ),
+                    ],
+                  )
+                : _buildMobileSettingsDetail(
+                    context, locale, safeTimeZone, destination),
           );
         },
       ),
@@ -304,7 +332,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
   String _mobileSectionTitle(String locale, ProfileSettingsDestination section) {
     return switch (section) {
-      ProfileSettingsDestination.account => t(locale, 'account_security'),
+      ProfileSettingsDestination.account => locale.startsWith('ru')
+          ? 'Имя и данные профиля' : 'Profile details',
+      ProfileSettingsDestination.security => locale.startsWith('ru')
+          ? 'Пароль и биометрия' : 'Password and biometrics',
+      ProfileSettingsDestination.session => locale.startsWith('ru')
+          ? 'Управление сеансом' : 'Session',
       ProfileSettingsDestination.sleep => locale.startsWith('ru') ? 'Здоровье и сон' : 'Health & sleep',
       ProfileSettingsDestination.voice => t(locale, 'desktop_voice_settings_section'),
       ProfileSettingsDestination.calendars => t(locale, 'calendar_integrations_title'),
@@ -373,16 +406,12 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     }
     final content = switch (section) {
-      ProfileSettingsDestination.account => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+      ProfileSettingsDestination.account =>
           _buildDisplayNameField(context, locale),
-          const SizedBox(height: 16),
-          AccountSecuritySection(),
-          const SizedBox(height: 8),
+      ProfileSettingsDestination.security =>
           SecuritySection(onSaved: widget.onSaved, embedded: true),
-        ],
-      ),
+      ProfileSettingsDestination.session =>
+          const AccountSecuritySection(showPeopleEntry: false),
       ProfileSettingsDestination.calendars => const CalendarIntegrationsSection(),
       ProfileSettingsDestination.sleep => const SleepSyncSettingsSection(),
       ProfileSettingsDestination.voice => kIsWeb

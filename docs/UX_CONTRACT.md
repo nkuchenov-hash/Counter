@@ -1,3 +1,9 @@
+## Consistent Profile and menu chrome (2026-11-05)
+
+- The desktop header contains LIFE OS branding; the neutral gray sidebar persists across People, Menu, Profile, and all settings leaves.
+- Profile is the account section of the **same** `LifeOsMenuPage` settings index, not a legacy tabbed Profile screen. Selecting a specific setting changes only shell content, and Back returns to Profile or Menu as appropriate.
+- Menu navigation row hover uses the full width of each grouped item, with distinguishable dividers; captions are gray and lighter than primary labels. The entire light canvas is neutral (no blue tint), with white panels visibly separate.
+
 ## Persistent desktop navigation across People and Menu (2026-11-05)
 
 - On desktop, global shell sidebar and header stay mounted and unchanged when switching Timeline, Planning, Calendar, Lists, Categories, Paths, People, Profile, or Menu.

@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `559bb3c6` on 2026-11-05.**
+**Generated from input HEAD `a387d970` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 978 — each appears **exactly once** below.
+**Tracked files:** 981 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -31,7 +31,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `Brain/data` | 114 |
 | `platform build` | 83 |
 | `shared foundation` | 69 |
-| `developer tool` | 64 |
+| `developer tool` | 65 |
 | `platform resource` | 44 |
 | `governing documentation` | 43 |
 | `Desktop Voice runtime` | 36 |
@@ -40,14 +40,14 @@ python scripts/manual/generate_app_structure_detailed.py
 | `PocketBase migration` | 21 |
 | `shared Voice system` | 20 |
 | `historical engineering record` | 18 |
-| `CI/deployment` | 13 |
+| `CI/deployment` | 14 |
 | `localization` | 13 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
 | `shared time` | 7 |
+| `asset` | 6 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
-| `asset` | 5 |
 | `audit tool` | 5 |
 | `mobile/web Voice adapters` | 2 |
 | `generated documentation` | 1 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 531 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 258 |
+| `PROVEN_REQUIRED` | 532 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 260 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 893 |
-| `MEDIUM` | 85 |
+| `HIGH` | 894 |
+| `MEDIUM` | 87 |
 
 ---
 
@@ -283,6 +283,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`assets/`](#folder-assets)
 - [`docs/`](#folder-docs)
 - [`.cursor/rules/`](#folder-cursorrules)
+- [`assets/fonts/`](#folder-assetsfonts)
 - [`assets/licenses/`](#folder-assetslicenses)
 - [`docs/releases/`](#folder-docsreleases)
 - [`docs/reports/`](#folder-docsreports)
@@ -864,6 +865,30 @@ RU:
 - **Когда открывать:** Ошибки несовпадения версии Gradle.
 - **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/settings.gradle.kts`.
+
+---
+
+## Folder: `assets/fonts/`
+
+EN:
+
+- **What this folder is:** Repository path `assets/fonts/` — tracked config, assets, or tooling for Life OS.
+- **Why it exists:** Git tracks `assets/fonts` because release, CI, or maintenance workflow depends on these files.
+- **What lives here:** Tracked files listed below with individual explanations.
+- **What part of the app it affects:** Repo workflow or platform build tied to this path — see child file entries.
+- **When to open it:** Maintenance or build work involving `assets/fonts`.
+- **Can it be deleted?** No — part of repository tooling or config unless cleanup report says otherwise.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, `CHANGELOG.md`.
+
+RU:
+
+- **Что это за папка:** Служебный каталог репозитория `assets/fonts/`.
+- **Зачем нужна:** Хранит файлы, необходимые отдельной части сборки, данных проекта или сопровождения репозитория.
+- **Что здесь лежит:** Отслеживаемые Git файлы и дочерние каталоги; каждый элемент описан ниже.
+- **На что влияет в приложении:** Влияет на ту часть продукта или процесса сборки, которой принадлежит этот путь.
+- **Когда открывать:** Открывать при работе с файлами и процессами, связанными с `assets/fonts/`.
+- **Можно удалить?** Нет — part of repository tooling or config если отчёт cleanup не сказал иное.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, `CHANGELOG.md`.
 
 ---
 
@@ -5046,6 +5071,43 @@ RU:
 - **Связано с:** `.github/`, Flutter tooling.
 
 
+### `.github/workflows/refresh-onest-structure.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/refresh-onest-structure.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/refresh-onest-structure.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/refresh-onest-structure.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/refresh-onest-structure.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `refresh-onest-structure.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `refresh-onest-structure.yml`.
+- **When to open:** When behavior tied to `refresh-onest-structure.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `refresh-onest-structure.yml` для CI и операций репозитория. GitHub Actions читает `refresh-onest-structure.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `refresh-onest-structure.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `refresh-onest-structure.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `refresh-onest-structure.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `refresh-onest-structure.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `refresh-onest-structure.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
 ### `.github/workflows/viktor-structure-regen.yml`
 
 EN:
@@ -6228,6 +6290,80 @@ RU:
 - **Когда открывать:** Gradle sync падает на settings или не видит `:app` module.
 - **Можно удалить?** Нет — без него не соберётся Android APK.
 - **Связано с:** `android/build.gradle.kts`, `android/app/build.gradle.kts`.
+
+
+### `assets/fonts/OFL-Onest.txt`
+
+EN:
+
+- **Human purpose:** txt file `OFL-Onest.txt` in `assets/fonts` — repo tooling or config. Tracked because `assets/fonts` needs `OFL-Onest.txt` for build, CI, or maintenance.
+- **What this is:** txt file `OFL-Onest.txt` in `assets/fonts` — repo tooling or config.
+- **Why needed:** Tracked because `assets/fonts` needs `OFL-Onest.txt` for build, CI, or maintenance.
+- **Contents:** Open `OFL-Onest.txt` when working on `assets/fonts` (see folder section above).
+- **Repository role:** developer tool
+- **Evidence of use:** Tracked repository file `assets/fonts/OFL-Onest.txt` retained for tooling/config.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `assets/fonts` workflow for `OFL-Onest.txt`.
+- **When to open:** When build output or maintenance cites `OFL-Onest.txt`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `assets/fonts/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `OFL-Onest.txt` — отслеживаемый ресурс области `assets/fonts` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `assets/fonts` для `OFL-Onest.txt`.
+- **Что это:** `OFL-Onest.txt` — отслеживаемый ресурс области `assets/fonts` с отдельной ролью.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `assets/fonts` для `OFL-Onest.txt`.
+- **Содержимое:** Данные или код `OFL-Onest.txt`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Отслеживаемый файл `assets/fonts/OFL-Onest.txt` для tooling/config.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `OFL-Onest.txt` для области `assets/fonts`.
+- **Когда открывать:** When результат сборки or maintenance cites `OFL-Onest.txt`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `assets/fonts/`, `docs/APP_STRUCTURE.md`.
+
+
+### `assets/fonts/Onest-Variable.ttf`
+
+EN:
+
+- **Human purpose:** Font file `Onest-Variable.ttf` in `assets/fonts` — repo tooling or config. Tracked because `assets/fonts` needs `Onest-Variable.ttf` for build, CI, or maintenance.
+- **What this is:** Font file `Onest-Variable.ttf` in `assets/fonts` — repo tooling or config.
+- **Why needed:** Tracked because `assets/fonts` needs `Onest-Variable.ttf` for build, CI, or maintenance.
+- **Contents:** Open `Onest-Variable.ttf` when working on `assets/fonts` (see folder section above).
+- **Repository role:** asset
+- **Evidence of use:** Referenced by: `pubspec.yaml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `assets/fonts` workflow for `Onest-Variable.ttf`.
+- **When to open:** When build output or maintenance cites `Onest-Variable.ttf`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `assets/fonts/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `Onest-Variable.ttf` — отслеживаемый ресурс области `assets/fonts` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `assets/fonts` для `Onest-Variable.ttf`.
+- **Что это:** `Onest-Variable.ttf` — отслеживаемый ресурс области `assets/fonts` с отдельной ролью.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `assets/fonts` для `Onest-Variable.ttf`.
+- **Содержимое:** Данные или код `Onest-Variable.ttf`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** asset
+- **Доказательства использования:** Упоминается в: `pubspec.yaml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `Onest-Variable.ttf` для области `assets/fonts`.
+- **Когда открывать:** When результат сборки or maintenance cites `Onest-Variable.ttf`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `assets/fonts/`, `docs/APP_STRUCTURE.md`.
 
 
 ### `assets/licenses/FLUENT_HEROICONS_LICENSES.txt`
@@ -32837,7 +32973,7 @@ EN:
 - **Why needed:** Maintains owner-readable structure guide in sync with repo after changes.
 - **Contents:** Python generator + curated folder/file descriptions.
 - **Repository role:** developer tool
-- **Evidence of use:** (1) Invoked or documented by: `.github/workflows/menu-structure-parity.yml`, `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
+- **Evidence of use:** (1) Invoked or documented by: `.github/workflows/menu-structure-parity.yml`, `.github/workflows/refresh-onest-structure.yml`, `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -32854,7 +32990,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `generate_app_structure_detailed.py`.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** (1) Вызывается или описан в: `.github/workflows/menu-structure-parity.yml`, `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
+- **Доказательства использования:** (1) Вызывается или описан в: `.github/workflows/menu-structure-parity.yml`, `.github/workflows/refresh-onest-structure.yml`, `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH

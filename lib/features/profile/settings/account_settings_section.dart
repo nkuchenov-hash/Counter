@@ -12,7 +12,12 @@ import 'package:flutter/material.dart';
 
 /// Account: current user, People, connected calendars, and logout.
 class AccountSecuritySection extends StatelessWidget {
-  const AccountSecuritySection({super.key});
+  const AccountSecuritySection({
+    super.key,
+    this.showPeopleEntry = true,
+  });
+
+  final bool showPeopleEntry;
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +82,7 @@ class AccountSecuritySection extends StatelessWidget {
                 ],
               ),
             ),
+            if (showPeopleEntry) ...[
             const Divider(height: 24),
             AppSettingsNavigationRow(
               title: peopleT(loc, 'title'),
@@ -90,6 +96,7 @@ class AccountSecuritySection extends StatelessWidget {
                 );
               },
             ),
+            ],
           ],
         );
       },
