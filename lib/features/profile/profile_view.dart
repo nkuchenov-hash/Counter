@@ -262,10 +262,24 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     }
 
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(title: Text(t(locale, 'settings'))),
-      body: _buildMobileSettings(context, locale, safeTimeZone),
+    return Theme(
+      data: settingsNeutralTheme(context),
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
+          title: Text(
+            t(locale, 'settings'),
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        body: _buildMobileSettings(context, locale, safeTimeZone),
+      ),
     );
   }
 
