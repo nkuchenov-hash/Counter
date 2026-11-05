@@ -1,4 +1,6 @@
 import 'package:counter/core/category_color_palette.dart';
+import 'package:counter/core/theme.dart';
+import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/tag_contrast.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter/material.dart';
@@ -122,4 +124,79 @@ void main() {
     expect(tagVibrantForeground(kTagYellowGold,
         surface: const Color(0xFFF8FAFC)), kTagYellowGold);
   });
+
+  testWidgets('grouped settings menu remains functional at phone width', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    var taps = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: appLightTheme,
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 320,
+              child: AppSettingsNavigationGroup(
+                children: [
+                  AppSettingsNavigationRow(
+                    title: 'Calendars',
+                    leading: const AppSettingsMenuIcon(
+                      icon: Icons.calendar_month_outlined,
+                    ),
+                    onTap: () => taps++,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Calendars'));
+    expect(taps, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('theme previews select both explicit and system modes', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    for (final theme in [appLightTheme, appDarkTheme]) {
+      String? selected;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 320,
+                child: AppSettingsThemeModePicker(
+                  value: 'light',
+                  lightLabel: 'Light',
+                  darkLabel: 'Dark',
+                  systemLabel: 'Use system setting',
+                  onChanged: (mode) => selected = mode,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Dark'));
+      expect(selected, 'dark');
+      await tester.tap(find.text('Use system setting'));
+      expect(selected, 'system');
+      expect(tester.takeException(), isNull);
+    }
+  });
+
 }
