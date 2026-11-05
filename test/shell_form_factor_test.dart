@@ -249,39 +249,87 @@ void main() {
         )),
       ));
 
-      Color? fill(String key) =>
-          (tester.widget<AnimatedContainer>(
-              find.byKey(ValueKey<String>(key))).decoration
-                  as BoxDecoration).color;
+      Color fill(String key) =>
+          tester.widget<ColoredBox>(
+              find.byKey(ValueKey<String>(key))).color;
       const hover = Color(0xFFE8E8E8);
       const divider = Color(0xFFF0F0F0);
       expect(hover.computeLuminance(),
           lessThan(const Color(0xFFF7F7F7).computeLuminance()));
-      expect(fill('settings-row-0'), Colors.transparent);
-      expect(fill('settings-row-1'), Colors.transparent);
+      expect(fill('settings-row-0'), Colors.white);
+      expect(fill('settings-row-1'), Colors.white);
       expect(fill('settings-divider-line-0'), divider);
 
       final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
       await mouse.addPointer(location: Offset.zero);
       await mouse.moveTo(tester.getCenter(find.text('Two')));
       await tester.pumpAndSettle();
-      expect(fill('settings-row-0'), Colors.transparent);
+      expect(fill('settings-row-0'), Colors.white);
       expect(fill('settings-row-1'), hover);
-      expect(fill('settings-row-2'), Colors.transparent);
+      expect(fill('settings-row-2'), Colors.white);
       expect(fill('settings-divider-line-0'), hover);
       expect(fill('settings-divider-line-1'), hover);
 
       await mouse.moveTo(tester.getCenter(find.text('Three')));
       await tester.pumpAndSettle();
-      expect(fill('settings-row-1'), Colors.transparent);
+      expect(fill('settings-row-1'), Colors.white);
       expect(fill('settings-row-2'), hover);
       expect(fill('settings-divider-line-0'), divider);
       expect(fill('settings-divider-line-1'), hover);
 
       await mouse.removePointer();
       await tester.pumpAndSettle();
-      expect(fill('settings-row-2'), Colors.transparent);
+      expect(fill('settings-row-2'), Colors.white);
       expect(fill('settings-divider-line-1'), divider);
+      expect(tester.takeException(), isNull);
+    });
+
+    test('Menu row hover uses static paint instead of layered animations', () {
+      final layout = File('lib/core/widgets/app_settings_layout.dart')
+          .readAsStringSync();
+      final groupSource = layout.split(
+          'class _AppSettingsNavigationGroupState').last.split(
+          '/// Compact neutral icon treatment').first;
+      expect(groupSource, isNot(contains('AnimatedContainer(')));
+      expect(groupSource, contains("ValueKey('settings-row-\$index')"));
+      expect(groupSource, contains("ValueKey('settings-divider-line-\$index')"));
+    });
+
+    test('only Timeline and Plans share Menu width on desktop', () {
+      final shell = File('lib/app/shell/shared/shell_chrome.dart')
+          .readAsStringSync();
+      expect(shell, contains('_readableWorkPage(timelineTabHost)'));
+      expect(shell, contains('_readableWorkPage(planningTabHost)'));
+      expect(shell, contains('maxWidth: settingsContentMaxWidth(context)'));
+      for (final page in <String>['calendarTabHost', 'listsTabHost']) {
+        expect(shell, isNot(contains('_readableWorkPage(\$page)')));
+      }
+    });
+
+    testWidgets('Menu scrollable uses full page width', (tester) async {
+      tester.view.physicalSize = const Size(1600, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(MaterialApp(
+        theme: appLightTheme,
+        home: Scaffold(body: AppSettingsPageBody(
+          children: [
+            for (var i = 0; i < 25; i++)
+              SizedBox(height: 64, child: Text('Row \$i')),
+          ],
+        )),
+      ));
+      final list = find.descendant(
+          of: find.byType(AppSettingsPageBody),
+          matching: find.byType(ListView));
+      expect(list, findsOneWidget);
+      final scrollRect = tester.getRect(list);
+      expect(scrollRect.left, closeTo(0, 1));
+      expect(scrollRect.right, closeTo(1600, 1));
+      final firstRow = tester.getRect(find.text('Row 0'));
+      expect(firstRow.left, greaterThan(200));
+      expect(firstRow.right, lessThan(1400));
       expect(tester.takeException(), isNull);
     });
 
