@@ -185,3 +185,21 @@ class _LifeOsNotesSettingsPageState extends State<LifeOsNotesSettingsPage> {
     );
   }
 }
+
+/// Opens the canonical settings page without duplicating Notes preferences.
+/// Callers keep their contextual category-bar editor as a separate shortcut.
+void openLifeOsNotesSettings(
+  BuildContext context, {
+  required VoidCallback onOpenCategoryBar,
+}) {
+  Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      builder: (settingsContext) => LifeOsNotesSettingsPage(
+        onOpenCategoryBar: () {
+          Navigator.of(settingsContext).pop();
+          onOpenCategoryBar();
+        },
+      ),
+    ),
+  );
+}

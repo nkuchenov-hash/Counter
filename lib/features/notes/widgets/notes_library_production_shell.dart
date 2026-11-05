@@ -185,7 +185,6 @@ class NotesLibraryProductionShell extends StatelessWidget {
   }
 }
 
-
 class _MobileNotesLibrary extends StatelessWidget {
   const _MobileNotesLibrary({
     required this.header,
@@ -451,9 +450,7 @@ class _MobileRoundActionVisual extends StatelessWidget {
 
 class _MobileNotesViewMenu extends StatelessWidget {
   const _MobileNotesViewMenu({required this.adapter});
-
   final _NotesHeaderAdapter adapter;
-
   void _show(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
@@ -506,22 +503,11 @@ class _MobileNotesViewMenu extends StatelessWidget {
               },
             ),
             AppMenuActionTile(
-              leading: AppSettingsMenuIcon(
-                icon: AppMenuIcons.icon(AppMenuIconRole.filter)),
-              title: Text(adapter.locale == 'ru'
-                  ? 'Все настройки заметок' : 'All Notes settings'),
+              leading: AppSettingsMenuIcon(icon: AppMenuIcons.icon(AppMenuIconRole.filter)),
+              title: Text(adapter.locale == 'ru' ? 'Все настройки заметок' : 'All Notes settings'),
               onTap: () {
                 Navigator.of(sheetContext).pop();
-                Navigator.of(context).push<void>(
-                  MaterialPageRoute<void>(
-                    builder: (settingsContext) => LifeOsNotesSettingsPage(
-                      onOpenCategoryBar: () {
-                        Navigator.of(settingsContext).pop();
-                        adapter.onOpenSettings();
-                      },
-                    ),
-                  ),
-                );
+                openLifeOsNotesSettings(context, onOpenCategoryBar: adapter.onOpenSettings);
               },
             ),
           ]),
@@ -529,7 +515,6 @@ class _MobileNotesViewMenu extends StatelessWidget {
       ),
     );
   }
-
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
@@ -546,18 +531,15 @@ class _MobileNotesViewMenu extends StatelessWidget {
     ),
   );
 }
-
 class _MobileNotesFoldersSheet extends StatelessWidget {
   const _MobileNotesFoldersSheet({
     required this.adapter,
     required this.locale,
     required this.onOpenSettings,
   });
-
   final _NotesCategoryAdapter adapter;
   final String locale;
   final VoidCallback onOpenSettings;
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -572,7 +554,6 @@ class _MobileNotesFoldersSheet extends StatelessWidget {
     final allCount = db
         .getBacklogPlansSnapshot(categoryId: null, includeCompleted: true)
         .length;
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 10, 0, 10),
       child: Material(
@@ -682,7 +663,6 @@ class _MobileNotesFoldersSheet extends StatelessWidget {
     );
   }
 }
-
 class _MobileCategoryFolderRow extends StatelessWidget {
   const _MobileCategoryFolderRow({
     required this.id,
