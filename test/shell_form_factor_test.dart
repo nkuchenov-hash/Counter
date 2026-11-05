@@ -114,8 +114,8 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         home: Builder(builder: (context) {
           final scheme = settingsNeutralTheme(context).colorScheme;
-          expect(scheme.surface, const Color(0xFFF2F2F2));
-          expect(scheme.surfaceContainerLowest, const Color(0xFFF2F2F2));
+          expect(scheme.surface, const Color(0xFFF6F6F6));
+          expect(scheme.surfaceContainerLowest, const Color(0xFFF6F6F6));
           expect(scheme.surfaceContainerHigh, AppColors.cardSurface);
           expect(scheme.surfaceContainer, const Color(0xFFF1F1F1));
           return const SizedBox.shrink();
@@ -144,7 +144,7 @@ void main() {
       expect(subtitle.style?.color, const Color(0xFF818181));
       expect((title.style?.fontSize ?? 0) > (subtitle.style?.fontSize ?? 0), isTrue);
       final tile = tester.widget<ListTile>(find.byType(ListTile));
-      expect(tile.hoverColor, const Color(0xFFF5F5F5));
+      expect(tile.hoverColor, const Color(0xFFEDEDED));
       expect(tile.splashColor, Colors.transparent);
       expect(tester.takeException(), isNull);
     });
@@ -170,19 +170,18 @@ void main() {
       expect(routes, contains('9 => 5,'));
     });
 
-    test('menu items own their full-width hover, not the parent card', () {
+    test('menu groups provide one hover target per item and no card stroke', () {
       final layout = File('lib/core/widgets/app_settings_layout.dart')
           .readAsStringSync();
-      expect(layout, contains('class AppSettingsNavigationGroup extends StatelessWidget'));
+      expect(layout, contains('class AppSettingsNavigationGroup extends StatefulWidget'));
       expect(layout, contains('clipBehavior: Clip.antiAlias'));
       expect(layout, contains('borderRadius: BorderRadius.circular(20)'));
-      expect(layout, contains('const Color(0xFFF5F5F5)'));
-      expect(layout, contains('class _AppSettingsRowPosition extends InheritedWidget'));
-      expect(layout, isNot(contains('onEnter: (_) => setState(() => _hovered = true)')));
+      expect(layout, contains("ValueKey('settings-row-\$index')"));
+      expect(layout, contains('onEnter: (_) => setState(() => _hoveredIndex = index)'));
       expect(layout, isNot(contains('Color(0xFFB6B6B6)')));
     });
 
-    testWidgets('card has equal visual outer spacing, no strokes, soft dividers',
+    testWidgets('settings rows have balanced outer margins and open middle rhythm',
         (tester) async {
       await tester.pumpWidget(MaterialApp(
         theme: appLightTheme,
@@ -207,35 +206,78 @@ void main() {
           of: group, matching: find.byType(Material)).first;
       expect(tester.widget<Material>(material).color, Colors.white);
       expect(tester.widget<Material>(material).shape, isNull);
-      final divider = tester.widget<Divider>(
-          find.descendant(of: group, matching: find.byType(Divider)).first);
-      expect(divider.color, const Color(0xFFE7E7E7));
-      expect(divider.thickness, 0.8);
 
       final cardRect = tester.getRect(material);
-      final iconRects = find.descendant(
+      final icons = find.descendant(
           of: group, matching: find.byType(AppSettingsMenuIcon));
-      final firstIcon = tester.getRect(iconRects.first);
-      final lastIcon = tester.getRect(iconRects.last);
-      final left = firstIcon.left - cardRect.left;
-      final top = firstIcon.top - cardRect.top;
-      final bottom = cardRect.bottom - lastIcon.bottom;
+      final first = tester.getRect(icons.first);
+      final last = tester.getRect(icons.last);
+      final left = first.left - cardRect.left;
+      final top = first.top - cardRect.top;
+      final bottom = cardRect.bottom - last.bottom;
       expect(left, closeTo(24, 2));
       expect(top, closeTo(left, 5));
       expect(bottom, closeTo(left, 5));
+      expect(last.top - first.bottom, greaterThanOrEqualTo(left));
 
-      final tiles = find.descendant(of: group, matching: find.byType(ListTile));
-      for (final tile in tester.widgetList<ListTile>(tiles)) {
-        expect(tile.hoverColor, const Color(0xFFF5F5F5));
+      for (final tile in tester.widgetList<ListTile>(
+          find.descendant(of: group, matching: find.byType(ListTile)))) {
+        expect(tile.hoverColor, Colors.transparent);
         expect(tile.shape, const RoundedRectangleBorder());
       }
-      final pointer = await tester.createGesture(kind: PointerDeviceKind.mouse);
-      await pointer.addPointer(location: Offset.zero);
-      await pointer.moveTo(tester.getCenter(find.text('Second item')));
-      await tester.pump();
-      // Hovering one item never paints the entire white card.
-      expect(tester.widget<Material>(material).color, Colors.white);
-      await pointer.removePointer();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('hover targets exactly one row and naturally fades its dividers',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        theme: appLightTheme,
+        home: Builder(builder: (context) => Theme(
+          data: settingsNeutralTheme(context),
+          child: Scaffold(body: AppSettingsNavigationGroup(children: [
+            AppSettingsNavigationRow(
+              title: 'One', leading: const Icon(Icons.alarm), onTap: () {}),
+            AppSettingsNavigationRow(
+              title: 'Two', leading: const Icon(Icons.person), onTap: () {}),
+            AppSettingsNavigationRow(
+              title: 'Three', leading: const Icon(Icons.check), onTap: () {}),
+          ])),
+        )),
+      ));
+
+      Color? fill(String key) =>
+          (tester.widget<AnimatedContainer>(
+              find.byKey(ValueKey<String>(key))).decoration
+                  as BoxDecoration).color;
+      const hover = Color(0xFFEDEDED);
+      const divider = Color(0xFFE9E9E9);
+      expect(hover.computeLuminance(),
+          lessThan(const Color(0xFFF6F6F6).computeLuminance()));
+      expect(fill('settings-row-0'), Colors.transparent);
+      expect(fill('settings-row-1'), Colors.transparent);
+      expect(fill('settings-divider-line-0'), divider);
+
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      await mouse.moveTo(tester.getCenter(find.text('Two')));
+      await tester.pumpAndSettle();
+      expect(fill('settings-row-0'), Colors.transparent);
+      expect(fill('settings-row-1'), hover);
+      expect(fill('settings-row-2'), Colors.transparent);
+      expect(fill('settings-divider-line-0'), hover);
+      expect(fill('settings-divider-line-1'), hover);
+
+      await mouse.moveTo(tester.getCenter(find.text('Three')));
+      await tester.pumpAndSettle();
+      expect(fill('settings-row-1'), Colors.transparent);
+      expect(fill('settings-row-2'), hover);
+      expect(fill('settings-divider-line-0'), divider);
+      expect(fill('settings-divider-line-1'), hover);
+
+      await mouse.removePointer();
+      await tester.pumpAndSettle();
+      expect(fill('settings-row-2'), Colors.transparent);
+      expect(fill('settings-divider-line-1'), divider);
       expect(tester.takeException(), isNull);
     });
 

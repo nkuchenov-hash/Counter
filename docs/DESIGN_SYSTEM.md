@@ -1,11 +1,11 @@
-## Menu and settings visual contract (corrected 2026-11-05)
+## Menu and settings visual contract (refined 2026-11-05)
 
-- Menu/Settings/People light canvas: neutral `#F2F2F2` with pure white `#FFFFFF` menu cards and no card strokes. Desktop sidebar is subtly distinct neutral `#ECECEC`; **LIFE OS branding appears exactly once in the desktop top header**, not again in the sidebar.
-- One menu item (one full-width row) owns hover. Each `AppSettingsNavigationRow` highlights only itself with neutral `#F5F5F5`; the entire group does not change. Group clipping rounds the first/last row hover into the white card corners. Never use an inset rounded rectangle or a group-wide hover.
-- The first and last menu items provide **18 px extra edge-aware vertical content padding** plus ListTile's normal vertical spacing so top/bottom icon-to-card gaps visually match the 24 px left/right gaps, including hover hit areas. Do not create short top/bottom gaps beside wide left insets.
-- Dividers between items are visible but delicate: neutral `#E7E7E7`, 0.8 px, inset only after the icon. No group/card outer borders; no gray stroke on hover.
-- Keep the user's approved **Onest** typeface unchanged. Menu row titles use regular 400 and soft `#474747` ink, secondary captions `#818181`, headings restrained. Do not substitute another font or add unnecessary bold weights.
-- Profile remains a unified shell destination, with all app data, routes and persistence behaviors unchanged.
+- **Keep bundled Onest.** Menu row title is regular 400 and neutral gray; never substitute another font.
+- Global light chrome is neutral, not blue: app canvas `#F7F7F7`, subtle surface `#F3F3F3`, gentle border tokens `#E5E5E5`/`#EEEEEE`. Only semantic category/tag elements retain their colors. Settings canvas is `#F6F6F6`; grouped menu cards are white, borderless, with a clear light-dark contrast.
+- Each menu item has independent **full-card-width hover** fill `#EDEDED`, which is darker than the `#F6F6F6` canvas; no inset rounded highlight or whole-group hover. The first/last item are clipped to the group's rounded corners.
+- Separate vertical item spacing is increased: content top/bottom 10 px for interior rows, 16 px at the first/last exterior edge, plus ListTile min vertical padding 8 px. Side content inset stays 24 px, making icon-to-outer edge spacing visually equal while allowing a more generous gap between adjacent items.
+- Dividers normally use subtle neutral `#E9E9E9`, 1 px inset to the text column; when either adjacent item is hovered, that divider animates to the same `#EDEDED` hover fill. It should disappear into the hover surface instead of appearing as a line inside or next to the highlight.
+- Sidebar is neutral light gray `#ECECEC`, header remains white; LIFE OS branding appears once in the persistent top header. No extra card borders, no extra sidebar branding, no new routing or data behavior.
 
 ## Canonical Menu / settings composition (2026-11-05)
 
