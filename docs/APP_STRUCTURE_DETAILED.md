@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `cd02c0a0` on 2026-11-05.**
+**Generated from input HEAD `8017365b` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -11883,8 +11883,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Foundation module `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only historical color compatibility. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only historical color compatibility.
+- **Human purpose:** Foundation module `life_color_compat.dart` (core) — Canonical 11-family semantic palette and display-only historical color compatibility. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What this is:** Foundation module `life_color_compat.dart` (core) — Canonical 11-family semantic palette and display-only historical color compatibility.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `life_color_compat.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
@@ -11893,15 +11893,15 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared foundation
-- **Responsibilities:** Canonical 10-family semantic palette and display-only historical color compatibility
+- **Responsibilities:** Canonical 11-family semantic palette and display-only historical color compatibility
 - **When to open:** When behavior tied to `life_color_compat.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Canonical 10-family semantic palette and display-only historical color compatibility
+- **Connected to:** APP_STRUCTURE role: Canonical 11-family semantic palette and display-only historical color compatibility
 
 RU:
 
-- **Зачем файл человеку:** Foundation-модуль `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only historical color compatibility. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `life_color_compat.dart` (core) — Canonical 10-family semantic palette and display-only historical color compatibility.
+- **Зачем файл человеку:** Foundation-модуль `life_color_compat.dart` (core) — Canonical 11-family semantic palette and display-only historical color compatibility. Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Что это:** Foundation-модуль `life_color_compat.dart` (core) — Canonical 11-family semantic palette and display-only historical color compatibility.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `life_color_compat.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
@@ -11910,7 +11910,7 @@ RU:
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Canonical 10-family semantic palette and display-only historical color compatibility.
+- **Обязанности:** Foundation-логика: Canonical 11-family semantic palette and display-only historical color compatibility.
 - **Когда открывать:** Когда ломается поведение, связанное с `life_color_compat.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -12563,7 +12563,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`).
 - **Key code names:** `AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`, `AppSettingsSwitchRow`, `AppSettingsInfoRow`, `AppSettingsActionRow`, `AppSettingsCardGrid`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/profile_view.dart`, `lib/features/settings/people/people_settings_page_impl.dart`, `lib/features/settings/people/people_sources_section.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/settings/voice/desktop_voice_settings_section.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/profile_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12580,7 +12580,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_settings_layout`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/profile_view.dart`, `lib/features/settings/people/people_settings_page_impl.dart`, `lib/features/settings/people/people_sources_section.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`, `lib/features/settings/voice/desktop_voice_settings_section.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/profile_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21964,7 +21964,7 @@ EN:
 - **Contents:** Primary symbols: `CalendarIntegrationsSection`, `_CalendarIntegrationsSectionState`, `_ProviderCard`.
 - **Key code names:** `CalendarIntegrationsSection`, `_CalendarIntegrationsSectionState`, `_ProviderCard`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/settings/account_settings_section.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/profile_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21981,7 +21981,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `calendar_integrations_section.dart` на More → Profile и настройки.
 - **Содержимое:** Dart-модуль `calendar_integrations_section.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/settings/account_settings_section.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/profile_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22037,8 +22037,8 @@ EN:
 - **Human purpose:** `profile_view.dart` on More → Profile and settings — Profile & tag settings. Users see `profile_view.dart` when using More → Profile and settings.
 - **What this is:** `profile_view.dart` on More → Profile and settings — Profile & tag settings.
 - **Why needed:** Users see `profile_view.dart` when using More → Profile and settings.
-- **Contents:** Primary symbols: `ProfilePage`, `_ProfilePageState`.
-- **Key code names:** `ProfilePage`, `_ProfilePageState`
+- **Contents:** Primary symbols: `ProfilePage`, `_MobileSettingsSection`, `_ProfilePageState`.
+- **Key code names:** `ProfilePage`, `_MobileSettingsSection`, `_ProfilePageState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
