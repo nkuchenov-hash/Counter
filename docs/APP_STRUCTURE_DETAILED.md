@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `8017365b` on 2026-11-05.**
+**Generated from input HEAD `0512c6a3` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 963 — each appears **exactly once** below.
+**Tracked files:** 970 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,11 +26,11 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 186 |
+| `production UI` | 191 |
 | `test` | 137 |
 | `Brain/data` | 114 |
 | `platform build` | 83 |
-| `shared foundation` | 66 |
+| `shared foundation` | 67 |
 | `developer tool` | 63 |
 | `platform resource` | 44 |
 | `governing documentation` | 43 |
@@ -41,8 +41,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | `shared Voice system` | 20 |
 | `historical engineering record` | 17 |
 | `localization` | 13 |
+| `CI/deployment` | 12 |
 | `installer` | 12 |
-| `CI/deployment` | 11 |
 | `Brain Voice` | 10 |
 | `shared time` | 7 |
 | `package metadata` | 6 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 519 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 256 |
+| `PROVEN_REQUIRED` | 527 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 255 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
 | `HISTORICAL_RECORD` | 17 |
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 880 |
-| `MEDIUM` | 83 |
+| `HIGH` | 888 |
+| `MEDIUM` | 82 |
 
 ---
 
@@ -158,6 +158,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/features/planning/time_view/`](#folder-libfeaturesplanningtime_view)
 - [`lib/features/planning/widgets/`](#folder-libfeaturesplanningwidgets)
 - [`lib/features/profile/calendar_integrations/`](#folder-libfeaturesprofilecalendar_integrations)
+- [`lib/features/profile/menu/`](#folder-libfeaturesprofilemenu)
 - [`lib/features/profile/settings/`](#folder-libfeaturesprofilesettings)
 - [`lib/features/settings/categories/`](#folder-libfeaturessettingscategories)
 - [`lib/features/settings/health/`](#folder-libfeaturessettingshealth)
@@ -3600,6 +3601,30 @@ RU:
 
 ---
 
+## Folder: `lib/features/profile/menu/`
+
+EN:
+
+- **What this folder is:** Dart source subtree `lib/features/profile/menu/` — part of app code for features/profile/menu.
+- **Why it exists:** Code under `lib/` ships in every platform build; this folder groups related Dart modules.
+- **What lives here:** Dart modules listed in file entries below.
+- **What part of the app it affects:** App behavior for the feature or layer named in the path.
+- **When to open it:** Bug or feature work in `features/profile/menu`.
+- **Can it be deleted?** No — required for app runtime unless explicitly deprecated in ROADMAP.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
+
+RU:
+
+- **Что это за папка:** Каталог исходного Dart-кода `lib/features/profile/menu/`, отвечающий за область `features/profile/menu`.
+- **Зачем нужна:** Собирает рядом файлы одного владельца, чтобы UI, данные и общая инфраструктура не смешивали обязанности.
+- **Что здесь лежит:** Dart-файлы и дочерние каталоги этого владельца; каждый файл описан ниже.
+- **На что влияет в приложении:** Поведение приложения в области `features/profile/menu` и связанные с ней потоки данных или интерфейс.
+- **Когда открывать:** Открывать при изменениях или ошибках в области `features/profile/menu`.
+- **Можно удалить?** Нет — нужен для работы приложения unless explicitly deprecated in ROADMAP.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
+
+---
+
 ## Folder: `lib/features/profile/settings/`
 
 EN:
@@ -4856,6 +4881,43 @@ RU:
 - **Владелец / слой:** CI
 - **Обязанности:** Управляет CI-сценарием `install-xiaomi-sleep-runtime.yml` и его границами выполнения.
 - **Когда открывать:** Когда ломается поведение, связанное с `install-xiaomi-sleep-runtime.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
+### `.github/workflows/menu-structure-parity.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/menu-structure-parity.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/menu-structure-parity.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/menu-structure-parity.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/menu-structure-parity.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `menu-structure-parity.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `menu-structure-parity.yml`.
+- **When to open:** When behavior tied to `menu-structure-parity.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `menu-structure-parity.yml` для CI и операций репозитория. GitHub Actions читает `menu-structure-parity.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `menu-structure-parity.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `menu-structure-parity.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `menu-structure-parity.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `menu-structure-parity.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `menu-structure-parity.yml`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `.github/`, Flutter tooling.
 
@@ -6460,7 +6522,7 @@ EN:
 - **Why needed:** Quick answer to ‘where does X live?’ without reading the full encyclopedia.
 - **Contents:** Tables of `lib/data`, features, scripts; architecture guard entry points.
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `.cursor/rules/flutter_expert.mdc`, `.github/copilot-instructions.md`, `.github/workflows/viktor-structure-regen.yml`, `AGENTS.md`.
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `.cursor/rules/flutter_expert.mdc`, `.github/copilot-instructions.md`, `.github/workflows/menu-structure-parity.yml`, `.github/workflows/viktor-structure-regen.yml`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -11588,7 +11650,7 @@ EN:
 - **Contents:** `AppColors` constants; `lightColorScheme()` / `darkColorScheme()` factories.
 - **Key code names:** `AppColors`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/life_card.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/core/widgets/life_card.dart`, `lib/features/timeline/timeline_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -11605,7 +11667,7 @@ RU:
 - **Зачем:** Смена `actionPrimary` перекрашивает кнопки, tabs и nav chrome во всём приложении.
 - **Содержимое:** Константы `AppColors`; фабрики `lightColorScheme()` / `darkColorScheme()`.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/life_card.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/app_snackbar.dart`, `lib/core/theme.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/core/widgets/life_card.dart`, `lib/features/timeline/timeline_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12553,6 +12615,44 @@ RU:
 - **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
 
 
+### `lib/core/widgets/app_menu_icons.dart`
+
+EN:
+
+- **Human purpose:** Shared design-system widget — app menu icons. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — app menu icons.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **Contents:** Canonical Flutter widget (`AppMenuIconRole`, `AppMenuIcons`).
+- **Key code names:** `AppMenuIconRole`, `AppMenuIcons`
+- **Repository role:** shared foundation
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/profile/menu/life_os_sync_status_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared design system
+- **Responsibilities:** app menu icons
+- **When to open:** When behavior tied to `app_menu_icons.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: app menu icons
+
+RU:
+
+- **Зачем файл человеку:** Общий виджет design system — app menu icons. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — app menu icons.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Содержимое:** Канонический Flutter-виджет (logic in `app_menu_icons`).
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/profile/menu/life_os_sync_status_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общий design system
+- **Обязанности:** Реализует в UI: app menu icons.
+- **Когда открывать:** Когда ломается поведение, связанное с `app_menu_icons.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/core/widgets/app_settings_layout.dart`
 
 EN:
@@ -12563,7 +12663,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`).
 - **Key code names:** `AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`, `AppSettingsSwitchRow`, `AppSettingsInfoRow`, `AppSettingsActionRow`, `AppSettingsCardGrid`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/profile_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_menu_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12580,7 +12680,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_settings_layout`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/profile_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_menu_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -14381,7 +14481,7 @@ EN:
 - **Contents:** Dart helpers and types (`OAuthSignInResult`, `PasswordResetRequestResult`, `AuthBridgeException`, `AuthBridgeCancelled`, `AuthBridge`).
 - **Key code names:** `OAuthSignInResult`, `PasswordResetRequestResult`, `AuthBridgeException`, `AuthBridgeCancelled`, `AuthBridge`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/health/health_sleep_sync_service.dart`, `lib/features/auth/auth_view.dart`, `lib/features/profile/settings/account_settings_section.dart`, `lib/main.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/health/health_sleep_sync_service.dart`, `lib/features/auth/auth_view.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/settings/account_settings_section.dart`, `lib/main.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14398,7 +14498,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `auth_bridge`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/health/health_sleep_sync_service.dart`, `lib/features/auth/auth_view.dart`, `lib/features/profile/settings/account_settings_section.dart`, `lib/main.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/health/health_sleep_sync_service.dart`, `lib/features/auth/auth_view.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/settings/account_settings_section.dart`, `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -19300,6 +19400,44 @@ RU:
 - **Связано с:** Вкладка Lists (shell index 3)
 
 
+### `lib/features/lists/notes_library_preferences.dart`
+
+EN:
+
+- **Human purpose:** `notes_library_preferences.dart` on Lists tab (fourth bottom tab) — notes library preferences. Users see `notes_library_preferences.dart` when using Lists tab (fourth bottom tab).
+- **What this is:** `notes_library_preferences.dart` on Lists tab (fourth bottom tab) — notes library preferences.
+- **Why needed:** Users see `notes_library_preferences.dart` when using Lists tab (fourth bottom tab).
+- **Contents:** Primary symbols: `NotesLibraryPreferences`.
+- **Key code names:** `NotesLibraryPreferences`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Lists UI
+- **Responsibilities:** Implements `NotesLibraryPreferences` and related API in `notes_library_preferences.dart`.
+- **When to open:** Lists tab: filters, done checkbox, bulk actions, export.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** Lists tab (shell index 3); APP_STRUCTURE role: notes library preferences
+
+RU:
+
+- **Зачем файл человеку:** `notes_library_preferences.dart` на вкладка Lists (четвёртая снизу) — Поддерживает поведение `notes_library_preferences` в этой feature-зоне.. Пользователь видит UI из `notes_library_preferences.dart` на вкладка Lists (четвёртая снизу).
+- **Что это:** `notes_library_preferences.dart` на вкладка Lists (четвёртая снизу) — Поддерживает поведение `notes_library_preferences` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `notes_library_preferences.dart` на вкладка Lists (четвёртая снизу).
+- **Содержимое:** Dart-модуль `notes_library_preferences.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/lists_view.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI списков
+- **Обязанности:** Поддерживает поведение `notes_library_preferences` в этой feature-зоне.
+- **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Вкладка Lists (shell index 3)
+
+
 ### `lib/features/notes/drawing_canvas_page.dart`
 
 EN:
@@ -20788,7 +20926,7 @@ EN:
 - **Contents:** Primary symbols: `PlanRecordLinkSuggestionSettingsBlock`, `PlanRecordLinkSuggestionSettingsBlockState`.
 - **Key code names:** `PlanRecordLinkSuggestionSettingsBlock`, `PlanRecordLinkSuggestionSettingsBlockState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20805,7 +20943,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `plan_record_link_settings.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `plan_record_link_settings.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20864,7 +21002,7 @@ EN:
 - **Contents:** Primary symbols: `PlanningTimelineBoundsSheet`, `PlanningTimelineBoundsSheetState`.
 - **Key code names:** `PlanningTimelineBoundsSheet`, `PlanningTimelineBoundsSheetState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20881,7 +21019,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `planning_timeline_bounds_sheet.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Основные символы: `PlanningTimelineBoundsSheet`, `PlanningTimelineBoundsSheetState`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21206,7 +21344,7 @@ EN:
 - **Contents:** Primary symbols: `TimeViewFixedTagsSettingsBlock`, `TimeViewFixedTagsSettingsBlockState`.
 - **Key code names:** `TimeViewFixedTagsSettingsBlock`, `TimeViewFixedTagsSettingsBlockState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21223,7 +21361,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `time_view_fixed_time_settings.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `time_view_fixed_time_settings.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21396,7 +21534,7 @@ EN:
 - **Contents:** Primary symbols: `PlanningTimeViewTimeViewSettingsSheet`.
 - **Key code names:** `PlanningTimeViewTimeViewSettingsSheet`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21413,7 +21551,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `time_view_settings_sheet.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Основные символы: `PlanningTimeViewTimeViewSettingsSheet`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21992,6 +22130,158 @@ RU:
 - **Связано с:** `lib/features/profile/calendar_integrations/`, `docs/APP_STRUCTURE.md`
 
 
+### `lib/features/profile/menu/life_os_menu_page.dart`
+
+EN:
+
+- **Human purpose:** `life_os_menu_page.dart` on More → Profile and settings — life os menu page. Users see `life_os_menu_page.dart` when using More → Profile and settings.
+- **What this is:** `life_os_menu_page.dart` on More → Profile and settings — life os menu page.
+- **Why needed:** Users see `life_os_menu_page.dart` when using More → Profile and settings.
+- **Contents:** Primary symbols: `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`, `_LifeOsMenuPageState`.
+- **Key code names:** `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`, `_LifeOsMenuPageState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Profile UI
+- **Responsibilities:** Implements `LifeOsMenuAction` and related API in `life_os_menu_page.dart`.
+- **When to open:** When behavior tied to `life_os_menu_page.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: life os menu page
+
+RU:
+
+- **Зачем файл человеку:** `life_os_menu_page.dart` на More → Profile и настройки — Отвечает за видимый UI, собранный в `life_os_menu_page.dart`.. Пользователь видит UI из `life_os_menu_page.dart` на More → Profile и настройки.
+- **Что это:** `life_os_menu_page.dart` на More → Profile и настройки — Отвечает за видимый UI, собранный в `life_os_menu_page.dart`..
+- **Зачем:** Пользователь видит UI из `life_os_menu_page.dart` на More → Profile и настройки.
+- **Содержимое:** Компоновка экрана и state в `life_os_menu_page.dart`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI профиля
+- **Обязанности:** Отвечает за видимый UI, собранный в `life_os_menu_page.dart`.
+- **Когда открывать:** Когда ломается поведение, связанное с `life_os_menu_page.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/profile/menu/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/profile/menu/life_os_notes_settings_page.dart`
+
+EN:
+
+- **Human purpose:** `life_os_notes_settings_page.dart` on More → Profile and settings — life os notes settings page. Users see `life_os_notes_settings_page.dart` when using More → Profile and settings.
+- **What this is:** `life_os_notes_settings_page.dart` on More → Profile and settings — life os notes settings page.
+- **Why needed:** Users see `life_os_notes_settings_page.dart` when using More → Profile and settings.
+- **Contents:** Primary symbols: `LifeOsNotesSettingsPage`, `_LifeOsNotesSettingsPageState`.
+- **Key code names:** `LifeOsNotesSettingsPage`, `_LifeOsNotesSettingsPageState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Profile UI
+- **Responsibilities:** Implements `LifeOsNotesSettingsPage` and related API in `life_os_notes_settings_page.dart`.
+- **When to open:** When behavior tied to `life_os_notes_settings_page.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: life os notes settings page
+
+RU:
+
+- **Зачем файл человеку:** `life_os_notes_settings_page.dart` на More → Profile и настройки — Отвечает за видимый UI, собранный в `life_os_notes_settings_page.dart`.. Пользователь видит UI из `life_os_notes_settings_page.dart` на More → Profile и настройки.
+- **Что это:** `life_os_notes_settings_page.dart` на More → Profile и настройки — Отвечает за видимый UI, собранный в `life_os_notes_settings_page.dart`..
+- **Зачем:** Пользователь видит UI из `life_os_notes_settings_page.dart` на More → Profile и настройки.
+- **Содержимое:** Компоновка экрана и state в `life_os_notes_settings_page.dart`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI профиля
+- **Обязанности:** Отвечает за видимый UI, собранный в `life_os_notes_settings_page.dart`.
+- **Когда открывать:** Когда ломается поведение, связанное с `life_os_notes_settings_page.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/profile/menu/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/profile/menu/life_os_planning_settings_page.dart`
+
+EN:
+
+- **Human purpose:** `life_os_planning_settings_page.dart` on More → Profile and settings — life os planning settings page. Users see `life_os_planning_settings_page.dart` when using More → Profile and settings.
+- **What this is:** `life_os_planning_settings_page.dart` on More → Profile and settings — life os planning settings page.
+- **Why needed:** Users see `life_os_planning_settings_page.dart` when using More → Profile and settings.
+- **Contents:** Primary symbols: `LifeOsPlanningSettingsPage`, `_LifeOsPlanningSettingsPageState`.
+- **Key code names:** `LifeOsPlanningSettingsPage`, `_LifeOsPlanningSettingsPageState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Profile UI
+- **Responsibilities:** Implements `LifeOsPlanningSettingsPage` and related API in `life_os_planning_settings_page.dart`.
+- **When to open:** When behavior tied to `life_os_planning_settings_page.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: life os planning settings page
+
+RU:
+
+- **Зачем файл человеку:** `life_os_planning_settings_page.dart` на More → Profile и настройки — Отвечает за видимый UI, собранный в `life_os_planning_settings_page.dart`.. Пользователь видит UI из `life_os_planning_settings_page.dart` на More → Profile и настройки.
+- **Что это:** `life_os_planning_settings_page.dart` на More → Profile и настройки — Отвечает за видимый UI, собранный в `life_os_planning_settings_page.dart`..
+- **Зачем:** Пользователь видит UI из `life_os_planning_settings_page.dart` на More → Profile и настройки.
+- **Содержимое:** Компоновка экрана и state в `life_os_planning_settings_page.dart`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI профиля
+- **Обязанности:** Отвечает за видимый UI, собранный в `life_os_planning_settings_page.dart`.
+- **Когда открывать:** Когда ломается поведение, связанное с `life_os_planning_settings_page.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/profile/menu/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/profile/menu/life_os_sync_status_page.dart`
+
+EN:
+
+- **Human purpose:** `life_os_sync_status_page.dart` on More → Profile and settings — life os sync status page. Users see `life_os_sync_status_page.dart` when using More → Profile and settings.
+- **What this is:** `life_os_sync_status_page.dart` on More → Profile and settings — life os sync status page.
+- **Why needed:** Users see `life_os_sync_status_page.dart` when using More → Profile and settings.
+- **Contents:** Primary symbols: `LifeOsSyncStatusPage`.
+- **Key code names:** `LifeOsSyncStatusPage`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Profile UI
+- **Responsibilities:** Implements `LifeOsSyncStatusPage` and related API in `life_os_sync_status_page.dart`.
+- **When to open:** When behavior tied to `life_os_sync_status_page.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: life os sync status page
+
+RU:
+
+- **Зачем файл человеку:** `life_os_sync_status_page.dart` на More → Profile и настройки — Отвечает за видимый UI, собранный в `life_os_sync_status_page.dart`.. Пользователь видит UI из `life_os_sync_status_page.dart` на More → Profile и настройки.
+- **Что это:** `life_os_sync_status_page.dart` на More → Profile и настройки — Отвечает за видимый UI, собранный в `life_os_sync_status_page.dart`..
+- **Зачем:** Пользователь видит UI из `life_os_sync_status_page.dart` на More → Profile и настройки.
+- **Содержимое:** Компоновка экрана и state в `life_os_sync_status_page.dart`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI профиля
+- **Обязанности:** Отвечает за видимый UI, собранный в `life_os_sync_status_page.dart`.
+- **Когда открывать:** Когда ломается поведение, связанное с `life_os_sync_status_page.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/profile/menu/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/features/profile/profile_hydration_status_bar.dart`
 
 EN:
@@ -22037,8 +22327,8 @@ EN:
 - **Human purpose:** `profile_view.dart` on More → Profile and settings — Profile & tag settings. Users see `profile_view.dart` when using More → Profile and settings.
 - **What this is:** `profile_view.dart` on More → Profile and settings — Profile & tag settings.
 - **Why needed:** Users see `profile_view.dart` when using More → Profile and settings.
-- **Contents:** Primary symbols: `ProfilePage`, `_MobileSettingsSection`, `_ProfilePageState`.
-- **Key code names:** `ProfilePage`, `_MobileSettingsSection`, `_ProfilePageState`
+- **Contents:** Primary symbols: `ProfilePage`, `ProfileSettingsDestination`, `_ProfilePageState`.
+- **Key code names:** `ProfilePage`, `ProfileSettingsDestination`, `_ProfilePageState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -22268,7 +22558,7 @@ EN:
 - **Contents:** Primary symbols: `TagSettingsHub`, `_TagSettingsHubState`.
 - **Key code names:** `TagSettingsHub`, `_TagSettingsHubState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_quick_add_tags_controller.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/planning_quick_add_tags_controller.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22285,7 +22575,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `tag_settings_hub.dart` на More → Profile и настройки.
 - **Содержимое:** Dart-модуль `tag_settings_hub.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_quick_add_tags_controller.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/planning_quick_add_tags_controller.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22647,7 +22937,7 @@ EN:
 - **Contents:** Primary symbols: `SleepSyncSettingsSection`, `_SleepSyncSettingsSectionState`.
 - **Key code names:** `SleepSyncSettingsSection`, `_SleepSyncSettingsSectionState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/settings/notification_settings_section.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/profile_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22664,7 +22954,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `health_connect_settings_section.dart` на settings.
 - **Содержимое:** Dart-модуль `health_connect_settings_section.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/settings/notification_settings_section.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/profile_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22798,7 +23088,7 @@ EN:
 - **Why needed:** Users see `people_settings_page.dart` when using settings area.
 - **Contents:** Barrel `export` lines: `people_settings_page_impl.dart`.
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/settings/account_settings_section.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/profile/settings/account_settings_section.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22815,7 +23105,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `people_settings_page.dart` на settings.
 - **Содержимое:** Компоновка экрана и state в `people_settings_page.dart`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/settings/account_settings_section.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/profile/settings/account_settings_section.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22833,8 +23123,8 @@ EN:
 - **Human purpose:** `people_settings_page_impl.dart` on settings area — People / Circles / Sources page composition and Person/Circle list state. Users see `people_settings_page_impl.dart` when using settings area.
 - **What this is:** `people_settings_page_impl.dart` on settings area — People / Circles / Sources page composition and Person/Circle list state.
 - **Why needed:** Users see `people_settings_page_impl.dart` when using settings area.
-- **Contents:** Primary symbols: `_PeopleSection`, `PeopleSettingsPage`, `_PeopleSettingsPageState`.
-- **Key code names:** `_PeopleSection`, `PeopleSettingsPage`, `_PeopleSettingsPageState`
+- **Contents:** Primary symbols: `PeopleSettingsDestination`, `PeopleSettingsPage`, `_PeopleSettingsPageState`.
+- **Key code names:** `PeopleSettingsDestination`, `PeopleSettingsPage`, `_PeopleSettingsPageState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/people/people_settings_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -23063,14 +23353,14 @@ EN:
 - **Contents:** Primary symbols: `DesktopVoiceSettingsSection`, `_DesktopVoiceSettingsSectionState`, `HotkeyCaptureDialog`, `_HotkeyCaptureDialogState`.
 - **Key code names:** `DesktopVoiceSettingsSection`, `_DesktopVoiceSettingsSectionState`, `HotkeyCaptureDialog`, `_HotkeyCaptureDialogState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/voice/desktop_voice_settings_desktop.dart`.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Removing it breaks a required repository capability.
-- **Confidence:** MEDIUM
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/profile_view.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
 - **Owner / layer:** Voice settings UI
 - **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings
 - **When to open:** When behavior tied to `desktop_voice_settings_section.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
 - **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sle
 
 RU:
@@ -23080,10 +23370,10 @@ RU:
 - **Зачем:** Пользователь видит UI из `desktop_voice_settings_section.dart` на settings.
 - **Содержимое:** Dart-модуль `desktop_voice_settings_section.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/voice/desktop_voice_settings_desktop.dart`.
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
-- **Уверенность:** MEDIUM
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/profile_view.dart`, `lib/features/settings/voice/desktop_voice_settings_desktop.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
 - **Владелец / слой:** UI настроек Voice
 - **Обязанности:** Поддерживает поведение `desktop_voice_settings_section` в этой feature-зоне.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_settings_section.dart`.
@@ -31752,7 +32042,7 @@ EN:
 - **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
 - **Contents:** PowerShell, Python, or Dart commands for `documentation_parity.py`.
 - **Repository role:** audit tool
-- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/menu-structure-parity.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -31769,7 +32059,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `documentation_parity.py`.
 - **Роль в репозитории:** audit tool
-- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`, `CHANGELOG.md`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/menu-structure-parity.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
@@ -32234,7 +32524,7 @@ EN:
 - **Why needed:** Maintains owner-readable structure guide in sync with repo after changes.
 - **Contents:** Python generator + curated folder/file descriptions.
 - **Repository role:** developer tool
-- **Evidence of use:** (1) Invoked or documented by: `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
+- **Evidence of use:** (1) Invoked or documented by: `.github/workflows/menu-structure-parity.yml`, `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -32251,7 +32541,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `generate_app_structure_detailed.py`.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** (1) Вызывается или описан в: `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`, `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
+- **Доказательства использования:** (1) Вызывается или описан в: `.github/workflows/menu-structure-parity.yml`, `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, `docs/reports/ARCHITECTURE_GUARD_BASELINE_2026-07-17.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
