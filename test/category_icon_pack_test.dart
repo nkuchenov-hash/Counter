@@ -70,21 +70,24 @@ void main() {
     expect(picker, isNot(contains('kCompleteHeroCategoryIcons')));
   });
 
-  test('Appearance collection persists and pack switching preserves it', () async {
+  testWidgets('Appearance collection persistence keeps stable semantic IDs',
+      (tester) async {
     SharedPreferences.setMockInitialValues({});
-    final store = CategoryIconStore.instance;
-    await store.ensureLoaded();
-    await store.setQuickKeys(kDefaultCategoryIconKeys);
-    expect(store.quickKeys.contains('academic_cap'), isFalse);
-    await store.setQuickKeys([...kDefaultCategoryIconKeys, 'academic_cap']);
-    expect(store.quickKeys, contains('academic_cap'));
-    final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getString('takto.category.icon_quick_collection.v1'),
-        contains('academic_cap'));
-    await store.setPack(CategoryIconPack.heroicons);
-    expect(store.quickKeys, contains('academic_cap'));
-    await store.setPack(CategoryIconPack.fluent);
-    await store.setQuickKeys(kDefaultCategoryIconKeys);
+    await tester.runAsync(() async {
+      final store = CategoryIconStore.instance;
+      await store.ensureLoaded();
+      await store.setQuickKeys(kDefaultCategoryIconKeys);
+      expect(store.quickKeys.contains('academic_cap'), isFalse);
+      await store.setQuickKeys([...kDefaultCategoryIconKeys, 'academic_cap']);
+      expect(store.quickKeys, contains('academic_cap'));
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('takto.category.icon_quick_collection.v1'),
+          contains('academic_cap'));
+      await store.setPack(CategoryIconPack.heroicons);
+      expect(store.quickKeys, contains('academic_cap'));
+      await store.setPack(CategoryIconPack.fluent);
+      await store.setQuickKeys(kDefaultCategoryIconKeys);
+    });
   });
 
   test('Appearance exposes searchable collection controls', () {
