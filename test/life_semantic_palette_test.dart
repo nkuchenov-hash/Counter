@@ -19,10 +19,10 @@ double _hueGap(Color a, Color b) {
 
 void main() {
   test('one canonical palette feeds both categories and tag presets', () {
-    expect(kCategoryPickerMaterialColors, hasLength(10));
-    expect(kLifeTagColorPresets, hasLength(10));
+    expect(kCategoryPickerMaterialColors, hasLength(11));
+    expect(kLifeTagColorPresets, hasLength(11));
     expect(kCategoryPickerMaterialColors.map((f) => f[500]!.toARGB32()).toSet(),
-        hasLength(10));
+        hasLength(11));
 
     for (var i = 0; i < kCategoryPickerMaterialColors.length; i++) {
       final family = kCategoryPickerMaterialColors[i];
@@ -44,14 +44,16 @@ void main() {
       }
     }
     expect(kLifeTagColorPresets, containsAll(<String>[
-      '#286BE3', '#E8700A', '#F6C500', '#56A235', '#008B83',
-      '#55BCE7', '#242B5D', '#C82332', '#E65EA5', '#606060',
+      '#286BE3', '#F26900', '#FFD000', '#48A130', '#008F87',
+      '#47BCE9', '#725EB5', '#C82332', '#F75CC5', '#000000', '#9A9A9A',
     ]));
   });
 
-  test('dangerous hue collisions are resolved without purple pink', () {
+  test('pink and red are visually separated without replacing purple or black', () {
     expect(_hueGap(kNordicEntertainment[500]!, kNordicPeople[500]!),
-        greaterThan(20));
+        greaterThan(30));
+    expect(kNordicStudy[500], const Color(0xFF725EB5));
+    expect(kCategoryBlack[500], Colors.black);
     expect(_hueGap(kNordicEntertainment[500]!, kNordicErrands[500]!),
         greaterThan(20));
     expect(_hueGap(kNordicMovement[500]!, kNordicHealth[500]!),
@@ -61,7 +63,19 @@ void main() {
     expect(kLifeTagColorPresets, isNot(contains('#BD4199')));
   });
 
-  test('all ten previous official base colors use their new family', () {
+  test('pink and red remain different even on translucent tag plates', () {
+    final pink = kNordicPeople[500]!;
+    final red = kNordicEntertainment[500]!;
+    final surface = const Color(0xFFF8FAFC);
+    final pinkPlate = tagLetterChipPlate(pink, surface);
+    final redPlate = tagLetterChipPlate(red, surface);
+    expect(pinkPlate, isNot(redPlate));
+    final pinkFg = tagVibrantForeground(pink, surface: surface);
+    final redFg = tagVibrantForeground(red, surface: surface);
+    expect(_hueGap(pinkFg, redFg), greaterThan(30));
+  });
+
+  test('previous official base colors resolve to new families', () {
     final legacyBase = <String, MaterialColor>{
       '#3978C5': kNordicWork,
       '#D97841': kNordicErrands,
@@ -91,7 +105,8 @@ void main() {
       const Color(0xFF121820),
     ]) {
       for (final family in kCategoryPickerMaterialColors) {
-        // Yellow is a deliberate older exact-gold text exception.
+        // Yellow uses the explicitly selected bright-gold foreground and is
+        // a documented exception to the 4.5:1 small-text goal.
         if (family == kNordicFood) continue;
         final color = family[500]!;
         final plate = tagLetterChipPlate(color, surface);
@@ -108,7 +123,7 @@ void main() {
       const Color(0xFF121820),
     ]) {
       for (final family in kCategoryPickerMaterialColors) {
-        if (family == kNordicFood) continue; // Preserve original pure gold.
+        if (family == kNordicFood) continue; // Preserve special user-approved yellow foreground.
         final fg = tagSolidAccentOnSurface(family[500]!, surface);
         expect(_contrast(fg, surface), greaterThanOrEqualTo(3.0),
             reason: 'Solid accent for ${family[500]} on ${surface.toARGB32()}');
@@ -116,10 +131,27 @@ void main() {
     }
   });
 
-  test('custom colors, exact gold, and saved database values are preserved', () {
+  test('custom colors, approved yellow parameters and saved values are preserved', () {
     expect(parseTagHexColor('#ABCD12'), const Color(0xFFABCD12));
     expect(parseTagHexColor('#F6C500'), kTagYellowGold);
-    expect(tagVibrantForeground(kTagYellowGold,
-        surface: const Color(0xFFF8FAFC)), kTagYellowGold);
+    expect(parseTagHexColor('#FFD000'), kTagYellowGold);
+    expect(kTagYellowGold, const Color(0xFFFFD000));
+    expect(kTagYellowText, const Color(0xFFE1B400));
+    expect(kTagYellowPlateOpacity, 0.13);
+    expect(kTagYellowBorderOpacity, 0.74);
+    for (final background in <Color>[Colors.white, const Color(0xFF121820)]) {
+      expect(tagLetterChipPlate(kTagYellowGold, background),
+          Color.alphaBlend(kTagYellowGold.withValues(alpha: 0.13), background));
+      expect(tagLetterChipBorder(kTagYellowGold, background),
+          Color.alphaBlend(kTagYellowGold.withValues(alpha: 0.74), background));
+      expect(tagVibrantForeground(kTagYellowGold, surface: background),
+          kTagYellowText);
+    }
+    expect(parseTagHexColor('#000000'), Colors.black);
+    expect(kLifeTagColorPresets, contains('#000000'));
+    // Old families remain visually compatible without modifying DB records.
+    expect(parseTagHexColor('#E65EA5'), kNordicPeople[500]);
+    expect(parseTagHexColor('#242B5D'), kNordicStudy[500]);
+    expect(parseTagHexColor('#606060'), kCategoryNeutral[500]);
   });
 }
