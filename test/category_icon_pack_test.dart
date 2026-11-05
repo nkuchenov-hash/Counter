@@ -13,11 +13,17 @@ void main() {
 
   test('only matched semantic IDs are selectable in both families', () {
     final keys = kMatchedCategoryIcons.keys.toSet();
-    expect(keys.length, 103);
+    expect(keys.length, greaterThan(103));
+    final selectable = keys.where(isSelectableCategoryIconKey).toSet();
     expect(CategoryIconStore.catalogFor(CategoryIconPack.fluent)
-        .map((e) => e.key).toSet(), keys);
+        .map((e) => e.key).toSet(), selectable);
     expect(CategoryIconStore.catalogFor(CategoryIconPack.heroicons)
-        .map((e) => e.key).toSet(), keys);
+        .map((e) => e.key).toSet(), selectable);
+    expect(selectable, isNot(contains('arrow_down')));
+    expect(selectable, isNot(contains('chevron_left')));
+    expect(selectable, isNot(contains('plus')));
+    expect(selectable, containsAll(['banknotes', 'credit_card',
+        'building_storefront', 'film', 'ticket', 'wifi']));
     expect(keys, containsAll(['home', 'cart', 'cake', 'moon', 'bell', 'book']));
     expect(CategoryIconStore.isValidKey('home'), isTrue);
     expect(CategoryIconStore.isValidKey('academic_cap'), isTrue);
@@ -36,11 +42,13 @@ void main() {
     }
   });
 
-  test('all audited icon pairs are included in the default library', () {
-    expect(kDefaultCategoryIconKeys, hasLength(kMatchedCategoryIcons.length));
-    expect(kDefaultCategoryIconKeys.toSet(), kMatchedCategoryIcons.keys.toSet());
+  test('default category library excludes navigation controls', () {
+    final keys = kMatchedCategoryIcons.keys.where(isSelectableCategoryIconKey);
+    expect(kDefaultCategoryIconKeys.toSet(), keys.toSet());
     expect(kDefaultCategoryIconKeys.every(CategoryIconStore.isValidKey), isTrue);
-    expect(kDefaultCategoryIconKeys, containsAll(['home', 'folder', 'heart']));
+    expect(kDefaultCategoryIconKeys, containsAll(
+        ['home', 'folder', 'heart', 'banknotes', 'film']));
+    expect(kDefaultCategoryIconKeys, isNot(contains('arrow_left')));
   });
 
   test('category manager and Notes use the same semantic renderer', () {
@@ -133,13 +141,21 @@ void main() {
     await tester.pumpAndSettle();
     final availableGrid = tester.widget<GridView>(grid);
     expect((availableGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
-        kMatchedCategoryIcons.length - 3);
+        CategoryIconStore.catalogFor(CategoryIconPack.fluent).length - 3);
     expect(find.textContaining('matching icons available'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('toggle-icon-catalog')));
     await tester.pumpAndSettle();
     final restoredGrid = tester.widget<GridView>(grid);
     expect((restoredGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
         3);
+  });
+
+  test('full cross-family Heroicons audit covers every upstream icon', () {
+    final file = File('docs/reports/HEROICONS_FLUENT_324_MAPPING.csv')
+        .readAsLinesSync();
+    expect(file.length - 1, 324);
+    expect(File('docs/reports/HEROICONS_FLUENT_MAPPING_REVIEW.md')
+        .existsSync(), isTrue);
   });
 
   test('published picker exposes actual build and selected icon count', () {
