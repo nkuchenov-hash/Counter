@@ -2,19 +2,16 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:counter/core/category_icon_catalog_generated.g.dart';
-import 'package:heroicons/heroicons.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-enum CategoryIconPack { fluent, heroicons }
 
 class CategoryIconChoice {
   const CategoryIconChoice(this.key, this.ru, this.en, this.group, this.synonyms);
   final String key, ru, en, group, synonyms;
 }
 
-const List<CategoryIconChoice> kCategoryIconCatalog = [
+const List<CategoryIconChoice> _legacyCategoryIconCatalog = [
   CategoryIconChoice('heart', 'Сердце', 'Heart', 'Личное', 'здоровье жизнь love health'),
   CategoryIconChoice('cake', 'Торт', 'Cake', 'Личное', 'еда праздник food birthday'),
   CategoryIconChoice('home', 'Дом', 'Home', 'Личное', 'жилье семья house'),
@@ -72,8 +69,14 @@ const List<CategoryIconChoice> kCategoryIconCatalog = [
   CategoryIconChoice('wifi', 'Wi-Fi', 'Wi-Fi', 'Работа', 'сеть интернет'),
 ];
 
-/// One curated semantic identifier has an authentic icon in both families.
-/// Older selected icon IDs remain stored even if no safe mapping exists.
+/// Everyday objects and activities are the primary category vocabulary.
+/// Legacy icon keys remain renderable, but controls are hidden from selection.
+final List<CategoryIconChoice> kCategoryIconCatalog =
+    List<CategoryIconChoice>.unmodifiable([
+  ..._legacyCategoryIconCatalog,
+  for (final item in kHumanCategorySubjects)
+    CategoryIconChoice(item.key, item.ru, item.en, item.group, item.synonyms),
+]);
 String _iconLabel(String key) => key.split('_')
     .map((part) => part.isEmpty ? part
         : '${part[0].toUpperCase()}${part.substring(1)}').join(' ');
@@ -129,41 +132,64 @@ const Map<String, String> kPreviousIconAliases = {
   'weather_sunny': 'sun',
 };
 
-/// The technical mapping includes legacy navigation/control icons for
-/// backwards-compatible rendering, but those do not belong in categories.
-bool isSelectableCategoryIconKey(String key) {
-  if (key.startsWith('arrow_') || key.startsWith('chevron_')) return false;
-  const controls = <String>{
-    'backspace', 'x_mark', 'check', 'plus', 'power', 'trash',
-    'magnifying_glass', 'printer', 'pencil', 'cog', 'play', 'pause',
-    'stop', 'pause_circle', 'play_circle', 'question_mark_circle',
-    'document_arrow_down', 'document_arrow_up', 'document_duplicate',
-    'cloud_arrow_up', 'cloud_arrow_down',
-  };
-  return !controls.contains(key);
-}
+/// Explicit subject whitelist: toolbar/navigation symbols cannot leak into
+/// the category picker just because a backing icon exists.
+const List<String> kLegacyCategorySubjectKeys = [
+  'home', 'heart', 'briefcase', 'calendar', 'folder', 'clock', 'star',
+  'book', 'cart', 'cake', 'moon', 'bell', 'lock', 'camera', 'wallet',
+  'gift', 'phone', 'document', 'cloud', 'tag', 'trophy', 'map',
+  'key', 'light_bulb', 'musical_note', 'sun', 'photo', 'paint_brush',
+  'user', 'users', 'map_pin', 'shopping_bag', 'tv', 'truck', 'food',
+  'beaker', 'fire', 'face_smile', 'globe_alt', 'house', 'building_office',
+  'building_storefront', 'banknotes', 'credit_card', 'calendar_days',
+  'calendar_date_range', 'check_badge', 'computer_desktop', 'device_tablet',
+  'film', 'inbox', 'newspaper', 'ticket', 'wifi', 'archive_box',
+];
 
-/// Popular category subjects first; then the remaining curated subjects.
-/// Explicit user favorites are retained and continue to appear first.
+final Set<String> _selectableIconKeys = <String>{
+  for (final item in kHumanCategorySubjects) item.key,
+  ...kLegacyCategorySubjectKeys,
+};
+
+bool isSelectableCategoryIconKey(String key) =>
+    _selectableIconKeys.contains(key) && kMatchedCategoryIcons.containsKey(key);
+
+/// Everyday-life subjects first. Legacy selections remain compatible.
 final List<String> kDefaultCategoryIconKeys = List<String>.unmodifiable(
   <String>{
-    ...<String>[
-      'home', 'heart', 'briefcase', 'calendar', 'folder', 'clock', 'star',
-      'book', 'cart', 'cake', 'moon', 'bell', 'lock', 'camera', 'wallet',
-      'gift', 'phone', 'document', 'cloud', 'tag', 'trophy', 'map',
-      'key', 'light_bulb', 'musical_note',
-    ].where(isSelectableCategoryIconKey),
-    ...(kMatchedCategoryIcons.keys.toList()..sort())
-        .where(isSelectableCategoryIconKey),
+    for (final item in kHumanCategorySubjects)
+      if (kMatchedCategoryIcons.containsKey(item.key)) item.key,
+    ...kLegacyCategorySubjectKeys.where(isSelectableCategoryIconKey),
   },
 );
+
+const List<String> kCategorySubjectGroups = [
+  'Все', 'Люди', 'Животные', 'Природа', 'Транспорт', 'Дом', 'Спорт',
+  'Одежда', 'Еда', 'Увлечения', 'Учёба', 'Здоровье', 'Работа',
+  'Финансы', 'Организация', 'Личное', 'Творчество', 'Прочее',
+];
+
+const Map<String, String> _groupNamesEn = {
+  'Все': 'All', 'Люди': 'People', 'Животные': 'Animals',
+  'Природа': 'Nature', 'Транспорт': 'Transport', 'Дом': 'Home',
+  'Спорт': 'Sports', 'Одежда': 'Clothing', 'Еда': 'Food',
+  'Увлечения': 'Hobbies', 'Учёба': 'Learning',
+  'Здоровье': 'Health', 'Работа': 'Work', 'Финансы': 'Finance',
+  'Организация': 'Planning', 'Личное': 'Personal',
+  'Творчество': 'Creative', 'Прочее': 'Other',
+};
+String categorySubjectGroupName(String group, {required bool russian}) =>
+    russian ? group : (_groupNamesEn[group] ?? group);
 
 List<CategoryIconChoice> _buildSharedCatalog() {
   final metadata = {for (final item in kCategoryIconCatalog) item.key: item};
   return List<CategoryIconChoice>.unmodifiable([
-    for (final key in (kMatchedCategoryIcons.keys.toList()..sort()))
-      metadata[key] ?? CategoryIconChoice(key, _iconLabel(key),
-          _iconLabel(key), _iconGroup(key), key.replaceAll('_', ' ')),
+    for (final key in kDefaultCategoryIconKeys)
+      if (metadata.containsKey(key))
+        metadata[key]!
+      else
+        CategoryIconChoice(key, _iconLabel(key),
+            _iconLabel(key), _iconGroup(key), key.replaceAll('_', ' ')),
   ]);
 }
 
@@ -192,19 +218,12 @@ class CategoryIconSelection {
 class CategoryIconStore extends ChangeNotifier {
   CategoryIconStore._();
   static final instance = CategoryIconStore._();
-  static const _packKey = 'takto.category.icon_pack.v1';
   static const _selectionKey = 'takto.category.icon_selection.v1';
   static const _selectionItemPrefix = 'takto.category.icon_selection_item.v1.';
-  CategoryIconPack _pack = CategoryIconPack.fluent;
   final Map<String, CategoryIconSelection> _values = {};
   Future<void>? _loadFuture;
-  CategoryIconPack get pack => _pack;
-  static final List<CategoryIconChoice> _approvedCatalog = _buildSharedCatalog();
-  static final List<CategoryIconChoice> _selectableCatalog =
-      List<CategoryIconChoice>.unmodifiable(_approvedCatalog.where(
-          (entry) => isSelectableCategoryIconKey(entry.key)));
-  static List<CategoryIconChoice> catalogFor(CategoryIconPack family) =>
-      _selectableCatalog; // Identical meaningful category icons in both packs.
+  static final List<CategoryIconChoice> _selectableCatalog = _buildSharedCatalog();
+  static List<CategoryIconChoice> catalogFor() => _selectableCatalog;
   static bool isValidKey(String key) => kMatchedCategoryIcons.containsKey(key);
   static String? canonicalKey(String key) => isValidKey(key)
       ? key : kPreviousIconAliases[key];
@@ -259,7 +278,6 @@ class CategoryIconStore extends ChangeNotifier {
   }
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    if (prefs.getString(_packKey) == 'heroicons') _pack = CategoryIconPack.heroicons;
     final savedQuick = prefs.getString(_quickKey);
     if (savedQuick != null) {
       try {
@@ -320,23 +338,6 @@ class CategoryIconStore extends ChangeNotifier {
   CategoryIconSelection? explicitFor(CategoryRule rule) => _values[keyFor(rule)];
   CategoryIconSelection selectionFor(CategoryRule rule) =>
       explicitFor(rule) ?? CategoryIconSelection(_legacyKey(rule));
-
-  Future<void> setPack(CategoryIconPack next) async {
-    await ensureLoaded();
-    if (_pack == next) return;
-    final previous = _pack;
-    _pack = next;
-    notifyListeners();
-    try {
-      if (!await (await SharedPreferences.getInstance()).setString(_packKey, next.name)) {
-        throw StateError('Could not save icon pack');
-      }
-    } catch (_) {
-      _pack = previous;
-      notifyListeners();
-      rethrow;
-    }
-  }
 
   Future<void> setSelection(CategoryRule category, CategoryIconSelection choice) async {
     if (!isValidKey(choice.key)) throw ArgumentError.value(choice.key);
@@ -401,29 +402,21 @@ class CategoryIconStore extends ChangeNotifier {
 
 class CategorySvgIcon extends StatelessWidget {
   const CategorySvgIcon({super.key, required this.selection,
-    this.size = 24, this.color, this.pack, this.semanticLabel});
+    this.size = 24, this.color, this.semanticLabel});
   final CategoryIconSelection selection;
   final double size;
   final Color? color;
-  final CategoryIconPack? pack;
   final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
-    final family = pack ?? CategoryIconStore.instance.pack;
     final tint = color ?? Theme.of(context).colorScheme.onSurface;
-    // Unsupported previously saved keys do not become a different concept:
-    // they display as the neutral folder until explicitly reselected.
+    // A removed/unknown old key renders neutrally until the user reselects.
     final canonical = CategoryIconStore.canonicalKey(selection.key);
-    final matched = kMatchedCategoryIcons[canonical] ??
+    final artwork = kMatchedCategoryIcons[canonical] ??
         kMatchedCategoryIcons['folder']!;
-    if (family == CategoryIconPack.fluent) {
-      return Icon(selection.filled ? matched.fluentFilled : matched.fluentOutline,
-          size: size, color: tint, semanticLabel: semanticLabel);
-    }
-    return HeroIcon(matched.hero,
-      style: selection.filled ? HeroIconStyle.solid : HeroIconStyle.outline,
-      size: size, color: tint, semanticLabel: semanticLabel);
+    return Icon(selection.filled ? artwork.fluentFilled : artwork.fluentOutline,
+        size: size, color: tint, semanticLabel: semanticLabel);
   }
 }
 
@@ -446,7 +439,7 @@ class CategoryGlyph extends StatelessWidget {
           store.selectionFor(category).key, filled: selected,
         );
         return CategorySvgIcon(
-          selection: choice, pack: store.pack,
+          selection: choice,
           size: size, color: color, semanticLabel: category.name,
         );
       },
@@ -454,80 +447,3 @@ class CategoryGlyph extends StatelessWidget {
   }
 }
 
-/// Shared Profile > Appearance picker on desktop and mobile.
-class CategoryIconPackPreference extends StatelessWidget {
-  const CategoryIconPackPreference({super.key, required this.isRussian});
-  final bool isRussian;
-  @override
-  Widget build(BuildContext context) {
-    final store = CategoryIconStore.instance;
-    unawaited(store.ensureLoaded());
-    final cs = Theme.of(context).colorScheme;
-    return AnimatedBuilder(
-      animation: store,
-      builder: (context, child) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(isRussian ? 'Набор иконок' : 'Icon family',
-              style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 5),
-          Text(isRussian
-              ? 'Для категорий. У каждой иконки есть контур и заливка.'
-              : 'For categories. Every icon has Outline and Filled versions.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: cs.onSurfaceVariant)),
-          const SizedBox(height: 12),
-          LayoutBuilder(builder: (context, constraints) {
-            final cards = CategoryIconPack.values.map((family) {
-              final active = store.pack == family;
-              return InkWell(
-                key: ValueKey('icon-pack-' + family.name),
-                onTap: active ? null : () async {
-                  try {
-                    await store.setPack(family);
-                  } catch (_) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(isRussian
-                            ? 'Не удалось сохранить набор.'
-                            : 'Could not save icon family.')));
-                    }
-                  }
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: active ? cs.primaryContainer.withValues(alpha: 0.3) : cs.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: active ? cs.primary : cs.outlineVariant,
-                        width: active ? 2 : 1),
-                  ),
-                  child: Row(children: [
-                    CategorySvgIcon(pack: family, size: 22,
-                      selection: const CategoryIconSelection('heart')),
-                    const SizedBox(width: 6),
-                    CategorySvgIcon(pack: family, size: 22,
-                      selection: const CategoryIconSelection('folder', filled: true)),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text(family == CategoryIconPack.fluent
-                        ? 'Fluent UI' : 'Heroicons',
-                      style: const TextStyle(fontWeight: FontWeight.w600))),
-                    Icon(active ? Icons.check_circle : Icons.circle_outlined,
-                        size: 18, color: active ? cs.primary : cs.outline),
-                  ]),
-                ),
-              );
-            }).toList();
-            return constraints.maxWidth < 420
-                ? Column(children: [cards[0], const SizedBox(height: 8), cards[1]])
-                : Row(children: [
-                    Expanded(child: cards[0]), const SizedBox(width: 10),
-                    Expanded(child: cards[1]),
-                  ]);
-          }),
-        ],
-      ),
-    );
-  }
-}
