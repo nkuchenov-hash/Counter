@@ -14,7 +14,6 @@ import 'package:counter/core/widgets/chip_component.dart';
 import 'package:flutter/material.dart';
 part 'component_lab_cards_demo.dart';
 part 'component_lab_notes_demo.dart';
-
 /// Internal visual control surface for canonical components.
 ///
 /// Admin-only, mock data only, and no database writes.
