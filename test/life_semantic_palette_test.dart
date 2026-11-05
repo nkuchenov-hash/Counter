@@ -519,7 +519,7 @@ void main() {
         }),
       )),
     ));
-    expect(background, const Color(0xFFF6F6F6));
+    expect(background, const Color(0xFFF7F7F7));
     expect(card, const Color(0xFFFFFFFF));
     expect(background, isNot(card));
     expect(tester.takeException(), isNull);
