@@ -62,7 +62,8 @@ Color tagVibrantForeground(Color tagBaseColor, {Color? surface}) {
     final lower = a > backgroundLuminance ? backgroundLuminance : a;
     if ((higher + 0.05) / (lower + 0.05) >= 4.5) return foreground;
     final nextLightness =
-        (hsl.lightness + (useDarkerText ? -0.025 : 0.025)).clamp(0.0, 1.0);
+        (hsl.lightness + (useDarkerText ? -0.025 : 0.025))
+            .clamp(0.0, 1.0).toDouble();
     if (nextLightness == hsl.lightness) break;
     hsl = hsl.withLightness(nextLightness);
     foreground = hsl.toColor();
