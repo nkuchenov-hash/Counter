@@ -1,3 +1,4 @@
+import 'package:counter/core/life_color_compat.dart';
 import 'package:flutter/material.dart';
 
 /// Life OS design tokens: neutral chrome shared across every feature.
@@ -60,7 +61,7 @@ abstract final class AppColors {
   static const Color onSuccess = AppNeutralTones.white;
   static const Color warning = Color(0xFFB0700A);
   static const Color onWarning = AppNeutralTones.white;
-  static const Color information = Color(0xFF286BE3);
+  static const Color information = kNordicWork;
   static const Color onInformation = AppNeutralTones.white;
   static const Color error = Color(0xFFB3261E);
   static const Color onError = AppNeutralTones.white;
