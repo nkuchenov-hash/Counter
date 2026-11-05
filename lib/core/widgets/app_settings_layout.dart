@@ -22,24 +22,24 @@ ThemeData settingsNeutralTheme(BuildContext context) {
     primary: base.colorScheme.onSurface,
     onPrimary: dark ? AppColors.darkAppBackground : Colors.white,
     // Neutral TECNO-inspired surfaces: distinct white cards, no blue tint.
-    surface: dark ? const Color(0xFF161616) : const Color(0xFFF0F0F0),
+    surface: dark ? const Color(0xFF161616) : const Color(0xFFE5E5E5),
     surfaceContainerLowest:
-        dark ? const Color(0xFF161616) : const Color(0xFFF0F0F0),
+        dark ? const Color(0xFF161616) : const Color(0xFFE5E5E5),
     surfaceContainerLow:
-        dark ? const Color(0xFF222222) : const Color(0xFFF0F0F0),
+        dark ? const Color(0xFF222222) : const Color(0xFFE5E5E5),
     surfaceContainer:
         dark ? const Color(0xFF303030) : const Color(0xFFF1F1F1),
     surfaceContainerHigh:
         dark ? const Color(0xFF252525) : Colors.white,
     surfaceContainerHighest:
         dark ? const Color(0xFF303030) : Colors.white,
-    onSurface: dark ? base.colorScheme.onSurface : const Color(0xFF303030),
+    onSurface: dark ? base.colorScheme.onSurface : const Color(0xFF474747),
     onSurfaceVariant: dark
         ? base.colorScheme.onSurfaceVariant
-        : const Color(0xFF777777),
+        : const Color(0xFF818181),
     outlineVariant: dark
         ? base.colorScheme.outlineVariant
-        : const Color(0xFFDADADA),
+        : const Color(0xFFC4C4C4),
   );
   return base.copyWith(
     colorScheme: scheme,
@@ -499,9 +499,9 @@ class AppSettingsNavigationRow extends StatelessWidget {
           leading: leading,
           title: Text(title, style: theme.textTheme.bodyLarge?.copyWith(
             fontSize: 16,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
             letterSpacing: 0,
-            height: 1.28,
+            height: 1.38,
           )),
           subtitle: subtitle == null ? null : Text(
             subtitle!,
@@ -536,9 +536,8 @@ class AppSettingsNavigationRow extends StatelessWidget {
           ),
           onTap: onTap,
           enabled: onTap != null,
-          hoverColor: scheme.brightness == Brightness.dark
-              ? scheme.onSurface.withValues(alpha: 0.07)
-              : const Color(0xFFF2F2F2),
+          // Group-level MouseRegion highlights the entire card; never a row inset.
+          hoverColor: Colors.transparent,
           splashColor: Colors.transparent,
           shape: const RoundedRectangleBorder(),
         ),
@@ -581,7 +580,7 @@ class AppSettingsControlRow extends StatelessWidget {
         title,
         style: theme.textTheme.bodyLarge?.copyWith(
           fontSize: 16,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
           letterSpacing: 0,
         ),
       ),
@@ -643,7 +642,7 @@ class AppMenuActionTile extends StatelessWidget {
 
 /// A single grouped surface for short settings destinations. Dividers are
 /// inset to the text column, not drawn through the leading icons.
-class AppSettingsNavigationGroup extends StatelessWidget {
+class AppSettingsNavigationGroup extends StatefulWidget {
   const AppSettingsNavigationGroup({
     super.key,
     required this.children,
@@ -652,32 +651,62 @@ class AppSettingsNavigationGroup extends StatelessWidget {
   final List<Widget> children;
 
   @override
+  State<AppSettingsNavigationGroup> createState() =>
+      _AppSettingsNavigationGroupState();
+}
+
+class _AppSettingsNavigationGroupState
+    extends State<AppSettingsNavigationGroup> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final dark = scheme.brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Material(
-        color: scheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(20),
-        clipBehavior: Clip.antiAlias,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var index = 0; index < children.length; index++) ...[
-                children[index],
-                if (index != children.length - 1)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 82, right: 24),
-                    child: Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: scheme.outlineVariant,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: Material(
+          // Hover belongs to the whole group, including its edges and icons.
+          color: _hovered && !dark
+              ? const Color(0xFFF7F7F7)
+              : scheme.surfaceContainerHigh,
+          animationDuration: const Duration(milliseconds: 130),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: dark
+                  ? scheme.outlineVariant
+                  : _hovered
+                      ? const Color(0xFFB6B6B6)
+                      : const Color(0xFFCACACA),
+              width: 1,
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var index = 0; index < widget.children.length; index++) ...[
+                  widget.children[index],
+                  if (index != widget.children.length - 1)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 78, right: 20),
+                      child: Divider(
+                        height: 1,
+                        thickness: 1.2,
+                        color: dark
+                            ? scheme.outlineVariant
+                            : const Color(0xFFC4C4C4),
+                      ),
                     ),
-                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
