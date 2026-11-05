@@ -66,33 +66,6 @@ class ShellSideNavigation extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 2, 0, 16),
-                  child: Row(
-                    children: [
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: scheme.onSurface,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: SizedBox(
-                          width: 32,
-                          height: 32,
-                          child: Icon(
-                            AppMenuIcons.icon(AppMenuIconRole.viktor),
-                            size: 19,
-                            color: scheme.surfaceContainerHigh,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text('LIFE OS',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        )),
-                    ],
-                  ),
-                ),
                 Expanded(
                   child: ListView(
                     padding: EdgeInsets.zero,
@@ -103,12 +76,8 @@ class ShellSideNavigation extends StatelessWidget {
                       _entry(AppMenuIconRole.planning, t(locale, 'tab_planning'), 1),
                       _entry(AppMenuIconRole.calendar, t(locale, 'calendar'), 2),
                       _entry(AppMenuIconRole.notes, t(locale, 'tab_lists'), 3),
-                      _sectionLabel(context,
-                        ru ? 'ДОПОЛНИТЕЛЬНО' : 'MORE'),
+                      const SizedBox(height: 12),
                       _entry(AppMenuIconRole.paths, ru ? 'Пути' : 'Paths', 6),
-                      _entry(AppMenuIconRole.people, ru ? 'Люди' : 'People', 8),
-                      _entry(AppMenuIconRole.menu,
-                        ru ? 'Меню и настройки' : 'Menu & settings', 7),
                     ],
                   ),
                 ),
@@ -117,8 +86,8 @@ class ShellSideNavigation extends StatelessWidget {
                 Divider(height: 1,
                   color: scheme.outlineVariant.withValues(alpha: 0.7)),
                 const SizedBox(height: 7),
-                _entry(AppMenuIconRole.account,
-                  ru ? 'Профиль' : 'Profile', 5),
+                _entry(AppMenuIconRole.menu,
+                  ru ? 'Меню и настройки' : 'Menu & settings', 7),
               ],
             ),
           ),
