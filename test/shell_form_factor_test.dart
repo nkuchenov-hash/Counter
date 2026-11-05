@@ -140,10 +140,10 @@ void main() {
       final subtitle = tester.widget<Text>(find.text('Quiet reminders and alerts'));
       expect(title.style?.fontWeight, FontWeight.w600);
       expect(subtitle.style?.fontWeight, FontWeight.w400);
-      expect(subtitle.style?.color, const Color(0xFF687586));
+      expect(subtitle.style?.color, AppColors.lightColorScheme().onSurfaceVariant);
       expect((title.style?.fontSize ?? 0) > (subtitle.style?.fontSize ?? 0), isTrue);
       final tile = tester.widget<ListTile>(find.byType(ListTile));
-      expect(tile.hoverColor, const Color(0xFFF3F6FA));
+      expect(tile.hoverColor, AppColors.appBackground);
       expect(tile.splashColor, Colors.transparent);
       expect(tester.takeException(), isNull);
     });
