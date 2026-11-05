@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 970 — each appears **exactly once** below.
+**Tracked files:** 977 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -40939,3 +40939,245 @@ RU:
 - **Когда открывать:** Ошибка native compile ссылается на `win32_window.h`.
 - **Можно удалить?** Нет — без него не соберётся Windows `.exe`/runner.
 - **Связано с:** `windows/runner/`, `windows/flutter/`.
+
+
+### `.github/workflows/icon-packs-qa.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/icon-packs-qa.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/icon-packs-qa.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/icon-packs-qa.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/icon-packs-qa.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `icon-packs-qa.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `docs/APP_STRUCTURE.md`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `icon-packs-qa.yml`.
+- **When to open:** When behavior tied to `icon-packs-qa.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `icon-packs-qa.yml` для CI и операций репозитория. GitHub Actions читает `icon-packs-qa.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `icon-packs-qa.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `icon-packs-qa.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `icon-packs-qa.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `icon-packs-qa.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `icon-packs-qa.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
+### `assets/licenses/FLUENT_HEROICONS_LICENSES.txt`
+
+EN:
+
+- **Human purpose:** txt file `FLUENT_HEROICONS_LICENSES.txt` in `assets/licenses` — repo tooling or config. Tracked because `assets/licenses` needs `FLUENT_HEROICONS_LICENSES.txt` for build, CI, or maintenance.
+- **What this is:** txt file `FLUENT_HEROICONS_LICENSES.txt` in `assets/licenses` — repo tooling or config.
+- **Why needed:** Tracked because `assets/licenses` needs `FLUENT_HEROICONS_LICENSES.txt` for build, CI, or maintenance.
+- **Contents:** Open `FLUENT_HEROICONS_LICENSES.txt` when working on `assets/licenses` (see folder section above).
+- **Repository role:** developer tool
+- **Evidence of use:** Referenced by: `docs/APP_STRUCTURE.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Supports `assets/licenses` workflow for `FLUENT_HEROICONS_LICENSES.txt`.
+- **When to open:** When build output or maintenance cites `FLUENT_HEROICONS_LICENSES.txt`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `assets/licenses/`, `docs/APP_STRUCTURE.md`.
+
+RU:
+
+- **Зачем файл человеку:** `FLUENT_HEROICONS_LICENSES.txt` — отслеживаемый ресурс области `assets/licenses` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `assets/licenses` для `FLUENT_HEROICONS_LICENSES.txt`.
+- **Что это:** `FLUENT_HEROICONS_LICENSES.txt` — отслеживаемый ресурс области `assets/licenses` с отдельной ролью.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `assets/licenses` для `FLUENT_HEROICONS_LICENSES.txt`.
+- **Содержимое:** Данные или код `FLUENT_HEROICONS_LICENSES.txt`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Упоминается в: `docs/APP_STRUCTURE.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `FLUENT_HEROICONS_LICENSES.txt` для области `assets/licenses`.
+- **Когда открывать:** When результат сборки or maintenance cites `FLUENT_HEROICONS_LICENSES.txt`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `assets/licenses/`, `docs/APP_STRUCTURE.md`.
+
+
+### `lib/core/category_icon_svg_data.dart`
+
+EN:
+
+- **Human purpose:** Foundation module `category_icon_svg_data.dart` (core) — Pinned 56 official Fluent UI / Heroicons source SVG variants (14 stable keys × two pairs) for offline Web/Android rendering. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What this is:** Foundation module `category_icon_svg_data.dart` (core) — Pinned 56 official Fluent UI / Heroicons source SVG variants (14 stable keys × two pairs) for offline Web/Android rendering.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **Contents:** Primary symbols: `CategorySvgPair`.
+- **Key code names:** `CategorySvgPair`
+- **Repository role:** shared foundation
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_icon_system.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared foundation
+- **Responsibilities:** Pinned 56 official Fluent UI / Heroicons source SVG variants (14 stable keys × two pairs) for offline Web/Android rendering
+- **When to open:** When behavior tied to `category_icon_svg_data.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Pinned 56 official Fluent UI / Heroicons source SVG variants (14 stable keys × two pairs) for offline Web/Android render
+
+RU:
+
+- **Зачем файл человеку:** Foundation-модуль `category_icon_svg_data.dart` (core) — Pinned 56 official Fluent UI / Heroicons source SVG variants (14 stable keys × two pairs) for offline Web/Android rendering. Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Что это:** Foundation-модуль `category_icon_svg_data.dart` (core) — Pinned 56 official Fluent UI / Heroicons source SVG variants (14 stable keys × two pairs) for offline Web/Android rendering.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `category_icon_svg_data.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Импортируется production Dart: `lib/core/category_icon_system.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общая foundation
+- **Обязанности:** Foundation-логика: Pinned 56 official Fluent UI / Heroicons source SVG variants (14 stable keys × two pairs) for offline Web/Android rendering.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_icon_svg_data.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/core/category_icon_system.dart`
+
+EN:
+
+- **Human purpose:** Foundation module `category_icon_system.dart` (core) — Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved). Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What this is:** Foundation module `category_icon_system.dart` (core) — Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved).
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **Contents:** Primary symbols: `CategoryIconPack`, `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`, `CategorySvgIcon`, `CategoryGlyph`.
+- **Key code names:** `CategoryIconPack`, `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`, `CategorySvgIcon`, `CategoryGlyph`, `CategoryIconPackPreference`
+- **Repository role:** shared foundation
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/widgets/notes_folder_pane.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/profile_view.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared foundation
+- **Responsibilities:** Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved)
+- **When to open:** When behavior tied to `category_icon_system.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences,
+
+RU:
+
+- **Зачем файл человеку:** Foundation-модуль `category_icon_system.dart` (core) — Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved). Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Что это:** Foundation-модуль `category_icon_system.dart` (core) — Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved).
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `category_icon_system.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/widgets/notes_folder_pane.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/profile_view.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общая foundation
+- **Обязанности:** Foundation-логика: Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved).
+- **Когда открывать:** Когда ломается поведение, связанное с `category_icon_system.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/settings/categories/category_icon_picker.dart`
+
+EN:
+
+- **Human purpose:** `category_icon_picker.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings. Users see `category_icon_picker.dart` when using settings area.
+- **What this is:** `category_icon_picker.dart` on settings area — Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings.
+- **Why needed:** Users see `category_icon_picker.dart` when using settings area.
+- **Contents:** Primary symbols: `_IconPicker`, `_IconPickerState`.
+- **Key code names:** `_IconPicker`, `_IconPickerState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Categories settings UI
+- **Responsibilities:** Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sleep integration settings
+- **When to open:** When behavior tied to `category_icon_picker.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Settings-owned timezone helpers + Voice settings + Categories manager + unfilled-time notification settings + health/sle
+
+RU:
+
+- **Зачем файл человеку:** `category_icon_picker.dart` на settings — Поддерживает поведение `category_icon_picker` в этой feature-зоне.. Пользователь видит UI из `category_icon_picker.dart` на settings.
+- **Что это:** `category_icon_picker.dart` на settings — Поддерживает поведение `category_icon_picker` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `category_icon_picker.dart` на settings.
+- **Содержимое:** Dart-модуль `category_icon_picker.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI настроек категорий
+- **Обязанности:** Поддерживает поведение `category_icon_picker` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_icon_picker.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/settings/categories/`, `docs/APP_STRUCTURE.md`
+
+
+### `test/category_icon_pack_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `category_icon_pack_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `category_icon_pack_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/category_icon_pack_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `category_icon_pack_test` scenario.
+- **When to open:** CI failure or changing code near `category_icon_pack`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `category_icon_pack`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `category_icon_pack` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `category_icon_pack` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `category_icon_pack`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/category_icon_pack_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `category_icon_pack`.
+- **Когда открывать:** Падение CI или правка кода рядом с `category_icon_pack`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `lib/core/category_icon_catalog_generated.g.dart`
+
+EN:
+
+- **Human purpose:** Generated native Flutter icon registry: 2,244 native Fluent UI Regular/Filled pairs and all Heroicons Outline/Solid enum entries.
+- **Repository role:** Generated Dart shared foundation.
+- **Evidence of use:** Imported by `lib/core/category_icon_system.dart` and verified by `test/category_icon_pack_test.dart`.
+- **Necessity status:** PROVEN_REQUIRED.
+
+RU:
+
+- **Назначение:** Сгенерированный каталог родных пар иконок Fluent UI и Heroicons для категорий.
+- **Использование:** `lib/core/category_icon_system.dart` и `test/category_icon_pack_test.dart`.
+- **Удалять нельзя:** Нужен для выбора и отображения иконок.

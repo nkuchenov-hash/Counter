@@ -3,6 +3,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:counter/core/category_icon_system.dart';
+import 'package:counter/data/models.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/features/profile/menu/life_os_notes_settings_page.dart';
@@ -678,14 +680,12 @@ class _MobileCategoryFolderRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final rule = DatabaseService.instance.getCategoryRuleById(id);
     if (rule == null) return const SizedBox.shrink();
-    final icon = rule.iconCodePoint == null
-        ? Icons.folder_outlined
-        : IconData(rule.iconCodePoint!, fontFamily: 'MaterialIcons');
     final count = DatabaseService.instance
         .getBacklogPlansSnapshot(categoryId: id, includeCompleted: true)
         .length;
     return _MobileFolderRow(
-      icon: icon,
+      icon: Icons.folder_outlined,
+      category: rule,
       label: rule.name.trim().isEmpty ? '—' : rule.name.trim(),
       count: count,
       selected: selected,
@@ -703,9 +703,11 @@ class _MobileFolderRow extends StatelessWidget {
     required this.onTap,
     this.accent,
     this.count,
+    this.category,
   });
 
   final IconData icon;
+  final CategoryRule? category;
   final String label;
   final bool selected;
   final int? count;
@@ -730,7 +732,15 @@ class _MobileFolderRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             child: Row(
               children: [
-                Icon(icon, size: 24, color: selected ? tone : scheme.onSurfaceVariant),
+                if (category != null)
+                  CategoryGlyph(
+                    category: category!,
+                    size: 24,
+                    color: selected ? tone : scheme.onSurfaceVariant,
+                    selected: selected,
+                  )
+                else
+                  Icon(icon, size: 24, color: selected ? tone : scheme.onSurfaceVariant),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
@@ -1171,9 +1181,8 @@ class _NotesPhysicalFolderTabsState extends State<_NotesPhysicalFolderTabs> {
       folders.add(NotesFolderTabData(
         id: id,
         label: rule.name.trim().isEmpty ? '—' : rule.name.trim(),
-        icon: rule.iconCodePoint == null
-            ? Icons.folder_outlined
-            : IconData(rule.iconCodePoint!, fontFamily: 'MaterialIcons'),
+        icon: Icons.folder_outlined,
+        category: rule,
         paper: notesFolderPaper(context, id),
         accent: rule.colorOrDefault,
       ));

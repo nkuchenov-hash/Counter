@@ -1,4 +1,6 @@
+import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/data/database_service.dart';
+import 'package:counter/data/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 
@@ -66,6 +68,7 @@ class NotesFolderTabData {
     required this.icon,
     required this.paper,
     this.accent,
+    this.category,
   });
 
   final int id;
@@ -73,6 +76,7 @@ class NotesFolderTabData {
   final IconData icon;
   final Color paper;
   final Color? accent;
+  final CategoryRule? category;
 }
 
 /// All | horizontally scrollable physical category tabs | add.
@@ -193,6 +197,7 @@ class NotesFolderTabStrip extends StatelessWidget {
           key: ValueKey('notes-tab-${tab.id}'),
           label: tab.label,
           icon: tab.icon,
+          category: tab.category,
           paper: tab.paper,
           accent: tab.accent,
           selected: tab.id == selectedId,
@@ -351,6 +356,7 @@ class _PhysicalNotesTab extends StatefulWidget {
     required this.selected,
     required this.width,
     this.accent,
+    this.category,
     required this.onTap,
     this.onLongPress,
     this.compact = false,
@@ -360,6 +366,7 @@ class _PhysicalNotesTab extends StatefulWidget {
   final IconData? icon;
   final Color paper;
   final Color? accent;
+  final CategoryRule? category;
   final bool selected;
   final double width;
   final VoidCallback onTap;
@@ -444,9 +451,17 @@ class _PhysicalNotesTabState extends State<_PhysicalNotesTab> {
                   : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (widget.icon != null) ...[
-                          Icon(widget.icon!, size: 16,
-                              color: foreground.withValues(alpha: 0.82)),
+                        if (widget.category != null || widget.icon != null) ...[
+                          if (widget.category != null)
+                            CategoryGlyph(
+                              category: widget.category!,
+                              size: 16,
+                              selected: widget.selected,
+                              color: foreground.withValues(alpha: 0.82),
+                            )
+                          else
+                            Icon(widget.icon!, size: 16,
+                                color: foreground.withValues(alpha: 0.82)),
                           const SizedBox(width: 7),
                         ],
                         Expanded(

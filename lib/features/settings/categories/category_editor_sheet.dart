@@ -1,14 +1,14 @@
 import 'dart:async';
 
 import 'package:counter/core/category_color_palette.dart';
+import 'package:counter/core/category_icon_system.dart';
+import 'package:counter/features/settings/categories/category_icon_picker.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/settings/categories/category_helpers.dart';
 import 'package:counter/features/settings/categories/category_tag_input_field.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// Unified category editor: names, parent, color, icon, keywords, default, delete.
 class CategoryEditorSheet extends StatefulWidget {
@@ -37,7 +37,8 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
   int? _selectedColorValue;
   MaterialColor? _selectedPrimary;
   int? _selectedShadeValue;
-  late int _iconCodePoint;
+  late CategoryIconSelection _choice;
+  late CategoryIconSelection _initialChoice;
   late final TextEditingController _primaryNameController;
   late final TextEditingController _nameEnController;
   late final TextEditingController _nameRuController;
@@ -52,7 +53,14 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
       );
     }
     _selectedColorValue = widget.category.colorValue;
-    _iconCodePoint = categoryManagerIconFor(widget.category).codePoint;
+    _choice = CategoryIconStore.instance.selectionFor(widget.category);
+    _initialChoice = _choice;
+    unawaited(CategoryIconStore.instance.ensureLoaded().then((_) {
+      if (mounted) setState(() {
+        _choice = CategoryIconStore.instance.selectionFor(widget.category);
+        _initialChoice = _choice;
+      });
+    }));
     final names = widget.category.localizedNames ?? const {};
     _primaryNameController = TextEditingController(
       text: widget.category.name.trim(),
@@ -82,11 +90,9 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     final db = DatabaseService.instance;
     final id = widget.category.id;
     final beforeColor = widget.category.colorValue;
-    final beforeIcon = widget.category.iconCodePoint;
     final colorChanged =
         _selectedColorValue != null && _selectedColorValue != beforeColor;
-    final iconChanged = _iconCodePoint !=
-        (beforeIcon ?? Icons.folder_rounded.codePoint);
+    final iconSelectionChanged = _choice != _initialChoice;
     final primaryChanged = primaryNew != widget.category.name.trim();
 
     final oldNames = widget.category.localizedNames ?? const <String, String>{};
@@ -112,13 +118,31 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     final keywordsChanged = !_sameKeywords(keywords, oldKeywords);
     final delta = <String, dynamic>{
       if (colorChanged) 'color_value': _selectedColorValue,
-      if (iconChanged) 'icon_code_point': _iconCodePoint,
       if (namesChanged) 'localized_names': names,
       if (keywordsChanged) 'keywords': keywords,
     };
 
+    if (!primaryChanged && delta.isEmpty && !iconSelectionChanged) {
+      if (!widget.inline) Navigator.of(context).pop();
+      return;
+    }
+    if (iconSelectionChanged) {
+      try {
+        await CategoryIconStore.instance.setSelection(widget.category, _choice);
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(currentLocale.value == 'ru'
+                ? 'Не удалось сохранить иконку на устройстве.'
+                : 'Could not save the icon on this device.'),
+          ));
+        }
+        return;
+      }
+      if (!mounted) return;
+    }
     if (!primaryChanged && delta.isEmpty) {
-      // No change is not a network operation.
+      widget.onSaved();
       if (!widget.inline) Navigator.of(context).pop();
       return;
     }
@@ -303,72 +327,13 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
   }
 
   Future<void> _showIconGallery() async {
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => Dialog(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520, maxHeight: 590),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(child: Text(t(currentLocale.value, 'category_choose_icon'),
-                        style: Theme.of(ctx).textTheme.titleLarge)),
-                    IconButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      icon: const Icon(Icons.close_rounded),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 64,
-                    mainAxisSpacing: 9,
-                    crossAxisSpacing: 9,
-                    mainAxisExtent: 48,
-                  ),
-                  itemCount: kCategoryMoreIconChoices.length,
-                  itemBuilder: (context, index) {
-                    final icon = kCategoryMoreIconChoices[index];
-                    return _iconTile(icon, closeGallery: () => Navigator.of(ctx).pop());
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    final choice = await showCategoryIconPicker(
+      context,
+      initial: _choice,
+      color: Color(_selectedColorValue ?? widget.category.colorOrDefault.toARGB32()),
     );
-  }
-
-  Widget _iconTile(IconData icon, {VoidCallback? closeGallery}) {
-    final scheme = Theme.of(context).colorScheme;
-    final active = _iconCodePoint == icon.codePoint;
-    return InkWell(
-      borderRadius: BorderRadius.circular(9),
-      onTap: () {
-        setState(() => _iconCodePoint = icon.codePoint);
-        HapticFeedback.selectionClick();
-        closeGallery?.call();
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: active ? scheme.onSurface.withValues(alpha: 0.05) : scheme.surface,
-          borderRadius: BorderRadius.circular(9),
-          border: Border.all(
-            color: active ? scheme.onSurface : scheme.outlineVariant,
-            width: active ? 2 : 1,
-          ),
-        ),
-        alignment: Alignment.center,
-        child: Icon(icon, size: 20, color: scheme.onSurface),
-      ),
-    );
+    if (!mounted || choice == null) return;
+    setState(() => _choice = choice);
   }
 
   Widget _iconPanel(bool desktop) {
@@ -378,31 +343,19 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
         Text(t(currentLocale.value, 'category_choose_icon'),
             style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
-        LayoutBuilder(builder: (context, constraints) {
-          final columns = desktop ? 5 : 4;
-          final count = columns * 3;
-          return GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: count,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              mainAxisSpacing: 7,
-              crossAxisSpacing: 7,
-              mainAxisExtent: 38,
-            ),
-            itemBuilder: (context, index) {
-              if (index == count - 1) {
-                return OutlinedButton(
-                  onPressed: () => unawaited(_showIconGallery()),
-                  style: OutlinedButton.styleFrom(padding: EdgeInsets.zero),
-                  child: const Icon(Icons.more_horiz_rounded, size: 22),
-                );
-              }
-              return _iconTile(kCategoryIconChoices[index]);
-            },
-          );
-        }),
+        OutlinedButton(
+          key: const ValueKey('category-full-icon-picker'),
+          onPressed: () => unawaited(_showIconGallery()),
+          style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(15)),
+          child: Row(children: [
+            CategorySvgIcon(selection: _choice, size: 27),
+            const SizedBox(width: 13),
+            Expanded(child: Text(currentLocale.value == 'ru'
+                ? 'Выбрать иконку · Контур / Заливка'
+                : 'Choose icon · Outline / Filled')),
+            const Icon(Icons.chevron_right_rounded),
+          ]),
+        ),
       ],
     );
   }
@@ -505,11 +458,11 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                         .withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(11),
                   ),
-                  child: Icon(
-                    IconData(_iconCodePoint, fontFamily: 'MaterialIcons'),
+                  child: Center(child: CategorySvgIcon(
+                    selection: _choice,
                     color: Color(_selectedColorValue ?? widget.category.colorOrDefault.toARGB32()),
                     size: 22,
-                  ),
+                  )),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
