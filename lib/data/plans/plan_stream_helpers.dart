@@ -143,6 +143,72 @@ final class _PlanningDayStreamHub {
 }
 
 extension PlanStreamRefreshExtension on DatabaseService {
+  // Apply remote PocketBase plans directly to local UI; no REST on success.
+  void _onPbPlansSubscriptionEvent(RecordSubscriptionEvent e) {
+    try {
+      if (!_isInitialized || !_hasAuthenticatedUserId) return;
+      final action = e.action.toLowerCase().trim();
+      if (action == 'delete') {
+        final id = e.record?.id.trim() ?? '';
+        if (id.isEmpty) {
+          _recoverDroppedRealtimeEvent('plans_delete_missing_id');
+          return;
+        }
+        if (_plansFullFetchesInFlight > 0) {
+          _plansRealtimeDuringFullFetch[id] = null;
+        }
+        _removePlanFromUserCache(id);
+        clearOptimisticPlanningForPlanRow(id);
+        notifyPlanningRefresh(
+          scheduleNetworkRefresh: false,
+          immediateLocal: true,
+        );
+        return;
+      }
+      if (action != 'create' && action != 'update') {
+        _recoverDroppedRealtimeEvent('plans_unexpected_action');
+        return;
+      }
+      final rec = e.record;
+      if (rec == null) {
+        _recoverDroppedRealtimeEvent('plans_missing_payload');
+        return;
+      }
+      // Realtime delivery must never wait for another HTTP request. The event
+      // is merged immediately using the current tag catalog/expand payload.
+      try {
+        final task = _planningTaskFromPocketRecord(
+          rec,
+          pocketTagCatalog: _userTagsCatalogCache,
+        );
+        if (_plansFullFetchesInFlight > 0) {
+          _plansRealtimeDuringFullFetch[task.planRowIdForBackend] = task;
+        }
+        _upsertPlanInUserCache(task);
+        _allPlansUserCacheFetchedAt = DateTime.now();
+        final biz = _planBusinessUuidFromTask(task);
+        if (!_hasPendingPlanMutationForBusinessId(biz)) {
+          if (biz != null && biz.isNotEmpty) {
+            clearOptimisticPlanningForPlanRow('optimistic-$biz');
+          }
+          clearOptimisticPlanningForPlanRow(task.planRowIdForBackend);
+        }
+        notifyPlanningRefresh(
+          scheduleNetworkRefresh: false,
+          immediateLocal: true,
+        );
+      } catch (error, stackTrace) {
+        _recoverDroppedRealtimeEvent('plans_apply_failed');
+        if (kDebugMode) {
+          debugPrint('plans realtime merge failed: $error\n$stackTrace');
+        }
+      }
+    } catch (_) {
+      _recoverDroppedRealtimeEvent('plans_handler_failed');
+    }
+  }
+
+
   /// Marks a live Notes editing session. Lists uses [planningRefreshNotifications]
   /// and is intentionally isolated from autosave/realtime refresh fan-out until
   /// the last editor closes. Raw Planning streams continue to receive cache pokes.
