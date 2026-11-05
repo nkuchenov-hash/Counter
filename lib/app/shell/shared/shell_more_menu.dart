@@ -145,8 +145,10 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
         _openProfileDestination(ProfileSettingsDestination.calendars);
         break;
       case LifeOsMenuAction.notifications:
+        _openProfileDestination(ProfileSettingsDestination.notifications);
+        break;
       case LifeOsMenuAction.morning:
-        _openProfileDestination(ProfileSettingsDestination.notificationsRoutines);
+        _openProfileDestination(ProfileSettingsDestination.morning);
         break;
       case LifeOsMenuAction.sleep:
         _openProfileDestination(ProfileSettingsDestination.sleep);
@@ -155,13 +157,18 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
         _openProfileDestination(ProfileSettingsDestination.voice);
         break;
       case LifeOsMenuAction.appearance:
-        _openProfileDestination(ProfileSettingsDestination.appearanceRegion);
+        _openProfileDestination(ProfileSettingsDestination.appearance);
         break;
       case LifeOsMenuAction.languageAndTime:
-        _openProfileDestination(ProfileSettingsDestination.appearanceRegion);
+        _openProfileDestination(ProfileSettingsDestination.timeLocale);
         break;
       case LifeOsMenuAction.account:
-        _openProfileDestination(ProfileSettingsDestination.account);
+        if (shellFormFactorForWidth(MediaQuery.sizeOf(context).width) ==
+            ShellFormFactor.desktop) {
+          setState(() => setShellPageIndex(5));
+        } else {
+          _openProfileDestination(ProfileSettingsDestination.account);
+        }
         break;
       case LifeOsMenuAction.about:
         _openProfileDestination(ProfileSettingsDestination.about);
@@ -203,10 +210,8 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
       return;
     }
     if (navIndex == 5) {
-      openMoreMenu();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _openProfileDestination(ProfileSettingsDestination.account);
-      });
+      // Profile is one shell destination, not a settings hub pushed over Menu.
+      setState(() => setShellPageIndex(5));
       return;
     }
     if (navIndex == 6) {

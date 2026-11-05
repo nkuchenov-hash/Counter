@@ -1,3 +1,11 @@
+## 2026-11-05 — Unify Menu, Profile and Settings navigation [pending verification]
+
+- Removed the parallel desktop settings tab hub from Profile: Profile now renders an account/details destination through the same canonical settings surface used by Menu.
+- Menu categories now consistently open their own detail lists. Removed duplicated desktop quick shortcuts and workspace launch rows; mobile retains necessary Paths, People and Viktor links.
+- Added Categories to the desktop sidebar. Profile stays in the shell instead of opening a second settings route, and Menu actions route notification, morning, appearance, and language preferences to their specific existing owners.
+- Standardized Menu/settings content width via `AppSettingsPageBody`; removed redundant desktop brand text and ambiguous “Profile & settings” heading. No PocketBase schema or setting persistence changes.
+- Added source-contract and layout regression tests. Flutter analyze/build and live visual acceptance remain required before release.
+
 ## 2026-10-29 — P0: date-scoped recovery for plans missing from Planner [CI pending]
 
 - Selected-day reads now independently query authenticated PocketBase by `initial_date_key` if the cached all-plan projection is empty. This also protects Viktor from re-creating an existing day-only plan because a global list query failed.

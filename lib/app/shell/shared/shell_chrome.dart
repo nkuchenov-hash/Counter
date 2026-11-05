@@ -45,7 +45,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
     2 => t(loc, 'calendar'),
     3 => t(loc, 'tab_lists'),
     4 => t(loc, 'more_menu_categories'),
-    5 => t(loc, 'more_menu_profile'),
+    5 => loc.toLowerCase().startsWith('ru') ? 'Профиль' : 'Profile',
     6 => loc.toLowerCase().startsWith('ru') ? 'Пути' : 'Paths',
     7 => loc.toLowerCase().startsWith('ru') ? 'Меню' : 'Menu',
     _ => t(loc, 'app_title'),
@@ -130,7 +130,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                                       : null,
                                   title: Row(
                                     children: [
-                                      if (desktopShell ||
+                                      if (!desktopShell &&
                                           MediaQuery.sizeOf(context).width >= 430) ...[
                                       Text(
                                         t(loc, 'app_title'),

@@ -1,3 +1,4 @@
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/data/auth_bridge.dart';
@@ -123,8 +124,6 @@ const _sections = <_LifeOsMenuSection>[
       _LifeOsMenuRow('planDurations', 'Длительность по тегам',
           'Default tag durations', AppMenuIconRole.defaultTime,
           LifeOsMenuAction.tagDurations),
-      _LifeOsMenuRow('openPlanner', 'Открыть планировщик', 'Open Planning',
-          AppMenuIconRole.planning, LifeOsMenuAction.planning),
     ]),
   ], helpRu: 'Расписание и правила работы с задачами.',
      helpEn: 'Schedule and plan placement rules.'),
@@ -141,11 +140,6 @@ const _sections = <_LifeOsMenuSection>[
           AppMenuIconRole.folder, LifeOsMenuAction.notesCategoryBar,
           helpRu: 'Закреплённые категории и фильтры',
           helpEn: 'Pinned categories and filters'),
-    ]),
-    _LifeOsMenuGroup('РАБОТА', 'WORKSPACE', [
-      _LifeOsMenuRow('openNotes', 'Открыть заметки и списки',
-          'Open Notes & Lists', AppMenuIconRole.notes,
-          LifeOsMenuAction.notes),
     ]),
   ], helpRu: 'Порядок, фильтры и вид карточек.',
      helpEn: 'Order, filters and card presentation.'),
@@ -222,8 +216,6 @@ const _sections = <_LifeOsMenuSection>[
           LifeOsMenuAction.syncStatus,
           helpRu: 'Статус подключения и офлайн-очередь',
           helpEn: 'Connection state and offline queue'),
-      _LifeOsMenuRow('people', 'Люди и связи', 'People & relations',
-          AppMenuIconRole.people, LifeOsMenuAction.people),
     ]),
   ]),
   _LifeOsMenuSection('health', 'Здоровье и сон', 'Health & sleep',
@@ -254,8 +246,6 @@ const _sections = <_LifeOsMenuSection>[
     _LifeOsMenuGroup('МОЙ ПРОФИЛЬ', 'MY ACCOUNT', [
       _LifeOsMenuRow('profile', 'Имя и данные профиля', 'Profile details',
           AppMenuIconRole.account, LifeOsMenuAction.account),
-      _LifeOsMenuRow('peopleProfile', 'Люди и круги', 'People and circles',
-          AppMenuIconRole.people, LifeOsMenuAction.people),
     ]),
     _LifeOsMenuGroup('ЗАЩИТА И ВХОД', 'SECURITY & SIGN-IN', [
       _LifeOsMenuRow('security', 'Пароль и биометрия',
@@ -285,7 +275,7 @@ const _homeGroups = <({String ru, String en, List<String> ids})>[
   (ru: 'ДАННЫЕ И ПОДКЛЮЧЕНИЯ', en: 'DATA & CONNECTIONS',
      ids: ['connections', 'health']),
   (ru: 'ПРИЛОЖЕНИЕ', en: 'APPLICATION',
-     ids: ['appearance', 'account', 'about']),
+     ids: ['appearance', 'about']),
 ];
 
 class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
@@ -367,21 +357,8 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
     return AppSettingsNavigationRow(
       title: entry.title(_ru),
       leading: AppSettingsMenuIcon(icon: AppMenuIcons.icon(entry.icon)),
-      onTap: () {
-        if (entry.id == 'planning') {
-          widget.onAction(LifeOsMenuAction.planningSettings);
-        } else if (entry.id == 'notes') {
-          widget.onAction(LifeOsMenuAction.notesSettings);
-        } else if (entry.id == 'appearance') {
-          widget.onAction(LifeOsMenuAction.appearance);
-        } else if (entry.id == 'notifications') {
-          widget.onAction(LifeOsMenuAction.notifications);
-        } else if (entry.id == 'health') {
-          widget.onAction(LifeOsMenuAction.sleep);
-        } else {
-          _openSection(entry.id);
-        }
-      },
+      // Every category opens one detail index, never a different settings hub.
+      onTap: () => _openSection(entry.id),
     );
   }
 
@@ -444,34 +421,6 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
     );
   }
 
-  Widget _quickTile(BuildContext context, String label,
-      AppMenuIconRole role, LifeOsMenuAction action) {
-    return Expanded(
-      child: Material(
-        color: Theme.of(context).colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(18),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => widget.onAction(action),
-          child: SizedBox(
-            height: 88,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(AppMenuIcons.icon(role), size: 25),
-                const SizedBox(height: 8),
-                Text(label,
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w700)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _searchField() => TextField(
     controller: _search,
     textInputAction: TextInputAction.search,
@@ -500,17 +449,14 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
   Widget _home(BuildContext context) {
     final result = _searchResults();
     final searching = _search.text.trim().isNotEmpty;
+    final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(_ru ? 'Меню' : 'Menu',
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            fontSize: 35, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 21),
-        if (!searching) ...[
-          _profileCard(context),
-          const SizedBox(height: 18),
-        ],
+            fontWeight: FontWeight.w700)),
+        const SizedBox(height: 16),
         _searchField(),
         const SizedBox(height: 16),
         if (searching) ...[
@@ -528,19 +474,23 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
                     : _detailRow(entry, subtitle: section.title(_ru)),
             ]),
         ] else ...[
-          _heading(context, _ru ? 'БЫСТРЫЙ ДОСТУП' : 'QUICK ACCESS'),
-          Row(
-            children: [
-              _quickTile(context, _ru ? 'Виктор' : 'Viktor',
-                AppMenuIconRole.viktor, LifeOsMenuAction.viktor),
-              const SizedBox(width: 10),
-              _quickTile(context, _ru ? 'Пути' : 'Paths',
-                AppMenuIconRole.paths, LifeOsMenuAction.paths),
-              const SizedBox(width: 10),
-              _quickTile(context, _ru ? 'Люди' : 'People',
-                AppMenuIconRole.people, LifeOsMenuAction.people),
-            ],
-          ),
+          // Desktop already has global navigation. Mobile exposes these
+          // destinations here, without adding a second navigation rail.
+          if (!desktop) ...[
+            _profileCard(context),
+            _heading(context, _ru ? 'РАЗДЕЛЫ' : 'DESTINATIONS'),
+            _group(context, [
+              _detailRow(const _LifeOsMenuRow(
+                'pathsShortcut', 'Пути', 'Paths',
+                AppMenuIconRole.paths, LifeOsMenuAction.paths)),
+              _detailRow(const _LifeOsMenuRow(
+                'peopleShortcut', 'Люди', 'People',
+                AppMenuIconRole.people, LifeOsMenuAction.people)),
+              _detailRow(const _LifeOsMenuRow(
+                'viktorShortcut', 'Виктор', 'Viktor',
+                AppMenuIconRole.viktor, LifeOsMenuAction.viktor)),
+            ]),
+          ],
           for (final group in _homeGroups) ...[
             _heading(context, _ru ? group.ru : group.en),
             _group(context, [
@@ -585,7 +535,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
         const SizedBox(height: 14),
         Text(section.title(_ru),
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            fontSize: 30, fontWeight: FontWeight.w700)),
+            fontWeight: FontWeight.w700)),
         if (section.subtitle(_ru).isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(section.subtitle(_ru),
@@ -607,7 +557,6 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
     return Theme(
       data: settingsNeutralTheme(context),
       child: Builder(builder: (context) {
-        final scheme = Theme.of(context).colorScheme;
         return ValueListenableBuilder<int>(
           valueListenable: widget.activeTab,
           builder: (context, selectedTab, _) => PopScope(
@@ -617,35 +566,15 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
               _back();
             }
           },
-          child: LayoutBuilder(
-            builder: (context, size) {
-              final wide = size.maxWidth >= 800;
-              final active = _activeSection;
-              return ColoredBox(
-                color: scheme.surfaceContainerLowest,
-                child: Row(
-                  children: [
-                    // Primary navigation lives in ShellSideNavigation. No second rail.
-                    Expanded(
-                      child: ListView(
-                        key: ValueKey(active ?? 'home'),
-                        padding: EdgeInsets.fromLTRB(
-                          wide ? 52 : 20, wide ? 38 : 22,
-                          wide ? 32 : 20, 48),
-                        children: [
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 680),
-                            child: active == null
-                                ? _home(context)
-                                : _details(context, _section(active)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+          child: AppSettingsPageBody(
+            // Avoid reopening a section/search at the previous menu scroll offset.
+            key: ValueKey(_activeSection ??
+                (_search.text.trim().isEmpty ? 'home' : 'search')),
+            children: [
+              _activeSection == null
+                  ? _home(context)
+                  : _details(context, _section(_activeSection!)),
+            ],
           ),
           ),
         );
