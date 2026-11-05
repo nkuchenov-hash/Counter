@@ -1,0 +1,40 @@
+name: Realtime sync regression
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'lib/data/records/record_realtime.dart'
+      - 'lib/data/record_service.dart'
+      - 'lib/data/plans/plan_stream_helpers.dart'
+      - 'lib/data/plan_service.dart'
+      - 'test/live_sync_contract_test.dart'
+      - '.github/workflows/realtime-sync-regression.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: realtime-sync-regression-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+      - name: Generate non-secret environment placeholder
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' "  static const String placeholder = '';" '}' > lib/core/env/env.dart
+      - run: flutter pub get
+      - name: Verify realtime delivery and durable writes
+        run: |
+          flutter test test/live_sync_contract_test.dart test/record_write_durability_test.dart
