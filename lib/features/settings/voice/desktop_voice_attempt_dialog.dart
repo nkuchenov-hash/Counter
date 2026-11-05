@@ -1,3 +1,4 @@
+import 'package:counter/core/app_colors.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_attempt_log.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -224,37 +225,37 @@ class _StatusHeader extends StatelessWidget {
       case DesktopVoiceAttemptStatus.taskCreated:
         return (
           Icons.check_circle_rounded,
-          const Color(0xFF1F8A4C),
+          const AppColors.success,
           isRu ? 'Задача создана' : 'Task created',
         );
       case DesktopVoiceAttemptStatus.inProgress:
         return (
           Icons.graphic_eq_rounded,
-          const Color(0xFF1F6FEB),
+          const AppColors.information,
           isRu ? 'Выполняется…' : 'In progress…',
         );
       case DesktopVoiceAttemptStatus.notRecognized:
         return (
           Icons.help_outline_rounded,
-          const Color(0xFFB0700A),
+          const AppColors.warning,
           isRu ? 'Команда не распознана' : 'Not recognized',
         );
       case DesktopVoiceAttemptStatus.micError:
         return (
           Icons.mic_off_rounded,
-          const Color(0xFFB3261E),
+          const AppColors.error,
           isRu ? 'Ошибка микрофона' : 'Microphone error',
         );
       case DesktopVoiceAttemptStatus.sttError:
         return (
           Icons.closed_caption_disabled_rounded,
-          const Color(0xFFB3261E),
+          const AppColors.error,
           isRu ? 'Ошибка распознавания' : 'Recognition error',
         );
       case DesktopVoiceAttemptStatus.saveError:
         return (
           Icons.cloud_off_rounded,
-          const Color(0xFFB3261E),
+          const AppColors.error,
           isRu ? 'Не удалось сохранить' : 'Save failed',
         );
       case DesktopVoiceAttemptStatus.cancelled:
