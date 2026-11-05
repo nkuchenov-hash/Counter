@@ -33,6 +33,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
       onTestDesktopVoice: () => unawaited(openViktor()),
     ),
     const PathsPage(),
+    LifeOsMenuPage(onAction: onLifeOsMenuAction),
   ];
 
   String _desktopSectionTitle(String loc) => switch (shellPageIndex) {
@@ -43,6 +44,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
     4 => t(loc, 'more_menu_categories'),
     5 => t(loc, 'more_menu_profile'),
     6 => loc.toLowerCase().startsWith('ru') ? 'Пути' : 'Paths',
+    7 => loc.toLowerCase().startsWith('ru') ? 'Меню' : 'Menu',
     _ => t(loc, 'app_title'),
   };
 

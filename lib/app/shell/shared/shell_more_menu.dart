@@ -33,139 +33,137 @@ mixin ShellMoreMenu on ShellCoreLogic {
     );
   }
 
+  /// The full-screen Menu tab replaces the previous mixed-action bottom sheet.
+  /// Feature-local sheets stay available at their own entry points.
   void openMoreMenu({bool secondaryOnly = false}) {
-    final loc = currentLocale.value;
-    final isRu = loc.toLowerCase().startsWith('ru');
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-      builder: (sheetContext) => StreamBuilder<UserSettings>(
-        stream: DatabaseService.instance.userSettingsStream,
-        initialData: DatabaseService.instance.settings,
-        builder: (context, snapshot) {
-          final isAdmin =
-              snapshot.data?.isAdmin ??
-              DatabaseService.instance.settings.isAdmin;
+    setState(() => setShellPageIndex(7));
+  }
 
-          void navigateTo(int index) {
-            Navigator.of(sheetContext).pop();
-            setState(() => setShellPageIndex(index));
-          }
-
-          return SafeArea(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.80,
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(5, 2, 0, 16),
-                      child: Text(
-                        isRu ? 'Ещё' : 'More',
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    AppSettingsNavigationGroup(
-                      children: [
-                        AppMenuActionTile(
-                          leading: const AppSettingsMenuIcon(
-                            icon: Icons.auto_awesome_rounded,
-                          ),
-                          title: Text(isRu ? 'Виктор · ИИ' : 'Viktor · AI'),
-                          subtitle: Text(isRu
-                              ? 'Общение, планы и голосовые команды'
-                              : 'Chat, planning and voice commands'),
-                          onTap: () {
-                            Navigator.of(sheetContext).pop();
-                            unawaited(openViktor());
-                          },
-                        ),
-                      ],
-                    ),
-                    AppSettingsNavigationGroup(
-                      children: [
-                        if (!secondaryOnly)
-                          AppMenuActionTile(
-                            leading: const AppSettingsMenuIcon(
-                              icon: Icons.person_outline_rounded,
-                            ),
-                            title: Text(t(loc, 'more_menu_profile')),
-                            onTap: () => navigateTo(5),
-                          ),
-                        if (!secondaryOnly)
-                          AppMenuActionTile(
-                            leading: const AppSettingsMenuIcon(
-                              icon: Icons.label_outline_rounded,
-                            ),
-                            title: Text(t(loc, 'more_menu_categories')),
-                            onTap: () => navigateTo(4),
-                          ),
-                        AppMenuActionTile(
-                          leading: const AppSettingsMenuIcon(
-                            icon: Icons.alt_route_rounded,
-                          ),
-                          title: Text(
-                              isRu ? 'Пути проектов' : 'Project paths'),
-                          subtitle: Text(isRu
-                              ? 'От цели до конкретных действий'
-                              : 'From goals to concrete actions'),
-                          onTap: () {
-                            Navigator.of(sheetContext).pop();
-                            openProjectPaths();
-                          },
-                        ),
-                      ],
-                    ),
-                    if (isAdmin || _desktopVoiceDevDiagnosticsVisible)
-                      AppSettingsNavigationGroup(
-                        children: [
-                          if (isAdmin)
-                            AppMenuActionTile(
-                              leading: const AppSettingsMenuIcon(
-                                icon: Icons.design_services_outlined,
-                              ),
-                              title: const Text('Dev / Design Lab'),
-                              onTap: () {
-                                Navigator.of(sheetContext).pop();
-                                Navigator.of(context).push<void>(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => const ComponentLabPage(),
-                                  ),
-                                );
-                              },
-                            ),
-                          if (_desktopVoiceDevDiagnosticsVisible)
-                            AppMenuActionTile(
-                              leading: const AppSettingsMenuIcon(
-                                icon: Icons.graphic_eq_rounded,
-                              ),
-                              title: Text(
-                                  t(loc, 'more_menu_voice_diagnostics')),
-                              subtitle: Text(
-                                  t(loc, 'more_menu_voice_diagnostics_subtitle')),
-                              onTap: () {
-                                Navigator.of(sheetContext).pop();
-                                showDesktopVoiceAttemptDialog(context);
-                              },
-                            ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
+  void _openProfileDestination(ProfileSettingsDestination target) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => ProfilePage(
+          initialDestination: target,
+          onSaved: () {
+            if (mounted) setState(() {});
+            unawaited(refreshDesktopTrayMenu());
+          },
+          onDesktopVoiceHotkeyChanged: (_) => reattachDesktopVoiceHotkey(),
+          onTestDesktopVoice: () => unawaited(openViktor()),
+          onOpenViktor: () => unawaited(openViktor()),
+        ),
       ),
     );
+  }
+
+  void _navigateToWorkspace(int tab) {
+    setState(() => setShellPageIndex(tab));
+    if (tab == 0 || tab == 1) {
+      final target = DatabaseService.instance.getTimelineDeviceLocalToday();
+      applySharedSelectedDate(target, loadTimelineTasks: tab == 0);
+    }
+  }
+
+  void onLifeOsMenuAction(LifeOsMenuAction action) {
+    switch (action) {
+      case LifeOsMenuAction.viktor:
+        unawaited(openViktor());
+        break;
+      case LifeOsMenuAction.paths:
+        openProjectPaths();
+        break;
+      case LifeOsMenuAction.people:
+        Navigator.of(context).push<void>(MaterialPageRoute<void>(
+          builder: (_) => const PeopleSettingsPage()));
+        break;
+      case LifeOsMenuAction.peopleSources:
+        Navigator.of(context).push<void>(MaterialPageRoute<void>(
+          builder: (_) => const PeopleSettingsPage(
+            initialSection: PeopleSettingsDestination.sources)));
+        break;
+      case LifeOsMenuAction.categories:
+      case LifeOsMenuAction.categoryAppearance:
+        _navigateToWorkspace(4);
+        break;
+      case LifeOsMenuAction.tags:
+        Navigator.of(context).push<void>(MaterialPageRoute<void>(
+          builder: (_) => const TagSettingsHub()));
+        break;
+      case LifeOsMenuAction.tagAppearance:
+        Navigator.of(context).push<void>(MaterialPageRoute<void>(
+          builder: (_) => const TagSettingsHub(initialTabIndex: 1)));
+        break;
+      case LifeOsMenuAction.tagDurations:
+        Navigator.of(context).push<void>(MaterialPageRoute<void>(
+          builder: (_) => const TagSettingsHub(initialTabIndex: 2)));
+        break;
+      case LifeOsMenuAction.planning:
+        _navigateToWorkspace(1);
+        break;
+      case LifeOsMenuAction.planningSettings:
+        Navigator.of(context).push<void>(MaterialPageRoute<void>(
+          builder: (_) => LifeOsPlanningSettingsPage(
+            onOpenPlanning: () {
+              Navigator.of(context).pop();
+              _navigateToWorkspace(1);
+            },
+          )));
+        break;
+      case LifeOsMenuAction.notes:
+        _navigateToWorkspace(3);
+        break;
+      case LifeOsMenuAction.notesSettings:
+        Navigator.of(context).push<void>(MaterialPageRoute<void>(
+          builder: (_) => LifeOsNotesSettingsPage(
+            onOpenNotes: () {
+              Navigator.of(context).pop();
+              _navigateToWorkspace(3);
+            },
+          )));
+        break;
+      case LifeOsMenuAction.calendars:
+        _openProfileDestination(ProfileSettingsDestination.calendars);
+        break;
+      case LifeOsMenuAction.notifications:
+        _openProfileDestination(ProfileSettingsDestination.notifications);
+        break;
+      case LifeOsMenuAction.morning:
+        _openProfileDestination(ProfileSettingsDestination.morning);
+        break;
+      case LifeOsMenuAction.sleep:
+        _openProfileDestination(ProfileSettingsDestination.sleep);
+        break;
+      case LifeOsMenuAction.voiceSettings:
+        _openProfileDestination(ProfileSettingsDestination.voice);
+        break;
+      case LifeOsMenuAction.appearance:
+        _openProfileDestination(ProfileSettingsDestination.appearance);
+        break;
+      case LifeOsMenuAction.languageAndTime:
+        _openProfileDestination(ProfileSettingsDestination.timeLocale);
+        break;
+      case LifeOsMenuAction.account:
+        _openProfileDestination(ProfileSettingsDestination.account);
+        break;
+      case LifeOsMenuAction.about:
+        _openProfileDestination(ProfileSettingsDestination.about);
+        break;
+      case LifeOsMenuAction.syncStatus:
+      case LifeOsMenuAction.diagnostics:
+        Navigator.of(context).push<void>(MaterialPageRoute<void>(
+          builder: (_) => const LifeOsSyncStatusPage()));
+        break;
+      case LifeOsMenuAction.componentLab:
+        if (!DatabaseService.instance.settings.isAdmin) return;
+        Navigator.of(context).push<void>(MaterialPageRoute<void>(
+          builder: (_) => const ComponentLabPage()));
+        break;
+      case LifeOsMenuAction.voiceDiagnostics:
+        if (_desktopVoiceDevDiagnosticsVisible) {
+          showDesktopVoiceAttemptDialog(context);
+        }
+        break;
+    }
   }
 
   void onShellTabSelected(int i) {
