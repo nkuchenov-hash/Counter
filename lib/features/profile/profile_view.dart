@@ -386,9 +386,21 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
         AppSettingsSectionCard(
+          title: t(locale, 'profile_time_locale_section'),
+          child: _buildTimeLocaleFields(context, locale, safeTimeZone),
+        ),
+        AppSettingsSectionCard(
+          title: t(locale, 'appearance'),
+          child: _buildAppearanceFields(context, locale),
+        ),
+        AppSettingsSectionCard(
           title: t(locale, 'profile_notifications_section'),
           subtitle: kIsWeb ? null : t(locale, 'profile_notifications_subtitle'),
           child: ProfileNotificationsSection(embedded: true),
+        ),
+        AppSettingsSectionCard(
+          title: t(locale, 'morning_prompt_section'),
+          child: const MorningStartSettingsSection(),
         ),
         AppSettingsSectionCard(
           title: 'Виктор · ИИ',
@@ -397,18 +409,6 @@ class _ProfilePageState extends State<ProfilePage> {
             icon: Icons.auto_awesome_rounded,
             onPressed: widget.onOpenViktor,
           ),
-        ),
-        AppSettingsSectionCard(
-          title: t(locale, 'appearance'),
-          child: _buildAppearanceFields(context, locale),
-        ),
-        AppSettingsSectionCard(
-          title: t(locale, 'profile_time_locale_section'),
-          child: _buildTimeLocaleFields(context, locale, safeTimeZone),
-        ),
-        AppSettingsSectionCard(
-          title: t(locale, 'morning_prompt_section'),
-          child: const MorningStartSettingsSection(),
         ),
         AppSettingsSectionCard(
           title: t(locale, 'profile_about_section'),
