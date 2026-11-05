@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `34d627a0` on 2026-11-05.**
+**Generated from input HEAD `be5ed7ed` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -12625,7 +12625,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppMenuIconRole`, `AppMenuIcons`).
 - **Key code names:** `AppMenuIconRole`, `AppMenuIcons`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/profile/menu/life_os_sync_status_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/app_settings_layout.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12642,7 +12642,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_menu_icons`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/profile/menu/life_os_sync_status_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/app_settings_layout.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22178,7 +22178,7 @@ EN:
 - **Contents:** Primary symbols: `LifeOsNotesSettingsPage`, `_LifeOsNotesSettingsPageState`.
 - **Key code names:** `LifeOsNotesSettingsPage`, `_LifeOsNotesSettingsPageState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22195,7 +22195,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `life_os_notes_settings_page.dart` на More → Profile и настройки.
 - **Содержимое:** Компоновка экрана и state в `life_os_notes_settings_page.dart`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
