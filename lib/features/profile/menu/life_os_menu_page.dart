@@ -478,7 +478,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
       children: [
         Text(_ru ? 'Меню' : 'Menu',
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            fontSize: 35, fontWeight: FontWeight.w750)),
+            fontSize: 35, fontWeight: FontWeight.w700)),
         const SizedBox(height: 21),
         _searchField(),
         const SizedBox(height: 16),
@@ -544,7 +544,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
         const SizedBox(height: 14),
         Text(section.title(_ru),
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            fontSize: 30, fontWeight: FontWeight.w750)),
+            fontSize: 30, fontWeight: FontWeight.w700)),
         if (section.subtitle(_ru).isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(section.subtitle(_ru),

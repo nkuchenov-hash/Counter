@@ -20,6 +20,8 @@ import 'package:counter/features/profile/settings/account_settings_section.dart'
 import 'package:counter/features/profile/calendar_integrations/calendar_integrations_section.dart';
 import 'package:counter/features/profile/settings/notification_settings_section.dart';
 import 'package:counter/features/profile/settings/security_settings_section.dart';
+import 'package:counter/features/settings/health/health_connect_settings_section.dart';
+import 'package:counter/features/settings/voice/desktop_voice_settings_section.dart';
 
 // ---------------------------------------------------------------------------
 // PROFILE FEATURE — UI_ISOLATION (§7). All strings via t() from dictionary.
@@ -34,6 +36,7 @@ class ProfilePage extends StatefulWidget {
     this.onDesktopVoiceHotkeyChanged,
     this.onTestDesktopVoice,
     this.onOpenViktor,
+    this.initialDestination,
   });
 
   final VoidCallback? onSaved;
@@ -41,13 +44,16 @@ class ProfilePage extends StatefulWidget {
   onDesktopVoiceHotkeyChanged;
   final VoidCallback? onTestDesktopVoice;
   final VoidCallback? onOpenViktor;
+  final ProfileSettingsDestination? initialDestination;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-enum _MobileSettingsSection {
+enum ProfileSettingsDestination {
   account,
+  sleep,
+  voice,
   calendars,
   timeLocale,
   appearance,
@@ -72,7 +78,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   bool _savingTimeZone = false;
   AppSettingsTab _desktopSettingsTab = AppSettingsTab.account;
-  _MobileSettingsSection? _mobileSection;
+  ProfileSettingsDestination? _mobileSection;
 
   static const _nameDebounceDuration = Duration(milliseconds: 600);
 
@@ -87,6 +93,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _displayNameController = TextEditingController(text: s.displayName ?? '');
     _displayNameFocus = FocusNode();
     _displayNameFocus.addListener(_onDisplayNameFocusChange);
+    _mobileSection = widget.initialDestination;
   }
 
   void _onDisplayNameFocusChange() {
@@ -265,6 +272,22 @@ class _ProfilePageState extends State<ProfilePage> {
         settingsIsWideDesktop(context) &&
         shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
 
+    if (useDesktopLayout && widget.initialDestination != null) {
+      return Theme(
+        data: settingsNeutralTheme(context),
+        child: Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+          appBar: AppBar(
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+            surfaceTintColor: Colors.transparent,
+            title: Text(_mobileSectionTitle(locale, widget.initialDestination!)),
+          ),
+          body: _buildMobileSettingsDetail(
+              context, locale, safeTimeZone, widget.initialDestination!),
+        ),
+      );
+    }
+
     if (useDesktopLayout) {
       return Theme(
         data: settingsNeutralTheme(context),
@@ -277,7 +300,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     final section = _mobileSection;
     return PopScope(
-      canPop: section == null,
+      canPop: section == null || widget.initialDestination != null,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop && _mobileSection != null && mounted) {
           setState(() => _mobileSection = null);
@@ -295,7 +318,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 : IconButton(
                     tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                     icon: const Icon(Icons.arrow_back_rounded),
-                    onPressed: () => setState(() => _mobileSection = null),
+                    onPressed: widget.initialDestination != null
+                        ? () => Navigator.of(context).maybePop()
+                        : () => setState(() => _mobileSection = null),
                   ),
             toolbarHeight: section == null ? 80 : 60,
             backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
@@ -417,16 +442,18 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  String _mobileSectionTitle(String locale, _MobileSettingsSection section) {
+  String _mobileSectionTitle(String locale, ProfileSettingsDestination section) {
     return switch (section) {
-      _MobileSettingsSection.account => t(locale, 'account_security'),
-      _MobileSettingsSection.calendars => t(locale, 'calendar_integrations_title'),
-      _MobileSettingsSection.timeLocale => t(locale, 'profile_time_locale_section'),
-      _MobileSettingsSection.appearance => t(locale, 'appearance'),
-      _MobileSettingsSection.notifications => t(locale, 'profile_notifications_section'),
-      _MobileSettingsSection.morning => t(locale, 'morning_prompt_section'),
-      _MobileSettingsSection.viktor => locale.startsWith('ru') ? 'Виктор · ИИ' : 'Viktor · AI',
-      _MobileSettingsSection.about => t(locale, 'profile_about_section'),
+      ProfileSettingsDestination.account => t(locale, 'account_security'),
+      ProfileSettingsDestination.sleep => locale.startsWith('ru') ? 'Здоровье и сон' : 'Health & sleep',
+      ProfileSettingsDestination.voice => t(locale, 'desktop_voice_settings_section'),
+      ProfileSettingsDestination.calendars => t(locale, 'calendar_integrations_title'),
+      ProfileSettingsDestination.timeLocale => t(locale, 'profile_time_locale_section'),
+      ProfileSettingsDestination.appearance => t(locale, 'appearance'),
+      ProfileSettingsDestination.notifications => t(locale, 'profile_notifications_section'),
+      ProfileSettingsDestination.morning => t(locale, 'morning_prompt_section'),
+      ProfileSettingsDestination.viktor => locale.startsWith('ru') ? 'Виктор · ИИ' : 'Viktor · AI',
+      ProfileSettingsDestination.about => t(locale, 'profile_about_section'),
     };
   }
 
@@ -436,7 +463,7 @@ class _ProfilePageState extends State<ProfilePage> {
     String safeTimeZone,
   ) {
     AppSettingsNavigationRow destination(
-      _MobileSettingsSection section,
+      ProfileSettingsDestination section,
       IconData icon, {
       String? subtitle,
     }) {
@@ -455,22 +482,24 @@ class _ProfilePageState extends State<ProfilePage> {
       children: [
         AppSettingsNavigationGroup(
           children: [
-            destination(_MobileSettingsSection.account, Icons.person_outline_rounded),
-            destination(_MobileSettingsSection.calendars, Icons.calendar_month_outlined),
+            destination(ProfileSettingsDestination.account, Icons.person_outline_rounded),
+            destination(ProfileSettingsDestination.sleep, Icons.favorite_border_rounded),
+            destination(ProfileSettingsDestination.calendars, Icons.calendar_month_outlined),
           ],
         ),
         AppSettingsNavigationGroup(
           children: [
-            destination(_MobileSettingsSection.appearance, Icons.palette_outlined),
-            destination(_MobileSettingsSection.timeLocale, Icons.language_rounded),
-            destination(_MobileSettingsSection.notifications, Icons.notifications_none_rounded),
-            destination(_MobileSettingsSection.morning, Icons.wb_sunny_outlined),
+            destination(ProfileSettingsDestination.appearance, Icons.palette_outlined),
+            destination(ProfileSettingsDestination.timeLocale, Icons.language_rounded),
+            destination(ProfileSettingsDestination.notifications, Icons.notifications_none_rounded),
+            destination(ProfileSettingsDestination.morning, Icons.wb_sunny_outlined),
           ],
         ),
         AppSettingsNavigationGroup(
           children: [
-            destination(_MobileSettingsSection.viktor, Icons.auto_awesome_outlined),
-            destination(_MobileSettingsSection.about, Icons.info_outline_rounded),
+            destination(ProfileSettingsDestination.viktor, Icons.auto_awesome_outlined),
+            destination(ProfileSettingsDestination.voice, Icons.mic_none_rounded),
+            destination(ProfileSettingsDestination.about, Icons.info_outline_rounded),
           ],
         ),
       ],
@@ -481,11 +510,11 @@ class _ProfilePageState extends State<ProfilePage> {
     BuildContext context,
     String locale,
     String safeTimeZone,
-    _MobileSettingsSection section,
+    ProfileSettingsDestination section,
   ) {
     final title = _mobileSectionTitle(locale, section);
     final content = switch (section) {
-      _MobileSettingsSection.account => Column(
+      ProfileSettingsDestination.account => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildDisplayNameField(context, locale),
@@ -495,19 +524,28 @@ class _ProfilePageState extends State<ProfilePage> {
           SecuritySection(onSaved: widget.onSaved, embedded: true),
         ],
       ),
-      _MobileSettingsSection.calendars => const CalendarIntegrationsSection(),
-      _MobileSettingsSection.timeLocale =>
+      ProfileSettingsDestination.calendars => const CalendarIntegrationsSection(),
+      ProfileSettingsDestination.sleep => const SleepSyncSettingsSection(),
+      ProfileSettingsDestination.voice => kIsWeb
+          ? Text(locale.startsWith('ru')
+              ? 'Голосовые настройки устройства доступны в приложении для Windows.'
+              : 'Desktop voice settings are available in the Windows app.')
+          : DesktopVoiceSettingsSection(
+              onHotkeyChanged: widget.onDesktopVoiceHotkeyChanged,
+              onTestVoice: widget.onTestDesktopVoice,
+            ),
+      ProfileSettingsDestination.timeLocale =>
           _buildTimeLocaleFields(context, locale, safeTimeZone),
-      _MobileSettingsSection.appearance => _buildAppearanceFields(context, locale),
-      _MobileSettingsSection.notifications =>
+      ProfileSettingsDestination.appearance => _buildAppearanceFields(context, locale),
+      ProfileSettingsDestination.notifications =>
           ProfileNotificationsSection(embedded: true),
-      _MobileSettingsSection.morning => const MorningStartSettingsSection(),
-      _MobileSettingsSection.viktor => AppButton.primary(
+      ProfileSettingsDestination.morning => const MorningStartSettingsSection(),
+      ProfileSettingsDestination.viktor => AppButton.primary(
         label: locale.startsWith('ru') ? 'Открыть Виктора' : 'Open Viktor',
         icon: Icons.auto_awesome_rounded,
         onPressed: widget.onOpenViktor,
       ),
-      _MobileSettingsSection.about => Text(
+      ProfileSettingsDestination.about => Text(
         '${t(locale, 'profile_build_label')} ${AppBuildInfo.gitCommit} · ${AppBuildInfo.builtAt}',
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -518,7 +556,7 @@ class _ProfilePageState extends State<ProfilePage> {
       children: [
         AppSettingsSectionCard(
           title: title,
-          subtitle: section == _MobileSettingsSection.notifications && !kIsWeb
+          subtitle: section == ProfileSettingsDestination.notifications && !kIsWeb
               ? t(locale, 'profile_notifications_subtitle')
               : null,
           child: content,
