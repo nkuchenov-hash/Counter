@@ -12,7 +12,7 @@ import 'package:counter/features/settings/timezone_settings.dart'
     as tz_settings;
 import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:counter/core/widgets/app_loading.dart';
@@ -38,6 +38,7 @@ class ProfilePage extends StatefulWidget {
     this.onOpenViktor,
     this.initialDestination,
     this.onBackToMenu,
+    this.activeTab,
   });
 
   final VoidCallback? onSaved;
@@ -47,6 +48,7 @@ class ProfilePage extends StatefulWidget {
   final VoidCallback? onOpenViktor;
   final ProfileSettingsDestination? initialDestination;
   final VoidCallback? onBackToMenu;
+  final ValueListenable<int>? activeTab;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -281,10 +283,10 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     }
 
-    return PopScope(
-      canPop: widget.onBackToMenu == null,
+    Widget page(bool isActive) => PopScope(
+      canPop: widget.onBackToMenu == null || !isActive,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && widget.onBackToMenu != null) {
+        if (!didPop && isActive && widget.onBackToMenu != null) {
           widget.onBackToMenu!();
         }
       },
@@ -310,6 +312,13 @@ class _ProfilePageState extends State<ProfilePage> {
           body: _buildMobileSettingsDetail(context, locale, safeTimeZone, section),
         ),
       ),
+    );
+
+    final tabNotifier = widget.activeTab;
+    if (tabNotifier == null) return page(true);
+    return ValueListenableBuilder<int>(
+      valueListenable: tabNotifier,
+      builder: (context, tab, _) => page(tab == 5),
     );
   }
 
