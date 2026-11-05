@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `0512c6a3` on 2026-11-05.**
+**Generated from input HEAD `2211f784` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -12625,7 +12625,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppMenuIconRole`, `AppMenuIcons`).
 - **Key code names:** `AppMenuIconRole`, `AppMenuIcons`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/profile/menu/life_os_sync_status_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/profile/menu/life_os_sync_status_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12642,7 +12642,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_menu_icons`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/profile/menu/life_os_sync_status_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/profile/menu/life_os_sync_status_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12663,7 +12663,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`).
 - **Key code names:** `AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`, `AppSettingsSwitchRow`, `AppSettingsInfoRow`, `AppSettingsActionRow`, `AppSettingsCardGrid`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_menu_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12680,7 +12680,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_settings_layout`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_menu_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
