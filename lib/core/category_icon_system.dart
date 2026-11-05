@@ -138,7 +138,7 @@ bool isSelectableCategoryIconKey(String key) {
     'magnifying_glass', 'printer', 'pencil', 'cog', 'play', 'pause',
     'stop', 'pause_circle', 'play_circle', 'question_mark_circle',
     'document_arrow_down', 'document_arrow_up', 'document_duplicate',
-    'document_arrow_up', 'cloud_arrow_up', 'cloud_arrow_down',
+    'cloud_arrow_up', 'cloud_arrow_down',
   };
   return !controls.contains(key);
 }
