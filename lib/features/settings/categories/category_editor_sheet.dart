@@ -130,12 +130,17 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     if (iconSelectionChanged) {
       try {
         await CategoryIconStore.instance.setSelection(widget.category, _choice);
-      } catch (_) {
+      } catch (error, stack) {
+        debugPrint('Category icon save failed for ${_choice.key}: $error\n$stack');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(currentLocale.value == 'ru'
-                ? 'Не удалось сохранить иконку на устройстве.'
-                : 'Could not save the icon on this device.'),
+            content: Text(error is ArgumentError
+                ? (currentLocale.value == 'ru'
+                    ? 'Эта иконка не поддерживается. Выберите другую.'
+                    : 'This icon is not supported. Choose another.')
+                : (currentLocale.value == 'ru'
+                    ? 'Не удалось записать иконку в локальное хранилище. Изменение не сохранено.'
+                    : 'Could not write the icon to local storage. No change was saved.')),
           ));
         }
         return;
