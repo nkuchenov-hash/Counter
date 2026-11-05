@@ -20,6 +20,7 @@ ThemeData settingsNeutralTheme(BuildContext context) {
   final scheme = base.colorScheme.copyWith(
     primary: base.colorScheme.onSurface,
     onPrimary: dark ? AppColors.darkAppBackground : Colors.white,
+    surface: dark ? const Color(0xFF161616) : const Color(0xFFF2F2F2),
     surfaceContainerLowest: dark
         ? const Color(0xFF161616)
         : const Color(0xFFF2F2F2),
