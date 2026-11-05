@@ -41,6 +41,27 @@ void main() {
     );
   });
 
+  test('small red orange pink labels contrast against tinted chips', () {
+    for (final surface in <Color>[
+      const Color(0xFFF8FAFC), const Color(0xFF121820),
+    ]) {
+      for (final family in <MaterialColor>[
+        kNordicEntertainment, kNordicErrands, kNordicPeople,
+      ]) {
+        final color = family[500]!;
+        final plate = tagLetterChipPlate(color, surface);
+        final fg = tagVibrantForeground(color, surface: surface);
+        final foregroundLuminance = fg.computeLuminance();
+        final plateLuminance = plate.computeLuminance();
+        final higher = foregroundLuminance > plateLuminance
+            ? foregroundLuminance : plateLuminance;
+        final lower = foregroundLuminance > plateLuminance
+            ? plateLuminance : foregroundLuminance;
+        expect((higher + 0.05) / (lower + 0.05), greaterThanOrEqualTo(4.5));
+      }
+    }
+  });
+
   test('custom tag colors and exact gold stay untouched', () {
     expect(parseTagHexColor('#ABCD12'), const Color(0xFFABCD12));
     expect(parseTagHexColor('#F6C500'), kTagYellowGold);
