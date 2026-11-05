@@ -102,24 +102,30 @@ const MaterialColor kNordicErrands = MaterialColor(0xFFF26900, <int, Color>{
   900: Color(0xFF6E2E00),
 });
 
-const MaterialColor kNordicEntertainment = MaterialColor(0xFFC82332, <int, Color>{
-  50: Color(0xFFFDF1F2), 100: Color(0xFFF9DFE2), 200: Color(0xFFF2BDC3),
-  300: Color(0xFFE88F99), 400: Color(0xFFDC5F70), 500: Color(0xFFC82332),
-  600: Color(0xFFB3202E), 700: Color(0xFF961F2A), 800: Color(0xFF7A1F27),
-  900: Color(0xFF621D24),
+const MaterialColor kNordicEntertainment = MaterialColor(0xFFEF3B3B, <int, Color>{
+  50: Color(0xFFFFF3F3),
+  100: Color(0xFFFFE0E0),
+  200: Color(0xFFFFC0C0),
+  300: Color(0xFFFF9696),
+  400: Color(0xFFF66A6A),
+  500: Color(0xFFEF3B3B),
+  600: Color(0xFFD52F2F),
+  700: Color(0xFFB62626),
+  800: Color(0xFF942020),
+  900: Color(0xFF731B1B),
 });
 
-const MaterialColor kNordicPeople = MaterialColor(0xFFF75CC5, <int, Color>{
-  50: Color(0xFFFFF3FC),
-  100: Color(0xFFFDE6F7),
-  200: Color(0xFFFBC9EE),
-  300: Color(0xFFF6A7E0),
-  400: Color(0xFFF382D4),
-  500: Color(0xFFF75CC5),
-  600: Color(0xFFD647A7),
-  700: Color(0xFFAD3585),
-  800: Color(0xFF8D2B6C),
-  900: Color(0xFF702459),
+const MaterialColor kNordicPeople = MaterialColor(0xFFFF79AA, <int, Color>{
+  50: Color(0xFFFFF4F8),
+  100: Color(0xFFFFE5EF),
+  200: Color(0xFFFFCBDE),
+  300: Color(0xFFFFAAC8),
+  400: Color(0xFFFF92B8),
+  500: Color(0xFFFF79AA),
+  600: Color(0xFFE65E91),
+  700: Color(0xFFBD4978),
+  800: Color(0xFF963B61),
+  900: Color(0xFF752E4B),
 });
 
 
@@ -313,6 +319,32 @@ const Map<int, int> _legacyNovemberCategoryNeutralTones = <int, int>{
   0xFF2A2A2A: 900,
 };
 
+const Map<int, int> _priorScarletTones = <int, int>{
+  0xFFFDF1F2: 50,
+  0xFFF9DFE2: 100,
+  0xFFF2BDC3: 200,
+  0xFFE88F99: 300,
+  0xFFDC5F70: 400,
+  0xFFC82332: 500,
+  0xFFB3202E: 600,
+  0xFF961F2A: 700,
+  0xFF7A1F27: 800,
+  0xFF621D24: 900,
+};
+
+const Map<int, int> _priorPinkTones = <int, int>{
+  0xFFFFF3FC: 50,
+  0xFFFDE6F7: 100,
+  0xFFFBC9EE: 200,
+  0xFFF6A7E0: 300,
+  0xFFF382D4: 400,
+  0xFFF75CC5: 500,
+  0xFFD647A7: 600,
+  0xFFAD3585: 700,
+  0xFF8D2B6C: 800,
+  0xFF702459: 900,
+};
+
 int canonicalLifeColorValue(int savedArgb) {
 
   // Current values must be stable. Exact-match historical remapping never
@@ -365,6 +397,11 @@ int canonicalLifeColorValue(int savedArgb) {
   if (tonekNordicStudy != null) return kNordicStudy[tonekNordicStudy]!.toARGB32();
   final tonekCategoryNeutral = _legacyCategoryNeutralTones[savedArgb];
   if (tonekCategoryNeutral != null) return kCategoryNeutral[tonekCategoryNeutral]!.toARGB32();
+  // Official colors from the previous palette revision, not arbitrary HEX.
+  final prevRedTone = _priorScarletTones[savedArgb];
+  if (prevRedTone != null) return kNordicEntertainment[prevRedTone]!.toARGB32();
+  final prevPinkTone = _priorPinkTones[savedArgb];
+  if (prevPinkTone != null) return kNordicPeople[prevPinkTone]!.toARGB32();
   final orangeTone = _legacyOrangeTones[savedArgb];
   if (orangeTone != null) return kNordicErrands[orangeTone]!.toARGB32();
   final redTone = _legacyRedTones[savedArgb];
