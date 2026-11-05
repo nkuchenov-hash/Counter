@@ -307,7 +307,7 @@ class _ProfilePageState extends State<ProfilePage> {
         Container(
           height: 1,
           margin: const EdgeInsets.only(top: 0),
-          color: const Color(0xFFE6E2DC),
+          color: Theme.of(context).colorScheme.outlineVariant,
         ),
         const SizedBox(height: 20),
         switch (_desktopSettingsTab) {
