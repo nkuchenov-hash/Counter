@@ -74,6 +74,9 @@ jobs:
       - name: Verify shared LIFE OS semantic palette
         run: flutter test test/life_semantic_palette_test.dart
 
+      - name: Verify persistent People/Menu shell and styling contracts
+        run: flutter test test/shell_form_factor_test.dart
+
       - name: Analyze runtime app
         run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 
