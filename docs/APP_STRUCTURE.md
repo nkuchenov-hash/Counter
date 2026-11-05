@@ -820,3 +820,6 @@ One-off Pass 3/Pass 2 extraction scripts (`scripts/pass3_*`, `scripts/extract_*`
 
 - `lib/features/profile/menu/life_os_planning_settings_page.dart` — full Planning preference screen sharing Time View preference storage and existing controls.
 - `lib/features/profile/menu/life_os_sync_status_page.dart` — live PocketBase outbox status and retry screen.
+
+- `lib/features/lists/notes_library_preferences.dart` — canonical Notes library view preference and in-memory change notification shared between settings and Notes.
+- `lib/features/profile/menu/life_os_notes_settings_page.dart` — real Notes/List settings, backed by the existing preferences and profile fields.

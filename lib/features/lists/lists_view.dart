@@ -1,11 +1,9 @@
 // ---------------------------------------------------------------------------
 // LISTS / BACKLOG — Undated plans ([PlanningTask.startTime] == null). UI_ISOLATION.
 // ---------------------------------------------------------------------------
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
-
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
@@ -22,6 +20,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/features/lists/lists_card.dart';
+import 'package:counter/features/lists/notes_library_preferences.dart';
 import 'package:counter/features/lists/lists_export.dart';
 import 'package:counter/features/lists/lists_bulk_actions.dart';
 import 'package:counter/features/lists/lists_empty_state.dart';
@@ -31,7 +30,6 @@ import 'package:counter/features/notes/widgets/notes_library_production_shell.da
 import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/features/notes/widgets/notes_library_body.dart';
-
 /// Backlog screen: grouped headers by category path, Done + Delete, inline add.
 class ListsPage extends StatefulWidget {
   const ListsPage({
@@ -40,7 +38,6 @@ class ListsPage extends StatefulWidget {
     this.onDateChanged,
     this.onEditTask,
   });
-
   /// Wall day for the unified global header (Lists content stays backlog / undated).
   final DateTime? selectedDate;
   final ValueChanged<DateTime>? onDateChanged;
@@ -94,7 +91,6 @@ class _ListsPageState extends State<ListsPage>
   final FocusNode _notesSearchFocus = FocusNode();
 
   // GLM Notes v3 library view preferences.
-  static const String _kPrefNotesView = 'lifeos.notes.view';
   static const String _kPrefNotesCheckboxMode = 'lifeos.notes.checkboxMode';
   NotesLibraryView _notesView = NotesLibraryView.grid;
   bool _notesCheckboxesOn = false;
@@ -145,7 +141,7 @@ class _ListsPageState extends State<ListsPage>
   Future<void> _loadNotesLibraryPrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final v = prefs.getString(_kPrefNotesView);
+      final v = prefs.getString(NotesLibraryPreferences.key);
       final c = prefs.getBool(_kPrefNotesCheckboxMode);
       if (!mounted) return;
       setState(() {
@@ -153,27 +149,29 @@ class _ListsPageState extends State<ListsPage>
         if (v == 'list') _notesView = NotesLibraryView.list;
         if (c == true) _notesCheckboxesOn = true;
       });
+      if (v == 'list' || v == 'grid') {
+        NotesLibraryPreferences.mode.value = v!;
+      }
     } catch (_) {}
   }
-
   Future<void> _persistNotesView(NotesLibraryView v) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        _kPrefNotesView,
-        v == NotesLibraryView.grid ? 'grid' : 'list',
-      );
+      await NotesLibraryPreferences.select(
+          v == NotesLibraryView.grid ? 'grid' : 'list');
     } catch (_) {}
   }
-
+  void _onSharedNotesViewChanged() {
+    final view = NotesLibraryPreferences.mode.value == 'list'
+        ? NotesLibraryView.list : NotesLibraryView.grid;
+    if (mounted && _notesView != view) setState(() => _notesView = view);
+  }
   Future<void> _persistNotesCheckboxMode(bool on) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_kPrefNotesCheckboxMode, on);
     } catch (_) {}
   }
-
-  /// GLM v3 sort: unfinished first, pinned first, updated desc, stable fallback.
+GLM v3 sort: unfinished first, pinned first, updated desc, stable fallback.
   void _notesLibrarySort(List<PlanningTask> list) {
     if (_notesCheckboxesOn) return;
     final db = DatabaseService.instance;
@@ -321,6 +319,7 @@ class _ListsPageState extends State<ListsPage>
   void initState() {
     super.initState();
     _inlineController = TextEditingController();
+    NotesLibraryPreferences.mode.addListener(_onSharedNotesViewChanged);
     final db = DatabaseService.instance;
     _planRefreshSub = db.planningRefreshNotifications.listen((_) {
       if (!mounted) return;
@@ -651,6 +650,7 @@ class _ListsPageState extends State<ListsPage>
   void dispose() {
     _planRefreshSub?.cancel();
     _tagsCatalogSub?.cancel();
+    NotesLibraryPreferences.mode.removeListener(_onSharedNotesViewChanged);
     _chipBarScrollController.dispose();
     _tagFilterScrollController.dispose();
     _inlineController.dispose();
