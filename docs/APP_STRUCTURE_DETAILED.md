@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `6af57fad` on 2026-11-05.**
+**Generated from input HEAD `d0f1aa49` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -12187,7 +12187,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `life_color_compat.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_color_palette.dart`, `lib/core/tag_contrast.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`, `lib/data/models.dart`, `lib/features/dev/component_lab_notes_demo.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/app_colors.dart`, `lib/core/category_color_palette.dart`, `lib/core/tag_contrast.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`, `lib/data/models.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12204,7 +12204,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `life_color_compat.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/category_color_palette.dart`, `lib/core/tag_contrast.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`, `lib/data/models.dart`, `lib/features/dev/component_lab_notes_demo.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/app_colors.dart`, `lib/core/category_color_palette.dart`, `lib/core/tag_contrast.dart`, `lib/core/widgets/plan_time_task_card/plan_card_geometry.dart`, `lib/data/models.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
