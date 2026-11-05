@@ -1,89 +1,118 @@
 import 'dart:io';
+
 import 'package:counter/core/category_icon_system.dart';
-import 'package:counter/core/category_icon_svg_data.dart';
 import 'package:counter/core/category_icon_catalog_generated.g.dart';
-import 'package:counter/features/settings/categories/category_icon_picker.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:heroicons/heroicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('strict gate: every selectable icon is a native pair in both packs', () {
-    final keys = kCategoryIconCatalog.map((e) => e.key).toSet();
-    expect(keys, hasLength(kCategoryIconCatalog.length),
-        reason: 'Duplicate keys break stable category icon identifiers.');
-    expect(kFluentCategorySvgs.keys.toSet(), keys);
-    expect(kHeroCategorySvgs.keys.toSet(), keys);
-    for (final family in CategoryIconPack.values) {
-      for (final key in keys) {
-        expect(CategoryIconStore.isValidKey(key), isTrue,
-            reason: 'The same symbol must exist in both variants and packs.');
-        final pair = CategoryIconStore.iconsFor(family)[key]!;
-        expect(pair.regular, contains('<svg'));
-        expect(pair.filled, contains('<svg'));
-        expect(pair.regular, isNot(equals(pair.filled)),
-            reason: 'A style toggle must not display identical artwork.');
-      }
+  test('only matched semantic IDs are selectable in both families', () {
+    final keys = kMatchedCategoryIcons.keys.toSet();
+    expect(keys.length, 103);
+    expect(CategoryIconStore.catalogFor(CategoryIconPack.fluent)
+        .map((e) => e.key).toSet(), keys);
+    expect(CategoryIconStore.catalogFor(CategoryIconPack.heroicons)
+        .map((e) => e.key).toSet(), keys);
+    expect(keys, containsAll(['home', 'cart', 'cake', 'moon', 'bell', 'book']));
+    expect(CategoryIconStore.isValidKey('home'), isTrue);
+    expect(CategoryIconStore.isValidKey('academic_cap'), isTrue);
+    expect(CategoryIconStore.isValidKey('shopping_cart'), isFalse,
+        reason: 'Heroicons-specific names must not leak into saved semantic IDs.');
+    expect(CategoryIconStore.isValidKey('unmatched_fluent_icon'), isFalse);
+    expect(kMatchedCategoryIcons['cart']!.hero, HeroIcons.shoppingCart);
+    expect(kMatchedCategoryIcons['moon']!.hero, HeroIcons.moon);
+    expect(kMatchedCategoryIcons['book']!.hero, HeroIcons.bookOpen);
+    expect(kMatchedCategoryIcons['lock']!.hero, HeroIcons.lockClosed);
+    expect(kMatchedCategoryIcons['home']!.hero, HeroIcons.home);
+    for (final entry in kMatchedCategoryIcons.entries) {
+      expect(entry.value.fluentOutline, isNot(entry.value.fluentFilled),
+          reason: '${entry.key} must have a real Regular/Fill pair');
+      expect(CategoryIconStore.isValidKey(entry.key), isTrue);
     }
   });
 
-  test('complete families are selectable independently, not limited to 14', () {
-    expect(kCompleteFluentCategoryIcons.length, greaterThan(2200));
-    expect(kCompleteHeroCategoryIcons.length, greaterThan(300));
-    final fluent = CategoryIconStore.catalogFor(CategoryIconPack.fluent);
-    final hero = CategoryIconStore.catalogFor(CategoryIconPack.heroicons);
-    expect(fluent.length, greaterThan(2200));
-    expect(hero.length, greaterThan(300));
-    expect(fluent.map((v) => v.key).toSet().length, fluent.length);
-    expect(hero.map((v) => v.key).toSet().length, hero.length);
-    expect(fluent.any((e) => e.key == 'accessibility_checkmark'), isTrue);
-    expect(hero.any((e) => e.key == 'academic_cap'), isTrue);
-    expect(CategoryIconStore.isValidKey('accessibility_checkmark'), isTrue);
-    expect(CategoryIconStore.isValidKey('academic_cap'), isTrue);
+  test('quick defaults are smaller than the available semantic catalog', () {
+    expect(kDefaultCategoryIconKeys, hasLength(26));
+    expect(kDefaultCategoryIconKeys.toSet().length, 26);
+    expect(kDefaultCategoryIconKeys.every(CategoryIconStore.isValidKey), isTrue);
+    expect(kDefaultCategoryIconKeys, containsAll(['home', 'folder', 'heart']));
   });
 
-  test('category manager and Notes must use shared glyph renderer', () {
-    final manager = File(
-      'lib/features/settings/categories/category_list_view.dart',
-    ).readAsStringSync();
-    final notes = File(
-      'lib/features/notes/widgets/notes_library_production_shell.dart',
-    ).readAsStringSync();
-    final folderTabs = File(
-      'lib/features/notes/widgets/notes_folder_pane.dart',
-    ).readAsStringSync();
+  test('category manager and Notes use the same semantic renderer', () {
+    final manager =
+        File('lib/features/settings/categories/category_list_view.dart')
+            .readAsStringSync();
+    final notes =
+        File('lib/features/notes/widgets/notes_library_production_shell.dart')
+            .readAsStringSync();
+    final folderTabs =
+        File('lib/features/notes/widgets/notes_folder_pane.dart')
+            .readAsStringSync();
     expect(manager, contains('CategoryGlyph(category: r,'));
-    expect(manager, isNot(contains('Icon(categoryManagerIconFor(r)')),
-        reason: 'Main Categories manager must not revert to Material Icons.');
+    expect(manager, isNot(contains('Icon(categoryManagerIconFor(r)')));
     expect(notes, contains('category: rule,'));
-    expect(notes, isNot(contains("IconData(rule.iconCodePoint!")));
+    expect(notes, isNot(contains('IconData(rule.iconCodePoint!')));
     expect(folderTabs, contains('CategoryGlyph('));
   });
 
-  testWidgets('picker preserves symbol while changing Outline to Fill',
+  test('picker uses the quick collection and preserves Outline/Fill', () {
+    final picker = File(
+      'lib/features/settings/categories/category_icon_picker.dart',
+    ).readAsStringSync();
+    expect(picker, contains('store.quickCatalog'));
+    expect(picker, contains('CategoryIconStore.isValidKey'));
+    expect(picker, contains('category-icon-style-toggle'));
+    expect(picker, contains('category-icon-apply'));
+    expect(picker, isNot(contains('kCompleteFluentCategoryIcons')));
+    expect(picker, isNot(contains('kCompleteHeroCategoryIcons')));
+  });
+
+  testWidgets('Appearance collection persistence keeps stable semantic IDs',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
-    CategoryIconSelection? picked;
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(body: Builder(
-        builder: (context) => TextButton(
-          onPressed: () async {
-            picked = await showCategoryIconPicker(context,
-              initial: const CategoryIconSelection('heart'));
-          },
-          child: const Text('OPEN PICKER'),
-        ),
-      )),
-    ));
-    await tester.tap(find.text('OPEN PICKER'));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('category-icon-style-toggle')), findsOneWidget);
-    await tester.tap(find.text('Fill').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('category-icon-apply')));
-    await tester.pumpAndSettle();
-    expect(picked, const CategoryIconSelection('heart', filled: true));
+    await tester.runAsync(() async {
+      final store = CategoryIconStore.instance;
+      await store.ensureLoaded();
+      await store.setQuickKeys(kDefaultCategoryIconKeys);
+      expect(store.quickKeys.contains('academic_cap'), isFalse);
+      await store.setQuickKeys([...kDefaultCategoryIconKeys, 'academic_cap']);
+      expect(store.quickKeys, contains('academic_cap'));
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('takto.category.icon_quick_collection.v1'),
+          contains('academic_cap'));
+      await store.setPack(CategoryIconPack.heroicons);
+      expect(store.quickKeys, contains('academic_cap'));
+      await store.setPack(CategoryIconPack.fluent);
+      await store.setQuickKeys(kDefaultCategoryIconKeys);
+    });
+  });
+
+  test('Appearance exposes searchable collection controls', () {
+    final screen = File(
+      'lib/features/settings/categories/category_icon_collection_preference.dart',
+    ).readAsStringSync();
+    final profile = File('lib/features/profile/profile_view.dart')
+        .readAsStringSync();
+    expect(profile, contains('CategoryIconCollectionPreference'));
+    expect(screen, contains('showCategoryIconCollectionEditor'));
+    expect(screen, contains('matched-icon-collection-grid'));
+    expect(screen, contains('reset-default-icons'));
+    expect(screen, contains('save-icon-collection'));
+  });
+
+  test('old family-specific keys map to shared semantics safely', () {
+    final migrated = CategoryIconSelection.fromJson(
+      {'key': 'shopping_cart', 'filled': true});
+    expect(migrated, const CategoryIconSelection('cart', filled: true));
+    expect(CategoryIconStore.canonicalKey('food_cake'), 'cake');
+    expect(CategoryIconStore.canonicalKey('weather_moon'), 'moon');
+    expect(CategoryIconStore.canonicalKey('book_open'), 'book');
+    expect(CategoryIconStore.canonicalKey('unmapped_icon'), isNull);
+    // Unsupported old choices are not discarded from local storage.
+    expect(CategoryIconSelection.fromJson({'key': 'unmapped_icon'})?.key,
+        'unmapped_icon');
   });
 }

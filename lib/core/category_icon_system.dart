@@ -1,12 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:counter/core/category_icon_svg_data.dart';
 import 'package:counter/core/category_icon_catalog_generated.g.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum CategoryIconPack { fluent, heroicons }
@@ -33,8 +31,8 @@ const List<CategoryIconChoice> kCategoryIconCatalog = [
   CategoryIconChoice('lock', 'Замок', 'Lock', 'Организация', 'пароль безопасность security'),
 ];
 
-/// Each family independently offers its complete native paired catalog.
-/// Legacy 14-key aliases stay available so older saved categories do not break.
+/// One curated semantic identifier has an authentic icon in both families.
+/// Older selected icon IDs remain stored even if no safe mapping exists.
 String _iconLabel(String key) => key.split('_')
     .map((part) => part.isEmpty ? part
         : '${part[0].toUpperCase()}${part.substring(1)}').join(' ');
@@ -49,17 +47,60 @@ String _iconGroup(String key) {
   return 'Прочее';
 }
 
-List<CategoryIconChoice> _buildPackCatalog(CategoryIconPack family) {
-  final names = <String>{
-    ...(family == CategoryIconPack.fluent
-        ? kCompleteFluentCategoryIcons.keys
-        : kCompleteHeroCategoryIcons.keys),
-    ...kCategoryIconCatalog.map((item) => item.key),
-  }.toList()..sort();
-  final legacy = {for (final item in kCategoryIconCatalog) item.key: item};
+/// Safe migration from previous family-specific icon keys to stable semantic IDs.
+/// Unknown older choices are kept in local storage without a misleading remap.
+const Map<String, String> kPreviousIconAliases = {
+  'add': 'plus',
+  'alert': 'bell',
+  'book_open': 'book',
+  'chat': 'chat_bubble_left',
+  'checkmark_circle': 'check_circle',
+  'data_bar_vertical': 'chart_bar',
+  'data_pie': 'chart_pie',
+  'delete': 'trash',
+  'dismiss': 'x_mark',
+  'document_copy': 'document_duplicate',
+  'edit': 'pencil',
+  'emoji_smile_slight': 'face_smile',
+  'food_cake': 'cake',
+  'globe': 'globe_alt',
+  'hat_graduation': 'academic_cap',
+  'image': 'photo',
+  'lightbulb': 'light_bulb',
+  'location': 'map_pin',
+  'lock_closed': 'lock',
+  'mail': 'envelope',
+  'mic': 'microphone',
+  'music_note_1': 'musical_note',
+  'people': 'users',
+  'person': 'user',
+  'print': 'printer',
+  'question_circle': 'question_mark_circle',
+  'rocket': 'rocket_launch',
+  'search': 'magnifying_glass',
+  'settings': 'cog',
+  'shield_checkmark': 'shield_check',
+  'shopping_cart': 'cart',
+  'text_bullet_list': 'list_bullet',
+  'vehicle_truck': 'truck',
+  'video': 'video_camera',
+  'weather_moon': 'moon',
+  'weather_sunny': 'sun',
+};
+
+/// Initial quick collection stays small. Users can customize it in Appearance.
+const List<String> kDefaultCategoryIconKeys = [
+  'home', 'heart', 'briefcase', 'calendar', 'folder', 'clock', 'star',
+  'book', 'cart', 'cake', 'moon', 'bell', 'lock', 'camera', 'wallet',
+  'gift', 'phone', 'document', 'cloud', 'tag', 'trophy', 'map',
+  'key', 'light_bulb', 'pencil', 'musical_note',
+];
+
+List<CategoryIconChoice> _buildSharedCatalog() {
+  final metadata = {for (final item in kCategoryIconCatalog) item.key: item};
   return List<CategoryIconChoice>.unmodifiable([
-    for (final key in names)
-      legacy[key] ?? CategoryIconChoice(key, _iconLabel(key),
+    for (final key in (kMatchedCategoryIcons.keys.toList()..sort()))
+      metadata[key] ?? CategoryIconChoice(key, _iconLabel(key),
           _iconLabel(key), _iconGroup(key), key.replaceAll('_', ' ')),
   ]);
 }
@@ -72,8 +113,10 @@ class CategoryIconSelection {
   static CategoryIconSelection? fromJson(dynamic value) {
     if (value is! Map || value['key'] is! String) return null;
     final key = value['key'] as String;
-    if (!CategoryIconStore.isValidKey(key)) return null;
-    return CategoryIconSelection(key, filled: value['filled'] == true);
+    // Retain older device-local keys. Unmatched artwork renders as a folder,
+    // but the original saved value is not silently replaced or deleted.
+    return CategoryIconSelection(CategoryIconStore.canonicalKey(key) ?? key,
+        filled: value['filled'] == true);
   }
   @override
   bool operator ==(Object other) =>
@@ -93,28 +136,64 @@ class CategoryIconStore extends ChangeNotifier {
   final Map<String, CategoryIconSelection> _values = {};
   Future<void>? _loadFuture;
   CategoryIconPack get pack => _pack;
-  static Map<String, CategorySvgPair> iconsFor(CategoryIconPack family) =>
-      family == CategoryIconPack.fluent ? kFluentCategorySvgs : kHeroCategorySvgs;
-  static final List<CategoryIconChoice> _fluentCatalog =
-      _buildPackCatalog(CategoryIconPack.fluent);
-  static final List<CategoryIconChoice> _heroCatalog =
-      _buildPackCatalog(CategoryIconPack.heroicons);
+  static final List<CategoryIconChoice> _approvedCatalog = _buildSharedCatalog();
   static List<CategoryIconChoice> catalogFor(CategoryIconPack family) =>
-      family == CategoryIconPack.fluent ? _fluentCatalog : _heroCatalog;
-  static bool isValidKey(String key) {
-    if (kCompleteFluentCategoryIcons.containsKey(key) ||
-        kCompleteHeroCategoryIcons.containsKey(key)) return true;
-    final a = kFluentCategorySvgs[key], b = kHeroCategorySvgs[key];
-    return a != null && b != null &&
-        a.regular != a.filled && b.regular != b.filled &&
-        a.regular.contains('<svg') && a.filled.contains('<svg') &&
-        b.regular.contains('<svg') && b.filled.contains('<svg');
+      _approvedCatalog; // Exactly the same semantic keys in both families.
+  static bool isValidKey(String key) => kMatchedCategoryIcons.containsKey(key);
+  static String? canonicalKey(String key) => isValidKey(key)
+      ? key : kPreviousIconAliases[key];
+
+  static const _quickKey = 'takto.category.icon_quick_collection.v1';
+  List<String> _quickKeys = List<String>.from(kDefaultCategoryIconKeys);
+  List<String> get quickKeys => List<String>.unmodifiable(_quickKeys);
+  List<CategoryIconChoice> get quickCatalog {
+    final byKey = {for (final icon in _approvedCatalog) icon.key: icon};
+    return List<CategoryIconChoice>.unmodifiable([
+      for (final key in _quickKeys)
+        if (byKey.containsKey(key)) byKey[key]!,
+    ]);
   }
+
+  Future<void> setQuickKeys(Iterable<String> values) async {
+    await ensureLoaded();
+    final next = values.toSet().where(isValidKey).toList();
+    if (next.isEmpty) throw ArgumentError('Select at least one paired icon');
+    if (_sameStrings(_quickKeys, next)) return;
+    final previous = List<String>.from(_quickKeys);
+    _quickKeys = next;
+    notifyListeners();
+    try {
+      if (!await (await SharedPreferences.getInstance())
+          .setString(_quickKey, jsonEncode(next))) {
+        throw StateError('Could not save quick icon collection');
+      }
+    } catch (_) {
+      _quickKeys = previous;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  static bool _sameStrings(List<String> a, List<String> b) =>
+      a.length == b.length &&
+      List.generate(a.length, (i) => a[i] == b[i]).every((same) => same);
 
   Future<void> ensureLoaded() => _loadFuture ??= _load();
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getString(_packKey) == 'heroicons') _pack = CategoryIconPack.heroicons;
+    final savedQuick = prefs.getString(_quickKey);
+    if (savedQuick != null) {
+      try {
+        final raw = jsonDecode(savedQuick);
+        if (raw is List) {
+          final keys = raw.whereType<String>().where(isValidKey).toSet().toList();
+          if (keys.isNotEmpty) _quickKeys = keys;
+        }
+      } on FormatException {
+        // Keep the sensible defaults when local data is malformed.
+      }
+    }
     final json = prefs.getString(_selectionKey);
     if (json != null) {
       try {
@@ -236,32 +315,19 @@ class CategorySvgIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final family = pack ?? CategoryIconStore.instance.pack;
-    final fallbackColor = color ?? Theme.of(context).colorScheme.onSurface;
+    final tint = color ?? Theme.of(context).colorScheme.onSurface;
+    // Unsupported previously saved keys do not become a different concept:
+    // they display as the neutral folder until explicitly reselected.
+    final canonical = CategoryIconStore.canonicalKey(selection.key);
+    final matched = kMatchedCategoryIcons[canonical] ??
+        kMatchedCategoryIcons['folder']!;
     if (family == CategoryIconPack.fluent) {
-      final fullPair = kCompleteFluentCategoryIcons[selection.key];
-      if (fullPair != null) {
-        return Icon(selection.filled ? fullPair.$2 : fullPair.$1,
-          size: size, color: fallbackColor, semanticLabel: semanticLabel);
-      }
-    } else {
-      final hero = kCompleteHeroCategoryIcons[selection.key];
-      if (hero != null) {
-        return HeroIcon(hero,
-          style: selection.filled ? HeroIconStyle.solid : HeroIconStyle.outline,
-          size: size, color: fallbackColor, semanticLabel: semanticLabel);
-      }
+      return Icon(selection.filled ? matched.fluentFilled : matched.fluentOutline,
+          size: size, color: tint, semanticLabel: semanticLabel);
     }
-    final pair = CategoryIconStore.iconsFor(family)[selection.key] ??
-        CategoryIconStore.iconsFor(family)['folder']!;
-    return SvgPicture.string(
-      selection.filled ? pair.filled : pair.regular,
-      width: size, height: size, fit: BoxFit.contain,
-      colorFilter: ColorFilter.mode(
-        color ?? Theme.of(context).colorScheme.onSurface,
-        BlendMode.srcIn,
-      ),
-      semanticsLabel: semanticLabel,
-    );
+    return HeroIcon(matched.hero,
+      style: selection.filled ? HeroIconStyle.solid : HeroIconStyle.outline,
+      size: size, color: tint, semanticLabel: semanticLabel);
   }
 }
 

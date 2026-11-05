@@ -46,7 +46,10 @@ class _IconPickerState extends State<_IconPicker> {
   @override
   void initState() {
     super.initState();
-    _selection = widget.initial;
+    _selection = CategoryIconSelection(
+      CategoryIconStore.canonicalKey(widget.initial.key) ?? widget.initial.key,
+      filled: widget.initial.filled,
+    );
     _search.addListener(_changed);
     unawaited(CategoryIconStore.instance.ensureLoaded());
   }
@@ -63,21 +66,30 @@ class _IconPickerState extends State<_IconPicker> {
     final store = CategoryIconStore.instance;
     final cs = Theme.of(context).colorScheme;
     final ru = Localizations.localeOf(context).languageCode == 'ru';
-    final query = _search.text.trim().toLowerCase();
-    final catalog = CategoryIconStore.catalogFor(store.pack);
-    final icons = catalog.where((item) {
-      if (_group != 'Все' && item.group != _group) return false;
-      return query.isEmpty ||
-          (item.key + ' ' + item.ru + ' ' + item.en + ' ' + item.synonyms)
-              .toLowerCase().contains(query);
-    }).toList();
-    final current = catalog.where((item) => item.key == _selection.key)
-        .firstOrNull ?? CategoryIconChoice(_selection.key, _selection.key,
-            _selection.key, 'Прочее', '');
-
     return AnimatedBuilder(
       animation: store,
-      builder: (context, _) => Column(
+      builder: (context, _) {
+        final query = _search.text.trim().toLowerCase();
+        final approved = CategoryIconStore.catalogFor(store.pack);
+        final catalog = store.quickCatalog;
+        final current = approved.where((e) => e.key == _selection.key)
+            .firstOrNull ?? CategoryIconChoice(
+              _selection.key, _selection.key, _selection.key, 'Прочее', '');
+        final choices = [...catalog];
+        // Keep the current category icon visible for editing even if it
+        // was removed from the user's preferred quick collection.
+        if (CategoryIconStore.isValidKey(_selection.key) &&
+            !choices.any((item) => item.key == _selection.key)) {
+          choices.insert(0, current);
+        }
+        final icons = choices.where((item) {
+          if (_group != 'Все' && item.group != _group) return false;
+          return query.isEmpty ||
+              (item.key + ' ' + item.ru + ' ' + item.en + ' ' + item.synonyms)
+                  .toLowerCase().contains(query);
+        }).toList();
+
+        return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
@@ -134,6 +146,14 @@ class _IconPickerState extends State<_IconPicker> {
                   onPressed: _search.clear, icon: const Icon(Icons.close)),
               ),
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 6, 18, 0),
+            child: Text(ru
+                ? 'Мой набор · изменяется в Настройках → Оформление'
+                : 'My collection · edit in Settings → Appearance',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: cs.onSurfaceVariant)),
           ),
           SizedBox(height: 52, child: ListView.separated(
             scrollDirection: Axis.horizontal,
@@ -200,13 +220,15 @@ class _IconPickerState extends State<_IconPicker> {
               const SizedBox(width: 8),
               FilledButton(
                 key: const ValueKey('category-icon-apply'),
-                onPressed: () => Navigator.pop(context, _selection),
+                onPressed: CategoryIconStore.isValidKey(_selection.key)
+                    ? () => Navigator.pop(context, _selection) : null,
                 child: Text(ru ? 'Применить' : 'Apply'),
               ),
             ])),
           ),
         ],
-      ),
+      );
+      },
     );
   }
 }

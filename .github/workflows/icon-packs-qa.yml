@@ -37,8 +37,8 @@ jobs:
           set -euo pipefail
           paths=(
             lib/core/category_icon_catalog_generated.g.dart
-            lib/core/category_icon_svg_data.dart
             lib/core/category_icon_system.dart
+            lib/features/settings/categories/category_icon_collection_preference.dart
             lib/features/settings/categories/category_icon_picker.dart
             lib/features/settings/categories/category_appearance_sheet.dart
             lib/features/settings/categories/category_editor_sheet.dart

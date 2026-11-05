@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:counter/core/app_build_info.dart';
 import 'package:counter/core/category_icon_system.dart';
+import 'package:counter/features/settings/categories/category_icon_collection_preference.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/timezone_quick_picker.dart';
@@ -476,6 +477,8 @@ class _ProfilePageState extends State<ProfilePage> {
         const Divider(),
         const SizedBox(height: 16),
         CategoryIconPackPreference(isRussian: locale.startsWith('ru')),
+        const SizedBox(height: 24),
+        CategoryIconCollectionPreference(isRussian: locale.startsWith('ru')),
       ],
     );
   }
