@@ -2,17 +2,17 @@ import 'dart:async';
 
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/time_view_fixed_time_policy.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/settings/default_plan_category_search.dart';
-import 'package:counter/features/planning/settings/plan_record_link_settings.dart';
 import 'package:counter/features/planning/settings/planning_no_tags_settings.dart';
 import 'package:counter/features/planning/settings/planning_timeline_bounds_sheet.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
 import 'package:counter/features/planning/time_view/time_view_fixed_time_settings.dart';
-import 'package:counter/features/profile/tag_settings_hub.dart';
+import 'package:counter/features/profile/menu/life_os_planning_settings_page.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -401,23 +401,10 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
                       await host.reloadQuickAddTags();
                     },
                   ),
-                  const Divider(height: 1),
-                  const PlanRecordLinkSuggestionSettingsBlock(),
                   const Divider(height: 24),
                   PlanAutoPlacementSettingsBlock(
                     initialMode: DatabaseService.instance.planAutoPlacementMode,
-                    onChanged:
-                        DatabaseService.instance.setPlanAutoPlacementMode,
-                  ),
-                  const Divider(height: 24),
-                  TimeViewFixedTagsSettingsBlock(
-                    initialSelectedIds: timeViewFixedTagIds,
-                    onSave: (ids) async {
-                      await TimeViewFixedTagPrefs.save(ids);
-                      if (host.mounted) {
-                        host.notifySetState(() => timeViewFixedTagIds = ids);
-                      }
-                    },
+                    onChanged: DatabaseService.instance.setPlanAutoPlacementMode,
                   ),
                   const Divider(height: 24),
                   AppSettingsNavigationGroup(
@@ -425,8 +412,8 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
                       AppSettingsNavigationRow(
                         title: t(loc, 'plan_default_times_title'),
                         subtitle: t(loc, 'plan_default_times_subtitle'),
-                        leading: const AppSettingsMenuIcon(
-                          icon: Icons.schedule_rounded,
+                        leading: AppSettingsMenuIcon(
+                          icon: AppMenuIcons.icon(AppMenuIconRole.defaultTime),
                         ),
                         onTap: () {
                           Navigator.of(sheetCtx).pop();
@@ -434,32 +421,28 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
                         },
                       ),
                       AppSettingsNavigationRow(
-                        title: t(loc, 'tag_default_durations_title'),
-                        subtitle: t(loc, 'tag_default_durations_sheet_subtitle'),
-                        leading: const AppSettingsMenuIcon(
-                          icon: Icons.timer_outlined,
+                        title: loc.startsWith('ru')
+                            ? 'Все настройки планирования'
+                            : 'All Planning settings',
+                        leading: AppSettingsMenuIcon(
+                          icon: AppMenuIcons.icon(AppMenuIconRole.filter),
                         ),
                         onTap: () {
                           Navigator.of(sheetCtx).pop();
                           Navigator.of(host.context).push<void>(
                             MaterialPageRoute<void>(
-                              builder: (_) =>
-                                  const TagSettingsHub(initialTabIndex: 2),
-                            ),
-                          );
-                        },
-                      ),
-                      AppSettingsNavigationRow(
-                        title: t(loc, 'tag_settings_hub_title'),
-                        subtitle: t(loc, 'tag_settings_sheet_subtitle'),
-                        leading: const AppSettingsMenuIcon(
-                          icon: Icons.label_outline_rounded,
-                        ),
-                        onTap: () {
-                          Navigator.of(sheetCtx).pop();
-                          Navigator.of(host.context).push<void>(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const TagSettingsHub(),
+                              builder: (settingsContext) =>
+                                  LifeOsPlanningSettingsPage(
+                                onOpenDefaultPlanTimes: () {
+                                  Navigator.of(settingsContext).pop();
+                                  WidgetsBinding.instance
+                                      .addPostFrameCallback((_) {
+                                    if (host.mounted) {
+                                      showDefaultPlanTimesSheet();
+                                    }
+                                  });
+                                },
+                              ),
                             ),
                           );
                         },
