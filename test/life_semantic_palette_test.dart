@@ -76,6 +76,22 @@ void main() {
     final redFg = tagVibrantForeground(red, surface: surface);
     expect(_hueGap(pinkFg, redFg), greaterThan(18));
     expect((pinkPlate.b - redPlate.b).abs(), greaterThan(0.07));
+    expect(pinkFg, kNordicPeople[700]);
+    expect(redFg, kNordicEntertainment[600]);
+    expect(_contrast(pinkFg, pinkPlate), greaterThanOrEqualTo(3.0));
+    expect(_contrast(redFg, redPlate), greaterThanOrEqualTo(3.0));
+  });
+
+  test('warm pink and red retain their identity on dark surfaces', () {
+    const dark = Color(0xFF121820);
+    final pink = kNordicPeople[500]!;
+    final red = kNordicEntertainment[500]!;
+    expect(tagVibrantForeground(pink, surface: dark), kNordicPeople[400]);
+    expect(tagVibrantForeground(red, surface: dark), kNordicEntertainment[400]);
+    expect(_contrast(kNordicPeople[400]!, tagLetterChipPlate(pink, dark)),
+        greaterThanOrEqualTo(4.5));
+    expect(_contrast(kNordicEntertainment[400]!, tagLetterChipPlate(red, dark)),
+        greaterThanOrEqualTo(4.5));
   });
 
   test('previous official base colors resolve to new families', () {
@@ -108,9 +124,13 @@ void main() {
       const Color(0xFF121820),
     ]) {
       for (final family in kCategoryPickerMaterialColors) {
-        // Yellow uses the explicitly selected bright-gold foreground and is
-        // a documented exception to the 4.5:1 small-text goal.
-        if (family == kNordicFood) continue;
+        // Yellow has user-approved exact text; red and pink deliberately
+        // prioritize chromatic fidelity with 3:1 minimum for chips.
+        if (family == kNordicFood ||
+            family == kNordicEntertainment ||
+            family == kNordicPeople) {
+          continue;
+        }
         final color = family[500]!;
         final plate = tagLetterChipPlate(color, surface);
         final fg = tagVibrantForeground(color, surface: surface);
