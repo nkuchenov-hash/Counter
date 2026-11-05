@@ -24,6 +24,9 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
       },
     ),
     ProfilePage(
+      key: ValueKey(activeProfileDestination),
+      initialDestination: activeProfileDestination,
+      onBackToMenu: () => setState(() => setShellPageIndex(7)),
       onSaved: () {
         if (mounted) setState(() {});
         unawaited(refreshDesktopTrayMenu());
@@ -105,8 +108,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                           // The approved Menu owns its full screen, including
                           // its title. Do not stack the workspace date header
                           // above it on desktop.
-                          appBar: (desktopShell && shellPageIndex != 7) ||
-                                  (!desktopShell && shellPageIndex <= 3)
+                          appBar: desktopShell || (!desktopShell && shellPageIndex <= 3)
                               ? AppBar(
                                   toolbarHeight: kGlobalCompactHeaderHeight,
                                   backgroundColor: desktopShell
@@ -188,32 +190,6 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                               final mainColumn = Column(
                                 children: [
                                   const ShellTopStatusBars(),
-                                  if (formFactor == ShellFormFactor.desktop &&
-                                      shellPageIndex == 5)
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                        kShellDesktopContentHorizontalPadding,
-                                        kShellDesktopContentTopPadding,
-                                        kShellDesktopContentHorizontalPadding,
-                                        12,
-                                      ),
-                                      child: Align(
-                                        alignment:
-                                            AlignmentDirectional.centerStart,
-                                        child: Text(
-                                          _desktopSectionTitle(loc),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headlineSmall
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w800,
-                                                height: 1.1,
-                                              ),
-                                        ),
-                                      ),
-                                    ),
                                   Expanded(
                                     child: kShellDeferHiddenTabsUntilFirstFrame
                                         ? LazyIndexedStack(
