@@ -1,9 +1,9 @@
 ## Consistent Profile and menu chrome (refined 2026-11-05)
 
-- Preserve Onest, existing navigation and app data. Global light surfaces must not have a blue cast: application `#F7F7F7`, settings `#F6F6F6`, white cards `#FFFFFF`, neutral sidebar `#ECECEC`.
-- Grouped menu cards are borderless. Every menu item is separately interactive over the complete width. The pointer highlights **exactly one row** with `#EDEDED`; first/last edge padding of 16 px and inner rows 10 px keeps icons, labels, and touch targets evenly spaced.
-- Dividers (`#E9E9E9` / 1 px) are inset and fade to the hover fill if either adjacent item is hovered. No extra visible divider inside the hover block and no group-wide hover.
-- One LIFE OS logo in the persistent top header; Profile remains a unified settings destination inside desktop chrome.
+- Preserve Onest, existing navigation and data flows. Light Menu settings canvas is neutral `#F7F7F7`, cards are pure white without outlines, sidebar is `#F4F4F4`, and text remains crisp/dark rather than washed out.
+- Each menu item is one full-width interactive row, at least 74 px high in a grouped card. The leading 42 px icons have 24 px outer spacing on all four group edges and at least 30 px clearance from the adjacent row's icon. A hover highlights **exactly one row** in `#E8E8E8`, including the card-edge padding.
+- Dividers are subtle 1 px `#F0F0F0`, inset from the left, and dissolve to the hover shade when either adjacent row is hovered. The hover never becomes a separately rounded inset pill or a whole-card highlight.
+- One LIFE OS logo in the persistent top header. Profile, People, Menu and other destinations keep the existing shell navigation and settings ownership.
 
 ## Persistent desktop navigation across People and Menu (2026-11-05)
 

@@ -53,7 +53,7 @@ class ShellSideNavigation extends StatelessWidget {
     return Material(
       color: scheme.brightness == Brightness.dark
           ? scheme.surfaceContainerHigh
-          : const Color(0xFFECECEC),
+          : const Color(0xFFF4F4F4),
       shape: Border(
         right: BorderSide(
           color: scheme.outlineVariant.withValues(alpha: 0.75),
@@ -126,11 +126,11 @@ class ShellSideNavItem extends StatelessWidget {
     final bg = selected
         ? (scheme.brightness == Brightness.dark
             ? scheme.surfaceContainerLow
-            : const Color(0xFFDDDDDD))
+            : const Color(0xFFE7E7E7))
         : Colors.transparent;
     final fg = scheme.brightness == Brightness.dark
         ? scheme.onSurface
-        : const Color(0xFF454545);
+        : const Color(0xFF303030);
     final indicator = selected ? scheme.onSurface : Colors.transparent;
     return Material(
       color: bg,
@@ -140,7 +140,7 @@ class ShellSideNavItem extends StatelessWidget {
         onTap: onTap,
         hoverColor: scheme.brightness == Brightness.dark
             ? scheme.onSurface.withValues(alpha: 0.06)
-            : const Color(0xFFE1E1E1),
+            : const Color(0xFFE9E9E9),
         splashColor: Colors.transparent,
         child: Container(
           decoration: BoxDecoration(

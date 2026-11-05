@@ -349,7 +349,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
   }
 
   Widget _heading(BuildContext context, String value) => Padding(
-    padding: const EdgeInsets.fromLTRB(4, 22, 0, 10),
+    padding: const EdgeInsets.fromLTRB(4, 16, 0, 10),
     child: Text(
       value,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(

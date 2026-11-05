@@ -114,10 +114,10 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         home: Builder(builder: (context) {
           final scheme = settingsNeutralTheme(context).colorScheme;
-          expect(scheme.surface, const Color(0xFFF6F6F6));
-          expect(scheme.surfaceContainerLowest, const Color(0xFFF6F6F6));
+          expect(scheme.surface, const Color(0xFFF7F7F7));
+          expect(scheme.surfaceContainerLowest, const Color(0xFFF7F7F7));
           expect(scheme.surfaceContainerHigh, AppColors.cardSurface);
-          expect(scheme.surfaceContainer, const Color(0xFFF1F1F1));
+          expect(scheme.surfaceContainer, const Color(0xFFF4F4F4));
           return const SizedBox.shrink();
         }),
       ));
@@ -139,12 +139,12 @@ void main() {
       ));
       final title = tester.widget<Text>(find.text('Notifications'));
       final subtitle = tester.widget<Text>(find.text('Quiet reminders and alerts'));
-      expect(title.style?.fontWeight, FontWeight.w400);
+      expect(title.style?.fontWeight, FontWeight.w500);
       expect(subtitle.style?.fontWeight, FontWeight.w400);
-      expect(subtitle.style?.color, const Color(0xFF818181));
+      expect(subtitle.style?.color, const Color(0xFF707070));
       expect((title.style?.fontSize ?? 0) > (subtitle.style?.fontSize ?? 0), isTrue);
       final tile = tester.widget<ListTile>(find.byType(ListTile));
-      expect(tile.hoverColor, const Color(0xFFEDEDED));
+      expect(tile.hoverColor, const Color(0xFFE8E8E8));
       expect(tile.splashColor, Colors.transparent);
       expect(tester.takeException(), isNull);
     });
@@ -164,7 +164,7 @@ void main() {
       expect(chrome, contains("desktopShell ? 'LIFE OS'"));
       expect(chrome, contains("initialSection: 'account'"));
       expect(chrome, contains('embeddedInShell: true'));
-      expect(sidebar, contains('Color(0xFFECECEC)'));
+      expect(sidebar, contains('Color(0xFFF4F4F4)'));
       expect(sidebar, isNot(contains("'LIFE OS'")));
       expect(routes, contains('setShellPageIndex(9)'));
       expect(routes, contains('9 => 5,'));
@@ -219,6 +219,10 @@ void main() {
       expect(top, closeTo(left, 5));
       expect(bottom, closeTo(left, 5));
       expect(last.top - first.bottom, greaterThanOrEqualTo(left));
+      // One row owns its entire interaction surface; the icon-to-icon gap
+      // is deliberate and never collapses to the previous cramped default.
+      expect(last.top - first.bottom, greaterThanOrEqualTo(30));
+      expect((cardRect.bottom - last.bottom - left).abs(), lessThan(4));
 
       for (final tile in tester.widgetList<ListTile>(
           find.descendant(of: group, matching: find.byType(ListTile)))) {
@@ -249,10 +253,10 @@ void main() {
           (tester.widget<AnimatedContainer>(
               find.byKey(ValueKey<String>(key))).decoration
                   as BoxDecoration).color;
-      const hover = Color(0xFFEDEDED);
-      const divider = Color(0xFFE9E9E9);
+      const hover = Color(0xFFE8E8E8);
+      const divider = Color(0xFFF0F0F0);
       expect(hover.computeLuminance(),
-          lessThan(const Color(0xFFF6F6F6).computeLuminance()));
+          lessThan(const Color(0xFFF7F7F7).computeLuminance()));
       expect(fill('settings-row-0'), Colors.transparent);
       expect(fill('settings-row-1'), Colors.transparent);
       expect(fill('settings-divider-line-0'), divider);

@@ -1,3 +1,9 @@
+## 2026-11-05 — Menu card rhythm and neutral contrast [pending CI and visual acceptance]
+
+- Fixed the cramped grouped Menu layout with 74 px minimum row height, 24 px icon-to-card edge spacing and reduced unused intergroup whitespace; each row remains one full-width hit/hover target.
+- Restored a lighter pure-gray canvas (#F7F7F7), sidebar (#F4F4F4), crisp Onest text, subtle 1 px dividers (#F0F0F0) and darker row-only hover (#E8E8E8) that dissolves adjacent dividers. Borderless white cards and single LIFE OS header brand are unchanged.
+- Updated canonical Menu UX/design contracts and widget regression assertions. No routes, PocketBase, local queues, plan/timeline behavior or font families changed. Release remains blocked pending checks and rendered-screen review.
+
 ## 2026-11-05 — Fluent UI / Heroicons category icons
 
 - Added a complete icon picker for both independent families: 2,244 Fluent UI 24-pixel Regular/Filled pairs and all 324 Heroicons Outline/Solid pairs.
