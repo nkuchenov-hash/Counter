@@ -89,17 +89,17 @@ const MaterialColor kCategoryNeutral = MaterialColor(0xFF9A9A9A, <int, Color>{
   900: Color(0xFF3B3B3B),
 });
 
-const MaterialColor kNordicErrands = MaterialColor(0xFFF26900, <int, Color>{
-  50: Color(0xFFFFF7EF),
-  100: Color(0xFFFFE8CF),
-  200: Color(0xFFFFD0A1),
-  300: Color(0xFFFFAE66),
-  400: Color(0xFFFF8E35),
-  500: Color(0xFFF26900),
-  600: Color(0xFFD95C00),
-  700: Color(0xFFB34C00),
-  800: Color(0xFF913D00),
-  900: Color(0xFF6E2E00),
+const MaterialColor kNordicErrands = MaterialColor(0xFFFF7900, <int, Color>{
+  50: Color(0xFFFFF8EF),
+  100: Color(0xFFFFEBD4),
+  200: Color(0xFFFFD7A6),
+  300: Color(0xFFFFBF7A),
+  400: Color(0xFFFFA048),
+  500: Color(0xFFFF7900),
+  600: Color(0xFFE56D00),
+  700: Color(0xFFBD5900),
+  800: Color(0xFF964700),
+  900: Color(0xFF763700),
 });
 
 const MaterialColor kNordicEntertainment = MaterialColor(0xFFEF3B3B, <int, Color>{
@@ -345,6 +345,21 @@ const Map<int, int> _priorPinkTones = <int, int>{
   0xFF702459: 900,
 };
 
+/// Previous official orange shades (November palette). Persisted HEXs
+/// resolve to the new vivid-orange family at display time only.
+const Map<int, int> _priorOrangeTones = <int, int>{
+  0xFFFFF7EF: 50,
+  0xFFFFE8CF: 100,
+  0xFFFFD0A1: 200,
+  0xFFFFAE66: 300,
+  0xFFFF8E35: 400,
+  0xFFF26900: 500,
+  0xFFD95C00: 600,
+  0xFFB34C00: 700,
+  0xFF913D00: 800,
+  0xFF6E2E00: 900,
+};
+
 int canonicalLifeColorValue(int savedArgb) {
 
   // Current values must be stable. Exact-match historical remapping never
@@ -402,6 +417,10 @@ int canonicalLifeColorValue(int savedArgb) {
   if (prevRedTone != null) return kNordicEntertainment[prevRedTone]!.toARGB32();
   final prevPinkTone = _priorPinkTones[savedArgb];
   if (prevPinkTone != null) return kNordicPeople[prevPinkTone]!.toARGB32();
+  final previousOrangeTone = _priorOrangeTones[savedArgb];
+  if (previousOrangeTone != null) {
+    return kNordicErrands[previousOrangeTone]!.toARGB32();
+  }
   final orangeTone = _legacyOrangeTones[savedArgb];
   if (orangeTone != null) return kNordicErrands[orangeTone]!.toARGB32();
   final redTone = _legacyRedTones[savedArgb];

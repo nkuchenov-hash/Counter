@@ -34,7 +34,7 @@ class TimeViewTagsRow extends StatelessWidget {
                     label: tag.name.trim().isNotEmpty
                         ? tag.name.trim()
                         : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
-                    color: parseTagHexColor(tag.color) ?? scheme.primary,
+                    color: parseTagDisplayColor(tag.color, tagName: tag.name) ?? scheme.primary,
                     icon: iconForTagKey(tag.icon),
                     compactGlyphLayout: true,
                     syntheticNoTagsMonochrome: tag.tagId == -1,
@@ -89,7 +89,7 @@ class TimeViewCompactTagPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = parseTagHexColor(tag.color) ?? scheme.primary;
+    final color = parseTagDisplayColor(tag.color, tagName: tag.name) ?? scheme.primary;
     final plate = tagLetterChipPlate(color, scheme.surface);
     final fg = tagVibrantForeground(color, surface: scheme.surface);
     final label = tag.name.trim().isNotEmpty

@@ -66,7 +66,7 @@ class _TagManagerPageState extends State<TagManagerPage> {
   String _initialColorHex(Tag? existing) {
     final c = existing?.color?.trim();
     if (c != null && c.length >= 7 && c.startsWith('#')) {
-      final color = parseTagHexColor(c);
+      final color = parseTagDisplayColor(c, tagName: existing?.name ?? '');
       if (color != null) {
         return '#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
       }
@@ -358,7 +358,7 @@ class _TagManagerPageState extends State<TagManagerPage> {
                         itemBuilder: (ctx, i) {
                           final tag = _tags[i];
                           final c =
-                              parseTagHexColor(tag.color) ?? scheme.primary;
+                              parseTagDisplayColor(tag.color, tagName: tag.name) ?? scheme.primary;
                           final avatarPlate =
                               tagManagerAvatarPlate(c, scheme.surface);
                           final avatarFg = tagVibrantForeground(c, surface: scheme.surface);

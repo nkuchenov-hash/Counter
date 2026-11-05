@@ -232,7 +232,7 @@ class _TagDefaultDurationSettingsViewState
             title: CategoryChip(
               mode: DatabaseService.instance.settings.tagDisplayMode,
               label: tag.name,
-              color: parseTagHexColor(tag.color) ?? scheme.primary,
+              color: parseTagDisplayColor(tag.color, tagName: tag.name) ?? scheme.primary,
               icon: iconForTagKey(tag.icon),
               compactGlyphLayout: true,
               variant: CategoryChipVariant.compactCard,
