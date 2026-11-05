@@ -14,7 +14,7 @@ import 'package:flutter/material.dart';
 /// **Timeline record category** — text-only breadcrumbs, not a tag chip.
 ///
 /// Hierarchical path (`Parent > Child`). Independent of `profiles.tag_display_mode`.
-/// Compact stadium-shaped tint ([accentColor] ~13% opacity), full-strength accent text.
+/// Uses the exact same semantic fill, stroke and foreground as plan tag chips.
 class CategoryBreadcrumb extends StatelessWidget {
   const CategoryBreadcrumb({
     super.key,
@@ -42,6 +42,7 @@ class CategoryBreadcrumb extends StatelessWidget {
 
     final scheme = Theme.of(context).colorScheme;
     final plate = tagCategoryBreadcrumbPlate(accentColor, scheme.surface);
+    final border = tagLetterChipBorder(accentColor, scheme.surface);
     final fg = tagVibrantForeground(accentColor, surface: scheme.surface);
     final sepStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
       color: fg.withValues(alpha: 0.58),
@@ -63,6 +64,7 @@ class CategoryBreadcrumb extends StatelessWidget {
         decoration: BoxDecoration(
           color: plate,
           borderRadius: BorderRadius.circular(100),
+          border: Border.all(color: border),
         ),
         child: Wrap(
           crossAxisAlignment: WrapCrossAlignment.center,
