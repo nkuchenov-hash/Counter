@@ -1,3 +1,4 @@
+import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -330,7 +331,7 @@ class NotesPhysicalFolderShape extends ShapeBorder {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0
-        ..color = const Color(0x220E2034)
+        ..color = AppNeutralTones.black.withValues(alpha: 34 / 255)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.4),
     );
     canvas.drawPath(
@@ -338,7 +339,7 @@ class NotesPhysicalFolderShape extends ShapeBorder {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 0.8
-        ..color = const Color(0x260E2034),
+        ..color = AppNeutralTones.black.withValues(alpha: 38 / 255),
     );
   }
 

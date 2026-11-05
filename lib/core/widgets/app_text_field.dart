@@ -45,13 +45,13 @@ class AppTextField extends StatelessWidget {
     final dark = theme.brightness == Brightness.dark;
     final meta = dark
         ? scheme.onSurfaceVariant.withValues(alpha: 0.92)
-        : const Color(0xFF6B7280);
+        : scheme.onSurfaceVariant;
     final fill = dark
         ? scheme.surfaceContainerHigh.withValues(alpha: 0.82)
-        : const Color(0xFFF7F8FA).withValues(alpha: 0.78);
+        : scheme.surfaceContainerLow.withValues(alpha: 0.78);
     final borderColor = dark
         ? scheme.outlineVariant.withValues(alpha: 0.78)
-        : const Color(0xFFDFE3E8).withValues(alpha: 0.76);
+        : scheme.outlineVariant.withValues(alpha: 0.76);
 
     final glass = surface == AppTextFieldSurface.glass;
     final field = TextField(
