@@ -86,8 +86,9 @@ void main() {
       expect((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF);
       expect((rgb >> 8) & 0xFF, rgb & 0xFF);
     }
-    expect(AppColors.appBackground, const Color(0xFFF5F5F5));
+    expect(AppColors.appBackground, const Color(0xFFF0F0F0));
     expect(AppColors.cardSurface, Colors.white);
+    expect(AppColors.borderSubtle, AppNeutralTones.gray300);
     expect(
       AppColors.cardSurface.computeLuminance() -
           AppColors.appBackground.computeLuminance(),
