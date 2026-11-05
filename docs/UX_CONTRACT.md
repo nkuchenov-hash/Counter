@@ -1,3 +1,11 @@
+## Menu and settings navigation (2026-11-05)
+
+- The shell is the **only** primary navigation owner. On desktop it owns the persistent sidebar; Menu never creates a parallel rail. On mobile, Menu may surface shortcuts for destinations not present in the bottom tab bar.
+- Menu is the **single settings index and search**. Each top-level category opens a detail list using one interaction pattern, and a matching result opens its existing feature-owned destination. Profile is an **account destination**, not another settings index with competing desktop tabs.
+- Settings rows with different intent must route to the specific existing section (notifications vs morning routine, appearance vs language/time) rather than silently combining several destinations under a generic page.
+- Desktop Menu and leaf settings pages use the shared `AppSettingsPageBody` readable content width, `AppSettingsNavigationGroup` and canonical section/card patterns. Preserve keyboard/Back handling, scroll position semantics, RU/EN wording and accessibility.
+- This is navigation/presentation work only. Existing setting ownership, local-first behavior, account/session security, PocketBase schema, offline queues, and Timeline/Planning responsiveness remain unchanged.
+
 # UX Contract
 ## Viktor conversations, dates and context (2026-10-28)
 
