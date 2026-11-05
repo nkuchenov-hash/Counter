@@ -79,14 +79,14 @@ const MaterialColor kNordicStudy = MaterialColor(0xFF725EB5, <int, Color>{
 const MaterialColor kCategoryNeutral = MaterialColor(0xFF9A9A9A, <int, Color>{
   50: Color(0xFFFBFBFB),
   100: Color(0xFFF6F6F6),
-  200: Color(0xFFEAEAEA),
+  200: Color(0xFFECECEC),
   300: Color(0xFFD5D5D5),
   400: Color(0xFFB9B9B9),
   500: Color(0xFF9A9A9A),
   600: Color(0xFF828282),
   700: Color(0xFF686868),
   800: Color(0xFF505050),
-  900: Color(0xFF393939),
+  900: Color(0xFF3B3B3B),
 });
 
 const MaterialColor kNordicErrands = MaterialColor(0xFFF26900, <int, Color>{
