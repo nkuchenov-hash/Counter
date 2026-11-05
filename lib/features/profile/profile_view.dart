@@ -505,8 +505,6 @@ class _ProfilePageState extends State<ProfilePage> {
         const SizedBox(height: 24),
         const Divider(),
         const SizedBox(height: 16),
-        CategoryIconPackPreference(isRussian: locale.startsWith('ru')),
-        const SizedBox(height: 24),
         CategoryIconCollectionPreference(isRussian: locale.startsWith('ru')),
       ],
     );
