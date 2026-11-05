@@ -62,7 +62,7 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   final List<List<_DrawingStroke>> _undo = [];
   final List<List<_DrawingStroke>> _redo = [];
   NotesDrawingTool _tool = NotesDrawingTool.pen;
-  Color _color = kNotesDrawingColors.first.color;
+  Color _color = kCategoryBlack;
   double _strokeWidth = 6;
   _DrawingStroke? _current;
   ui.Image? _initialImage;
