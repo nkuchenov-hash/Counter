@@ -76,7 +76,7 @@ void main() {
     final redFg = tagVibrantForeground(red, surface: surface);
     expect(_hueGap(pinkFg, redFg), greaterThan(18));
     expect((pinkPlate.b - redPlate.b).abs(), greaterThan(0.07));
-    expect(pinkFg, kNordicPeople[700]);
+    expect(pinkFg, kTagPinkText);
     expect(redFg, kNordicEntertainment[600]);
     expect(_contrast(pinkFg, pinkPlate), greaterThanOrEqualTo(3.0));
     expect(_contrast(redFg, redPlate), greaterThanOrEqualTo(3.0));
@@ -86,12 +86,45 @@ void main() {
     const dark = Color(0xFF121820);
     final pink = kNordicPeople[500]!;
     final red = kNordicEntertainment[500]!;
-    expect(tagVibrantForeground(pink, surface: dark), kNordicPeople[400]);
+    expect(tagVibrantForeground(pink, surface: dark), kTagPinkText);
     expect(tagVibrantForeground(red, surface: dark), kNordicEntertainment[400]);
-    expect(_contrast(kNordicPeople[400]!, tagLetterChipPlate(pink, dark)),
-        greaterThanOrEqualTo(4.5));
+    expect(_contrast(kTagPinkText, tagLetterChipPlate(pink, dark)),
+        greaterThanOrEqualTo(3.0));
     expect(_contrast(kNordicEntertainment[400]!, tagLetterChipPlate(red, dark)),
         greaterThanOrEqualTo(4.5));
+  });
+
+  test('approved pink parameters apply across shared tag presentations', () {
+    const light = Color(0xFFF8FAFC);
+    const dark = Color(0xFF121820);
+    final pink = kNordicPeople[500]!;
+    expect(pink, const Color(0xFFFF79AA));
+    expect(kTagPinkText, const Color(0xFFD25888));
+    expect(kTagPinkPlateOpacity, 0.16);
+    expect(kTagPinkBorderOpacity, 0.60);
+    for (final surface in <Color>[light, dark]) {
+      final plate = Color.alphaBlend(pink.withValues(alpha: 0.16), surface);
+      final border = Color.alphaBlend(pink.withValues(alpha: 0.60), surface);
+      expect(tagLetterChipPlate(pink, surface), plate);
+      expect(tagManagerAvatarPlate(pink, surface), plate);
+      expect(tagLetterChipBorder(pink, surface), border);
+      expect(tagEmptyChipFill(pink, surface), pink.withValues(alpha: 0.16));
+      expect(tagEmptyChipBorderColor(pink), pink.withValues(alpha: 0.60));
+      expect(tagVibrantForeground(pink, surface: surface), kTagPinkText);
+      expect(_contrast(kTagPinkText, plate), greaterThanOrEqualTo(3.0));
+    }
+    // Red keeps its original tint settings and chromatic text.
+    final red = kNordicEntertainment[500]!;
+    expect(tagLetterChipPlate(red, light),
+        Color.alphaBlend(red.withValues(alpha: 0.26), light));
+    expect(tagLetterChipBorder(red, light),
+        Color.alphaBlend(red.withValues(alpha: 0.55), light));
+    expect(tagVibrantForeground(red, surface: light), kNordicEntertainment[600]);
+    // User-approved yellow remains independent of pink settings.
+    expect(kTagYellowGold, const Color(0xFFFFD000));
+    expect(kTagYellowPlateOpacity, 0.13);
+    expect(kTagYellowText, const Color(0xFFE1B400));
+    expect(kTagYellowBorderOpacity, 0.74);
   });
 
   test('previous official base colors resolve to new families', () {
