@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:counter/core/category_icon_system.dart';
+import 'package:counter/core/app_build_info.dart';
 import 'package:flutter/material.dart';
 
 Future<CategoryIconSelection?> showCategoryIconPicker(
@@ -211,8 +212,9 @@ class _IconPickerState extends State<_IconPicker> {
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
             child: SafeArea(top: false, child: Row(children: [
-              Text(icons.length.toString() + ' / ' +
-                  catalog.length.toString(),
+              Text('${icons.length} / ${catalog.length} icons · '
+                  'build ${AppBuildInfo.gitCommit}',
+                  key: const ValueKey('icon-picker-build-and-count'),
                   style: Theme.of(context).textTheme.bodySmall),
               const Spacer(),
               TextButton(onPressed: () => Navigator.pop(context),
