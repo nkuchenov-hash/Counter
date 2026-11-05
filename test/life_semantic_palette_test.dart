@@ -160,8 +160,8 @@ void main() {
     expect(tagVibrantForeground(red, surface: light), kNordicEntertainment[600]);
     // User-approved yellow remains independent of pink settings.
     expect(kTagYellowGold, const Color(0xFFFFD000));
-    expect(kTagYellowPlateOpacity, 0.13);
-    expect(kTagYellowText, const Color(0xFFE1B400));
+    expect(kTagYellowPlateOpacity, 0.16);
+    expect(kTagYellowText, const Color(0xFFB18900));
     expect(kTagYellowBorderOpacity, 0.74);
   });
 
@@ -217,7 +217,7 @@ void main() {
     expect(kNordicEntertainment[500], const Color(0xFFEF3B3B));
     expect(kNordicPeople[500], const Color(0xFFFF79AA));
     expect(kTagPinkPlateOpacity, 0.16);
-    expect(kTagYellowPlateOpacity, 0.13);
+    expect(kTagYellowPlateOpacity, 0.16);
   });
 
   test('previous official base colors resolve to new families', () {
@@ -286,12 +286,12 @@ void main() {
     expect(parseTagHexColor('#F6C500'), kTagYellowGold);
     expect(parseTagHexColor('#FFD000'), kTagYellowGold);
     expect(kTagYellowGold, const Color(0xFFFFD000));
-    expect(kTagYellowText, const Color(0xFFE1B400));
-    expect(kTagYellowPlateOpacity, 0.13);
+    expect(kTagYellowText, const Color(0xFFB18900));
+    expect(kTagYellowPlateOpacity, 0.16);
     expect(kTagYellowBorderOpacity, 0.74);
     for (final background in <Color>[Colors.white, const Color(0xFF121820)]) {
       expect(tagLetterChipPlate(kTagYellowGold, background),
-          Color.alphaBlend(kTagYellowGold.withValues(alpha: 0.13), background));
+          Color.alphaBlend(kTagYellowGold.withValues(alpha: 0.16), background));
       expect(tagLetterChipBorder(kTagYellowGold, background),
           Color.alphaBlend(kTagYellowGold.withValues(alpha: 0.74), background));
       expect(tagVibrantForeground(kTagYellowGold, surface: background),
