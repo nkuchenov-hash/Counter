@@ -1,0 +1,37 @@
+name: Vendor licensed Manrope typeface
+on:
+  push:
+    branches: [fix/tecno-menu-card-hover-brand-20261105]
+    paths: [.github/workflows/vendor-manrope-ui.yml]
+permissions:
+  contents: write
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Download variable Manrope and SIL OFL license
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/fonts
+          curl --fail --location --retry 4 --silent --show-error 'https://raw.githubusercontent.com/google/fonts/main/ofl/manrope/Manrope%5Bwght%5D.ttf' -o assets/fonts/Manrope-Variable.ttf
+          curl --fail --location --retry 4 --silent --show-error 'https://raw.githubusercontent.com/google/fonts/main/ofl/manrope/OFL.txt' -o assets/fonts/OFL-Manrope.txt
+          test "$(wc -c < assets/fonts/Manrope-Variable.ttf)" -gt 100000
+          grep -qi 'SIL OPEN FONT LICENSE' assets/fonts/OFL-Manrope.txt
+          sed -i 's/[[:blank:]]*$//' assets/fonts/OFL-Manrope.txt
+      - name: Commit local font into app
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/fonts/Manrope-Variable.ttf assets/fonts/OFL-Manrope.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Bundle Manrope variable font and its SIL license"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
