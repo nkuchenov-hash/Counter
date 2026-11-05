@@ -1,4 +1,13 @@
 # UX Contract
+
+## Unified Menu and settings navigation (2026-11-05)
+
+- Workspace navigation is the single outer navigation level. Desktop has only one primary rail with Timeline, Planning, Calendar, Lists, Paths, and one “Menu & settings” entry. The global desktop header is consistent across workspaces and settings.
+- The Menu is the canonical settings directory. Its section rows always open a section, while detail rows open the owning feature or focused settings destination; no second rail or separate horizontal settings tabs.
+- Profile, account, calendars, language, time zone, appearance, notification/routines, sleep, and device voice settings use one destination-based detail screen inside the existing shell; Back returns to the Menu, including on mobile. Offstage views must not intercept system Back.
+- Menu and settings detail pages use bounded, centered content widths on desktop. Reuse canonical settings rows, section cards, and neutral theme; do not create separate screen-specific navigation systems.
+- Preserve existing settings autosave, authentication, PocketBase ownership, offline sync, and fast navigation. UI consistency work must not touch data persistence or active Timeline/Planning behavior.
+
 ## Viktor conversations, dates and context (2026-10-28)
 
 - The app must preserve exactly when each user/assistant turn was sent, including UTC instant and the profile day/timezone at submission. Older legacy turns retain their known PocketBase server-created instant, but must **not** be assigned a fabricated historical profile date/zone.
