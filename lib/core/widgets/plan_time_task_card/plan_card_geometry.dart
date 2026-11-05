@@ -1,4 +1,7 @@
 import 'package:counter/core/widgets/plan_time_task_card/plan_card_metrics.dart';
+import 'package:counter/core/app_colors.dart';
+import 'package:counter/core/life_color_compat.dart';
+import 'package:counter/core/tag_contrast.dart';
 import 'package:flutter/material.dart';
 // --- Figma geometry (328px reference) ----------------------------------------
 
@@ -120,13 +123,13 @@ abstract final class PlanCardTokens {
   static const Color menuBg = Color(0xFFEBEBEB);
   static const Color menuStroke = Color(0xFF8E8E8E);
   static const Color dividerColor = Color(0x61D9D9D9);
-  static const Color breadcrumbColor = Color(0xFF609CE1);
+  static const Color breadcrumbColor = kNordicWork;
   static const Color breadcrumbFallbackColor = Color(0xFF878787);
   static const Color timeColor = Color(0xB8878787);
-  static const Color tagPinkBg = Color(0xFFFFE8E8);
-  static const Color tagPinkText = Color(0xFFF55D88);
-  static const Color tagPurpleBg = Color(0xFFEEE5F8);
-  static const Color tagPurpleText = Color(0xFF7118E5);
+  static final Color tagPinkBg = tagLetterChipPlate(kNordicPeople[500]!, AppColors.appBackground);
+  static const Color tagPinkText = kTagPinkText;
+  static final Color tagPurpleBg = tagLetterChipPlate(kNordicStudy[500]!, AppColors.appBackground);
+  static const Color tagPurpleText = kNordicStudy;
 
   static List<BoxShadow> cardShadow(bool interacting, {bool hovered = false}) =>
       [
