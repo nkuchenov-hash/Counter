@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `fe824e52` on 2026-11-05.**
+**Generated from input HEAD `df82ffe8` on 2026-11-05.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -26,11 +26,11 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 192 |
+| `production UI` | 193 |
 | `test` | 138 |
 | `Brain/data` | 114 |
 | `platform build` | 83 |
-| `shared foundation` | 70 |
+| `shared foundation` | 69 |
 | `developer tool` | 64 |
 | `platform resource` | 44 |
 | `governing documentation` | 43 |
@@ -39,7 +39,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `PocketBase backend` | 24 |
 | `PocketBase migration` | 21 |
 | `shared Voice system` | 20 |
-| `historical engineering record` | 17 |
+| `historical engineering record` | 18 |
 | `CI/deployment` | 13 |
 | `localization` | 13 |
 | `installer` | 12 |
@@ -61,7 +61,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 258 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 43 |
-| `HISTORICAL_RECORD` | 17 |
+| `HISTORICAL_RECORD` | 18 |
 | `GENERATED_CANONICAL_OUTPUT` | 1 |
 
 ### By confidence
@@ -69,7 +69,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Confidence | Count |
 | :--- | ---: |
 | `HIGH` | 893 |
-| `MEDIUM` | 84 |
+| `MEDIUM` | 85 |
 
 ---
 
@@ -6239,7 +6239,7 @@ EN:
 - **Why needed:** Tracked because `assets/licenses` needs `FLUENT_HEROICONS_LICENSES.txt` for build, CI, or maintenance.
 - **Contents:** Open `FLUENT_HEROICONS_LICENSES.txt` when working on `assets/licenses` (see folder section above).
 - **Repository role:** developer tool
-- **Evidence of use:** Referenced by: `docs/APP_STRUCTURE.md`, `lib/core/category_icon_catalog_generated.g.dart`.
+- **Evidence of use:** Referenced by: `docs/APP_STRUCTURE.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** May break tooling or configuration; verify before delete.
 - **Confidence:** MEDIUM
@@ -6256,7 +6256,7 @@ RU:
 - **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `assets/licenses` для `FLUENT_HEROICONS_LICENSES.txt`.
 - **Содержимое:** Данные или код `FLUENT_HEROICONS_LICENSES.txt`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Упоминается в: `docs/APP_STRUCTURE.md`, `lib/core/category_icon_catalog_generated.g.dart`.
+- **Доказательства использования:** Упоминается в: `docs/APP_STRUCTURE.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
 - **Уверенность:** MEDIUM
@@ -7484,6 +7484,43 @@ RU:
 - **Владелец / слой:** документация
 - **Обязанности:** Фиксирует evidence и итоги по теме этого расследования.
 - **Когда открывать:** Смотрите историю по `ARCHITECTURE GUARD BASELINE 2026-07-17` перед повторением той же работы.
+- **Можно удалить?** Пропадёт история решения по тому расследованию.
+- **Связано с:** `docs/ROADMAP.md`, `CHANGELOG.md`, связанные governing docs.
+
+
+### `docs/reports/CATEGORY_ICON_INTERSECTION_2026-11-05.md`
+
+EN:
+
+- **Human purpose:** Engineering report `CATEGORY_ICON_INTERSECTION_2026-11-05.md` — dated findings under `docs/reports/`. Preserves audit/parity decisions so later work does not re-litigate the same findings.
+- **What this is:** Engineering report `CATEGORY_ICON_INTERSECTION_2026-11-05.md` — dated findings under `docs/reports/`.
+- **Why needed:** Preserves audit/parity decisions so later work does not re-litigate the same findings.
+- **Contents:** Markdown report body for `CATEGORY ICON INTERSECTION 2026-11-05`.
+- **Repository role:** historical engineering record
+- **Evidence of use:** (1) Dated engineering report retained as decision history; linked from structure/changelog audits — not runtime code. (2) Referenced by: `docs/APP_STRUCTURE.md`, `lib/core/category_icon_catalog_generated.g.dart`.
+- **Necessity status:** HISTORICAL_RECORD
+- **Deletion consequence:** Lost historical decision evidence for that investigation.
+- **Confidence:** MEDIUM
+- **Owner / layer:** documentation
+- **Responsibilities:** Document evidence and outcomes for this investigation topic.
+- **When to open:** Reviewing history related to `CATEGORY ICON INTERSECTION 2026-11-05` before repeating the work.
+- **Can it be deleted?** Lost historical decision evidence for that investigation.
+- **Connected to:** `docs/ROADMAP.md`, `CHANGELOG.md`, related governing docs.
+
+RU:
+
+- **Зачем файл человеку:** Инженерный отчёт `CATEGORY_ICON_INTERSECTION_2026-11-05.md` — dated findings в `docs/reports/`. Сохраняет решения audit/parity, чтобы позже не переобсуждать те же findings.
+- **Что это:** Инженерный отчёт `CATEGORY_ICON_INTERSECTION_2026-11-05.md` — dated findings в `docs/reports/`.
+- **Зачем:** Сохраняет решения audit/parity, чтобы позже не переобсуждать те же findings.
+- **Содержимое:** Markdown-тело отчёта `CATEGORY ICON INTERSECTION 2026-11-05`.
+- **Роль в репозитории:** historical engineering record
+- **Доказательства использования:** Отчёт с датой — история решений; не runtime-код.
+- **Статус необходимости:** HISTORICAL_RECORD
+- **Что будет, если удалить:** Пропадёт история решения по тому расследованию.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** документация
+- **Обязанности:** Фиксирует evidence и итоги по теме этого расследования.
+- **Когда открывать:** Смотрите историю по `CATEGORY ICON INTERSECTION 2026-11-05` перед повторением той же работы.
 - **Можно удалить?** Пропадёт история решения по тому расследованию.
 - **Связано с:** `docs/ROADMAP.md`, `CHANGELOG.md`, связанные governing docs.
 
@@ -11919,25 +11956,26 @@ RU:
 
 EN:
 
-- **Human purpose:** Foundation module `category_icon_catalog_generated.g.dart` (core) — Generated complete native icon registries: 2,244 Fluent 24px Regular/Filled pairs and all Heroicons Outline/Solid enum entries. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `category_icon_catalog_generated.g.dart` (core) — Generated complete native icon registries: 2,244 Fluent 24px Regular/Filled pairs and all Heroicons Outline/Solid enum entries.
+- **Human purpose:** Foundation module `category_icon_catalog_generated.g.dart` (core) — Reviewed semantic intersection: 103 concepts available in both Fluent UI and Heroicons (Outline/Fill). Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What this is:** Foundation module `category_icon_catalog_generated.g.dart` (core) — Reviewed semantic intersection: 103 concepts available in both Fluent UI and Heroicons (Outline/Fill).
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Dart module `category_icon_catalog_generated.g.dart` — open file for classes and helpers.
+- **Contents:** Primary symbols: `MatchedCategoryIcon`.
+- **Key code names:** `MatchedCategoryIcon`
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/core/category_icon_system.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared foundation
-- **Responsibilities:** Generated complete native icon registries: 2,244 Fluent 24px Regular/Filled pairs and all Heroicons Outline/Solid enum entries
+- **Responsibilities:** Reviewed semantic intersection: 103 concepts available in both Fluent UI and Heroicons (Outline/Fill)
 - **When to open:** When behavior tied to `category_icon_catalog_generated.g.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Generated complete native icon registries: 2,244 Fluent 24px Regular/Filled pairs and all Heroicons Outline/Solid enum e
+- **Connected to:** APP_STRUCTURE role: Reviewed semantic intersection: 103 concepts available in both Fluent UI and Heroicons (Outline/Fill)
 
 RU:
 
-- **Зачем файл человеку:** Foundation-модуль `category_icon_catalog_generated.g.dart` (core) — Generated complete native icon registries: 2,244 Fluent 24px Regular/Filled pairs and all Heroicons Outline/Solid enum entries. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `category_icon_catalog_generated.g.dart` (core) — Generated complete native icon registries: 2,244 Fluent 24px Regular/Filled pairs and all Heroicons Outline/Solid enum entries.
+- **Зачем файл человеку:** Foundation-модуль `category_icon_catalog_generated.g.dart` (core) — Reviewed semantic intersection: 103 concepts available in both Fluent UI and Heroicons (Outline/Fill). Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Что это:** Foundation-модуль `category_icon_catalog_generated.g.dart` (core) — Reviewed semantic intersection: 103 concepts available in both Fluent UI and Heroicons (Outline/Fill).
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `category_icon_catalog_generated.g.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
@@ -11946,37 +11984,36 @@ RU:
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Generated complete native icon registries: 2,244 Fluent 24px Regular/Filled pairs and all Heroicons Outline/Solid enum entries.
+- **Обязанности:** Foundation-логика: Reviewed semantic intersection: 103 concepts available in both Fluent UI and Heroicons (Outline/Fill).
 - **Когда открывать:** Когда ломается поведение, связанное с `category_icon_catalog_generated.g.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
-
 
 
 ### `lib/core/category_icon_system.dart`
 
 EN:
 
-- **Human purpose:** Foundation module `category_icon_system.dart` (core) — Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved). Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `category_icon_system.dart` (core) — Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved).
+- **Human purpose:** Foundation module `category_icon_system.dart` (core) — Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon choices. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What this is:** Foundation module `category_icon_system.dart` (core) — Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon choices.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `CategoryIconPack`, `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`, `CategorySvgIcon`, `CategoryGlyph`.
-- **Key code names:** `CategoryIconPack`, `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`, `CategorySvgIcon`, `CategoryGlyph`
+- **Contents:** Primary symbols: `CategoryIconPack`, `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`, `CategorySvgIcon`.
+- **Key code names:** `CategoryIconPack`, `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`, `CategorySvgIcon`
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/widgets/notes_folder_pane.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/profile_view.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared foundation
-- **Responsibilities:** Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved)
+- **Responsibilities:** Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon choices
 - **When to open:** When behavior tied to `category_icon_system.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences,
+- **Connected to:** APP_STRUCTURE role: Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon
 
 RU:
 
-- **Зачем файл человеку:** Foundation-модуль `category_icon_system.dart` (core) — Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved). Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `category_icon_system.dart` (core) — Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved).
+- **Зачем файл человеку:** Foundation-модуль `category_icon_system.dart` (core) — Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon choices. Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Что это:** Foundation-модуль `category_icon_system.dart` (core) — Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon choices.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `category_icon_system.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
@@ -11985,7 +12022,7 @@ RU:
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: Global Fluent/Heroicons family setting, shared SVG renderer, paired key registry, local-first category icon preferences, existing Material codepoint mapping (server field preserved).
+- **Обязанности:** Foundation-логика: Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon choices.
 - **Когда открывать:** Когда ломается поведение, связанное с `category_icon_system.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -22933,6 +22970,44 @@ RU:
 - **Владелец / слой:** UI настроек категорий
 - **Обязанности:** Поддерживает поведение `category_helpers` в этой feature-зоне.
 - **Когда открывать:** Когда ломается поведение, связанное с `category_helpers.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/settings/categories/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/settings/categories/category_icon_collection_preference.dart`
+
+EN:
+
+- **Human purpose:** `category_icon_collection_preference.dart` on settings area — category icon collection preference. Users see `category_icon_collection_preference.dart` when using settings area.
+- **What this is:** `category_icon_collection_preference.dart` on settings area — category icon collection preference.
+- **Why needed:** Users see `category_icon_collection_preference.dart` when using settings area.
+- **Contents:** Primary symbols: `CategoryIconCollectionPreference`, `_IconCollectionEditor`, `_IconCollectionEditorState`.
+- **Key code names:** `CategoryIconCollectionPreference`, `_IconCollectionEditor`, `_IconCollectionEditorState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/profile_view.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Categories settings UI
+- **Responsibilities:** Implements `CategoryIconCollectionPreference` and related API in `category_icon_collection_preference.dart`.
+- **When to open:** When behavior tied to `category_icon_collection_preference.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: category icon collection preference
+
+RU:
+
+- **Зачем файл человеку:** `category_icon_collection_preference.dart` на settings — Поддерживает поведение `category_icon_collection_preference` в этой feature-зоне.. Пользователь видит UI из `category_icon_collection_preference.dart` на settings.
+- **Что это:** `category_icon_collection_preference.dart` на settings — Поддерживает поведение `category_icon_collection_preference` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `category_icon_collection_preference.dart` на settings.
+- **Содержимое:** Dart-модуль `category_icon_collection_preference.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/profile_view.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI настроек категорий
+- **Обязанности:** Поддерживает поведение `category_icon_collection_preference` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_icon_collection_preference.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/settings/categories/`, `docs/APP_STRUCTURE.md`
 
@@ -41215,78 +41290,3 @@ RU:
 - **Когда открывать:** Ошибка native compile ссылается на `win32_window.h`.
 - **Можно удалить?** Нет — без него не соберётся Windows `.exe`/runner.
 - **Связано с:** `windows/runner/`, `windows/flutter/`.
-
-
-### `docs/reports/CATEGORY_ICON_INTERSECTION_2026-11-05.md`
-
-EN:
-
-- **Human purpose:** Engineering report `CATEGORY_ICON_INTERSECTION_2026-11-05.md` — dated findings under `docs/reports/`. Preserves audit/parity decisions so later work does not re-litigate the same findings.
-- **What this is:** Engineering report `CATEGORY_ICON_INTERSECTION_2026-11-05.md` — dated findings under `docs/reports/`.
-- **Why needed:** Preserves audit/parity decisions so later work does not re-litigate the same findings.
-- **Contents:** Markdown report body for `CATEGORY ICON INTERSECTION 2026-11-05`.
-- **Repository role:** historical engineering record
-- **Evidence of use:** (1) Dated engineering report retained as decision history; linked from structure/changelog audits — not runtime code. (2) Referenced by: `docs/APP_STRUCTURE.md`, `lib/core/category_icon_catalog_generated.g.dart`.
-- **Necessity status:** HISTORICAL_RECORD
-- **Deletion consequence:** Lost historical decision evidence for that investigation.
-- **Confidence:** MEDIUM
-- **Owner / layer:** documentation
-- **Responsibilities:** Document evidence and outcomes for this investigation topic.
-- **When to open:** Reviewing history related to `CATEGORY ICON INTERSECTION 2026-11-05` before repeating the work.
-- **Can it be deleted?** Lost historical decision evidence for that investigation.
-- **Connected to:** `docs/ROADMAP.md`, `CHANGELOG.md`, related governing docs.
-
-RU:
-
-- **Зачем файл человеку:** Инженерный отчёт `CATEGORY_ICON_INTERSECTION_2026-11-05.md` — dated findings в `docs/reports/`. Сохраняет решения audit/parity, чтобы позже не переобсуждать те же findings.
-- **Что это:** Инженерный отчёт `CATEGORY_ICON_INTERSECTION_2026-11-05.md` — dated findings в `docs/reports/`.
-- **Зачем:** Сохраняет решения audit/parity, чтобы позже не переобсуждать те же findings.
-- **Содержимое:** Markdown-тело отчёта `CATEGORY ICON INTERSECTION 2026-11-05`.
-- **Роль в репозитории:** historical engineering record
-- **Доказательства использования:** Отчёт с датой — история решений; не runtime-код.
-- **Статус необходимости:** HISTORICAL_RECORD
-- **Что будет, если удалить:** Пропадёт история решения по тому расследованию.
-- **Уверенность:** MEDIUM
-- **Владелец / слой:** документация
-- **Обязанности:** Фиксирует evidence и итоги по теме этого расследования.
-- **Когда открывать:** Смотрите историю по `CATEGORY ICON INTERSECTION 2026-11-05` перед повторением той же работы.
-- **Можно удалить?** Пропадёт история решения по тому расследованию.
-- **Связано с:** `docs/ROADMAP.md`, `CHANGELOG.md`, связанные governing docs.
-
-
-### `lib/features/settings/categories/category_icon_collection_preference.dart`
-
-EN:
-
-- **Human purpose:** `category_icon_collection_preference.dart` on settings area — category icon collection preference. Users see `category_icon_collection_preference.dart` when using settings area.
-- **What this is:** `category_icon_collection_preference.dart` on settings area — category icon collection preference.
-- **Why needed:** Users see `category_icon_collection_preference.dart` when using settings area.
-- **Contents:** Primary symbols: `CategoryIconCollectionPreference`, `_IconCollectionEditor`, `_IconCollectionEditorState`.
-- **Key code names:** `CategoryIconCollectionPreference`, `_IconCollectionEditor`, `_IconCollectionEditorState`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/profile_view.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Categories settings UI
-- **Responsibilities:** Implements `CategoryIconCollectionPreference` and related API in `category_icon_collection_preference.dart`.
-- **When to open:** When behavior tied to `category_icon_collection_preference.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: category icon collection preference
-
-RU:
-
-- **Зачем файл человеку:** `category_icon_collection_preference.dart` на settings — Поддерживает поведение `category_icon_collection_preference` в этой feature-зоне.. Пользователь видит UI из `category_icon_collection_preference.dart` на settings.
-- **Что это:** `category_icon_collection_preference.dart` на settings — Поддерживает поведение `category_icon_collection_preference` в этой feature-зоне..
-- **Зачем:** Пользователь видит UI из `category_icon_collection_preference.dart` на settings.
-- **Содержимое:** Dart-модуль `category_icon_collection_preference.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/profile_view.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** UI настроек категорий
-- **Обязанности:** Поддерживает поведение `category_icon_collection_preference` в этой feature-зоне.
-- **Когда открывать:** Когда ломается поведение, связанное с `category_icon_collection_preference.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/features/settings/categories/`, `docs/APP_STRUCTURE.md`
