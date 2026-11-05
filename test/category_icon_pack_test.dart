@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/core/category_icon_catalog_generated.g.dart';
+import 'package:counter/features/settings/categories/category_icon_collection_preference.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -101,6 +103,40 @@ void main() {
     expect(screen, contains('matched-icon-collection-grid'));
     expect(screen, contains('reset-default-icons'));
     expect(screen, contains('save-icon-collection'));
+  });
+
+  testWidgets('Settings initially shows only user icons, never all matched icons',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.runAsync(() async {
+      await CategoryIconStore.instance.ensureLoaded();
+      await CategoryIconStore.instance.setQuickKeys(kDefaultCategoryIconKeys);
+      await CategoryIconStore.instance.setPack(CategoryIconPack.fluent);
+    });
+    await tester.pumpWidget(const MaterialApp(
+      home: Scaffold(body: SingleChildScrollView(
+        child: CategoryIconCollectionPreference(isRussian: false),
+      )),
+    ));
+    await tester.tap(find.byKey(const ValueKey('manage-category-icons')));
+    await tester.pumpAndSettle();
+    final grid = find.byKey(const ValueKey('matched-icon-collection-grid'));
+    final defaultGrid = tester.widget<GridView>(grid);
+    expect((defaultGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
+        kDefaultCategoryIconKeys.length);
+    expect(find.textContaining('in my collection'), findsOneWidget);
+    expect(find.byKey(const ValueKey('toggle-icon-catalog')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('toggle-icon-catalog')));
+    await tester.pumpAndSettle();
+    final availableGrid = tester.widget<GridView>(grid);
+    expect((availableGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
+        kMatchedCategoryIcons.length - kDefaultCategoryIconKeys.length);
+    expect(find.textContaining('matching icons available'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('toggle-icon-catalog')));
+    await tester.pumpAndSettle();
+    final restoredGrid = tester.widget<GridView>(grid);
+    expect((restoredGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
+        kDefaultCategoryIconKeys.length);
   });
 
   test('old family-specific keys map to shared semantics safely', () {
