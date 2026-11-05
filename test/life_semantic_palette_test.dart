@@ -65,6 +65,34 @@ void main() {
     expect(grays.last, Colors.black);
   });
 
+  test('app surface tokens use a pure grayscale ramp', () {
+    final surfaces = <Color>[
+      AppColors.actionPrimaryContainer,
+      AppColors.appBackground,
+      AppColors.cardSurface,
+      AppColors.borderSubtle,
+      AppColors.borderMuted,
+      AppColors.surfaceMuted,
+      AppColors.darkAppBackground,
+      AppColors.darkCardSurface,
+      AppColors.darkActionPrimary,
+      AppColors.onDarkActionPrimary,
+      AppColors.darkActionPrimaryContainer,
+    ];
+    for (final color in surfaces) {
+      final rgb = color.toARGB32();
+      expect((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF);
+      expect((rgb >> 8) & 0xFF, rgb & 0xFF);
+    }
+    expect(AppColors.appBackground, const Color(0xFFF0F0F0));
+    expect(AppColors.cardSurface, Colors.white);
+    expect(
+      AppColors.cardSurface.computeLuminance() -
+          AppColors.appBackground.computeLuminance(),
+      greaterThan(0.09),
+    );
+  });
+
   test('one canonical palette feeds both categories and tag presets', () {
     expect(kCategoryPickerMaterialColors, hasLength(11));
     expect(kLifeTagColorPresets, hasLength(11));
