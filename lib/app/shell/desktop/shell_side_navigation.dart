@@ -53,7 +53,7 @@ class ShellSideNavigation extends StatelessWidget {
     return Material(
       color: scheme.brightness == Brightness.dark
           ? scheme.surfaceContainerHigh
-          : const Color(0xFFDDDDDD),
+          : const Color(0xFFECECEC),
       shape: Border(
         right: BorderSide(
           color: scheme.outlineVariant.withValues(alpha: 0.75),
@@ -68,42 +68,6 @@ class ShellSideNavigation extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Brand belongs at the top of the actual desktop navigation,
-                // not only in an app bar which may be cropped by host chrome.
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 2, 0, 14),
-                  child: Row(
-                    children: [
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: scheme.brightness == Brightness.dark
-                              ? scheme.onSurface
-                              : const Color(0xFF454545),
-                          borderRadius: BorderRadius.circular(9),
-                        ),
-                        child: SizedBox(
-                          height: 29,
-                          width: 29,
-                          child: Icon(
-                            AppMenuIcons.icon(AppMenuIconRole.viktor),
-                            size: 18,
-                            color: scheme.surfaceContainerHigh,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'LIFE OS',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: scheme.brightness == Brightness.dark
-                              ? scheme.onSurface
-                              : const Color(0xFF454545),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 Expanded(
                   child: ListView(
                     padding: EdgeInsets.zero,
