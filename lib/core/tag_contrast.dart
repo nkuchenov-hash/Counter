@@ -41,10 +41,33 @@ Color tagManagerAvatarPlate(Color tagColor, Color surface) {
   return Color.alphaBlend(tagColor.withValues(alpha: 0.2), surface);
 }
 
-/// Vibrant text/icon on pale plates & avatars: full [tagBaseColor], except yellow → [kTagYellowGold].
-Color tagVibrantForeground(Color tagBaseColor) {
+/// Shared foreground for translucent category/tag chips.
+///
+/// When [surface] is supplied, maintain the original hue but select enough
+/// lightness contrast for small text on that surface (light *or* dark mode).
+/// Solid color icons/rings still use the unmodified family color when
+/// [surface] is omitted. Yellow retains its existing exact-gold policy.
+Color tagVibrantForeground(Color tagBaseColor, {Color? surface}) {
   if (tagColorIsYellowFamily(tagBaseColor)) return kTagYellowGold;
-  return tagBaseColor;
+  if (surface == null) return tagBaseColor;
+
+  final background = tagLetterChipPlate(tagBaseColor, surface);
+  final backgroundLuminance = background.computeLuminance();
+  final useDarkerText = backgroundLuminance > 0.35;
+  var hsl = HSLColor.fromColor(tagBaseColor);
+  var foreground = tagBaseColor;
+  for (var step = 0; step <= 20; step++) {
+    final a = foreground.computeLuminance();
+    final higher = a > backgroundLuminance ? a : backgroundLuminance;
+    final lower = a > backgroundLuminance ? backgroundLuminance : a;
+    if ((higher + 0.05) / (lower + 0.05) >= 4.5) return foreground;
+    final nextLightness =
+        (hsl.lightness + (useDarkerText ? -0.025 : 0.025)).clamp(0.0, 1.0);
+    if (nextLightness == hsl.lightness) break;
+    hsl = hsl.withLightness(nextLightness);
+    foreground = hsl.toColor();
+  }
+  return foreground;
 }
 
 /// Icon/glyph without a filled tag circle.
