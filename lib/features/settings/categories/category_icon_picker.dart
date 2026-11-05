@@ -46,7 +46,10 @@ class _IconPickerState extends State<_IconPicker> {
   @override
   void initState() {
     super.initState();
-    _selection = widget.initial;
+    _selection = CategoryIconSelection(
+      CategoryIconStore.canonicalKey(widget.initial.key) ?? widget.initial.key,
+      filled: widget.initial.filled,
+    );
     _search.addListener(_changed);
     unawaited(CategoryIconStore.instance.ensureLoaded());
   }
