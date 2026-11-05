@@ -109,17 +109,17 @@ const MaterialColor kNordicEntertainment = MaterialColor(0xFFC82332, <int, Color
   900: Color(0xFF621D24),
 });
 
-const MaterialColor kNordicPeople = MaterialColor(0xFFF56AB9, <int, Color>{
-  50: Color(0xFFFEF3FA),
-  100: Color(0xFFFCE6F3),
-  200: Color(0xFFF9CDE8),
-  300: Color(0xFFF5AED7),
-  400: Color(0xFFF28CCB),
-  500: Color(0xFFF56AB9),
-  600: Color(0xFFD44F9E),
-  700: Color(0xFFAF3B81),
-  800: Color(0xFF8E326C),
-  900: Color(0xFF712A57),
+const MaterialColor kNordicPeople = MaterialColor(0xFFF75CC5, <int, Color>{
+  50: Color(0xFFFFF3FC),
+  100: Color(0xFFFDE6F7),
+  200: Color(0xFFFBC9EE),
+  300: Color(0xFFF6A7E0),
+  400: Color(0xFFF382D4),
+  500: Color(0xFFF75CC5),
+  600: Color(0xFFD647A7),
+  700: Color(0xFFAD3585),
+  800: Color(0xFF8D2B6C),
+  900: Color(0xFF702459),
 });
 
 
