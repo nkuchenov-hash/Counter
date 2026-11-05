@@ -1,4 +1,3 @@
-import 'package:counter/core/life_color_compat.dart';
 part of 'component_lab_view.dart';
 
 class ComponentLabNotesDemo extends StatefulWidget {
