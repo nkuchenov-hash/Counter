@@ -40,91 +40,124 @@ mixin ShellMoreMenu on ShellCoreLogic {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      builder: (ctx) => StreamBuilder<UserSettings>(
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+      builder: (sheetContext) => StreamBuilder<UserSettings>(
         stream: DatabaseService.instance.userSettingsStream,
         initialData: DatabaseService.instance.settings,
         builder: (context, snapshot) {
           final isAdmin =
               snapshot.data?.isAdmin ??
               DatabaseService.instance.settings.isAdmin;
+
+          void navigateTo(int index) {
+            Navigator.of(sheetContext).pop();
+            setState(() => setShellPageIndex(index));
+          }
+
           return SafeArea(
             child: ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(ctx).height * 0.75),
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.80,
+              ),
               child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                AppMenuActionTile(
-                  leading: const Icon(Icons.auto_awesome_rounded),
-                  title: Text(isRu ? 'Виктор · ИИ' : 'Viktor · AI'),
-                  subtitle: Text(isRu
-                      ? 'Общение, планы и голосовые команды'
-                      : 'Chat, planning and voice commands'),
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    unawaited(openViktor());
-                  },
-                ),
-                if (!secondaryOnly) ...[
-                  AppMenuActionTile(
-                    leading: const Icon(Icons.person_rounded),
-                    title: Text(t(loc, 'more_menu_profile')),
-                    onTap: () {
-                      Navigator.of(ctx).pop();
-                      setState(() => setShellPageIndex(5));
-                    },
-                  ),
-                  AppMenuActionTile(
-                    leading: const Icon(Icons.label_rounded),
-                    title: Text(t(loc, 'more_menu_categories')),
-                    onTap: () {
-                      Navigator.of(ctx).pop();
-                      setState(() => setShellPageIndex(4));
-                    },
-                  ),
-                ],
-                AppMenuActionTile(
-                  leading: const Icon(Icons.alt_route_rounded),
-                  title: Text(isRu ? 'Пути проектов' : 'Project paths'),
-                  subtitle: Text(
-                    isRu
-                        ? 'От конечной цели до действий не длиннее 30 минут'
-                        : 'From the end goal to actions no longer than 30 minutes',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    openProjectPaths();
-                  },
-                ),
-                if (isAdmin)
-                  AppMenuActionTile(
-                    leading: const Icon(Icons.design_services_rounded),
-                    title: const Text('Dev / Design Lab'),
-                    onTap: () {
-                      Navigator.of(ctx).pop();
-                      Navigator.of(context).push<void>(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const ComponentLabPage(),
-                        ),
-                      );
-                    },
-                  ),
-                if (_desktopVoiceDevDiagnosticsVisible)
-                  AppMenuActionTile(
-                    leading: const Icon(Icons.graphic_eq_rounded),
-                    title: Text(t(loc, 'more_menu_voice_diagnostics')),
-                    subtitle: Text(
-                      t(loc, 'more_menu_voice_diagnostics_subtitle'),
-                      style: Theme.of(context).textTheme.bodySmall,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(5, 2, 0, 16),
+                      child: Text(
+                        isRu ? 'Ещё' : 'More',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
                     ),
-                    onTap: () {
-                      Navigator.of(ctx).pop();
-                      showDesktopVoiceAttemptDialog(context);
-                    },
-                  ),
-
+                    AppSettingsNavigationGroup(
+                      children: [
+                        AppMenuActionTile(
+                          leading: const AppSettingsMenuIcon(
+                            icon: Icons.auto_awesome_rounded,
+                          ),
+                          title: Text(isRu ? 'Виктор · ИИ' : 'Viktor · AI'),
+                          subtitle: Text(isRu
+                              ? 'Общение, планы и голосовые команды'
+                              : 'Chat, planning and voice commands'),
+                          onTap: () {
+                            Navigator.of(sheetContext).pop();
+                            unawaited(openViktor());
+                          },
+                        ),
+                      ],
+                    ),
+                    AppSettingsNavigationGroup(
+                      children: [
+                        if (!secondaryOnly)
+                          AppMenuActionTile(
+                            leading: const AppSettingsMenuIcon(
+                              icon: Icons.person_outline_rounded,
+                            ),
+                            title: Text(t(loc, 'more_menu_profile')),
+                            onTap: () => navigateTo(5),
+                          ),
+                        if (!secondaryOnly)
+                          AppMenuActionTile(
+                            leading: const AppSettingsMenuIcon(
+                              icon: Icons.label_outline_rounded,
+                            ),
+                            title: Text(t(loc, 'more_menu_categories')),
+                            onTap: () => navigateTo(4),
+                          ),
+                        AppMenuActionTile(
+                          leading: const AppSettingsMenuIcon(
+                            icon: Icons.alt_route_rounded,
+                          ),
+                          title: Text(
+                              isRu ? 'Пути проектов' : 'Project paths'),
+                          subtitle: Text(isRu
+                              ? 'От цели до конкретных действий'
+                              : 'From goals to concrete actions'),
+                          onTap: () {
+                            Navigator.of(sheetContext).pop();
+                            openProjectPaths();
+                          },
+                        ),
+                      ],
+                    ),
+                    if (isAdmin || _desktopVoiceDevDiagnosticsVisible)
+                      AppSettingsNavigationGroup(
+                        children: [
+                          if (isAdmin)
+                            AppMenuActionTile(
+                              leading: const AppSettingsMenuIcon(
+                                icon: Icons.design_services_outlined,
+                              ),
+                              title: const Text('Dev / Design Lab'),
+                              onTap: () {
+                                Navigator.of(sheetContext).pop();
+                                Navigator.of(context).push<void>(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const ComponentLabPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                          if (_desktopVoiceDevDiagnosticsVisible)
+                            AppMenuActionTile(
+                              leading: const AppSettingsMenuIcon(
+                                icon: Icons.graphic_eq_rounded,
+                              ),
+                              title: Text(
+                                  t(loc, 'more_menu_voice_diagnostics')),
+                              subtitle: Text(
+                                  t(loc, 'more_menu_voice_diagnostics_subtitle')),
+                              onTap: () {
+                                Navigator.of(sheetContext).pop();
+                                showDesktopVoiceAttemptDialog(context);
+                              },
+                            ),
+                        ],
+                      ),
                   ],
                 ),
               ),
