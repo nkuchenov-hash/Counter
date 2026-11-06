@@ -332,24 +332,42 @@ foreach ($w in $rawUi) {
 $inputPattern = '\b(TextField|TextFormField)\s*\('
 $inputTotal = 0
 $inputFiles = 0
-# The entire lib tree is inspected, not only feature directories. The
-# canonical AppTextField's internal native field(s) are intentionally excluded.
+# Specialized content editors need their native behavior (rich text, inline
+# table cells, bespoke date/time digit controls). They must not grow new raw
+# fields, and none may be used as an ordinary search/text form alternative.
+$specializedNativeFieldCaps = @{
+    'lib/core/widgets/omni_date_time_picker_dialog.dart' = 1
+    'lib/features/shared/planning_task_edit_sheet.dart' = 1
+    'lib/features/notes/widgets/note_editor_block_widgets.dart' = 1
+    'lib/features/notes/widgets/notes_component_media_blocks.dart' = 1
+    'lib/features/notes/widgets/notes_component_structural_blocks.dart' = 3
+    'lib/features/notes/widgets/notes_component_text_blocks.dart' = 2
+    'lib/features/notes/widgets/notes_editor_screen.dart' = 1
+    'lib/features/viktor/viktor_composer.dart' = 1
+}
+# Inspect every app-owned Dart file; a screen cannot create an independent
+# ordinary TextField just by moving it from lib/features into lib/shared.
 if (Test-Path -LiteralPath $libRoot) {
     $allDartFiles = @(Get-ChildItem -LiteralPath $libRoot -Recurse -Filter '*.dart' -File -ErrorAction SilentlyContinue)
     foreach ($file in $allDartFiles) {
         $rel = Get-RepoRelativePath $file.FullName
         if ($rel -eq 'lib/core/widgets/app_text_field.dart') { continue }
-        $hits = @(Select-String -LiteralPath $file.FullName -Pattern $inputPattern)
-        if ($hits.Count -gt 0) {
-            $inputTotal += $hits.Count
+        $body = Get-Content -LiteralPath $file.FullName -Raw
+        $nativeCount = [regex]::Matches($body, $inputPattern).Count
+        if ($nativeCount -gt 0) {
+            $inputTotal += $nativeCount
             $inputFiles++
-            Write-Host "RAW_INPUT_INVENTORY $rel occurrences=$($hits.Count)"
+            Write-Host "NATIVE_EDITOR_INVENTORY $rel occurrences=$nativeCount"
+            if (-not $specializedNativeFieldCaps.ContainsKey($rel)) {
+                Add-Violation "DUPLICATE_INPUT_PAINTER $rel: ordinary field must use AppTextField"
+            }
+            elseif ($nativeCount -gt $specializedNativeFieldCaps[$rel]) {
+                Add-Violation "NATIVE_EDITOR_CAP_EXCEEDED $rel $nativeCount (max $($specializedNativeFieldCaps[$rel]))"
+            }
         }
     }
 }
-if ($inputTotal -gt 0) {
-    Add-Warning "RAW_INPUT_LEGACY $inputTotal occurrences across $inputFiles files app-wide; ordinary fields must migrate to AppTextField"
-}
+Write-Host "NATIVE_EDITOR_SPECIALIZED $inputTotal occurrences in $inputFiles files (ordinary fields use AppTextField)"
 
 # These production entrypoints must NEVER grow a second text field painter.
 $canonicalInputConsumers = @(

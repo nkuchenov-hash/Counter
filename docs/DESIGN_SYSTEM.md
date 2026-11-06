@@ -415,3 +415,9 @@ row and surface tokens, adapted to available width.
 - Web deployment is blocked unless the shared input geometry, painted pill corners, centered hint raster, and Settings vs Timeline cross-screen tests pass.
 
 - Optional leading icons, suffix icons, suffix text, and `enableSuggestions` are properties of the **same `AppTextField`**. Feature screens must pass these variants instead of creating a new decorated `TextField`; search uses `variant: AppTextFieldVariant.search`. No local fill/radius/height overrides.
+
+### Complete ordinary field migration and specialized exceptions (2026-11-06)
+
+- Every ordinary search, category/name/text/credential/record, date text entry and message/dialog form must render through `AppTextField` variants. Their background, border, 36 px height, 18 px pill radius, optional leading search icon, hint position and theme treatment are owned solely by that component and `AppControlTokens`.
+- Raw `TextField` / `TextFormField` is prohibited outside `lib/core/widgets/app_text_field.dart` except a tightly capped list of specialized internal editors checked by the strict architecture guard: Notes block/caption/table editing, Planning title editor, Viktor chat composer and Omni-Picker HH:MM digit fields. Those are not competing standard form or search components.
+- Adding even one ordinary raw input or increasing the number of approved specialist fields fails architecture CI. The web deploy additionally runs pixel tests against both the Timeline and Settings composition.
