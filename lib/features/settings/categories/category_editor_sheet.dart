@@ -382,7 +382,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
         AppTextField(
           controller: _nameEnController,
           focusNode: _nameEnFocus,
-          hintText: t(locale, 'name_en'),
+          hintText: '',
           textCapitalization: TextCapitalization.words,
           textInputAction: TextInputAction.next,
         ),
@@ -393,7 +393,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
         AppTextField(
           controller: _nameRuController,
           focusNode: _nameRuFocus,
-          hintText: t(locale, 'name_ru'),
+          hintText: '',
           textCapitalization: TextCapitalization.words,
           textInputAction: TextInputAction.done,
         ),
@@ -528,7 +528,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                     key: const ValueKey('category-primary-name'),
                     controller: _primaryNameController,
                     focusNode: _primaryNameFocus,
-                    hintText: t(locale, 'category_name_label'),
+                    hintText: '',
                     textCapitalization: TextCapitalization.words,
                     textInputAction: TextInputAction.done,
                     onChanged: (_) => setState(() {}),
@@ -563,7 +563,9 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                                  message: index == kCategoryPickerMaterialColors.length - 1
                                      ? 'Нейтральный серый' : 'Цветовая группа ${index + 1}',
                                  child: _compactSwatch(
-                                   color,
+                                   _selectedPrimary == color
+                                       ? Color(_selectedShadeValue ?? color[500]!.toARGB32())
+                                       : color[500]!,
                                    _selectedPrimary == color,
                                    () => setState(() {
                                      _selectedPrimary = color;
