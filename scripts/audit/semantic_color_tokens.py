@@ -17,7 +17,9 @@ from __future__ import annotations
 
 import argparse
 import colorsys
+import os
 import re
+import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
@@ -47,6 +49,46 @@ FROM_RGBO = re.compile(
     r"\bColor\.fromRGBO\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,"
 )
 ALLOW = "semantic-color-audit: external"
+
+# No feature may introduce a literal UI color, including white/black/gray.
+# Existing technical debt is reported separately; new violations are a CI
+# failure on every push/PR. Only named design-token owners can define colors.
+RAW_COLOR_TOKEN = re.compile(
+    r"\\b(?:const\\s+)?Color\\s*\\(\\s*0x[0-9A-Fa-f]{8}\\s*\\)"
+    r"|\\b(?:Colors|CupertinoColors)\\.[A-Za-z]\\w*"
+    r"|\\bColor\\.(?:fromARGB|fromRGBO)\\s*\\("
+    r"|\\bMaterialColor\\s*\\(\\s*0x[0-9A-Fa-f]{8}"
+)
+
+
+def new_unowned_literal_findings() -> list[tuple[str, str]]:
+    # PRs compare all submitted changes; main pushes compare the new commit.
+    base = "origin/main" if os.environ.get("GITHUB_BASE_REF") else "HEAD^"
+    command = ["git", "diff", "--unified=0", "--no-ext-diff",
+               f"{base}...HEAD" if base == "origin/main" else base,
+               "HEAD"] if base != "origin/main" else [
+                   "git", "diff", "--unified=0", "--no-ext-diff",
+                   f"{base}...HEAD"]
+    command += ["--", "lib"]
+    output = subprocess.run(command, cwd=ROOT, text=True,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if output.returncode != 0:
+        raise RuntimeError(f"Unable to check new color literals: {output.stderr}")
+    current_path = ""
+    violations: list[tuple[str, str]] = []
+    for line in output.stdout.splitlines():
+        if line.startswith("+++ b/"):
+            current_path = line[6:]
+        elif line.startswith("+") and not line.startswith("+++"):
+            if current_path in OWNERS or not current_path.endswith(".dart"):
+                continue
+            added = line[1:].strip()
+            if added.startswith(("//", "///", "*", "/*")):
+                continue
+            if RAW_COLOR_TOKEN.search(added):
+                violations.append((current_path, added))
+    return violations
+
 
 
 def chromatic(r: int, g: int, b: int) -> bool:
@@ -86,7 +128,17 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--strict", action="store_true")
     parser.add_argument("--report", action="store_true")
+    parser.add_argument("--strict-new", action="store_true",
+                        help="Reject all new literal colors outside design-token owners")
     args = parser.parse_args()
+    if args.strict_new:
+        violations = new_unowned_literal_findings()
+        for path, line in violations:
+            print(f"UNOWNED UI COLOR: {path}: {line}")
+        if violations:
+            print("FAIL: all new UI colors must be sourced from the Life OS design system")
+            return 1
+        print("PASS: no new UI color literals outside canonical design-token owners")
     failures = []
     examined = 0
     for path in sorted((ROOT / "lib").rglob("*.dart")):
