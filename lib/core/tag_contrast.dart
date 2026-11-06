@@ -116,34 +116,10 @@ Color tagVibrantForeground(Color tagBaseColor, {Color? surface}) {
 /// ensuring sufficient separation from a dark or light app surface.
 /// Tag fills and colors stored in PocketBase are not modified.
 Color tagSolidAccentOnSurface(Color base, Color surface) {
-  // Category and tag accent identity is always the exact saved palette shade.
-  // Do not replace 400/600 yellow with 500 gold or auto-darken official hues.
-  // Only genuinely custom colors may be adjusted for visibility.
-  final canonical = Color(canonicalLifeColorValue(base.toARGB32()));
-  if (tagColorIsYellowFamily(canonical)) return canonical;
-  for (final family in <MaterialColor>[
-    kNordicEntertainment, kNordicErrands, kNordicPeople, kNordicFood,
-  ]) {
-    for (final tone in <int>[400, 500, 600]) {
-      if (canonical.toARGB32() == family[tone]!.toARGB32()) return canonical;
-    }
-  }
-  final backgroundLum = surface.computeLuminance();
-  final lightSurface = backgroundLum > 0.35;
-  var color = base;
-  var hsl = HSLColor.fromColor(base);
-  for (var i = 0; i < 28; i++) {
-    final foregroundLum = color.computeLuminance();
-    final high = foregroundLum > backgroundLum ? foregroundLum : backgroundLum;
-    final low = foregroundLum > backgroundLum ? backgroundLum : foregroundLum;
-    if ((high + 0.05) / (low + 0.05) >= 3.0) return color;
-    final lightness = (hsl.lightness + (lightSurface ? -0.025 : 0.025))
-        .clamp(0.0, 1.0).toDouble();
-    if (lightness == hsl.lightness) break;
-    hsl = hsl.withLightness(lightness);
-    color = hsl.toColor();
-  }
-  return color;
+  // Solid category identity must be the actual saved/canonical palette value.
+  // Contrast is applied to text and plate roles, never by silently changing
+  // the icon or stripe into a different shade (especially yellow).
+  return Color(canonicalLifeColorValue(base.toARGB32()));
 }
 
 /// Icon/glyph without a filled tag circle.
