@@ -186,7 +186,7 @@ class _IconPickerState extends State<_IconPicker> {
                           decoration: BoxDecoration(
                             color: active
                                 ? cs.primaryContainer.withValues(alpha: 0.5)
-                                : Colors.transparent,
+                                : Theme.of(context).colorScheme.surface.withValues(alpha: 0),
                             borderRadius: BorderRadius.circular(10),
                             border: active
                                 ? Border.all(color: cs.primary, width: 2)
