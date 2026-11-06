@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:counter/core/app_control_tokens.dart';
 import 'package:counter/core/theme.dart';
 import 'package:counter/core/widgets/app_button.dart';
@@ -106,6 +108,101 @@ void main() {
       expect(shape, isA<RoundedRectangleBorder>());
       expect((shape! as RoundedRectangleBorder).borderRadius,
           BorderRadius.circular(AppControlTokens.radius));
+    });
+  }
+
+  // Regression for the real desktop Timeline screenshot: the button painted
+  // ~72 px while the field painted ~46 px even though layout tests passed.
+  // Raster-sample both surfaces, including scaled device viewports.
+  for (final pixelRatio in <double>[1, 1.5, 2]) {
+    testWidgets('quick entry PAINTED pixels have identical vertical bounds '
+        'at DPR $pixelRatio', (tester) async {
+      final entry = TextEditingController();
+      final focus = FocusNode();
+      addTearDown(() {
+        entry.dispose();
+        focus.dispose();
+        tester.view.resetDevicePixelRatio();
+        tester.view.resetPhysicalSize();
+      });
+      tester.view.devicePixelRatio = pixelRatio;
+      tester.view.physicalSize = Size(1596 * pixelRatio, 340 * pixelRatio);
+      const boundaryKey = ValueKey('quick-entry-paint-geometry');
+      const background = Color(0xffabbcca);
+      await tester.pumpWidget(MaterialApp(
+        theme: appLightTheme,
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.topLeft,
+            child: RepaintBoundary(
+              key: boundaryKey,
+              child: ColoredBox(
+                color: background,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: 1400,
+                    child: AppQuickEntryRow(
+                      controller: entry,
+                      focusNode: focus,
+                      hintText: 'Добавить запись',
+                      actionLabel: 'Старт',
+                      actionIcon: Icons.play_arrow_rounded,
+                      onAction: () {},
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ));
+      await tester.pump();
+      final boundary = tester.renderObject<RenderRepaintBoundary>(
+        find.byKey(boundaryKey),
+      );
+      final bounds = tester.getRect(find.byKey(boundaryKey));
+      final fieldBounds = tester.getRect(find.descendant(
+        of: find.byType(AppQuickEntryRow),
+        matching: find.byType(AppTextField),
+      ));
+      final buttonBounds = tester.getRect(find.descendant(
+        of: find.byType(AppQuickEntryRow),
+        matching: find.byType(AppButton),
+      ));
+      final image = await boundary.toImage(pixelRatio: pixelRatio);
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      expect(bytes, isNotNull);
+      final pixels = bytes!.buffer.asUint8List();
+      final imageWidth = image.width;
+      final imageHeight = image.height;
+      // Sample the horizontal center of each surface. This bypasses the
+      // rounded corners, icons, focus outlines and font antialiasing.
+      final fx = ((fieldBounds.center.dx - bounds.left) * pixelRatio).round();
+      final bx = ((buttonBounds.center.dx - bounds.left) * pixelRatio).round();
+      int differenceAt(int x, int y) {
+        final offset = (y * imageWidth + x) * 4;
+        return (pixels[offset] - background.r * 255).abs().round() +
+            (pixels[offset + 1] - background.g * 255).abs().round() +
+            (pixels[offset + 2] - background.b * 255).abs().round();
+      }
+      (int, int) paintedRange(int x) {
+        final ys = <int>[];
+        for (var y = 0; y < imageHeight; y++) {
+          if (differenceAt(x, y) > 48) ys.add(y);
+        }
+        expect(ys, isNotEmpty, reason: 'No painted pixels at x=$x');
+        return (ys.first, ys.last);
+      }
+      final fieldPaint = paintedRange(fx);
+      final buttonPaint = paintedRange(bx);
+      expect((fieldPaint.$1 - buttonPaint.$1).abs(), lessThanOrEqualTo(1));
+      expect((fieldPaint.$2 - buttonPaint.$2).abs(), lessThanOrEqualTo(1));
+      final expected = (AppControlTokens.height * pixelRatio).round();
+      expect(fieldPaint.$2 - fieldPaint.$1 + 1, inInclusiveRange(expected - 2, expected + 2));
+      expect(buttonPaint.$2 - buttonPaint.$1 + 1, inInclusiveRange(expected - 2, expected + 2));
+      image.dispose();
+      expect(tester.takeException(), isNull);
     });
   }
 

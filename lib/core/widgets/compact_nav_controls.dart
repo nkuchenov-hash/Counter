@@ -177,30 +177,40 @@ class AppQuickEntryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: AppTextField(
-            controller: controller,
-            focusNode: focusNode,
-            hintText: hintText,
-            textInputAction: TextInputAction.done,
-            showSearchIcon: false,
-            onSubmitted: onSubmitted,
+    // Own one *tight* painted row. Two separate control-sized wrappers leave
+    // room for a parent theme/viewport to render their surfaces at different
+    // optical heights (see Timeline capture, 2026-11-06). Clipping each shared
+    // primitive to the SAME row geometry also prevents bleeding on web zoom.
+    return SizedBox(
+      height: kAppQuickEntryControlHeight,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppControlTokens.radius),
+              child: AppTextField(
+                controller: controller,
+                focusNode: focusNode,
+                hintText: hintText,
+                textInputAction: TextInputAction.done,
+                onSubmitted: onSubmitted,
+              ),
+            ),
           ),
-        ),
-        const SizedBox(width: AppControlTokens.horizontalGap),
-        SizedBox(
-          height: kAppQuickEntryControlHeight,
-          child: AppButton.primary(
-            label: actionLabel,
-            icon: actionIcon,
-            onPressed: onAction,
-            loading: loading,
-            size: AppButtonSize.m,
+          const SizedBox(width: AppControlTokens.horizontalGap),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppControlTokens.radius),
+            child: AppButton.primary(
+              label: actionLabel,
+              icon: actionIcon,
+              onPressed: onAction,
+              loading: loading,
+              size: AppButtonSize.m,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

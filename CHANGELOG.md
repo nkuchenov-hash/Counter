@@ -1,3 +1,9 @@
+## 2026-11-06 — Quick-entry visual geometry regression correction
+
+- Screenshot evidence showed the Timeline field at ~46 physical px while its neighboring Start action painted ~72 px; prior unit tests measured widget rectangles instead of actual pixels. This was not an acceptable verified result.
+- The canonical `AppQuickEntryRow` now imposes one tight 48 logical px line, stretches both standard components to it and clips the painted edges to the identical 14 px radius. Planning and Timeline both consume the fix.
+- Added raster-bound tests at DPR 1.0, 1.5 and 2.0 that compare field and button *painted pixels* rather than only widget sizes. No record/plan action logic, sync, database, timer or startup path modified.
+
 ## 2026-11-06 — Shared input variants and form migration [CI and visual verification pending]
 
 - Extended `AppTextField` for search, email, number, password, multiline and validation; standard one-line input and adjacent `AppButton.m` geometry is owned by `AppControlTokens` (48 px height, 14 px radius).
