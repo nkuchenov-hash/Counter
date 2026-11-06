@@ -170,6 +170,29 @@ void main() {
         tagLetterChipPlate(kNordicFood[500]!, Colors.white));
   });
 
+  test('every solid category accent preserves its chosen design-system shade', () {
+    for (final family in kCategoryPickerMaterialColors) {
+      for (final tone in <int>[400, 500, 600]) {
+        final selected = family[tone]!;
+        for (final surface in <Color>[
+          AppColors.cardSurface,
+          AppColors.appBackground,
+          AppColors.darkCardSurface,
+        ]) {
+          expect(
+            tagSolidAccentOnSurface(selected, surface),
+            selected,
+            reason: '${family.value} tone ${tone} must not turn into a different shade',
+          );
+        }
+      }
+    }
+    expect(tagSolidAccentOnSurface(kNordicFood[600]!, Colors.white),
+        kNordicFood[600]);
+    expect(tagSolidAccentOnSurface(kNordicFood[400]!, Colors.white),
+        kNordicFood[400]);
+  });
+
   test('one canonical palette feeds both categories and tag presets', () {
     expect(kCategoryPickerMaterialColors, hasLength(11));
     expect(kLifeTagColorPresets, hasLength(11));
@@ -596,7 +619,7 @@ void main() {
         }),
       )),
     ));
-    expect(background, const Color(0xFFF7F7F7));
+    expect(background, AppColors.appBackground);
     expect(card, const Color(0xFFFFFFFF));
     expect(background, isNot(card));
     expect(tester.takeException(), isNull);
