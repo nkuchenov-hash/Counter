@@ -57,6 +57,12 @@ void main() {
   });
 
   test('old auto-selected giant libraries migrate, custom collections do not', () {
+    expect(isLegacyAutoSelectedCollection([
+      'home', 'heart', 'briefcase', 'calendar', 'folder', 'clock', 'star',
+      'book', 'cart', 'cake', 'moon', 'bell', 'lock', 'camera', 'wallet',
+      'gift', 'phone', 'document', 'cloud', 'tag', 'trophy', 'map',
+      'key', 'light_bulb', 'pencil', 'musical_note',
+    ]), isTrue);
     expect(isLegacyAutoSelectedCollection(
         kMatchedCategoryIcons.keys.take(103).toList()), isTrue);
     expect(isLegacyAutoSelectedCollection(
