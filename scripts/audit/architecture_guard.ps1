@@ -381,7 +381,16 @@ $hasParent = (& git rev-parse 'HEAD^' 2>$null)
 if ($LASTEXITCODE -eq 0) {
     $inputDiff = @(& git diff --no-ext-diff --unified=0 'HEAD^' HEAD -- lib/features lib/app lib/shared)
     foreach ($line in $inputDiff) {
-        if ($line -match '^\+\+\+ b/(.+\.dart)
+        if ($line -match '^\+\+\+ b/(.+\.dart)$') {
+            $diffPath = $Matches[1]
+        }
+        elseif ($line -match '^\+[^+]' -and $line -match $inputPattern) {
+            Add-Violation ('NEW_RAW_INPUT_FORBIDDEN ' + $diffPath + ': use AppTextField variant instead of TextField/TextFormField')
+        }
+    }
+}
+
+# --- 8b. Durable Paths ownership (hard structural law) ---
 $pathCompatDir = Get-RepoPath @('lib', 'data', 'paths', 'compatibility')
 if (Test-Path -LiteralPath $pathCompatDir) {
     Add-Violation "PATH_COMPATIBILITY_REGRESSION lib/data/paths/compatibility must not return"
