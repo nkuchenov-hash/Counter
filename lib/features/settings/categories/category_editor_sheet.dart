@@ -261,7 +261,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
         return kNordicEntertainment[100]!;
       default:
         return Theme.of(context).chipTheme.backgroundColor ??
-            Colors.grey.shade300;
+            Theme.of(context).colorScheme.surfaceContainerHigh;
     }
   }
 
@@ -272,7 +272,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
       case 'ru':
         return kNordicEntertainment[900]!;
       default:
-        return Theme.of(context).chipTheme.labelStyle?.color ?? Colors.black87;
+        return Theme.of(context).chipTheme.labelStyle?.color ?? Theme.of(context).colorScheme.onSurface;
     }
   }
 
