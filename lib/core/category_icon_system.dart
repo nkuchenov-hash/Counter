@@ -178,6 +178,13 @@ bool isLegacyAutoSelectedCollection(Iterable<String> source) {
   final oldAll = <String>{
     for (final item in kHumanCategorySubjects) item.key,
     ...kLegacyCategorySubjectKeys.where(kMatchedCategoryIcons.containsKey),
+    ...<String>[
+      'user', 'users', 'truck', 'beaker', 'globe_alt', 'house',
+      'building_office', 'building_storefront', 'banknotes',
+      'credit_card', 'calendar_days', 'calendar_date_range',
+      'check_badge', 'computer_desktop', 'device_tablet', 'film',
+      'inbox', 'newspaper', 'ticket', 'wifi', 'archive_box',
+    ].where(kMatchedCategoryIcons.containsKey),
   };
   return (keys.length == oldIntersection.length &&
           keys.containsAll(oldIntersection)) ||
