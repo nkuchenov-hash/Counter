@@ -172,12 +172,26 @@ void main() {
         of: find.byType(AppQuickEntryRow),
         matching: find.byType(AppButton),
       ));
-      final image = await boundary.toImage(pixelRatio: pixelRatio);
-      final bytes = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-      expect(bytes, isNotNull);
-      final pixels = bytes!.buffer.asUint8List();
-      final imageWidth = image.width;
-      final imageHeight = image.height;
+      // GPU image encoding is real asynchronous work; Flutter's fake-async
+      // widget binding cannot drive it while directly awaiting toByteData.
+      final capture = await tester.runAsync(() async {
+        final image = await boundary.toImage(pixelRatio: pixelRatio);
+        try {
+          final bytes = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+          if (bytes == null) throw StateError('Raster capture returned null');
+          return (
+            width: image.width,
+            height: image.height,
+            pixels: bytes.buffer.asUint8List(),
+          );
+        } finally {
+          image.dispose();
+        }
+      });
+      expect(capture, isNotNull);
+      final pixels = capture!.pixels;
+      final imageWidth = capture.width;
+      final imageHeight = capture.height;
       // Sample the horizontal center of each surface. This bypasses the
       // rounded corners, icons, focus outlines and font antialiasing.
       final fx = ((fieldBounds.center.dx - bounds.left) * pixelRatio).round();
@@ -203,7 +217,6 @@ void main() {
       final expected = (AppControlTokens.height * pixelRatio).round();
       expect(fieldPaint.$2 - fieldPaint.$1 + 1, inInclusiveRange(expected - 2, expected + 2));
       expect(buttonPaint.$2 - buttonPaint.$1 + 1, inInclusiveRange(expected - 2, expected + 2));
-      image.dispose();
       expect(tester.takeException(), isNull);
     });
   }
