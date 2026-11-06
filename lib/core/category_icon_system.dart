@@ -566,10 +566,9 @@ class CategoryGlyph extends StatelessWidget {
     return AnimatedBuilder(
       animation: store,
       builder: (context, child) {
-        final explicit = store.explicitFor(category);
-        final choice = explicit ?? CategoryIconSelection(
-          store.selectionFor(category).key, filled: selected,
-        );
+        // Row selection does not change Outline/Fill; the saved icon choice
+        // must render identically in the editor and every category list.
+        final choice = store.selectionFor(category);
         return CategorySvgIcon(
           selection: choice,
           size: size, color: color, semanticLabel: category.name,
