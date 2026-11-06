@@ -6,6 +6,7 @@
 import 'dart:async';
 
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -62,6 +63,7 @@ class _CalendarViewState extends State<CalendarView>
   DateTime? _lastCalendarPlanDragEnd;
   Stream<List<PlanningTask>>? _dayStream;
   StreamSubscription<void>? _planningRefreshSub;
+  final TextEditingController _calendarSearchController = TextEditingController();
 
   @override
   bool get wantKeepAlive => true;
@@ -85,6 +87,7 @@ class _CalendarViewState extends State<CalendarView>
   @override
   void dispose() {
     _planningRefreshSub?.cancel();
+    _calendarSearchController.dispose();
     super.dispose();
   }
 
@@ -282,6 +285,7 @@ class _CalendarViewState extends State<CalendarView>
       return a.title.toLowerCase().compareTo(b.title.toLowerCase());
     });
     var query = '';
+    _calendarSearchController.clear();
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -305,12 +309,11 @@ class _CalendarViewState extends State<CalendarView>
               height: MediaQuery.sizeOf(context).height * 0.72,
               child: Column(
                 children: [
-                  TextField(
+                  AppTextField(
+                    controller: _calendarSearchController,
                     autofocus: true,
-                    decoration: InputDecoration(
-                      hintText: t(currentLocale.value, 'calendar_search_hint'),
-                      prefixIcon: const Icon(Icons.search_rounded),
-                    ),
+                    variant: AppTextFieldVariant.search,
+                    hintText: t(currentLocale.value, 'calendar_search_hint'),
                     onChanged: (value) => setSheetState(() => query = value),
                   ),
                   const SizedBox(height: 12),
