@@ -11,6 +11,7 @@ abstract final class AppNeutralTones {
   static const Color transparent = Color(0x00000000);
   static const Color white = Color(0xFFFFFFFF);
   static const Color gray50 = Color(0xFFFAFAFA);
+  static const Color gray75 = Color(0xFFF7F7F7);
   static const Color gray100 = Color(0xFFF5F5F5);
   static const Color gray150 = Color(0xFFF0F0F0);
   static const Color gray200 = Color(0xFFE5E5E5);
@@ -52,7 +53,8 @@ abstract final class AppColors {
   static const Color onActionPrimaryContainer = Color(0xFF111111);
 
   // --- Surfaces ---
-  static const Color appBackground = AppNeutralTones.gray150;
+  // One global light canvas for Menu, Timeline, Plans and other destinations.
+  static const Color appBackground = AppNeutralTones.gray75;
   static const Color cardSurface = AppNeutralTones.white;
   static const Color borderSubtle = AppNeutralTones.gray300;
   static const Color borderMuted = AppNeutralTones.gray200;
