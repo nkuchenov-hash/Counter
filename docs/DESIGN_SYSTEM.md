@@ -392,3 +392,9 @@ row and surface tokens, adapted to available width.
 - Field labels, when requested, sit above the 48 px input; multiline content can grow. Shared field visuals derive from the active light/dark theme. Screens must not override border, fill, radius, height, padding, or focus style.
 - `AppQuickEntryRow` owns the Timeline/Planning adjacent field/action layout; the painted `InputDecorator` and `FilledButton` must have matching top and bottom bounds and the same radius. Widget tests must measure the inner controls, not just their wrappers.
 - Rich-text editing surfaces (e.g. document block editors) may retain specialized editors for editing behavior, but simple text/search/forms must migrate to `AppTextField` instead of creating new `TextField` styling.
+
+### Exact painted input geometry (2026-11-06)
+
+- The standard single-line `AppTextField` owns its border and fill in one `DecoratedBox` with exact `AppControlTokens.height` = 48 logical px and `AppControlTokens.radius` = 14 px. The inner text editor is borderless/collapsed and vertically centered. Do not make `InputDecorator` responsible for the visible rectangle of standard text or search controls.
+- `AppQuickEntryRow` is one tight 48 px line that stretches and clips both the input surface and neighboring `AppButton.m`. Both painted surfaces must share top/bottom positions, height and corner radius at any pixel ratio.
+- For visual QA, compare actual raster pixels at field/button centers at DPR 1, 1.5 and 2, not just their widget layout rectangles. A mismatch blocks deployment.

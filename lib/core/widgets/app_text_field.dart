@@ -94,6 +94,125 @@ class AppTextField extends StatelessWidget {
           AppTextFieldVariant.multiline => TextInputType.multiline,
           _ => TextInputType.text,
         };
+    // Standard single-line fields own their painted surface OUTSIDE
+    // Flutter's InputDecorator. InputDecorator may draw a smaller internal
+    // outline inside a 48px TextField box under desktop web scaling; that
+    // caused the 46px painted field alongside a 72px action in Timeline.
+    // The shared outer surface is exactly kControlHeight tall, and the
+    // border/fill and text are both optically centered there.
+    if (!multiline && validator == null && lines == 1) {
+      final inner = TextField(
+        controller: controller,
+        focusNode: focusNode,
+        keyboardType: type,
+        obscureText: hidden,
+        autofocus: autofocus,
+        enabled: enabled,
+        readOnly: readOnly,
+        autocorrect: autocorrect,
+        autofillHints: autofillHints,
+        inputFormatters: inputFormatters,
+        maxLines: 1,
+        textInputAction: action,
+        textCapitalization: textCapitalization,
+        textAlignVertical: TextAlignVertical.center,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
+        onEditingComplete: onEditingComplete,
+        onTap: onTap,
+        style: TextStyle(
+          fontSize: AppControlTokens.fontSize,
+          color: scheme.onSurface,
+          height: 1.2,
+        ),
+        decoration: InputDecoration(
+          isCollapsed: true,
+          hintText: hintText,
+          hintStyle: TextStyle(
+            fontSize: AppControlTokens.fontSize,
+            color: meta,
+          ),
+          filled: false,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+        ),
+      );
+      Widget frame = Focus(
+        skipTraversal: true,
+        child: Builder(
+          builder: (focusContext) {
+            final focused = Focus.of(focusContext).hasFocus;
+            final stroke = focused
+                ? scheme.primary.withValues(alpha: dark ? 0.72 : 0.34)
+                : glass
+                    ? scheme.onSurface.withValues(
+                        alpha: dark ? 0.12 : 0.08,
+                      )
+                    : borderColor;
+            return SizedBox(
+              height: height,
+              child: DecoratedBox(
+                key: const ValueKey('app-text-field-painted-surface'),
+                decoration: BoxDecoration(
+                  color: glass
+                      ? scheme.surface.withValues(
+                          alpha: dark ? 0.28 : 0.20,
+                        )
+                      : fill,
+                  borderRadius: BorderRadius.circular(radius),
+                  border: Border.all(color: stroke),
+                ),
+                child: Row(
+                  children: [
+                    if (search)
+                      SizedBox(
+                        width: 40,
+                        height: height,
+                        child: Icon(
+                          Icons.search_rounded,
+                          size: 18,
+                          color: meta,
+                        ),
+                      )
+                    else
+                      const SizedBox(
+                        width: AppControlTokens.horizontalPadding,
+                      ),
+                    Expanded(
+                      child: Center(child: inner),
+                    ),
+                    if (suffixIcon != null)
+                      SizedBox(
+                        width: height,
+                        height: height,
+                        child: suffixIcon!,
+                      )
+                    else
+                      const SizedBox(
+                        width: AppControlTokens.horizontalPadding,
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
+      if (glass) {
+        frame = ClipRRect(
+          borderRadius: BorderRadius.circular(radius),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: frame,
+          ),
+        );
+      }
+      return _withLabel(context, frame);
+    }
+
     final decoration = InputDecoration(
       constraints: multiline || validator != null
           ? null
@@ -218,6 +337,10 @@ class AppTextField extends StatelessWidget {
         ),
       );
     }
+    return _withLabel(context, control);
+  }
+
+  Widget _withLabel(BuildContext context, Widget control) {
     final label = labelText;
     if (label == null || label.isEmpty) return control;
     return Column(
@@ -226,8 +349,8 @@ class AppTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: scheme.onSurfaceVariant,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 6),

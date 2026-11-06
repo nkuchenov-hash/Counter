@@ -88,7 +88,7 @@ void main() {
       // Compare the actual visual controls, not just their sized wrappers.
       final paintedField = find.descendant(
         of: entryField,
-        matching: find.byType(InputDecorator),
+        matching: find.byKey(const ValueKey('app-text-field-painted-surface')),
       );
       final paintedButton = find.descendant(
         of: actionButton,
@@ -100,9 +100,10 @@ void main() {
       expect(buttonRect.height, AppControlTokens.height);
       expect(buttonRect.top, fieldRect.top);
       expect(buttonRect.bottom, fieldRect.bottom);
-      final outline = tester.widget<InputDecorator>(paintedField)
-          .decoration.border as OutlineInputBorder;
-      expect(outline.borderRadius, BorderRadius.circular(AppControlTokens.radius));
+      final fieldDecoration =
+          tester.widget<DecoratedBox>(paintedField).decoration as BoxDecoration;
+      expect(fieldDecoration.borderRadius,
+          BorderRadius.circular(AppControlTokens.radius));
       final filled = tester.widget<FilledButton>(paintedButton);
       final shape = filled.style?.shape?.resolve({});
       expect(filled.style?.maximumSize?.resolve({})?.height, AppControlTokens.height);
@@ -225,7 +226,8 @@ void main() {
       matching: find.byType(AppButton),
     );
     final fieldRect = tester.getRect(find.descendant(
-      of: field, matching: find.byType(InputDecorator)));
+      of: field, matching: find.byKey(
+          const ValueKey('app-text-field-painted-surface'))));
     final buttonRect = tester.getRect(find.descendant(
       of: button, matching: find.byType(FilledButton)));
     expect(fieldRect.height, AppControlTokens.height);
