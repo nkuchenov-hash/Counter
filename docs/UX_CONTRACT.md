@@ -1,9 +1,11 @@
 ## Consistent Profile and menu chrome (refined 2026-11-05)
 
-- Preserve Onest, existing navigation and data flows. Light Menu settings canvas is neutral `#F7F7F7`, cards are pure white without outlines, sidebar is `#F4F4F4`, and text remains crisp/dark rather than washed out.
-- Each menu item is one full-width interactive row, at least 74 px high in a grouped card. The leading 42 px icons have 24 px outer spacing on all four group edges and at least 30 px clearance from the adjacent row's icon. A hover highlights **exactly one row** in `#E8E8E8`, including the card-edge padding.
-- Dividers are subtle 1 px `#F0F0F0`, inset from the left, and dissolve to the hover shade when either adjacent row is hovered. The hover never becomes a separately rounded inset pill or a whole-card highlight.
-- One LIFE OS logo in the persistent top header. Profile, People, Menu and other destinations keep the existing shell navigation and settings ownership.
+- Preserve Onest, existing navigation and data flows. All light-theme main pages share the single `AppColors.appBackground` neutral gray `#F7F7F7`; Menu cards remain white, borderless, and sidebar remains a distinct `#F4F4F4`.
+- Each menu item is one full-width interactive row, at least 74 px high. Leading 42 px icons keep 24 px clearance from every group edge and at least 30 px from adjacent icon tiles.
+- Hover highlights **exactly one row** in `#E8E8E8` with immediate, static paint (no animation). Adjacent divider surfaces blend into that fill; dividers do not own hover hit targets.
+- Menu scroll is owned by a full-viewport `ListView`; its scrollbar stays at the page's extreme right, while the 960 px desktop content column remains centered.
+- Only **Timeline and Plans** adopt that same centered desktop content width. Calendar, Lists, Paths, Categories, People and other sections retain their previous widths. No change to date swipe, drag, plan/record interactions, or navigation.
+- One LIFE OS logo remains in the persistent top header.
 
 ## Persistent desktop navigation across People and Menu (2026-11-05)
 
