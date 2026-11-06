@@ -1,4 +1,5 @@
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:flutter/material.dart';
@@ -274,12 +275,12 @@ Future<NotesLinkDialogResult?> showNotesLinkDialog({
     context: context,
     builder: (dialogContext) => AlertDialog(
       title: const Text('Link'),
-      content: TextField(
+      content: AppTextField(
         controller: controller,
         autofocus: true,
         keyboardType: TextInputType.url,
         textInputAction: TextInputAction.done,
-        decoration: const InputDecoration(hintText: 'https://example.com'),
+        hintText: 'https://example.com',
         onSubmitted: (value) {
           final clean = value.trim();
           if (clean.isEmpty) return;
