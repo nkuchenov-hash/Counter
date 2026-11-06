@@ -1,4 +1,5 @@
 import 'package:counter/core/app_control_tokens.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
 
 enum AppButtonVariant {
@@ -129,7 +130,10 @@ class AppButton extends StatelessWidget {
 
   ButtonStyle _baseStyle(BuildContext context) => ButtonStyle(
         minimumSize: WidgetStatePropertyAll(Size(0, _height)),
+        maximumSize: WidgetStatePropertyAll(Size(double.infinity, _height)),
         padding: WidgetStatePropertyAll(_padding),
+        visualDensity: VisualDensity.standard,
+        alignment: Alignment.center,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppControlTokens.radius)),
@@ -253,11 +257,11 @@ Future<Map<String, String>?> showAppFormDialog({
               mainAxisSize: MainAxisSize.min,
               children: [
                 for (var i = 0; i < fields.length; i++) ...[
-                  TextFormField(
-                    controller: controllers[fields[i].keyName],
+                  AppTextField(
+                    controller: controllers[fields[i].keyName]!,
                     autofocus: fields[i].autofocus,
                     keyboardType: fields[i].keyboardType,
-                    decoration: InputDecoration(labelText: fields[i].label),
+                    labelText: fields[i].label,
                     validator: fields[i].validator,
                   ),
                   if (i != fields.length - 1) const SizedBox(height: 12),
