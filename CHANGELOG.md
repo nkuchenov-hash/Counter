@@ -1,3 +1,10 @@
+## 2026-11-05 — Unify page canvases, Menu scrollbar/hover and work-page width [verification pending]
+
+- All light main pages share the global neutral #F7F7F7 canvas; Plans Time View no longer blends in a second, slightly lighter gray. Menu retains white borderless cards and neutral sidebar.
+- Menu ListView spans the available page viewport, keeping the scrollbar at the far right while the inner settings content stays centered. Menu hover now repaints a single row instantly; adjacent dividers dissolve without overlapping animations and without hover ownership on separator pixels.
+- Only desktop Timeline and Plans are constrained to the same max content width as Menu (960 px on wide desktop); no width changes to Calendar, Lists or any other destinations. No font or persistence changes.
+- Regression checks added for shared palette, hover, scroll extent and scoped width. Pending CI and rendered visual acceptance.
+
 ## 2026-11-05 — Menu card rhythm and neutral contrast [pending CI and visual acceptance]
 
 - Fixed the cramped grouped Menu layout with 74 px minimum row height, 24 px icon-to-card edge spacing and reduced unused intergroup whitespace; each row remains one full-width hit/hover target.
