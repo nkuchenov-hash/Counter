@@ -369,7 +369,12 @@ void main() {
     });
     expect(imageData, isNotNull);
     final img = imageData!;
-    double hintOpticalCenter(Rect rect, {required bool search}) {
+    double textOpticalCenter(
+      Rect rect, {
+      required bool search,
+      required int imageWidth,
+      required List<int> pixels,
+    }) {
       final left = ((rect.left + (search ? 42 : 18) -
               boundaryRect.left) * ratio).ceil();
       final right = ((rect.left + (search ? 210 : 200) -
@@ -380,10 +385,10 @@ void main() {
       for (var y = top; y < bottom; y++) {
         var glyphPixels = 0;
         for (var x = left; x < right; x++) {
-          final offset = (y * img.width + x) * 4;
-          if (img.pixels[offset] < 165 &&
-              img.pixels[offset + 1] < 165 &&
-              img.pixels[offset + 2] < 165) {
+          final offset = (y * imageWidth + x) * 4;
+          if (pixels[offset] < 165 &&
+              pixels[offset + 1] < 165 &&
+              pixels[offset + 2] < 165) {
             glyphPixels++;
           }
         }
@@ -394,14 +399,43 @@ void main() {
           boundaryRect.top;
     }
 
-    final timelineHintCenter = hintOpticalCenter(r1, search: false);
-    final settingsHintCenter = hintOpticalCenter(r2, search: true);
+    final timelineHintCenter = textOpticalCenter(
+      r1, search: false, imageWidth: img.width, pixels: img.pixels);
+    final settingsHintCenter = textOpticalCenter(
+      r2, search: true, imageWidth: img.width, pixels: img.pixels);
     expect((timelineHintCenter - r1.center.dy).abs(),
         lessThanOrEqualTo(3),
         reason: 'Timeline hint must be optically centered in the pill');
     expect((settingsHintCenter - r2.center.dy).abs(),
         lessThanOrEqualTo(3),
         reason: 'Settings search hint must be optically centered in the pill');
+
+    // The user's requirement includes INPUT text, not only placeholder hint.
+    // Controller changes also prove that the centered shared hint disappears.
+    timeline.text = 'Планирование';
+    settings.text = 'Результаты';
+    await tester.pump();
+    final typedImage = await tester.runAsync(() async {
+      final image = await boundary.toImage(pixelRatio: ratio);
+      try {
+        final bytes = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+        return (width: image.width, pixels: bytes!.buffer.asUint8List());
+      } finally {
+        image.dispose();
+      }
+    });
+    expect(typedImage, isNotNull);
+    final typed = typedImage!;
+    final timelineTypedCenter = textOpticalCenter(
+      r1, search: false, imageWidth: typed.width, pixels: typed.pixels);
+    final settingsTypedCenter = textOpticalCenter(
+      r2, search: true, imageWidth: typed.width, pixels: typed.pixels);
+    expect((timelineTypedCenter - r1.center.dy).abs(),
+        lessThanOrEqualTo(3),
+        reason: 'Typed Timeline text must be optically centered');
+    expect((settingsTypedCenter - r2.center.dy).abs(),
+        lessThanOrEqualTo(3),
+        reason: 'Typed Settings search text must be optically centered');
     expect(tester.takeException(), isNull);
   });
 
