@@ -1,0 +1,56 @@
+name: Regenerate complete Fluent icon library
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/manual/generate_fluent_full_catalog.py'
+      - '.github/workflows/generate-fluent-category-library.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fluent-category-generator
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+      - name: Resolve pinned icon package
+        run: flutter pub get
+      - name: Generate complete 24px Regular/Filled catalog
+        run: python scripts/manual/generate_fluent_full_catalog.py
+      - name: Update canonical repository structure document
+        run: python scripts/manual/generate_app_structure_detailed.py
+      - name: Commit generated icon library
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/core/fluent_full_catalog_generated.g.dart docs/APP_STRUCTURE_DETAILED.md
+          if git diff --cached --quiet; then
+            echo "Complete Fluent library already current."
+            exit 0
+          fi
+          git commit -m "icons: generate full pinned Fluent category catalog"
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 2
+          done
+          exit 1
