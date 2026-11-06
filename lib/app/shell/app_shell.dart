@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show exit, Platform;
 
+import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/shared/voice/diagnostics/desktop_voice_log.dart';
 import 'package:counter/shared/voice/diagnostics/desktop_voice_pipeline.dart';
