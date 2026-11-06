@@ -23,7 +23,6 @@ part 'component_lab_inputs_demo.dart';
 class ComponentLabPage extends StatelessWidget {
   const ComponentLabPage({super.key});
   static const routeName = '/internal/component-lab';
-
   @override
   Widget build(BuildContext context) {
     final isAdmin = DatabaseService.instance.settings.isAdmin;
@@ -35,7 +34,6 @@ class ComponentLabPage extends StatelessWidget {
         ),
       );
     }
-
     return Scaffold(
       appBar: AppBar(title: const Text('Dev / Design Lab')),
       body: ListView(
@@ -62,27 +60,15 @@ class ComponentLabPage extends StatelessWidget {
           ),
           _LabSection(title: 'Headers', child: _HeadersDemo()),
           _LabSection(title: 'Inputs', child: _InputsDemo()),
-          _LabSection(
-            title: 'Sheets',
-            child: _PlaceholderDemo(
-              figmaName: 'Sheet',
-              flutterMapping: 'Future: AppSheet',
-              variant: 'placeholder',
-              note: 'Input variants are now executable above; modal sheet is pending.',
-            ),
-          ),
         ],
       ),
     );
   }
 }
-
 class _LabSection extends StatelessWidget {
   const _LabSection({required this.title, required this.child});
-
   final String title;
   final Widget child;
-
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -104,10 +90,8 @@ class _LabSection extends StatelessWidget {
     );
   }
 }
-
 class _ButtonsDemo extends StatelessWidget {
   const _ButtonsDemo();
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -353,9 +337,7 @@ class _ButtonsDemo extends StatelessWidget {
     );
   }
 }
-
 void _mockAction() {}
-
 class _IconButtonsDemo extends StatelessWidget {
   const _IconButtonsDemo();
 
