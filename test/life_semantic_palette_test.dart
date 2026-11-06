@@ -140,7 +140,13 @@ void main() {
       ).map((widget) => widget.decoration)
           .whereType<BoxDecoration>()
           .firstWhere((decoration) => decoration.color != null);
-      final surface = theme.colorScheme.surfaceContainerHighest;
+      // Evaluate the inherited theme actually used to paint these widgets.
+      // Reusing an existing element across theme-mode pumps can otherwise
+      // compare a light-rendered chip against a detached dark ThemeData.
+      final actualTheme = Theme.of(
+        tester.element(find.byType(CategoryBreadcrumb)),
+      );
+      final surface = actualTheme.colorScheme.surfaceContainerHighest;
       expect(breadcrumbDecoration.color, tagLetterChipPlate(yellow, surface));
       expect(breadcrumbDecoration.color, tagDecoration.color);
       expect(breadcrumbDecoration.border, tagDecoration.border);
