@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import 'package:counter/core/app_colors.dart';
+import 'package:counter/core/app_control_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// Max width for sign-in / register forms.
@@ -50,9 +51,13 @@ ThemeData _buildAppTheme(ColorScheme scheme) {
       style: FilledButton.styleFrom(
         backgroundColor: scheme.primary,
         foregroundColor: scheme.onPrimary,
+        minimumSize: const Size(0, AppControlTokens.height),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         disabledBackgroundColor: scheme.onSurface.withValues(alpha: 0.12),
         disabledForegroundColor: scheme.onSurface.withValues(alpha: 0.38),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppControlTokens.radius),
+        ),
       ),
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
@@ -138,17 +143,27 @@ ThemeData _buildAppTheme(ColorScheme scheme) {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
+      isDense: true,
+      constraints: const BoxConstraints(minHeight: AppControlTokens.height),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppControlTokens.horizontalPadding,
+        vertical: 12,
+      ),
+      hintStyle: TextStyle(
+        fontSize: AppControlTokens.fontSize,
+        color: scheme.onSurfaceVariant,
+      ),
       fillColor: scheme.surfaceContainerHighest,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppControlTokens.radius),
         borderSide: BorderSide(color: scheme.outline),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppControlTokens.radius),
         borderSide: BorderSide(color: scheme.outline),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppControlTokens.radius),
         borderSide: BorderSide(color: scheme.primary, width: 1.5),
       ),
     ),
