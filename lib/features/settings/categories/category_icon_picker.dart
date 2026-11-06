@@ -42,7 +42,7 @@ class _IconPickerState extends State<_IconPicker> {
   late CategoryIconSelection _selection;
   final TextEditingController _search = TextEditingController();
   String _group = 'Все';
-  String _view = 'everyday';
+  String _view = 'favorites';
   bool _changingFavorites = false;
 
   @override
