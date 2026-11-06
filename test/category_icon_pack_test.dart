@@ -4,6 +4,7 @@ import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/core/category_icon_catalog_generated.g.dart';
 import 'package:counter/core/fluent_full_catalog_generated.g.dart';
 import 'package:counter/features/settings/categories/category_icon_collection_preference.dart';
+import 'package:counter/features/settings/categories/category_icon_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -174,6 +175,31 @@ void main() {
     expect(isSelectableCategoryIconKey('arrow_left'), isFalse);
     expect(CategoryIconStore.isValidKey('arrow_left'), isTrue,
         reason: 'Previously saved controls must remain renderable.');
+  });
+
+  testWidgets('actual category picker shows dogs and cars before technical art',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: Builder(
+        builder: (context) => TextButton(
+          onPressed: () => showCategoryIconPicker(context,
+              initial: const CategoryIconSelection('home')),
+          child: const Text('Open icon picker'),
+        ),
+      )),
+    ));
+    await tester.tap(find.text('Open icon picker'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('category-icon-dog')), findsOneWidget);
+    expect(find.byKey(const ValueKey('category-icon-car')), findsOneWidget);
+    expect(find.byKey(const ValueKey('category-icon-all-fluent')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('category-icon-all-fluent')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'animal_dog');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('category-icon-fluent__animal_dog')),
+        findsOneWidget);
   });
 
   test('published picker exposes actual build and selected icon count', () {
