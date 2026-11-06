@@ -251,6 +251,7 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 | :--- | :--- |
 | `theme.dart` | `ThemeData`, density, input decoration |
 | `app_colors.dart` | Color tokens |
+| `app_control_tokens.dart` | Global 48px form-control size, radius, typography and adjacent-input spacing tokens |
 | `constants.dart` | UI limits, global keys |
 | `app_snackbar.dart` | `AppSnack` toasts |
 | `app_build_info.dart` | Build metadata |
