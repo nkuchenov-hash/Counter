@@ -50,7 +50,7 @@ Color tagManagerAvatarPlate(Color tagColor, Color surface) {
   if (tagColorIsBlack(tagColor)) return Colors.black;
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
-      kTagYellowGold.withValues(alpha: kTagYellowPlateOpacity),
+      tagColor.withValues(alpha: kTagYellowPlateOpacity),
       surface,
     );
   }
@@ -147,7 +147,7 @@ Color tagLetterChipPlate(Color tagColor, Color surface) {
   if (tagColorIsBlack(tagColor)) return Colors.black;
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
-      kTagYellowGold.withValues(alpha: kTagYellowPlateOpacity),
+      tagColor.withValues(alpha: kTagYellowPlateOpacity),
       surface,
     );
   }
@@ -169,7 +169,7 @@ Color tagLetterChipBorder(Color tagColor, Color surface) {
   if (tagColorIsBlack(tagColor)) return Colors.black;
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
-      kTagYellowGold.withValues(alpha: kTagYellowBorderOpacity), surface,
+      tagColor.withValues(alpha: kTagYellowBorderOpacity), surface,
     );
   }
   if (tagColorIsCanonicalPink(tagColor)) {
@@ -190,7 +190,7 @@ Color tagEmptyChipFill(Color tagColor, Color surface) {
   if (tagColorIsBlack(tagColor)) return Colors.black;
   if (tagColorIsYellowFamily(tagColor)) {
     return Color.alphaBlend(
-      kTagYellowGold.withValues(alpha: kTagYellowPlateOpacity),
+      tagColor.withValues(alpha: kTagYellowPlateOpacity),
       surface,
     );
   }
@@ -206,7 +206,7 @@ Color tagEmptyChipFill(Color tagColor, Color surface) {
 Color tagEmptyChipBorderColor(Color tagColor) {
   if (tagColorIsBlack(tagColor)) return Colors.black;
   if (tagColorIsYellowFamily(tagColor)) {
-    return kTagYellowGold.withValues(alpha: kTagYellowBorderOpacity);
+    return tagColor.withValues(alpha: kTagYellowBorderOpacity);
   }
   if (tagColorIsCanonicalPink(tagColor)) {
     return tagColor.withValues(alpha: kTagPinkBorderOpacity);
