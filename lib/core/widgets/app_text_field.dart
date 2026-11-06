@@ -33,10 +33,11 @@ class AppTextField extends StatelessWidget {
     this.labelText,
     this.keyboardType,
     this.inputFormatters,
+    this.autofillHints,
     this.autofocus = false,
     this.enabled = true,
     this.readOnly = false,
-    this.obscureText = false,
+    this.obscureText,
     this.autocorrect = true,
     this.enableSuggestions = true,
     this.minLines,
@@ -67,10 +68,11 @@ class AppTextField extends StatelessWidget {
   final AppTextFieldSurface surface;
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
+  final Iterable<String>? autofillHints;
   final bool autofocus;
   final bool enabled;
   final bool readOnly;
-  final bool obscureText;
+  final bool? obscureText;
   final bool autocorrect;
   final bool enableSuggestions;
   final int? minLines;
@@ -87,7 +89,7 @@ class AppTextField extends StatelessWidget {
     final glass = surface == AppTextFieldSurface.glass;
     final multi = variant == AppTextFieldVariant.multiline ||
         (maxLines != null && maxLines != 1);
-    final obscured = obscureText || variant == AppTextFieldVariant.password;
+    final obscured = obscureText ?? (variant == AppTextFieldVariant.password);
     final lines = obscured ? 1 : (maxLines ?? (multi ? 4 : 1));
     final search = showSearchIcon || variant == AppTextFieldVariant.search;
     final fieldKeyboard = keyboardType ??
@@ -170,6 +172,7 @@ class AppTextField extends StatelessWidget {
               onEditingComplete: onEditingComplete,
               keyboardType: fieldKeyboard,
               inputFormatters: inputFormatters,
+              autofillHints: autofillHints,
               autofocus: autofocus,
               enabled: enabled,
               readOnly: readOnly,
@@ -195,6 +198,7 @@ class AppTextField extends StatelessWidget {
               validator: validator,
               keyboardType: fieldKeyboard,
               inputFormatters: inputFormatters,
+              autofillHints: autofillHints,
               autofocus: autofocus,
               enabled: enabled,
               readOnly: readOnly,
