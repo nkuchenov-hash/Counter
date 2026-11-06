@@ -512,7 +512,13 @@ class AppSettingsNavigationRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
               ],
-              Icon(AppMenuIcons.icon(AppMenuIconRole.arrow), color: scheme.onSurfaceVariant),
+              Icon(
+                AppMenuIcons.icon(AppMenuIconRole.arrow),
+                size: 20,
+                color: scheme.brightness == Brightness.dark
+                    ? AppColors.darkSettingsChevron
+                    : AppColors.settingsChevron,
+              ),
             ],
           ),
           onTap: onTap,
@@ -527,10 +533,12 @@ class AppSettingsNavigationRow extends StatelessWidget {
           splashColor: AppNeutralTones.transparent,
           shape: const RoundedRectangleBorder(),
         ),
-        if (showDivider) Divider(
+        if (showDivider && !grouped) Divider(
           height: 1,
-          thickness: 0.8,
-          color: scheme.outlineVariant,
+          thickness: 1,
+          color: scheme.brightness == Brightness.dark
+              ? AppColors.darkSettingsDivider
+              : AppColors.settingsDivider,
         ),
       ],
     );
@@ -641,9 +649,8 @@ class _AppSettingsRowPosition extends InheritedWidget {
 
 /// Borderless white group with independently hoverable full-width rows.
 ///
-/// The divider is painted as part of the same visual surface. When the pointer
-/// is on either neighboring item, that divider gently disappears into the
-/// hover shade instead of showing as a separate line.
+/// Dividers always remain visible between white-card rows, including on hover.
+/// Hover covers the full row width without obscuring its neighboring separator.
 class AppSettingsNavigationGroup extends StatefulWidget {
   const AppSettingsNavigationGroup({
     super.key,
@@ -668,8 +675,8 @@ class _AppSettingsNavigationGroupState
         ? scheme.onSurface.withValues(alpha: 0.06)
         : AppNeutralTones.gray200;
     final dividerFill = dark
-        ? scheme.outlineVariant
-        : AppNeutralTones.gray150;
+        ? AppColors.darkSettingsDivider
+        : AppColors.settingsDivider;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -715,18 +722,12 @@ class _AppSettingsNavigationGroupState
                   height: 1,
                   child: ColoredBox(
                     key: ValueKey('settings-divider-$index'),
-                    color: _hoveredIndex == index ||
-                            _hoveredIndex == index + 1
-                        ? hoverFill
-                        : scheme.surfaceContainerHigh,
+                    color: scheme.surfaceContainerHigh,
                     child: Padding(
                       padding: const EdgeInsets.only(left: 78, right: 20),
                       child: ColoredBox(
                         key: ValueKey('settings-divider-line-$index'),
-                        color: _hoveredIndex == index ||
-                                _hoveredIndex == index + 1
-                            ? hoverFill
-                            : dividerFill,
+                        color: dividerFill,
                       ),
                     ),
                   ),
