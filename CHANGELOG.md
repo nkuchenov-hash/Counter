@@ -1,3 +1,9 @@
+## 2026-11-06 — Shared input variants and form migration [CI and visual verification pending]
+
+- Extended `AppTextField` for search, email, number, password, multiline and validation; standard one-line input and adjacent `AppButton.m` geometry is owned by `AppControlTokens` (48 px height, 14 px radius).
+- Replaced raw simple inputs in authentication, profile display name, category creation, People editor and shared form dialogs; Settings search uses the search variant.
+- Added a regression assertion on the painted Timeline/Planning field and button geometry. Data, PocketBase, timers, optimistic UI and synchronization logic remain unchanged. Web and Android release verification is pending.
+
 ## 2026-11-06 — Shared canvas, stable Menu hover and desktop work width [pending verification]
 
 - Reuse one global light-theme canvas `AppColors.appBackground` (#F7F7F7) across screens; Menu settings theme inherits the existing shared semantic palette. Removed the Plans Time View secondary gray overlay.

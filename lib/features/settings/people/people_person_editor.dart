@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/omni_date_time_picker_dialog.dart';
 import 'package:counter/data/people/people_models.dart';
@@ -527,27 +528,23 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                         Row(
                           children: [
                             Expanded(
-                              child: TextField(
+                              child: AppTextField(
                                 controller: firstNameController,
                                 autofocus: person == null,
                                 enabled: !saving,
                                 textCapitalization: TextCapitalization.words,
                                 onChanged: (_) => setDialogState(() {}),
-                                decoration: InputDecoration(
-                                  labelText: peopleT(locale, 'first_name'),
-                                ),
+                                labelText: peopleT(locale, 'first_name'),
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: TextField(
+                              child: AppTextField(
                                 controller: lastNameController,
                                 enabled: !saving,
                                 textCapitalization: TextCapitalization.words,
                                 onChanged: (_) => setDialogState(() {}),
-                                decoration: InputDecoration(
-                                  labelText: peopleT(locale, 'last_name'),
-                                ),
+                                labelText: peopleT(locale, 'last_name'),
                               ),
                             ),
                           ],
@@ -578,13 +575,11 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                         Row(
                           children: [
                             Expanded(
-                              child: TextField(
+                              child: AppTextField(
                                 controller: relationshipController,
                                 enabled: !saving,
                                 textCapitalization: TextCapitalization.sentences,
-                                decoration: InputDecoration(
-                                  hintText: peopleT(locale, 'relationship_hint'),
-                                ),
+                                hintText: peopleT(locale, 'relationship_hint'),
                                 onSubmitted: (_) {
                                   final value =
                                       relationshipController.text.trim();
@@ -659,12 +654,10 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: TextField(
+                                        child: AppTextField(
                                           controller: contacts[index].labelController,
                                           enabled: !saving,
-                                          decoration: InputDecoration(
-                                            labelText: peopleT(locale, 'contact_type'),
-                                          ),
+                                          labelText: peopleT(locale, 'contact_type'),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
@@ -679,25 +672,21 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                                     ],
                                   ),
                                   const SizedBox(height: 12),
-                                  TextField(
+                                  AppTextField(
                                     controller: contacts[index].valueController,
                                     enabled: !saving,
-                                    decoration: InputDecoration(
-                                      labelText: peopleT(locale, 'contact_value'),
-                                    ),
+                                    labelText: peopleT(locale, 'contact_value'),
                                   ),
                                   const SizedBox(height: 12),
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: TextField(
+                                        child: AppTextField(
                                           controller: contacts[index].linkController,
                                           enabled: !saving,
                                           keyboardType: TextInputType.url,
                                           onChanged: (_) => setDialogState(() {}),
-                                          decoration: InputDecoration(
-                                            labelText: peopleT(locale, 'contact_link'),
-                                          ),
+                                          labelText: peopleT(locale, 'contact_link'),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
@@ -723,34 +712,28 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                               children: [
                                 SizedBox(
                                   width: 125,
-                                  child: TextField(
+                                  child: AppTextField(
                                     controller: contacts[index].labelController,
                                     enabled: !saving,
-                                    decoration: InputDecoration(
-                                      labelText: peopleT(locale, 'contact_type'),
-                                    ),
+                                    labelText: peopleT(locale, 'contact_type'),
                                   ),
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
-                                  child: TextField(
+                                  child: AppTextField(
                                     controller: contacts[index].valueController,
                                     enabled: !saving,
-                                    decoration: InputDecoration(
-                                      labelText: peopleT(locale, 'contact_value'),
-                                    ),
+                                    labelText: peopleT(locale, 'contact_value'),
                                   ),
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
-                                  child: TextField(
+                                  child: AppTextField(
                                     controller: contacts[index].linkController,
                                     enabled: !saving,
                                     keyboardType: TextInputType.url,
                                     onChanged: (_) => setDialogState(() {}),
-                                    decoration: InputDecoration(
-                                      labelText: peopleT(locale, 'contact_link'),
-                                    ),
+                                    labelText: peopleT(locale, 'contact_link'),
                                   ),
                                 ),
                                 AppIconButton(
@@ -806,7 +789,7 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: TextField(
+                              child: AppTextField(
                                 controller: birthdayYearController,
                                 enabled: !saving && birthdayDate != null,
                                 keyboardType: TextInputType.number,
@@ -814,13 +797,12 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                                   FilteringTextInputFormatter.digitsOnly,
                                   LengthLimitingTextInputFormatter(4),
                                 ],
-                                decoration: InputDecoration(
-                                  labelText:
-                                      peopleT(locale, 'birthday_year_optional'),
-                                  hintText: peopleT(
-                                    locale,
-                                    'birthday_year_optional_hint',
-                                  ),
+                                variant: AppTextFieldVariant.number,
+                                labelText:
+                                    peopleT(locale, 'birthday_year_optional'),
+                                hintText: peopleT(
+                                  locale,
+                                  'birthday_year_optional_hint',
                                 ),
                               ),
                             ),
@@ -922,14 +904,13 @@ Future<PeoplePersonEditorResult?> showPeoplePersonEditor({
                           ),
                         ],
                         const SizedBox(height: 24),
-                        TextField(
+                        AppTextField(
                           controller: notesController,
                           enabled: !saving,
+                          variant: AppTextFieldVariant.multiline,
                           minLines: 3,
                           maxLines: 8,
-                          decoration: InputDecoration(
-                            labelText: peopleT(locale, 'notes'),
-                          ),
+                          labelText: peopleT(locale, 'notes'),
                         ),
                         if (validationError != null) ...[
                           const SizedBox(height: 12),

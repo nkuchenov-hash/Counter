@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:counter/core/app_control_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Single canonical input element. Search, passwords, numeric/email input,
 /// validation and multi-line editors are variants, not feature-local controls.
@@ -33,6 +34,7 @@ class AppTextField extends StatelessWidget {
     this.readOnly = false,
     this.autocorrect = true,
     this.autofillHints,
+    this.inputFormatters,
     this.minLines,
     this.maxLines,
     this.validator,
@@ -62,6 +64,7 @@ class AppTextField extends StatelessWidget {
   final bool readOnly;
   final bool autocorrect;
   final Iterable<String>? autofillHints;
+  final List<TextInputFormatter>? inputFormatters;
   final int? minLines;
   final int? maxLines;
   final String? Function(String?)? validator;
@@ -165,6 +168,7 @@ class AppTextField extends StatelessWidget {
             readOnly: readOnly,
             autocorrect: autocorrect,
             autofillHints: autofillHints,
+            inputFormatters: inputFormatters,
             minLines: minVisibleLines,
             maxLines: lines,
             textInputAction: action,
@@ -187,6 +191,7 @@ class AppTextField extends StatelessWidget {
             readOnly: readOnly,
             autocorrect: autocorrect,
             autofillHints: autofillHints,
+            inputFormatters: inputFormatters,
             minLines: minVisibleLines,
             maxLines: lines,
             textInputAction: action,
