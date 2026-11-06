@@ -151,6 +151,14 @@ void main() {
     final everydayGrid = tester.widget<GridView>(grid);
     expect((everydayGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
         CategoryIconStore.catalogFor().length);
+    final dog = find.byKey(const ValueKey('custom-icon-dog'));
+    expect(dog, findsOneWidget);
+    await tester.tap(dog); // One tap adds.
+    await tester.pump();
+    expect(find.textContaining('4 selected'), findsOneWidget);
+    await tester.tap(dog); // Second tap removes.
+    await tester.pump();
+    expect(find.textContaining('3 selected'), findsOneWidget);
     expect(find.byKey(const ValueKey('selected-icon-catalog')), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('selected-icon-catalog')));
     await tester.pumpAndSettle();
@@ -164,6 +172,13 @@ void main() {
     expect((fluentGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
         CategoryIconStore.catalogFor(includeFullFluent: true).length);
     expect(find.textContaining('shown'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('clear-icon-collection')));
+    await tester.pump();
+    expect(find.textContaining('0 selected'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('reset-default-icons')));
+    await tester.pump();
+    expect(find.textContaining('${kDefaultCategoryIconKeys.length} selected'),
+        findsOneWidget);
   });
 
   test('human-first catalog covers everyday life and keeps legacy art', () {
