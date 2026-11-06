@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/core/tag_contrast.dart';
@@ -122,13 +123,11 @@ class _TagDefaultDurationSettingsViewState
                   ],
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                AppTextField(
                   controller: customCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: t(loc, 'tag_default_duration_custom'),
-                    suffixText: t(loc, 'tag_default_duration_min_suffix'),
-                  ),
+                  variant: AppTextFieldVariant.number,
+                  labelText: t(loc, 'tag_default_duration_custom'),
+                  suffixText: t(loc, 'tag_default_duration_min_suffix'),
                 ),
                 const SizedBox(height: 12),
                 AppButton(
