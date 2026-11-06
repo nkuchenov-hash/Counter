@@ -1,13 +1,13 @@
-## Menu and settings visual contract (refined 2026-11-05)
+## Settings visual contract (refined 2026-11-06)
 
-- **Keep bundled Onest.** Menu titles use 16 px / medium 500 with crisp neutral `#282828` ink; captions remain regular 400 / `#707070`. Do not substitute another font.
-- All light-theme pages, including Menu, Timeline and Plans, use `AppColors.appBackground` `#F7F7F7`. Cards stay white and **borderless**; desktop sidebar remains separate `#F4F4F4`. Settings must inherit the global semantic palette, never define a second one.
+- **Keep bundled Onest.** Settings titles use 16 px / medium 500 with crisp neutral `#282828` ink; captions remain regular 400 / `#707070`. Do not substitute another font.
+- All light-theme pages, including Settings, Timeline and Plans, use `AppColors.appBackground` `#F7F7F7`. Cards stay white and **borderless**; desktop sidebar remains separate `#F4F4F4`. Settings must inherit the global semantic palette, never define a second one.
 - Each menu row uses the shared `AppNeutralTones.gray200` `#E5E5E5` hover fill. Hover covers exactly one full-width row with **no animation**: nested animations previously caused flicker/sparkling on pointer movement.
 - Grouped navigation rows have a minimum 74 px height with a 42 px leading icon. The first and last row keep an 8 px edge inset *inside* the full-width hover, resulting in 24 px icon-to-card spacing at top, bottom and left. Adjacent icon tiles have at least 30 px vertical separation. Group-to-group gaps are reduced instead of compressing row content.
-- Dividers are 1 px, `AppNeutralTones.gray150` `#F0F0F0`, inset to the text column. The divider is outside any row's hover hit target and paints the *same* hover shade instantly when either neighbor is hovered.
+- Dividers are **always visible**, 1 px, inset to the text column, and use `AppColors.settingsDivider` (`#D4D4D4`, light) or `AppColors.darkSettingsDivider` (dark). Hover never erases them. Navigation chevrons are intentionally subdued (`AppColors.settingsChevron` = `#A3A3A3` on light surfaces, `darkSettingsChevron` in dark mode), not full-strength body-text ink. These are shared semantic tokens, never screen-local colors.
 - Header stays white; LIFE OS appears once at the top. No changes to navigation routes, settings persistence or app data.
 
-## Canonical Menu / settings composition (2026-11-05)
+## Canonical Settings composition (2026-11-06)
 
 - `ShellSideNavigation` is the sole desktop primary navigation; `LifeOsMenuPage` supplies a **single content column** and settings category index, not its own sidebar.
 - `AppSettingsPageBody` owns a **full-page-width scroll viewport**, keeping the scrollbar at the far right; its inner content remains centered with `settingsContentMaxWidth` (960 px wide desktop) and 24 px horizontal insets. **Only Timeline and Plans** adopt this content width on desktop through `ShellTabHost`; other destinations do not.
@@ -354,7 +354,7 @@ On wide desktop layouts, the shell owns the global LIFE OS header and the side-n
 - Phone/tablet spacing is form-factor-owned and is not changed by this desktop contract.
 
 
-## Grouped Settings and Unified Menu Surfaces (2026-11-05)
+## Grouped Settings Surfaces (2026-11-06)
 
 LIFE OS settings must use a neutral grouped-navigation layout inspired by the
 reference Android screenshots without copying device branding or colors.
@@ -378,9 +378,9 @@ row and surface tokens, adapted to available width.
 - Black/neutral accents only; no copied TECNO orange, beige, or purple.
 - Do not claim a new app release until web, Android and desktop CI succeed.
 
-## Menu icons and approved grouped Settings UI (2026-11-05)
+## Settings icons and approved grouped UI (2026-11-06)
 
-- The approved LIFE OS menu uses the existing **Flutter Material Symbols** already shipped with the app, via `AppMenuIcons.icon(AppMenuIconRole)` in `lib/core/widgets/app_menu_icons.dart`. This is an icon-role adapter, not a new or finalized icon library. Keep all icon choices in that one mapping until the separately selected collection is approved.
-- Light-mode Menu canvas is `#F7F7F7`; grouped cards are `#FFFFFF`, with subtle `#F4F4F4` icon containers and no card border. Dark mode uses equivalent neutral surfaces, not hard-coded light fills.
-- Search is a real destination index. All menu destinations must open working settings or working feature screens, never a visual-only switch or a fake integration status.
+- The approved LIFE OS Settings screen uses the existing **Flutter Material Symbols** already shipped with the app, via `AppMenuIcons.icon(AppMenuIconRole)` in `lib/core/widgets/app_menu_icons.dart`. This is an icon-role adapter, not a new or finalized icon library. Keep all icon choices in that one mapping until the separately selected collection is approved.
+- Light-mode Settings canvas is `#F7F7F7`; grouped cards are `#FFFFFF`, with subtle `#F4F4F4` icon containers and no card border. Dark mode uses equivalent neutral surfaces, not hard-coded light fills.
+- The page, desktop sidebar and mobile destination are named **Settings / Настройки**, never Menu / Меню; the destination uses the shared settings-gear icon role. Search uses the canonical `AppTextField` at 48 px high, the same as other search/input controls. All Settings destinations must open working settings or working feature screens, never a visual-only switch or a fake integration status.
 - Domain settings have one persistence implementation; feature-local quick menus remain accessible but link to the same canonical settings screens.
