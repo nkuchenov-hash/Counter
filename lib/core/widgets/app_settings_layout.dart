@@ -18,28 +18,21 @@ bool settingsIsWideDesktop(BuildContext context) =>
 ThemeData settingsNeutralTheme(BuildContext context) {
   final base = Theme.of(context);
   final dark = base.brightness == Brightness.dark;
+  // Settings cannot define its own palette. Use the same semantic tokens,
+  // neutral canvas and card surfaces as the rest of Life OS.
   final scheme = base.colorScheme.copyWith(
-    primary: base.colorScheme.onSurface,
-    onPrimary: dark ? AppColors.darkAppBackground : Colors.white,
-    // Neutral TECNO-inspired surfaces: distinct white cards, no blue tint.
-    surface: dark ? const Color(0xFF161616) : const Color(0xFFF7F7F7),
-    surfaceContainerLowest:
-        dark ? const Color(0xFF161616) : const Color(0xFFF7F7F7),
-    surfaceContainerLow:
-        dark ? const Color(0xFF222222) : const Color(0xFFF7F7F7),
-    surfaceContainer:
-        dark ? const Color(0xFF303030) : const Color(0xFFF4F4F4),
-    surfaceContainerHigh:
-        dark ? const Color(0xFF252525) : Colors.white,
-    surfaceContainerHighest:
-        dark ? const Color(0xFF303030) : Colors.white,
-    onSurface: dark ? base.colorScheme.onSurface : const Color(0xFF282828),
-    onSurfaceVariant: dark
-        ? base.colorScheme.onSurfaceVariant
-        : const Color(0xFF707070),
-    outlineVariant: dark
-        ? base.colorScheme.outlineVariant
-        : const Color(0xFFF0F0F0),
+    primary: base.colorScheme.primary,
+    onPrimary: base.colorScheme.onPrimary,
+    surface: base.colorScheme.surface,
+    surfaceContainerLowest: base.colorScheme.surfaceContainerLowest,
+    surfaceContainerLow: base.colorScheme.surfaceContainerLow,
+    surfaceContainer: base.colorScheme.surfaceContainer,
+    surfaceContainerHigh: base.colorScheme.surfaceContainerHigh,
+    surfaceContainerHighest: base.colorScheme.surfaceContainerHighest,
+    onSurface: base.colorScheme.onSurface,
+    onSurfaceVariant: base.colorScheme.onSurfaceVariant,
+    outline: base.colorScheme.outline,
+    outlineVariant: base.colorScheme.outlineVariant,
   );
   return base.copyWith(
     colorScheme: scheme,
@@ -51,7 +44,7 @@ ThemeData settingsNeutralTheme(BuildContext context) {
     appBarTheme: base.appBarTheme.copyWith(
       backgroundColor: scheme.surfaceContainerLowest,
       foregroundColor: scheme.onSurface,
-      surfaceTintColor: Colors.transparent,
+      surfaceTintColor: AppNeutralTones.transparent,
       scrolledUnderElevation: 0,
     ),
     tabBarTheme: base.tabBarTheme.copyWith(
@@ -521,11 +514,11 @@ class AppSettingsNavigationRow extends StatelessWidget {
           // Grouped rows use the full-width background owned by the group,
           // so InkWell cannot paint a second rectangle over the separator.
           hoverColor: _AppSettingsRowPosition.maybeOf(context) != null
-              ? Colors.transparent
+              ? AppNeutralTones.transparent
               : (scheme.brightness == Brightness.dark
                   ? scheme.onSurface.withValues(alpha: 0.06)
-                  : const Color(0xFFE8E8E8)),
-          splashColor: Colors.transparent,
+                  : AppNeutralTones.gray200),
+          splashColor: AppNeutralTones.transparent,
           shape: const RoundedRectangleBorder(),
         ),
         if (showDivider) Divider(
@@ -665,7 +658,7 @@ class _AppSettingsNavigationGroupState
     final dark = scheme.brightness == Brightness.dark;
     final hoverFill = dark
         ? scheme.onSurface.withValues(alpha: 0.06)
-        : const Color(0xFFE8E8E8);
+        : AppNeutralTones.gray200;
     const dividerFill = Color(0xFFF0F0F0);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -700,7 +693,7 @@ class _AppSettingsNavigationGroupState
                       curve: Curves.easeOutCubic,
                       color: _hoveredIndex == index
                           ? hoverFill
-                          : Colors.transparent,
+                          : AppNeutralTones.transparent,
                       child: _AppSettingsRowPosition(
                         first: index == 0,
                         last: index == widget.children.length - 1,
@@ -845,9 +838,9 @@ class _AppSettingsThemeChoice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final previewBg = dark ? const Color(0xFF262626) : const Color(0xFFFFFFFF);
-    final previewPanel = dark ? const Color(0xFF383838) : const Color(0xFFF0F0F0);
-    final previewStroke = dark ? const Color(0xFF646464) : const Color(0xFFE3E3E3);
+    final previewBg = dark ? AppNeutralTones.gray800 : AppNeutralTones.white;
+    final previewPanel = dark ? AppNeutralTones.gray700 : AppNeutralTones.gray150;
+    final previewStroke = dark ? AppNeutralTones.gray600 : AppNeutralTones.gray200;
     final selectedColor = scheme.onSurface;
 
     return Semantics(
@@ -856,7 +849,7 @@ class _AppSettingsThemeChoice extends StatelessWidget {
       enabled: onTap != null,
       label: label,
       child: Material(
-        color: Colors.transparent,
+        color: AppNeutralTones.transparent,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(18),
