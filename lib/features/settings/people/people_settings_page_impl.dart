@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/data/people/people_models.dart';
@@ -435,13 +436,11 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    TextField(
+                    AppTextField(
                       controller: controller,
                       autofocus: true,
                       enabled: !saving,
-                      decoration: InputDecoration(
-                        labelText: peopleT(_locale, 'circle_name'),
-                      ),
+                      labelText: peopleT(_locale, 'circle_name'),
                     ),
                     if (error != null) ...[
                       const SizedBox(height: 12),

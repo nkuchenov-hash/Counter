@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:counter/core/category_icon_system.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/app_build_info.dart';
 import 'package:flutter/material.dart';
 
@@ -207,17 +208,14 @@ class _IconPickerState extends State<_IconPicker> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: TextField(
+              child: AppTextField(
                 controller: _search,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.search),
-                  hintText: ru ? 'Поиск по всем иконкам: собака, машина…'
-                      : 'Search all icons: dog, car, sports…',
-                  isDense: true, border: const OutlineInputBorder(),
-                  suffixIcon: query.isEmpty ? null : IconButton(
-                    onPressed: _search.clear,
-                    icon: const Icon(Icons.close),
-                  ),
+                variant: AppTextFieldVariant.search,
+                hintText: ru ? 'Поиск по всем иконкам: собака, машина…'
+                    : 'Search all icons: dog, car, sports…',
+                suffixIcon: query.isEmpty ? null : IconButton(
+                  onPressed: _search.clear,
+                  icon: const Icon(Icons.close),
                 ),
               ),
             ),

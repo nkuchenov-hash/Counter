@@ -4,6 +4,7 @@ import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
+import 'package:counter/features/settings/categories/category_tag_input_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -108,6 +109,34 @@ void main() {
     });
   }
 
+  testWidgets('tag input and its adjacent Add button share painted geometry',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      theme: appLightTheme,
+      home: const Scaffold(body: SizedBox(
+        width: 390,
+        child: TagInputField(tags: [], onChanged: _noopTagChanged),
+      )),
+    ));
+    final field = find.descendant(
+      of: find.byType(TagInputField),
+      matching: find.byType(AppTextField),
+    );
+    final button = find.descendant(
+      of: find.byType(TagInputField),
+      matching: find.byType(AppButton),
+    );
+    final fieldRect = tester.getRect(find.descendant(
+      of: field, matching: find.byType(InputDecorator)));
+    final buttonRect = tester.getRect(find.descendant(
+      of: button, matching: find.byType(FilledButton)));
+    expect(fieldRect.height, AppControlTokens.height);
+    expect(buttonRect.height, AppControlTokens.height);
+    expect(fieldRect.top, buttonRect.top);
+    expect(fieldRect.bottom, buttonRect.bottom);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('email, password, numeric, search, multiline and validation '
       'use the same canonical field', (tester) async {
     final controllers = List.generate(6, (_) => TextEditingController());
@@ -150,3 +179,5 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 }
+
+void _noopTagChanged(List<String> tags) {}

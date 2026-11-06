@@ -6,6 +6,7 @@
 import 'dart:async';
 
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/core/tag_contrast.dart';
@@ -105,12 +106,10 @@ class _TagManagerPageState extends State<TagManagerPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    TextField(
+                    AppTextField(
                       controller: nameCtrl,
                       autofocus: true,
-                      decoration: InputDecoration(
-                        labelText: t(loc, 'tag_name_label'),
-                      ),
+                      labelText: t(loc, 'tag_name_label'),
                       textCapitalization: TextCapitalization.sentences,
                     ),
                     const SizedBox(height: 12),

@@ -1,3 +1,6 @@
+import 'package:counter/core/app_control_tokens.dart';
+import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -105,25 +108,27 @@ class _TagInputFieldState extends State<TagInputField> {
           ],
         ),
         const SizedBox(height: 8),
-        TextField(
-          controller: _controller,
-          decoration: (widget.decoration ??
-              InputDecoration(labelText: t(currentLocale.value, 'add_keyword_hint')))
-              .copyWith(
-            suffixIcon: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
-              child: FilledButton.icon(
-                onPressed: _controller.text.trim().isEmpty ? null : _commitCurrent,
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: Text(t(currentLocale.value, 'add')),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: AppTextField(
+                controller: _controller,
+                labelText: widget.decoration?.labelText ??
+                    t(currentLocale.value, 'add_keyword_hint'),
+                hintText: widget.decoration?.hintText ?? '',
+                textCapitalization: TextCapitalization.sentences,
+                onChanged: (_) => setState(() {}),
+                onSubmitted: (_) => _commitCurrent(),
               ),
             ),
-            suffixIconConstraints: const BoxConstraints(minWidth: 108),
-          ),
-          textCapitalization: TextCapitalization.sentences,
-          onChanged: (_) => setState(() {}),
-
-          onSubmitted: (_) => _commitCurrent(),
+            const SizedBox(width: AppControlTokens.horizontalGap),
+            AppButton.primary(
+              label: t(currentLocale.value, 'add'),
+              icon: Icons.add_rounded,
+              onPressed: _controller.text.trim().isEmpty ? null : _commitCurrent,
+            ),
+          ],
         ),
       ],
     );
