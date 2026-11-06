@@ -25,6 +25,7 @@ class AppTextField extends StatelessWidget {
     this.onSaved,
     this.validator,
     this.suffixIcon,
+    this.suffixText,
     this.prefixIcon,
     this.showSearchIcon = false,
     this.clearable = false,
@@ -61,6 +62,7 @@ class AppTextField extends StatelessWidget {
   final FormFieldSetter<String>? onSaved;
   final FormFieldValidator<String>? validator;
   final Widget? suffixIcon;
+  final String? suffixText;
   final Widget? prefixIcon;
   final bool showSearchIcon;
   final bool clearable;
@@ -120,6 +122,7 @@ class AppTextField extends StatelessWidget {
             ? const BoxConstraints(minWidth: 40, minHeight: height)
             : null,
         suffixIcon: trailing,
+        suffixText: suffixText,
         suffixIconConstraints: trailing != null
             ? const BoxConstraints(minWidth: height, minHeight: height)
             : null,
