@@ -1,16 +1,16 @@
 ## Menu and settings visual contract (refined 2026-11-05)
 
 - **Keep bundled Onest.** Menu titles use 16 px / medium 500 with crisp neutral `#282828` ink; captions remain regular 400 / `#707070`. Do not substitute another font.
-- The Menu/settings canvas is neutral `#F7F7F7`, cards are white and **borderless**, and the desktop sidebar uses `#F4F4F4`. The chrome must not introduce blue, beige, extra card strokes or duplicate branding.
-- Each individual menu row has a full-width hover fill `#E8E8E8`, darker than the page and card. Rounded corners belong to the **group clip**; no inset rounded hover plate or whole-group highlight.
+- Every light-theme page uses the shared `AppColors.appBackground` canvas `#F7F7F7` (including Menu, Timeline and Plans); grouped cards stay white and **borderless**. Desktop sidebar is a separate `#F4F4F4` navigation surface, and the header is white. Do not introduce blue/beige or page-local background grays.
+- Each individual menu row has a **static, instantaneous** full-width hover fill `#E8E8E8`. Do not use overlapping row/divider animations: they visibly sparkle at hover boundaries. Rounded corners belong to the group clip; no inset hover plate or whole-group highlight.
 - Grouped navigation rows have a minimum 74 px height with a 42 px leading icon. The first and last row keep an 8 px edge inset *inside* the full-width hover, resulting in 24 px icon-to-card spacing at top, bottom and left. Adjacent icon tiles have at least 30 px vertical separation. Group-to-group gaps are reduced instead of compressing row content.
-- Dividers are 1 px, subtly `#F0F0F0`, inset to the text column; either adjacent row's hover dissolves the divider into the same `#E8E8E8` fill. No separator is painted on top of hovered content.
+- Dividers are 1 px, subtly `#F0F0F0`, inset to the text column. When either adjacent row is hovered, its divider is painted in the identical hover shade with **no transition** and sits outside the row's `MouseRegion`, avoiding pointer-boundary oscillation.
 - Header stays white; LIFE OS appears once at the top. No changes to navigation routes, settings persistence or app data.
 
 ## Canonical Menu / settings composition (2026-11-05)
 
 - `ShellSideNavigation` is the sole desktop primary navigation; `LifeOsMenuPage` supplies a **single content column** and settings category index, not its own sidebar.
-- `AppSettingsPageBody` owns the responsive content width and padding for Menu and settings destinations. A wide desktop viewport must not stretch form groups into full-width panels.
+- `AppSettingsPageBody` owns the full-width scrolling viewport so the scrollbar sits at the page's right edge; a centered inner column alone is capped by `settingsContentMaxWidth` (960 px on wide desktop) with 24 px side padding. This same cap is applied to **desktop Timeline and Plans only** in `ShellChrome`; all other page widths remain unchanged.
 - `AppSettingsNavigationGroup`, `AppSettingsNavigationRow`, `AppSettingsMenuIcon`, and `AppSettingsSectionCard` are the shared settings building blocks. Category navigation consistently opens a category detail; leaf controls keep their existing persistence owner.
 - Profile content reuses those same components; do not add a second desktop preferences tab hub or duplicate shell headings/branding. Different settings destinations must not share a misleading generic route.
 
