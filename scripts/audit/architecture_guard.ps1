@@ -332,20 +332,23 @@ foreach ($w in $rawUi) {
 $inputPattern = '\b(TextField|TextFormField)\s*\('
 $inputTotal = 0
 $inputFiles = 0
-if (Test-Path -LiteralPath $featuresRoot) {
-    $featureDartFiles = @(Get-ChildItem -LiteralPath $featuresRoot -Recurse -Filter '*.dart' -File -ErrorAction SilentlyContinue)
-    foreach ($file in $featureDartFiles) {
+# The entire lib tree is inspected, not only feature directories. The
+# canonical AppTextField's internal native field(s) are intentionally excluded.
+if (Test-Path -LiteralPath $libRoot) {
+    $allDartFiles = @(Get-ChildItem -LiteralPath $libRoot -Recurse -Filter '*.dart' -File -ErrorAction SilentlyContinue)
+    foreach ($file in $allDartFiles) {
+        $rel = Get-RepoRelativePath $file.FullName
+        if ($rel -eq 'lib/core/widgets/app_text_field.dart') { continue }
         $hits = @(Select-String -LiteralPath $file.FullName -Pattern $inputPattern)
         if ($hits.Count -gt 0) {
             $inputTotal += $hits.Count
             $inputFiles++
-            $rel = Get-RepoRelativePath $file.FullName
             Write-Host "RAW_INPUT_INVENTORY $rel occurrences=$($hits.Count)"
         }
     }
 }
 if ($inputTotal -gt 0) {
-    Add-Warning "RAW_INPUT_LEGACY $inputTotal occurrences across $inputFiles feature files; ordinary fields must migrate to AppTextField"
+    Add-Warning "RAW_INPUT_LEGACY $inputTotal occurrences across $inputFiles files app-wide; ordinary fields must migrate to AppTextField"
 }
 
 # These production entrypoints must NEVER grow a second text field painter.
