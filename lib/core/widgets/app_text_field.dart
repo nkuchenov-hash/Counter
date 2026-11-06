@@ -1,7 +1,6 @@
 import 'dart:ui' as ui;
 
 import 'package:counter/core/app_control_tokens.dart';
-
 import 'package:flutter/material.dart';
 
 /// Canonical single-line text/search input for Life OS.
@@ -49,7 +48,7 @@ class AppTextField extends StatelessWidget {
         ? scheme.onSurfaceVariant.withValues(alpha: 0.92)
         : scheme.onSurfaceVariant;
     final fill = scheme.surfaceContainerHighest;
-    final borderColor = scheme.outline.withValues(alpha: 0.86);
+    final borderColor = scheme.outline;
 
     final glass = surface == AppTextFieldSurface.glass;
     final field = TextField(
@@ -60,9 +59,14 @@ class AppTextField extends StatelessWidget {
       textAlignVertical: TextAlignVertical.center,
       onChanged: onChanged,
       onSubmitted: onSubmitted,
-      style: TextStyle(fontSize: AppControlTokens.fontSize, color: scheme.onSurface),
+      style: TextStyle(
+        fontSize: AppControlTokens.fontSize,
+        color: scheme.onSurface,
+        height: 1.2,
+      ),
       decoration: InputDecoration(
         constraints: const BoxConstraints.tightFor(height: height),
+        floatingLabelBehavior: FloatingLabelBehavior.never,
         hintText: hintText,
         hintStyle: TextStyle(fontSize: AppControlTokens.fontSize, color: meta),
         prefixIcon: showSearchIcon
@@ -82,9 +86,9 @@ class AppTextField extends StatelessWidget {
         isDense: true,
         contentPadding: EdgeInsets.fromLTRB(
           showSearchIcon ? 0 : AppControlTokens.horizontalPadding,
-          0,
+          10,
           AppControlTokens.horizontalPadding,
-          0,
+          10,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius),
