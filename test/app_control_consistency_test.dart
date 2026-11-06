@@ -101,6 +101,7 @@ void main() {
       expect(outline.borderRadius, BorderRadius.circular(AppControlTokens.radius));
       final filled = tester.widget<FilledButton>(paintedButton);
       final shape = filled.style?.shape?.resolve({});
+      expect(filled.style?.maximumSize?.resolve({})?.height, AppControlTokens.height);
       expect(shape, isA<RoundedRectangleBorder>());
       expect((shape! as RoundedRectangleBorder).borderRadius,
           BorderRadius.circular(AppControlTokens.radius));

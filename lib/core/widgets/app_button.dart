@@ -130,6 +130,7 @@ class AppButton extends StatelessWidget {
 
   ButtonStyle _baseStyle(BuildContext context) => ButtonStyle(
         minimumSize: WidgetStatePropertyAll(Size(0, _height)),
+        maximumSize: WidgetStatePropertyAll(Size(double.infinity, _height)),
         padding: WidgetStatePropertyAll(_padding),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: WidgetStatePropertyAll(

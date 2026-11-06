@@ -370,7 +370,7 @@ Representative search targets: `ElevatedButton`, `FilledButton`, `OutlinedButton
 | Raw `CircularProgressIndicator` in feature screens | `AppLoading` |
 | Local empty/error blocks | `AppEmptyState` / `AppErrorState` |
 | Sheet header/footer chrome in feature sheets | `AppSheetScaffold` |
-| Search/time/text field copies | `AppTextField`, `AppSearchField`, Omni-Picker-backed time/date inputs |
+| Search/time/text field copies | `AppTextField` (search/text/email/number/password/multiline/validation variants); Omni-Picker-backed date/time inputs |
 
 ## Safe Now
 
