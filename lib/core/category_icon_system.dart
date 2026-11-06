@@ -145,13 +145,60 @@ const List<String> kLegacyCategorySubjectKeys = [
   'map_pin', 'shopping_bag', 'tv', 'food', 'fire', 'face_smile',
 ];
 
-final Set<String> _selectableIconKeys = <String>{
-  for (final item in kHumanCategorySubjects) item.key,
-  ...kLegacyCategorySubjectKeys,
+// Every entry presented by the picker must be a genuine Fluent UI glyph.
+// Material fallback artwork remains renderable for old saved categories only.
+typedef _CategoryGlyphPair = (IconData, IconData);
+
+_CategoryGlyphPair _glyphPair(MatchedCategoryIcon icon) =>
+    (icon.fluentOutline, icon.fluentFilled);
+
+final Set<_CategoryGlyphPair> _officialFluentPairs = <_CategoryGlyphPair>{
+  for (final icon in kFullFluentCategoryIcons.values) _glyphPair(icon),
 };
 
-bool isSelectableCategoryIconKey(String key) =>
-    _selectableIconKeys.contains(key) && kMatchedCategoryIcons.containsKey(key);
+final List<String> _everydayCandidateKeys = <String>[
+  for (final item in kHumanCategorySubjects) item.key,
+  ...kLegacyCategorySubjectKeys,
+];
+
+final Map<_CategoryGlyphPair, String> _everydayRepresentatives = () {
+  final selected = <_CategoryGlyphPair, String>{};
+  for (final key in _everydayCandidateKeys) {
+    final icon = kMatchedCategoryIcons[key];
+    if (icon == null) continue;
+    final glyph = _glyphPair(icon);
+    if (_officialFluentPairs.contains(glyph)) {
+      selected.putIfAbsent(glyph, () => key);
+    }
+  }
+  return Map<_CategoryGlyphPair, String>.unmodifiable(selected);
+}();
+
+bool isSelectableCategoryIconKey(String key) {
+  final icon = kMatchedCategoryIcons[key];
+  if (icon == null) return false;
+  return _everydayRepresentatives[_glyphPair(icon)] == key;
+}
+
+/// The canonical *picker* ID for an old alias/full-Fluent ID, by exact
+/// Regular+Filled artwork identity. Never rewrite existing category records.
+String? categoryPickerRepresentative(String key) {
+  final icon = kMatchedCategoryIcons[key] ?? kFullFluentCategoryIcons[key];
+  if (icon == null) return null;
+  final glyph = _glyphPair(icon);
+  if (!_officialFluentPairs.contains(glyph)) return null;
+  return _everydayRepresentatives[glyph] ??
+      'fluent__${key.startsWith('fluent__') ? key.substring(8) : _fluentStemForPair(glyph) ?? ''}';
+}
+
+String? _fluentStemForPair(_CategoryGlyphPair glyph) {
+  for (final entry in kFullFluentCategoryIcons.entries) {
+    if (_glyphPair(entry.value) == glyph) {
+      return entry.key.substring('fluent__'.length);
+    }
+  }
+  return null;
+}
 
 /// Deliberately small human-first starter collection. The old v1 defaults
 /// unintentionally selected the entire technical catalog (~100+ icons).
@@ -165,7 +212,11 @@ const List<String> kStarterCategoryIcons = [
 ];
 
 final List<String> kDefaultCategoryIconKeys = List<String>.unmodifiable(
-  kStarterCategoryIcons.where((key) => kMatchedCategoryIcons.containsKey(key)),
+  <String>{
+    for (final key in kStarterCategoryIcons)
+      if (categoryPickerRepresentative(key) case final String canonical)
+        if (canonical.isNotEmpty) canonical,
+  },
 );
 
 /// The default collections from older builds are recognizable by exact ID
@@ -221,15 +272,13 @@ String categorySubjectGroupName(String group, {required bool russian}) =>
 List<CategoryIconChoice> _buildSharedCatalog() {
   final metadata = {for (final item in kCategoryIconCatalog) item.key: item};
   return List<CategoryIconChoice>.unmodifiable([
-    for (final key in <String>{
-      for (final item in kHumanCategorySubjects) item.key,
-      ...kLegacyCategorySubjectKeys.where(isSelectableCategoryIconKey),
-    })
-      if (metadata.containsKey(key))
-        metadata[key]!
-      else
-        CategoryIconChoice(key, _iconLabel(key),
-            _iconLabel(key), _iconGroup(key), key.replaceAll('_', ' ')),
+    for (final key in _everydayCandidateKeys)
+      if (isSelectableCategoryIconKey(key))
+        if (metadata.containsKey(key))
+          metadata[key]!
+        else
+          CategoryIconChoice(key, _iconLabel(key), _iconLabel(key),
+              _iconGroup(key), key.replaceAll('_', ' ')),
   ]);
 }
 
@@ -262,22 +311,34 @@ class CategoryIconStore extends ChangeNotifier {
   static const _selectionItemPrefix = 'takto.category.icon_selection_item.v1.';
   final Map<String, CategoryIconSelection> _values = {};
   Future<void>? _loadFuture;
-  static final List<CategoryIconChoice> _selectableCatalog = _buildSharedCatalog();
+  static final List<CategoryIconChoice> _selectableCatalog =
+      _buildSharedCatalog();
+
+  // Only one tile per exact Fluent Regular/Filled pair. The curated
+  // everyday name wins over a second fluent__ alias for the same artwork.
   static final List<CategoryIconChoice> _fullFluentCatalog =
-      List<CategoryIconChoice>.unmodifiable([
-    ..._selectableCatalog,
-    for (final key in kFullFluentCategoryIcons.keys)
-      CategoryIconChoice(
-        key,
-        _iconLabel(key.substring('fluent__'.length)),
-        _iconLabel(key.substring('fluent__'.length)),
-        'Fluent',
-        key.substring('fluent__'.length).replaceAll('_', ' '),
-      ),
-  ]);
+      _buildUniqueFullFluentCatalog();
+
+  static List<CategoryIconChoice> _buildUniqueFullFluentCatalog() {
+    final choices = List<CategoryIconChoice>.from(_selectableCatalog);
+    final seen = <_CategoryGlyphPair>{
+      for (final choice in _selectableCatalog)
+        _glyphPair(kMatchedCategoryIcons[choice.key]!),
+    };
+    for (final entry in kFullFluentCategoryIcons.entries) {
+      if (!seen.add(_glyphPair(entry.value))) continue;
+      final key = entry.key;
+      final label = _iconLabel(key.substring('fluent__'.length));
+      choices.add(CategoryIconChoice(key, label, label, 'Fluent',
+          key.substring('fluent__'.length).replaceAll('_', ' ')));
+    }
+    return List<CategoryIconChoice>.unmodifiable(choices);
+  }
+
   static List<CategoryIconChoice> catalogFor({bool includeFullFluent = false}) =>
       includeFullFluent ? _fullFluentCatalog : _selectableCatalog;
-  static int get fullFluentCount => kFullFluentCategoryIcons.length;
+
+  static int get fullFluentCount => _fullFluentCatalog.length;
   static bool isValidKey(String key) =>
       kMatchedCategoryIcons.containsKey(key) ||
       kFullFluentCategoryIcons.containsKey(key);
@@ -295,10 +356,18 @@ class CategoryIconStore extends ChangeNotifier {
     ]);
   }
 
+  static List<String> _uniqueFavoriteKeys(Iterable<String> keys) =>
+      <String>{
+        for (final key in keys)
+          if (categoryPickerRepresentative(key) case final String canonical)
+            if (canonical.isNotEmpty) canonical,
+      }.toList();
+
   Future<void> setQuickKeys(Iterable<String> values) async {
     await ensureLoaded();
-    // An empty collection is allowed: the everyday library stays available.
-    final next = values.toSet().where(isValidKey).toList();
+    // Only one favorite per icon image, including older aliases.
+    // Material fallbacks remain renderable in old categories, not in pickers.
+    final next = _uniqueFavoriteKeys(values);
     if (_sameStrings(_quickKeys, next)) return;
     final previous = List<String>.from(_quickKeys);
     _quickKeys = next;
@@ -340,7 +409,7 @@ class CategoryIconStore extends ChangeNotifier {
           final keys = raw.whereType<String>().where(isValidKey).toSet().toList();
           _quickKeys = isLegacyAutoSelectedCollection(keys)
               ? List<String>.from(kDefaultCategoryIconKeys)
-              : keys;
+              : _uniqueFavoriteKeys(keys);
         }
       } on FormatException {
         // Keep the sensible defaults when local data is malformed.
