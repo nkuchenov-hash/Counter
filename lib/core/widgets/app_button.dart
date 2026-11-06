@@ -129,7 +129,10 @@ class AppButton extends StatelessWidget {
 
   ButtonStyle _baseStyle(BuildContext context) => ButtonStyle(
         minimumSize: WidgetStatePropertyAll(Size(0, _height)),
+        maximumSize: WidgetStatePropertyAll(Size(double.infinity, _height)),
         padding: WidgetStatePropertyAll(_padding),
+        visualDensity: VisualDensity.standard,
+        alignment: Alignment.center,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppControlTokens.radius)),
