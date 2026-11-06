@@ -118,20 +118,22 @@ void main() {
         ),
       ));
 
-      final breadcrumb = tester.widgetList<Container>(
+      final breadcrumbDecoration = tester.widgetList<Container>(
         find.descendant(
           of: find.byType(CategoryBreadcrumb),
           matching: find.byType(Container),
         ),
-      ).first;
-      final planTag = tester.widgetList<Container>(
+      ).map((widget) => widget.decoration)
+          .whereType<BoxDecoration>()
+          .firstWhere((decoration) => decoration.color != null);
+      final tagDecoration = tester.widgetList<Container>(
         find.descendant(
           of: find.byType(CategoryChip),
           matching: find.byType(Container),
         ),
-      ).first;
-      final breadcrumbDecoration = breadcrumb.decoration! as BoxDecoration;
-      final tagDecoration = planTag.decoration! as BoxDecoration;
+      ).map((widget) => widget.decoration)
+          .whereType<BoxDecoration>()
+          .firstWhere((decoration) => decoration.color != null);
       final surface = theme.colorScheme.surfaceContainerHighest;
       expect(breadcrumbDecoration.color, tagLetterChipPlate(yellow, surface));
       expect(breadcrumbDecoration.color, tagDecoration.color);
@@ -440,16 +442,17 @@ void main() {
     }
   });
 
-  test('solid dots remain visible on both light and dark surfaces', () {
+  test('category solid accents stay identical on light and dark surfaces', () {
     for (final surface in <Color>[
-      const Color(0xFFF8FAFC),
-      const Color(0xFF121820),
+      AppColors.cardSurface,
+      AppColors.darkCardSurface,
     ]) {
       for (final family in kCategoryPickerMaterialColors) {
-        if (family == kNordicFood) continue; // Preserve special user-approved yellow foreground.
-        final fg = tagSolidAccentOnSurface(family[500]!, surface);
-        expect(_contrast(fg, surface), greaterThanOrEqualTo(3.0),
-            reason: 'Solid accent for ${family[500]} on ${surface.toARGB32()}');
+        for (final tone in <int>[400, 500, 600]) {
+          final saved = family[tone]!;
+          expect(tagSolidAccentOnSurface(saved, surface), saved,
+              reason: 'A category icon must match its saved shade exactly');
+        }
       }
     }
   });
