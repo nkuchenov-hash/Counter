@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `de8f8e07` on 2026-11-06.**
+**Generated from input HEAD `56318cbb` on 2026-11-06.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 989 — each appears **exactly once** below.
+**Tracked files:** 990 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 193 |
-| `test` | 139 |
+| `test` | 140 |
 | `Brain/data` | 114 |
 | `platform build` | 83 |
 | `shared foundation` | 71 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 535 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 263 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 264 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 902 |
+| `HIGH` | 903 |
 | `MEDIUM` | 87 |
 
 ---
@@ -12282,8 +12282,8 @@ EN:
 - **Human purpose:** Foundation module `category_icon_system.dart` (core) — Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon choices. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **What this is:** Foundation module `category_icon_system.dart` (core) — Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon choices.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `CategoryIconChoice`.
-- **Key code names:** `CategoryIconChoice`
+- **Contents:** Primary symbols: `CategoryIconChoice`, `_CategoryGlyphPair`.
+- **Key code names:** `CategoryIconChoice`, `_CategoryGlyphPair`
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/widgets/notes_folder_pane.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/profile_view.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -13298,7 +13298,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppTextFieldSurface`, `AppTextField`).
 - **Key code names:** `AppTextFieldSurface`, `AppTextField`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13315,7 +13315,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_text_field`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -23193,7 +23193,7 @@ EN:
 - **Contents:** Primary symbols: `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`.
 - **Key code names:** `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`
 - **Repository role:** production UI
-- **Evidence of use:** Mentioned by tracked docs/scripts: `.github/workflows/icon-packs-qa.yml`, `docs/APP_STRUCTURE.md`, `docs/reports/LARGE_FILE_DECOMPOSITION_PLAN_2026-07-06.md`.
+- **Evidence of use:** Mentioned by tracked docs/scripts: `.github/workflows/icon-packs-qa.yml`, `docs/APP_STRUCTURE.md`, `docs/reports/LARGE_FILE_DECOMPOSITION_PLAN_2026-07-06.md`, `test/category_appearance_consistency_test.dart`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Removing it breaks a required repository capability.
 - **Confidence:** MEDIUM
@@ -23210,7 +23210,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `category_appearance_sheet.dart` на settings.
 - **Содержимое:** Основные символы: `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Упоминается в docs/scripts: `.github/workflows/icon-packs-qa.yml`, `docs/APP_STRUCTURE.md`, `docs/reports/LARGE_FILE_DECOMPOSITION_PLAN_2026-07-06.md`.
+- **Доказательства использования:** Упоминается в docs/scripts: `.github/workflows/icon-packs-qa.yml`, `docs/APP_STRUCTURE.md`, `docs/reports/LARGE_FILE_DECOMPOSITION_PLAN_2026-07-06.md`, `test/category_appearance_consistency_test.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
 - **Уверенность:** MEDIUM
@@ -34599,6 +34599,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `calendar_week_timeview_drag`.
 - **Когда открывать:** Падение CI или правка кода рядом с `calendar_week_timeview_drag`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/category_appearance_consistency_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `category_appearance_consistency_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `category_appearance_consistency_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/category_appearance_consistency_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `category_appearance_consistency_test` scenario.
+- **When to open:** CI failure or changing code near `category_appearance_consistency`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `category_appearance_consistency`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `category_appearance_consistency` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `category_appearance_consistency` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `category_appearance_consistency`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/category_appearance_consistency_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `category_appearance_consistency`.
+- **Когда открывать:** Падение CI или правка кода рядом с `category_appearance_consistency`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
