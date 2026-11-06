@@ -25,6 +25,9 @@ class AppTextField extends StatelessWidget {
     this.onEditingComplete,
     this.onTap,
     this.suffixIcon,
+    this.prefixIcon,
+    this.suffixText,
+    this.enableSuggestions = true,
     this.showSearchIcon = false,
     this.variant = AppTextFieldVariant.text,
     this.surface = AppTextFieldSurface.standard,
@@ -55,6 +58,9 @@ class AppTextField extends StatelessWidget {
   final VoidCallback? onEditingComplete;
   final VoidCallback? onTap;
   final Widget? suffixIcon;
+  final Widget? prefixIcon;
+  final String? suffixText;
+  final bool enableSuggestions;
   final bool showSearchIcon;
   final AppTextFieldVariant variant;
   final AppTextFieldSurface surface;
@@ -110,6 +116,7 @@ class AppTextField extends StatelessWidget {
         enabled: enabled,
         readOnly: readOnly,
         autocorrect: autocorrect,
+        enableSuggestions: enableSuggestions,
         autofillHints: autofillHints,
         inputFormatters: inputFormatters,
         maxLines: 1,
@@ -178,14 +185,17 @@ class AppTextField extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    if (search)
+                    if (search || prefixIcon != null)
                       SizedBox(
                         width: 40,
                         height: height,
-                        child: Icon(
-                          Icons.search_rounded,
-                          size: 18,
-                          color: meta,
+                        child: Center(
+                          child: prefixIcon ??
+                              Icon(
+                                Icons.search_rounded,
+                                size: 18,
+                                color: meta,
+                              ),
                         ),
                       )
                     else
@@ -229,6 +239,17 @@ class AppTextField extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (suffixText != null && suffixText!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8, right: 8),
+                        child: Text(
+                          suffixText!,
+                          style: TextStyle(
+                            fontSize: AppControlTokens.fontSize,
+                            color: meta,
+                          ),
+                        ),
+                      ),
                     if (suffixIcon != null)
                       SizedBox(
                         width: height,
@@ -265,11 +286,13 @@ class AppTextField extends StatelessWidget {
       floatingLabelBehavior: FloatingLabelBehavior.never,
       hintText: hintText,
       hintStyle: TextStyle(fontSize: AppControlTokens.fontSize, color: meta),
-      prefixIcon: search ? Icon(Icons.search_rounded, size: 18, color: meta) : null,
-      prefixIconConstraints: search
+      prefixIcon: prefixIcon ??
+          (search ? Icon(Icons.search_rounded, size: 18, color: meta) : null),
+      prefixIconConstraints: search || prefixIcon != null
           ? const BoxConstraints(minWidth: 40, minHeight: height)
           : null,
       suffixIcon: suffixIcon,
+      suffixText: suffixText,
       suffixIconConstraints: suffixIcon != null
           ? const BoxConstraints.tightFor(width: height, height: height)
           : null,
@@ -331,6 +354,7 @@ class AppTextField extends StatelessWidget {
             enabled: enabled,
             readOnly: readOnly,
             autocorrect: autocorrect,
+            enableSuggestions: enableSuggestions,
             autofillHints: autofillHints,
             inputFormatters: inputFormatters,
             minLines: minVisibleLines,
@@ -354,6 +378,7 @@ class AppTextField extends StatelessWidget {
             enabled: enabled,
             readOnly: readOnly,
             autocorrect: autocorrect,
+            enableSuggestions: enableSuggestions,
             autofillHints: autofillHints,
             inputFormatters: inputFormatters,
             minLines: minVisibleLines,

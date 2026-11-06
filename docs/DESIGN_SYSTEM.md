@@ -413,3 +413,5 @@ row and surface tokens, adapted to available width.
 - `AppTextField` is the **sole owner** of ordinary text and search rendering. Existing callers must select its `variant` or `showSearchIcon` without copying decoration logic. `AppQuickEntryRow` only arranges a field beside an `AppButton`; it is not a separate painter.
 - The architecture guard enumerates older raw `TextField` and `TextFormField` usage for migration, rejects new raw instances in feature/app/shared code, and strictly bans raw fields in canonicalized Auth, Profile, Settings search, category creation, and Timeline. Rich-text/block editors remain specialized, not alternate ordinary fields.
 - Web deployment is blocked unless the shared input geometry, painted pill corners, centered hint raster, and Settings vs Timeline cross-screen tests pass.
+
+- Optional leading icons, suffix icons, suffix text, and `enableSuggestions` are properties of the **same `AppTextField`**. Feature screens must pass these variants instead of creating a new decorated `TextField`; search uses `variant: AppTextFieldVariant.search`. No local fill/radius/height overrides.
