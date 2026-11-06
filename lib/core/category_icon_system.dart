@@ -182,22 +182,18 @@ bool isSelectableCategoryIconKey(String key) {
 
 /// The canonical *picker* ID for an old alias/full-Fluent ID, by exact
 /// Regular+Filled artwork identity. Never rewrite existing category records.
+final Map<_CategoryGlyphPair, String> _fluentRepresentativeKeys = {
+  for (final entry in kFullFluentCategoryIcons.entries)
+    _glyphPair(entry.value): entry.key,
+};
+
 String? categoryPickerRepresentative(String key) {
   final icon = kMatchedCategoryIcons[key] ?? kFullFluentCategoryIcons[key];
   if (icon == null) return null;
   final glyph = _glyphPair(icon);
   if (!_officialFluentPairs.contains(glyph)) return null;
   return _everydayRepresentatives[glyph] ??
-      'fluent__${key.startsWith('fluent__') ? key.substring(8) : _fluentStemForPair(glyph) ?? ''}';
-}
-
-String? _fluentStemForPair(_CategoryGlyphPair glyph) {
-  for (final entry in kFullFluentCategoryIcons.entries) {
-    if (_glyphPair(entry.value) == glyph) {
-      return entry.key.substring('fluent__'.length);
-    }
-  }
-  return null;
+      _fluentRepresentativeKeys[glyph];
 }
 
 /// Deliberately small human-first starter collection. The old v1 defaults
