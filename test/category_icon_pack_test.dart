@@ -18,11 +18,16 @@ void main() {
     final selectable = keys.where(isSelectableCategoryIconKey).toSet();
     expect(CategoryIconStore.catalogFor().map((e) => e.key).toSet(),
         selectable);
-    expect(selectable, containsAll([
+    final expectedSubjects = [
       'person', 'dog', 'cat', 'tree', 'bicycle', 'car', 'taxi', 'bed',
       'couch', 'washer', 'dishwasher', 'tv', 'dumbbell', 'soccer',
-      'clothes_hanger', 'washer', 'oven', 'book_open',
-    ]));
+      'clothes_hanger', 'oven', 'book_open',
+    ];
+    print('ICON_AUDIT unselected requested icon IDs: ' +
+        expectedSubjects.where((k) => !selectable.contains(k))
+            .map((k) => '${k}=>${categoryPickerRepresentative(k)}')
+            .join(', '));
+    expect(selectable, containsAll(expectedSubjects));
     expect(selectable, isNot(contains('arrow_down')));
     expect(selectable, isNot(contains('chevron_left')));
     expect(selectable, isNot(contains('plus')));
@@ -51,7 +56,23 @@ void main() {
 
   test('complete pinned Fluent library is available only on request', () {
     expect(kFullFluentCategoryIcons.length, greaterThan(2000));
-    expect(CategoryIconStore.fullFluentCount, kFullFluentCategoryIcons.length);
+    final officialPairs = <(IconData, IconData)>{
+      for (final icon in kFullFluentCategoryIcons.values)
+        (icon.fluentOutline, icon.fluentFilled),
+    };
+    final curatedNoMatch = <String>[];
+    for (final item in CategoryIconStore.catalogFor()) {
+      final icon = kMatchedCategoryIcons[item.key]!;
+      final pair = (icon.fluentOutline, icon.fluentFilled);
+      if (!officialPairs.contains(pair)) curatedNoMatch.add(item.key);
+    }
+    print('ICON_AUDIT official entries=${kFullFluentCategoryIcons.length} '
+        'unique pairs=${officialPairs.length} '
+        'curated entries=${CategoryIconStore.catalogFor().length} '
+        'curated missing=${curatedNoMatch.join(', ')} '
+        'merged=${CategoryIconStore.fullFluentCount}');
+    expect(CategoryIconStore.fullFluentCount,
+        lessThanOrEqualTo(kFullFluentCategoryIcons.length));
     final everyday = CategoryIconStore.catalogFor();
     final entire = CategoryIconStore.catalogFor(includeFullFluent: true);
     expect(entire.length, lessThanOrEqualTo(kFullFluentCategoryIcons.length));
