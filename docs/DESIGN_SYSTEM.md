@@ -193,13 +193,13 @@ Each mapping must answer:
 
 ### Text Fields / Search / Quick Entry
 
-- All form geometry is owned by `lib/core/app_control_tokens.dart` (`48px` standard height, `14px` radius, `16px` text, `8px` adjacent-control gap); `AppTextField`, `AppButton` and `AppIconButton` consume these values. Standard inputs/searches and their neighboring actions must align at the same 48px height on web, Android and desktop. Only specialized controls (multi-line editors, date/time inputs) may have an explicitly different height.
+- All form geometry is owned by `lib/core/app_control_tokens.dart` (`36px` compact standard height, `18px` full-pill radius, `16px` text, `8px` adjacent-control gap); `AppTextField`, `AppButton` and `AppIconButton` consume these values. Standard inputs/searches and their neighboring actions must align at the same 36px painted height on web, Android and desktop. Only specialized controls (multi-line editors, date/time inputs) may have an explicitly different height.
 - **No independent color owners in feature code.** All interface chromatic and achromatic values must come from `lib/core/app_colors.dart` / `lib/core/life_color_compat.dart` via `Theme.of(context).colorScheme`, named app tokens or saved user data. Settings, Timeline, Planning, Categories and Notes do not own alternate palettes. `scripts/audit/semantic_color_tokens.py --strict-new` blocks newly introduced hardcoded color values (including grayscale) outside the canonical owners.
 
 - Canonical standard one-line input: `AppTextField` in `lib/core/widgets/app_text_field.dart`.
-- The approved geometry is the Notes library input: **48px height, 14px radius, shared fill/border/focus treatment, 16px text**.
+- The approved geometry is the Notes library input: **36px painted height, 18px half-height pill radius, shared fill/border/focus treatment, 16px text**.
 - Search is a parameter of the same component (`showSearchIcon: true`), not a separate visual component.
-- Timeline/Planning quick entry composes `AppTextField` + `AppButton` at the exact same 48px rendered height.
+- Timeline/Planning quick entry composes `AppTextField` + `AppButton` at the exact same 36px painted height.
 - Raw feature-local `TextField` / `TextFormField` styling for standard one-line app inputs is forbidden. Feature screens must not define their own height, radius, fill, border, padding, hint typography, hover, or focus styling.
 - Exceptions are semantic editors/controls that are not standard one-line fields: Notes rich-text blocks, multiline editors, native/specialized picker internals, and other explicitly documented component internals.
 - Any future visual input change is made once in `AppTextField` and therefore changes Notes, Timeline, Planning, search, and other migrated one-line fields together.
