@@ -5,6 +5,7 @@ import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/features/settings/categories/category_icon_picker.dart';
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/settings/categories/category_tag_input_field.dart';
@@ -43,6 +44,9 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
   late final TextEditingController _primaryNameController;
   late final TextEditingController _nameEnController;
   late final TextEditingController _nameRuController;
+  final FocusNode _primaryNameFocus = FocusNode();
+  final FocusNode _nameEnFocus = FocusNode();
+  final FocusNode _nameRuFocus = FocusNode();
 
   @override
   void initState() {
@@ -75,6 +79,9 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     _primaryNameController.dispose();
     _nameEnController.dispose();
     _nameRuController.dispose();
+    _primaryNameFocus.dispose();
+    _nameEnFocus.dispose();
+    _nameRuFocus.dispose();
     super.dispose();
   }
 
@@ -349,18 +356,13 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
         Text(t(currentLocale.value, 'category_choose_icon'),
             style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
-        OutlinedButton(
+        AppButton.outlined(
           key: const ValueKey('category-full-icon-picker'),
           onPressed: () => unawaited(_showIconGallery()),
-          style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(15)),
-          child: Row(children: [
-            CategorySvgIcon(selection: _choice, size: 27),
-            const SizedBox(width: 13),
-            Expanded(child: Text(currentLocale.value == 'ru'
-                ? 'Выбрать иконку · Контур / Заливка'
-                : 'Choose icon · Outline / Filled')),
-            const Icon(Icons.chevron_right_rounded),
-          ]),
+          icon: Icons.category_outlined,
+          label: currentLocale.value == 'ru'
+              ? 'Выбрать иконку · Контур / Заливка'
+              : 'Choose icon · Outline / Filled',
         ),
       ],
     );
@@ -374,16 +376,26 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
       collapsedShape: const RoundedRectangleBorder(side: BorderSide.none),
       title: Text(t(locale, 'category_advanced')),
       children: [
-        TextField(
+        Text(t(locale, 'name_en'),
+            style: Theme.of(context).textTheme.labelMedium),
+        const SizedBox(height: 6),
+        AppTextField(
           controller: _nameEnController,
+          focusNode: _nameEnFocus,
+          hintText: t(locale, 'name_en'),
           textCapitalization: TextCapitalization.words,
-          decoration: InputDecoration(labelText: t(locale, 'name_en')),
+          textInputAction: TextInputAction.next,
         ),
-        const SizedBox(height: 10),
-        TextField(
+        const SizedBox(height: 12),
+        Text(t(locale, 'name_ru'),
+            style: Theme.of(context).textTheme.labelMedium),
+        const SizedBox(height: 6),
+        AppTextField(
           controller: _nameRuController,
+          focusNode: _nameRuFocus,
+          hintText: t(locale, 'name_ru'),
           textCapitalization: TextCapitalization.words,
-          decoration: InputDecoration(labelText: t(locale, 'name_ru')),
+          textInputAction: TextInputAction.done,
         ),
         const SizedBox(height: 14),
         Align(
@@ -509,14 +521,17 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  TextField(
+                  Text(t(locale, 'category_name_label'),
+                      style: Theme.of(context).textTheme.labelMedium),
+                  const SizedBox(height: 6),
+                  AppTextField(
+                    key: const ValueKey('category-primary-name'),
                     controller: _primaryNameController,
+                    focusNode: _primaryNameFocus,
+                    hintText: t(locale, 'category_name_label'),
                     textCapitalization: TextCapitalization.words,
-                    decoration: InputDecoration(
-                      labelText: t(locale, 'category_name_label'),
-                      isDense: true,
-                      border: const OutlineInputBorder(),
-                    ),
+                    textInputAction: TextInputAction.done,
+                    onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 18),
                   Text(
