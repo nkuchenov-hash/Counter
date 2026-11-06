@@ -86,7 +86,7 @@ class ShellSideNavigation extends StatelessWidget {
                         t(locale, 'more_menu_categories'), 4),
                       _entry(AppMenuIconRole.people, ru ? 'Люди' : 'People', 8),
                       _entry(AppMenuIconRole.menu,
-                        ru ? 'Меню' : 'Menu', 7),
+                        ru ? 'Настройки' : 'Settings', 7),
                     ],
                   ),
                 ),
