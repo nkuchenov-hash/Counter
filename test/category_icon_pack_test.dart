@@ -23,10 +23,6 @@ void main() {
       'couch', 'washer', 'dishwasher', 'tv', 'dumbbell', 'soccer',
       'clothes_hanger', 'oven', 'book_open',
     ];
-    print('ICON_AUDIT unselected requested icon IDs: ' +
-        expectedSubjects.where((k) => !selectable.contains(k))
-            .map((k) => '${k}=>${categoryPickerRepresentative(k)}')
-            .join(', '));
     expect(selectable, containsAll(expectedSubjects));
     expect(selectable, isNot(contains('arrow_down')));
     expect(selectable, isNot(contains('chevron_left')));
@@ -56,21 +52,6 @@ void main() {
 
   test('complete pinned Fluent library is available only on request', () {
     expect(kFullFluentCategoryIcons.length, greaterThan(2000));
-    final officialPairs = <(IconData, IconData)>{
-      for (final icon in kFullFluentCategoryIcons.values)
-        (icon.fluentOutline, icon.fluentFilled),
-    };
-    final curatedNoMatch = <String>[];
-    for (final item in CategoryIconStore.catalogFor()) {
-      final icon = kMatchedCategoryIcons[item.key]!;
-      final pair = (icon.fluentOutline, icon.fluentFilled);
-      if (!officialPairs.contains(pair)) curatedNoMatch.add(item.key);
-    }
-    print('ICON_AUDIT official entries=${kFullFluentCategoryIcons.length} '
-        'unique pairs=${officialPairs.length} '
-        'curated entries=${CategoryIconStore.catalogFor().length} '
-        'curated missing=${curatedNoMatch.join(', ')} '
-        'merged=${CategoryIconStore.fullFluentCount}');
     expect(CategoryIconStore.fullFluentCount,
         lessThanOrEqualTo(kFullFluentCategoryIcons.length));
     final everyday = CategoryIconStore.catalogFor();
@@ -84,6 +65,9 @@ void main() {
         (icon.fluentOutline, icon.fluentFilled),
     };
     for (final choices in [everyday, entire]) {
+      final keys = choices.map((choice) => choice.key).toList();
+      expect(keys.toSet().length, keys.length,
+          reason: 'Each semantic ID appears exactly once');
       final artworks = <(IconData, IconData)>[];
       for (final item in choices) {
         final icon = kMatchedCategoryIcons[item.key] ??
@@ -98,6 +82,10 @@ void main() {
     }
     expect(entire.any((item) => item.key == 'fluent__animal_dog'), isFalse,
         reason: 'Dog is already shown as a curated everyday icon.');
+    for (final key in ['tv', 'shopping_bag', 'food']) {
+      expect(everyday.where((item) => item.key == key).length, 1,
+          reason: '$key was present in both catalogs and must not repeat');
+    }
     expect(categoryPickerRepresentative('fluent__animal_dog'), 'dog');
     expect(categoryPickerRepresentative('fridge'), isNull);
     expect(CategoryIconStore.catalogFor().any(
