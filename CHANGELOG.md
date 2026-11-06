@@ -1,3 +1,10 @@
+## 2026-11-06 — Single canonical form input and exact field/action parity [pending checks]
+
+- Unified ordinary text, search, password, numeric, validated-form and multiline input variants in **one** `AppTextField` backed by `AppControlTokens`. Optional labels, icons, clear button, suffix text, focus, input formatters, password reveal/autofill and validation are parameters, not local input designs.
+- Migrated Menu/Settings search, Timeline/Plans quick entry, Profile name, People circles/person editor, Auth login/register, Calendar search, Notes category search/create, Categories icon picker/create, tag name/duration, generic form dialogs, and Paths edit surfaces. Rich document/chat editors retain their behavior and are not conflated with normal form inputs.
+- Paired `AppButton` now explicitly caps painted height at the same 48 px as the input and uses identical 14 px corner radius; quick-add row locks both to one height and 8 px gap. Tests assert actual input/button bounds, not only wrappers, in light/dark modes.
+- No model, DB, PocketBase, scheduling, plans, synchronization, routes or font changes. Flutter CI and browser rendered confirmation remain required before acceptance.
+
 ## 2026-11-06 — Shared canvas, stable Menu hover and desktop work width [pending verification]
 
 - Reuse one global light-theme canvas `AppColors.appBackground` (#F7F7F7) across screens; Menu settings theme inherits the existing shared semantic palette. Removed the Plans Time View secondary gray overlay.
