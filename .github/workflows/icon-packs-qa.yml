@@ -1,6 +1,15 @@
-name: Fluent and Heroicons icon QA
+name: Human category icon QA
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'lib/core/category_icon_*'
+      - 'lib/features/settings/categories/category_*'
+      - 'lib/features/profile/profile_view.dart'
+      - 'pubspec.yaml'
+      - 'test/category_icon_pack_test.dart'
+      - '.github/workflows/icon-packs-qa.yml'
   pull_request:
     branches: [main]
     paths:
@@ -29,7 +38,7 @@ jobs:
           cache: true
       - name: Resolve Flutter dependencies
         run: flutter pub get
-      - name: Verify both icon families and the Regular/Fill picker
+      - name: Verify human category library and Outline/Fill icons
         run: flutter test --no-pub test/category_icon_pack_test.dart
       - name: Check changed Flutter code for analyzer errors
         shell: bash
