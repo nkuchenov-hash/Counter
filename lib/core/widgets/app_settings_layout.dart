@@ -169,25 +169,32 @@ class AppSettingsPageBody extends StatelessWidget {
     final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
     return ColoredBox(
       color: scheme.surfaceContainerLowest,
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          // Settings and Menu use the same readable content column.
-          // A desktop sidebar must not make settings forms expand across
-          // the entire remaining viewport.
-          constraints: BoxConstraints(
-            maxWidth: settingsContentMaxWidth(context),
-          ),
-          child: ListView(
-            padding: EdgeInsets.fromLTRB(
-              desktop ? kShellDesktopContentHorizontalPadding : 16,
-              desktop ? 16 : 20,
-              desktop ? kShellDesktopContentHorizontalPadding : 20,
-              24 + MediaQuery.viewPaddingOf(context).bottom,
-            ),
-            children: children,
-          ),
+      child: ListView(
+        padding: EdgeInsets.only(
+          top: desktop ? 16 : 20,
+          bottom: 24 + MediaQuery.viewPaddingOf(context).bottom,
         ),
+        children: [
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: settingsContentMaxWidth(context),
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: desktop
+                      ? kShellDesktopContentHorizontalPadding
+                      : 16,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: children,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -651,14 +658,19 @@ class AppSettingsNavigationGroup extends StatefulWidget {
 class _AppSettingsNavigationGroupState
     extends State<AppSettingsNavigationGroup> {
   int? _hoveredIndex;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final dark = scheme.brightness == Brightness.dark;
+    // Reuse the shared palette rather than assigning a new menu-only gray.
     final hoverFill = dark
         ? scheme.onSurface.withValues(alpha: 0.06)
         : AppNeutralTones.gray200;
-    const dividerFill = Color(0xFFF0F0F0);
+    final dividerFill = dark
+        ? scheme.outlineVariant
+        : AppNeutralTones.gray150;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
@@ -668,65 +680,58 @@ class _AppSettingsNavigationGroupState
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            for (var index = 0; index < widget.children.length; index++)
+            for (var index = 0; index < widget.children.length; index++) ...[
               MouseRegion(
-                onEnter: (_) => setState(() => _hoveredIndex = index),
+                onEnter: (_) {
+                  if (_hoveredIndex != index) {
+                    setState(() => _hoveredIndex = index);
+                  }
+                },
                 onExit: (_) {
                   if (_hoveredIndex == index) {
                     setState(() => _hoveredIndex = null);
                   }
                 },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AnimatedContainer(
-                      key: ValueKey('settings-row-$index'),
-                      // Edge inset is part of the hover surface, not a dead
-                      // white gutter. 74px rows + 8px edge insets center the
-                      // 42px icons 24px from all four card edges.
-                      padding: EdgeInsets.only(
-                        top: index == 0 ? 8 : 0,
-                        bottom: index == widget.children.length - 1 ? 8 : 0,
-                      ),
-                      duration: const Duration(milliseconds: 140),
-                      curve: Curves.easeOutCubic,
-                      color: _hoveredIndex == index
-                          ? hoverFill
-                          : AppNeutralTones.transparent,
-                      child: _AppSettingsRowPosition(
-                        first: index == 0,
-                        last: index == widget.children.length - 1,
-                        child: widget.children[index],
-                      ),
+                child: ColoredBox(
+                  key: ValueKey('settings-row-$index'),
+                  color: _hoveredIndex == index
+                      ? hoverFill
+                      : scheme.surfaceContainerHigh,
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      top: index == 0 ? 8 : 0,
+                      bottom: index == widget.children.length - 1 ? 8 : 0,
                     ),
-                    if (index != widget.children.length - 1)
-                      AnimatedContainer(
-                        key: ValueKey('settings-divider-$index'),
-                        height: 1,
-                        duration: const Duration(milliseconds: 140),
-                        curve: Curves.easeOutCubic,
+                    child: _AppSettingsRowPosition(
+                      first: index == 0,
+                      last: index == widget.children.length - 1,
+                      child: widget.children[index],
+                    ),
+                  ),
+                ),
+              ),
+              if (index != widget.children.length - 1)
+                SizedBox(
+                  height: 1,
+                  child: ColoredBox(
+                    key: ValueKey('settings-divider-$index'),
+                    color: _hoveredIndex == index ||
+                            _hoveredIndex == index + 1
+                        ? hoverFill
+                        : scheme.surfaceContainerHigh,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 78, right: 20),
+                      child: ColoredBox(
+                        key: ValueKey('settings-divider-line-$index'),
                         color: _hoveredIndex == index ||
                                 _hoveredIndex == index + 1
                             ? hoverFill
-                            : scheme.surfaceContainerHigh,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 78, right: 20),
-                          child: AnimatedContainer(
-                            key: ValueKey('settings-divider-line-$index'),
-                            duration: const Duration(milliseconds: 140),
-                            curve: Curves.easeOutCubic,
-                            color: _hoveredIndex == index ||
-                                    _hoveredIndex == index + 1
-                                ? hoverFill
-                                : (dark
-                                    ? scheme.outlineVariant
-                                    : dividerFill),
-                          ),
-                        ),
+                            : dividerFill,
                       ),
-                  ],
+                    ),
+                  ),
                 ),
-              ),
+            ],
           ],
         ),
       ),
