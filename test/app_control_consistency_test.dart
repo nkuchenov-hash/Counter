@@ -8,6 +8,7 @@ import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/features/settings/categories/category_tag_input_field.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
