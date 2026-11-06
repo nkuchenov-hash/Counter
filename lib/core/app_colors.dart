@@ -65,8 +65,10 @@ abstract final class AppColors {
   // visible on white cards even while neighboring rows are hovered.
   static const Color settingsChevron = AppNeutralTones.gray400;
   static const Color darkSettingsChevron = AppNeutralTones.gray500;
-  static const Color settingsDivider = AppNeutralTones.gray300;
-  static const Color darkSettingsDivider = AppNeutralTones.gray600;
+  // Soft, still visible 1px separators against white/dark card surfaces.
+  // Use the shared neutral ramp; avoid the former harsh 300/600 contrast.
+  static const Color settingsDivider = AppNeutralTones.gray200;
+  static const Color darkSettingsDivider = AppNeutralTones.gray700;
 
   // --- Semantic (success only — not default action color) ---
   static const Color success = Color(0xFF2E7D32);
