@@ -115,6 +115,10 @@ jobs:
           print('LIFE OS web startup invariants passed')
           PY
 
+      - name: Verify canonical input and cross-screen hint alignment
+        if: steps.freshness.outputs.fresh == 'true'
+        run: flutter test test/app_control_consistency_test.dart
+
       - name: Build LIFE OS web
         if: steps.freshness.outputs.fresh == 'true'
         run: |

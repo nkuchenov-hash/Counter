@@ -325,6 +325,142 @@ foreach ($w in $rawUi) {
 }
 
 
+# --- 8a. Shared input ownership: report legacy callers and reject new copies ---
+# All ordinary fields, including Settings search and Timeline quick entry,
+# are rendered by AppTextField. Existing specialized/legacy raw editors remain
+# visible as migration debt, but may not grow unnoticed.
+$inputPattern = '\b(TextField|TextFormField)\s*\('
+$inputTotal = 0
+$inputFiles = 0
+if (Test-Path -LiteralPath $featuresRoot) {
+    $featureDartFiles = @(Get-ChildItem -LiteralPath $featuresRoot -Recurse -Filter '*.dart' -File -ErrorAction SilentlyContinue)
+    foreach ($file in $featureDartFiles) {
+        $hits = @(Select-String -LiteralPath $file.FullName -Pattern $inputPattern)
+        if ($hits.Count -gt 0) {
+            $inputTotal += $hits.Count
+            $inputFiles++
+            $rel = $file.FullName.Substring($script:RepoRoot.Length).TrimStart('\', '/').Replace('\', '/')
+            Write-Host "RAW_INPUT_INVENTORY $rel occurrences=$($hits.Count)"
+        }
+    }
+}
+if ($inputTotal -gt 0) {
+    Add-Warning "RAW_INPUT_LEGACY $inputTotal occurrences across $inputFiles feature files; ordinary fields must migrate to AppTextField"
+}
+
+# These production entrypoints must NEVER grow a second text field painter.
+$canonicalInputConsumers = @(
+    'lib/features/profile/menu/life_os_menu_page.dart',
+    'lib/features/timeline/timeline_header_controls.dart',
+    'lib/features/settings/categories/category_icon_picker.dart',
+    'lib/features/settings/categories/category_tag_input_field.dart',
+    'lib/features/settings/categories/create_category_dialog.dart',
+    'lib/features/auth/auth_view.dart',
+    'lib/features/profile/profile_view.dart'
+)
+foreach ($rel in $canonicalInputConsumers) {
+    $absolute = Join-Path $script:RepoRoot $rel
+    if (-not (Test-Path -LiteralPath $absolute)) {
+        Add-Violation "CANONICAL_INPUT_MISSING_SCREEN $rel"
+        continue
+    }
+    $body = Get-Content -LiteralPath $absolute -Raw
+    if ($body -match $inputPattern) {
+        Add-Violation "DUPLICATE_INPUT_PAINTER $rel uses raw TextField/TextFormField rather than AppTextField"
+    }
+    if ($body -notmatch '\b(AppTextField|AppQuickEntryRow)\s*\(') {
+        Add-Violation "CANONICAL_INPUT_NOT_USED $rel"
+    }
+}
+
+# Do not let any NEW feature-local raw input be introduced in a commit.
+# This is a transition guard: the inventory above identifies older fields
+# that still require a dedicated migration pass.
+$diffPath = ''
+$hasParent = (& git rev-parse 'HEAD^' 2>$null)
+if ($LASTEXITCODE -eq 0) {
+    $inputDiff = @(& git diff --no-ext-diff --unified=0 'HEAD^' HEAD -- lib/features lib/app lib/shared)
+    foreach ($line in $inputDiff) {
+        if ($line -match '^\+\+\+ b/(.+\.dart)
+$pathCompatDir = Get-RepoPath @('lib', 'data', 'paths', 'compatibility')
+if (Test-Path -LiteralPath $pathCompatDir) {
+    Add-Violation "PATH_COMPATIBILITY_REGRESSION lib/data/paths/compatibility must not return"
+}
+
+$pathMarkerLeaks = Find-DartFilesMatching 'lib' 'LIFEOS_PATH::|LIFEOS_PATH_ACTION|LIFEOS_WEEK_ROUTINE'
+foreach ($rel in $pathMarkerLeaks) {
+    Add-Violation "PATH_MARKER_RUNTIME_LEAK $rel"
+}
+
+$pathToPlannerImports = Find-DartFilesMatching 'lib/data/paths' "import 'package:counter/data/plans/"
+foreach ($rel in $pathToPlannerImports) {
+    Add-Violation "PATH_DOMAIN_IMPORTS_PLANNER $rel"
+}
+
+$plannerPathImports = Find-DartFilesMatching 'lib/data/plans' "import 'package:counter/data/paths/"
+foreach ($rel in $plannerPathImports) {
+    if ($rel -ne 'lib/data/plans/path_planner_bridge.dart') {
+        Add-Violation "PATH_PLANNER_BRIDGE_BYPASS $rel"
+    }
+}
+
+$projectSpecificPathLeaks = Find-DartFilesMatching 'lib/data/paths' '(?i)KADR|КАДР|GOLOS|Игропоиск|Igropoisk|Price Reporter|Etnika|ZenMoney'
+foreach ($rel in $projectSpecificPathLeaks) {
+    Add-Violation "PATH_PROJECT_TEMPLATE_LEAK $rel"
+}
+
+$pathRepositoryBody = Get-Content -LiteralPath (Get-RepoPath @('lib','data','paths','path_repository.dart')) -Raw
+if ($pathRepositoryBody -match "import 'package:pocketbase/|\.collection\(") {
+    Add-Violation "PATH_REPOSITORY_DIRECT_PB_IO path_repository.dart must delegate to DatabaseService path_service part"
+}
+
+$pathServiceBody = Get-Content -LiteralPath (Get-RepoPath @('lib','data','paths','path_service.dart')) -Raw
+if ($pathServiceBody -notmatch "part of '../database_service.dart';") {
+    Add-Violation "PATH_SERVICE_NOT_DATABASE_PART lib/data/paths/path_service.dart"
+}
+
+# --- Report ---
+Write-Host ''
+Write-Host '=== architecture_guard summary ===' -ForegroundColor Cyan
+Write-Host "Mode: $(if ($Strict) { 'STRICT (exit 1 on any violation)' } else { 'WARNING (exit 0; LARGE_FILE/RAW_UI are warnings only)' })"
+Write-Host "Violations: $($violations.Count)"
+Write-Host "Warnings: $($warnings.Count)"
+Write-Host ''
+
+if ($violations.Count -gt 0) {
+    Write-Host '--- Violations ---' -ForegroundColor Red
+    $violations | ForEach-Object { Write-Host $_ }
+}
+
+if ($warnings.Count -gt 0) {
+    Write-Host '--- Warnings ---' -ForegroundColor DarkYellow
+    $warnings | Select-Object -First 25 | ForEach-Object { Write-Host $_ }
+    if ($warnings.Count -gt 25) { Write-Host "... and $($warnings.Count - 25) more" }
+}
+
+if ($Strict -and $violations.Count -gt 0) {
+    Write-Host ''
+    Write-Host ('STRICT: exiting 1 with ' + $violations.Count + ' violation(s)') -ForegroundColor Red
+    exit 1
+}
+
+if (-not $Strict -and $violations.Count -gt 0) {
+    Write-Host ''
+    Write-Host "Note: $($violations.Count) violation(s) reported (non-strict mode, exit 0). Re-run with -Strict to fail CI." -ForegroundColor Yellow
+}
+
+Write-Host ''
+Write-Host 'architecture_guard: done (exit 0)' -ForegroundColor Green
+exit 0
+) {
+            $diffPath = $Matches[1]
+        }
+        elseif ($line -match '^\+[^+]' -and $line -match $inputPattern) {
+            Add-Violation "NEW_RAW_INPUT_FORBIDDEN $diffPath: use AppTextField variant instead of TextField/TextFormField"
+        }
+    }
+}
+
 # --- 8b. Durable Paths ownership (hard structural law) ---
 $pathCompatDir = Get-RepoPath @('lib', 'data', 'paths', 'compatibility')
 if (Test-Path -LiteralPath $pathCompatDir) {

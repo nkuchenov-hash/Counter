@@ -407,3 +407,9 @@ row and surface tokens, adapted to available width.
 - Regression tests must verify **both visual symmetry and the aesthetic invariant** `radius == height/2` (a capsule rather than weakly rounded rectangle); a geometrically aligned but oversized/square-ish pair is a failure.
 
 - The one-line visual hint is drawn by the canonical input line box itself, not by Flutter's default `InputDecorator` hint baseline. Native editor hint semantics are retained; visual hint visibility is driven by the shared controller. Timeline text entry and Settings search render the same vertically centered 36 px capsule, including inside Settings' neutral `Theme` wrapper.
+
+### Enforced input ownership (2026-11-06)
+
+- `AppTextField` is the **sole owner** of ordinary text and search rendering. Existing callers must select its `variant` or `showSearchIcon` without copying decoration logic. `AppQuickEntryRow` only arranges a field beside an `AppButton`; it is not a separate painter.
+- The architecture guard enumerates older raw `TextField` and `TextFormField` usage for migration, rejects new raw instances in feature/app/shared code, and strictly bans raw fields in canonicalized Auth, Profile, Settings search, category creation, and Timeline. Rich-text/block editors remain specialized, not alternate ordinary fields.
+- Web deployment is blocked unless the shared input geometry, painted pill corners, centered hint raster, and Settings vs Timeline cross-screen tests pass.
