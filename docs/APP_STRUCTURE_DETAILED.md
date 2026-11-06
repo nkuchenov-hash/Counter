@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `cb826e35` on 2026-11-05.**
+**Generated from input HEAD `dd862d20` on 2026-11-06.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 984 — each appears **exactly once** below.
+**Tracked files:** 986 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,10 +27,10 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 193 |
-| `test` | 138 |
+| `test` | 139 |
 | `Brain/data` | 114 |
 | `platform build` | 83 |
-| `shared foundation` | 69 |
+| `shared foundation` | 70 |
 | `developer tool` | 65 |
 | `governing documentation` | 45 |
 | `platform resource` | 44 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 532 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 261 |
+| `PROVEN_REQUIRED` | 533 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 262 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 897 |
+| `HIGH` | 899 |
 | `MEDIUM` | 87 |
 
 ---
@@ -7633,7 +7633,7 @@ EN:
 - **Why needed:** Preserves audit/parity decisions so later work does not re-litigate the same findings.
 - **Contents:** Markdown report body for `CATEGORY ICON INTERSECTION 2026-11-05`.
 - **Repository role:** historical engineering record
-- **Evidence of use:** (1) Dated engineering report retained as decision history; linked from structure/changelog audits — not runtime code. (2) Referenced by: `docs/APP_STRUCTURE.md`, `lib/core/category_icon_catalog_generated.g.dart`.
+- **Evidence of use:** (1) Dated engineering report retained as decision history; linked from structure/changelog audits — not runtime code. (2) Referenced by: `docs/APP_STRUCTURE.md`.
 - **Necessity status:** HISTORICAL_RECORD
 - **Deletion consequence:** Lost historical decision evidence for that investigation.
 - **Confidence:** MEDIUM
@@ -8040,7 +8040,7 @@ EN:
 - **Why needed:** Tracked because `docs/reports` needs `HEROICONS_FLUENT_324_MAPPING.csv` for build, CI, or maintenance.
 - **Contents:** Open `HEROICONS_FLUENT_324_MAPPING.csv` when working on `docs/reports` (see folder section above).
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `docs/APP_STRUCTURE.md`, `docs/reports/HEROICONS_FLUENT_MAPPING_REVIEW.md`, `test/category_icon_pack_test.dart`.
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `docs/APP_STRUCTURE.md`, `docs/reports/HEROICONS_FLUENT_MAPPING_REVIEW.md`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -8077,7 +8077,7 @@ EN:
 - **Why needed:** Preserves audit/parity decisions so later work does not re-litigate the same findings.
 - **Contents:** Markdown report body for `HEROICONS FLUENT MAPPING REVIEW`.
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `docs/APP_STRUCTURE.md`, `test/category_icon_pack_test.dart`.
+- **Evidence of use:** Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing).
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -12049,6 +12049,44 @@ RU:
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
 
 
+### `lib/core/app_control_tokens.dart`
+
+EN:
+
+- **Human purpose:** Foundation module `app_control_tokens.dart` (core) — app control tokens. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What this is:** Foundation module `app_control_tokens.dart` (core) — app control tokens.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **Contents:** Primary symbols: `AppControlTokens`.
+- **Key code names:** `AppControlTokens`
+- **Repository role:** shared foundation
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/theme.dart`, `lib/core/widgets/app_button.dart`, `lib/core/widgets/app_icon_button.dart`, `lib/core/widgets/app_text_field.dart`, `lib/core/widgets/compact_nav_controls.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared foundation
+- **Responsibilities:** app control tokens
+- **When to open:** When behavior tied to `app_control_tokens.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: app control tokens
+
+RU:
+
+- **Зачем файл человеку:** Foundation-модуль `app_control_tokens.dart` (core) — app control tokens. Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Что это:** Foundation-модуль `app_control_tokens.dart` (core) — app control tokens.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `app_control_tokens.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Импортируется production Dart: `lib/core/theme.dart`, `lib/core/widgets/app_button.dart`, `lib/core/widgets/app_icon_button.dart`, `lib/core/widgets/app_text_field.dart`, `lib/core/widgets/compact_nav_controls.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общая foundation
+- **Обязанности:** Foundation-логика: app control tokens.
+- **Когда открывать:** Когда ломается поведение, связанное с `app_control_tokens.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/core/app_icons.dart`
 
 EN:
@@ -12207,8 +12245,8 @@ EN:
 - **Human purpose:** Foundation module `category_icon_system.dart` (core) — Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon choices. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **What this is:** Foundation module `category_icon_system.dart` (core) — Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon choices.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `CategoryIconPack`, `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`.
-- **Key code names:** `CategoryIconPack`, `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`
+- **Contents:** Primary symbols: `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`.
+- **Key code names:** `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/widgets/notes_folder_pane.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/profile_view.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -13186,7 +13224,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppTextFieldSurface`, `AppTextField`).
 - **Key code names:** `AppTextFieldSurface`, `AppTextField`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/notes/notes_glm_surface.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/settings/categories/category_list_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13203,7 +13241,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_text_field`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/notes/notes_glm_surface.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/settings/categories/category_list_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -34110,6 +34148,44 @@ RU:
 - **Когда открывать:** Owner или CI запускает `sync_locales.dart` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `lib/l10n/langs/HELP HOW TO UPDATE the languages`.
+
+
+### `test/app_control_consistency_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `app_control_consistency_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `app_control_consistency_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/app_control_consistency_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `app_control_consistency_test` scenario.
+- **When to open:** CI failure or changing code near `app_control_consistency`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `app_control_consistency`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `app_control_consistency` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `app_control_consistency` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `app_control_consistency`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/app_control_consistency_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `app_control_consistency`.
+- **Когда открывать:** Падение CI или правка кода рядом с `app_control_consistency`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
 
 
 ### `test/app_hotkey_keycaps_test.dart`
