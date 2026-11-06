@@ -12,6 +12,7 @@ import 'package:counter/core/tag_contrast.dart';
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 
@@ -105,12 +106,10 @@ class _TagManagerPageState extends State<TagManagerPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    TextField(
+                    AppTextField(
                       controller: nameCtrl,
                       autofocus: true,
-                      decoration: InputDecoration(
-                        labelText: t(loc, 'tag_name_label'),
-                      ),
+                      labelText: t(loc, 'tag_name_label'),
                       textCapitalization: TextCapitalization.sentences,
                     ),
                     const SizedBox(height: 12),

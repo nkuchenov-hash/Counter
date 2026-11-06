@@ -443,14 +443,11 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
   Widget _searchField() => AppTextField(
     controller: _search,
     focusNode: _searchFocus,
-    textInputAction: TextInputAction.search,
+    variant: AppTextFieldVariant.search,
     hintText: _ru ? 'Найти настройку' : 'Find a setting',
-    showSearchIcon: true,
-    suffixIcon: _search.text.isEmpty ? null : IconButton(
-      tooltip: _ru ? 'Очистить поиск' : 'Clear search',
-      icon: Icon(AppMenuIcons.icon(AppMenuIconRole.close)),
-      onPressed: _search.clear,
-    ),
+    textInputAction: TextInputAction.search,
+    clearable: true,
+    clearTooltip: _ru ? 'Очистить поиск' : 'Clear search',
   );
 
   Widget _home(BuildContext context) {

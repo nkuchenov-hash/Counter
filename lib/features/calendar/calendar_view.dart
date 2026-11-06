@@ -6,6 +6,7 @@
 import 'dart:async';
 
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -19,7 +20,6 @@ import 'package:counter/features/calendar/calendar_week_grid.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 /// Calendar tab: Google Calendar–style browsing + focused-day details.
 class CalendarView extends StatefulWidget {
   const CalendarView({
@@ -30,7 +30,6 @@ class CalendarView extends StatefulWidget {
     required this.onEditTask,
     required this.onStartRecordFromTask,
   });
-
   final DateTime selectedDate;
   final DateTime focusedDay;
   final Future<void> Function(DateTime selectedDay, DateTime focusedDay)
@@ -43,11 +42,9 @@ class CalendarView extends StatefulWidget {
     String? sourcePlanPocketRecordId,
   })
   onStartRecordFromTask;
-
   @override
   State<CalendarView> createState() => _CalendarViewState();
 }
-
 class _CalendarViewState extends State<CalendarView>
     with AutomaticKeepAliveClientMixin {
   late DateTime _selectedDay;
@@ -62,10 +59,9 @@ class _CalendarViewState extends State<CalendarView>
   DateTime? _lastCalendarPlanDragEnd;
   Stream<List<PlanningTask>>? _dayStream;
   StreamSubscription<void>? _planningRefreshSub;
-
+  final _calendarSearchController = TextEditingController();
   @override
   bool get wantKeepAlive => true;
-
   @override
   void initState() {
     super.initState();
@@ -81,13 +77,12 @@ class _CalendarViewState extends State<CalendarView>
       },
     );
   }
-
   @override
   void dispose() {
     _planningRefreshSub?.cancel();
+    _calendarSearchController.dispose();
     super.dispose();
   }
-
   Stream<List<PlanningTask>> _createDayStream(DateTime day) {
     return DatabaseService.instance.planningStream(
       day,
@@ -282,6 +277,7 @@ class _CalendarViewState extends State<CalendarView>
       return a.title.toLowerCase().compareTo(b.title.toLowerCase());
     });
     var query = '';
+    _calendarSearchController.clear();
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -305,13 +301,14 @@ class _CalendarViewState extends State<CalendarView>
               height: MediaQuery.sizeOf(context).height * 0.72,
               child: Column(
                 children: [
-                  TextField(
+                  AppTextField(
+                    controller: _calendarSearchController,
+                    variant: AppTextFieldVariant.search,
                     autofocus: true,
-                    decoration: InputDecoration(
-                      hintText: t(currentLocale.value, 'calendar_search_hint'),
-                      prefixIcon: const Icon(Icons.search_rounded),
-                    ),
+                    hintText: t(currentLocale.value, 'calendar_search_hint'),
                     onChanged: (value) => setSheetState(() => query = value),
+                    clearable: true,
+                    clearTooltip: t(currentLocale.value, 'close'),
                   ),
                   const SizedBox(height: 12),
                   Expanded(

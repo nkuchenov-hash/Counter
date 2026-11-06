@@ -177,30 +177,34 @@ class AppQuickEntryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: AppTextField(
-            controller: controller,
-            focusNode: focusNode,
-            hintText: hintText,
-            textInputAction: TextInputAction.done,
-            showSearchIcon: false,
-            onSubmitted: onSubmitted,
+    // A single tight row constraint makes the field and *painted* action
+    // identical in height at every viewport / Flutter button density.
+    return SizedBox(
+      height: kAppQuickEntryControlHeight,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: AppTextField(
+              controller: controller,
+              focusNode: focusNode,
+              hintText: hintText,
+              textInputAction: TextInputAction.done,
+              variant: AppTextFieldVariant.text,
+              onSubmitted: onSubmitted,
+            ),
           ),
-        ),
-        const SizedBox(width: AppControlTokens.horizontalGap),
-        SizedBox(
-          height: kAppQuickEntryControlHeight,
-          child: AppButton.primary(
+          const SizedBox(width: AppControlTokens.horizontalGap),
+          AppButton.primary(
             label: actionLabel,
             icon: actionIcon,
             onPressed: onAction,
             loading: loading,
             size: AppButtonSize.m,
           ),
-        ),
-      ],
+        ],
+      ),
     );
+
   }
 }

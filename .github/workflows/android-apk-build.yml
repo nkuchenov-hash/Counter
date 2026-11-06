@@ -77,6 +77,9 @@ jobs:
       - name: Verify persistent People/Menu shell and styling contracts
         run: flutter test test/shell_form_factor_test.dart
 
+      - name: Verify universal input variants and painted button geometry
+        run: flutter test test/app_control_consistency_test.dart
+
       - name: Analyze runtime app
         run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 

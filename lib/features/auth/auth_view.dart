@@ -6,6 +6,7 @@
 import 'dart:async';
 
 import 'package:counter/core/theme.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/data/pb_config.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -278,23 +279,16 @@ class _AuthViewState extends State<AuthView> {
     }
   }
 
-  InputDecoration _passwordDecoration({
-    required String label,
+  Widget _passwordVisibilityButton({
     required bool obscure,
     required VoidCallback onToggle,
-  }) {
-    return InputDecoration(
-      labelText: label,
-      border: const OutlineInputBorder(),
-      suffixIcon: IconButton(
-        icon: Icon(
-          obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-        ),
-        tooltip: obscure ? _t('auth_show_password') : _t('auth_hide_password'),
-        onPressed: onToggle,
-      ),
-    );
-  }
+  }) => IconButton(
+    icon: Icon(
+      obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+    ),
+    tooltip: obscure ? _t('auth_show_password') : _t('auth_hide_password'),
+    onPressed: onToggle,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -416,29 +410,27 @@ class _AuthViewState extends State<AuthView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          TextField(
+                          AppTextField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             autocorrect: false,
                             autofillHints: const [AutofillHints.email],
                             textInputAction: TextInputAction.next,
-                            decoration: InputDecoration(
-                              labelText: _t('auth_email_label'),
-                              hintText: _t('auth_email_hint'),
-                              border: const OutlineInputBorder(),
-                            ),
+                            labelText: _t('auth_email_label'),
+                            hintText: _t('auth_email_hint'),
                           ),
                           const SizedBox(height: 12),
-                          TextField(
+                          AppTextField(
                             controller: _passwordController,
+                            variant: AppTextFieldVariant.password,
                             obscureText: _obscurePassword,
                             autofillHints: const [AutofillHints.password],
                             textInputAction: _loginMode
                                 ? TextInputAction.done
                                 : TextInputAction.next,
                             onSubmitted: (_) => _loginMode ? _signIn() : null,
-                            decoration: _passwordDecoration(
-                              label: _t('auth_password_label'),
+                            labelText: _t('auth_password_label'),
+                            suffixIcon: _passwordVisibilityButton(
                               obscure: _obscurePassword,
                               onToggle: () => setState(
                                 () => _obscurePassword = !_obscurePassword,
@@ -456,14 +448,15 @@ class _AuthViewState extends State<AuthView> {
                           ] else
                             const SizedBox(height: 12),
                           if (!_loginMode) ...[
-                            TextField(
+                            AppTextField(
                               controller: _confirmController,
+                              variant: AppTextFieldVariant.password,
                               obscureText: _obscureConfirm,
                               autofillHints: const [AutofillHints.newPassword],
                               textInputAction: TextInputAction.done,
                               onSubmitted: (_) => _register(),
-                              decoration: _passwordDecoration(
-                                label: _t('auth_confirm_password_label'),
+                              labelText: _t('auth_confirm_password_label'),
+                              suffixIcon: _passwordVisibilityButton(
                                 obscure: _obscureConfirm,
                                 onToggle: () => setState(
                                   () => _obscureConfirm = !_obscureConfirm,
