@@ -569,9 +569,16 @@ class _CategoriesPageState extends State<CategoriesPage> {
     final dropPosition = _dropTargetCategoryId == r.id ? _dropPosition : null;
     final tile = Material(
         key: _rowAnchors.putIfAbsent(r.id, () => GlobalKey()),
+        // Selection uses a neutral plate; an accent-colored row compounded
+        // with the icon plate and made the same category look different.
         color: dropPosition == CategoryDropPosition.inside
             ? tint.withValues(alpha: 0.15)
-            : (selected ? tint.withValues(alpha: 0.07) : scheme.surface),
+            : (selected
+                ? Color.alphaBlend(
+                    scheme.onSurface.withValues(alpha: 0.055),
+                    scheme.surface,
+                  )
+                : scheme.surface),
         elevation: 0,
         shadowColor: tint,
         borderRadius: BorderRadius.circular(12),
