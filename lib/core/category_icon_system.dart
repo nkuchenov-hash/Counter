@@ -173,6 +173,12 @@ final List<String> kDefaultCategoryIconKeys = List<String>.unmodifiable(
 bool isLegacyAutoSelectedCollection(Iterable<String> source) {
   final keys = source.toSet();
   if (keys.isEmpty || keys.length != source.length) return false;
+  const firstDefault = <String>[
+    'home', 'heart', 'briefcase', 'calendar', 'folder', 'clock', 'star',
+    'book', 'cart', 'cake', 'moon', 'bell', 'lock', 'camera', 'wallet',
+    'gift', 'phone', 'document', 'cloud', 'tag', 'trophy', 'map',
+    'key', 'light_bulb', 'pencil', 'musical_note',
+  ];
   final oldIntersection = kMatchedCategoryIcons.keys.take(103).toSet();
   final oldExpanded = kMatchedCategoryIcons.keys.take(144).toSet();
   final oldAll = <String>{
@@ -186,7 +192,9 @@ bool isLegacyAutoSelectedCollection(Iterable<String> source) {
       'inbox', 'newspaper', 'ticket', 'wifi', 'archive_box',
     ].where(kMatchedCategoryIcons.containsKey),
   };
-  return (keys.length == oldIntersection.length &&
+  return (keys.length == firstDefault.length &&
+          keys.containsAll(firstDefault)) ||
+      (keys.length == oldIntersection.length &&
           keys.containsAll(oldIntersection)) ||
       (keys.length == oldExpanded.length && keys.containsAll(oldExpanded)) ||
       (keys.length == oldAll.length && keys.containsAll(oldAll));
