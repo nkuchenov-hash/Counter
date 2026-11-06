@@ -148,6 +148,11 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('manage-category-icons')));
     await tester.pumpAndSettle();
     final grid = find.byKey(const ValueKey('matched-icon-collection-grid'));
+    final selectedGridFirst = tester.widget<GridView>(grid);
+    expect((selectedGridFirst.childrenDelegate as SliverChildBuilderDelegate)
+        .childCount, 3);
+    await tester.tap(find.byKey(const ValueKey('everyday-icon-catalog')));
+    await tester.pumpAndSettle();
     final everydayGrid = tester.widget<GridView>(grid);
     expect((everydayGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
         CategoryIconStore.catalogFor().length);
