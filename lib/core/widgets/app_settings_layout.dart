@@ -17,7 +17,6 @@ bool settingsIsWideDesktop(BuildContext context) =>
 /// Black/neutral accent theme for settings tabs and toggles.
 ThemeData settingsNeutralTheme(BuildContext context) {
   final base = Theme.of(context);
-  final dark = base.brightness == Brightness.dark;
   // Settings cannot define its own palette. Use the same semantic tokens,
   // neutral canvas and card surfaces as the rest of Life OS.
   final scheme = base.colorScheme.copyWith(
