@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:counter/core/app_control_tokens.dart';
 import 'package:counter/core/theme.dart';
+import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
@@ -277,6 +278,132 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('Timeline and Settings search paint their hint glyphs '
+      'at the SAME vertical center in the canonical capsule',
+      (tester) async {
+    final timeline = TextEditingController();
+    final settings = TextEditingController();
+    final focus = FocusNode();
+    addTearDown(() {
+      timeline.dispose();
+      settings.dispose();
+      focus.dispose();
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPhysicalSize();
+    });
+
+    const ratio = 1.5;
+    tester.view.devicePixelRatio = ratio;
+    tester.view.physicalSize = const Size(1200, 700);
+    const surfaceKey = ValueKey('cross-screen-canonical-control-pixels');
+    await tester.pumpWidget(MaterialApp(
+      theme: appLightTheme,
+      home: Scaffold(
+        body: RepaintBoundary(
+          key: surfaceKey,
+          child: ColoredBox(
+            color: const Color(0xffabbcca),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  AppQuickEntryRow(
+                    controller: timeline,
+                    focusNode: focus,
+                    hintText: 'Добавить запись',
+                    actionLabel: 'Старт',
+                    actionIcon: Icons.play_arrow_rounded,
+                    onAction: () {},
+                  ),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: Builder(
+                      builder: (context) => Theme(
+                        data: settingsNeutralTheme(context),
+                        child: AppSettingsPageBody(
+                          children: [
+                            AppTextField(
+                              controller: settings,
+                              variant: AppTextFieldVariant.search,
+                              hintText: 'Найти настройку',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.pump();
+
+    final timelineField = find.descendant(
+      of: find.byType(AppQuickEntryRow),
+      matching: find.byType(AppTextField),
+    );
+    final settingsField = find.descendant(
+      of: find.byType(AppSettingsPageBody),
+      matching: find.byType(AppTextField),
+    );
+    final r1 = tester.getRect(timelineField);
+    final r2 = tester.getRect(settingsField);
+    expect(r1.height, AppControlTokens.height);
+    expect(r2.height, AppControlTokens.height);
+    final boundary = tester.renderObject<RenderRepaintBoundary>(
+      find.byKey(surfaceKey),
+    );
+    final boundaryRect = tester.getRect(find.byKey(surfaceKey));
+    final imageData = await tester.runAsync(() async {
+      final image = await boundary.toImage(pixelRatio: ratio);
+      try {
+        final bytes = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+        return (width: image.width, pixels: bytes!.buffer.asUint8List());
+      } finally {
+        image.dispose();
+      }
+    });
+    expect(imageData, isNotNull);
+    final img = imageData!;
+    double hintOpticalCenter(Rect rect, {required bool search}) {
+      final left = ((rect.left + (search ? 42 : 18) -
+              boundaryRect.left) * ratio).ceil();
+      final right = ((rect.left + (search ? 210 : 200) -
+              boundaryRect.left) * ratio).floor();
+      final top = ((rect.top + 3 - boundaryRect.top) * ratio).ceil();
+      final bottom = ((rect.bottom - 3 - boundaryRect.top) * ratio).floor();
+      final visibleRows = <int>[];
+      for (var y = top; y < bottom; y++) {
+        var glyphPixels = 0;
+        for (var x = left; x < right; x++) {
+          final offset = (y * img.width + x) * 4;
+          if (img.pixels[offset] < 165 &&
+              img.pixels[offset + 1] < 165 &&
+              img.pixels[offset + 2] < 165) {
+            glyphPixels++;
+          }
+        }
+        if (glyphPixels >= 2) visibleRows.add(y);
+      }
+      expect(visibleRows, isNotEmpty);
+      return (visibleRows.first + visibleRows.last) / (2 * ratio) +
+          boundaryRect.top;
+    }
+
+    final timelineHintCenter = hintOpticalCenter(r1, search: false);
+    final settingsHintCenter = hintOpticalCenter(r2, search: true);
+    expect((timelineHintCenter - r1.center.dy).abs(),
+        lessThanOrEqualTo(3),
+        reason: 'Timeline hint must be optically centered in the pill');
+    expect((settingsHintCenter - r2.center.dy).abs(),
+        lessThanOrEqualTo(3),
+        reason: 'Settings search hint must be optically centered in the pill');
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('tag input and its adjacent Add button share painted geometry',
       (tester) async {

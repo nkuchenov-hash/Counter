@@ -1,3 +1,8 @@
+## 2026-11-06 — Center rendered hints in every canonical single-line field
+
+- Fixed the remaining inconsistency visible between Timeline and Settings: InputDecorator had different hint glyph placement even with shared outer dimensions. A single controller-reactive hint overlay inside `AppTextField` now owns the visible text baseline, independently of the surrounding screen/theme.
+- Added pixel-level regression coverage mounting Timeline quick entry alongside Settings search through `AppSettingsPageBody` and `settingsNeutralTheme`; both hint glyph bounding boxes must be centered within three logical pixels. No record, planning, persistence or backend logic modified.
+
 ## 2026-11-06 — Restore compact pill geometry for all canonical inputs
 
 - Corrected a design regression: previously an oversized Start button drove the input to an equally large, nearly square 48 px / 14 px radius shape. The desired design is the opposite: one compact 36 px-tall pill, 18 px fully rounded ends, centered 16 px text, optional leading search icon, and a matching adjacent action. No separate Timeline form widget.

@@ -405,3 +405,5 @@ row and surface tokens, adapted to available width.
 - The same `AppTextField` is used for typing and search; the optional 18 px leading search icon is centered vertically and does not change the outer height. Keep text left-aligned inside the input while centering it vertically.
 - `AppButton.m` shares the capsule height and exact radius; its medium horizontal padding is 14 px. Keep these measurements in `AppControlTokens`, never locally in Timeline or Planning.
 - Regression tests must verify **both visual symmetry and the aesthetic invariant** `radius == height/2` (a capsule rather than weakly rounded rectangle); a geometrically aligned but oversized/square-ish pair is a failure.
+
+- The one-line visual hint is drawn by the canonical input line box itself, not by Flutter's default `InputDecorator` hint baseline. Native editor hint semantics are retained; visual hint visibility is driven by the shared controller. Timeline text entry and Settings search render the same vertically centered 36 px capsule, including inside Settings' neutral `Theme` wrapper.

@@ -133,10 +133,15 @@ class AppTextField extends StatelessWidget {
           constraints: const BoxConstraints.tightFor(
             height: AppControlTokens.singleLineEditorHeight,
           ),
-          hintText: hintText,
+          // Preserve the native accessibility hint, but render its visible
+          // glyphs from the same vertically centered line box as typed text.
+          // InputDecorator applies its own baseline/strut rules to hintText
+          // even when the outer field is constrained; that caused the
+          // Settings search placeholder to sit at the top of its capsule.
+          hintText: hintText.isEmpty ? null : hintText,
           hintStyle: TextStyle(
             fontSize: AppControlTokens.fontSize,
-            color: meta,
+            color: meta.withValues(alpha: 0),
           ),
           filled: false,
           border: InputBorder.none,
@@ -191,7 +196,36 @@ class AppTextField extends StatelessWidget {
                       child: Center(
                         child: SizedBox(
                           height: AppControlTokens.singleLineEditorHeight,
-                          child: inner,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              // One visible hint implementation for plain
+                              // text, Timeline quick entry and Settings search.
+                              ValueListenableBuilder<TextEditingValue>(
+                                valueListenable: controller,
+                                builder: (context, value, _) =>
+                                    value.text.isNotEmpty || hintText.isEmpty
+                                        ? const SizedBox.shrink()
+                                        : IgnorePointer(
+                                            child: Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(
+                                                hintText,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      AppControlTokens.fontSize,
+                                                  height: 1.2,
+                                                  color: meta,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                              ),
+                              inner,
+                            ],
+                          ),
                         ),
                       ),
                     ),
