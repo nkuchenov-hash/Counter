@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 990 — each appears **exactly once** below.
+**Tracked files:** 991 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -19616,6 +19616,44 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `component_lab_cards_demo.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/dev/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/dev/component_lab_inputs_demo.dart`
+
+EN:
+
+- **Human purpose:** Show the actual canonical `AppTextField` with editable text, search, email, numeric, password, multiline and adjacent action variants in the admin-only Component Lab.
+- **What this is:** Focused Flutter `part` of `component_lab_view.dart`, containing `_InputsDemo` and `_InputsDemoState`.
+- **Why needed:** Design-system changes can be reviewed in one UI before release; field and button geometry have an executable visual reference.
+- **Contents:** Mock-data-only input controllers and widgets.
+- **Key code names:** `_InputsDemo`, `_InputsDemoState`, `AppTextField`, `AppQuickEntryRow`.
+- **Repository role:** production UI (admin-only diagnostics).
+- **Evidence of use:** Included via `part 'component_lab_inputs_demo.dart'` in `lib/features/dev/component_lab_view.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Component Lab would fail to compile without updating its reference.
+- **Confidence:** HIGH
+- **Owner / layer:** Component Lab UI, no database writes.
+- **Responsibilities:** Display canonical inputs, expose variations and quick-entry button parity for review.
+- **When to open:** When adding input variants or investigating inconsistent fields or adjacent action sizes.
+- **Can it be deleted?** No, not while referenced by the Component Lab.
+- **Connected to:** `lib/core/widgets/app_text_field.dart`, `lib/core/widgets/compact_nav_controls.dart`, `docs/DESIGN_SYSTEM.md`.
+
+RU:
+
+- **Зачем файл человеку:** Показать в Component Lab единый элемент `AppTextField` во всех вариантах, включая поиск и кнопку справа.
+- **Что это:** Flutter `part` для `component_lab_view.dart`, классы `_InputsDemo` и `_InputsDemoState`.
+- **Зачем:** Проверять все виды ввода в одном месте, а не создавать отдельное оформление на экранах.
+- **Содержимое:** Демонстрационные контроллеры и поля без пользовательских данных.
+- **Роль в репозитории:** production UI, только для администраторов.
+- **Доказательства использования:** Подключён директивой `part` в `component_lab_view.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции Component Lab.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Component Lab.
+- **Обязанности:** Демонстрировать единый инпут и равные размеры соседней кнопки.
+- **Когда открывать:** При изменении общего поля ввода, поиска и быстрых форм.
+- **Можно удалить?** Нет, пока указан в `component_lab_view.dart`.
+- **Связано с:** `app_text_field.dart`, `compact_nav_controls.dart`, `DESIGN_SYSTEM.md`.
 
 
 ### `lib/features/dev/component_lab_notes_demo.dart`
