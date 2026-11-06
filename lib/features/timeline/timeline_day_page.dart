@@ -216,16 +216,13 @@ class TimelineLazyRecordListState extends State<TimelineLazyRecordList> {
         ms: sw.elapsedMilliseconds,
       );
     }
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final desktop = shellUsesSideNavigation(viewportWidth);
     return ListView.builder(
-      padding: EdgeInsets.fromLTRB(
-        shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
-            ? kShellDesktopContentHorizontalPadding
-            : 12,
-        12,
-        shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
-            ? kShellDesktopContentHorizontalPadding
-            : 12,
-        12,
+      key: const ValueKey('timeline-full-width-scroll-viewport'),
+      padding: EdgeInsets.symmetric(
+        horizontal: desktop ? 0 : 12,
+        vertical: 12,
       ),
       physics: const AlwaysScrollableScrollPhysics(),
       cacheExtent: 320,
@@ -252,20 +249,37 @@ class TimelineLazyRecordListState extends State<TimelineLazyRecordList> {
             _activeOtherDayStr != widget.selectedDateString) {
           otherDayBanner = _activeOtherDayStr;
         }
-        return Padding(
-          padding: EdgeInsets.only(bottom: index < maps.length - 1 ? 10 : 0),
-          child: KeyedSubtree(
-            key: tileKey,
-            child: RepaintBoundary(
-              child: TimelineRecordCard(
-                vm: vm,
-                currentActivityFromDate: otherDayBanner,
-                onStop: widget.onStop,
-                onDelete: widget.onDelete,
-                onEdit: () => widget.onEdit(data),
-              ),
+        final card = KeyedSubtree(
+          key: tileKey,
+          child: RepaintBoundary(
+            child: TimelineRecordCard(
+              vm: vm,
+              currentActivityFromDate: otherDayBanner,
+              onStop: widget.onStop,
+              onDelete: widget.onDelete,
+              onEdit: () => widget.onEdit(data),
             ),
           ),
+        );
+        return Padding(
+          padding: EdgeInsets.only(bottom: index < maps.length - 1 ? 10 : 0),
+          child: desktop
+              ? Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    key: ValueKey<String>('timeline-record-content-frame-$index'),
+                    constraints: BoxConstraints(
+                      maxWidth: shellReadableContentMaxWidth(viewportWidth),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: kShellDesktopContentHorizontalPadding,
+                      ),
+                      child: card,
+                    ),
+                  ),
+                )
+              : card,
         );
       },
     );

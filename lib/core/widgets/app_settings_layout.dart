@@ -4,12 +4,8 @@ import 'package:counter/core/app_colors.dart';
 import 'package:flutter/material.dart';
 
 /// Max content width for settings screens by form factor.
-double settingsContentMaxWidth(BuildContext context) {
-  final w = MediaQuery.sizeOf(context).width;
-  if (w >= 1100) return 960;
-  if (w >= 760) return 840;
-  return w;
-}
+double settingsContentMaxWidth(BuildContext context) =>
+    shellReadableContentMaxWidth(MediaQuery.sizeOf(context).width);
 
 bool settingsIsWideDesktop(BuildContext context) =>
     MediaQuery.sizeOf(context).width >= 960;

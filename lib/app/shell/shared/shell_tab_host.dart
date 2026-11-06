@@ -49,7 +49,8 @@ mixin ShellTabHost on ShellTaskActions, ShellEditHosts {
       active: shellPageIndex == 0,
       ms: sw.elapsedMilliseconds,
     );
-    return _readableWorkPage(child);
+    // Keep the Timeline scroll viewport full width, centering only content.
+    return child;
   }
 
   Widget buildPlanningSwipeTab() {

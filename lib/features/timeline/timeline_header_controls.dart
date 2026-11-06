@@ -85,7 +85,7 @@ class TimelineHeaderControls extends StatelessWidget {
         ? t(loc, 'start_timer')
         : t(loc, 'new_record_btn');
 
-    return Column(
+    final headerContent = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         if (desktopShell)
@@ -118,8 +118,27 @@ class TimelineHeaderControls extends StatelessWidget {
           ),
           const SizedBox(height: 8),
         ],
-        const Divider(height: 1),
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: desktopShell ? kShellDesktopContentHorizontalPadding : 16,
+          ),
+          child: const Divider(
+            key: ValueKey('timeline-content-divider'),
+            height: 1,
+          ),
+        ),
       ],
+    );
+    if (!desktopShell) return headerContent;
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        key: const ValueKey('timeline-header-content-frame'),
+        constraints: BoxConstraints(
+          maxWidth: shellReadableContentMaxWidth(MediaQuery.sizeOf(context).width),
+        ),
+        child: headerContent,
+      ),
     );
   }
 }

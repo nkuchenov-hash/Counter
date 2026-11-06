@@ -253,6 +253,8 @@ class _ContinuousTimelineHistoryState extends State<ContinuousTimelineHistory> {
 
   @override
   Widget build(BuildContext context) {
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final desktop = shellUsesSideNavigation(viewportWidth);
     final slivers = <Widget>[];
     for (var dayIndex = 0; dayIndex < _loadedDays; dayIndex++) {
       final date = _topDate.subtract(Duration(days: dayIndex));
@@ -291,7 +293,8 @@ class _ContinuousTimelineHistoryState extends State<ContinuousTimelineHistory> {
 
       slivers.add(
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
+          padding: EdgeInsets.fromLTRB(desktop ? 0 : 12, 10,
+              desktop ? 0 : 12, 16),
           sliver: SliverList.builder(
             itemCount: records.length,
             itemBuilder: (context, index) {
@@ -311,14 +314,31 @@ class _ContinuousTimelineHistoryState extends State<ContinuousTimelineHistory> {
                 padding: EdgeInsets.only(
                   bottom: index == records.length - 1 ? 0 : 10,
                 ),
-                child: KeyedSubtree(
-                  key: key,
-                  child: RepaintBoundary(
-                    child: TimelineRecordCard(
-                      vm: vm,
-                      onStop: widget.onStop,
-                      onDelete: widget.onDelete,
-                      onEdit: () => widget.onEdit(data),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: desktop
+                          ? shellReadableContentMaxWidth(viewportWidth)
+                          : viewportWidth,
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: desktop
+                            ? kShellDesktopContentHorizontalPadding
+                            : 0,
+                      ),
+                      child: KeyedSubtree(
+                        key: key,
+                        child: RepaintBoundary(
+                          child: TimelineRecordCard(
+                            vm: vm,
+                            onStop: widget.onStop,
+                            onDelete: widget.onDelete,
+                            onEdit: () => widget.onEdit(data),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),

@@ -15,6 +15,13 @@ const double kShellDesktopContentHorizontalPadding = 24;
 /// Canonical top inset for the first row of every primary desktop section.
 const double kShellDesktopContentTopPadding = 6;
 
+/// Shared readable content width. Scroll viewports stay full-width.
+double shellReadableContentMaxWidth(double viewportWidth) {
+  if (viewportWidth >= 1100) return 960;
+  if (viewportWidth >= 760) return 840;
+  return viewportWidth;
+}
+
 bool shellUsesSideNavigation(double width) =>
     width >= kShellDesktopNavBreakpoint;
 
