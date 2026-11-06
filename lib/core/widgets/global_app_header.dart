@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import 'package:counter/core/widgets/app_bar_live_clock.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/timezone_quick_picker.dart';
 import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -106,20 +107,17 @@ class _HeaderDayPickerState extends State<_HeaderDayPicker> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
+            AppTextField(
               controller: _dateController,
               keyboardType: TextInputType.datetime,
               textInputAction: TextInputAction.go,
-              decoration: InputDecoration(
-                labelText: t(widget.locale, 'header_date_picker_enter'),
-                hintText: 'DD.MM.YYYY',
-                errorText: _dateError,
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  tooltip: t(widget.locale, 'header_date_picker_go'),
-                  icon: const Icon(Icons.arrow_forward_rounded),
-                  onPressed: _submitManualDate,
-                ),
+              labelText: t(widget.locale, 'header_date_picker_enter'),
+              hintText: 'DD.MM.YYYY',
+              errorText: _dateError,
+              suffixIcon: IconButton(
+                tooltip: t(widget.locale, 'header_date_picker_go'),
+                icon: const Icon(Icons.arrow_forward_rounded),
+                onPressed: _submitManualDate,
               ),
               onChanged: (_) {
                 if (_dateError != null) setState(() => _dateError = null);

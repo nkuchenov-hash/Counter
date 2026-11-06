@@ -17,6 +17,7 @@ class AppTextField extends StatelessWidget {
     this.focusNode,
     this.hintText = '',
     this.labelText,
+    this.errorText,
     this.textInputAction,
     this.textCapitalization = TextCapitalization.none,
     this.keyboardType,
@@ -50,6 +51,7 @@ class AppTextField extends StatelessWidget {
   final FocusNode? focusNode;
   final String hintText;
   final String? labelText;
+  final String? errorText;
   final TextInputAction? textInputAction;
   final TextCapitalization textCapitalization;
   final TextInputType? keyboardType;
@@ -412,19 +414,34 @@ class AppTextField extends StatelessWidget {
 
   Widget _withLabel(BuildContext context, Widget control) {
     final label = labelText;
-    if (label == null || label.isEmpty) return control;
+    final error = errorText;
+    if ((label == null || label.isEmpty) &&
+        (error == null || error.isEmpty)) {
+      return control;
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+        if (label != null && label.isNotEmpty) ...[
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
-        ),
-        const SizedBox(height: 6),
+          const SizedBox(height: 6),
+        ],
         control,
+        if (error != null && error.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            error,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ],
       ],
     );
   }

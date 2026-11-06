@@ -5,6 +5,7 @@
 // yearless birthdays: no year and no time are shown in the picker UI.
 // ---------------------------------------------------------------------------
 
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -430,13 +431,9 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
             ),
           ),
           const SizedBox(height: 8),
-          TextFormField(
+          AppTextField(
             controller: _dateTextController,
-            decoration: InputDecoration(
-              labelText: mat.dateInputLabel,
-              border: const OutlineInputBorder(),
-              isDense: true,
-            ),
+            labelText: mat.dateInputLabel,
             keyboardType: TextInputType.datetime,
             textInputAction: TextInputAction.next,
             onChanged: _onDateTextChanged,
