@@ -92,7 +92,7 @@ void main() {
       'lib/features/settings/categories/category_icon_picker.dart',
     ).readAsStringSync();
     expect(picker, contains('store.quickCatalog'));
-    expect(picker, contains("final catalog = switch (_view)"));
+    expect(picker, contains("final catalog = query.isNotEmpty ? all : switch (_view)"));
     expect(picker, contains('category-icon-all-fluent'));
     expect(picker, contains('category-icon-my-icons'));
     expect(picker, contains('category-icon-favorite-toggle'));
