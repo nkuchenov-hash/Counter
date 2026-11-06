@@ -1,3 +1,10 @@
+## 2026-11-06 — Shared canvas, stable Menu hover and desktop work width [pending verification]
+
+- Reuse one global light-theme canvas `AppColors.appBackground` (#F7F7F7) across screens; Menu settings theme inherits the existing shared semantic palette. Removed the Plans Time View secondary gray overlay.
+- Move Menu scrolling outside the centered content column so native scrollbar is at the far-right page edge. Replace layered animated hover/dividers with one static row hover using the existing neutral token; the divider blends without flicker.
+- Align **only desktop Timeline and Plans** to Menu's centered maximum content width. Other section widths, all navigation, date swipes, scheduling, PocketBase and bundled Onest remain unchanged.
+- Added tests for viewport scroll width, row hover paint, shared palette and scoped width. CI and rendered verification remain required.
+
 ## 2026-11-05 — Menu card rhythm and neutral contrast [pending CI and visual acceptance]
 
 - Fixed the cramped grouped Menu layout with 74 px minimum row height, 24 px icon-to-card edge spacing and reduced unused intergroup whitespace; each row remains one full-width hit/hover target.
