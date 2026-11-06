@@ -302,7 +302,7 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
                   decoration: BoxDecoration(
                     color: picked
                         ? cs.primaryContainer.withValues(alpha: .35)
-                        : Colors.transparent,
+                        : Theme.of(context).colorScheme.surface.withValues(alpha: 0),
                     borderRadius: BorderRadius.circular(10),
                     border: picked
                         ? Border.all(color: cs.primary, width: 2) : null,
