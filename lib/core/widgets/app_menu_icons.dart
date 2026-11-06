@@ -73,7 +73,7 @@ abstract final class AppMenuIcons {
     AppMenuIconRole.feedback => Icons.feedback_outlined,
     AppMenuIconRole.arrow => Icons.chevron_right_rounded,
     AppMenuIconRole.timeline => Icons.timeline_outlined,
-    AppMenuIconRole.menu => Icons.menu_rounded,
+    AppMenuIconRole.menu => Icons.settings_outlined,
     AppMenuIconRole.back => Icons.arrow_back_rounded,
     AppMenuIconRole.close => Icons.close_rounded,
   };
