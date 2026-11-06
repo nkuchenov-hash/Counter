@@ -54,10 +54,10 @@ ALLOW = "semantic-color-audit: external"
 # Existing technical debt is reported separately; new violations are a CI
 # failure on every push/PR. Only named design-token owners can define colors.
 RAW_COLOR_TOKEN = re.compile(
-    r"\\b(?:const\\s+)?Color\\s*\\(\\s*0x[0-9A-Fa-f]{8}\\s*\\)"
-    r"|\\b(?:Colors|CupertinoColors)\\.[A-Za-z]\\w*"
-    r"|\\bColor\\.(?:fromARGB|fromRGBO)\\s*\\("
-    r"|\\bMaterialColor\\s*\\(\\s*0x[0-9A-Fa-f]{8}"
+    r"\b(?:const\s+)?Color\s*\(\s*0x[0-9A-Fa-f]{8}\s*\)"
+    r"|\b(?:Colors|CupertinoColors)\.[A-Za-z]\w*"
+    r"|\bColor\.(?:fromARGB|fromRGBO)\s*\("
+    r"|\bMaterialColor\s*\(\s*0x[0-9A-Fa-f]{8}"
 )
 
 
