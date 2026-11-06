@@ -165,7 +165,7 @@ void main() {
       expect(chrome, contains("desktopShell ? 'LIFE OS'"));
       expect(chrome, contains("initialSection: 'account'"));
       expect(chrome, contains('embeddedInShell: true'));
-      expect(sidebar, contains('Color(0xFFF4F4F4)'));
+      expect(sidebar, contains('AppNeutralTones.gray100'));
       expect(sidebar, isNot(contains("'LIFE OS'")));
       expect(routes, contains('setShellPageIndex(9)'));
       expect(routes, contains('9 => 5,'));
@@ -234,7 +234,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('hover targets exactly one row and naturally fades its dividers',
+    testWidgets('hover paints one row while keeping dividers legible',
         (tester) async {
       await tester.pumpWidget(MaterialApp(
         theme: appLightTheme,
@@ -255,7 +255,7 @@ void main() {
           tester.widget<ColoredBox>(
               find.byKey(ValueKey<String>(key))).color;
       const hover = AppNeutralTones.gray200;
-      const divider = Color(0xFFF0F0F0);
+      const divider = AppColors.settingsDivider;
       expect(hover.computeLuminance(),
           lessThan(const Color(0xFFF7F7F7).computeLuminance()));
       expect(fill('settings-row-0'), Colors.white);
@@ -269,15 +269,15 @@ void main() {
       expect(fill('settings-row-0'), Colors.white);
       expect(fill('settings-row-1'), hover);
       expect(fill('settings-row-2'), Colors.white);
-      expect(fill('settings-divider-line-0'), hover);
-      expect(fill('settings-divider-line-1'), hover);
+      expect(fill('settings-divider-line-0'), divider);
+      expect(fill('settings-divider-line-1'), divider);
 
       await mouse.moveTo(tester.getCenter(find.text('Three')));
       await tester.pumpAndSettle();
       expect(fill('settings-row-1'), Colors.white);
       expect(fill('settings-row-2'), hover);
       expect(fill('settings-divider-line-0'), divider);
-      expect(fill('settings-divider-line-1'), hover);
+      expect(fill('settings-divider-line-1'), divider);
 
       await mouse.removePointer();
       await tester.pumpAndSettle();
@@ -320,7 +320,7 @@ void main() {
         home: Scaffold(body: AppSettingsPageBody(
           children: [
             for (var i = 0; i < 25; i++)
-              SizedBox(height: 64, child: Text('Row \$i')),
+              SizedBox(height: 64, child: Text('Row $i')),
           ],
         )),
       ));
