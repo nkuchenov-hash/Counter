@@ -1,3 +1,10 @@
+## Single universal input system and paired actions (2026-11-06)
+
+- Every app-owned standard editable field (search, text, number, password, labeled form, multiline) is one `AppTextField` component with explicit variants, never a feature-local `TextField` border/fill/radius design. Specialized rich content editors preserve their document/chat behavior.
+- The ordinary field's visible rect and adjacent medium `AppButton` visible rect are exactly 48 logical px tall and have the same 14 logical px radius. They align at top and bottom with an 8 px gap in `AppQuickEntryRow`, on both desktop and mobile, light and dark. Painted widget bounds, not wrapper bounds, are the acceptance criterion.
+- The central `AppControlTokens` source governs size and typography. Search displays a leading search icon and an in-field clear action; password reveal, numeric unit suffixes, hints, labels, autofill, validation and multiline are variants of that same source.
+- Do not resize `Start` / `Add` independently of input. Preserve submit callbacks, keyboard next/done behavior, persisted quick-add drafts, search filters, user text and FocusNode ownership. UI consistency cannot remove functionality.
+
 ## Consistent Profile and menu chrome (refined 2026-11-05)
 
 - Preserve Onest, shared routing and data flows. All light-theme main pages share the single `AppColors.appBackground` neutral canvas `#F7F7F7`. The sidebar stays visually separate, `#F4F4F4`; Menu cards are white and borderless.
