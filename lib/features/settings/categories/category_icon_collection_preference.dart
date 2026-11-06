@@ -107,9 +107,9 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
   late final Set<String> _picked;
   final TextEditingController _search = TextEditingController();
   bool _saving = false;
-  bool _browsing = false; // Start with the user's preferred collection.
+  bool _showFullFluent = false;
+  bool _selectedOnly = false;
   String _group = 'Все';
-  static const groups = kCategorySubjectGroups;
 
   @override
   void initState() {
@@ -123,6 +123,8 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
           ..clear()
           ..addAll(CategoryIconStore.instance.quickKeys);
       });
+    }).catchError((Object error) {
+      debugPrint('Unable to read saved icon favorites: $error');
     }));
   }
 
@@ -136,20 +138,22 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
   }
 
   Future<void> _save() async {
-    if (_picked.isEmpty || _saving) return;
+    if (_saving) return;
     setState(() => _saving = true);
     try {
       final existing = CategoryIconStore.instance.quickKeys;
-      // Preserve the user's existing order and append newly chosen concepts.
-      final order = [
+      final all = CategoryIconStore.catalogFor(includeFullFluent: true);
+      final order = <String>[
         ...existing.where(_picked.contains),
-        ...CategoryIconStore.catalogFor()
-            .map((e) => e.key).where((key) =>
-                _picked.contains(key) && !existing.contains(key)),
+        ...all.map((e) => e.key).where(
+            (key) => _picked.contains(key) && !existing.contains(key)),
+        ..._picked.where((key) => !existing.contains(key) &&
+            !all.any((e) => e.key == key)),
       ];
       await CategoryIconStore.instance.setQuickKeys(order);
       if (mounted) Navigator.of(context).pop();
-    } catch (_) {
+    } catch (error, stack) {
+      debugPrint('Could not persist chosen category icons: $error\n$stack');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(widget.isRussian
@@ -167,120 +171,141 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
     final store = CategoryIconStore.instance;
     final cs = Theme.of(context).colorScheme;
     final query = _search.text.trim().toLowerCase();
-    final approved = CategoryIconStore.catalogFor();
-    final byKey = {for (final icon in approved) icon.key: icon};
-    final selectedOrder = <String>[
-      ...store.quickKeys.where(_picked.contains),
-      ..._picked.where((key) => !store.quickKeys.contains(key)),
-    ];
-    // This preference editor shows the selected favorites; the category
-    // picker separately exposes every approved icon, favorites first.
-    final entries = _browsing
-        ? approved.where((icon) => !_picked.contains(icon.key)).where((item) {
-            if (_group != 'Все' && item.group != _group) return false;
-            return query.isEmpty ||
-                [item.key, item.en, item.ru, item.synonyms]
-                    .join(' ').toLowerCase().contains(query);
-          }).toList()
-        : <CategoryIconChoice>[
-            for (final key in selectedOrder)
-              if (byKey.containsKey(key)) byKey[key]!,
-          ];
+    final approved =
+        CategoryIconStore.catalogFor(includeFullFluent: _showFullFluent);
+    final labels = <String, CategoryIconChoice>{
+      for (final item in CategoryIconStore.catalogFor(includeFullFluent: true))
+        item.key: item,
+    };
+    final entries = _selectedOnly
+        ? <CategoryIconChoice>[
+            for (final key in _picked)
+              if (labels.containsKey(key))
+                labels[key]!
+              else
+                CategoryIconChoice(key, key.replaceAll('_', ' '),
+                    key.replaceAll('_', ' '), 'Прочее', ''),
+          ]
+        : approved;
+    final visible = entries.where((item) {
+      if (!_selectedOnly && !_showFullFluent &&
+          _group != 'Все' && _group != item.group) return false;
+      return query.isEmpty ||
+          [item.key, item.en, item.ru, item.synonyms]
+              .join(' ').toLowerCase().contains(query);
+    }).toList();
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(18, 14, 12, 6),
+        padding: const EdgeInsets.fromLTRB(18, 14, 12, 5),
         child: Row(children: [
           Expanded(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(_browsing
-                  ? (widget.isRussian ? 'Добавить иконки' : 'Add icons')
-                  : (widget.isRussian ? 'Мой набор иконок' : 'My icon collection'),
-                style: Theme.of(context).textTheme.titleLarge),
-              Text(_browsing
-                  ? (widget.isRussian
-                      ? 'Доступно ${entries.length} значков'
-                      : '${entries.length} category icons available')
-                  : (widget.isRussian
-                      ? 'В моём наборе: ${_picked.length} · build ${AppBuildInfo.gitCommit}'
-                      : '${_picked.length} in my collection · build ${AppBuildInfo.gitCommit}'),
+              Text(widget.isRussian ? 'Мои иконки' : 'My icons',
+                  style: Theme.of(context).textTheme.titleLarge),
+              Text(widget.isRussian
+                  ? 'Выбрано: ${_picked.length} · нажмите значок, чтобы добавить или убрать'
+                  : '${_picked.length} selected · tap an icon to add or remove',
                 style: Theme.of(context).textTheme.bodySmall),
             ],
           )),
-          IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.close_rounded),
+          IconButton(onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close_rounded)),
+        ]),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(18, 6, 18, 7),
+        child: Wrap(spacing: 7, runSpacing: 6, children: [
+          ChoiceChip(
+            key: const ValueKey('everyday-icon-catalog'),
+            label: Text(widget.isRussian ? 'Повседневные' : 'Everyday'),
+            selected: !_showFullFluent && !_selectedOnly,
+            onSelected: (_) => setState(() {
+              _showFullFluent = false;
+              _selectedOnly = false;
+              _group = 'Все';
+            }),
+          ),
+          ChoiceChip(
+            key: const ValueKey('selected-icon-catalog'),
+            label: Text(widget.isRussian
+                ? 'Мои (${_picked.length})'
+                : 'Selected (${_picked.length})'),
+            selected: _selectedOnly,
+            onSelected: (_) => setState(() {
+              _selectedOnly = !_selectedOnly;
+              _group = 'Все';
+            }),
+          ),
+          ChoiceChip(
+            key: const ValueKey('toggle-icon-catalog'),
+            label: Text(widget.isRussian
+                ? 'Вся Fluent (${CategoryIconStore.fullFluentCount})'
+                : 'All Fluent (${CategoryIconStore.fullFluentCount})'),
+            selected: _showFullFluent && !_selectedOnly,
+            onSelected: (_) => setState(() {
+              _showFullFluent = true;
+              _selectedOnly = false;
+              _group = 'Все';
+            }),
           ),
         ]),
       ),
       Padding(
-        padding: const EdgeInsets.fromLTRB(18, 4, 18, 4),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: OutlinedButton.icon(
-            key: const ValueKey('toggle-icon-catalog'),
-            onPressed: _saving ? null : () => setState(() {
-              _browsing = !_browsing;
-              _group = 'Все';
-              _search.clear();
-            }),
-            icon: Icon(_browsing ? Icons.arrow_back_rounded : Icons.add_rounded),
-            label: Text(_browsing
-                ? (widget.isRussian ? 'Мои иконки' : 'Back to my icons')
-                : (widget.isRussian ? 'Добавить иконки' : 'Add icons')),
-          ),
-        ),
-      ),
-      if (_browsing) ...[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(18, 10, 18, 2),
-          child: TextField(
-            controller: _search,
-            decoration: InputDecoration(
-              isDense: true,
-              prefixIcon: const Icon(Icons.search),
-              hintText: widget.isRussian
-                  ? 'Поиск по иконкам'
-                  : 'Search category icons',
-              border: const OutlineInputBorder(),
-              suffixIcon: query.isEmpty ? null : IconButton(
-                onPressed: _search.clear,
-                icon: const Icon(Icons.close),
-              ),
+        padding: const EdgeInsets.fromLTRB(18, 3, 18, 3),
+        child: TextField(
+          controller: _search,
+          decoration: InputDecoration(
+            isDense: true,
+            prefixIcon: const Icon(Icons.search),
+            hintText: widget.isRussian
+                ? 'Поиск: собака, машина, спорт…'
+                : 'Search: dog, car, sports…',
+            border: const OutlineInputBorder(),
+            suffixIcon: query.isEmpty ? null : IconButton(
+              onPressed: _search.clear,
+              icon: const Icon(Icons.close),
             ),
           ),
         ),
-        SizedBox(height: 49, child: ListView.separated(
+      ),
+      if (!_showFullFluent && !_selectedOnly)
+        SizedBox(height: 50, child: ListView.separated(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.fromLTRB(18, 7, 18, 0),
-          itemCount: groups.length,
+          padding: const EdgeInsets.fromLTRB(18, 7, 18, 2),
+          itemCount: kCategorySubjectGroups.length,
           separatorBuilder: (_, _) => const SizedBox(width: 6),
           itemBuilder: (_, i) => ChoiceChip(
-            label: Text(categorySubjectGroupName(groups[i],
+            label: Text(categorySubjectGroupName(kCategorySubjectGroups[i],
                 russian: widget.isRussian)),
-            selected: groups[i] == _group,
+            selected: kCategorySubjectGroups[i] == _group,
             showCheckmark: false,
-            onSelected: (_) => setState(() => _group = groups[i]),
+            onSelected: (_) => setState(
+                () => _group = kCategorySubjectGroups[i]),
           ),
         )),
-      ],
-      Expanded(child: entries.isEmpty
-          ? Center(child: Text(_browsing
-              ? (widget.isRussian ? 'Все доступные иконки уже добавлены' : 'All matching icons added')
-              : (widget.isRussian ? 'Нет иконок' : 'No icons')))
+      Padding(
+        padding: const EdgeInsets.fromLTRB(18, 2, 18, 0),
+        child: Text(widget.isRussian
+            ? 'Показано ${visible.length} · выбранные отмечены галочкой'
+            : '${visible.length} shown · checkmark means selected',
+            style: Theme.of(context).textTheme.bodySmall),
+      ),
+      Expanded(child: visible.isEmpty
+          ? Center(child: Text(widget.isRussian
+              ? 'Нет иконок по этому запросу'
+              : 'No icons match this filter'))
           : GridView.builder(
         key: const ValueKey('matched-icon-collection-grid'),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 58,
-          mainAxisExtent: 52,
-          mainAxisSpacing: 5,
-          crossAxisSpacing: 5,
+          maxCrossAxisExtent: 58, mainAxisExtent: 54,
+          mainAxisSpacing: 5, crossAxisSpacing: 5,
         ),
-        itemCount: entries.length,
+        itemCount: visible.length,
         itemBuilder: (context, index) {
-          final item = entries[index];
+          final item = visible[index];
           final picked = _picked.contains(item.key);
           final label = widget.isRussian ? item.ru : item.en;
           return Tooltip(
@@ -290,27 +315,35 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
               child: InkWell(
                 key: ValueKey('custom-icon-${item.key}'),
                 onTap: () => setState(() {
-                  if (_browsing) {
-                    _picked.add(item.key);
-                  } else if (_picked.length > 1) {
+                  if (picked) {
                     _picked.remove(item.key);
+                  } else {
+                    _picked.add(item.key);
                   }
                 }),
                 borderRadius: BorderRadius.circular(10),
                 child: Center(child: Container(
-                  width: 44, height: 44,
+                  width: 45, height: 45,
                   decoration: BoxDecoration(
                     color: picked
                         ? cs.primaryContainer.withValues(alpha: .35)
-                        : Theme.of(context).colorScheme.surface.withValues(alpha: 0),
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                     border: picked
-                        ? Border.all(color: cs.primary, width: 2) : null,
+                        ? Border.all(color: cs.primary, width: 1.5)
+                        : null,
                   ),
-                  child: Center(child: CategorySvgIcon(
-                    selection: CategoryIconSelection(item.key),
-                    size: 26,
-                  )),
+                  child: Stack(children: [
+                    Center(child: CategorySvgIcon(
+                      selection: CategoryIconSelection(item.key),
+                      size: 26,
+                    )),
+                    if (picked) Positioned(
+                      right: 0, bottom: 0,
+                      child: Icon(Icons.check_circle, color: cs.primary,
+                          size: 13),
+                    ),
+                  ]),
                 )),
               ),
             ),
@@ -318,8 +351,13 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
         },
       )),
       Padding(
-        padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
+        padding: const EdgeInsets.fromLTRB(18, 7, 18, 14),
         child: SafeArea(top: false, child: Row(children: [
+          TextButton(
+            key: const ValueKey('clear-icon-collection'),
+            onPressed: _saving ? null : () => setState(_picked.clear),
+            child: Text(widget.isRussian ? 'Убрать все' : 'Clear all'),
+          ),
           TextButton(
             key: const ValueKey('reset-default-icons'),
             onPressed: _saving ? null : () => setState(() {
@@ -327,18 +365,13 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
                 ..clear()
                 ..addAll(kDefaultCategoryIconKeys);
             }),
-            child: Text(widget.isRussian ? 'По умолчанию' : 'Reset defaults'),
+            child: Text(widget.isRussian ? 'Стандартные' : 'Starter set'),
           ),
           const Spacer(),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(widget.isRussian ? 'Отмена' : 'Cancel'),
-          ),
-          const SizedBox(width: 8),
           FilledButton(
             key: const ValueKey('save-icon-collection'),
-            onPressed: _picked.isEmpty || _saving ? null : _save,
-            child: Text(widget.isRussian ? 'Сохранить' : 'Save'),
+            onPressed: _saving ? null : _save,
+            child: Text(widget.isRussian ? 'Готово' : 'Done'),
           ),
         ])),
       ),
