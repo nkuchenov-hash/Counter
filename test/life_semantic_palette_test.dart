@@ -543,12 +543,15 @@ void main() {
           dark ? AppColors.darkSettingsDivider : AppColors.settingsDivider;
       final expectedChevron =
           dark ? AppColors.darkSettingsChevron : AppColors.settingsChevron;
-      expect(
-        tester.widget<ColoredBox>(
-          find.byKey(const ValueKey('settings-divider-line-0')),
-        ).color,
-        expectedDivider,
+      final divider = find.byKey(
+        const ValueKey('settings-divider-line-0'),
       );
+      expect(tester.widget<ColoredBox>(divider).color, expectedDivider);
+      // A color-only assertion cannot catch an invisible zero-size line.
+      expect(tester.getSize(divider).width, greaterThan(100));
+      expect(tester.getSize(divider).height, 1);
+      final groupSize = tester.getSize(find.byType(AppSettingsNavigationGroup));
+      expect(tester.getSize(divider).width, lessThan(groupSize.width));
       final chevron = tester.widget<Icon>(
         find.byIcon(AppMenuIcons.icon(AppMenuIconRole.arrow)).first,
       );
@@ -558,13 +561,10 @@ void main() {
       await mouse.addPointer(location: Offset.zero);
       await mouse.moveTo(tester.getCenter(find.text('Planning')));
       await tester.pump();
-      expect(
-        tester.widget<ColoredBox>(
-          find.byKey(const ValueKey('settings-divider-line-0')),
-        ).color,
-        expectedDivider,
-        reason: 'Hover must not erase Settings row separators',
-      );
+      expect(tester.widget<ColoredBox>(divider).color, expectedDivider,
+          reason: 'Hover must not erase Settings row separators');
+      expect(tester.getSize(divider).width, greaterThan(100),
+          reason: 'Hover must not collapse the divider geometry');
       await mouse.removePointer();
     }
     expect(tester.takeException(), isNull);
