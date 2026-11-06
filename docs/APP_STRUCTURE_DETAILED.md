@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `fbd1751a` on 2026-11-06.**
+**Generated from input HEAD `de8f8e07` on 2026-11-06.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 988 — each appears **exactly once** below.
+**Tracked files:** 989 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -30,7 +30,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `test` | 139 |
 | `Brain/data` | 114 |
 | `platform build` | 83 |
-| `shared foundation` | 70 |
+| `shared foundation` | 71 |
 | `developer tool` | 66 |
 | `governing documentation` | 45 |
 | `platform resource` | 44 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 534 |
+| `PROVEN_REQUIRED` | 535 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 263 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 901 |
+| `HIGH` | 902 |
 | `MEDIUM` | 87 |
 
 ---
@@ -12247,7 +12247,7 @@ EN:
 - **Contents:** Primary symbols: `MatchedCategoryIcon`.
 - **Key code names:** `MatchedCategoryIcon`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_icon_system.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_icon_system.dart`, `lib/core/fluent_full_catalog_generated.g.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12264,7 +12264,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `category_icon_catalog_generated.g.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/category_icon_system.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/category_icon_system.dart`, `lib/core/fluent_full_catalog_generated.g.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12461,6 +12461,43 @@ RU:
 - **Когда открывать:** Новый разработчик не знает какие ключи нужны в `env.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/env/`, `docs/APP_STRUCTURE.md`.
+
+
+### `lib/core/fluent_full_catalog_generated.g.dart`
+
+EN:
+
+- **Human purpose:** Foundation module `fluent_full_catalog_generated.g.dart` (core) — Generated, pinned Fluent icon catalog shared by all category picker displays. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What this is:** Foundation module `fluent_full_catalog_generated.g.dart` (core) — Generated, pinned Fluent icon catalog shared by all category picker displays.
+- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **Contents:** Dart module `fluent_full_catalog_generated.g.dart` — open file for classes and helpers.
+- **Repository role:** shared foundation
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_icon_system.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared foundation
+- **Responsibilities:** Generated, pinned Fluent icon catalog shared by all category picker displays
+- **When to open:** When behavior tied to `fluent_full_catalog_generated.g.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Generated, pinned Fluent icon catalog shared by all category picker displays
+
+RU:
+
+- **Зачем файл человеку:** Foundation-модуль `fluent_full_catalog_generated.g.dart` (core) — Generated, pinned Fluent icon catalog shared by all category picker displays. Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Что это:** Foundation-модуль `fluent_full_catalog_generated.g.dart` (core) — Generated, pinned Fluent icon catalog shared by all category picker displays.
+- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Содержимое:** Dart-модуль `fluent_full_catalog_generated.g.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Импортируется production Dart: `lib/core/category_icon_system.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общая foundation
+- **Обязанности:** Foundation-логика: Generated, pinned Fluent icon catalog shared by all category picker displays.
+- **Когда открывать:** Когда ломается поведение, связанное с `fluent_full_catalog_generated.g.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
 
 
 ### `lib/core/life_color_compat.dart`
@@ -33196,7 +33233,7 @@ EN:
 - **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
 - **Contents:** PowerShell, Python, or Dart commands for `generate_fluent_full_catalog.py`.
 - **Repository role:** developer tool
-- **Evidence of use:** Invoked or documented by: `.github/workflows/generate-fluent-category-library.yml`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/generate-fluent-category-library.yml`, `lib/core/fluent_full_catalog_generated.g.dart`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -33213,7 +33250,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `generate_fluent_full_catalog.py`.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Вызывается или описан в: `.github/workflows/generate-fluent-category-library.yml`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/generate-fluent-category-library.yml`, `lib/core/fluent_full_catalog_generated.g.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
