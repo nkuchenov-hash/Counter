@@ -103,6 +103,10 @@ void main() {
     for (final theme in <ThemeData>[appLightTheme, appDarkTheme]) {
       await tester.pumpWidget(MaterialApp(
         theme: theme,
+        darkTheme: theme,
+        themeMode: theme.brightness == Brightness.dark
+            ? ThemeMode.dark
+            : ThemeMode.light,
         home: Scaffold(
           body: Column(children: [
             CategoryBreadcrumb(
