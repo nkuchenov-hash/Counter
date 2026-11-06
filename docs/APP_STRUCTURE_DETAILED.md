@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `3b91ea28` on 2026-11-06.**
+**Generated from input HEAD `6b332fe7` on 2026-11-06.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -26,7 +26,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 193 |
+| `production UI` | 194 |
 | `test` | 140 |
 | `Brain/data` | 114 |
 | `platform build` | 83 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 535 |
+| `PROVEN_REQUIRED` | 536 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 264 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 903 |
+| `HIGH` | 904 |
 | `MEDIUM` | 87 |
 
 ---
@@ -13298,7 +13298,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppTextFieldVariant`, `AppTextFieldSurface`, `AppTextField`).
 - **Key code names:** `AppTextFieldVariant`, `AppTextFieldSurface`, `AppTextField`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/auth/auth_view.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/profile_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/app_button.dart`, `lib/core/widgets/compact_nav_controls.dart`, `lib/features/auth/auth_view.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/notes/notes_glm_surface.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13315,7 +13315,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_text_field`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/auth/auth_view.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/profile_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/app_button.dart`, `lib/core/widgets/compact_nav_controls.dart`, `lib/features/auth/auth_view.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/notes/notes_glm_surface.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -13412,7 +13412,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppCompactSegmentLabel`, `AppCompactTextTab`, `AppDesktopSectionControlRow`, `AppQuickEntryRow`).
 - **Key code names:** `AppCompactSegmentLabel`, `AppCompactTextTab`, `AppDesktopSectionControlRow`, `AppQuickEntryRow`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/settings/categories/category_list_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13429,7 +13429,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `compact_nav_controls`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/settings/categories/category_list_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -19622,38 +19622,38 @@ RU:
 
 EN:
 
-- **Human purpose:** Show the actual canonical `AppTextField` with editable text, search, email, numeric, password, multiline and adjacent action variants in the admin-only Component Lab.
-- **What this is:** Focused Flutter `part` of `component_lab_view.dart`, containing `_InputsDemo` and `_InputsDemoState`.
-- **Why needed:** Design-system changes can be reviewed in one UI before release; field and button geometry have an executable visual reference.
-- **Contents:** Mock-data-only input controllers and widgets.
-- **Key code names:** `_InputsDemo`, `_InputsDemoState`, `AppTextField`, `AppQuickEntryRow`.
-- **Repository role:** production UI (admin-only diagnostics).
-- **Evidence of use:** Included via `part 'component_lab_inputs_demo.dart'` in `lib/features/dev/component_lab_view.dart`.
+- **Human purpose:** `component_lab_inputs_demo.dart` on admin-only Component Lab (More → Dev) — Admin-only Component Lab including canonical Notes block/media/tool states. Users see `component_lab_inputs_demo.dart` when using admin-only Component Lab (More → Dev).
+- **What this is:** `component_lab_inputs_demo.dart` on admin-only Component Lab (More → Dev) — Admin-only Component Lab including canonical Notes block/media/tool states.
+- **Why needed:** Users see `component_lab_inputs_demo.dart` when using admin-only Component Lab (More → Dev).
+- **Contents:** Primary symbols: `_InputsDemo`, `_InputsDemoState`.
+- **Key code names:** `_InputsDemo`, `_InputsDemoState`
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/features/dev/component_lab_view.dart` through a `part` directive (not imported directly).
 - **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Component Lab would fail to compile without updating its reference.
+- **Deletion consequence:** Brain/library compile failure in `lib/features/dev/component_lab_view.dart` and broken related UI/data ops.
 - **Confidence:** HIGH
-- **Owner / layer:** Component Lab UI, no database writes.
-- **Responsibilities:** Display canonical inputs, expose variations and quick-entry button parity for review.
-- **When to open:** When adding input variants or investigating inconsistent fields or adjacent action sizes.
-- **Can it be deleted?** No, not while referenced by the Component Lab.
-- **Connected to:** `lib/core/widgets/app_text_field.dart`, `lib/core/widgets/compact_nav_controls.dart`, `docs/DESIGN_SYSTEM.md`.
+- **Owner / layer:** Component Lab
+- **Responsibilities:** Admin-only Component Lab including canonical Notes block/media/tool states
+- **When to open:** When behavior tied to `component_lab_inputs_demo.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Brain/library compile failure in `lib/features/dev/component_lab_view.dart` and broken related UI/data ops.
+- **Connected to:** APP_STRUCTURE role: Admin-only Component Lab including canonical Notes block/media/tool states
 
 RU:
 
-- **Зачем файл человеку:** Показать в Component Lab единый элемент `AppTextField` во всех вариантах, включая поиск и кнопку справа.
-- **Что это:** Flutter `part` для `component_lab_view.dart`, классы `_InputsDemo` и `_InputsDemoState`.
-- **Зачем:** Проверять все виды ввода в одном месте, а не создавать отдельное оформление на экранах.
-- **Содержимое:** Демонстрационные контроллеры и поля без пользовательских данных.
-- **Роль в репозитории:** production UI, только для администраторов.
-- **Доказательства использования:** Подключён директивой `part` в `component_lab_view.dart`.
+- **Зачем файл человеку:** `component_lab_inputs_demo.dart` на Component Lab (More → Dev, только admin) — Поддерживает поведение `component_lab_inputs_demo` в этой feature-зоне.. Пользователь видит UI из `component_lab_inputs_demo.dart` на Component Lab (More → Dev, только admin).
+- **Что это:** `component_lab_inputs_demo.dart` на Component Lab (More → Dev, только admin) — Поддерживает поведение `component_lab_inputs_demo` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `component_lab_inputs_demo.dart` на Component Lab (More → Dev, только admin).
+- **Содержимое:** Dart-модуль `component_lab_inputs_demo.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/features/dev/component_lab_view.dart` через `part` (не импортируется напрямую).
 - **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции Component Lab.
+- **Что будет, если удалить:** Сломается компиляция `lib/features/dev/component_lab_view.dart` и связанные экраны/данные.
 - **Уверенность:** HIGH
-- **Владелец / слой:** Component Lab.
-- **Обязанности:** Демонстрировать единый инпут и равные размеры соседней кнопки.
-- **Когда открывать:** При изменении общего поля ввода, поиска и быстрых форм.
-- **Можно удалить?** Нет, пока указан в `component_lab_view.dart`.
-- **Связано с:** `app_text_field.dart`, `compact_nav_controls.dart`, `DESIGN_SYSTEM.md`.
+- **Владелец / слой:** Component Lab
+- **Обязанности:** Поддерживает поведение `component_lab_inputs_demo` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `component_lab_inputs_demo.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/dev/`, `docs/APP_STRUCTURE.md`
 
 
 ### `lib/features/dev/component_lab_notes_demo.dart`
