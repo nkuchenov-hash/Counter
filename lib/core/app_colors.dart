@@ -60,6 +60,14 @@ abstract final class AppColors {
   static const Color borderMuted = AppNeutralTones.gray200;
   static const Color surfaceMuted = AppNeutralTones.gray100;
 
+  // Navigation rows, shared across Settings and nested Settings pages.
+  // Chevrons must be less prominent than labels; dividers must remain
+  // visible on white cards even while neighboring rows are hovered.
+  static const Color settingsChevron = AppNeutralTones.gray400;
+  static const Color darkSettingsChevron = AppNeutralTones.gray500;
+  static const Color settingsDivider = AppNeutralTones.gray300;
+  static const Color darkSettingsDivider = AppNeutralTones.gray600;
+
   // --- Semantic (success only — not default action color) ---
   static const Color success = Color(0xFF2E7D32);
   static const Color onSuccess = AppNeutralTones.white;
