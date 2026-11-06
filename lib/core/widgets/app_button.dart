@@ -108,7 +108,7 @@ class AppButton extends StatelessWidget {
 
   EdgeInsetsGeometry get _padding => switch (size) {
         AppButtonSize.s => const EdgeInsets.symmetric(horizontal: 12),
-        AppButtonSize.m => const EdgeInsets.symmetric(horizontal: AppControlTokens.horizontalPadding),
+        AppButtonSize.m => const EdgeInsets.symmetric(horizontal: AppControlTokens.buttonHorizontalPadding),
         AppButtonSize.l => const EdgeInsets.symmetric(horizontal: 20),
       };
 

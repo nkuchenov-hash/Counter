@@ -16,7 +16,10 @@ void main() {
     expect(AppTextField.height, AppControlTokens.height);
     expect(AppTextField.radius, AppControlTokens.radius);
     expect(kAppQuickEntryControlHeight, AppControlTokens.height);
-    expect(AppControlTokens.height, 48);
+    expect(AppControlTokens.height, 36);
+    expect(AppControlTokens.radius, 18);
+    // Full pill, not the previous 14px rounded rectangle.
+    expect(AppControlTokens.radius * 2, AppControlTokens.height);
     expect(AppControlTokens.fontSize, 16);
   });
 
@@ -96,6 +99,28 @@ void main() {
       );
       final fieldRect = tester.getRect(paintedField);
       final buttonRect = tester.getRect(paintedButton);
+      // Verify the actual editing line and optional search ornament live
+      // within the same compact capsule, vertically centered.
+      final editor = find.descendant(
+        of: entryField,
+        matching: find.byType(EditableText),
+      );
+      expect((tester.getRect(editor).center.dy - fieldRect.center.dy).abs(),
+          lessThanOrEqualTo(1));
+      final searchField = find.byType(AppTextField).last;
+      final searchPaint = find.descendant(
+        of: searchField,
+        matching: find.byKey(const ValueKey('app-text-field-painted-surface')),
+      );
+      final searchRect = tester.getRect(searchPaint);
+      expect(searchRect.height, AppControlTokens.height);
+      final searchIcon = find.descendant(
+        of: searchField,
+        matching: find.byIcon(Icons.search_rounded),
+      );
+      expect(searchIcon, findsOneWidget);
+      expect((tester.getRect(searchIcon).center.dy - searchRect.center.dy).abs(),
+          lessThanOrEqualTo(1));
       expect(fieldRect.height, AppControlTokens.height);
       expect(buttonRect.height, AppControlTokens.height);
       expect(buttonRect.top, fieldRect.top);
@@ -110,6 +135,7 @@ void main() {
       expect(shape, isA<RoundedRectangleBorder>());
       expect((shape! as RoundedRectangleBorder).borderRadius,
           BorderRadius.circular(AppControlTokens.radius));
+      expect(AppControlTokens.radius, AppControlTokens.height / 2);
     });
   }
 

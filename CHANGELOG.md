@@ -1,3 +1,9 @@
+## 2026-11-06 — Restore compact pill geometry for all canonical inputs
+
+- Corrected a design regression: previously an oversized Start button drove the input to an equally large, nearly square 48 px / 14 px radius shape. The desired design is the opposite: one compact 36 px-tall pill, 18 px fully rounded ends, centered 16 px text, optional leading search icon, and a matching adjacent action. No separate Timeline form widget.
+- A single `AppControlTokens` change drives `AppTextField`, `AppButton.m`, `AppQuickEntryRow`, settings search and other canonical field users. Medium action horizontal padding is 14 px.
+- Added visual geometry regression assertions for capsule radius, editor alignment, and search icon centering in addition to the existing pixel-bound tests. Web build and visual acceptance are still necessary before claiming release completion.
+
 ## 2026-11-06 — Quick-entry visual geometry regression correction
 
 - Screenshot evidence showed the Timeline field at ~46 physical px while its neighboring Start action painted ~72 px; prior unit tests measured widget rectangles instead of actual pixels. This was not an acceptable verified result.

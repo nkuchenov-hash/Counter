@@ -382,19 +382,26 @@ row and surface tokens, adapted to available width.
 
 - The approved LIFE OS Settings screen uses the existing **Flutter Material Symbols** already shipped with the app, via `AppMenuIcons.icon(AppMenuIconRole)` in `lib/core/widgets/app_menu_icons.dart`. This is an icon-role adapter, not a new or finalized icon library. Keep all icon choices in that one mapping until the separately selected collection is approved.
 - Light-mode Settings canvas is `#F7F7F7`; grouped cards are `#FFFFFF`, with subtle `#F4F4F4` icon containers and no card border. Dark mode uses equivalent neutral surfaces, not hard-coded light fills.
-- The page, desktop sidebar and mobile destination are named **Settings / Настройки**, never Menu / Меню; the destination uses the shared settings-gear icon role. Search uses the canonical `AppTextField` at 48 px high, the same as other search/input controls. All Settings destinations must open working settings or working feature screens, never a visual-only switch or a fake integration status.
+- The page, desktop sidebar and mobile destination are named **Settings / Настройки**, never Menu / Меню; the destination uses the shared settings-gear icon role. Search uses the canonical `AppTextField` at 36 logical px high, the same as other search/input controls. All Settings destinations must open working settings or working feature screens, never a visual-only switch or a fake integration status.
 - Domain settings have one persistence implementation; feature-local quick menus remain accessible but link to the same canonical settings screens.
 
 ## Canonical input contract (2026-11-06)
 
 - **One canonical Flutter input**: `AppTextField` in `lib/core/widgets/app_text_field.dart`. Text, search, email, numeric, password, multiline and validation are variants/parameters of this widget, not separate feature-local control implementations.
-- `AppControlTokens` owns standard single-line field and adjacent `AppButton.m` geometry: **48 logical px height**, **14 px corner radius**, **16 px text**, **8 px gap**. Search prefix icons and show/hide suffix icons do not change the painted outer bounds.
-- Field labels, when requested, sit above the 48 px input; multiline content can grow. Shared field visuals derive from the active light/dark theme. Screens must not override border, fill, radius, height, padding, or focus style.
+- `AppControlTokens` owns standard single-line field and adjacent `AppButton.m` geometry: **36 logical px painted height**, **18 px pill radius (half height)**, **16 px text**, **8 px gap**. Search prefix icons and show/hide suffix icons do not change the painted outer bounds.
+- Field labels, when requested, sit above the 36 px input; multiline content can grow. Shared field visuals derive from the active light/dark theme. Screens must not override border, fill, radius, height, padding, or focus style.
 - `AppQuickEntryRow` owns the Timeline/Planning adjacent field/action layout; the painted `InputDecorator` and `FilledButton` must have matching top and bottom bounds and the same radius. Widget tests must measure the inner controls, not just their wrappers.
 - Rich-text editing surfaces (e.g. document block editors) may retain specialized editors for editing behavior, but simple text/search/forms must migrate to `AppTextField` instead of creating new `TextField` styling.
 
 ### Exact painted input geometry (2026-11-06)
 
-- The standard single-line `AppTextField` owns its border and fill in one `DecoratedBox` with exact `AppControlTokens.height` = 48 logical px and `AppControlTokens.radius` = 14 px. The inner text editor is borderless/collapsed and vertically centered. Do not make `InputDecorator` responsible for the visible rectangle of standard text or search controls.
-- `AppQuickEntryRow` is one tight 48 px line that stretches and clips both the input surface and neighboring `AppButton.m`. Both painted surfaces must share top/bottom positions, height and corner radius at any pixel ratio.
+- The standard single-line `AppTextField` owns its border and fill in one `DecoratedBox` with exact `AppControlTokens.height` = 36 logical px and `AppControlTokens.radius` = 18 px. The inner text editor is borderless/collapsed and vertically centered. Do not make `InputDecorator` responsible for the visible rectangle of standard text or search controls.
+- `AppQuickEntryRow` is one tight 36 px line that stretches and clips both the input surface and neighboring `AppButton.m`. Both painted surfaces must share top/bottom positions, height and corner radius at any pixel ratio.
 - For visual QA, compare actual raster pixels at field/button centers at DPR 1, 1.5 and 2, not just their widget layout rectangles. A mismatch blocks deployment.
+
+### Compact capsule appearance — visual correction (2026-11-06)
+
+- Screenshots of the Timeline showed the original input at approximately 46 image pixels tall while the Start action was approximately 72. The intended correction is a **smaller adjacent button**, not a larger input. The canonical default is now a **36 logical px visual capsule**, with **18 px radius**, vertically centered 16 px text, 8 px gap and white/neutral input fill.
+- The same `AppTextField` is used for typing and search; the optional 18 px leading search icon is centered vertically and does not change the outer height. Keep text left-aligned inside the input while centering it vertically.
+- `AppButton.m` shares the capsule height and exact radius; its medium horizontal padding is 14 px. Keep these measurements in `AppControlTokens`, never locally in Timeline or Planning.
+- Regression tests must verify **both visual symmetry and the aesthetic invariant** `radius == height/2` (a capsule rather than weakly rounded rectangle); a geometrically aligned but oversized/square-ish pair is a failure.
