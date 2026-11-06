@@ -361,8 +361,8 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
           onPressed: () => unawaited(_showIconGallery()),
           icon: Icons.category_outlined,
           label: currentLocale.value == 'ru'
-              ? 'Выбрать иконку · Контур / Заливка'
-              : 'Choose icon · Outline / Filled',
+              ? (desktop ? 'Выбрать иконку · Контур / Заливка' : 'Выбрать иконку')
+              : (desktop ? 'Choose icon · Outline / Filled' : 'Choose icon'),
         ),
       ],
     );
@@ -540,7 +540,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                   ),
                   const SizedBox(height: 12),
                   LayoutBuilder(builder: (context, constraints) {
-                    final desktopPicker = constraints.maxWidth >= 540;
+                    final desktopPicker = constraints.maxWidth >= 760;
                     final colors = Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -620,12 +620,22 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                          ),
                       ],
                     );
+                    if (!desktopPicker) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          colors,
+                          const SizedBox(height: 18),
+                          _iconPanel(false),
+                        ],
+                      );
+                    }
                     return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(child: colors),
-                        SizedBox(width: desktopPicker ? 24 : 14),
-                        Expanded(child: _iconPanel(desktopPicker)),
+                        const SizedBox(width: 24),
+                        Expanded(child: _iconPanel(true)),
                       ],
                     );
                   }),
