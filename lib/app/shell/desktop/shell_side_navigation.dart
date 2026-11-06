@@ -1,3 +1,4 @@
+import 'package:counter/core/app_colors.dart';
 import 'package:counter/features/timeline/unfilled_time_gap_banner.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -53,7 +54,7 @@ class ShellSideNavigation extends StatelessWidget {
     return Material(
       color: scheme.brightness == Brightness.dark
           ? scheme.surfaceContainerHigh
-          : const Color(0xFFF4F4F4),
+          : AppNeutralTones.gray100,
       shape: Border(
         right: BorderSide(
           color: scheme.outlineVariant.withValues(alpha: 0.75),
@@ -126,12 +127,12 @@ class ShellSideNavItem extends StatelessWidget {
     final bg = selected
         ? (scheme.brightness == Brightness.dark
             ? scheme.surfaceContainerLow
-            : const Color(0xFFE7E7E7))
-        : Colors.transparent;
+            : AppNeutralTones.gray200)
+        : AppNeutralTones.transparent;
     final fg = scheme.brightness == Brightness.dark
         ? scheme.onSurface
-        : const Color(0xFF303030);
-    final indicator = selected ? scheme.onSurface : Colors.transparent;
+        : AppNeutralTones.gray800;
+    final indicator = selected ? scheme.onSurface : AppNeutralTones.transparent;
     return Material(
       color: bg,
       borderRadius: BorderRadius.circular(13),
@@ -140,8 +141,8 @@ class ShellSideNavItem extends StatelessWidget {
         onTap: onTap,
         hoverColor: scheme.brightness == Brightness.dark
             ? scheme.onSurface.withValues(alpha: 0.06)
-            : const Color(0xFFE9E9E9),
-        splashColor: Colors.transparent,
+            : AppNeutralTones.gray200,
+        splashColor: AppNeutralTones.transparent,
         child: Container(
           decoration: BoxDecoration(
             border: Border(
