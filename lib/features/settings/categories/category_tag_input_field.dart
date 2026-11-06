@@ -81,11 +81,11 @@ class _TagInputFieldState extends State<TagInputField> {
     final bg =
         widget.chipBackgroundColor ??
         Theme.of(context).chipTheme.backgroundColor ??
-        Colors.grey.shade300;
+        Theme.of(context).colorScheme.surfaceContainerHigh;
     final fg =
         widget.chipLabelColor ??
         Theme.of(context).chipTheme.labelStyle?.color ??
-        Colors.black87;
+        Theme.of(context).colorScheme.onSurface;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
