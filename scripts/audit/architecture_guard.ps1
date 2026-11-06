@@ -359,7 +359,7 @@ if (Test-Path -LiteralPath $libRoot) {
             $inputFiles++
             Write-Host "NATIVE_EDITOR_INVENTORY $rel occurrences=$nativeCount"
             if (-not $specializedNativeFieldCaps.ContainsKey($rel)) {
-                Add-Violation "DUPLICATE_INPUT_PAINTER $rel: ordinary field must use AppTextField"
+                Add-Violation ('DUPLICATE_INPUT_PAINTER ' + $rel + ': ordinary field must use AppTextField')
             }
             elseif ($nativeCount -gt $specializedNativeFieldCaps[$rel]) {
                 Add-Violation "NATIVE_EDITOR_CAP_EXCEEDED $rel $nativeCount (max $($specializedNativeFieldCaps[$rel]))"
