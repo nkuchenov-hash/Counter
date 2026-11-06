@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/planning/planning_sort_mode.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -132,25 +133,13 @@ class PlanningQuickAddChrome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settingsButton = IconButton(
-      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-      style: IconButton.styleFrom(
-        foregroundColor: scheme.primary,
-        splashFactory: NoSplash.splashFactory,
-        hoverColor: Colors.transparent,
-      ),
-      icon: const Icon(Icons.settings_rounded),
+    final settingsButton = AppIconButton(
+      icon: Icons.settings_rounded,
       tooltip: settingsTooltip,
       onPressed: onSettings,
     );
-    final smartButton = IconButton(
-      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-      style: IconButton.styleFrom(
-        foregroundColor: scheme.primary,
-        splashFactory: NoSplash.splashFactory,
-        hoverColor: Colors.transparent,
-      ),
-      icon: const Icon(Icons.auto_awesome_rounded),
+    final smartButton = AppIconButton(
+      icon: Icons.auto_awesome_rounded,
       tooltip: smartTooltip,
       onPressed: onSmart,
     );
