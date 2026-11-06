@@ -310,6 +310,10 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     } catch (_) {}
   }
 
+  Color get _currentAccent => Color(canonicalLifeColorValue(
+        _selectedColorValue ?? widget.category.colorOrDefault.toARGB32(),
+      ));
+
   Widget _compactSwatch(Color color, bool selected, VoidCallback tap,
       {bool rounded = true}) {
     final outline = Theme.of(context).colorScheme.onSurface;
@@ -343,7 +347,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     final choice = await showCategoryIconPicker(
       context,
       initial: _choice,
-      color: Color(_selectedColorValue ?? widget.category.colorOrDefault.toARGB32()),
+      color: _currentAccent,
     );
     if (!mounted || choice == null) return;
     setState(() => _choice = choice);
@@ -472,13 +476,12 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: Color(_selectedColorValue ?? widget.category.colorOrDefault.toARGB32())
-                        .withValues(alpha: 0.12),
+                    color: _currentAccent.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(11),
                   ),
                   child: Center(child: CategorySvgIcon(
                     selection: _choice,
-                    color: Color(_selectedColorValue ?? widget.category.colorOrDefault.toARGB32()),
+                    color: _currentAccent,
                     size: 22,
                   )),
                 ),
@@ -563,9 +566,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                                  message: index == kCategoryPickerMaterialColors.length - 1
                                      ? 'Нейтральный серый' : 'Цветовая группа ${index + 1}',
                                  child: _compactSwatch(
-                                   _selectedPrimary == color
-                                       ? Color(_selectedShadeValue ?? color[500]!.toARGB32())
-                                       : color[500]!,
+                                   color[500]!, // Always show the base hue in the family palette.
                                    _selectedPrimary == color,
                                    () => setState(() {
                                      _selectedPrimary = color;
