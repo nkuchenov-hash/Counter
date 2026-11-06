@@ -72,7 +72,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
           builder: (context, shellSuppressed, _) {
             if (shellSuppressed) {
               return const ColoredBox(
-                color: Colors.transparent,
+                color: AppNeutralTones.transparent,
                 child: SizedBox.expand(),
               );
             }
@@ -97,7 +97,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                   mode: tagMode,
                   child: AnnotatedRegion<SystemUiOverlayStyle>(
                     value: SystemUiOverlayStyle(
-                      statusBarColor: Colors.transparent,
+                      statusBarColor: AppNeutralTones.transparent,
                       statusBarIconBrightness: Brightness.light,
                       systemNavigationBarColor: scheme.surface,
                     ),
@@ -116,12 +116,12 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                               ? AppBar(
                                   toolbarHeight: kGlobalCompactHeaderHeight,
                                   backgroundColor: desktopShell
-                                      ? const Color(0xFFFFFFFF)
+                                      ? AppNeutralTones.white
                                       : kGlobalCompactHeaderColor,
                                   foregroundColor: desktopShell
                                       ? scheme.onSurface
                                       : kGlobalCompactHeaderForeground,
-                                  surfaceTintColor: Colors.transparent,
+                                  surfaceTintColor: AppNeutralTones.transparent,
                                   automaticallyImplyLeading: false,
                                   elevation: 0,
                                   scrolledUnderElevation: 0,
@@ -150,7 +150,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                                             child: Icon(
                                               Icons.auto_awesome_rounded,
                                               size: 17,
-                                              color: Colors.white,
+                                              color: AppNeutralTones.white,
                                             ),
                                           ),
                                         ),
