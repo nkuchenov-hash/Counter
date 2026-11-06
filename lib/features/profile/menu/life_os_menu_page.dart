@@ -1,4 +1,6 @@
+import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/shell_adaptive.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/data/auth_bridge.dart';
@@ -286,6 +288,7 @@ const _homeGroups = <({String ru, String en, List<String> ids})>[
 
 class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
   final TextEditingController _search = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
   String? _activeSection;
 
   bool get _ru => currentLocale.value.toLowerCase().startsWith('ru');
@@ -305,6 +308,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
   void dispose() {
     _search.removeListener(_refreshSearch);
     _search.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -423,7 +427,10 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
                     ],
                   )),
                   Icon(AppMenuIcons.icon(AppMenuIconRole.arrow),
-                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    size: 20,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.darkSettingsChevron
+                        : AppColors.settingsChevron),
                 ],
               ),
             ),
@@ -433,34 +440,16 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
     );
   }
 
-  Widget _searchField() => TextField(
+  Widget _searchField() => AppTextField(
     controller: _search,
+    focusNode: _searchFocus,
     textInputAction: TextInputAction.search,
-    decoration: InputDecoration(
-      hintText: _ru ? 'Найти настройку' : 'Find a setting',
-      prefixIcon: Icon(AppMenuIcons.icon(AppMenuIconRole.search)),
-      suffixIcon: _search.text.isEmpty ? null : IconButton(
-        tooltip: _ru ? 'Очистить поиск' : 'Clear search',
-        icon: Icon(AppMenuIcons.icon(AppMenuIconRole.close)),
-        onPressed: _search.clear,
-      ),
-      filled: true,
-      fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant,
-          width: 0.7,
-        ),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant,
-          width: 0.7,
-        ),
-      ),
-      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+    hintText: _ru ? 'Найти настройку' : 'Find a setting',
+    showSearchIcon: true,
+    suffixIcon: _search.text.isEmpty ? null : IconButton(
+      tooltip: _ru ? 'Очистить поиск' : 'Clear search',
+      icon: Icon(AppMenuIcons.icon(AppMenuIconRole.close)),
+      onPressed: _search.clear,
     ),
   );
 
@@ -471,7 +460,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(_ru ? 'Меню' : 'Menu',
+        Text(_ru ? 'Настройки' : 'Settings',
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
             fontSize: 30,
             fontWeight: FontWeight.w500,
@@ -547,7 +536,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
               children: [
                 Icon(AppMenuIcons.icon(AppMenuIconRole.back)),
                 const SizedBox(width: 9),
-                Text(_ru ? 'Меню' : 'Menu',
+                Text(_ru ? 'Настройки' : 'Settings',
                   style: Theme.of(context).textTheme.bodyLarge),
               ],
             ),
