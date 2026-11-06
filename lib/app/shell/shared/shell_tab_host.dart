@@ -1,6 +1,23 @@
 part of '../app_shell.dart';
 
 mixin ShellTabHost on ShellTaskActions, ShellEditHosts {
+  /// Only Timeline and Plans use Menu's desktop content width.
+  /// Called from the tab builders after MediaQuery is available.
+  Widget _readableWorkPage(Widget page) {
+    if (!shellUsesSideNavigation(MediaQuery.sizeOf(context).width)) {
+      return page;
+    }
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: settingsContentMaxWidth(context),
+        ),
+        child: page,
+      ),
+    );
+  }
+
   Widget buildTimelineSwipeTab() {
     final sw = Stopwatch()..start();
     final child = TimelineSwipeWrapper(
@@ -32,7 +49,7 @@ mixin ShellTabHost on ShellTaskActions, ShellEditHosts {
       active: shellPageIndex == 0,
       ms: sw.elapsedMilliseconds,
     );
-    return child;
+    return _readableWorkPage(child);
   }
 
   Widget buildPlanningSwipeTab() {
@@ -52,7 +69,7 @@ mixin ShellTabHost on ShellTaskActions, ShellEditHosts {
       active: shellPageIndex == 1,
       ms: sw.elapsedMilliseconds,
     );
-    return child;
+    return _readableWorkPage(child);
   }
 
   Widget buildCalendarTab() {
