@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 /// gray (which is a selectable tag/category identity). Keep white/black and
 /// many true grays available without introducing random blue or beige tints.
 abstract final class AppNeutralTones {
+  static const Color transparent = Color(0x00000000);
   static const Color white = Color(0xFFFFFFFF);
   static const Color gray50 = Color(0xFFFAFAFA);
   static const Color gray100 = Color(0xFFF5F5F5);
