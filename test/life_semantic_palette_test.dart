@@ -195,6 +195,30 @@ void main() {
         kNordicFood[400]);
   });
 
+  test('all yellow plates inherit the saved 400/500/600 tone', () {
+    final surface = AppColors.cardSurface;
+    for (final tone in <int>[400, 500, 600]) {
+      final selected = kNordicFood[tone]!;
+      expect(
+        tagLetterChipPlate(selected, surface),
+        Color.alphaBlend(
+          selected.withValues(alpha: kTagYellowPlateOpacity), surface),
+      );
+      expect(
+        tagLetterChipBorder(selected, surface),
+        Color.alphaBlend(
+          selected.withValues(alpha: kTagYellowBorderOpacity), surface),
+      );
+      expect(
+        tagManagerAvatarPlate(selected, surface),
+        Color.alphaBlend(
+          selected.withValues(alpha: kTagYellowPlateOpacity), surface),
+      );
+    }
+    expect(tagLetterChipPlate(kNordicFood[400]!, surface),
+        isNot(tagLetterChipPlate(kNordicFood[600]!, surface)));
+  });
+
   test('one canonical palette feeds both categories and tag presets', () {
     expect(kCategoryPickerMaterialColors, hasLength(11));
     expect(kLifeTagColorPresets, hasLength(11));
