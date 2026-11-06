@@ -208,7 +208,10 @@ String categorySubjectGroupName(String group, {required bool russian}) =>
 List<CategoryIconChoice> _buildSharedCatalog() {
   final metadata = {for (final item in kCategoryIconCatalog) item.key: item};
   return List<CategoryIconChoice>.unmodifiable([
-    for (final key in kDefaultCategoryIconKeys)
+    for (final key in <String>{
+      for (final item in kHumanCategorySubjects) item.key,
+      ...kLegacyCategorySubjectKeys.where(isSelectableCategoryIconKey),
+    })
       if (metadata.containsKey(key))
         metadata[key]!
       else
