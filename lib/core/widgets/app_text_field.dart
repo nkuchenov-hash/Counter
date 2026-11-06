@@ -16,7 +16,7 @@ class AppTextField extends StatelessWidget {
     required this.controller,
     this.focusNode,
     this.hintText = '',
-    this.textInputAction = TextInputAction.done,
+    this.textInputAction,
     this.variant = AppTextFieldVariant.text,
     this.textCapitalization = TextCapitalization.none,
     this.onChanged,
@@ -53,7 +53,7 @@ class AppTextField extends StatelessWidget {
   final FocusNode? focusNode;
   final String hintText;
   final String? labelText;
-  final TextInputAction textInputAction;
+  final TextInputAction? textInputAction;
   final AppTextFieldVariant variant;
   final TextCapitalization textCapitalization;
   final ValueChanged<String>? onChanged;
@@ -95,6 +95,8 @@ class AppTextField extends StatelessWidget {
     final lines = obscured ? 1 : (maxLines ?? (multi ? 4 : 1));
     final search = showSearchIcon || variant == AppTextFieldVariant.search;
     final flexibleHeight = multi || validator != null;
+    final effectiveAction = textInputAction ??
+        (multi ? TextInputAction.newline : search ? TextInputAction.search : TextInputAction.done);
     final fieldKeyboard = keyboardType ??
         (variant == AppTextFieldVariant.number
             ? TextInputType.number
@@ -167,7 +169,7 @@ class AppTextField extends StatelessWidget {
           ? TextField(
               controller: controller,
               focusNode: focusNode,
-              textInputAction: textInputAction,
+              textInputAction: effectiveAction,
               textCapitalization: textCapitalization,
               textAlign: textAlign,
               textAlignVertical: multi ? TextAlignVertical.top : TextAlignVertical.center,
@@ -191,7 +193,7 @@ class AppTextField extends StatelessWidget {
           : TextFormField(
               controller: controller,
               focusNode: focusNode,
-              textInputAction: textInputAction,
+              textInputAction: effectiveAction,
               textCapitalization: textCapitalization,
               textAlign: textAlign,
               textAlignVertical: multi ? TextAlignVertical.top : TextAlignVertical.center,
