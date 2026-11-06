@@ -193,13 +193,13 @@ Each mapping must answer:
 
 ### Text Fields / Search / Quick Entry
 
-- All form geometry is owned by `lib/core/app_control_tokens.dart` (`36px` compact standard height, `18px` full-pill radius, `16px` text, `8px` adjacent-control gap); `AppTextField`, `AppButton` and `AppIconButton` consume these values. Standard inputs/searches and their neighboring actions must align at the same 36px painted height on web, Android and desktop. Only specialized controls (multi-line editors, date/time inputs) may have an explicitly different height.
+- All form geometry is owned by `lib/core/app_control_tokens.dart` (`40px` compact standard height, `20px` full-pill radius, `16px` text, `8px` adjacent-control gap); `AppTextField`, `AppButton` and `AppIconButton` consume these values. Standard inputs/searches and their neighboring actions must align at the same 40px painted height on web, Android and desktop. Only specialized controls (multi-line editors, date/time inputs) may have an explicitly different height.
 - **No independent color owners in feature code.** All interface chromatic and achromatic values must come from `lib/core/app_colors.dart` / `lib/core/life_color_compat.dart` via `Theme.of(context).colorScheme`, named app tokens or saved user data. Settings, Timeline, Planning, Categories and Notes do not own alternate palettes. `scripts/audit/semantic_color_tokens.py --strict-new` blocks newly introduced hardcoded color values (including grayscale) outside the canonical owners.
 
 - Canonical standard one-line input: `AppTextField` in `lib/core/widgets/app_text_field.dart`.
-- The approved geometry is the Notes library input: **36px painted height, 18px half-height pill radius, shared fill/border/focus treatment, 16px text**.
+- The approved geometry is the Notes library input: **40px painted height, 20px half-height pill radius, shared fill/border/focus treatment, 16px text**.
 - Search is a parameter of the same component (`showSearchIcon: true`), not a separate visual component.
-- Timeline/Planning quick entry composes `AppTextField` + `AppButton` at the exact same 36px painted height.
+- Timeline/Planning quick entry composes `AppTextField` + `AppButton` at the exact same 40px painted height.
 - Raw feature-local `TextField` / `TextFormField` styling for standard one-line app inputs is forbidden. Feature screens must not define their own height, radius, fill, border, padding, hint typography, hover, or focus styling.
 - Exceptions are semantic editors/controls that are not standard one-line fields: Notes rich-text blocks, multiline editors, native/specialized picker internals, and other explicitly documented component internals.
 - Any future visual input change is made once in `AppTextField` and therefore changes Notes, Timeline, Planning, search, and other migrated one-line fields together.
@@ -382,31 +382,31 @@ row and surface tokens, adapted to available width.
 
 - The approved LIFE OS Settings screen uses the existing **Flutter Material Symbols** already shipped with the app, via `AppMenuIcons.icon(AppMenuIconRole)` in `lib/core/widgets/app_menu_icons.dart`. This is an icon-role adapter, not a new or finalized icon library. Keep all icon choices in that one mapping until the separately selected collection is approved.
 - Light-mode Settings canvas is `#F7F7F7`; grouped cards are `#FFFFFF`, with subtle `#F4F4F4` icon containers and no card border. Dark mode uses equivalent neutral surfaces, not hard-coded light fills.
-- The page, desktop sidebar and mobile destination are named **Settings / Настройки**, never Menu / Меню; the destination uses the shared settings-gear icon role. Search uses the canonical `AppTextField` at 36 logical px high, the same as other search/input controls. All Settings destinations must open working settings or working feature screens, never a visual-only switch or a fake integration status.
+- The page, desktop sidebar and mobile destination are named **Settings / Настройки**, never Menu / Меню; the destination uses the shared settings-gear icon role. Search uses the canonical `AppTextField` at 40 logical px high, the same as other search/input controls. All Settings destinations must open working settings or working feature screens, never a visual-only switch or a fake integration status.
 - Domain settings have one persistence implementation; feature-local quick menus remain accessible but link to the same canonical settings screens.
 
 ## Canonical input contract (2026-11-06)
 
 - **One canonical Flutter input**: `AppTextField` in `lib/core/widgets/app_text_field.dart`. Text, search, email, numeric, password, multiline and validation are variants/parameters of this widget, not separate feature-local control implementations.
-- `AppControlTokens` owns standard single-line field and adjacent `AppButton.m` geometry: **36 logical px painted height**, **18 px pill radius (half height)**, **16 px text**, **8 px gap**. Search prefix icons and show/hide suffix icons do not change the painted outer bounds.
-- Field labels, when requested, sit above the 36 px input; multiline content can grow. Shared field visuals derive from the active light/dark theme. Screens must not override border, fill, radius, height, padding, or focus style.
+- `AppControlTokens` owns standard single-line field and adjacent `AppButton.m` geometry: **40 logical px painted height**, **20 px pill radius (half height)**, **16 px text**, **8 px gap**. Search prefix icons and show/hide suffix icons do not change the painted outer bounds.
+- Field labels, when requested, sit above the 40 px input; multiline content can grow. Shared field visuals derive from the active light/dark theme. Screens must not override border, fill, radius, height, padding, or focus style.
 - `AppQuickEntryRow` owns the Timeline/Planning adjacent field/action layout; the painted `InputDecorator` and `FilledButton` must have matching top and bottom bounds and the same radius. Widget tests must measure the inner controls, not just their wrappers.
 - Rich-text editing surfaces (e.g. document block editors) may retain specialized editors for editing behavior, but simple text/search/forms must migrate to `AppTextField` instead of creating new `TextField` styling.
 
 ### Exact painted input geometry (2026-11-06)
 
-- The standard single-line `AppTextField` owns its border and fill in one `DecoratedBox` with exact `AppControlTokens.height` = 36 logical px and `AppControlTokens.radius` = 18 px. The inner text editor is borderless/collapsed and vertically centered. Do not make `InputDecorator` responsible for the visible rectangle of standard text or search controls.
-- `AppQuickEntryRow` is one tight 36 px line that stretches and clips both the input surface and neighboring `AppButton.m`. Both painted surfaces must share top/bottom positions, height and corner radius at any pixel ratio.
+- The standard single-line `AppTextField` owns its border and fill in one `DecoratedBox` with exact `AppControlTokens.height` = 40 logical px and `AppControlTokens.radius` = 20 px. The inner text editor is borderless/collapsed and vertically centered. Do not make `InputDecorator` responsible for the visible rectangle of standard text or search controls.
+- `AppQuickEntryRow` is one tight 40 px line that stretches and clips both the input surface and neighboring `AppButton.m`. Both painted surfaces must share top/bottom positions, height and corner radius at any pixel ratio.
 - For visual QA, compare actual raster pixels at field/button centers at DPR 1, 1.5 and 2, not just their widget layout rectangles. A mismatch blocks deployment.
 
 ### Compact capsule appearance — visual correction (2026-11-06)
 
-- Screenshots of the Timeline showed the original input at approximately 46 image pixels tall while the Start action was approximately 72. The intended correction is a **smaller adjacent button**, not a larger input. The canonical default is now a **36 logical px visual capsule**, with **18 px radius**, vertically centered 16 px text, 8 px gap and white/neutral input fill.
+- Screenshots of the Timeline showed the original input at approximately 46 image pixels tall while the Start action was approximately 72. The intended correction is a **smaller adjacent button**, not a larger input. The canonical default is now a **40 logical px visual capsule**, with **20 px radius**, vertically centered 16 px text, 8 px gap and white/neutral input fill.
 - The same `AppTextField` is used for typing and search; the optional 18 px leading search icon is centered vertically and does not change the outer height. Keep text left-aligned inside the input while centering it vertically.
 - `AppButton.m` shares the capsule height and exact radius; its medium horizontal padding is 14 px. Keep these measurements in `AppControlTokens`, never locally in Timeline or Planning.
 - Regression tests must verify **both visual symmetry and the aesthetic invariant** `radius == height/2` (a capsule rather than weakly rounded rectangle); a geometrically aligned but oversized/square-ish pair is a failure.
 
-- The one-line visual hint is drawn by the canonical input line box itself, not by Flutter's default `InputDecorator` hint baseline. Native editor hint semantics are retained; visual hint visibility is driven by the shared controller. Timeline text entry and Settings search render the same vertically centered 36 px capsule, including inside Settings' neutral `Theme` wrapper.
+- The one-line visual hint is drawn by the canonical input line box itself, not by Flutter's default `InputDecorator` hint baseline. Native editor hint semantics are retained; visual hint visibility is driven by the shared controller. Timeline text entry and Settings search render the same vertically centered 40 px capsule, including inside Settings' neutral `Theme` wrapper.
 
 ### Enforced input ownership (2026-11-06)
 
@@ -418,6 +418,12 @@ row and surface tokens, adapted to available width.
 
 ### Complete ordinary field migration and specialized exceptions (2026-11-06)
 
-- Every ordinary search, category/name/text/credential/record, date text entry and message/dialog form must render through `AppTextField` variants. Their background, border, 36 px height, 18 px pill radius, optional leading search icon, hint position and theme treatment are owned solely by that component and `AppControlTokens`.
+- Every ordinary search, category/name/text/credential/record, date text entry and message/dialog form must render through `AppTextField` variants. Their background, border, 40 px height, 20 px pill radius, optional leading search icon, hint position and theme treatment are owned solely by that component and `AppControlTokens`.
 - Raw `TextField` / `TextFormField` is prohibited outside `lib/core/widgets/app_text_field.dart` except a tightly capped list of specialized internal editors checked by the strict architecture guard: Notes block/caption/table editing, Planning title editor, Viktor chat composer and Omni-Picker HH:MM digit fields. Those are not competing standard form or search components.
 - Adding even one ordinary raw input or increasing the number of approved specialist fields fails architecture CI. The web deploy additionally runs pixel tests against both the Timeline and Settings composition.
+
+### Timeline full viewport scroll and aligned content (2026-11-06)
+
+- The Timeline scroll viewport occupies the entire available desktop work area; its scrollbar must stay on the **far-right edge**, never at the readable column's edge. The Timeline shell tab must not be wrapped in `_readableWorkPage`.
+- Timeline section title, quick-entry, separator and record cards use the same centered width from `shellReadableContentMaxWidth(viewportWidth)`. The horizontal content gutter is `kShellDesktopContentHorizontalPadding` (24 logical pixels), including both edges of the divider.
+- The canonical standard input and adjacent medium action are now **40 logical pixels high** with **20 px half-height rounding**. This change applies globally through `AppControlTokens`, not through Timeline-only styles.

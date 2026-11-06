@@ -1,3 +1,10 @@
+## 2026-11-06 — Timeline scrollbar at screen edge and shared 40 px pill geometry
+
+- Timeline no longer constrains its whole scrolling page to the Settings readable-column width. Its ListView fills the available viewport; cards and header are independently centered in the shared readable frame.
+- Timeline divider is horizontally inset to match the exact edges of its entry row and record cards; alternate continuous-history cards use the same framing.
+- The canonical AppTextField and neighboring AppButton.m are now globally 40 logical px high with matching 20 px pill radius, retaining centered 16 px text and an 8 px adjacent gap.
+- Added widget and source contract regressions to verify full scroll viewport width, aligned divider, centered header and shared sizing. Does not modify timer, records or synchronization.
+
 ## 2026-11-06 — Enforce canonical input contract in deployed GitHub Pages workflow
 
 - Synchronized the default branch `gh-pages/.github/workflows/deploy.yml` with `main`: web publishing now includes both Flutter widget rendering checks and Chrome renderer checks for compact pill geometry, actual typed text and hint alignment in Timeline and Settings.

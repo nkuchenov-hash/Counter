@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/theme.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/compact_nav_controls.dart';
+import 'package:counter/features/timeline/timeline_header_controls.dart';
+import 'package:counter/features/timeline/timeline_day_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:counter/app/shell/shared/shell_form_factor.dart';
@@ -297,16 +300,93 @@ void main() {
       expect(group, contains("ValueKey('settings-divider-line-\$index')"));
     });
 
-    test('desktop work-page width is applied to Timeline and Plans only', () {
+    test('Timeline scrolls full width while Planning retains readable page width', () {
       final host = File('lib/app/shell/shared/shell_tab_host.dart')
           .readAsStringSync();
       expect(host, contains('Widget _readableWorkPage(Widget page)'));
       expect(host, contains('maxWidth: settingsContentMaxWidth(context)'));
-      expect('return _readableWorkPage(child);'.allMatches(host).length, 2);
-      final shell = File('lib/app/shell/shared/shell_chrome.dart')
+      expect('return _readableWorkPage(child);'.allMatches(host).length, 1);
+      expect(host.split('Widget buildPlanningSwipeTab()').first,
+          contains('return child;'));
+      expect(shellReadableContentMaxWidth(1600), 960);
+      expect(shellReadableContentMaxWidth(800), 840);
+      expect(shellReadableContentMaxWidth(390), 390);
+      final chrome = File('lib/app/shell/shared/shell_chrome.dart')
           .readAsStringSync();
-      expect(shell, isNot(contains('_readableWorkPage(calendarTabHost)')));
-      expect(shell, isNot(contains('_readableWorkPage(listsTabHost)')));
+      expect(chrome, isNot(contains('_readableWorkPage(calendarTabHost)')));
+      expect(chrome, isNot(contains('_readableWorkPage(listsTabHost)')));
+    });
+
+    testWidgets('Timeline divider matches quick-entry while scroll viewport '
+        'reaches the right edge', (tester) async {
+      tester.view.physicalSize = const Size(1600, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final entry = TextEditingController();
+      final focus = FocusNode();
+      addTearDown(entry.dispose);
+      addTearDown(focus.dispose);
+      await tester.pumpWidget(MaterialApp(
+        theme: appLightTheme,
+        home: Scaffold(
+          body: Column(
+            children: [
+              TimelineHeaderControls(
+                showStatsView: false,
+                visibleDate: DateTime(2026, 11, 6),
+                visibleIsFuture: false,
+                titleController: entry,
+                titleFocus: focus,
+                onShowStatsViewChanged: (_) {},
+                onStart: () {},
+                onPlan: () {},
+                onNewTaskForPastDate: () {},
+              ),
+              Expanded(
+                child: TimelineLazyRecordList(
+                  recordMaps: const [],
+                  dateKey: '2020-01-01',
+                  selectedDate: DateTime(2020, 1, 1),
+                  selectedDateString: '2020-01-01',
+                  onStop: (_) async {},
+                  onDelete: (_) async {},
+                  onEdit: (_) {},
+                ),
+              ),
+            ],
+          ),
+        ),
+      ));
+      await tester.pump();
+      final viewport = tester.getRect(
+        find.byKey(const ValueKey('timeline-full-width-scroll-viewport')));
+      expect(viewport.left, 0);
+      expect(viewport.right, 1600);
+      final header = tester.getRect(
+        find.byKey(const ValueKey('timeline-header-content-frame')));
+      expect(header.width, shellReadableContentMaxWidth(1600));
+      expect(header.center.dx, closeTo(viewport.center.dx, 0.5));
+      final quickEntry = tester.getRect(find.byType(AppQuickEntryRow));
+      final divider = tester.getRect(
+        find.byKey(const ValueKey('timeline-content-divider')));
+      expect(divider.left, closeTo(quickEntry.left, 0.5));
+      expect(divider.right, closeTo(quickEntry.right, 0.5));
+      expect(quickEntry.height, 40);
+      expect(tester.takeException(), isNull);
+    });
+
+    test('Timeline cards use centered content frames without narrowing list',
+        () {
+      final list = File('lib/features/timeline/timeline_day_page.dart')
+          .readAsStringSync();
+      expect(list, contains('timeline-record-content-frame-'));
+      expect(list, contains('shellReadableContentMaxWidth(viewportWidth)'));
+      expect(list, contains('horizontal: desktop ? 0 : 12'));
+      final history =
+          File('lib/features/timeline/timeline_continuous_history.dart')
+              .readAsStringSync();
+      expect(history, contains('shellReadableContentMaxWidth(viewportWidth)'));
     });
 
     testWidgets('Menu scroll viewport reaches the far-right page edge',

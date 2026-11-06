@@ -17,8 +17,8 @@ void main() {
     expect(AppTextField.height, AppControlTokens.height);
     expect(AppTextField.radius, AppControlTokens.radius);
     expect(kAppQuickEntryControlHeight, AppControlTokens.height);
-    expect(AppControlTokens.height, 36);
-    expect(AppControlTokens.radius, 18);
+    expect(AppControlTokens.height, 40);
+    expect(AppControlTokens.radius, 20);
     // Full pill, not the previous 14px rounded rectangle.
     expect(AppControlTokens.radius * 2, AppControlTokens.height);
     expect(AppControlTokens.fontSize, 16);
