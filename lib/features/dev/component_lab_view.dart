@@ -1,5 +1,7 @@
 import 'package:counter/core/life_color_compat.dart';
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
+import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
@@ -58,13 +60,14 @@ class ComponentLabPage extends StatelessWidget {
             ),
           ),
           _LabSection(title: 'Headers', child: _HeadersDemo()),
+          _LabSection(title: 'Inputs', child: _InputsDemo()),
           _LabSection(
-            title: 'Sheets / Inputs',
+            title: 'Sheets',
             child: _PlaceholderDemo(
-              figmaName: 'Sheet / Input',
-              flutterMapping: 'Future: AppSheet / AppTextField',
+              figmaName: 'Sheet',
+              flutterMapping: 'Future: AppSheet',
               variant: 'placeholder',
-              note: 'No sheet/input migration in V7E.',
+              note: 'Input variants are now executable above; modal sheet is pending.',
             ),
           ),
         ],
@@ -1001,6 +1004,150 @@ class _PlaceholderDemo extends StatelessWidget {
         'Placeholder: canonical component surface will be added here as V7 evolves.',
         style: Theme.of(context).textTheme.bodyMedium,
       ),
+    );
+  }
+}
+
+/// One editable example of every AppTextField variant. No production state.
+class _InputsDemo extends StatefulWidget {
+  const _InputsDemo();
+
+  @override
+  State<_InputsDemo> createState() => _InputsDemoState();
+}
+
+class _InputsDemoState extends State<_InputsDemo> {
+  final _entry = TextEditingController();
+  final _plain = TextEditingController();
+  final _search = TextEditingController();
+  final _email = TextEditingController();
+  final _number = TextEditingController();
+  final _password = TextEditingController();
+  final _notes = TextEditingController();
+  final _entryFocus = FocusNode();
+
+  @override
+  void dispose() {
+    _entry.dispose();
+    _plain.dispose();
+    _search.dispose();
+    _email.dispose();
+    _number.dispose();
+    _password.dispose();
+    _notes.dispose();
+    _entryFocus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _LabExample(
+          title: 'Input / Quick entry / Adjacent action / M',
+          flutterMapping: 'AppQuickEntryRow → AppTextField + AppButton.primary',
+          variant: 'text + action',
+          size: 'M',
+          state: 'enabled',
+          note: 'Painted field and button: identical 48px height and 14px radius.',
+          fullWidth: true,
+          child: AppQuickEntryRow(
+            controller: _entry,
+            focusNode: _entryFocus,
+            hintText: 'Add a record',
+            actionLabel: 'Start',
+            actionIcon: Icons.play_arrow_rounded,
+            onAction: _mockAction,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _LabExample(
+          title: 'Input / Text / M',
+          flutterMapping: 'AppTextField(variant: text)',
+          variant: 'text',
+          size: 'M',
+          state: 'enabled',
+          fullWidth: true,
+          child: AppTextField(
+            controller: _plain,
+            labelText: 'Name',
+            hintText: 'Name',
+          ),
+        ),
+        const SizedBox(height: 12),
+        _LabExample(
+          title: 'Input / Search / M',
+          flutterMapping: 'AppTextField(variant: search)',
+          variant: 'search',
+          size: 'M',
+          state: 'enabled',
+          fullWidth: true,
+          child: AppTextField(
+            controller: _search,
+            variant: AppTextFieldVariant.search,
+            hintText: 'Search',
+            textInputAction: TextInputAction.search,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _LabExample(
+          title: 'Input / Email / M',
+          flutterMapping: 'AppTextField(variant: email)',
+          variant: 'email',
+          size: 'M',
+          state: 'enabled',
+          fullWidth: true,
+          child: AppTextField(
+            controller: _email,
+            variant: AppTextFieldVariant.email,
+            hintText: 'Email',
+          ),
+        ),
+        const SizedBox(height: 12),
+        _LabExample(
+          title: 'Input / Number / M',
+          flutterMapping: 'AppTextField(variant: number)',
+          variant: 'number',
+          size: 'M',
+          state: 'enabled',
+          fullWidth: true,
+          child: AppTextField(
+            controller: _number,
+            variant: AppTextFieldVariant.number,
+            hintText: 'Minutes',
+          ),
+        ),
+        const SizedBox(height: 12),
+        _LabExample(
+          title: 'Input / Password / M',
+          flutterMapping: 'AppTextField(variant: password)',
+          variant: 'password',
+          size: 'M',
+          state: 'enabled',
+          fullWidth: true,
+          child: AppTextField(
+            controller: _password,
+            variant: AppTextFieldVariant.password,
+            hintText: 'Password',
+          ),
+        ),
+        const SizedBox(height: 12),
+        _LabExample(
+          title: 'Input / Multiline',
+          flutterMapping: 'AppTextField(variant: multiline)',
+          variant: 'multiline',
+          state: 'enabled',
+          fullWidth: true,
+          child: AppTextField(
+            controller: _notes,
+            variant: AppTextFieldVariant.multiline,
+            hintText: 'Notes',
+            minLines: 2,
+            maxLines: 5,
+          ),
+        ),
+      ],
     );
   }
 }
