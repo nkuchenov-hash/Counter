@@ -108,7 +108,7 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
   final TextEditingController _search = TextEditingController();
   bool _saving = false;
   bool _showFullFluent = false;
-  bool _selectedOnly = false;
+  bool _selectedOnly = true;
   String _group = 'Все';
 
   @override
