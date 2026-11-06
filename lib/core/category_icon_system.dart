@@ -156,10 +156,15 @@ final Set<_CategoryGlyphPair> _officialFluentPairs = <_CategoryGlyphPair>{
   for (final icon in kFullFluentCategoryIcons.values) _glyphPair(icon),
 };
 
-final List<String> _everydayCandidateKeys = <String>[
-  for (final item in kHumanCategorySubjects) item.key,
-  ...kLegacyCategorySubjectKeys,
-];
+// Semantic keys also repeat across legacy and everyday labels (e.g. TV,
+// shopping bag and food). A set deduplicates identifiers *before* artworks
+// are deduplicated by Fluent glyph identity.
+final List<String> _everydayCandidateKeys = List<String>.unmodifiable(
+  <String>{
+    for (final item in kHumanCategorySubjects) item.key,
+    ...kLegacyCategorySubjectKeys,
+  },
+);
 
 final Map<_CategoryGlyphPair, String> _everydayRepresentatives = () {
   final selected = <_CategoryGlyphPair, String>{};
