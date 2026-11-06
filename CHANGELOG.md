@@ -1,3 +1,9 @@
+## 2026-11-06 — Enforce canonical input contract in deployed GitHub Pages workflow
+
+- Synchronized the default branch `gh-pages/.github/workflows/deploy.yml` with `main`: web publishing now includes both Flutter widget rendering checks and Chrome renderer checks for compact pill geometry, actual typed text and hint alignment in Timeline and Settings.
+- Strict architecture guard bans independently painted ordinary `TextField` / `TextFormField` across all application layers. Only audited specialized editors retain native internal text-editing widgets. Ordinary inputs use `AppTextField` and global `AppControlTokens`.
+- The deployed web build must be verified by exact `lifeos-build.txt` SHA; build success alone does not guarantee user-visible acceptance.
+
 ## 2026-11-06 — Center rendered hints in every canonical single-line field
 
 - Fixed the remaining inconsistency visible between Timeline and Settings: InputDecorator had different hint glyph placement even with shared outer dimensions. A single controller-reactive hint overlay inside `AppTextField` now owns the visible text baseline, independently of the surrounding screen/theme.
