@@ -1,3 +1,4 @@
+import 'package:counter/core/app_control_tokens.dart';
 import 'package:flutter/material.dart';
 
 enum AppIconButtonVariant {
@@ -62,20 +63,20 @@ class AppIconButton extends StatelessWidget {
   };
 
   double get _visualSize => switch (size) {
-    AppIconButtonSize.s => 36,
-    AppIconButtonSize.m => 44,
-    AppIconButtonSize.l => 52,
+    AppIconButtonSize.s => AppControlTokens.smallHeight,
+    AppIconButtonSize.m => AppControlTokens.height,
+    AppIconButtonSize.l => AppControlTokens.largeHeight,
   };
 
   Size get _minimumSize => switch (size) {
-    AppIconButtonSize.s => const Size(40, 40),
-    AppIconButtonSize.m => const Size(48, 48),
-    AppIconButtonSize.l => const Size(56, 56),
+    AppIconButtonSize.s => const Size.square(AppControlTokens.smallHeight),
+    AppIconButtonSize.m => const Size.square(AppControlTokens.height),
+    AppIconButtonSize.l => const Size.square(AppControlTokens.largeHeight),
   };
 
   ButtonStyle _style(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final radius = BorderRadius.circular(12);
+    final radius = BorderRadius.circular(AppControlTokens.radius);
 
     Color? background(Set<WidgetState> states) {
       if (states.contains(WidgetState.disabled)) return null;
@@ -132,7 +133,7 @@ class AppIconButton extends StatelessWidget {
       minimumSize: WidgetStatePropertyAll(_minimumSize),
       fixedSize: WidgetStatePropertyAll(Size.square(_visualSize)),
       padding: const WidgetStatePropertyAll(EdgeInsets.zero),
-      tapTargetSize: MaterialTapTargetSize.padded,
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       shape: WidgetStatePropertyAll(
         RoundedRectangleBorder(borderRadius: radius),
       ),
