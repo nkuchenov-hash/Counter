@@ -1,6 +1,7 @@
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -433,35 +434,13 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
     );
   }
 
-  Widget _searchField() => TextField(
+  Widget _searchField() => AppTextField(
     controller: _search,
+    variant: AppTextFieldVariant.search,
+    hintText: _ru ? 'Найти настройку' : 'Find a setting',
     textInputAction: TextInputAction.search,
-    decoration: InputDecoration(
-      hintText: _ru ? 'Найти настройку' : 'Find a setting',
-      prefixIcon: Icon(AppMenuIcons.icon(AppMenuIconRole.search)),
-      suffixIcon: _search.text.isEmpty ? null : IconButton(
-        tooltip: _ru ? 'Очистить поиск' : 'Clear search',
-        icon: Icon(AppMenuIcons.icon(AppMenuIconRole.close)),
-        onPressed: _search.clear,
-      ),
-      filled: true,
-      fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant,
-          width: 0.7,
-        ),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant,
-          width: 0.7,
-        ),
-      ),
-      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-    ),
+    clearable: true,
+    clearTooltip: _ru ? 'Очистить поиск' : 'Clear search',
   );
 
   Widget _home(BuildContext context) {
