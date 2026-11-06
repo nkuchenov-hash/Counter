@@ -59,6 +59,7 @@ class _CalendarViewState extends State<CalendarView>
   DateTime? _lastCalendarPlanDragEnd;
   Stream<List<PlanningTask>>? _dayStream;
   StreamSubscription<void>? _planningRefreshSub;
+  final _calendarSearchController = TextEditingController();
   @override
   bool get wantKeepAlive => true;
   @override
@@ -79,6 +80,7 @@ class _CalendarViewState extends State<CalendarView>
   @override
   void dispose() {
     _planningRefreshSub?.cancel();
+    _calendarSearchController.dispose();
     super.dispose();
   }
   Stream<List<PlanningTask>> _createDayStream(DateTime day) {
@@ -275,7 +277,7 @@ class _CalendarViewState extends State<CalendarView>
       return a.title.toLowerCase().compareTo(b.title.toLowerCase());
     });
     var query = '';
-    final searchController = TextEditingController();
+    _calendarSearchController.clear();
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -300,7 +302,7 @@ class _CalendarViewState extends State<CalendarView>
               child: Column(
                 children: [
                   AppTextField(
-                    controller: searchController,
+                    controller: _calendarSearchController,
                     variant: AppTextFieldVariant.search,
                     autofocus: true,
                     hintText: t(currentLocale.value, 'calendar_search_hint'),
@@ -346,7 +348,6 @@ class _CalendarViewState extends State<CalendarView>
         },
       ),
     );
-    searchController.dispose();
   }
   String _calendarPageKey() {
     if (_dayFocusActive) return 'day-${calendarDayKey(_selectedDay)}';
