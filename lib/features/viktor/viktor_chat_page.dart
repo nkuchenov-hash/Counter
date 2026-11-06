@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/ai/viktor_action_contract.dart';
 import 'package:counter/data/ai/viktor_executor.dart';
 import 'package:counter/data/ai/viktor_historical_records.dart';
@@ -603,12 +604,9 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                     ],
                     if (provider == 'yandex') ...[
                       const SizedBox(height: 12),
-                      TextField(
+                      AppTextField(
                         controller: folderCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'ID каталога Yandex Cloud',
-                          border: OutlineInputBorder(),
-                        ),
+                        labelText: 'ID каталога Yandex Cloud',
                       ),
                     ],
                     if (provider == 'yandex') ...[
@@ -650,33 +648,29 @@ class _ViktorChatPageState extends State<ViktorChatPage>
                         },
                       ),
                       const SizedBox(height: 12),
-                      TextField(
+                      AppTextField(
                         controller: speechKeyCtrl,
+                        variant: AppTextFieldVariant.password,
                         obscureText: true,
                         autocorrect: false,
                         enableSuggestions: false,
-                        decoration: const InputDecoration(
-                          labelText: 'API-ключ для диктовки',
-                          border: OutlineInputBorder(),
-                        ),
+                        labelText: 'API-ключ для диктовки',
                       ),
                     ],
                     const SizedBox(height: 16),
-                    TextField(
+                    AppTextField(
                       controller: keyCtrl,
+                      variant: AppTextFieldVariant.password,
                       obscureText: true,
                       autocorrect: false,
                       enableSuggestions: false,
-                      decoration: InputDecoration(
-                        labelText: provider == 'gigachat'
-                            ? 'Ключ авторизации GigaChat API'
-                            : 'API-ключ модели',
-                        hintText: _cloudConnectionError == null &&
-                                _settings.cloudProviders.contains(provider)
-                            ? 'Ключ сохранён на сервере'
-                            : 'Введите ключ для подключения',
-                        border: OutlineInputBorder(),
-                      ),
+                      labelText: provider == 'gigachat'
+                          ? 'Ключ авторизации GigaChat API'
+                          : 'API-ключ модели',
+                      hintText: _cloudConnectionError == null &&
+                              _settings.cloudProviders.contains(provider)
+                          ? 'Ключ сохранён на сервере'
+                          : 'Введите ключ для подключения',
                     ),
                     const SizedBox(height: 8),
                     if (_cloudConnectionError != null) ...[
