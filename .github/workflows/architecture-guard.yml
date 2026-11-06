@@ -31,6 +31,9 @@ jobs:
       - name: Enforce canonical chromatic UI color tokens
         run: python scripts/audit/semantic_color_tokens.py --strict
 
+      - name: Reject new colors outside the global design system
+        run: python scripts/audit/semantic_color_tokens.py --strict-new
+
       - name: Check governing documentation parity
         run: python scripts/audit/documentation_parity.py
 
