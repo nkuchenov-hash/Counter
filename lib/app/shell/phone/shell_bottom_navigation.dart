@@ -1,3 +1,4 @@
+import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -122,7 +123,7 @@ class _ShellBottomNavItem extends StatelessWidget {
     final fg = selected ? scheme.onSurface : scheme.onSurfaceVariant;
 
     return Material(
-      color: Colors.transparent,
+      color: AppNeutralTones.transparent,
       child: InkWell(
         onTap: onTap,
         child: Padding(
