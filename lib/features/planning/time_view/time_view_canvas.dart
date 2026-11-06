@@ -39,11 +39,9 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
     final grid = durationResult.grid;
     final layouts = durationResult.layouts;
     final canvasHeight = timelineCanvasHeightPx(grid);
+    // Avoid a second, subtly lighter background band in Plans Time View.
     final canvasSurface = scheme.brightness == Brightness.light
-        ? Color.alphaBlend(
-            scheme.surfaceContainerHighest.withValues(alpha: 0.24),
-            scheme.surface,
-          )
+        ? scheme.surface
         : scheme.surfaceContainerLow;
     final gridColor = scheme.outlineVariant.withValues(alpha: 0.30);
     final railColor = scheme.brightness == Brightness.light

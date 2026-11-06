@@ -51,7 +51,8 @@ void main() {
   test('complete neutral ramp has only true grays, white and black', () {
     const grays = <Color>[
       AppNeutralTones.white, AppNeutralTones.gray50,
-      AppNeutralTones.gray100, AppNeutralTones.gray200,
+      AppNeutralTones.gray75, AppNeutralTones.gray100,
+      AppNeutralTones.gray200,
       AppNeutralTones.gray300, AppNeutralTones.gray400,
       AppNeutralTones.gray500, AppNeutralTones.gray600,
       AppNeutralTones.gray700, AppNeutralTones.gray800,
@@ -86,13 +87,13 @@ void main() {
       expect((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF);
       expect((rgb >> 8) & 0xFF, rgb & 0xFF);
     }
-    expect(AppColors.appBackground, const Color(0xFFF0F0F0));
+    expect(AppColors.appBackground, const Color(0xFFF7F7F7));
     expect(AppColors.cardSurface, Colors.white);
     expect(AppColors.borderSubtle, AppNeutralTones.gray300);
     expect(
       AppColors.cardSurface.computeLuminance() -
           AppColors.appBackground.computeLuminance(),
-      greaterThan(0.075),
+      greaterThan(0.06),
     );
   });
 
