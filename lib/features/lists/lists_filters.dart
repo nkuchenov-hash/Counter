@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 
 import 'package:counter/core/tag_contrast.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/lists/lists_card.dart';
@@ -257,7 +258,7 @@ Future<void> _openLegacyCategoryPicker(BuildContext context) async {
                                 ? t(currentLocale.value, 'category_label')
                                 : categoryRawName(parent.id),
                           ),
-                          content: TextField(
+                          content: AppTextField(
                             key: ValueKey<String>(
                               parent == null
                                   ? 'notes-category-create-root-input'
@@ -266,11 +267,9 @@ Future<void> _openLegacyCategoryPicker(BuildContext context) async {
                             controller: controller,
                             autofocus: true,
                             textInputAction: TextInputAction.done,
-                            decoration: InputDecoration(
-                              labelText: t(
-                                currentLocale.value,
-                                'category_label',
-                              ),
+                            labelText: t(
+                              currentLocale.value,
+                              'category_label',
                             ),
                             onSubmitted: (_) => submit(),
                           ),
@@ -460,29 +459,25 @@ Future<void> _openLegacyCategoryPicker(BuildContext context) async {
                     if (widget.glmPresentation)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-                        child: TextField(
+                        child: AppTextField(
                           key: const ValueKey<String>(
                             'notes-category-search-field',
                           ),
                           controller: searchController,
                           autofocus: false,
                           textInputAction: TextInputAction.search,
-                          decoration: InputDecoration(
-                            hintText: '${t(currentLocale.value, 'category_label')}…',
-                            prefixIcon: const Icon(Icons.search_rounded),
-                            suffixIcon: normalizedQuery.isEmpty
-                                ? null
-                                : IconButton(
-                                    tooltip: t(currentLocale.value, 'close'),
-                                    onPressed: () {
-                                      searchController.clear();
-                                      setModal(() => searchQuery = '');
-                                    },
-                                    icon: const Icon(Icons.close_rounded),
-                                  ),
-                            border: const OutlineInputBorder(),
-                            isDense: true,
-                          ),
+                          variant: AppTextFieldVariant.search,
+                          hintText: '${t(currentLocale.value, 'category_label')}…',
+                          suffixIcon: normalizedQuery.isEmpty
+                              ? null
+                              : IconButton(
+                                  tooltip: t(currentLocale.value, 'close'),
+                                  onPressed: () {
+                                    searchController.clear();
+                                    setModal(() => searchQuery = '');
+                                  },
+                                  icon: const Icon(Icons.close_rounded),
+                                ),
                           onChanged: (value) =>
                               setModal(() => searchQuery = value),
                           onSubmitted: (_) {

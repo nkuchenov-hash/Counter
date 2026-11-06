@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
+import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/omni_date_time_picker_dialog.dart';
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/theme.dart';
@@ -112,26 +114,22 @@ class BacklogSubItemsPanelState extends State<BacklogSubItemsPanel> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
-              child: TextField(
+              child: AppTextField(
                 controller: _newTitleController,
                 enabled: _parentPersisted,
                 textInputAction: TextInputAction.done,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  hintText: t(loc, 'lists_subitems_add_hint'),
-                  isDense: true,
-                  border: const OutlineInputBorder(),
-                ),
+                hintText: t(loc, 'lists_subitems_add_hint'),
                 onSubmitted: (_) => unawaited(_addSubItem()),
               ),
             ),
             const SizedBox(width: 8),
-            FilledButton.icon(
+            AppButton.primary(
               onPressed: _parentPersisted
                   ? () => unawaited(_addSubItem())
                   : null,
-              icon: const Icon(Icons.add_rounded),
-              label: Text(t(loc, 'add')),
+              icon: Icons.add_rounded,
+              label: t(loc, 'add'),
             ),
           ],
         ),
@@ -381,13 +379,10 @@ class ParallelActivitiesTabState extends State<ParallelActivitiesTab>
       controller: widget.scrollController,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       children: [
-        TextField(
+        AppTextField(
           controller: _newTitleController,
-          decoration: InputDecoration(
-            labelText: t(currentLocale.value, 'title_label'),
-            hintText: t(currentLocale.value, 'hint_record_example'),
-            border: const OutlineInputBorder(),
-          ),
+          labelText: t(currentLocale.value, 'title_label'),
+          hintText: t(currentLocale.value, 'hint_record_example'),
           textCapitalization: TextCapitalization.sentences,
         ),
         const SizedBox(height: 8),
@@ -535,21 +530,17 @@ class ChildParallelEditBarState extends State<ChildParallelEditBar> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          TextField(
+          AppTextField(
             controller: _title,
-            decoration: InputDecoration(
-              labelText: t(currentLocale.value, 'title_label'),
-              border: const OutlineInputBorder(),
-            ),
+            labelText: t(currentLocale.value, 'title_label'),
             textCapitalization: TextCapitalization.sentences,
           ),
           const SizedBox(height: 8),
-          TextField(
+          AppTextField(
             controller: _note,
-            decoration: InputDecoration(
-              labelText: t(currentLocale.value, 'notes_label'),
-              border: const OutlineInputBorder(),
-            ),
+            labelText: t(currentLocale.value, 'notes_label'),
+            variant: AppTextFieldVariant.multiline,
+            minLines: 1,
             maxLines: 4,
             textCapitalization: TextCapitalization.sentences,
           ),

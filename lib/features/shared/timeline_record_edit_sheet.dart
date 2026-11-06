@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/omni_date_time_picker_dialog.dart';
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/theme.dart';
@@ -836,15 +837,12 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          TextField(
+                          AppTextField(
                             controller: _titleController,
-                            decoration: InputDecoration(
-                              isDense: true,
-                              labelText: t(currentLocale.value, 'title_label'),
-                              hintText: t(
-                                currentLocale.value,
-                                'hint_record_example',
-                              ),
+                            labelText: t(currentLocale.value, 'title_label'),
+                            hintText: t(
+                              currentLocale.value,
+                              'hint_record_example',
                             ),
                             textCapitalization: TextCapitalization.sentences,
                             onChanged: (raw) {
