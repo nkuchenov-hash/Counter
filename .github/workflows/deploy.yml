@@ -119,6 +119,10 @@ jobs:
         if: steps.freshness.outputs.fresh == 'true'
         run: flutter test test/app_control_consistency_test.dart
 
+      - name: Verify same canonical inputs in Chrome renderer
+        if: steps.freshness.outputs.fresh == 'true'
+        run: flutter test --platform chrome test/app_control_consistency_test.dart
+
       - name: Build LIFE OS web
         if: steps.freshness.outputs.fresh == 'true'
         run: |
