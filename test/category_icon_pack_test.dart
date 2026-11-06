@@ -21,12 +21,16 @@ void main() {
     expect(selectable, containsAll([
       'person', 'dog', 'cat', 'tree', 'bicycle', 'car', 'taxi', 'bed',
       'couch', 'washer', 'dishwasher', 'tv', 'dumbbell', 'soccer',
-      'clothes_hanger', 'chair', 'fridge', 'microwave', 'book_open',
+      'clothes_hanger', 'washer', 'oven', 'book_open',
     ]));
     expect(selectable, isNot(contains('arrow_down')));
     expect(selectable, isNot(contains('chevron_left')));
     expect(selectable, isNot(contains('plus')));
     expect(selectable, isNot(contains('currency_euro')));
+    expect(selectable, isNot(contains('fridge')));
+    expect(selectable, isNot(contains('flowers')));
+    expect(CategoryIconStore.isValidKey('fridge'), isTrue,
+        reason: 'Previously saved Material artwork still renders.');
     for (final entry in kMatchedCategoryIcons.entries) {
       expect(entry.value.fluentOutline, isNot(entry.value.fluentFilled),
           reason: '${entry.key} must have separate Outline/Fill styles');
@@ -38,7 +42,7 @@ void main() {
     expect(kDefaultCategoryIconKeys.length, inInclusiveRange(25, 50));
     expect(kDefaultCategoryIconKeys.every(CategoryIconStore.isValidKey), isTrue);
     expect(kDefaultCategoryIconKeys, containsAll([
-      'dog', 'cat', 'tree', 'car', 'taxi', 'bicycle', 'tv', 'fridge',
+      'dog', 'cat', 'tree', 'car', 'taxi', 'bicycle', 'tv', 'washer',
       'dumbbell', 'clothes_hanger', 'book_open',
     ]));
     expect(kDefaultCategoryIconKeys, isNot(contains('arrow_left')));
@@ -48,8 +52,33 @@ void main() {
   test('complete pinned Fluent library is available only on request', () {
     expect(kFullFluentCategoryIcons.length, greaterThan(2000));
     expect(CategoryIconStore.fullFluentCount, kFullFluentCategoryIcons.length);
-    expect(CategoryIconStore.catalogFor(includeFullFluent: true).length,
-        CategoryIconStore.catalogFor().length + kFullFluentCategoryIcons.length);
+    final everyday = CategoryIconStore.catalogFor();
+    final entire = CategoryIconStore.catalogFor(includeFullFluent: true);
+    expect(entire.length, lessThanOrEqualTo(kFullFluentCategoryIcons.length));
+    expect(entire.length, greaterThan(2000));
+
+    // No duplicate image in either gallery, even when aliases differ.
+    final validGlyphs = <(IconData, IconData)>{
+      for (final icon in kFullFluentCategoryIcons.values)
+        (icon.fluentOutline, icon.fluentFilled),
+    };
+    for (final choices in [everyday, entire]) {
+      final artworks = <(IconData, IconData)>[];
+      for (final item in choices) {
+        final icon = kMatchedCategoryIcons[item.key] ??
+            kFullFluentCategoryIcons[item.key]!;
+        final pair = (icon.fluentOutline, icon.fluentFilled);
+        expect(validGlyphs, contains(pair),
+            reason: '${item.key} must be Fluent, never Material');
+        artworks.add(pair);
+      }
+      expect(artworks.toSet().length, artworks.length,
+          reason: 'No duplicated glyphs are permitted in a category gallery');
+    }
+    expect(entire.any((item) => item.key == 'fluent__animal_dog'), isFalse,
+        reason: 'Dog is already shown as a curated everyday icon.');
+    expect(categoryPickerRepresentative('fluent__animal_dog'), 'dog');
+    expect(categoryPickerRepresentative('fridge'), isNull);
     expect(CategoryIconStore.catalogFor().any(
         (entry) => entry.key.startsWith('fluent__')), isFalse);
     expect(CategoryIconStore.isValidKey('fluent__animal_dog'), isTrue);
@@ -113,9 +142,14 @@ void main() {
       await store.ensureLoaded();
       await store.setQuickKeys(kDefaultCategoryIconKeys);
       await store.setQuickKeys(['home', 'tree', 'dog']);
-      expect(store.quickKeys, ['home', 'tree', 'dog']);
-      await store.setQuickKeys(['home', 'tree', 'dog', 'taxi']);
+      expect(store.quickKeys, ['house', 'tree', 'dog']);
+      await store.setQuickKeys(['home', 'tree', 'dog', 'taxi',
+          'fluent__animal_dog', 'fridge', 'door']);
       expect(store.quickKeys, contains('taxi'));
+      expect(store.quickKeys.where((key) => key == 'dog').length, 1,
+          reason: 'Fluent dog and curated dog are one icon, not two');
+      expect(store.quickKeys, isNot(contains('fridge')));
+      expect(store.quickKeys, isNot(contains('door')));
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('takto.category.icon_quick_collection.v1'),
           contains('taxi'));
@@ -198,6 +232,8 @@ void main() {
         ['dog', 'cat', 'tree', 'car', 'taxi']);
     expect(kDefaultCategoryIconKeys.indexOf('dog'),
         lessThan(kDefaultCategoryIconKeys.indexOf('work')));
+    expect(kDefaultCategoryIconKeys, isNot(contains('fridge')));
+    expect(kDefaultCategoryIconKeys, isNot(contains('flowers')));
     expect(isSelectableCategoryIconKey('arrow_left'), isFalse);
     expect(CategoryIconStore.isValidKey('arrow_left'), isTrue,
         reason: 'Previously saved controls must remain renderable.');
@@ -228,8 +264,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'animal_dog');
     await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('category-icon-dog')), findsOneWidget);
     expect(find.byKey(const ValueKey('category-icon-fluent__animal_dog')),
-        findsOneWidget);
+        findsNothing, reason: 'Official alias must not show a second dog');
     await tester.tap(find.byKey(const ValueKey('category-icon-my-icons')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'dog');
