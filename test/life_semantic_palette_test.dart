@@ -9,6 +9,7 @@ import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/core/tag_contrast.dart';
 import 'package:counter/data/models.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -511,6 +512,56 @@ void main() {
     expect(parseTagHexColor('#C82332'), kNordicEntertainment[500]);
     expect(parseTagHexColor('#242B5D'), kNordicStudy[500]);
     expect(parseTagHexColor('#606060'), kCategoryNeutral[500]);
+  });
+
+  testWidgets('Settings chevrons and dividers use shared readable tokens',
+      (tester) async {
+    expect(AppMenuIcons.icon(AppMenuIconRole.menu), Icons.settings_outlined);
+    for (final theme in <ThemeData>[appLightTheme, appDarkTheme]) {
+      await tester.pumpWidget(MaterialApp(
+        key: ValueKey(theme.brightness),
+        theme: theme,
+        darkTheme: theme,
+        themeMode: theme.brightness == Brightness.dark
+            ? ThemeMode.dark
+            : ThemeMode.light,
+        home: Scaffold(
+          body: AppSettingsNavigationGroup(children: [
+            AppSettingsNavigationRow(title: 'Planning', onTap: () {}),
+            AppSettingsNavigationRow(title: 'Categories', onTap: () {}),
+          ]),
+        ),
+      ));
+      final dark = theme.brightness == Brightness.dark;
+      final expectedDivider =
+          dark ? AppColors.darkSettingsDivider : AppColors.settingsDivider;
+      final expectedChevron =
+          dark ? AppColors.darkSettingsChevron : AppColors.settingsChevron;
+      expect(
+        tester.widget<ColoredBox>(
+          find.byKey(const ValueKey('settings-divider-line-0')),
+        ).color,
+        expectedDivider,
+      );
+      final chevron = tester.widget<Icon>(
+        find.byIcon(AppMenuIcons.icon(AppMenuIconRole.arrow)).first,
+      );
+      expect(chevron.color, expectedChevron);
+
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      await mouse.moveTo(tester.getCenter(find.text('Planning')));
+      await tester.pump();
+      expect(
+        tester.widget<ColoredBox>(
+          find.byKey(const ValueKey('settings-divider-line-0')),
+        ).color,
+        expectedDivider,
+        reason: 'Hover must not erase Settings row separators',
+      );
+      await mouse.removePointer();
+    }
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('grouped settings menu remains functional at phone width', (
