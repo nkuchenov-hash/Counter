@@ -127,6 +127,12 @@ class AppTextField extends StatelessWidget {
         ),
         decoration: InputDecoration(
           isCollapsed: true,
+          // Override the global InputDecorationTheme minimum height. Without
+          // this, EditableText takes the full control height and its glyphs
+          // sit at the top instead of being centered in the 36px capsule.
+          constraints: const BoxConstraints.tightFor(
+            height: AppControlTokens.singleLineEditorHeight,
+          ),
           hintText: hintText,
           hintStyle: TextStyle(
             fontSize: AppControlTokens.fontSize,
@@ -182,7 +188,12 @@ class AppTextField extends StatelessWidget {
                         width: AppControlTokens.horizontalPadding,
                       ),
                     Expanded(
-                      child: Center(child: inner),
+                      child: Center(
+                        child: SizedBox(
+                          height: AppControlTokens.singleLineEditorHeight,
+                          child: inner,
+                        ),
+                      ),
                     ),
                     if (suffixIcon != null)
                       SizedBox(

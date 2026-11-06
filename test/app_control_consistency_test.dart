@@ -105,6 +105,8 @@ void main() {
         of: entryField,
         matching: find.byType(EditableText),
       );
+      expect(tester.getRect(editor).height,
+          lessThan(AppControlTokens.height));
       expect((tester.getRect(editor).center.dy - fieldRect.center.dy).abs(),
           lessThanOrEqualTo(1));
       final searchField = find.byType(AppTextField).last;
