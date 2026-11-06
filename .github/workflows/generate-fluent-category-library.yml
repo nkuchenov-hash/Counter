@@ -48,6 +48,9 @@ jobs:
             exit 0
           fi
           git commit -m "icons: generate full pinned Fluent category catalog"
+          # flutter pub get can touch pubspec.lock; only generated artifacts
+          # belong to this commit. Discard that unrelated working-tree diff.
+          git reset --hard HEAD
           for attempt in 1 2 3 4 5; do
             git pull --rebase origin main
             if git push origin HEAD:main; then exit 0; fi
