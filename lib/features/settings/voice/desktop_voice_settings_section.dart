@@ -7,6 +7,7 @@ import 'package:counter/shared/voice/platforms/desktop/desktop_voice_hotkey.dart
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_settings.dart';
 import 'package:counter/core/services/desktop_tray_service.dart';
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/voice/voice_command_parser.dart';
@@ -199,12 +200,10 @@ class _DesktopVoiceSettingsSectionState extends State<DesktopVoiceSettingsSectio
             style: Theme.of(context).textTheme.labelLarge,
           ),
           const SizedBox(height: 8),
-          TextField(
+          AppTextField(
             controller: _parserTestController,
-            decoration: InputDecoration(
-              hintText: t(loc, 'desktop_voice_parser_test_hint'),
-              border: const OutlineInputBorder(),
-            ),
+            variant: AppTextFieldVariant.multiline,
+            hintText: t(loc, 'desktop_voice_parser_test_hint'),
             minLines: 1,
             maxLines: 2,
           ),

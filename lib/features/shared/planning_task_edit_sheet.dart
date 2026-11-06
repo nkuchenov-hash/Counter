@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/omni_date_time_picker_dialog.dart';
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/theme.dart';
@@ -878,19 +879,14 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                             ),
                             if (_repeatUi == PlanRepeatUi.custom) ...[
                               const SizedBox(height: 12),
-                              TextField(
+                              AppTextField(
                                 controller: _rruleCustomController,
+                                variant: AppTextFieldVariant.multiline,
                                 minLines: 2,
                                 maxLines: 5,
                                 onChanged: (_) => _onPlanFieldChanged(),
-                                decoration: InputDecoration(
-                                  labelText: t(
-                                    currentLocale.value,
-                                    'plan_repeat_custom',
-                                  ),
-                                  border: const OutlineInputBorder(),
+                                labelText: t(currentLocale.value, 'plan_repeat_custom'),
                                 ),
-                              ),
                             ],
                           ],
                         ),
@@ -1231,19 +1227,14 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                                   ),
                                   if (_repeatUi == PlanRepeatUi.custom) ...[
                                     const SizedBox(height: 12),
-                                    TextField(
+                                    AppTextField(
                                       controller: _rruleCustomController,
+                                      variant: AppTextFieldVariant.multiline,
                                       minLines: 2,
                                       maxLines: 5,
                                       onChanged: (_) => _onPlanFieldChanged(),
-                                      decoration: InputDecoration(
-                                        labelText: t(
-                                          currentLocale.value,
-                                          'plan_repeat_custom',
-                                        ),
-                                        border: const OutlineInputBorder(),
+                                      labelText: t(currentLocale.value, 'plan_repeat_custom'),
                                       ),
-                                    ),
                                   ],
                                 ],
                               ),

@@ -1,4 +1,5 @@
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/paths/path_repository.dart';
 import 'package:flutter/material.dart';
 
@@ -304,19 +305,18 @@ class _TwoFieldPathEditSheetState extends State<_TwoFieldPathEditSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _PathFieldLabel(widget.firstLabel),
-          TextField(
+          AppTextField(
             controller: _first,
             autofocus: true,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(border: OutlineInputBorder()),
           ),
           const SizedBox(height: 22),
           _PathFieldLabel(widget.secondLabel),
-          TextField(
+          AppTextField(
             controller: _second,
+            variant: AppTextFieldVariant.multiline,
             minLines: widget.secondMinLines,
             maxLines: 8,
-            decoration: const InputDecoration(border: OutlineInputBorder()),
           ),
         ],
       ),
@@ -436,33 +436,31 @@ class _PathActionEditSheetState extends State<_PathActionEditSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _PathFieldLabel(ru ? 'Формулировка' : 'Wording'),
-          TextField(
+          AppTextField(
             controller: _text,
+            variant: AppTextFieldVariant.multiline,
             autofocus: true,
             minLines: 1,
             maxLines: 4,
-            decoration: const InputDecoration(border: OutlineInputBorder()),
           ),
           const SizedBox(height: 20),
           _PathFieldLabel(ru ? 'Конечный результат' : 'Final result'),
-          TextField(
+          AppTextField(
             controller: _result,
+            variant: AppTextFieldVariant.multiline,
             minLines: 2,
             maxLines: 6,
-            decoration: const InputDecoration(border: OutlineInputBorder()),
           ),
           const SizedBox(height: 20),
           _PathFieldLabel(ru ? 'Описание / контекст' : 'Description / context'),
-          TextField(
+          AppTextField(
             controller: _description,
+            variant: AppTextFieldVariant.multiline,
             minLines: 4,
             maxLines: 12,
-            decoration: InputDecoration(
-              border: const OutlineInputBorder(),
-              hintText: ru
-                  ? 'Что важно знать, ссылки, пояснения, промежуточные детали…'
-                  : 'Context, links, notes and intermediate details…',
-            ),
+            hintText: ru
+                ? 'Что важно знать, ссылки, пояснения, промежуточные детали…'
+                : 'Context, links, notes and intermediate details…',
           ),
           const SizedBox(height: 20),
           Row(
@@ -508,12 +506,9 @@ class _PathActionEditSheetState extends State<_PathActionEditSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _PathFieldLabel(ru ? 'Время, мин' : 'Minutes'),
-                TextField(
+                AppTextField(
                   controller: _minutes,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                  ),
+                  variant: AppTextFieldVariant.number,
                 ),
               ],
             ),
@@ -549,14 +544,11 @@ class _PathChecklistEditorRow extends StatelessWidget {
           },
         ),
         Expanded(
-          child: TextField(
+          child: AppTextField(
             controller: item.controller,
+            variant: AppTextFieldVariant.multiline,
             minLines: 1,
             maxLines: 3,
-            decoration: const InputDecoration(
-              isDense: true,
-              border: OutlineInputBorder(),
-            ),
           ),
         ),
         const SizedBox(width: 6),

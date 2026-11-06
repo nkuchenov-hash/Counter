@@ -1,4 +1,5 @@
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/voice/voice_command_parser.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -129,13 +130,10 @@ class _DesktopVoiceCorrectionSheetBodyState
                       ),
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                AppTextField(
                   controller: _titleController,
                   autofocus: true,
-                  decoration: InputDecoration(
-                    labelText: t(loc, 'desktop_voice_record_title'),
-                    border: const OutlineInputBorder(),
-                  ),
+                  labelText: t(loc, 'desktop_voice_record_title'),
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _onConfirm(),
                 ),
