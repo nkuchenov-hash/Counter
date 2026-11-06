@@ -384,3 +384,11 @@ row and surface tokens, adapted to available width.
 - Light-mode Settings canvas is `#F7F7F7`; grouped cards are `#FFFFFF`, with subtle `#F4F4F4` icon containers and no card border. Dark mode uses equivalent neutral surfaces, not hard-coded light fills.
 - The page, desktop sidebar and mobile destination are named **Settings / Настройки**, never Menu / Меню; the destination uses the shared settings-gear icon role. Search uses the canonical `AppTextField` at 48 px high, the same as other search/input controls. All Settings destinations must open working settings or working feature screens, never a visual-only switch or a fake integration status.
 - Domain settings have one persistence implementation; feature-local quick menus remain accessible but link to the same canonical settings screens.
+
+## Canonical input contract (2026-11-06)
+
+- **One canonical Flutter input**: `AppTextField` in `lib/core/widgets/app_text_field.dart`. Text, search, email, numeric, password, multiline and validation are variants/parameters of this widget, not separate feature-local control implementations.
+- `AppControlTokens` owns standard single-line field and adjacent `AppButton.m` geometry: **48 logical px height**, **14 px corner radius**, **16 px text**, **8 px gap**. Search prefix icons and show/hide suffix icons do not change the painted outer bounds.
+- Field labels, when requested, sit above the 48 px input; multiline content can grow. Shared field visuals derive from the active light/dark theme. Screens must not override border, fill, radius, height, padding, or focus style.
+- `AppQuickEntryRow` owns the Timeline/Planning adjacent field/action layout; the painted `InputDecorator` and `FilledButton` must have matching top and bottom bounds and the same radius. Widget tests must measure the inner controls, not just their wrappers.
+- Rich-text editing surfaces (e.g. document block editors) may retain specialized editors for editing behavior, but simple text/search/forms must migrate to `AppTextField` instead of creating new `TextField` styling.

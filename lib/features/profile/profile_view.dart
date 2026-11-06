@@ -7,6 +7,7 @@ import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/timezone_quick_picker.dart';
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_settings.dart';
 import 'package:counter/features/settings/timezone_settings.dart'
@@ -460,25 +461,14 @@ class _ProfilePageState extends State<ProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(
+        AppTextField(
           controller: _displayNameController,
           focusNode: _displayNameFocus,
-          style: Theme.of(context).textTheme.bodyLarge,
-          decoration: InputDecoration(
-            labelText: t(locale, 'display_name_label'),
-            hintText: t(locale, 'display_name_hint'),
-            border: const OutlineInputBorder(),
-            suffixIcon: _savingDisplayName
-                ? const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: AppLoading(size: AppLoadingSize.small),
-                    ),
-                  )
-                : null,
-          ),
+          labelText: t(locale, 'display_name_label'),
+          hintText: t(locale, 'display_name_hint'),
+          suffixIcon: _savingDisplayName
+              ? const Center(child: AppLoading(size: AppLoadingSize.small))
+              : null,
           textCapitalization: TextCapitalization.words,
           onChanged: (_) => _scheduleDisplayNameSave(),
           onEditingComplete: _flushDisplayNameSave,

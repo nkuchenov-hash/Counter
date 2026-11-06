@@ -445,7 +445,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
     focusNode: _searchFocus,
     textInputAction: TextInputAction.search,
     hintText: _ru ? 'Найти настройку' : 'Find a setting',
-    showSearchIcon: true,
+    variant: AppTextFieldVariant.search,
     suffixIcon: _search.text.isEmpty ? null : IconButton(
       tooltip: _ru ? 'Очистить поиск' : 'Clear search',
       icon: Icon(AppMenuIcons.icon(AppMenuIconRole.close)),

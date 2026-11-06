@@ -1,4 +1,5 @@
 import 'package:counter/core/app_colors.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'dart:async';
 
 import 'package:counter/core/category_color_palette.dart';
@@ -164,12 +165,10 @@ class _CreateCategoryDialogState extends State<_CreateCategoryDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
+            AppTextField(
               controller: _controller,
-              decoration: InputDecoration(
-                labelText: t(loc, 'name_label'),
-                hintText: t(loc, 'hint_work_health'),
-              ),
+              labelText: t(loc, 'name_label'),
+              hintText: t(loc, 'hint_work_health'),
               textCapitalization: TextCapitalization.sentences,
               autofocus: true,
             ),
