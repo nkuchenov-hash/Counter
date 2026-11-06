@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:file_saver/file_saver.dart';
@@ -293,15 +294,14 @@ Future<NotesCaptionResult?> showNotesImageCaptionDialog({
     context: context,
     builder: (dialogContext) => AlertDialog(
       title: Text(t(loc, 'notes_image_caption_title')),
-      content: TextField(
+      content: AppTextField(
         controller: controller,
         autofocus: true,
+        variant: AppTextFieldVariant.multiline,
         minLines: 1,
         maxLines: 4,
         textCapitalization: TextCapitalization.sentences,
-        decoration: InputDecoration(
-          hintText: t(loc, 'notes_image_caption_hint'),
-        ),
+        hintText: t(loc, 'notes_image_caption_hint'),
       ),
       actions: [
         AppButton.ghost(

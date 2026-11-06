@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:counter/core/category_icon_system.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/app_build_info.dart';
 import 'package:flutter/material.dart';
 
@@ -254,19 +255,15 @@ class _IconCollectionEditorState extends State<_IconCollectionEditor> {
       ),
       Padding(
         padding: const EdgeInsets.fromLTRB(18, 3, 18, 3),
-        child: TextField(
+        child: AppTextField(
           controller: _search,
-          decoration: InputDecoration(
-            isDense: true,
-            prefixIcon: const Icon(Icons.search),
-            hintText: widget.isRussian
-                ? 'Поиск: собака, машина, спорт…'
-                : 'Search: dog, car, sports…',
-            border: const OutlineInputBorder(),
-            suffixIcon: query.isEmpty ? null : IconButton(
-              onPressed: _search.clear,
-              icon: const Icon(Icons.close),
-            ),
+          variant: AppTextFieldVariant.search,
+          hintText: widget.isRussian
+              ? 'Поиск: собака, машина, спорт…'
+              : 'Search: dog, car, sports…',
+          suffixIcon: query.isEmpty ? null : IconButton(
+            onPressed: _search.clear,
+            icon: const Icon(Icons.close),
           ),
         ),
       ),

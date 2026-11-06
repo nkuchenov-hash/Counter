@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/features/shared/sleep_record_policy.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -472,14 +473,12 @@ class _MorningStartSheetState extends State<MorningStartSheet> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                TextField(
+                AppTextField(
                   controller: _customController,
                   textInputAction: TextInputAction.done,
                   onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: _copy('Something else…', 'Что-то другое…'),
-                    prefixIcon: const Icon(Icons.edit_outlined, size: 19),
-                  ),
+                  hintText: _copy('Something else…', 'Что-то другое…'),
+                  prefixIcon: const Icon(Icons.edit_outlined, size: 19),
                 ),
               ],
               const SizedBox(height: 18),

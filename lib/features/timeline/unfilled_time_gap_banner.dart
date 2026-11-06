@@ -1,5 +1,6 @@
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/records/unfilled_time_gap_policy.dart';
 import 'package:counter/data/records/unfilled_time_gap_service.dart';
@@ -132,14 +133,11 @@ class UnfilledTimeGapSidebarCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 16),
-                    TextField(
+                    AppTextField(
                       controller: controller,
                       autofocus: true,
                       textCapitalization: TextCapitalization.sentences,
-                      decoration: InputDecoration(
-                        hintText: t(locale, 'unfilled_time_activity_hint'),
-                        border: const OutlineInputBorder(),
-                      ),
+                      hintText: t(locale, 'unfilled_time_activity_hint'),
                       onSubmitted: (_) {
                         if (!saving) {
                           _saveGap(
