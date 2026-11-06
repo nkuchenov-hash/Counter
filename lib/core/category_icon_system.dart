@@ -136,15 +136,13 @@ const Map<String, String> kPreviousIconAliases = {
 /// Explicit subject whitelist: toolbar/navigation symbols cannot leak into
 /// the category picker just because a backing icon exists.
 const List<String> kLegacyCategorySubjectKeys = [
+  // Familiar objects only. More specialized/business and UI controls
+  // remain renderable for existing categories, not added to Everyday.
   'home', 'heart', 'briefcase', 'calendar', 'folder', 'clock', 'star',
   'book', 'cart', 'cake', 'moon', 'bell', 'lock', 'camera', 'wallet',
   'gift', 'phone', 'document', 'cloud', 'tag', 'trophy', 'map',
   'key', 'light_bulb', 'musical_note', 'sun', 'photo', 'paint_brush',
-  'user', 'users', 'map_pin', 'shopping_bag', 'tv', 'truck', 'food',
-  'beaker', 'fire', 'face_smile', 'globe_alt', 'house', 'building_office',
-  'building_storefront', 'banknotes', 'credit_card', 'calendar_days',
-  'calendar_date_range', 'check_badge', 'computer_desktop', 'device_tablet',
-  'film', 'inbox', 'newspaper', 'ticket', 'wifi', 'archive_box',
+  'map_pin', 'shopping_bag', 'tv', 'food', 'fire', 'face_smile',
 ];
 
 final Set<String> _selectableIconKeys = <String>{
