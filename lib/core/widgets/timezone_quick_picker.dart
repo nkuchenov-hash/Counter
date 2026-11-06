@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/shared/time/profile_timezone_actions.dart';
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:counter/core/widgets/app_timezone_icon.dart';
@@ -253,14 +254,10 @@ class _TimezoneQuickPickerSheetState extends State<_TimezoneQuickPickerSheet> {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
-          TextField(
+          AppTextField(
             controller: _searchController,
-            decoration: InputDecoration(
-              isDense: true,
-              prefixIcon: const Icon(Icons.search, size: 20),
-              hintText: t(loc, 'search_timezones'),
-              border: const OutlineInputBorder(),
-            ),
+            variant: AppTextFieldVariant.search,
+            hintText: t(loc, 'search_timezones'),
             onChanged: (v) => setState(() => _query = v),
           ),
           const SizedBox(height: 8),

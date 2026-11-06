@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/shared/categories/picker/category_picker_contracts.dart';
@@ -202,12 +203,10 @@ class _CreateCategoryFromPickerDialogState
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
+            AppTextField(
               controller: _controller,
               enabled: !_busy,
-              decoration: InputDecoration(
-                labelText: t(loc, 'category_name_label'),
-              ),
+              labelText: t(loc, 'category_name_label'),
               textCapitalization: TextCapitalization.sentences,
               autofocus: true,
               onSubmitted: (_) => unawaited(_submit()),

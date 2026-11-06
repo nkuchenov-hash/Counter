@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -172,13 +173,10 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-            child: TextField(
+            child: AppTextField(
               controller: _searchController,
-              decoration: InputDecoration(
-                isDense: true,
-                prefixIcon: const Icon(Icons.search_rounded),
-                hintText: t(loc, 'category_label'),
-              ),
+              variant: AppTextFieldVariant.search,
+              hintText: t(loc, 'category_label'),
               textCapitalization: TextCapitalization.sentences,
             ),
           ),
@@ -375,13 +373,10 @@ class _CategoryTreeMultiPickerSheetState
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-            child: TextField(
+            child: AppTextField(
               controller: _searchController,
-              decoration: InputDecoration(
-                isDense: true,
-                prefixIcon: const Icon(Icons.search_rounded),
-                hintText: t(loc, 'category_label'),
-              ),
+              variant: AppTextFieldVariant.search,
+              hintText: t(loc, 'category_label'),
               textCapitalization: TextCapitalization.sentences,
             ),
           ),
