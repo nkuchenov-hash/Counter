@@ -257,6 +257,7 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 | `app_build_info.dart` | Build metadata |
 | `app_icons.dart` | Canonical icon tokens (timezone family, shared glyphs) |
 | `category_icon_catalog_generated.g.dart` | Reviewed semantic intersection: 103 concepts available in both Fluent UI and Heroicons (Outline/Fill) |
+| `fluent_full_catalog_generated.g.dart` | Generated, pinned Fluent icon catalog shared by all category picker displays |
 | `category_icon_system.dart` | Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon choices |
 | `category_color_palette.dart` | Category tile palette |
 | `life_color_compat.dart` | Canonical 11-family semantic palette and display-only historical color compatibility |
