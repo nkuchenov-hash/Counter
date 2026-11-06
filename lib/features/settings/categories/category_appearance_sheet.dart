@@ -226,7 +226,7 @@ class _CategoryAppearanceSheetState extends State<CategoryAppearanceSheet> {
               child: Row(children: [
                 CategorySvgIcon(
                   selection: _choice, size: 28,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: Color(_colorValue ?? widget.category.colorOrDefault.toARGB32()),
                 ),
                 const SizedBox(width: 13),
                 Expanded(child: Text(
