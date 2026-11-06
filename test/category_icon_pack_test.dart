@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/core/category_icon_catalog_generated.g.dart';
+import 'package:counter/core/fluent_full_catalog_generated.g.dart';
 import 'package:counter/features/settings/categories/category_icon_collection_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,13 +33,34 @@ void main() {
     }
   });
 
-  test('default category library excludes navigation controls', () {
-    final keys = kMatchedCategoryIcons.keys.where(isSelectableCategoryIconKey);
-    expect(kDefaultCategoryIconKeys.toSet(), keys.toSet());
+  test('starter collection is small and focused on everyday subjects', () {
+    expect(kDefaultCategoryIconKeys.length, inInclusiveRange(25, 50));
     expect(kDefaultCategoryIconKeys.every(CategoryIconStore.isValidKey), isTrue);
-    expect(kDefaultCategoryIconKeys, containsAll(
-        ['home', 'folder', 'heart', 'banknotes', 'film']));
+    expect(kDefaultCategoryIconKeys, containsAll([
+      'dog', 'cat', 'tree', 'car', 'taxi', 'bicycle', 'tv', 'fridge',
+      'dumbbell', 'clothes_hanger', 'book_open',
+    ]));
     expect(kDefaultCategoryIconKeys, isNot(contains('arrow_left')));
+    expect(kDefaultCategoryIconKeys, isNot(contains('banknotes')));
+  });
+
+  test('complete pinned Fluent library is available only on request', () {
+    expect(kFullFluentCategoryIcons.length, greaterThan(2000));
+    expect(CategoryIconStore.fullFluentCount, kFullFluentCategoryIcons.length);
+    expect(CategoryIconStore.catalogFor(includeFullFluent: true).length,
+        CategoryIconStore.catalogFor().length + kFullFluentCategoryIcons.length);
+    expect(CategoryIconStore.catalogFor().any(
+        (entry) => entry.key.startsWith('fluent__')), isFalse);
+    expect(CategoryIconStore.isValidKey('fluent__animal_dog'), isTrue);
+    expect(CategoryIconStore.isValidKey('fluent__vehicle_car'), isTrue);
+  });
+
+  test('old auto-selected giant libraries migrate, custom collections do not', () {
+    expect(isLegacyAutoSelectedCollection(
+        kMatchedCategoryIcons.keys.take(103).toList()), isTrue);
+    expect(isLegacyAutoSelectedCollection(
+        kMatchedCategoryIcons.keys.take(144).toList()), isTrue);
+    expect(isLegacyAutoSelectedCollection(['home', 'dog', 'taxi']), isFalse);
   });
 
   test('category manager and Notes use the same semantic renderer', () {
@@ -63,7 +85,10 @@ void main() {
       'lib/features/settings/categories/category_icon_picker.dart',
     ).readAsStringSync();
     expect(picker, contains('store.quickCatalog'));
-    expect(picker, contains('final essentials = approved.take(47)'));
+    expect(picker, contains("final catalog = switch (_view)"));
+    expect(picker, contains('category-icon-all-fluent'));
+    expect(picker, contains('category-icon-my-icons'));
+    expect(picker, contains('category-icon-favorite-toggle'));
     expect(picker, contains('Tooltip('));
     expect(picker, contains('maxCrossAxisExtent: 58'));
     expect(picker, contains('CategoryIconStore.isValidKey'));
@@ -102,9 +127,12 @@ void main() {
     expect(screen, contains('matched-icon-collection-grid'));
     expect(screen, contains('reset-default-icons'));
     expect(screen, contains('save-icon-collection'));
+    expect(screen, contains('clear-icon-collection'));
+    expect(screen, contains('selected-icon-catalog'));
+    expect(screen, contains('everyday-icon-catalog'));
   });
 
-  testWidgets('Settings respects custom icon favorites and offers other icons',
+  testWidgets('My icons edits selected icons in one unified grid',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.runAsync(() async {
@@ -119,30 +147,30 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('manage-category-icons')));
     await tester.pumpAndSettle();
     final grid = find.byKey(const ValueKey('matched-icon-collection-grid'));
-    final defaultGrid = tester.widget<GridView>(grid);
-    expect((defaultGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
+    final everydayGrid = tester.widget<GridView>(grid);
+    expect((everydayGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
+        CategoryIconStore.catalogFor().length);
+    expect(find.byKey(const ValueKey('selected-icon-catalog')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('selected-icon-catalog')));
+    await tester.pumpAndSettle();
+    final selectedGrid = tester.widget<GridView>(grid);
+    expect((selectedGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
         3);
-    expect(find.textContaining('in my collection'), findsOneWidget);
     expect(find.byKey(const ValueKey('toggle-icon-catalog')), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('toggle-icon-catalog')));
     await tester.pumpAndSettle();
-    final availableGrid = tester.widget<GridView>(grid);
-    expect((availableGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
-        CategoryIconStore.catalogFor().length - 3);
-    expect(find.textContaining('category icons available'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('toggle-icon-catalog')));
-    await tester.pumpAndSettle();
-    final restoredGrid = tester.widget<GridView>(grid);
-    expect((restoredGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
-        3);
+    final fluentGrid = tester.widget<GridView>(grid);
+    expect((fluentGrid.childrenDelegate as SliverChildBuilderDelegate).childCount,
+        CategoryIconStore.catalogFor(includeFullFluent: true).length);
+    expect(find.textContaining('shown'), findsOneWidget);
   });
 
   test('human-first catalog covers everyday life and keeps legacy art', () {
     expect(kHumanCategorySubjects.length, greaterThanOrEqualTo(110));
     expect(kDefaultCategoryIconKeys.take(5),
-        ['person', 'family', 'friends', 'coworkers', 'walking']);
+        ['dog', 'cat', 'tree', 'car', 'taxi']);
     expect(kDefaultCategoryIconKeys.indexOf('dog'),
-        lessThan(kDefaultCategoryIconKeys.indexOf('wallet')));
+        lessThan(kDefaultCategoryIconKeys.indexOf('work')));
     expect(isSelectableCategoryIconKey('arrow_left'), isFalse);
     expect(CategoryIconStore.isValidKey('arrow_left'), isTrue,
         reason: 'Previously saved controls must remain renderable.');
@@ -159,7 +187,7 @@ void main() {
     final deploy = File('.github/workflows/deploy.yml').readAsStringSync();
     expect(picker, contains('icon-picker-build-and-count'));
     expect(picker, contains('AppBuildInfo.gitCommit'));
-    expect(collection, contains('AppBuildInfo.gitCommit'));
+    expect(collection, contains('showCategoryIconCollectionEditor'));
     expect(html, contains('lifeos-legacy-sw-upgraded'));
     expect(deploy, contains('Retire obsolete Flutter cache-first service worker'));
   });
