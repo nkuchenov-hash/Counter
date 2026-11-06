@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `dd862d20` on 2026-11-06.**
+**Generated from input HEAD `fbd1751a` on 2026-11-06.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 986 — each appears **exactly once** below.
+**Tracked files:** 988 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -31,7 +31,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `Brain/data` | 114 |
 | `platform build` | 83 |
 | `shared foundation` | 70 |
-| `developer tool` | 65 |
+| `developer tool` | 66 |
 | `governing documentation` | 45 |
 | `platform resource` | 44 |
 | `Desktop Voice runtime` | 36 |
@@ -40,7 +40,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `PocketBase migration` | 21 |
 | `shared Voice system` | 20 |
 | `historical engineering record` | 18 |
-| `CI/deployment` | 14 |
+| `CI/deployment` | 15 |
 | `localization` | 13 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 533 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 262 |
+| `PROVEN_REQUIRED` | 534 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 263 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 899 |
+| `HIGH` | 901 |
 | `MEDIUM` | 87 |
 
 ---
@@ -4882,6 +4882,43 @@ RU:
 - **Владелец / слой:** CI
 - **Обязанности:** Собрать и опубликовать web build при push в main.
 - **Когда открывать:** Сайт не обновился после merge; проверка CI deploy log.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
+### `.github/workflows/generate-fluent-category-library.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/generate-fluent-category-library.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/generate-fluent-category-library.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/generate-fluent-category-library.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/generate-fluent-category-library.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `generate-fluent-category-library.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `generate-fluent-category-library.yml`.
+- **When to open:** When behavior tied to `generate-fluent-category-library.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `generate-fluent-category-library.yml` для CI и операций репозитория. GitHub Actions читает `generate-fluent-category-library.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `generate-fluent-category-library.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `generate-fluent-category-library.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `generate-fluent-category-library.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `generate-fluent-category-library.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `generate-fluent-category-library.yml`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `.github/`, Flutter tooling.
 
@@ -12021,7 +12058,7 @@ EN:
 - **Contents:** `AppColors` constants; `lightColorScheme()` / `darkColorScheme()` factories.
 - **Key code names:** `AppNeutralTones`, `AppIllustrationColors`, `AppColors`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/app_snackbar.dart`, `lib/core/tag_contrast.dart`, `lib/core/theme.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/core/widgets/life_card.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/core/app_snackbar.dart`, `lib/core/tag_contrast.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12038,7 +12075,7 @@ RU:
 - **Зачем:** Смена `actionPrimary` перекрашивает кнопки, tabs и nav chrome во всём приложении.
 - **Содержимое:** Константы `AppColors`; фабрики `lightColorScheme()` / `darkColorScheme()`.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/app_snackbar.dart`, `lib/core/tag_contrast.dart`, `lib/core/theme.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/core/widgets/life_card.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/core/app_snackbar.dart`, `lib/core/tag_contrast.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12053,8 +12090,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Foundation module `app_control_tokens.dart` (core) — app control tokens. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What this is:** Foundation module `app_control_tokens.dart` (core) — app control tokens.
+- **Human purpose:** Foundation module `app_control_tokens.dart` (core) — Global 48px form-control size, radius, typography and adjacent-input spacing tokens. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
+- **What this is:** Foundation module `app_control_tokens.dart` (core) — Global 48px form-control size, radius, typography and adjacent-input spacing tokens.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Primary symbols: `AppControlTokens`.
 - **Key code names:** `AppControlTokens`
@@ -12064,15 +12101,15 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared foundation
-- **Responsibilities:** app control tokens
+- **Responsibilities:** Global 48px form-control size, radius, typography and adjacent-input spacing tokens
 - **When to open:** When behavior tied to `app_control_tokens.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: app control tokens
+- **Connected to:** APP_STRUCTURE role: Global 48px form-control size, radius, typography and adjacent-input spacing tokens
 
 RU:
 
-- **Зачем файл человеку:** Foundation-модуль `app_control_tokens.dart` (core) — app control tokens. Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Что это:** Foundation-модуль `app_control_tokens.dart` (core) — app control tokens.
+- **Зачем файл человеку:** Foundation-модуль `app_control_tokens.dart` (core) — Global 48px form-control size, radius, typography and adjacent-input spacing tokens. Общий код вне одного экрана: тема, время, voice, diagnostics.
+- **Что это:** Foundation-модуль `app_control_tokens.dart` (core) — Global 48px form-control size, radius, typography and adjacent-input spacing tokens.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `app_control_tokens.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
@@ -12081,7 +12118,7 @@ RU:
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** общая foundation
-- **Обязанности:** Foundation-логика: app control tokens.
+- **Обязанности:** Foundation-логика: Global 48px form-control size, radius, typography and adjacent-input spacing tokens.
 - **Когда открывать:** Когда ломается поведение, связанное с `app_control_tokens.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -12245,8 +12282,8 @@ EN:
 - **Human purpose:** Foundation module `category_icon_system.dart` (core) — Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon choices. Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **What this is:** Foundation module `category_icon_system.dart` (core) — Shared semantic icon renderer, 26 default icons, customizable quick collection, family preference and offline local icon choices.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **Contents:** Primary symbols: `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`.
-- **Key code names:** `CategoryIconChoice`, `CategoryIconSelection`, `CategoryIconStore`
+- **Contents:** Primary symbols: `CategoryIconChoice`.
+- **Key code names:** `CategoryIconChoice`
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/widgets/notes_folder_pane.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/profile_view.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -13224,7 +13261,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppTextFieldSurface`, `AppTextField`).
 - **Key code names:** `AppTextFieldSurface`, `AppTextField`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13241,7 +13278,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_text_field`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -33122,7 +33159,7 @@ EN:
 - **Why needed:** Maintains owner-readable structure guide in sync with repo after changes.
 - **Contents:** Python generator + curated folder/file descriptions.
 - **Repository role:** developer tool
-- **Evidence of use:** (1) Invoked or documented by: `.github/workflows/menu-structure-parity.yml`, `.github/workflows/refresh-onest-structure.yml`, `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
+- **Evidence of use:** (1) Invoked or documented by: `.github/workflows/generate-fluent-category-library.yml`, `.github/workflows/menu-structure-parity.yml`, `.github/workflows/refresh-onest-structure.yml`, `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`. (2) Generator for `docs/APP_STRUCTURE_DETAILED.md`; input is `git ls-files` + guide modules.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -33139,7 +33176,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `generate_app_structure_detailed.py`.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** (1) Вызывается или описан в: `.github/workflows/menu-structure-parity.yml`, `.github/workflows/refresh-onest-structure.yml`, `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
+- **Доказательства использования:** (1) Вызывается или описан в: `.github/workflows/generate-fluent-category-library.yml`, `.github/workflows/menu-structure-parity.yml`, `.github/workflows/refresh-onest-structure.yml`, `.github/workflows/viktor-structure-regen.yml`, `AGENT_NAVIGATION.md`. (2) Генератор `docs/APP_STRUCTURE_DETAILED.md`; вход — `git ls-files` и guide-модули.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
@@ -33148,6 +33185,43 @@ RU:
 - **Когда открывать:** Owner или CI запускает `generate_app_structure_detailed.py` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `docs/APP_STRUCTURE.md`, `structure_guide_data.py`.
+
+
+### `scripts/manual/generate_fluent_full_catalog.py`
+
+EN:
+
+- **Human purpose:** Developer script `generate_fluent_full_catalog.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `generate_fluent_full_catalog.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `generate_fluent_full_catalog.py`.
+- **Repository role:** developer tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/generate-fluent-category-library.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** developer tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `generate_fluent_full_catalog.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `generate_fluent_full_catalog.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `generate_fluent_full_catalog.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `generate_fluent_full_catalog.py`.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/generate-fluent-category-library.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** инструменты разработчика
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `generate_fluent_full_catalog.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
 
 ### `scripts/manual/install_counter_silent.ps1`
