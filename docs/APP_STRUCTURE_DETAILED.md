@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `56318cbb` on 2026-11-06.**
+**Generated from input HEAD `3b91ea28` on 2026-11-06.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -13295,10 +13295,10 @@ EN:
 - **Human purpose:** Shared design-system widget — Canonical app text-field input component. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **What this is:** Shared design-system widget — Canonical app text-field input component.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **Contents:** Canonical Flutter widget (`AppTextFieldSurface`, `AppTextField`).
-- **Key code names:** `AppTextFieldSurface`, `AppTextField`
+- **Contents:** Canonical Flutter widget (`AppTextFieldVariant`, `AppTextFieldSurface`, `AppTextField`).
+- **Key code names:** `AppTextFieldVariant`, `AppTextFieldSurface`, `AppTextField`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/auth/auth_view.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/profile_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13315,7 +13315,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_text_field`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/compact_nav_controls.dart`, `lib/features/auth/auth_view.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/profile_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
