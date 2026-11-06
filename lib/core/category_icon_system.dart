@@ -267,15 +267,22 @@ String categorySubjectGroupName(String group, {required bool russian}) =>
 
 List<CategoryIconChoice> _buildSharedCatalog() {
   final metadata = {for (final item in kCategoryIconCatalog) item.key: item};
-  return List<CategoryIconChoice>.unmodifiable([
-    for (final key in _everydayCandidateKeys)
-      if (isSelectableCategoryIconKey(key))
-        if (metadata.containsKey(key))
-          metadata[key]!
-        else
-          CategoryIconChoice(key, _iconLabel(key), _iconLabel(key),
-              _iconGroup(key), key.replaceAll('_', ' ')),
-  ]);
+  final result = <CategoryIconChoice>[];
+  for (final key in _everydayCandidateKeys) {
+    if (!isSelectableCategoryIconKey(key)) continue;
+    final source = metadata[key] ??
+        CategoryIconChoice(key, _iconLabel(key), _iconLabel(key),
+            _iconGroup(key), key.replaceAll('_', ' '));
+    // The canonical human-readable tile is also findable by its official
+    // Fluent icon name (e.g. animal_dog, vehicle_car) without a duplicate tile.
+    final icon = kMatchedCategoryIcons[key]!;
+    final fluentAlias =
+        _fluentRepresentativeKeys[_glyphPair(icon)] ?? '';
+    result.add(CategoryIconChoice(
+        source.key, source.ru, source.en, source.group,
+        '${source.synonyms} ${fluentAlias.replaceAll('fluent__', '')}'));
+  }
+  return List<CategoryIconChoice>.unmodifiable(result);
 }
 
 class CategoryIconSelection {
