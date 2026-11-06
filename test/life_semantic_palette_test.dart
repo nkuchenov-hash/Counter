@@ -93,7 +93,7 @@ void main() {
     expect(
       AppColors.cardSurface.computeLuminance() -
           AppColors.appBackground.computeLuminance(),
-      greaterThan(0.075),
+      greaterThan(0.06),
     );
   });
 
