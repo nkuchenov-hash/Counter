@@ -92,6 +92,7 @@ class AppTextField extends StatelessWidget {
     final obscured = obscureText ?? (variant == AppTextFieldVariant.password);
     final lines = obscured ? 1 : (maxLines ?? (multi ? 4 : 1));
     final search = showSearchIcon || variant == AppTextFieldVariant.search;
+    final flexibleHeight = multi || validator != null;
     final fieldKeyboard = keyboardType ??
         (variant == AppTextFieldVariant.number
             ? TextInputType.number
@@ -105,7 +106,7 @@ class AppTextField extends StatelessWidget {
 
     Widget buildInput(Widget? trailing) {
       final decoration = InputDecoration(
-        constraints: multi
+        constraints: flexibleHeight
             ? const BoxConstraints(minHeight: height)
             : const BoxConstraints.tightFor(height: height),
         floatingLabelBehavior:
@@ -210,7 +211,7 @@ class AppTextField extends StatelessWidget {
               style: textStyle,
               decoration: decoration,
             );
-      final child = multi ? field : SizedBox(height: height, child: field);
+      final child = flexibleHeight ? field : SizedBox(height: height, child: field);
       if (!glass) return child;
       return ClipRRect(
         borderRadius: BorderRadius.circular(radius),
@@ -222,22 +223,22 @@ class AppTextField extends StatelessWidget {
     }
 
     if (!clearable || suffixIcon != null) return buildInput(suffixIcon);
-    return ValueListenableBuilder<TextEditingValue>(
+    // Only the trailing icon rebuilds while typing. The editor, focus,
+    // caret and the 48px surface remain stable across every keystroke.
+    return buildInput(ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
-      builder: (context, textValue, _) => buildInput(
-        textValue.text.isEmpty
-            ? null
-            : IconButton(
-                tooltip: clearTooltip ?? 'Clear',
-                icon: const Icon(Icons.close_rounded, size: 18),
-                onPressed: enabled
-                    ? () {
-                        controller.clear();
-                        onChanged?.call('');
-                      }
-                    : null,
-              ),
-      ),
-    );
+      builder: (context, textValue, _) => textValue.text.isEmpty
+          ? const SizedBox(width: height, height: height)
+          : IconButton(
+              tooltip: clearTooltip ?? 'Clear',
+              icon: const Icon(Icons.close_rounded, size: 18),
+              onPressed: enabled
+                  ? () {
+                      controller.clear();
+                      onChanged?.call('');
+                    }
+                  : null,
+            ),
+    ));
   }
 }
