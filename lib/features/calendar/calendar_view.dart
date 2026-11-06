@@ -6,6 +6,7 @@
 import 'dart:async';
 
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -282,6 +283,7 @@ class _CalendarViewState extends State<CalendarView>
       return a.title.toLowerCase().compareTo(b.title.toLowerCase());
     });
     var query = '';
+    final searchController = TextEditingController();
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -305,13 +307,14 @@ class _CalendarViewState extends State<CalendarView>
               height: MediaQuery.sizeOf(context).height * 0.72,
               child: Column(
                 children: [
-                  TextField(
+                  AppTextField(
+                    controller: searchController,
+                    variant: AppTextFieldVariant.search,
                     autofocus: true,
-                    decoration: InputDecoration(
-                      hintText: t(currentLocale.value, 'calendar_search_hint'),
-                      prefixIcon: const Icon(Icons.search_rounded),
-                    ),
+                    hintText: t(currentLocale.value, 'calendar_search_hint'),
                     onChanged: (value) => setSheetState(() => query = value),
+                    clearable: true,
+                    clearTooltip: t(currentLocale.value, 'close'),
                   ),
                   const SizedBox(height: 12),
                   Expanded(
@@ -351,6 +354,7 @@ class _CalendarViewState extends State<CalendarView>
         },
       ),
     );
+    searchController.dispose();
   }
   String _calendarPageKey() {
     if (_dayFocusActive) return 'day-${calendarDayKey(_selectedDay)}';
