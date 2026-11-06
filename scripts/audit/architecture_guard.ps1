@@ -339,7 +339,7 @@ if (Test-Path -LiteralPath $featuresRoot) {
         if ($hits.Count -gt 0) {
             $inputTotal += $hits.Count
             $inputFiles++
-            $rel = $file.FullName.Substring($script:RepoRoot.Length).TrimStart('\', '/').Replace('\', '/')
+            $rel = Get-RepoRelativePath $file.FullName
             Write-Host "RAW_INPUT_INVENTORY $rel occurrences=$($hits.Count)"
         }
     }
@@ -456,7 +456,7 @@ exit 0
             $diffPath = $Matches[1]
         }
         elseif ($line -match '^\+[^+]' -and $line -match $inputPattern) {
-            Add-Violation "NEW_RAW_INPUT_FORBIDDEN $diffPath: use AppTextField variant instead of TextField/TextFormField"
+            Add-Violation "NEW_RAW_INPUT_FORBIDDEN ${diffPath}: use AppTextField variant instead of TextField/TextFormField"
         }
     }
 }
