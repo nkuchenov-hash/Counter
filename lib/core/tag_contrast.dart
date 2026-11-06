@@ -116,7 +116,18 @@ Color tagVibrantForeground(Color tagBaseColor, {Color? surface}) {
 /// ensuring sufficient separation from a dark or light app surface.
 /// Tag fills and colors stored in PocketBase are not modified.
 Color tagSolidAccentOnSurface(Color base, Color surface) {
-  if (tagColorIsYellowFamily(base)) return kTagYellowGold;
+  // Category and tag accent identity is always the exact saved palette shade.
+  // Do not replace 400/600 yellow with 500 gold or auto-darken official hues.
+  // Only genuinely custom colors may be adjusted for visibility.
+  final canonical = Color(canonicalLifeColorValue(base.toARGB32()));
+  if (tagColorIsYellowFamily(canonical)) return canonical;
+  for (final family in <MaterialColor>[
+    kNordicEntertainment, kNordicErrands, kNordicPeople, kNordicFood,
+  ]) {
+    for (final tone in <int>[400, 500, 600]) {
+      if (canonical.toARGB32() == family[tone]!.toARGB32()) return canonical;
+    }
+  }
   final backgroundLum = surface.computeLuminance();
   final lightSurface = backgroundLum > 0.35;
   var color = base;
