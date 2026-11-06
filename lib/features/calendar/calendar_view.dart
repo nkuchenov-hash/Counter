@@ -20,7 +20,6 @@ import 'package:counter/features/calendar/calendar_week_grid.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 /// Calendar tab: Google Calendar–style browsing + focused-day details.
 class CalendarView extends StatefulWidget {
   const CalendarView({
@@ -31,7 +30,6 @@ class CalendarView extends StatefulWidget {
     required this.onEditTask,
     required this.onStartRecordFromTask,
   });
-
   final DateTime selectedDate;
   final DateTime focusedDay;
   final Future<void> Function(DateTime selectedDay, DateTime focusedDay)
@@ -44,11 +42,9 @@ class CalendarView extends StatefulWidget {
     String? sourcePlanPocketRecordId,
   })
   onStartRecordFromTask;
-
   @override
   State<CalendarView> createState() => _CalendarViewState();
 }
-
 class _CalendarViewState extends State<CalendarView>
     with AutomaticKeepAliveClientMixin {
   late DateTime _selectedDay;
@@ -63,10 +59,8 @@ class _CalendarViewState extends State<CalendarView>
   DateTime? _lastCalendarPlanDragEnd;
   Stream<List<PlanningTask>>? _dayStream;
   StreamSubscription<void>? _planningRefreshSub;
-
   @override
   bool get wantKeepAlive => true;
-
   @override
   void initState() {
     super.initState();
@@ -82,13 +76,11 @@ class _CalendarViewState extends State<CalendarView>
       },
     );
   }
-
   @override
   void dispose() {
     _planningRefreshSub?.cancel();
     super.dispose();
   }
-
   Stream<List<PlanningTask>> _createDayStream(DateTime day) {
     return DatabaseService.instance.planningStream(
       day,
