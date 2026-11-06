@@ -196,7 +196,7 @@ const Map<String, MatchedCategoryIcon> kMatchedCategoryIcons = {
   'dishwasher': MatchedCategoryIcon(FluentIcons.dishwasher_24_regular, FluentIcons.dishwasher_24_filled),
   'oven': MatchedCategoryIcon(FluentIcons.oven_24_regular, FluentIcons.oven_24_filled),
   'garage': MatchedCategoryIcon(FluentIcons.home_garage_24_regular, FluentIcons.home_garage_24_filled),
-  'door': MatchedCategoryIcon(FluentIcons.door_24_regular, FluentIcons.door_24_filled),
+  'door': MatchedCategoryIcon(Icons.door_front_door_outlined, Icons.door_front_door),
   'home_heart': MatchedCategoryIcon(FluentIcons.home_heart_24_regular, FluentIcons.home_heart_24_filled),
   'laptop': MatchedCategoryIcon(FluentIcons.laptop_24_regular, FluentIcons.laptop_24_filled),
   'tablet': MatchedCategoryIcon(FluentIcons.tablet_24_regular, FluentIcons.tablet_24_filled),
