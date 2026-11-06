@@ -217,15 +217,25 @@ void main() {
     ));
     await tester.tap(find.text('Open icon picker'));
     await tester.pumpAndSettle();
+    // An existing user can have only three chosen favorites. Dogs and cars
+    // still exist one tap away in the Everyday library.
+    expect(find.byKey(const ValueKey('category-icon-all-fluent')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('category-icon-everyday')));
+    await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('category-icon-dog')), findsOneWidget);
     expect(find.byKey(const ValueKey('category-icon-car')), findsOneWidget);
-    expect(find.byKey(const ValueKey('category-icon-all-fluent')), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('category-icon-all-fluent')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'animal_dog');
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('category-icon-fluent__animal_dog')),
         findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('category-icon-my-icons')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'dog');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('category-icon-dog')), findsOneWidget,
+        reason: 'Search must be global even when My icons is active.');
   });
 
   test('published picker exposes actual build and selected icon count', () {
