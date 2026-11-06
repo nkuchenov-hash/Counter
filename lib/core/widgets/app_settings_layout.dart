@@ -718,17 +718,18 @@ class _AppSettingsNavigationGroupState
                 ),
               ),
               if (index != widget.children.length - 1)
+                // A color alone does not give a childless ColoredBox width.
+                // Explicit full width and a tight 1px height force a real
+                // painted separator after the text-column inset.
                 SizedBox(
+                  key: ValueKey('settings-divider-$index'),
+                  width: double.infinity,
                   height: 1,
-                  child: ColoredBox(
-                    key: ValueKey('settings-divider-$index'),
-                    color: scheme.surfaceContainerHigh,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 78, right: 20),
-                      child: ColoredBox(
-                        key: ValueKey('settings-divider-line-$index'),
-                        color: dividerFill,
-                      ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 78, right: 20),
+                    child: ColoredBox(
+                      key: ValueKey('settings-divider-line-$index'),
+                      color: dividerFill,
                     ),
                   ),
                 ),
