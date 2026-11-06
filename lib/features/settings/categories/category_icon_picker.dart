@@ -104,7 +104,9 @@ class _IconPickerState extends State<_IconPicker> {
         final query = _search.text.trim().toLowerCase();
         final curated = CategoryIconStore.catalogFor();
         final all = CategoryIconStore.catalogFor(includeFullFluent: true);
-        final catalog = switch (_view) {
+        // Searching is global, even if My icons contains only a few favorites.
+        // Everyday matches are first; the full Fluent catalog follows.
+        final catalog = query.isNotEmpty ? all : switch (_view) {
           'favorites' => store.quickCatalog,
           'full' => all,
           _ => curated,
@@ -115,7 +117,7 @@ class _IconPickerState extends State<_IconPicker> {
                 _selection.key.replaceAll('_', ' '),
                 _selection.key.replaceAll('_', ' '), 'Прочее', '');
         final icons = catalog.where((item) {
-          if (_view == 'everyday' &&
+          if (query.isEmpty && _view == 'everyday' &&
               _group != 'Все' && item.group != _group) return false;
           return query.isEmpty ||
               (item.key + ' ' + item.ru + ' ' + item.en + ' ' + item.synonyms)
@@ -209,8 +211,8 @@ class _IconPickerState extends State<_IconPicker> {
                 controller: _search,
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.search),
-                  hintText: ru ? 'Собака, машина, спорт…'
-                      : 'Dog, car, sports…',
+                  hintText: ru ? 'Поиск по всем иконкам: собака, машина…'
+                      : 'Search all icons: dog, car, sports…',
                   isDense: true, border: const OutlineInputBorder(),
                   suffixIcon: query.isEmpty ? null : IconButton(
                     onPressed: _search.clear,
