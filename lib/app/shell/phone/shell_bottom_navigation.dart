@@ -67,7 +67,7 @@ class ShellCompactBottomNav extends StatelessWidget {
       (
         icon: AppMenuIcons.icon(AppMenuIconRole.menu),
         selectedIcon: AppMenuIcons.icon(AppMenuIconRole.menu),
-        label: loc.toLowerCase().startsWith('ru') ? 'Меню' : 'Menu',
+        label: loc.toLowerCase().startsWith('ru') ? 'Настройки' : 'Settings',
         index: 4,
       ),
     ];
