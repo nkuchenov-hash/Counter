@@ -2,9 +2,7 @@
 // CALENDAR FEATURE — Full-screen month/week + focused-day task list.
 // UI_ISOLATION (§7). FEATURE-FIRST (§17). All strings via t().
 // ---------------------------------------------------------------------------
-
 import 'dart:async';
-
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/shell_adaptive.dart';
@@ -20,7 +18,6 @@ import 'package:counter/features/calendar/calendar_week_grid.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 /// Calendar tab: Google Calendar–style browsing + focused-day details.
 class CalendarView extends StatefulWidget {
   const CalendarView({
@@ -31,7 +28,6 @@ class CalendarView extends StatefulWidget {
     required this.onEditTask,
     required this.onStartRecordFromTask,
   });
-
   final DateTime selectedDate;
   final DateTime focusedDay;
   final Future<void> Function(DateTime selectedDay, DateTime focusedDay)
@@ -44,11 +40,9 @@ class CalendarView extends StatefulWidget {
     String? sourcePlanPocketRecordId,
   })
   onStartRecordFromTask;
-
   @override
   State<CalendarView> createState() => _CalendarViewState();
 }
-
 class _CalendarViewState extends State<CalendarView>
     with AutomaticKeepAliveClientMixin {
   late DateTime _selectedDay;
@@ -64,7 +58,6 @@ class _CalendarViewState extends State<CalendarView>
   Stream<List<PlanningTask>>? _dayStream;
   StreamSubscription<void>? _planningRefreshSub;
   final TextEditingController _calendarSearchController = TextEditingController();
-
   @override
   bool get wantKeepAlive => true;
 
