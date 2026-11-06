@@ -121,6 +121,8 @@ void main() {
         matching: find.byIcon(Icons.search_rounded),
       );
       expect(searchIcon, findsOneWidget);
+      expect(find.descendant(of: entryField, matching: find.byIcon(Icons.search_rounded)),
+          findsNothing);
       expect((tester.getRect(searchIcon).center.dy - searchRect.center.dy).abs(),
           lessThanOrEqualTo(1));
       expect(fieldRect.height, AppControlTokens.height);
@@ -245,6 +247,33 @@ void main() {
       final expected = (AppControlTokens.height * pixelRatio).round();
       expect(fieldPaint.$2 - fieldPaint.$1 + 1, inInclusiveRange(expected - 2, expected + 2));
       expect(buttonPaint.$2 - buttonPaint.$1 + 1, inInclusiveRange(expected - 2, expected + 2));
+
+      // Screenshot-level SHAPE regression: a full capsule must leave all four
+      // corners transparent to the row background. Checking borderRadius
+      // properties alone cannot detect a rectangular overlay/paint layer.
+      int pixelDifferenceAt(Offset logical) {
+        final x = ((logical.dx - bounds.left) * pixelRatio).round();
+        final y = ((logical.dy - bounds.top) * pixelRatio).round();
+        return differenceAt(x, y);
+      }
+      for (final rect in [fieldBounds, buttonBounds]) {
+        final corners = [
+          Offset(rect.left + 2, rect.top + 2),
+          Offset(rect.right - 3, rect.top + 2),
+          Offset(rect.left + 2, rect.bottom - 3),
+          Offset(rect.right - 3, rect.bottom - 3),
+        ];
+        for (final corner in corners) {
+          expect(pixelDifferenceAt(corner), lessThan(48),
+              reason: 'Rounded capsule must expose background at $corner');
+        }
+        expect(pixelDifferenceAt(Offset(rect.left + 2, rect.center.dy)),
+            greaterThan(48),
+            reason: 'Capsule mid-side must be visibly painted');
+        expect(pixelDifferenceAt(Offset(rect.center.dx, rect.top + 2)),
+            greaterThan(48),
+            reason: 'Capsule top-midpoint must be visibly painted');
+      }
       expect(tester.takeException(), isNull);
     });
   }
