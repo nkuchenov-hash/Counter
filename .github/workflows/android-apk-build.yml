@@ -68,7 +68,7 @@ jobs:
           good=false
           for attempt in 1 2 3; do
             status="$(curl --silent --show-error --location --connect-timeout 6 --max-time 12 --output /tmp/lifeos-pb-health.json --write-out "%{http_code}" https://137-22-146-109.sslip.io/api/health || true)"
-            if [[ "$status" == "200" ]] && python3 -c "import json; assert json.load(open(\x27/tmp/lifeos-pb-health.json\x27)).get(\x27code\x27) == 200"; then good=true; break; fi
+            if [[ "$status" == "200" ]] && python3 -c "import json; assert json.load(open('/tmp/lifeos-pb-health.json')).get('code') == 200"; then good=true; break; fi
             echo "Backend health attempt $attempt failed: HTTP $status"
             if [[ "$attempt" != "3" ]]; then sleep 5; fi
           done
@@ -371,7 +371,7 @@ jobs:
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk LIFE-OS-Recovery-arm64.apk
           aapt="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -name aapt -type f | sort -V | tail -n1)"
           apksigner="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -name apksigner -type f | sort -V | tail -n1)"
-          "$aapt" dump badging LIFE-OS-Recovery-arm64.apk | grep -q "package: name=\x27com.lifeos.recovery\x27"
+          "$aapt" dump badging LIFE-OS-Recovery-arm64.apk | grep -q "package: name='com.lifeos.recovery'"
           "$apksigner" verify --verbose LIFE-OS-Recovery-arm64.apk >/dev/null
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
