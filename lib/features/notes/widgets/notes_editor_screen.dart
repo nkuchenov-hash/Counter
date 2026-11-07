@@ -258,10 +258,11 @@ class _NotesEditorRail extends StatelessWidget {
         final contentWidth = (constraints.maxWidth - horizontalPadding * 2)
             .clamp(0.0, NotesFigmaTokens.editorContentMaxWidth)
             .toDouble();
-        // Keep the editor geometry stable while focus moves between blocks.
-        // The title is already capped at two lines, so collapsing it on IME
-        // changes only creates visible jumps.
-        const collapseTitleForKeyboard = false;
+        // Compact the standalone Notes header only in truly short
+        // viewports (e.g. after the keyboard opens). This recovers enough
+        // writing space without changing block geometry between keystrokes.
+        // Embedded record notes have no title header and do not use this path.
+        final collapseTitleForKeyboard = !embedded && constraints.maxHeight < 570;
         return Align(
           alignment: Alignment.topCenter,
           child: SizedBox(
@@ -710,6 +711,14 @@ class _NotesTitleBlockState extends State<_NotesTitleBlock> {
 
   @override
   Widget build(BuildContext context) {
+    // When the body owns the IME and space is limited, keep the title in the
+    // navigation header and return this height to the writing canvas.
+    // Never hide the title field WHILE editing the title itself.
+    if (widget.collapseForKeyboard && !_titleFocusNode.hasFocus) {
+      return const SizedBox.shrink(
+        key: ValueKey('notes-editor-title-collapsed-for-keyboard'),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
       child: Column(
