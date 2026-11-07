@@ -214,7 +214,8 @@ class CloudSleepSyncService {
     }
   }
 
-  Future<bool> connectGoogleFit() async {
+  /// Starts the server-owned Xiaomi Cloud authorization on every platform.
+  Future<bool> connectXiaomi() async {
     final headers = _headers(json: true);
     if (headers == null) return false;
     try {
@@ -223,7 +224,7 @@ class CloudSleepSyncService {
       // must leave the switch immediately retryable instead of looking stuck.
       final response = await http
           .post(
-            _uri(PbAppApiRoutes.sleepSyncGoogleFitConnect),
+            _uri(PbAppApiRoutes.sleepSyncXiaomiConnect),
             headers: headers,
             body: '{}',
           )
@@ -233,11 +234,22 @@ class CloudSleepSyncService {
           _failureMessage(response, 'Sleep source connection failed'),
         );
       }
+      final payload = _decode(response);
       final authorizationUrl =
-          _decode(response)['authorization_url']?.toString().trim() ?? '';
+          payload['authorization_url']?.toString().trim() ?? '';
+      // Xiaomi returns a status object instead of an authorization URL when
+      // this account has already completed its one-time cloud login.
+      if (authorizationUrl.isEmpty && payload.containsKey('configured')) {
+        _applyStatus(payload);
+        if (!state.value.configured) {
+          throw StateError('Xiaomi account is not connected');
+        }
+        _refreshRecordsForNewServerSync();
+        return true;
+      }
       final uri = Uri.tryParse(authorizationUrl);
-      if (uri == null || !uri.hasScheme) {
-        throw const FormatException('Missing sleep authorization URL');
+      if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+        throw const FormatException('Missing Xiaomi authorization URL');
       }
       state.value = state.value.copyWith(
         phase: CloudSleepSyncPhase.connecting,
@@ -263,6 +275,10 @@ class CloudSleepSyncService {
       return false;
     }
   }
+
+  /// Compatibility only: older app callers used the Google Fit method name.
+  @Deprecated('Use connectXiaomi')
+  Future<bool> connectGoogleFit() => connectXiaomi();
 
   bool get requiresGoogleHealthAccountSetup {
     final raw = state.value.error?.toLowerCase() ?? '';
@@ -356,7 +372,8 @@ class CloudSleepSyncService {
       // Timeline stale after the user explicitly requested a sync.
       await DatabaseService.instance.fetchRecords(forceNetwork: true);
       await loadStatus();
-      return state.value.phase != CloudSleepSyncPhase.error;
+      return state.value.configured &&
+          state.value.phase != CloudSleepSyncPhase.error;
     } catch (error) {
       state.value = state.value.copyWith(
         phase: CloudSleepSyncPhase.error,
