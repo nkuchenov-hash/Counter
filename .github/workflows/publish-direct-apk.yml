@@ -100,10 +100,14 @@ jobs:
             if command -v "$command_name" >/dev/null 2>&1; then echo "Reverse proxy: $command_name"; fi
           done
           ps -eo comm,args | grep -E '([p]ocketbase.*serve|[c]addy.*run|[n]ginx: master)' | cut -c1-180 | head -n6 || true
-          for port in 8090 80; do
-            code="$(curl --silent --max-time 3 --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:$port/downloads/LIFE-OS-Android-arm64.apk" || true)"
+          for port in 8099 8102 80; do
+            code="$(curl --silent --max-time 8 --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:$port/downloads/LIFE-OS-Android-arm64.apk" || true)"
             echo "Local static route $port HTTP $code"
           done
+          echo "Caddyfile route structure:"
+          if [[ -r /etc/caddy/Caddyfile ]]; then
+            grep -nE '(^[^#[:space:]].*\{|handle|route|reverse_proxy|file_server|root |import |redir |respond )' /etc/caddy/Caddyfile | sed -E 's/(basicauth|basic_auth).*/[sensitive rule redacted]/g' | head -n45
+          fi
           REMOTE
 
       - name: Confirm independently accessible HTTPS download and exact bytes
