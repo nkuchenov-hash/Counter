@@ -409,7 +409,11 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     );
     if (mutation.changed && !mutation.requiresRebuild) {
       final updated = _editor.blockById(block.id);
-      if (updated != null) controller.setRuns(updated.effectiveRuns);
+      if (updated != null) {
+        // The platform already notified EditableText for this keystroke.
+        // Refresh formatting without sending a second controller event.
+        controller.setRuns(updated.effectiveRuns, notify: false);
+      }
     }
     _applyMutation(mutation);
   }
