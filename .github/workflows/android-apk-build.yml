@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'lib/**'
+      - 'test/pocketbase_production_origin_test.dart'
       - 'test/life_semantic_palette_test.dart'
       - 'test/app_control_consistency_test.dart'
       - 'test/viktor_multiday_agent_test.dart'
@@ -31,6 +32,7 @@ on:
     branches: [main]
     paths:
       - 'lib/**'
+      - 'test/pocketbase_production_origin_test.dart'
       - 'test/life_semantic_palette_test.dart'
       - 'test/app_control_consistency_test.dart'
       - 'test/live_sync_contract_test.dart'
@@ -59,6 +61,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Verify restored PocketBase health before publishing Android
+        shell: bash
+        run: |
+          set -euo pipefail
+          good=false
+          for attempt in 1 2 3; do
+            status="$(curl --silent --show-error --location --connect-timeout 6 --max-time 12 --output /tmp/lifeos-pb-health.json --write-out "%{http_code}" https://137-22-146-109.sslip.io/api/health || true)"
+            if [[ "$status" == "200" ]] && python3 -c "import json; assert json.load(open(\x27/tmp/lifeos-pb-health.json\x27)).get(\x27code\x27) == 200"; then good=true; break; fi
+            echo "Backend health attempt $attempt failed: HTTP $status"
+            if [[ "$attempt" != "3" ]]; then sleep 5; fi
+          done
+          if [[ "$good" != "true" ]]; then echo "::error::PocketBase unavailable, do not publish broken login APK"; exit 1; fi
       - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
         with:
@@ -81,6 +95,9 @@ jobs:
 
       - name: Verify single canonical input and painted field-button alignment
         run: flutter test test/app_control_consistency_test.dart
+
+      - name: Verify Android and Web production backend parity
+        run: flutter test test/pocketbase_production_origin_test.dart
 
       - name: Analyze runtime app
         run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
@@ -324,7 +341,7 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" != "pull_request" ]]; then
             [[ "${LIFE_OS_SIGNING_MODE:-}" == "legacy" || "${LIFE_OS_SIGNING_MODE:-}" == "v2" ]] || exit 1
           fi
-          flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
+          LIFE_OS_RECOVERY_STANDALONE=false flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
 
       - name: Verify APK package and signing
         if: github.event_name != 'pull_request'
@@ -336,11 +353,7 @@ jobs:
           apksigner="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -name apksigner -type f | sort -V | tail -n1)"
           [[ -x "$aapt" && -x "$apksigner" ]]
           actual="$("$aapt" dump badging "$apk" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")"
-          if [[ "$LIFE_OS_SIGNING_MODE" == "legacy" ]]; then
-            [[ "$actual" == "com.example.counter" ]] || exit 1
-          else
-            [[ "$actual" == "com.lifeos.recovery" ]] || exit 1
-          fi
+          [[ "$actual" == "com.example.counter" ]] || exit 1
           "$apksigner" verify --verbose "$apk" >/dev/null
           echo "Verified package=$actual; signing mode=$LIFE_OS_SIGNING_MODE."
 
@@ -348,11 +361,25 @@ jobs:
       - name: Prepare public APK name
         run: cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk LIFE-OS-Android-arm64.apk
 
+      - name: Build recovery APK for previously installed recovery app
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$LIFE_OS_SIGNING_MODE" == "legacy" ]]; then exit 0; fi
+          LIFE_OS_RECOVERY_STANDALONE=true flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk LIFE-OS-Recovery-arm64.apk
+          aapt="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -name aapt -type f | sort -V | tail -n1)"
+          apksigner="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -name apksigner -type f | sort -V | tail -n1)"
+          "$aapt" dump badging LIFE-OS-Recovery-arm64.apk | grep -q "package: name=\x27com.lifeos.recovery\x27"
+          "$apksigner" verify --verbose LIFE-OS-Recovery-arm64.apk >/dev/null
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: counter-android-arm64-release
-          path: LIFE-OS-Android-arm64.apk
+          path: |
+            LIFE-OS-Android-arm64.apk
+            LIFE-OS-Recovery-arm64.apk
           if-no-files-found: error
           retention-days: 14
 
@@ -362,8 +389,8 @@ jobs:
         with:
           tag: life-os-android-${{ github.run_number }}-${{ github.sha }}
           name: LIFE OS Android — build ${{ github.run_number }}
-          body: Android ARM64 recovery build. Uses original signature and app ID when the legacy VPS key is available; otherwise a separately installable com.lifeos.recovery package signed by permanent v2 identity. Keep the old installation until cloud synchronization is confirmed.
-          artifacts: LIFE-OS-Android-arm64.apk
+          body: Fixed PocketBase login by unifying Android and Web production backend. Main APK updates com.example.counter v2 installs; Recovery APK updates com.lifeos.recovery v2 installs. Original historical signing certificates remain incompatible.
+          artifacts: LIFE-OS-*.apk
           immutableCreate: true
           makeLatest: true
           prerelease: false
