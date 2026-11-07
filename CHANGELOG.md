@@ -1,3 +1,10 @@
+## 2026-11-07 — Use Xiaomi Cloud sleep sync on Android and Web [verification pending]
+
+- Replaced the Android Health Connect-first settings toggle with the same server-owned Xiaomi Cloud/Mi Fitness connection used by Web; no local Health Connect permission required to enable cloud sync.
+- Settings now show connection/authentication progress, automatic sync toggle, manual sync, last server check, discovered/imported session counts, actionable missing-sleep and error messages, and safe disconnect.
+- Cloud connector now calls the canonical Xiaomi endpoint and accepts a server status response for a previously authorized account (instead of requiring a new OAuth URL). It continues to refresh PocketBase Timeline after explicit import.
+- Added sleep settings regression coverage to the Android CI checks. Do not claim production sleep delivery until the real Xiaomi account and signed Android APK are verified.
+
 ## 2026-11-06 — Timeline scrollbar at screen edge and shared 40 px pill geometry
 
 - Timeline no longer constrains its whole scrolling page to the Settings readable-column width. Its ListView fills the available viewport; cards and header are independently centered in the shared readable frame.
