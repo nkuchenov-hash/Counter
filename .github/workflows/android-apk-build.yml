@@ -8,6 +8,8 @@ on:
       - 'lib/**'
       - 'test/pocketbase_production_origin_test.dart'
       - 'test/life_semantic_palette_test.dart'
+      - 'test/record_notes_ime_stability_test.dart'
+      - 'test/notes_mobile_keyboard_regression_test.dart'
       - 'test/app_control_consistency_test.dart'
       - 'test/viktor_multiday_agent_test.dart'
       - 'test/viktor_priority_insertion_test.dart'
@@ -34,6 +36,8 @@ on:
       - 'lib/**'
       - 'test/pocketbase_production_origin_test.dart'
       - 'test/life_semantic_palette_test.dart'
+      - 'test/record_notes_ime_stability_test.dart'
+      - 'test/notes_mobile_keyboard_regression_test.dart'
       - 'test/app_control_consistency_test.dart'
       - 'test/live_sync_contract_test.dart'
       - 'test/record_write_durability_test.dart'
@@ -98,6 +102,9 @@ jobs:
 
       - name: Verify Android and Web production backend parity
         run: flutter test test/pocketbase_production_origin_test.dart
+
+      - name: Verify mobile Notes keyboard stability in record edits
+        run: flutter test test/record_notes_ime_stability_test.dart test/notes_mobile_keyboard_regression_test.dart
 
       - name: Analyze runtime app
         run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
