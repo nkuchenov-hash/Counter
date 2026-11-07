@@ -56,14 +56,23 @@ jobs:
           root_cmd=()
           if [[ "$(id -u)" != 0 ]]; then root_cmd=(sudo -n); fi
           service="$("${root_cmd[@]}" systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
-          if [[ -z "$service" ]]; then echo "PocketBase service missing"; exit 1; fi
-          working_dir="$("${root_cmd[@]}" systemctl show "$service" -p WorkingDirectory --value)"
-          if [[ -z "$working_dir" || "$working_dir" == "/" ]]; then
-            pid="$("${root_cmd[@]}" systemctl show "$service" -p MainPID --value)"
-            if [[ -n "$pid" && "$pid" != "0" ]]; then working_dir="$("${root_cmd[@]}" readlink -f "/proc/$pid/cwd")"; fi
+          working_dir=""
+          if [[ -n "$service" ]]; then
+            working_dir="$("${root_cmd[@]}" systemctl show "$service" -p WorkingDirectory --value || true)"
           fi
-          if [[ -z "$working_dir" || "$working_dir" == "/" || ! -d "$working_dir" ]]; then
-            echo "Could not determine PocketBase working directory"
+          if [[ -z "$working_dir" || "$working_dir" == "/" ]]; then
+            pid="$(pgrep -f '[p]ocketbase.*serve' | head -n1 || true)"
+            if [[ -n "$pid" ]]; then working_dir="$("${root_cmd[@]}" readlink -f "/proc/$pid/cwd" || true)"; fi
+          fi
+          if [[ -z "$working_dir" || "$working_dir" == "/" || ! -d "$working_dir" || ! -d "$working_dir/pb_data" ]]; then
+            for candidate in /opt/pocketbase /opt/lifeos/pocketbase /srv/pocketbase /home/pocketbase /root/pocketbase /var/lib/pocketbase; do
+              if [[ -d "$candidate/pb_data" ]]; then working_dir="$candidate"; break; fi
+            done
+          fi
+          if [[ -z "$working_dir" || "$working_dir" == "/" || ! -d "$working_dir/pb_data" ]]; then
+            echo "::error::PocketBase public directory could not be identified; refusing to publish to an unverified path."
+            echo "Diagnose: process=$(pgrep -af '[p]ocketbase' | cut -c1-90 | head -n2 || true)"
+            echo "Diagnose: docker=$(command -v docker >/dev/null && docker ps --format '{{.Names}} {{.Image}}' | grep -i pocketbase | head -n2 || true)"
             exit 1
           fi
           "${root_cmd[@]}" mkdir -p "$working_dir/pb_public/downloads"
