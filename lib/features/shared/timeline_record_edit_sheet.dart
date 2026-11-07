@@ -62,6 +62,11 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   bool _plansLoading = false;
   bool _plansLoaded = false;
   bool _notesEditorFocused = false;
+  // Android may briefly move focus through the IME/selection overlay.
+  // Keep the compact notes layout until the editor genuinely loses focus.
+  final FocusNode _notesScopeFocusNode =
+      FocusNode(debugLabel: 'record-notes-scope', skipTraversal: true);
+  Timer? _notesFocusExitTimer;
   final EditSheetAutosaveGate _recordAutosaveGate = EditSheetAutosaveGate();
 
   /// True when Save/autosave can PATCH an existing/optimistic row (not past-date create).
@@ -251,10 +256,31 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
 
   void _handleRecordTabChanged() {
     if (_tabController.index == 0) return;
+    _notesFocusExitTimer?.cancel();
     FocusManager.instance.primaryFocus?.unfocus();
     if (_notesEditorFocused && mounted) {
       setState(() => _notesEditorFocused = false);
     }
+  }
+
+  void _handleNotesEditorFocusChanged(bool focused) {
+    if (!mounted) return;
+    _notesFocusExitTimer?.cancel();
+    if (focused) {
+      if (!_notesEditorFocused) {
+        setState(() => _notesEditorFocused = true);
+      }
+      return;
+    }
+
+    // Switching between Notes blocks, the Android IME, and the text-selection
+    // toolbar must not alternately expand/collapse the entire record sheet.
+    _notesFocusExitTimer = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted || _notesScopeFocusNode.hasFocus || !_notesEditorFocused) {
+        return;
+      }
+      setState(() => _notesEditorFocused = false);
+    });
   }
 
   /// Same wall-calendar day as [DatabaseService._profileWallFromUtc] / planning fetch —
@@ -512,6 +538,8 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       }, force: _recordAutosaveGate.isDirty);
     }
     _recordAutosaveGate.dispose();
+    _notesFocusExitTimer?.cancel();
+    _notesScopeFocusNode.dispose();
     _tabController.dispose();
     _titleController.dispose();
     super.dispose();
@@ -780,8 +808,9 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
 
   @override
   Widget build(BuildContext context) {
-    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
-    final notesEditing = keyboardOpen && _notesEditorFocused;
+    // Do not switch the editor geometry on each Android IME inset frame.
+    // The focus state is held across transient keyboard/selection changes.
+    final notesEditing = _notesEditorFocused;
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     // ACTIVE_STATUS_LAW: running ⇔ end_time null (UI mirrors Brain).
     final isRunning = widget.record.endTime == null;
@@ -965,10 +994,8 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                     controller: _tabController,
                     children: [
                       Focus(
-                        onFocusChange: (focused) {
-                          if (!mounted || _notesEditorFocused == focused) return;
-                          setState(() => _notesEditorFocused = focused);
-                        },
+                        focusNode: _notesScopeFocusNode,
+                        onFocusChange: _handleNotesEditorFocusChanged,
                         child: NoteEditorPage(
                           inlineKeyboardActive: notesEditing,
                           task: PlanningTask(
