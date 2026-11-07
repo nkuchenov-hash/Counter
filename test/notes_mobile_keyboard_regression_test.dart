@@ -97,16 +97,11 @@ void main() {
     );
     final fieldRect = tester.getRect(find.byKey(const ValueKey('body-field')));
     expect(contentRect.height, greaterThan(0));
-    // Current Notes contract keeps the title geometry stable while the
-    // keyboard resizes the viewport; the old collapsing-title expectation
-    // caused a false failure and would reintroduce visual jumping.
-    expect(
-      find.byKey(const ValueKey('notes-editor-title')),
-      findsOneWidget,
-    );
+    // A short keyboard viewport is a one-way transition to the compact
+    // title header. Typing in the body must retain enough visible space.
     expect(
       find.byKey(const ValueKey('notes-editor-title-collapsed-for-keyboard')),
-      findsNothing,
+      findsOneWidget,
     );
     expect(fieldRect.top, lessThan(430));
     expect(fieldRect.bottom, lessThanOrEqualTo(430));
@@ -156,16 +151,11 @@ void main() {
     final fieldRect = tester.getRect(find.byKey(const ValueKey('body-field')));
     const visibleBottom = 844.0 - 380.0;
     expect(contentRect.height, greaterThan(0));
-    // Current Notes contract keeps the title geometry stable while the
-    // keyboard resizes the viewport; the old collapsing-title expectation
-    // caused a false failure and would reintroduce visual jumping.
-    expect(
-      find.byKey(const ValueKey('notes-editor-title')),
-      findsOneWidget,
-    );
+    // A short keyboard viewport is a one-way transition to the compact
+    // title header. Typing in the body must retain enough visible space.
     expect(
       find.byKey(const ValueKey('notes-editor-title-collapsed-for-keyboard')),
-      findsNothing,
+      findsOneWidget,
     );
     expect(fieldRect.top, lessThan(visibleBottom));
     expect(fieldRect.bottom, lessThanOrEqualTo(visibleBottom));
