@@ -62,9 +62,12 @@ class NotesTextEditingController extends TextEditingController {
 
   List<NoteTextRun> get runs => _runs;
 
-  void setRuns(List<NoteTextRun> runs) {
+  void setRuns(List<NoteTextRun> runs, {bool notify = true}) {
     _runs = List<NoteTextRun>.unmodifiable(runs);
-    notifyListeners();
+    // onChanged already originates from TextEditingController notifying the
+    // EditableText. Do not emit another notification for the rich-text runs
+    // of the very same keystroke: Android IME composition can flicker/reset.
+    if (notify) notifyListeners();
   }
 
   void syncDocument({
