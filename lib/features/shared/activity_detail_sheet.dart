@@ -42,11 +42,12 @@ Future<T?> showAppEditSheet<T>({
         minChildSize: AppEditSheetTokens.minChildSize,
         maxChildSize: AppEditSheetTokens.maxChildSize,
         builder: (context, scrollController) {
-          // Keep the draggable sheet geometry stable while the keyboard
-          // animates. Only the sheet's content moves above the IME.
-          return AnimatedPadding(
-            duration: const Duration(milliseconds: 160),
-            curve: Curves.easeOutCubic,
+          // Android already animates MediaQuery.viewInsets as the IME moves.
+          // A second 160ms AnimatedPadding continuously chases those values,
+          // producing repeated sheet translation/flicker while editing notes.
+          // Apply the platform inset directly, keeping the draggable viewport
+          // anchored without a competing independent animation.
+          return Padding(
             padding: EdgeInsets.only(bottom: keyboardInset),
             child: builder(context, scrollController, sheetContext),
           );
