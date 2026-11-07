@@ -95,6 +95,15 @@ jobs:
           "${root_cmd[@]}" install -m 644 "$upload" "$binary_dir/pb_public/downloads/LIFE-OS-Android-arm64.apk"
           "${root_cmd[@]}" rm -f "$upload"
           echo "APK placed in PocketBase static asset path."
+          echo "Routing diagnostics:"
+          for command_name in caddy nginx; do
+            if command -v "$command_name" >/dev/null 2>&1; then echo "Reverse proxy: $command_name"; fi
+          done
+          ps -eo comm,args | grep -E '([p]ocketbase.*serve|[c]addy.*run|[n]ginx: master)' | cut -c1-180 | head -n6 || true
+          for port in 8090 80; do
+            code="$(curl --silent --max-time 3 --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:$port/downloads/LIFE-OS-Android-arm64.apk" || true)"
+            echo "Local static route $port HTTP $code"
+          done
           REMOTE
 
       - name: Confirm independently accessible HTTPS download and exact bytes
@@ -103,5 +112,8 @@ jobs:
           set -euo pipefail
           url="https://137-22-146-109.sslip.io/downloads/LIFE-OS-Android-arm64.apk"
           curl -fSL --connect-timeout 8 --max-time 90 --retry 2 "$url" --output "$RUNNER_TEMP/direct.apk"
+          echo "Public response bytes: $(wc -c < "$RUNNER_TEMP/direct.apk")"
+          file "$RUNNER_TEMP/direct.apk"
+          head -c 140 "$RUNNER_TEMP/direct.apk" | strings | head -n3 || true
           echo "0b2ff2c360a26dec9d184ead614def4584396a3166145206a3a60c01eb89803d  $RUNNER_TEMP/direct.apk" | sha256sum --check
           echo "Public direct HTTPS download verified: $url"
