@@ -157,20 +157,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     }
   }
 
-  @override
-  void didUpdateWidget(covariant NoteEditorPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!oldWidget.inlineKeyboardActive &&
-        widget.inlineKeyboardActive &&
-        _editor.activeBlockId != null) {
-      final blockId = _editor.activeBlockId!;
-      _ensureBlockVisible(blockId);
-      Future<void>.delayed(const Duration(milliseconds: 180), () {
-        if (!mounted || !widget.inlineKeyboardActive) return;
-        _ensureBlockVisible(blockId);
-      });
-    }
-  }
+  // The EditableText already handles caret visibility when Android changes
+  // keyboard insets. Scheduling another two scroll animations from the host
+  // keyboard transition fought the IME and made the record sheet jump.
 
   @override
   void dispose() {
@@ -1078,10 +1067,16 @@ _deleteBlockFromMenu(block.id);
       if (!mounted) return;
       final blockContext = _blockItemKeys[blockId]?.currentContext;
       if (blockContext == null) return;
+      if (!_blockScrollController.hasClients) return;
+      final blockRenderObject = blockContext.findRenderObject();
+      if (blockRenderObject == null || !blockRenderObject.attached) return;
+      // Scroll only the Notes block list. Scrollable.ensureVisible(context)
+      // walks ALL ancestors, including the draggable record sheet, which
+      // caused the entire dialog to move whenever a block gained focus.
       unawaited(
-        Scrollable.ensureVisible(
-          blockContext,
-          duration: const Duration(milliseconds: 120),
+        _blockScrollController.position.ensureVisible(
+          blockRenderObject,
+          duration: const Duration(milliseconds: 100),
           curve: Curves.easeOut,
           alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
         ),
