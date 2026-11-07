@@ -6,12 +6,17 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/publish-direct-apk.yml'
+  workflow_run:
+    workflows: ['Android release APK']
+    types: [completed]
 
 permissions:
   contents: read
 
 jobs:
   mirror-apk:
+    # New releases are mirrored once their full Android CI has passed.
+    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -24,12 +29,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh release download life-os-android-1779-7f7dd17ce284abe1e67f3654e21250a9ed62006f \
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
+            tag="life-os-android-${{ github.event.workflow_run.run_number }}-${{ github.event.workflow_run.head_sha }}"
+          else
+            tag="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq '.tagName')"
+          fi
+          [[ "$tag" == life-os-android-* ]] || { echo "::error::Not an official Android release"; exit 1; }
+          digest="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" \
+            --jq '.assets[] | select(.name == "LIFE-OS-Android-arm64.apk") | .digest' | sed -n 's/^sha256://p' | head -n1)"
+          [[ "$digest" =~ ^[a-f0-9]{64}$ ]] || { echo "::error::No canonical APK SHA-256"; exit 1; }
+          gh release download "$tag" \
             --repo "$GITHUB_REPOSITORY" \
             --pattern "LIFE-OS-Android-arm64.apk" \
             --dir "$RUNNER_TEMP"
-          cd "$RUNNER_TEMP"
-          echo "0b2ff2c360a26dec9d184ead614def4584396a3166145206a3a60c01eb89803d  LIFE-OS-Android-arm64.apk" | sha256sum --check
+          echo "$digest  $RUNNER_TEMP/LIFE-OS-Android-arm64.apk" | sha256sum --check
+          echo "LIFEOS_APK_SHA256=$digest" >> "$GITHUB_ENV"
+          echo "Mirroring canonical release $tag"
 
       - name: Mirror release to existing PocketBase static public directory
         shell: bash
@@ -127,5 +142,5 @@ jobs:
           echo "Public response bytes: $(wc -c < "$RUNNER_TEMP/direct.apk")"
           file "$RUNNER_TEMP/direct.apk"
           head -c 140 "$RUNNER_TEMP/direct.apk" | strings | head -n3 || true
-          echo "0b2ff2c360a26dec9d184ead614def4584396a3166145206a3a60c01eb89803d  $RUNNER_TEMP/direct.apk" | sha256sum --check
+          echo "$LIFEOS_APK_SHA256  $RUNNER_TEMP/direct.apk" | sha256sum --check
           echo "Public direct HTTPS download verified: $url"
