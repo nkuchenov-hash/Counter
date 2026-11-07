@@ -394,7 +394,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     // hand-off synchronous prevents Android from closing/reopening the IME
     // while moving between adjacent Notes text blocks.
     node?.requestFocus();
-    _ensureBlockVisible(blockId);
+    // The FocusNode listener performs the one local visibility adjustment.
+    // A second scroll request here used to race the Android IME.
     if (mounted && (_editingBlockId != blockId || changedActive)) {
       setState(() => _editingBlockId = blockId);
     }
