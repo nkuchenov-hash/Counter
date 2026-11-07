@@ -55,6 +55,9 @@ abstract class PbAppApiRoutes {
 
   /// Authenticated cloud sleep-sync routes served by PocketBase hooks.
   static const String sleepSyncStatus = '/api/sleep-sync/status';
+  static const String sleepSyncXiaomiConnect =
+      '/api/sleep-sync/xiaomi/connect';
+  // Legacy endpoint retained for existing installed clients.
   static const String sleepSyncGoogleFitConnect =
       '/api/sleep-sync/google-fit/connect';
   static const String sleepSyncSettings = '/api/sleep-sync/settings';

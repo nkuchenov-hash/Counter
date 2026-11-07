@@ -106,6 +106,9 @@ jobs:
       - name: Verify mobile Notes keyboard stability in record edits
         run: flutter test test/record_notes_ime_stability_test.dart test/notes_mobile_keyboard_regression_test.dart
 
+      - name: Verify cloud-first sleep synchronization contract
+        run: flutter test test/sleep_cloud_settings_contract_test.dart
+
       - name: Analyze runtime app
         run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 

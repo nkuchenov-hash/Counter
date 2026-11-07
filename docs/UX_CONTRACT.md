@@ -1,3 +1,11 @@
+## Cloud sleep synchronization (2026-11-07)
+
+- Android, iOS and Web expose the same server-owned Xiaomi Cloud/Mi Fitness sleep connection in Settings → Health and sleep. Health Connect is not required to connect this source.
+- An unconnected account must show **Connect Xiaomi**, not a misleading enabled toggle. Connecting shows the external authorization step; only a configured account exposes the automatic sync toggle and a **Synchronize now** action.
+- The settings page shows the actual server-reported last check, sessions found/imported, and recoverable error/no-data states. A successful connection or enabled toggle is not evidence that the last completed night was imported.
+- Completed sleep is stored in owner-scoped PocketBase Timeline records. Keep the existing background ingestion and Timeline reactivity; do not block app startup or record gestures on external sleep providers.
+- Disconnect asks for confirmation and must not delete existing sleep records. Preserve external-authorization reopen on app resume and use existing auth/session failure handling.
+
 ## Consistent Profile and menu chrome (refined 2026-11-05)
 
 - Preserve Onest, shared routing and data flows. All light-theme main pages share the single `AppColors.appBackground` neutral canvas `#F7F7F7`. The sidebar stays visually separate, `#F4F4F4`; Menu cards are white and borderless.

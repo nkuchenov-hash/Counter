@@ -1,16 +1,14 @@
 import 'dart:async';
 
+import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/data/health/cloud_sleep_sync_service.dart';
-import 'package:counter/data/health/health_sleep_sync_service.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
-/// One user-facing sleep synchronization setting.
+/// One server-owned sleep connection on Android, iOS and Web.
 ///
-/// Android/iOS can read the device health store directly. Web uses the
-/// server-owned Google Health connection, whose reconciled sleep stream can
-/// include data uploaded from Health Connect and other supported sources.
+/// Xiaomi Cloud (Mi Fitness) imports completed nights into PocketBase. Device
+/// Health Connect permission is not a prerequisite for this settings flow.
 class SleepSyncSettingsSection extends StatefulWidget {
   const SleepSyncSettingsSection({super.key});
 
@@ -21,8 +19,12 @@ class SleepSyncSettingsSection extends StatefulWidget {
 
 class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
     with WidgetsBindingObserver {
-  bool get _useDeviceSource =>
-      !kIsWeb && HealthSleepSyncService.instance.isSupported;
+  final CloudSleepSyncService _cloud = CloudSleepSyncService.instance;
+  bool _firstLoad = true;
+  bool _actionRunning = false;
+
+  String _copy(String en, String ru) =>
+      currentLocale.value == 'ru' ? ru : en;
 
   @override
   void initState() {
@@ -39,300 +41,280 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      unawaited(_load());
-    }
+    if (state == AppLifecycleState.resumed) unawaited(_load());
   }
 
   Future<void> _load() async {
-    if (kIsWeb) {
-      await CloudSleepSyncService.instance.loadStatus();
-      return;
-    }
-    if (_useDeviceSource) {
-      await HealthSleepSyncService.instance.start();
-      return;
-    }
-    await CloudSleepSyncService.instance.loadStatus();
-  }
-
-  String _copy(String locale, String en, String ru) {
-    return locale == 'ru' ? ru : en;
-  }
-
-  Future<void> _setDeviceEnabled(bool enabled) async {
-    final service = HealthSleepSyncService.instance;
-    if (enabled) {
-      await service.requestAuthorizationAndEnable();
-    } else {
-      await service.setEnabled(false);
+    try {
+      await _cloud.loadStatus();
+    } finally {
+      if (mounted && _firstLoad) setState(() => _firstLoad = false);
     }
   }
 
-  Future<void> _setCloudEnabled(bool enabled) async {
-    final service = CloudSleepSyncService.instance;
-    final current = service.state.value;
-    if (!enabled) {
-      if (current.configured) await service.setEnabled(false);
+  Future<void> _perform(Future<void> Function() action) async {
+    if (_actionRunning) return;
+    setState(() => _actionRunning = true);
+    try {
+      await action();
+    } finally {
+      if (mounted) setState(() => _actionRunning = false);
+    }
+  }
+
+  Future<void> _connect() => _perform(() async {
+    final connected = await _cloud.connectXiaomi();
+    // An existing Xiaomi session returns connected immediately (no login URL).
+    // The server already starts an import for that path; refresh its status.
+    if (connected && _cloud.state.value.configured) {
+      await _cloud.loadStatus();
+    }
+  });
+
+  Future<void> _toggle(bool enabled) => _perform(() async {
+    if (!_cloud.state.value.configured) {
+      if (enabled) await _cloud.connectXiaomi();
       return;
     }
+    final updated = await _cloud.setEnabled(enabled);
+    if (updated && enabled) await _cloud.syncNow();
+  });
+
+  Future<void> _syncNow() => _perform(() async {
+    final current = _cloud.state.value;
     if (!current.configured) {
-      await service.connectGoogleFit();
-      return;
-    }
-    await service.setEnabled(true);
-  }
-
-  Future<void> _connectOrSyncWebCloud() async {
-    final service = CloudSleepSyncService.instance;
-    final current = service.state.value;
-    if (!current.configured) {
-      await service.connectGoogleFit();
+      await _cloud.connectXiaomi();
       return;
     }
     if (!current.enabled) {
-      final enabled = await service.setEnabled(true);
-      if (!enabled) return;
+      if (!await _cloud.setEnabled(true)) return;
     }
-    await service.syncNow();
+    await _cloud.syncNow();
+  });
+
+  Future<void> _confirmDisconnect() async {
+    if (_actionRunning) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(_copy('Disconnect Xiaomi?', 'Отключить Xiaomi?')),
+        content: Text(_copy(
+          'Automatic sleep imports will stop. Existing sleep records in Timeline will remain.',
+          'Автоматический импорт сна прекратится. Уже сохранённые записи в Timeline останутся.',
+        )),
+        actions: [
+          AppButton.ghost(
+            label: _copy('Cancel', 'Отмена'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+          ),
+          AppButton.destructive(
+            label: _copy('Disconnect', 'Отключить'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _perform(() async {
+      await _cloud.disconnect();
+    });
   }
 
-  String _deviceStatus(String locale, HealthSleepSyncState state) {
-    return switch (state.phase) {
-      HealthSleepSyncPhase.syncing =>
-        _copy(locale, 'Synchronizing…', 'Синхронизация…'),
-      HealthSleepSyncPhase.needsPermission => _copy(
-        locale,
-        'Permission is required to synchronize sleep.',
-        'Для синхронизации нужен доступ к данным сна.',
-      ),
-      HealthSleepSyncPhase.error => _copy(
-        locale,
-        'Could not enable synchronization. Try again.',
-        'Не удалось включить синхронизацию. Попробуйте ещё раз.',
-      ),
-      _ => state.enabled
-          ? _copy(
-              locale,
-              'Sleep is synchronized automatically.',
-              'Сон синхронизируется автоматически.',
-            )
-          : _copy(
-              locale,
-              'Turn on once and Life OS will keep sleep synchronized.',
-              'Включите один раз — дальше Life OS будет синхронизировать сон автоматически.',
-            ),
-    };
+  String _status(CloudSleepSyncState state) {
+    if (state.phase == CloudSleepSyncPhase.connecting) {
+      return _copy(
+        'Complete Xiaomi sign-in in the opened browser.',
+        'Завершите вход в Xiaomi в открывшемся браузере.',
+      );
+    }
+    if (!state.configured) {
+      return _copy(
+        'Not connected. Sign in to the Xiaomi account used by Mi Fitness.',
+        'Не подключено. Войдите в аккаунт Xiaomi, используемый в Mi Fitness.',
+      );
+    }
+    if (!state.enabled) {
+      return _copy('Paused', 'Приостановлено');
+    }
+    if (state.phase == CloudSleepSyncPhase.syncing) {
+      return _copy('Importing sleep…', 'Импортируем сон…');
+    }
+    if (state.error != null || state.phase == CloudSleepSyncPhase.error) {
+      return _copy('Needs attention', 'Требуется внимание');
+    }
+    if (state.lastSyncUtc == null) {
+      return _copy('Connected. Waiting for first import.', 'Подключено. Ожидаем первый импорт.');
+    }
+    return _copy('Connected · automatic sync on', 'Подключено · автосинхронизация включена');
   }
 
-  String _cloudStatus(String locale, CloudSleepSyncState state) {
-    return switch (state.phase) {
-      CloudSleepSyncPhase.connecting => _copy(
-        locale,
-        'Confirm access in the opened Google window.',
-        'Подтвердите доступ в открывшемся окне Google.',
-      ),
-      CloudSleepSyncPhase.syncing =>
-        _copy(locale, 'Synchronizing…', 'Синхронизация…'),
-      CloudSleepSyncPhase.error => state.configured && state.enabled
-          ? _copy(
-              locale,
-              'Synchronization is on. Life OS will retry automatically.',
-              'Синхронизация включена. Life OS повторит попытку автоматически.',
-            )
-          : _copy(
-              locale,
-              'Google Health access is required to continue.',
-              'Для продолжения нужен доступ Google Health.',
-            ),
-      _ => state.configured && state.enabled
-          ? _copy(
-              locale,
-              'Sleep is synchronized automatically through Google Health.',
-              'Сон автоматически синхронизируется через Google Health.',
-            )
-          : _copy(
-              locale,
-              'Connect Google Health once and Life OS will keep sleep synchronized on the server.',
-              'Один раз подключите Google Health — дальше сервер Life OS будет синхронизировать сон автоматически.',
-            ),
-    };
-  }
-
-  Widget _switch({
-    required String locale,
-    required bool value,
-    required bool busy,
-    required String status,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return SwitchListTile.adaptive(
-      contentPadding: EdgeInsets.zero,
-      title: Text(
-        _copy(locale, 'Synchronize sleep', 'Синхронизировать сон'),
-      ),
-      subtitle: Text(status),
-      value: value,
-      onChanged: busy ? null : onChanged,
+  String _errorText(String raw) {
+    final normalized = raw.toLowerCase();
+    if (normalized.contains('xiaomi_sleep_not_available_today')) {
+      return _copy(
+        'Xiaomi has not published today\'s sleep yet. LIFE OS will check again automatically.',
+        'Xiaomi ещё не передал сон за сегодня. LIFE OS проверит данные повторно автоматически.',
+      );
+    }
+    if (normalized.contains('server_sleep_sync_not_deployed')) {
+      return _copy(
+        'Sleep synchronization is not installed on the server.',
+        'Синхронизация сна не установлена на сервере.',
+      );
+    }
+    if (normalized.contains('xiaomi_authorization_start_failed')) {
+      return _copy(
+        'Could not start Xiaomi sign-in. Try connecting again.',
+        'Не удалось начать вход в Xiaomi. Повторите подключение.',
+      );
+    }
+    if (normalized.contains('not_connected')) {
+      return _copy(
+        'Xiaomi authorization has expired. Connect the account again.',
+        'Авторизация Xiaomi недействительна. Подключите аккаунт повторно.',
+      );
+    }
+    if (normalized.contains('(401') || normalized.contains('(403')) {
+      return _copy(
+        'Your LIFE OS session has expired. Sign in again.',
+        'Сессия LIFE OS истекла. Войдите в аккаунт повторно.',
+      );
+    }
+    return _copy(
+      'Sleep sync failed. Retry now or check Xiaomi/Mi Fitness and the server connection.',
+      'Не удалось синхронизировать сон. Повторите попытку и проверьте Mi Fitness и соединение с сервером.',
     );
   }
 
-  bool _requiresGoogleHealthSetup(CloudSleepSyncState state) {
-    final raw = state.error?.toLowerCase() ?? '';
-    return raw.contains('google_health_account_not_linked') ||
-        raw.contains('account_not_linked') ||
-        raw.contains('account is not linked to google health');
+  String _lastSyncLabel(DateTime instant) {
+    final local = instant.toLocal();
+    final date = MaterialLocalizations.of(context).formatMediumDate(local);
+    final time = TimeOfDay.fromDateTime(local).format(context);
+    return _copy('Last check (device time): ', 'Последняя проверка (время телефона): ') +
+        date + ' · ' + time;
   }
 
-  Widget _webStatus(String locale, ThemeData theme) {
-    return ValueListenableBuilder<CloudSleepSyncState>(
-      valueListenable: CloudSleepSyncService.instance.state,
-      builder: (context, state, _) {
-        final configured = state.configured;
-        final syncing = state.phase == CloudSleepSyncPhase.syncing;
-        final connecting = state.phase == CloudSleepSyncPhase.connecting;
-        final setupRequired = _requiresGoogleHealthSetup(state);
-        final status = setupRequired
-            ? _copy(
-                locale,
-                'Google requires a one-time Google Health profile setup before LIFE OS can read Health Connect sleep. Open setup once; LIFE OS will retry automatically.',
-                'Google требует один раз настроить профиль Google Health, прежде чем LIFE OS сможет читать сон из Health Connect. Откройте настройку один раз — LIFE OS будет повторять синхронизацию автоматически.',
-              )
-            : configured
-            ? (syncing
-                  ? _copy(
-                      locale,
-                      'Synchronizing sleep from Google Health…',
-                      'Синхронизация сна из Google Health…',
-                    )
-                  : _copy(
-                      locale,
-                      'Google Health is connected. The LIFE OS server synchronizes sleep automatically and stores it in PocketBase for every client.',
-                      'Google Health подключён. Сервер LIFE OS автоматически синхронизирует сон и сохраняет его в PocketBase для всех клиентов.',
-                    ))
-            : (connecting
-                  ? _copy(
-                      locale,
-                      'Complete Google Health authorization in the opened Google page. LIFE OS will import sleep immediately after authorization.',
-                      'Завершите авторизацию Google Health на открывшейся странице Google. LIFE OS сразу импортирует сон после авторизации.',
-                    )
-                  : _copy(
-                      locale,
-                      'Connect Google Health once. Its reconciled sleep stream can include data uploaded from Health Connect, without tying LIFE OS to a watch brand.',
-                      'Один раз подключите Google Health. Его объединённый поток сна может включать данные из Health Connect без привязки LIFE OS к марке часов.',
-                    ));
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.health_and_safety_outlined),
-              title: Text(
-                _copy(locale, 'Sleep synchronization', 'Синхронизация сна'),
-              ),
-              subtitle: Text(
-                status,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            OutlinedButton.icon(
-              onPressed: syncing
-                  ? null
-                  : () => unawaited(
-                      setupRequired
-                          ? CloudSleepSyncService.instance.openGoogleHealthAccountSetup()
-                          : _connectOrSyncWebCloud(),
-                    ),
-              icon: Icon(
-                setupRequired
-                    ? Icons.open_in_new
-                    : (configured ? Icons.sync : Icons.cloud_outlined),
-              ),
-              label: Text(
-                setupRequired
-                    ? _copy(
-                        locale,
-                        'Set up Google Health',
-                        'Настроить Google Health',
-                      )
-                    : configured
-                    ? _copy(locale, 'Synchronize now', 'Синхронизировать сейчас')
-                    : (connecting
-                          ? _copy(
-                              locale,
-                              'Continue Google Health connection',
-                              'Продолжить подключение Google Health',
-                            )
-                          : _copy(
-                              locale,
-                              'Connect Google Health',
-                              'Подключить Google Health',
-                            )),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+  String _counts(CloudSleepSyncState state) {
+    if (state.lastSessionCount == 0) {
+      return _copy(
+        'No sleep sessions returned in the last check.',
+        'При последней проверке записей сна не получено.',
+      );
+    }
+    return _copy('Sleep sessions found: ', 'Найдено периодов сна: ') +
+        state.lastSessionCount.toString() +
+        _copy(' · imported/updated: ', ' · добавлено/обновлено: ') +
+        state.lastImportedCount.toString();
   }
 
   @override
   Widget build(BuildContext context) {
-    final locale = currentLocale.value;
     final theme = Theme.of(context);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          t(locale, 'health_connect_title'),
-          style: theme.textTheme.titleMedium,
-        ),
-        const SizedBox(height: 4),
+        Text(t(currentLocale.value, 'health_connect_title'),
+            style: theme.textTheme.titleMedium),
+        const SizedBox(height: 8),
         Text(
           _copy(
-            locale,
-            'Automatically adds completed sleep to Timeline.',
-            'Автоматически добавляет завершённый сон в Timeline.',
+            'Source: Xiaomi Cloud / Mi Fitness. Completed sleep is saved to PocketBase and appears in Timeline on all devices. No Health Connect permission required.',
+            'Источник: Xiaomi Cloud / Mi Fitness. Завершённый сон сохраняется в PocketBase и появляется в Timeline на всех устройствах. Доступ к Health Connect не требуется.',
           ),
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          style: theme.textTheme.bodyMedium,
         ),
-        const SizedBox(height: 8),
-        if (kIsWeb)
-          _webStatus(locale, theme)
-        else if (_useDeviceSource)
-          ValueListenableBuilder<HealthSleepSyncState>(
-            valueListenable: HealthSleepSyncService.instance.state,
-            builder: (context, state, _) {
-              final busy = state.phase == HealthSleepSyncPhase.syncing;
-              return _switch(
-                locale: locale,
-                value: state.enabled,
-                busy: busy,
-                status: _deviceStatus(locale, state),
-                onChanged: (enabled) =>
-                    unawaited(_setDeviceEnabled(enabled)),
-              );
-            },
+        const SizedBox(height: 16),
+        if (_firstLoad)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              children: [
+                const SizedBox(width: 20, height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2)),
+                const SizedBox(width: 12),
+                Expanded(child: Text(
+                  _copy('Checking connection…', 'Проверяем подключение…'),
+                  style: theme.textTheme.bodyMedium,
+                )),
+              ],
+            ),
           )
         else
           ValueListenableBuilder<CloudSleepSyncState>(
-            valueListenable: CloudSleepSyncService.instance.state,
+            valueListenable: _cloud.state,
             builder: (context, state, _) {
-              final busy = state.phase == CloudSleepSyncPhase.syncing;
-              return _switch(
-                locale: locale,
-                value: state.configured && state.enabled,
-                busy: busy,
-                status: _cloudStatus(locale, state),
-                onChanged: (enabled) =>
-                    unawaited(_setCloudEnabled(enabled)),
+              final isSyncing = state.phase == CloudSleepSyncPhase.syncing;
+              final busy = _actionRunning || isSyncing;
+              final connected = state.configured;
+              final error = state.error?.trim();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_status(state), style: theme.textTheme.bodyMedium),
+                  if (error != null && error.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.warning_amber_rounded,
+                            color: theme.colorScheme.error, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(_errorText(error),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.error))),
+                      ],
+                    ),
+                  ],
+                  if (connected) ...[
+                    const SizedBox(height: 12),
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(_copy(
+                        'Automatic sleep synchronization',
+                        'Автоматическая синхронизация сна',
+                      )),
+                      subtitle: Text(_copy(
+                        'The server checks Xiaomi and adds completed nights.',
+                        'Сервер проверяет Xiaomi и добавляет завершённый сон.',
+                      )),
+                      value: state.enabled,
+                      onChanged: busy
+                          ? null
+                          : (value) => unawaited(_toggle(value)),
+                    ),
+                    if (state.lastSyncUtc != null) ...[
+                      const SizedBox(height: 4),
+                      Text(_lastSyncLabel(state.lastSyncUtc!),
+                          style: theme.textTheme.bodyMedium),
+                      const SizedBox(height: 4),
+                      Text(_counts(state), style: theme.textTheme.bodyMedium),
+                    ],
+                    const SizedBox(height: 16),
+                    AppButton.secondary(
+                      label: _copy('Synchronize now', 'Синхронизировать сейчас'),
+                      icon: Icons.sync_rounded,
+                      loading: busy,
+                      fullWidth: true,
+                      onPressed: busy ? null : () => unawaited(_syncNow()),
+                    ),
+                    const SizedBox(height: 8),
+                    AppButton.ghost(
+                      label: _copy('Disconnect Xiaomi account', 'Отключить аккаунт Xiaomi'),
+                      onPressed: busy ? null : () => unawaited(_confirmDisconnect()),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 16),
+                    AppButton.primary(
+                      label: state.phase == CloudSleepSyncPhase.connecting
+                          ? _copy('Continue Xiaomi sign-in', 'Продолжить вход в Xiaomi')
+                          : _copy('Connect Xiaomi / Mi Fitness', 'Подключить Xiaomi / Mi Fitness'),
+                      icon: Icons.cloud_outlined,
+                      loading: busy,
+                      fullWidth: true,
+                      onPressed: busy ? null : () => unawaited(_connect()),
+                    ),
+                  ],
+                ],
               );
             },
           ),
