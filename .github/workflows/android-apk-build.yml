@@ -112,76 +112,9 @@ jobs:
         run: flutter test --platform chrome test/web_record_journal_test.dart
 
 
-      # Restore the original release identity when it still exists on the former VPS.
-      # Do not expose the key, password, or signing.env in artifacts or logs.
-      # If recovery fails, ship an independently installable rescue package instead.
-      - name: Check original LIFE OS Android signing identity
-        if: github.event_name != 'pull_request'
-        shell: bash
-        env:
-          LEGACY_SSH_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
-          LEGACY_SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
-          LEGACY_SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST }}
-          LEGACY_SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
-        run: |
-          set -euo pipefail
-          echo "LIFE_OS_SIGNING_MODE=v2" >> "$GITHUB_ENV"
-          echo "LIFE_OS_RECOVERY_STANDALONE=true" >> "$GITHUB_ENV"
-          if [[ -z "${LEGACY_SSH_KEY:-}" ]]; then
-            echo "Legacy signing SSH credential unavailable; using standalone v2 recovery build."
-            exit 0
-          fi
-          install -m 700 -d "$HOME/.ssh"
-          keyfile="$RUNNER_TEMP/lifeos-legacy-ssh"
-          printf '%s\n' "$LEGACY_SSH_KEY" > "$keyfile"
-          chmod 600 "$keyfile"
-          mkdir -p "$RUNNER_TEMP/lifeos-legacy"
-          user="${LEGACY_SSH_USER:-root}"
-          port="${LEGACY_SSH_PORT:-22}"
-          success=false
-          for host in "${LEGACY_SSH_HOST:-217.114.0.201}" "217.114.0.201"; do
-            [[ -n "$host" ]] || continue
-            ssh-keyscan -T 5 -p "$port" -H "$host" > "$RUNNER_TEMP/lifeos-legacy-hostkey" 2>/dev/null || true
-            [[ -s "$RUNNER_TEMP/lifeos-legacy-hostkey" ]] || continue
-            cat "$RUNNER_TEMP/lifeos-legacy-hostkey" >> "$HOME/.ssh/known_hosts"
-            if scp -q -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=yes -i "$keyfile" -P "$port" \
-              "$user@$host:.lifeos/android-signing/life-os-release.jks" \
-              "$user@$host:.lifeos/android-signing/signing.env" \
-              "$RUNNER_TEMP/lifeos-legacy/"; then
-              success=true
-              break
-            fi
-          done
-          if [[ "$success" != true ]]; then
-            echo "Original key not reachable. Keep installed app and use separate recovery package."
-            exit 0
-          fi
-          set -a
-          source "$RUNNER_TEMP/lifeos-legacy/signing.env"
-          set +a
-          ANDROID_KEY_PASSWORD="$ANDROID_KEYSTORE_PASSWORD"
-          if ! keytool -list -keystore "$RUNNER_TEMP/lifeos-legacy/life-os-release.jks" \
-            -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null; then
-            echo "::warning::Original key could not be validated; switching to standalone recovery build."
-            exit 0
-          fi
-          cp "$RUNNER_TEMP/lifeos-legacy/life-os-release.jks" android/app/life-os-release.jks
-          echo "::add-mask::$ANDROID_KEYSTORE_PASSWORD"
-          echo "::add-mask::$ANDROID_KEY_PASSWORD"
-          {
-            printf 'LIFE_OS_KEYSTORE_PATH=%s\n' "$GITHUB_WORKSPACE/android/app/life-os-release.jks"
-            printf 'ANDROID_KEYSTORE_PASSWORD=%s\n' "$ANDROID_KEYSTORE_PASSWORD"
-            printf 'ANDROID_KEY_ALIAS=%s\n' "$ANDROID_KEY_ALIAS"
-            printf 'ANDROID_KEY_PASSWORD=%s\n' "$ANDROID_KEY_PASSWORD"
-            printf 'LIFE_OS_SIGNING_MODE=legacy\n'
-            printf 'LIFE_OS_RECOVERY_STANDALONE=false\n'
-          } >> "$GITHUB_ENV"
-          echo "Original signing key restored; build remains com.example.counter."
-
-      # The original key is unavailable. Create ONE new signing identity and
-      # retain an encrypted backup in a private (draft) GitHub release asset.
-      # Never rotate automatically after a signing backup exists.
-      - name: Configure permanent Android v2 signing
+      # Single production signing identity, kept in a private encrypted draft
+      # release. Missing backup must fail the release: never rotate keys again.
+      - name: Restore permanent LIFE OS Android signing key
         if: github.event_name != 'pull_request'
         shell: bash
         env:
@@ -189,97 +122,46 @@ jobs:
           SIGNING_ENCRYPTION_SECRET: ${{ secrets.LIFE_OS_SIGNING_ENCRYPTION_SECRET || secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
         run: |
           set -euo pipefail
-          if [[ "${LIFE_OS_SIGNING_MODE:-v2}" == "legacy" ]]; then
-            echo "Using verified original signing identity; no key rotation."
-            exit 0
-          fi
           umask 077
           if [[ -z "$SIGNING_ENCRYPTION_SECRET" ]]; then
-            echo "::error::A long-lived repository secret is needed to encrypt the new signing identity."
+            echo "::error::Stable encryption secret is unavailable; refusing to rotate or publish."
             exit 1
           fi
-          BACKUP_TAG="life-os-android-signing-identity-v2"
-          ASSET_NAME="life-os-signing-v2.tar.enc"
           WORK_DIR="$RUNNER_TEMP/lifeos-android-signing"
           mkdir -p "$WORK_DIR"
-          # This is a key-encryption password, derived from an existing stable
-          # Actions secret. The secret and derived password never enter the repo.
+          BACKUP_TAG="life-os-android-signing-identity-v2"
+          ASSET_NAME="life-os-signing-v2.tar.enc"
           WRAP_KEY="$(printf '%s' "$SIGNING_ENCRYPTION_SECRET" | sha256sum | cut -d ' ' -f1)"
           export WRAP_KEY
 
-          # The draft release remains private to repository collaborators even
-          # when the source repository and application releases are public.
-          # Use the authenticated list API: /releases/tags does not reliably
-          # expose drafts. Paginate to retain the identity beyond 100 releases.
           RELEASE_IDS="$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
             --jq '.[] | select(.tag_name == "life-os-android-signing-identity-v2" and .draft == true) | .id')"
           RELEASE_ID="$(printf '%s\n' "$RELEASE_IDS" | sed '/^$/d' | head -n1)"
-
-          if [[ -n "$RELEASE_ID" ]]; then
-            echo "Restoring existing v2 signing identity from encrypted private backup."
-            ASSET_ID="$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets" \
-              --jq '.[] | select(.name == "life-os-signing-v2.tar.enc") | .id')"
-            if [[ -z "$ASSET_ID" ]]; then
-              echo "::error::Signing backup release exists but its encrypted asset is missing. Refusing silent key rotation."
-              exit 1
-            fi
-            curl --fail --silent --show-error --location \
-              --header "Authorization: Bearer $GH_TOKEN" \
-              --header "Accept: application/octet-stream" \
-              "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/assets/$ASSET_ID" \
-              --output "$WORK_DIR/$ASSET_NAME"
-            openssl enc -d -aes-256-cbc -pbkdf2 -iter 300000 \
-              -in "$WORK_DIR/$ASSET_NAME" -out "$WORK_DIR/signing.tar" \
-              -pass env:WRAP_KEY
-            tar -xf "$WORK_DIR/signing.tar" -C "$WORK_DIR" \
-              life-os-release.jks signing.env
-          else
-            echo "Initializing the replacement signing identity (only once)."
-            STORE_PASSWORD="$(openssl rand -hex 32)"
-            keytool -genkeypair -noprompt \
-              -alias lifeos -keyalg RSA -keysize 3072 -validity 10000 \
-              -storetype PKCS12 -keystore "$WORK_DIR/life-os-release.jks" \
-              -storepass "$STORE_PASSWORD" -keypass "$STORE_PASSWORD" \
-              -dname "CN=LIFE OS, OU=Android, O=LIFE OS, C=US"
-            printf 'ANDROID_KEYSTORE_PASSWORD=%s\nANDROID_KEY_ALIAS=lifeos\nANDROID_KEY_PASSWORD=%s\n' \
-              "$STORE_PASSWORD" "$STORE_PASSWORD" > "$WORK_DIR/signing.env"
-            tar -cf "$WORK_DIR/signing.tar" -C "$WORK_DIR" \
-              life-os-release.jks signing.env
-            openssl enc -aes-256-cbc -salt -pbkdf2 -iter 300000 \
-              -in "$WORK_DIR/signing.tar" -out "$WORK_DIR/$ASSET_NAME" \
-              -pass env:WRAP_KEY
-
-            # Private draft, not a user-facing release. Actions token has
-            # repository contents:write. Failure here stops the build BEFORE
-            # publishing an APK without a durable signing-key backup.
-            gh release create "$BACKUP_TAG" "$WORK_DIR/$ASSET_NAME" \
-              --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --draft --latest=false \
-              --title "LIFE OS Android signing identity v2 (encrypted backup)" \
-              --notes "Private encrypted recovery backup. Never publish or delete."
-            RELEASE_IDS="$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
-              --jq '.[] | select(.tag_name == "life-os-android-signing-identity-v2" and .draft == true) | .id')"
-            RELEASE_ID="$(printf '%s\n' "$RELEASE_IDS" | sed '/^$/d' | head -n1)"
-            if [[ -z "$RELEASE_ID" ]]; then
-              echo "::error::Failed to verify persistent signing backup."
-              exit 1
-            fi
-            ASSET_ID="$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets" \
-              --jq '.[] | select(.name == "life-os-signing-v2.tar.enc") | .id')"
-            if [[ -z "$ASSET_ID" ]]; then
-              echo "::error::Encrypted signing-key asset not persisted."
-              exit 1
-            fi
+          if [[ -z "$RELEASE_ID" ]]; then
+            echo "::error::Original v2 signing backup missing. Do not generate new identity."
+            exit 1
           fi
-
+          ASSET_ID="$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets" \
+            --jq '.[] | select(.name == "life-os-signing-v2.tar.enc") | .id')"
+          if [[ -z "$ASSET_ID" ]]; then
+            echo "::error::Encrypted signing-key asset missing. Refusing signing rotation."
+            exit 1
+          fi
+          curl --fail --silent --show-error --location \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "Accept: application/octet-stream" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/assets/$ASSET_ID" \
+            --output "$WORK_DIR/$ASSET_NAME"
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 300000 \
+            -in "$WORK_DIR/$ASSET_NAME" -out "$WORK_DIR/signing.tar" \
+            -pass env:WRAP_KEY
+          tar -xf "$WORK_DIR/signing.tar" -C "$WORK_DIR" life-os-release.jks signing.env
           test -s "$WORK_DIR/life-os-release.jks"
           test -s "$WORK_DIR/signing.env"
-          # The env file is created solely by this workflow and encrypted at rest.
           source "$WORK_DIR/signing.env"
           [[ -n "$ANDROID_KEYSTORE_PASSWORD" && -n "$ANDROID_KEY_ALIAS" && -n "$ANDROID_KEY_PASSWORD" ]]
           keytool -list -keystore "$WORK_DIR/life-os-release.jks" \
             -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
-
           cp "$WORK_DIR/life-os-release.jks" android/app/life-os-release.jks
           chmod 600 android/app/life-os-release.jks
           echo "::add-mask::$ANDROID_KEYSTORE_PASSWORD"
@@ -290,7 +172,7 @@ jobs:
             printf 'ANDROID_KEY_ALIAS=%s\n' "$ANDROID_KEY_ALIAS"
             printf 'ANDROID_KEY_PASSWORD=%s\n' "$ANDROID_KEY_PASSWORD"
           } >> "$GITHUB_ENV"
-          echo "Persistent v2 signing identity available and backup verified."
+          echo "One canonical signing key verified."
 
       - name: Verify persistent signing is configured
         if: github.event_name != 'pull_request'
@@ -335,51 +217,36 @@ jobs:
             sleep $((attempt * 10))
           done
 
-      - name: Build arm64 release APK
+      - name: Build one canonical ARM64 release APK
+        shell: bash
         run: |
           set -euo pipefail
-          if [[ "$GITHUB_EVENT_NAME" != "pull_request" ]]; then
-            [[ "${LIFE_OS_SIGNING_MODE:-}" == "legacy" || "${LIFE_OS_SIGNING_MODE:-}" == "v2" ]] || exit 1
-          fi
-          LIFE_OS_RECOVERY_STANDALONE=false flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
+          flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk LIFE-OS-Android-arm64.apk
 
-      - name: Verify APK package and signing
+      - name: Verify canonical package ID and signing
         if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
-          apk=build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-          aapt="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -name aapt -type f | sort -V | tail -n1)"
-          apksigner="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -name apksigner -type f | sort -V | tail -n1)"
+          sdk="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          aapt="$(find "$sdk/build-tools" -name aapt -type f | sort -V | tail -n1)"
+          apksigner="$(find "$sdk/build-tools" -name apksigner -type f | sort -V | tail -n1)"
+          test -s LIFE-OS-Android-arm64.apk
           [[ -x "$aapt" && -x "$apksigner" ]]
-          actual="$("$aapt" dump badging "$apk" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")"
-          [[ "$actual" == "com.example.counter" ]] || exit 1
-          "$apksigner" verify --verbose "$apk" >/dev/null
-          echo "Verified package=$actual; signing mode=$LIFE_OS_SIGNING_MODE."
+          actual="$("$aapt" dump badging LIFE-OS-Android-arm64.apk | sed -n "s/^package: name='\([^']*\)'.*/\1/p")"
+          [[ "$actual" == "com.example.counter" ]] || {
+            echo "::error::Noncanonical app package ID: $actual"
+            exit 1
+          }
+          "$apksigner" verify --verbose LIFE-OS-Android-arm64.apk >/dev/null
+          echo "Verified single canonical package: $actual."
 
-
-      - name: Prepare public APK name
-        run: cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk LIFE-OS-Android-arm64.apk
-
-      - name: Build recovery APK for previously installed recovery app
-        if: github.event_name != 'pull_request'
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ "$LIFE_OS_SIGNING_MODE" == "legacy" ]]; then exit 0; fi
-          LIFE_OS_RECOVERY_STANDALONE=true flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk LIFE-OS-Recovery-arm64.apk
-          aapt="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -name aapt -type f | sort -V | tail -n1)"
-          apksigner="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -name apksigner -type f | sort -V | tail -n1)"
-          "$aapt" dump badging LIFE-OS-Recovery-arm64.apk | grep -q "package: name='com.lifeos.recovery'"
-          "$apksigner" verify --verbose LIFE-OS-Recovery-arm64.apk >/dev/null
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: counter-android-arm64-release
-          path: |
-            LIFE-OS-Android-arm64.apk
-            LIFE-OS-Recovery-arm64.apk
+          path: LIFE-OS-Android-arm64.apk
           if-no-files-found: error
           retention-days: 14
 
@@ -389,8 +256,8 @@ jobs:
         with:
           tag: life-os-android-${{ github.run_number }}-${{ github.sha }}
           name: LIFE OS Android — build ${{ github.run_number }}
-          body: Fixed PocketBase login by unifying Android and Web production backend. Main APK updates com.example.counter v2 installs; Recovery APK updates com.lifeos.recovery v2 installs. Original historical signing certificates remain incompatible.
-          artifacts: LIFE-OS-*.apk
+          body: Canonical LIFE OS Android ARM64 release. Single package com.example.counter, signed with retained permanent v2 key. Uses the same live PocketBase backend as Web. Older builds signed with unrelated keys cannot be updated in place.
+          artifacts: LIFE-OS-Android-arm64.apk
           immutableCreate: true
           makeLatest: true
           prerelease: false
