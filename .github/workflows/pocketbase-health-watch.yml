@@ -29,7 +29,7 @@ jobs:
           for attempt in 1 2 3; do
             http_code="$(curl --silent --show-error --location --max-time 12 \
               --output /tmp/pocketbase-health.json --write-out '%{http_code}' \
-              'https://217-114-0-201.sslip.io/api/health' || true)"
+              'https://137-22-146-109.sslip.io/api/health' || true)"
             if [[ "$http_code" == "200" ]] && python3 - <<'PY'
           import json
           try:
