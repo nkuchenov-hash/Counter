@@ -93,6 +93,14 @@ jobs:
           echo "Found PocketBase executable; placing APK beside the running binary."
           "${root_cmd[@]}" mkdir -p "$binary_dir/pb_public/downloads"
           "${root_cmd[@]}" install -m 644 "$upload" "$binary_dir/pb_public/downloads/LIFE-OS-Android-arm64.apk"
+          # Public HTTPS is served by Caddy's /var/www/lifeos-recovery
+          # rather than PocketBase for all non-API paths.
+          if ! grep -Eq 'root[[:space:]]+\*[[:space:]]+/var/www/lifeos-recovery' /etc/caddy/Caddyfile; then
+            echo "::error::Caddy public root no longer matches expected path."
+            exit 1
+          fi
+          "${root_cmd[@]}" mkdir -p /var/www/lifeos-recovery/downloads
+          "${root_cmd[@]}" install -m 644 "$upload" /var/www/lifeos-recovery/downloads/LIFE-OS-Android-arm64.apk
           "${root_cmd[@]}" rm -f "$upload"
           echo "APK placed in PocketBase static asset path."
           echo "Routing diagnostics:"
