@@ -75,8 +75,24 @@ jobs:
             echo "Diagnose: docker=$(command -v docker >/dev/null && docker ps --format '{{.Names}} {{.Image}}' | grep -i pocketbase | head -n2 || true)"
             exit 1
           fi
-          "${root_cmd[@]}" mkdir -p "$working_dir/pb_public/downloads"
-          "${root_cmd[@]}" install -m 644 "$upload" "$working_dir/pb_public/downloads/LIFE-OS-Android-arm64.apk"
+          # PocketBase resolves pb_public relative to the executable, NOT
+          # necessarily to its process working directory.
+          pid="$(pgrep -f '[p]ocketbase.*serve' | head -n1 || true)"
+          binary_dir=""
+          if [[ -n "$pid" ]]; then
+            executable="$("${root_cmd[@]}" readlink -f "/proc/$pid/exe" || true)"
+            if [[ -f "$executable" ]]; then binary_dir="$(dirname "$executable")"; fi
+          fi
+          if [[ -z "$binary_dir" && -f "$working_dir/pocketbase" ]]; then
+            binary_dir="$working_dir"
+          fi
+          if [[ -z "$binary_dir" ]]; then
+            echo "::error::PocketBase executable path unavailable; cannot determine static public directory."
+            exit 1
+          fi
+          echo "Found PocketBase executable; placing APK beside the running binary."
+          "${root_cmd[@]}" mkdir -p "$binary_dir/pb_public/downloads"
+          "${root_cmd[@]}" install -m 644 "$upload" "$binary_dir/pb_public/downloads/LIFE-OS-Android-arm64.apk"
           "${root_cmd[@]}" rm -f "$upload"
           echo "APK placed in PocketBase static asset path."
           REMOTE
