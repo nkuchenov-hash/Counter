@@ -9,8 +9,6 @@ kotlin {
     jvmToolchain(17)
 }
 
-// Only the recovery APK uses a separate install identity. Normal builds stay unchanged.
-val recoveryStandalone = System.getenv("LIFE_OS_RECOVERY_STANDALONE") == "true"
 val lifeOsKeystorePath = System.getenv("LIFE_OS_KEYSTORE_PATH")
 val lifeOsKeystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
 val lifeOsKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
@@ -51,7 +49,7 @@ android {
 
     defaultConfig {
         // Must match Google Cloud Console → Android OAuth client (package name + SHA-1).
-        applicationId = if (recoveryStandalone) "com.lifeos.recovery" else "com.example.counter"
+        applicationId = "com.example.counter"
         // Health integration requires API 26; Wear OS 3+ devices remain compatible.
         minSdk = 26
         targetSdk = flutter.targetSdkVersion
@@ -60,7 +58,6 @@ android {
         multiDexEnabled = true
         // BUILD_STABILITY (§10): Satisfy manifest placeholders required by flutter_login_yandex. Replace with your Yandex OAuth client ID from Yandex Developer Console.
         manifestPlaceholders["YANDEX_CLIENT_ID"] = "your_yandex_client_id_here"
-        manifestPlaceholders["LIFE_OS_APP_LABEL"] = if (recoveryStandalone) "LIFE OS (новая)" else "Life OS"
     }
 
     buildTypes {
