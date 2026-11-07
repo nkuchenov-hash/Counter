@@ -87,6 +87,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // With a fixed title the body may initially be below the visible area
+    // in a short viewport. The block must stay reachable by scrolling; do
+    // not animate/collapse the entire editor whenever the keyboard opens.
+    await tester.ensureVisible(find.byKey(const ValueKey('body-field')));
+    await tester.pumpAndSettle();
     final contentRect = tester.getRect(
       find.byKey(const ValueKey('notes-test-content')),
     );
@@ -140,6 +145,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // With a fixed title the body may initially be below the visible area
+    // in a short viewport. The block must stay reachable by scrolling; do
+    // not animate/collapse the entire editor whenever the keyboard opens.
+    await tester.ensureVisible(find.byKey(const ValueKey('body-field')));
+    await tester.pumpAndSettle();
     final contentRect = tester.getRect(
       find.byKey(const ValueKey('notes-test-content')),
     );
