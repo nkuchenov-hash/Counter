@@ -4,11 +4,13 @@ library;
 import 'package:counter/core/constants.dart';
 import 'package:flutter/foundation.dart';
 
-/// Legacy native-app origin; do not silently change offline Android clients.
-const String kPocketBaseProductionUrl = 'https://217-114-0-201.sslip.io';
+/// Canonical restored production PocketBase. Web and native release builds
+/// must authenticate against the same instance and the same profiles data.
+const String kPocketBaseProductionUrl = 'https://137-22-146-109.sslip.io';
 
-/// Restored server for the *existing* GitHub Pages web address.
-const String kPocketBaseRecoveredWebUrl = 'https://137-22-146-109.sslip.io';
+/// Compatibility alias for callers that previously used the web-only address.
+/// Never diverge the native and web production origins.
+const String kPocketBaseRecoveredWebUrl = kPocketBaseProductionUrl;
 
 String _pocketBaseUrlForWeb() {
   final host = Uri.base.host;
