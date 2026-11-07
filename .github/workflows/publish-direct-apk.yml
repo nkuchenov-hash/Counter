@@ -1,0 +1,82 @@
+name: Publish public LIFE OS APK on PocketBase host
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-direct-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  mirror-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      GH_TOKEN: ${{ github.token }}
+      LIFEOS_SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      LIFEOS_SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      LIFEOS_SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+    steps:
+      - name: Fetch exact canonical APK and verify published digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release download life-os-android-1779-7f7dd17ce284abe1e67f3654e21250a9ed62006f \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "LIFE-OS-Android-arm64.apk" \
+            --dir "$RUNNER_TEMP"
+          cd "$RUNNER_TEMP"
+          echo "0b2ff2c360a26dec9d184ead614def4584396a3166145206a3a60c01eb89803d  LIFE-OS-Android-arm64.apk" | sha256sum --check
+
+      - name: Mirror release to existing PocketBase static public directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${LIFEOS_SSH_PRIVATE_KEY:-}" ]]; then
+            echo "::error::Production SSH secret absent; direct APK hosting unavailable."
+            exit 1
+          fi
+          host="137.22.146.109"
+          user="${LIFEOS_SSH_USER:-root}"
+          port="${LIFEOS_SSH_PORT:-22}"
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$LIFEOS_SSH_PRIVATE_KEY" > "$RUNNER_TEMP/lifeos_host_key"
+          chmod 600 "$RUNNER_TEMP/lifeos_host_key"
+          ssh-keyscan -T 8 -p "$port" -H "$host" >> "$HOME/.ssh/known_hosts" 2>/dev/null
+          ssh_opts=(-i "$RUNNER_TEMP/lifeos_host_key" -p "$port" -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=yes)
+          scp -i "$RUNNER_TEMP/lifeos_host_key" -P "$port" \
+            -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=yes \
+            "$RUNNER_TEMP/LIFE-OS-Android-arm64.apk" "$user@$host:/tmp/lifeos-publish-apk-${GITHUB_RUN_ID}.apk"
+          ssh "${ssh_opts[@]}" "$user@$host" "bash -s -- /tmp/lifeos-publish-apk-${GITHUB_RUN_ID}.apk" <<'REMOTE'
+          set -euo pipefail
+          upload="$1"
+          root_cmd=()
+          if [[ "$(id -u)" != 0 ]]; then root_cmd=(sudo -n); fi
+          service="$("${root_cmd[@]}" systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
+          if [[ -z "$service" ]]; then echo "PocketBase service missing"; exit 1; fi
+          working_dir="$("${root_cmd[@]}" systemctl show "$service" -p WorkingDirectory --value)"
+          if [[ -z "$working_dir" || "$working_dir" == "/" ]]; then
+            pid="$("${root_cmd[@]}" systemctl show "$service" -p MainPID --value)"
+            if [[ -n "$pid" && "$pid" != "0" ]]; then working_dir="$("${root_cmd[@]}" readlink -f "/proc/$pid/cwd")"; fi
+          fi
+          if [[ -z "$working_dir" || "$working_dir" == "/" || ! -d "$working_dir" ]]; then
+            echo "Could not determine PocketBase working directory"
+            exit 1
+          fi
+          "${root_cmd[@]}" mkdir -p "$working_dir/pb_public/downloads"
+          "${root_cmd[@]}" install -m 644 "$upload" "$working_dir/pb_public/downloads/LIFE-OS-Android-arm64.apk"
+          "${root_cmd[@]}" rm -f "$upload"
+          echo "APK placed in PocketBase static asset path."
+          REMOTE
+
+      - name: Confirm independently accessible HTTPS download and exact bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://137-22-146-109.sslip.io/downloads/LIFE-OS-Android-arm64.apk"
+          curl -fSL --connect-timeout 8 --max-time 90 --retry 2 "$url" --output "$RUNNER_TEMP/direct.apk"
+          echo "0b2ff2c360a26dec9d184ead614def4584396a3166145206a3a60c01eb89803d  $RUNNER_TEMP/direct.apk" | sha256sum --check
+          echo "Public direct HTTPS download verified: $url"
