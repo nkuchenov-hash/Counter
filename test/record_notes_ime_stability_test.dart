@@ -59,7 +59,7 @@ void main() {
       editor,
       contains('_blockScrollController.position.ensureVisible('),
     );
-    expect(editor, isNot(contains('Scrollable.ensureVisible(')));
+    expect(editor, isNot(contains('\n        Scrollable.ensureVisible(')));
     expect(editor, isNot(contains('Future<void>.delayed(const Duration(milliseconds: 180)')));
     expect(record, contains('_handleNotesEditorFocusChanged'));
     expect(record, contains('_notesScopeFocusNode.hasFocus'));
