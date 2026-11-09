@@ -15,7 +15,7 @@ abstract final class AppControlTokens {
   // ~2.7 logical px low (4 physical pixels in the 2026-11-09 screenshot).
   // Shift ONLY the web editable text/caret, not the already-centered hint
   // or the external 44px tap surface.
-  static const double singleLineOpticalOffsetY = -2;
+  static const double singleLineOpticalOffsetY = -1.5;
   static const double horizontalGap = 8;
   static const double horizontalPadding = 16;
   static const double buttonHorizontalPadding = 14;
