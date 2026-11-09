@@ -1,5 +1,6 @@
 ## 2026-11-09 — Viktor preserves fixed meetings and recurring events during tag duration repair [verification pending]
 
+- Protected-tag detection also uses existing Time View fixed-tag preferences on the current device; preview signatures include those selections.
 - When restoring today's and tomorrow's plan durations, fixed-time meetings and recurring occurrences remain immovable anchors, along with completed and virtual plans.
 - Flexible tasks are reflowed around these intervals, rather than aborting the entire request on the first protected event. Existing preview, fresh data verification and atomic write safeguards are preserved.
 - Added anchored-reflow tests (fixed meeting, recurring and completed barriers, independent before/after changes, insufficient free time), wired into Android and Windows CI.
