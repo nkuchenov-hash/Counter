@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 998 — each appears **exactly once** below.
+**Tracked files:** 1000 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,8 +26,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 195 |
-| `test` | 144 |
+| `production UI` | 196 |
+| `test` | 145 |
 | `Brain/data` | 114 |
 | `platform build` | 83 |
 | `shared foundation` | 71 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 539 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 268 |
+| `PROVEN_REQUIRED` | 540 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 269 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 911 |
+| `HIGH` | 913 |
 | `MEDIUM` | 87 |
 
 ---
@@ -22611,6 +22611,44 @@ RU:
 - **Связано с:** Вкладка Plans (shell index 1)
 
 
+### `lib/features/planning/widgets/planning_day_swipe_region.dart`
+
+EN:
+
+- **Human purpose:** `planning_day_swipe_region.dart` on Plans tab (second bottom tab) — Content-only horizontal date swipe surface: keeps Planning tags, quick-entry and sort controls fixed; vertical scrolling remains native. Users see `planning_day_swipe_region.dart` when using Plans tab (second bottom tab).
+- **What this is:** `planning_day_swipe_region.dart` on Plans tab (second bottom tab) — Content-only horizontal date swipe surface: keeps Planning tags, quick-entry and sort controls fixed; vertical scrolling remains native.
+- **Why needed:** Users see `planning_day_swipe_region.dart` when using Plans tab (second bottom tab).
+- **Contents:** Primary symbols: `PlanningDaySwipeRegion`.
+- **Key code names:** `PlanningDaySwipeRegion`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Planning UI
+- **Responsibilities:** Content-only horizontal date swipe surface: keeps Planning tags, quick-entry and sort controls fixed; vertical scrolling remains native
+- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Content-only horizontal date swipe surface: keeps Planning tags, quick-entry and sort controls fixed; vertical scrolling remains native
+
+RU:
+
+- **Зачем файл человеку:** `planning_day_swipe_region.dart` на вкладка Plans (вторая снизу) — Ограничивает свайп дат телом дня, не затрагивая меню тегов и поле создания планов.. Пользователь видит UI из `planning_day_swipe_region.dart` на вкладка Plans (вторая снизу).
+- **Что это:** `planning_day_swipe_region.dart` на вкладка Plans (вторая снизу) — Ограничивает свайп дат телом дня, не затрагивая меню тегов и поле создания планов..
+- **Зачем:** Пользователь видит UI из `planning_day_swipe_region.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Dart-модуль `planning_day_swipe_region.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI планов
+- **Обязанности:** Ограничивает свайп дат телом дня, не затрагивая меню тегов и поле создания планов.
+- **Когда открывать:** Вкладка Plans: день, карточки, play.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Вкладка Plans (shell index 1)
+
+
 ### `lib/features/planning/widgets/planning_menu_overlay.dart`
 
 EN:
@@ -38869,6 +38907,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `plan_time_visible_window`.
 - **Когда открывать:** Падение CI или правка кода рядом с `plan_time_visible_window`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/planning_content_only_swipe_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `planning_content_only_swipe_test` — verifies only day content changes on swipe while tags stay fixed and vertical scroll works. Prevents regressions when related production code changes.
+- **What this is:** Automated test `planning_content_only_swipe_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/planning_content_only_swipe_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `planning_content_only_swipe_test` scenario.
+- **When to open:** CI failure or changing code near `planning_content_only_swipe`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `planning_content_only_swipe`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `planning_content_only_swipe` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `planning_content_only_swipe` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `planning_content_only_swipe`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/planning_content_only_swipe_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `planning_content_only_swipe`.
+- **Когда открывать:** Падение CI или правка кода рядом с `planning_content_only_swipe`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 

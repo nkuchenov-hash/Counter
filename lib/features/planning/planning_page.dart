@@ -46,6 +46,7 @@ import 'package:counter/features/planning/widgets/planning_category_grouped_list
 import 'package:counter/features/planning/widgets/planning_tag_grouped_list.dart';
 import 'package:counter/features/planning/widgets/planning_select_mode_header.dart';
 import 'package:counter/features/planning/widgets/planning_quick_add_strip.dart';
+import 'package:counter/features/planning/widgets/planning_day_swipe_region.dart';
 
 part 'planning_quick_add_schedule.dart';
 part 'planning_bulk_edit_actions.dart';
@@ -71,6 +72,7 @@ class PlanningPage extends StatefulWidget {
     required this.onEditTask,
     this.onDatePicked,
     this.onDateChanged,
+    this.onAdjacentDayRequested,
     this.onDatePagerLockChanged,
   });
 
@@ -99,6 +101,8 @@ class PlanningPage extends StatefulWidget {
   final void Function(PlanningTask task) onEditTask;
   final void Function(DateTime date)? onDatePicked;
   final void Function(DateTime date)? onDateChanged;
+  /// A date-swipe callback owned by the day content, never by page chrome.
+  final ValueChanged<int>? onAdjacentDayRequested;
   final void Function(bool locked)? onDatePagerLockChanged;
 
   @override
@@ -134,6 +138,7 @@ class _PlanningPageState extends State<PlanningPage>
   List<PlanningTask>? _dragOrder;
   bool _planSelectMode = false;
   PlanSortMode _sortMode = PlanSortMode.custom;
+  double _daySlideFrom = 0;
   late final PlanningTimeViewCoordinator timeView;
   bool _activePlanningResourcesLoaded = false;
 
@@ -418,6 +423,11 @@ class _PlanningPageState extends State<PlanningPage>
   @override
   void didUpdateWidget(covariant PlanningPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedDateString != widget.selectedDateString) {
+      final previous = oldWidget.selectedDate ?? _today;
+      final current = widget.selectedDate ?? _today;
+      _daySlideFrom = current.isAfter(previous) ? 0.035 : -0.035;
+    }
     if (oldWidget.selectedDate != widget.selectedDate ||
         oldWidget.selectedDateString != widget.selectedDateString ||
         oldWidget.isActivePlanningDay != widget.isActivePlanningDay ||
@@ -443,7 +453,7 @@ class _PlanningPageState extends State<PlanningPage>
           _dragOrder = null;
           _selectedPlanKeys.clear();
           _planSelectMode = false;
-          _sortMode = PlanSortMode.custom;
+          // Keep the user's selected Time/Category/Tags/Custom view across days.
         }
       });
       _syncPlanningShellFabBulkReserve();
@@ -1348,6 +1358,8 @@ class _PlanningPageState extends State<PlanningPage>
     final scheme = Theme.of(context).colorScheme;
 
     return StreamBuilder<List<PlanningTask>>(
+      // Reset snapshots when the day changes; never paint the prior day's tasks.
+      key: ValueKey<String>('planning-stream-${widget.selectedDateString}'),
       stream: _planningStream,
       builder: (context, snapshot) {
         List<PlanningTask>? displayedForChrome;
@@ -1539,8 +1551,27 @@ class _PlanningPageState extends State<PlanningPage>
                     );
                   },
                 )
-              : RepaintBoundary(
-                  child: _buildActiveDayBody(context, scheme, tasks),
+              : PlanningDaySwipeRegion(
+                  enabled: widget.shellTabActive &&
+                      widget.onAdjacentDayRequested != null,
+                  onDayChange: (direction) =>
+                      widget.onAdjacentDayRequested?.call(direction),
+                  child: TweenAnimationBuilder<double>(
+                    key: ValueKey<String>(
+                      'planning-content-${widget.selectedDateString}',
+                    ),
+                    tween: Tween<double>(begin: _daySlideFrom, end: 0),
+                    duration: const Duration(milliseconds: 150),
+                    curve: Curves.easeOutCubic,
+                    child: RepaintBoundary(
+                      child: _buildActiveDayBody(context, scheme, tasks),
+                    ),
+                    builder: (context, slide, dayBody) =>
+                        FractionalTranslation(
+                          translation: Offset(slide, 0),
+                          child: dayBody,
+                        ),
+                  ),
                 ),
         ),
       ],

@@ -1,23 +1,15 @@
-// Planning date pager shell — wraps [PlanningPage] per day.
+// Planning shell: one persistent PlanningPage, never a pager of whole pages.
+// Date swipes belong to the day content inside PlanningPage, not its chrome.
 import 'dart:async';
 
-import 'package:counter/core/date_pager_settle_gate.dart';
-import 'package:counter/core/date_swipe_physics.dart';
-import 'package:counter/shared/diagnostics/performance/runtime_flags.dart';
-import 'package:counter/shared/diagnostics/runtime_log.dart';
-import 'package:counter/shared/diagnostics/platform_log.dart';
-import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
-import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
-import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/planning/planning_page.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
+import 'package:counter/features/planning/planning_page.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart' show SchedulerBinding;
 
 class PlanningSwipeWrapper extends StatefulWidget {
   const PlanningSwipeWrapper({
@@ -41,8 +33,7 @@ class PlanningSwipeWrapper extends StatefulWidget {
     int categoryId,
     String dateKey, {
     String? sourcePlanPocketRecordId,
-  })
-  onStartRecordFromTask;
+  }) onStartRecordFromTask;
   final void Function(PlanningTask task) onEditTask;
 
   @override
@@ -50,225 +41,80 @@ class PlanningSwipeWrapper extends StatefulWidget {
 }
 
 class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
-  static const int _initialPage = 5000;
-  static const int _totalPageCount = 10000;
-  late PageController _controller;
-  late DateTime _anchorDate;
-  late int _visiblePageIndex;
-  late int _activePageIndex;
-  int? _pendingExternalPage;
-  bool _datePagerLocked = false;
+  late DateTime _visibleDate;
   late bool _timelineRangeReady;
-  final DatePagerSettleGate _settleGate = DatePagerSettleGate();
+  bool _datePagerLocked = false;
+  DateTime? _deferredExternalDate;
 
-  String _dateKeyFromDate(DateTime d) =>
+  String _dayKey(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
-  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
-
-  void _onPlanningDatePagerLockChanged(bool locked) {
-    if (_datePagerLocked == locked) return;
-    setState(() => _datePagerLocked = locked);
-    if (!locked) _applyPendingExternalPageIfNeeded();
+  @override
+  void initState() {
+    super.initState();
+    _visibleDate = DateUtils.dateOnly(widget.selectedDate);
+    _timelineRangeReady =
+        PlanningSheetTimelinePrefs.cachedVisibleDayRange != null;
+    if (!_timelineRangeReady) unawaited(_loadTimelineRange());
+    // Warm only the initial date. Never eagerly build two neighbor pages.
+    DatabaseService.instance.ensurePlansWarmWindow(widget.selectedDate);
   }
 
-  void _applyPendingExternalPageIfNeeded() {
-    if (_datePagerLocked || _settleGate.blocksExternalDateSync) return;
-    final pending = _pendingExternalPage;
-    if (pending == null) return;
-    _pendingExternalPage = null;
-    if (pending < 0 || pending >= _totalPageCount) return;
-    if (!_controller.hasClients) return;
-    final cur = _controller.page?.round();
-    _settleGate.resetCommittedPage(pending);
-    setState(() {
-      _visiblePageIndex = pending;
-      _activePageIndex = pending;
-    });
-    if (cur == pending) return;
-    _controller.jumpToPage(pending);
-  }
-
-  int _pageIndexForDate(DateTime date) {
-    final daysOffset = _dateOnly(date).difference(_anchorDate).inDays;
-    return _initialPage + daysOffset;
-  }
-
-  DateTime _dateForIndex(int index) =>
-      _dateOnly(_anchorDate.add(Duration(days: index - _initialPage)));
-
-  void _syncOnTabActivated() {
-    final page = _pendingExternalPage ?? _pageIndexForDate(widget.selectedDate);
-    _pendingExternalPage = null;
-    if (page < 0 || page >= _totalPageCount) return;
-    _settleGate.resetCommittedPage(page);
-    setState(() {
-      _visiblePageIndex = page;
-      _activePageIndex = page;
-    });
-    if (!_controller.hasClients) return;
-    final cur = _controller.page?.round();
-    if (cur == page) return;
-    _controller.jumpToPage(page);
-  }
-
-  void _deferHiddenExternalDate() {
-    final page = _pageIndexForDate(widget.selectedDate);
-    if (page < 0 || page >= _totalPageCount) return;
-    _pendingExternalPage = page;
-  }
-
-  void _schedulePrefetch(DateTime center) {
-    if (kUseMountedDayStrip) return;
-    unawaited(
-      Future.microtask(() {
-        if (!mounted) return;
-        DatabaseService.instance.extendPlansWarmWindowIfNeeded(center);
-      }),
-    );
-  }
-
-  Future<void> _primeTimelineRange() async {
+  Future<void> _loadTimelineRange() async {
     try {
       await PlanningSheetTimelinePrefs.loadVisibleDayRange();
-    } catch (error) {
-      if (kDebugMode) debugPrint('Planning hour preferences: $error');
+    } catch (e) {
+      if (kDebugMode) debugPrint('Planning hour preferences: $e');
     }
     if (mounted) setState(() => _timelineRangeReady = true);
   }
 
   @override
-  void initState() {
-    super.initState();
-    _timelineRangeReady = PlanningSheetTimelinePrefs.cachedVisibleDayRange != null;
-    if (!_timelineRangeReady) unawaited(_primeTimelineRange());
-    final platform = p0uPlatformLabel();
-    RuntimeLog.p0tDisabled(platform: platform, enabled: kUseMountedDayStrip);
-    RuntimeLog.biometricGate(enabled: false, reason: 'stabilization');
-    _anchorDate = DateUtils.dateOnly(DateTime.now());
-    final daysOffset = _dateOnly(
-      widget.selectedDate,
-    ).difference(_anchorDate).inDays;
-    _visiblePageIndex = _initialPage + daysOffset;
-    _activePageIndex = _visiblePageIndex;
-    _settleGate.resetCommittedPage(_visiblePageIndex);
-    _controller = PageController(initialPage: _visiblePageIndex);
-    _controller.addListener(_onPageControllerTick);
-    if (kPlansWarmWindowEnabled && !kUseMountedDayStrip) {
-      DatabaseService.instance.ensurePlansWarmWindow(widget.selectedDate);
-    }
-  }
-
-  void _onPageControllerTick() {
-    if (!_controller.hasClients) return;
-    final page = _controller.page;
-    if (page == null) return;
-    RebuildMetrics.instance.dateSwipeDrag(
-      section: 'Planning',
-      page: page.round(),
-      pageFraction: page,
-    );
-  }
-
-  @override
   void didUpdateWidget(covariant PlanningSwipeWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!oldWidget.shellTabActive && widget.shellTabActive) {
-      _syncOnTabActivated();
+    if (DateUtils.isSameDay(widget.selectedDate, oldWidget.selectedDate)) {
       return;
     }
-    if (!widget.shellTabActive) {
-      final oldD = _dateOnly(oldWidget.selectedDate);
-      final newD = _dateOnly(widget.selectedDate);
-      if (oldD != newD) _deferHiddenExternalDate();
-      return;
+    final requested = DateUtils.dateOnly(widget.selectedDate);
+    if (_datePagerLocked) {
+      _deferredExternalDate = requested;
+    } else if (!DateUtils.isSameDay(requested, _visibleDate)) {
+      setState(() => _visibleDate = requested);
     }
-    final oldD = _dateOnly(oldWidget.selectedDate);
-    final newD = _dateOnly(widget.selectedDate);
-    if (oldD == newD) return;
-    final page = _pageIndexForDate(widget.selectedDate);
-    if (page < 0 || page >= _totalPageCount) return;
-    if (_settleGate.blocksExternalDateSync || _datePagerLocked) {
-      _pendingExternalPage = page;
-      return;
-    }
-    _settleGate.resetCommittedPage(page);
-    if (_controller.hasClients) {
-      final cur = _controller.page;
-      if (cur != null && cur.round() == page) {
-        setState(() {
-          _visiblePageIndex = page;
-          _activePageIndex = page;
-        });
-        return;
+  }
+
+  void _onDatePagerLockChanged(bool locked) {
+    if (_datePagerLocked == locked) return;
+    setState(() => _datePagerLocked = locked);
+    if (!locked && _deferredExternalDate != null) {
+      final pending = _deferredExternalDate!;
+      _deferredExternalDate = null;
+      if (!DateUtils.isSameDay(pending, _visibleDate)) {
+        setState(() => _visibleDate = pending);
       }
-      setState(() => _visiblePageIndex = page);
-      _settleGate.markProgrammaticAnimStart();
-      _controller
-          .animateToPage(
-            page,
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-          )
-          .whenComplete(() {
-            if (mounted) _settleGate.markProgrammaticAnimEnd();
-          });
-    } else {
-      setState(() {
-        _visiblePageIndex = page;
-        _activePageIndex = page;
-      });
     }
   }
 
-  @override
-  void dispose() {
-    _settleGate.dispose();
-    _controller.removeListener(_onPageControllerTick);
-    _controller.dispose();
-    super.dispose();
+  void _pickDate(DateTime date) {
+    if (!widget.shellTabActive || _datePagerLocked) return;
+    final selected = DateUtils.dateOnly(date);
+    if (DateUtils.isSameDay(selected, _visibleDate)) return;
+    setState(() => _visibleDate = selected);
+    widget.onDateChanged(selected);
   }
 
-  void _jumpToDate(DateTime date) {
-    final dateOnly = _dateOnly(date);
-    final targetIndex = _pageIndexForDate(dateOnly);
-    if (targetIndex >= 0 &&
-        targetIndex < _totalPageCount &&
-        _controller.hasClients) {
-      _settleGate.resetCommittedPage(targetIndex);
-      setState(() {
-        _visiblePageIndex = targetIndex;
-        _activePageIndex = targetIndex;
-      });
-      _controller.jumpToPage(targetIndex);
-      widget.onDateChanged(dateOnly);
-    }
+  void _stepDay(int delta) {
+    if (delta == 0) return;
+    // Calendar arithmetic does not shift dates when crossing DST.
+    _pickDate(DateTime(
+      _visibleDate.year,
+      _visibleDate.month,
+      _visibleDate.day + (delta < 0 ? -1 : 1),
+    ));
   }
 
-  void _animateAdjacentDay(int delta) {
-    if (_datePagerLocked || !widget.shellTabActive || !_controller.hasClients) return;
-    final page = _visiblePageIndex + delta;
-    if (page < 0 || page >= _totalPageCount) return;
-    _settleGate.markProgrammaticAnimStart();
-    unawaited(_controller.animateToPage(
-      page,
-      duration: const Duration(milliseconds: 190),
-      curve: Curves.easeOutCubic,
-    ).whenComplete(() {
-      if (!mounted) return;
-      _settleGate.markProgrammaticAnimEnd();
-      _activateVisiblePageAfterSettle();
-      _applyPendingExternalPageIfNeeded();
-    }));
-  }
-
-  Widget _dayNavigationArrow(BuildContext context, {required bool previous}) {
+  Widget _sideArrow(BuildContext context, {required bool previous}) {
     final scheme = Theme.of(context).colorScheme;
-    final targetIndex = _visiblePageIndex + (previous ? -1 : 1);
-    final canNavigate = widget.shellTabActive &&
-        !_datePagerLocked &&
-        targetIndex >= 0 &&
-        targetIndex < _totalPageCount;
     return Center(
       child: DecoratedBox(
         decoration: BoxDecoration(
@@ -277,135 +123,59 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
           border: Border.all(color: scheme.outlineVariant),
         ),
         child: AppIconButton(
-          icon: previous ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+          icon: previous
+              ? Icons.chevron_left_rounded
+              : Icons.chevron_right_rounded,
           tooltip: t(
             currentLocale.value,
             previous ? 'date_previous_day' : 'date_next_day',
           ),
           size: AppIconButtonSize.l,
           variant: AppIconButtonVariant.standard,
-          onPressed: canNavigate
-              ? () => _animateAdjacentDay(previous ? -1 : 1)
+          onPressed: widget.shellTabActive && !_datePagerLocked
+              ? () => _stepDay(previous ? -1 : 1)
               : null,
         ),
       ),
     );
   }
 
-  void _activateVisiblePageAfterSettle() {
-    final page = _visiblePageIndex;
-    if (_activePageIndex != page) {
-      setState(() => _activePageIndex = page);
-    }
-    _settleGate.onPageSettled(
-      pageIndex: page,
-      onShellCommit: (settledPage) {
-        if (!mounted) return;
-        final committed = _dateForIndex(settledPage);
-        _schedulePrefetch(committed);
-        widget.onDateChanged(_dateOnly(committed));
+  @override
+  Widget build(BuildContext context) {
+    // The saved hour range must be known before mounting the day canvas.
+    if (!_timelineRangeReady) return const SizedBox.expand();
+    final planningPage = PlanningPage(
+      key: const ValueKey('planning-single-persistent-page'),
+      selectedDateString: _dayKey(_visibleDate),
+      selectedDate: _visibleDate,
+      isActivePlanningDay: widget.shellTabActive,
+      shellTabActive: widget.shellTabActive,
+      selectedCategoryId: widget.selectedCategoryId,
+      onCategoryChanged: widget.onCategoryChanged,
+      onStartRecordFromTask: widget.onStartRecordFromTask,
+      onEditTask: widget.onEditTask,
+      onDatePicked: _pickDate,
+      onDateChanged: _pickDate,
+      onAdjacentDayRequested: _stepDay,
+      onDatePagerLockChanged: _onDatePagerLockChanged,
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 800) return planningPage;
+        return Row(
+          children: [
+            SizedBox(
+              width: 64,
+              child: _sideArrow(context, previous: true),
+            ),
+            Expanded(child: planningPage),
+            SizedBox(
+              width: 64,
+              child: _sideArrow(context, previous: false),
+            ),
+          ],
+        );
       },
     );
   }
-
-  @override
-  Widget build(BuildContext context) {
-    rebuildMetricsTick('PlanningSwipeWrapper');
-    // Do not mount the timeline with a temporary 06:00 default.
-    if (!_timelineRangeReady) return const SizedBox.expand();
-    if (kUseMountedDayStrip) {
-      return _buildMountedStripFallback(context);
-    }
-    try {
-      final pager = ScrollConfiguration(
-        behavior: const MouseDragScrollBehavior(),
-        child: NotificationListener<ScrollNotification>(
-          onNotification: (n) {
-            if (n.depth != 0) return false;
-            if (n is ScrollStartNotification && n.dragDetails != null) {
-              _settleGate.onUserDragStart();
-              final from = _dateKeyFromDate(_dateForIndex(_visiblePageIndex));
-              RebuildMetrics.instance.dateSwipeStart(
-                section: 'Planning',
-                fromDate: from,
-              );
-            }
-            if (n is ScrollEndNotification) {
-              _settleGate.onUserDragEnd();
-              _activateVisiblePageAfterSettle();
-              _applyPendingExternalPageIfNeeded();
-              SchedulerBinding.instance.addPostFrameCallback((_) {
-                RebuildMetrics.instance.dateSwipeEnd(section: 'Planning');
-              });
-            }
-            return false;
-          },
-          child: PageView.builder(
-            controller: _controller,
-            physics: _datePagerLocked
-                ? const NeverScrollableScrollPhysics()
-                : const FeatherDateSwipePhysics(),
-            itemCount: _totalPageCount,
-            allowImplicitScrolling: true,
-            onPageChanged: (int index) {
-              if (index < 0 || index >= _totalPageCount) return;
-              setState(() => _visiblePageIndex = index);
-            },
-            itemBuilder: (context, index) {
-              final date = _dateForIndex(index);
-              final dateKey = _dateKeyFromDate(date);
-              final isActive =
-                  widget.shellTabActive && index == _activePageIndex;
-              return PlanningPage(
-                key: ValueKey<String>('plan-page-$dateKey'),
-                selectedDateString: dateKey,
-                selectedDate: date,
-                isActivePlanningDay: isActive,
-                shellTabActive: widget.shellTabActive,
-                selectedCategoryId: widget.selectedCategoryId,
-                onCategoryChanged: widget.onCategoryChanged,
-                onStartRecordFromTask: widget.onStartRecordFromTask,
-                onEditTask: widget.onEditTask,
-                onDatePicked: _jumpToDate,
-                onDateChanged: widget.onDateChanged,
-                onDatePagerLockChanged: _onPlanningDatePagerLockChanged,
-              );
-            },
-          ),
-        ),
-      );
-      // The rails sit OUTSIDE the plan canvas, so even a densely packed day
-      // has independent, accessible previous/next navigation on wide screens.
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth < 800) return pager;
-          return Row(
-            children: [
-              SizedBox(
-                width: 64,
-                child: _dayNavigationArrow(context, previous: true),
-              ),
-              Expanded(child: pager),
-              SizedBox(
-                width: 64,
-                child: _dayNavigationArrow(context, previous: false),
-              ),
-            ],
-          );
-        },
-      );
-    } catch (e, st) {
-      if (kDebugMode) debugPrint('PlanningSwipeWrapper: $e\n$st');
-      return Scaffold(
-        body: AppErrorState(message: t(currentLocale.value, 'no_data_found')),
-      );
-    }
-  }
-
-  /// Legacy P0S/P0T path — disabled when [kUseMountedDayStrip] is false.
-  Widget _buildMountedStripFallback(BuildContext context) {
-    return AppErrorState(message: t(currentLocale.value, 'no_data_found'));
-  }
 }
-
-/// Single-day planning: task list, add task, date picker.
