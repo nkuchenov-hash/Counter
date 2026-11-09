@@ -1,3 +1,10 @@
+## Viktor tag-duration barrier scheduling (2026-11-09)
+
+- For an explicit two-day duration correction, keep completed, recurring, unsynced, virtual, and fixed-time plans anchored at their saved intervals. These plans are obstacles, not reasons to reject the entire command.
+- Place flexible plan changes sequentially into the next nonoverlapping time slot while preserving the original flexible-plan order and duration defaults from the canonical plan-tag catalogue. A protected plan must never appear in a write patch. User confirms the preview before atomic commit.
+- If no same-day interval remains for a flexible plan, show the specific plan and day causing an unsatisfiable schedule. Do not silently move protected plans, shift across midnight, or partially commit a two-day bulk request.
+- Existing manual drag/resize and general-purpose AI edit semantics remain unchanged; this scheduling behavior belongs exclusively to the two-day tag-duration repair command.
+
 ## Live Onest web ink correction for the *whole* editor (2026-11-09)
 
 - The deployed Timeline screenshot at DPR 1.5 reveals a 44 logical px (66 physical px) capsule centered at about physical y165, while native hint glyph ink centers about y169. The native `InputDecorator` is therefore optically low even when the editor is geometrically centered.
