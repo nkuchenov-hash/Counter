@@ -1,3 +1,10 @@
+## Viktor bulk-duration confirmation and revision safety (2026-11-09)
+
+- A 30+ plan preview must be readable without line-wrapped prose: a bounded scroll region grouped by wall day, one title and before/after time per change, explicit duration delta or shift-only label. Dialog header, summary, cancel and confirm controls remain visible on desktop and narrow screens.
+- The client must carry PocketBase's top-level `updated` revision to each projected plan; absence of a revision from old cached projections is recovered only from an authenticated row re-read that verifies unchanged title, tag IDs, completion, and exact time anchors. Never omit revision checking to make a bulk write succeed.
+- Approval is followed by a fresh day/tag preview, server-owned atomic transaction and independent readback. Any mismatch rejects the entire operation. Do not claim a save based on preview alone.
+
+
 ## Quick-entry visible glyph centering (2026-11-09)
 
 - Typed text and placeholder glyphs must be optically centered within the entire field, not merely centered as an `EditableText` or `InputDecorator` box. For live Flutter Web with bundled Onest at DPR 1.5, target <=1.5 logical px ink displacement. The Chrome widget-test fallback-font check uses <=1.5 logical px and does **not** replace live screenshot acceptance. Native fonts retain their independently validated baseline.
