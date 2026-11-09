@@ -1,5 +1,6 @@
 ## Viktor — fixed-time meeting and recurring schedule anchors (2026-11-09)
 
+- The same user's Time View fixed-time tag selections also define protected anchors on the current device; changes to those selections invalidate the preview snapshot before committing.
 - User command to restore today's and tomorrow's plan durations from tag settings must NOT shift a fixed-time meeting, recurring occurrence, completed or unsynced plan. Both start and end stay exactly as stored.
 - Recalculate flexible plan durations against canonical tag defaults, keeping each task's original relative order and placing them into the next free interval before or after protected anchors as space permits. Never patch protected tasks or recurring series.
 - For insufficient same-day space, identify the specific task and date rather than modifying fixed commitments, moving work to another day silently, or partially saving.
