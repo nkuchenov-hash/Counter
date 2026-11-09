@@ -124,8 +124,8 @@ class CalendarEventPill extends StatelessWidget {
     return Tooltip(
       message: '${_timePrefix()}${task.title}',
       child: Container(
-      constraints: const BoxConstraints(minHeight: 23),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        constraints: const BoxConstraints(minHeight: 23),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: tone.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(4),
