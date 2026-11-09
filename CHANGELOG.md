@@ -1,3 +1,11 @@
+## 2026-11-09 — Viktor 30-plan duration save and review UI [CI / production verification pending]
+
+- Fixed PocketBase plan projection dropping top-level row `updated` (and `created`) metadata; the missing revision caused every two-day tag-duration commit to fail after preview with "Не получена полная версия исходного плана". Preserves recurrence instance metadata as well.
+- Atomic Viktor commit can rehydrate a missing cached row revision from authenticated server data only after comparing original title, completion, exact timestamps, and tag IDs; changed rows abort safely. Existing transaction, collision, ownership and post-commit readback checks remain.
+- Replaced the long unstructured confirmation with a height-constrained, day-grouped, scrollable list showing each affected plan, previous/new clock ranges, and actual duration changes versus timing-only shifts. Header and buttons stay fixed, including on mobile.
+- Added regression tests for plan revision mapping and the 30-plan mobile review dialog. No schema changes; no schedule writes during deployment.
+
+
 ## 2026-11-09 — Correct the visible quick-entry glyph baseline [pixel verification pending]
 
 - Customer screenshot of the published 44 logical px Timeline capsule shows Latin typed glyph ink about four **screen** pixels below its vertical center at 1.5 device pixel ratio. Existing geometry-only tests did not reject that offset.

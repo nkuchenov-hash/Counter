@@ -30,15 +30,54 @@ class ViktorAtomicBulkGateway {
       final originalEnd = original.endUtcInstant ??
           (original.endDateTime == null ? null :
               db.viktorProfileWallToUtc(original.endDateTime!));
-      if (original.updatedAt == null ||
-          originalStart == null || originalEnd == null) {
-        throw StateError('Не получена полная версия исходного плана. '
-            'Обновите календарь перед переносом.');
+      if (originalStart == null || originalEnd == null ||
+          original.pocketRecordId == null) {
+        throw StateError('Нет точных исходных данных плана. '
+            'Изменения не сохранены.');
+      }
+      // Older cached plan projections omitted RecordModel.updated. Recover
+      // the revision from an authenticated server read, but never treat a
+      // changed start/end/title/status/tag relation as the same approved plan.
+      var revision = original.updatedAt;
+      if (revision == null) {
+        final current = await db.pocketBase
+            .collection(PbCollections.plans)
+            .getOne(original.pocketRecordId!);
+        DateTime? liveUtc(String field) {
+          final raw = current.data[field]?.toString().trim() ?? '';
+          if (raw.isEmpty) return null;
+          return DateTime.tryParse(raw.replaceFirst(' ', 'T'))?.toUtc();
+        }
+        bool sameInstant(DateTime? live, DateTime expected) =>
+            live != null &&
+            live.difference(expected).inMilliseconds.abs() < 1000;
+        final rawTags = current.data['tags_link'];
+        final liveTagIds = rawTags is List
+            ? rawTags.map((tag) => tag.toString()).toSet()
+            : <String>{};
+        final oldTagIds = original.tags
+            .map((tag) => tag.pbRecordId?.trim() ?? '').toSet();
+        if (oldTagIds.contains('') ||
+            liveTagIds.length != oldTagIds.length ||
+            !liveTagIds.containsAll(oldTagIds) ||
+            current.data['title']?.toString() != original.title ||
+            (current.data['is_done'] == true) != original.isDone ||
+            !sameInstant(liveUtc('start_time'), originalStart) ||
+            !sameInstant(liveUtc('end_time'), originalEnd)) {
+          throw StateError('План изменён на сервере после предпросмотра. '
+              'Обновите календарь и проверьте изменения заново.');
+        }
+        revision = DateTime.tryParse(
+            current.updated.replaceFirst(' ', 'T'))?.toUtc();
+      }
+      if (revision == null) {
+        throw StateError('Нет версии записи PocketBase для проверки '
+            'конкурентных изменений. Ничего не сохранено.');
       }
       final anchor = db.planningAuditAnchorDateKey(original);
       rows.add({
         'id': original.pocketRecordId,
-        'expected_updated': original.updatedAt!.toUtc().toIso8601String(),
+        'expected_updated': revision.toUtc().toIso8601String(),
         'expected_start': originalStart.toUtc().toIso8601String(),
         'expected_end': originalEnd.toUtc().toIso8601String(),
         'expected_title': original.title,

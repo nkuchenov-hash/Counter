@@ -26,6 +26,7 @@ part 'viktor_dialogue_ui_state.dart';
 part 'viktor_composer.dart';
 part 'viktor_chat_layout.dart';
 part 'viktor_threads_ui.dart';
+part 'viktor_duration_review_dialog.dart';
 const double kViktorChatContentMaxWidth = 840;
 class ViktorChatPage extends StatefulWidget {
   const ViktorChatPage({super.key, required this.wallDay,
@@ -123,12 +124,10 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         final repair = ViktorTagDurationRepair(db);
         final preview = await repair.prepare(profileToday);
         if (!mounted) return;
-        final approved = await _confirmPreview(
-          'Длительности по тегам — сегодня и завтра.\n'
-          'Завершённые, закреплённые, повторяющиеся планы и планы без '
-          'однозначной базовой длительности не меняются.\n\n'
-          + preview.describe(),
-        );
+        final approved = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => ViktorTagDurationReviewDialog(preview: preview),
+        ) ?? false;
         if (!mounted) return;
         if (!approved) {
           _push('Изменения отменены.');
