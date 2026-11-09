@@ -208,9 +208,11 @@ class AppTextField extends StatelessWidget {
                       child: Center(
                         child: SizedBox(
                           height: AppControlTokens.singleLineEditorHeight,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
+                          child: Transform.translate(
+                            offset: const Offset(0, AppControlTokens.singleLineOpticalOffsetY),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
                               // One visible hint implementation for plain
                               // text, Timeline quick entry and Settings search.
                               ValueListenableBuilder<TextEditingValue>(
@@ -235,8 +237,9 @@ class AppTextField extends StatelessWidget {
                                             ),
                                           ),
                               ),
-                              inner,
-                            ],
+                                inner,
+                              ],
+                            ),
                           ),
                         ),
                       ),
