@@ -136,7 +136,8 @@ class _CalendarViewState extends State<CalendarView>
 
   bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
   void _collapseDayFocus() { if (_dayFocusActive) setState(() => _dayFocusActive = false); }
-  void _selectDay(DateTime day) {
+  /// Day taps open Plans. Internal calendar paging keeps the Calendar open.
+  void _onDayTapped(DateTime day, {bool openPlans = true}) {
     final d = calendarDateOnly(day);
     setState(() {
       _selectedDay = d;
@@ -146,13 +147,7 @@ class _CalendarViewState extends State<CalendarView>
       _focusedMonth = DateTime(d.year, d.month);
     });
     unawaited(_reloadIndicators());
-  }
-
-  /// A day selects the existing Plans view; it never implicitly creates a plan.
-  void _onDayTapped(DateTime day) {
-    final d = calendarDateOnly(day);
-    _selectDay(d);
-    unawaited(widget.onSelectDate(d, d));
+    if (openPlans) unawaited(widget.onSelectDate(d, d));
   }
 
   void _goToday() {
@@ -191,9 +186,7 @@ class _CalendarViewState extends State<CalendarView>
     unawaited(_reloadIndicators());
   }
 
-  void _shiftDay(int delta) {
-    _selectDay(calendarAddDays(_selectedDay, delta));
-  }
+  void _shiftDay(int delta) => _onDayTapped(calendarAddDays(_selectedDay, delta), openPlans: false);
 
   void _shiftEventsMonth(int delta) {
     final source = _selectedDay;
@@ -339,7 +332,7 @@ class _CalendarViewState extends State<CalendarView>
                                   leading: const AppSettingsMenuIcon(icon: Icons.event_outlined),
                                   onTap: () {
                                     Navigator.of(sheetContext).pop();
-                                    _selectDay(day);
+                                    _onDayTapped(day, openPlans: false);
                                     widget.onEditTask(task);
                                   },
                                 ),
