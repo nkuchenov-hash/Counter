@@ -109,8 +109,9 @@ void main() {
       );
       expect(tester.getRect(editor).height,
           lessThan(AppControlTokens.height));
-      expect((tester.getRect(editor).center.dy - fieldRect.center.dy).abs(),
-          lessThanOrEqualTo(1));
+      expect((tester.getRect(editor).center.dy -
+              (fieldRect.center.dy + AppControlTokens.singleLineOpticalOffsetY))
+          .abs(), lessThanOrEqualTo(1));
       final searchField = find.byType(AppTextField).last;
       final searchPaint = find.descendant(
         of: searchField,
@@ -405,15 +406,16 @@ void main() {
     final settingsHintCenter = textOpticalCenter(
       r2, search: true, imageWidth: img.width, pixels: img.pixels);
     expect((timelineHintCenter - r1.center.dy).abs(),
-        lessThanOrEqualTo(3),
-        reason: 'Timeline hint must be optically centered in the pill');
+        lessThanOrEqualTo(1.5),
+        reason: 'Timeline hint glyph ink must align, not merely its layout box');
     expect((settingsHintCenter - r2.center.dy).abs(),
-        lessThanOrEqualTo(3),
-        reason: 'Settings search hint must be optically centered in the pill');
+        lessThanOrEqualTo(1.5),
+        reason: 'Settings hint glyph ink must align with its capsule center');
 
     // The user's requirement includes INPUT text, not only placeholder hint.
     // Controller changes also prove that the centered shared hint disappears.
-    timeline.text = 'Планирование';
+    // Regression: Latin input seen on Nov 9 screenshot was ~4 physical px low.
+    timeline.text = 'sdfdfds';
     settings.text = 'Результаты';
     await tester.pump();
     final typedImage = await tester.runAsync(() async {
@@ -432,11 +434,11 @@ void main() {
     final settingsTypedCenter = textOpticalCenter(
       r2, search: true, imageWidth: typed.width, pixels: typed.pixels);
     expect((timelineTypedCenter - r1.center.dy).abs(),
-        lessThanOrEqualTo(3),
-        reason: 'Typed Timeline text must be optically centered');
+        lessThanOrEqualTo(1.5),
+        reason: 'Typed Latin input ink must be centered within 1.5 logical px');
     expect((settingsTypedCenter - r2.center.dy).abs(),
-        lessThanOrEqualTo(3),
-        reason: 'Typed Settings search text must be optically centered');
+        lessThanOrEqualTo(1.5),
+        reason: 'Typed Settings text ink must be centered within 1.5 logical px');
     expect(tester.takeException(), isNull);
   });
 
