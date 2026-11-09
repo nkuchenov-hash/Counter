@@ -2,6 +2,8 @@ import 'dart:typed_data';
 
 import 'package:counter/data/ai/viktor_voice_recorder.dart';
 import 'package:counter/features/viktor/viktor_chat_page.dart';
+import 'package:counter/data/ai/viktor_schedule_planner.dart';
+import 'package:counter/data/models.dart';
 import 'package:counter/core/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +12,68 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('Viktor 30-plan review has readable rows and fixed footer on mobile',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 720);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final moves = List<ViktorBulkMove>.generate(30, (index) {
+      final day = DateTime(2026, 11, index < 15 ? 9 : 10);
+      final start = day.add(Duration(minutes: 60 * 9 + (index % 15) * 25));
+      final end = start.add(const Duration(minutes: 25));
+      final plan = PlanningTask(
+        id: index + 1,
+        pocketRecordId: 'aaaaabbbbb' + index.toString().padLeft(5, '0'),
+        title: 'Plan ' + index.toString(),
+        categoryId: 1,
+        dateKey: index < 15 ? '2026-11-09' : '2026-11-10',
+        startTime: start,
+        endDateTime: end,
+      );
+      return ViktorBulkMove(
+        plan, start, end.add(const Duration(minutes: 15)),
+        plan.dateKey, 'compact',
+      );
+    });
+    final preview = ViktorBulkPreview(moves, 'snapshot');
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Builder(builder: (context) => TextButton(
+          onPressed: () => showDialog<bool>(
+            context: context,
+            builder: (_) => ViktorTagDurationReviewDialog(preview: preview),
+          ),
+          child: const Text('Open preview'),
+        )),
+      ),
+    ));
+    await tester.tap(find.text('Open preview'));
+    await tester.pumpAndSettle();
+    expect(find.text('Проверить длительности'), findsOneWidget);
+    expect(find.textContaining('30 изменений длительности'), findsOneWidget);
+    expect(find.text('Plan 0'), findsOneWidget);
+    expect(find.text('Применить'), findsOneWidget);
+    final reviewList = find.byKey(const Key('viktor_duration_changes_list'));
+    expect(reviewList, findsOneWidget);
+    expect(tester.widget<Scrollbar>(
+      find.ancestor(of: reviewList, matching: find.byType(Scrollbar))
+          .first).thumbVisibility, isTrue);
+    final dialogBottom = tester.getBottomLeft(
+        find.byType(ViktorTagDurationReviewDialog)).dy;
+    expect(dialogBottom, lessThanOrEqualTo(720));
+    await tester.drag(reviewList, const Offset(0, -1300));
+    await tester.pumpAndSettle();
+    expect(find.text('Применить'), findsOneWidget,
+        reason: 'Approval controls must not scroll out of view');
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('Отмена'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ViktorTagDurationReviewDialog), findsNothing);
+  });
+
 
   test('Viktor WAV is a complete mono 16kHz PCM16 recording', () {
     final pcm = Uint8List.fromList([1, 2, 3, 4, 5, 6]);
