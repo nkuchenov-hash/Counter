@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `5f13be89` on 2026-11-09.**
+**Generated from input HEAD `c71a1a58` on 2026-11-09.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -6449,7 +6449,7 @@ EN:
 - **Why needed:** Tracked because `assets/fonts` needs `Onest-Variable.ttf` for build, CI, or maintenance.
 - **Contents:** Open `Onest-Variable.ttf` when working on `assets/fonts` (see folder section above).
 - **Repository role:** asset
-- **Evidence of use:** Referenced by: `pubspec.yaml`.
+- **Evidence of use:** Referenced by: `pubspec.yaml`, `test/app_control_consistency_test.dart`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** May break tooling or configuration; verify before delete.
 - **Confidence:** MEDIUM
@@ -6466,7 +6466,7 @@ RU:
 - **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `assets/fonts` для `Onest-Variable.ttf`.
 - **Содержимое:** Данные или код `Onest-Variable.ttf`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** asset
-- **Доказательства использования:** Упоминается в: `pubspec.yaml`.
+- **Доказательства использования:** Упоминается в: `pubspec.yaml`, `test/app_control_consistency_test.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
 - **Уверенность:** MEDIUM
