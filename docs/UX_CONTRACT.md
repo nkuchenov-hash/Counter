@@ -1,3 +1,10 @@
+## Calendar month/week navigation and civil dates (2026-11-09)
+
+- Calendar month and week cells use **civil-day arithmetic** (year/month/day constructors), never `DateTime.add(Duration(days: ...))` for day indexing, week shifts, or month-grid bounds. This prevents duplicate/misplaced days on DST changes such as New York's 2026-11-01 rollback.
+- The month grid is Monday-first, shows each calendar date once, and uses visible day boundaries, readable event labels, and an unclipped `+N more` overflow label. Category colors continue to identify tasks.
+- **Click/tap a day** in month, week, or year calendar -> open **Plans** on that selected date. Never create a plan implicitly. Clicking an existing task opens the task editor; explicit Add actions may create a new plan. Horizontal calendar paging remains in Calendar.
+- Calendar-to-Plans navigation updates the existing shared shell selected date and tab index without changing PocketBase schemas, record/plan mutation paths, or optimistic UI.
+
 ## Viktor — fixed-time meeting and recurring schedule anchors (2026-11-09)
 
 - The same user's Time View fixed-time tag selections also define protected anchors on the current device; changes to those selections invalidate the preview snapshot before committing.
