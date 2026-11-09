@@ -12,9 +12,19 @@ import 'package:counter/features/timeline/timeline_header_controls.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart' show FontLoader, rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  // Widget tests otherwise may substitute a fallback/Ahem font, making
+  // rasterized glyph baselines disagree with the real bundled Onest font.
+  // Load the exact production typeface before measuring hint and typed ink.
+  setUpAll(() async {
+    final font = FontLoader('Onest')
+      ..addFont(rootBundle.load('assets/fonts/Onest-Variable.ttf'));
+    await font.load();
+  });
+
   test('all standard control components use one geometry source', () {
     expect(AppTextField.height, AppControlTokens.height);
     expect(AppTextField.radius, AppControlTokens.radius);
