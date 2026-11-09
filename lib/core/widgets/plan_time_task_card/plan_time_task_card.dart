@@ -386,6 +386,9 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
                 : !widget.timelineFillHeight &&
                     effectiveDensity != PlanTimeTaskCardDensity.micro &&
                     resolvedHeight >= PlanCardGeom.watermarkMinCardHeight;
+            final alignTallTimeViewActionsToTop =
+                isTimeViewCard &&
+                widget.timelineVisualDensity == PlanTimeCardVisualDensity.medium;
             final trailingControlCount =
                 (timeViewTrailingPlay ? 1 : 0) + (timeViewTrailingMenu ? 1 : 0);
             final trailingControlsWidth = trailingControlCount == 0
@@ -420,8 +423,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
                     Positioned(
                       // Tall Time View cards align actions with the checkbox.
                       // Shorter densities retain their existing center position.
-                      top: widget.timelineVisualDensity ==
-                              PlanTimeCardVisualDensity.medium
+                      top: alignTallTimeViewActionsToTop
                           ? PlanCardGeom.padTopMediumLarge
                           : math.max(
                               0.0,
