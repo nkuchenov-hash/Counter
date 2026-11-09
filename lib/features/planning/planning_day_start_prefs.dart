@@ -18,6 +18,12 @@ class PlanningSheetTimelinePrefs {
       PlanTimeVisibleWindow.defaultStartExtended;
   static const int defaultEndExtended =
       PlanTimeVisibleWindow.defaultEndExtended;
+
+  // All Planning day pages must start from the same persisted window.
+  // Synchronous access prevents a default-hours flash during date swipes.
+  static ({int start, int end})? _cachedVisibleDayRange;
+  static ({int start, int end})? get cachedVisibleDayRange =>
+      _cachedVisibleDayRange;
   static const int rangeSliderDivisions = 30;
 
   /// Shared drag and resize snap for Planning Time timeline (minutes).
@@ -44,6 +50,8 @@ class PlanningSheetTimelinePrefs {
   );
 
   static Future<({int start, int end})> loadVisibleDayRange() async {
+    final cached = _cachedVisibleDayRange;
+    if (cached != null) return cached;
     final p = await SharedPreferences.getInstance();
     final migrationDone = p.getBool(_keyLateHoursMigration) ?? false;
 
@@ -72,11 +80,13 @@ class PlanningSheetTimelinePrefs {
     if (!migrationDone) {
       await p.setBool(_keyLateHoursMigration, true);
     }
+    _cachedVisibleDayRange = range;
     return range;
   }
 
   static Future<void> saveVisibleDayRange(int start, int end) async {
     final range = normalizeExtendedRange(start, end);
+    _cachedVisibleDayRange = range;
     final p = await SharedPreferences.getInstance();
     await p.setInt(_keyStartExtended, range.start);
     await p.setInt(_keyEndExtended, range.end);
