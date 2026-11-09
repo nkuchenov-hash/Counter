@@ -572,12 +572,17 @@ class _TimeViewFooterStackLayout extends StatelessWidget {
                     right: 0,
                     top: contentTop,
                     height: PlanCardGeom.titleLineHeight,
-                    child: PlanCardTitleRow(
-                      title: common.task.title,
-                      displayIsDone: common.displayIsDone,
-                      hasRepeat: common.hasRepeat,
-                      maxLines: 1,
-                      metaIcons: common.metaIcons,
+                    child: Transform.translate(
+                      // Only lift the heading of the tall card. Tags remain
+                      // anchored at their existing position below this slot.
+                      offset: Offset(0, fullProgressSlot ? -2.0 : 0.0),
+                      child: PlanCardTitleRow(
+                        title: common.task.title,
+                        displayIsDone: common.displayIsDone,
+                        hasRepeat: common.hasRepeat,
+                        maxLines: 1,
+                        metaIcons: common.metaIcons,
+                      ),
                     ),
                   ),
                   if (common.visibleTags.isNotEmpty)
