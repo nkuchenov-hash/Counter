@@ -1,7 +1,6 @@
 import 'dart:ui' as ui;
 
 import 'package:counter/core/app_control_tokens.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -143,15 +142,14 @@ class AppTextField extends StatelessWidget {
           constraints: const BoxConstraints.tightFor(
             height: AppControlTokens.singleLineEditorHeight,
           ),
-          // Preserve the native accessibility hint, but render its visible
-          // glyphs from the same vertically centered line box as typed text.
-          // InputDecorator applies its own baseline/strut rules to hintText
-          // even when the outer field is constrained; that caused the
-          // Settings search placeholder to sit at the top of its capsule.
+          // Paint placeholder and typed text in the SAME editable line.
+          // A separate overlay Text and web-only Transform had different
+          // glyph baselines and changed alignment as soon as typing began.
           hintText: hintText.isEmpty ? null : hintText,
           hintStyle: TextStyle(
             fontSize: AppControlTokens.fontSize,
-            color: meta.withValues(alpha: 0),
+            height: 1.2,
+            color: meta,
           ),
           filled: false,
           border: InputBorder.none,
@@ -209,42 +207,7 @@ class AppTextField extends StatelessWidget {
                       child: Center(
                         child: SizedBox(
                           height: AppControlTokens.singleLineEditorHeight,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              // One visible hint implementation for plain
-                              // text, Timeline quick entry and Settings search.
-                              ValueListenableBuilder<TextEditingValue>(
-                                valueListenable: controller,
-                                builder: (context, value, _) =>
-                                    value.text.isNotEmpty || hintText.isEmpty
-                                        ? const SizedBox.shrink()
-                                        : IgnorePointer(
-                                            child: Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Text(
-                                                hintText,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      AppControlTokens.fontSize,
-                                                  height: 1.2,
-                                                  color: meta,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                              ),
-                              Transform.translate(
-                                offset: const Offset(
-                                  0,
-                                  kIsWeb ? AppControlTokens.singleLineOpticalOffsetY : 0,
-                                ),
-                                child: inner,
-                              ),
-                            ],
-                          ),
+                          child: inner,
                         ),
                       ),
                     ),

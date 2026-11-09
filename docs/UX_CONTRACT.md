@@ -1,3 +1,10 @@
+## One rendering baseline for placeholder and typed input (2026-11-09)
+
+- Supersedes the separate-overlay/offset approach below: canonical single-line `AppTextField` must use **one native TextField/EditableText line** to render both placeholder and typed glyphs. No visually painted `Text` overlay for hint, and no web-only `Transform.translate` applied to typed text/caret.
+- Identical placeholder and typed strings must keep the same ink center (within one device pixel at DPR 1.5); both remain centered in the 44px capsule. Check Timeline quick entry and Settings search, Latin and Cyrillic strings.
+- Preserve the full-surface focus target, text selection, caret, draft preservation across tab switches, accessibility, responsive typing and Android/Windows behavior.
+
+
 ## Viktor bulk-duration confirmation and revision safety (2026-11-09)
 
 - A 30+ plan preview must be readable without line-wrapped prose: a bounded scroll region grouped by wall day, one title and before/after time per change, explicit duration delta or shift-only label. Dialog header, summary, cancel and confirm controls remain visible on desktop and narrow screens.

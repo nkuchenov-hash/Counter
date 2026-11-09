@@ -123,10 +123,8 @@ void main() {
       );
       expect(tester.getRect(editor).height,
           lessThan(AppControlTokens.height));
-      expect((tester.getRect(editor).center.dy -
-              (fieldRect.center.dy +
-                  (kIsWeb ? AppControlTokens.singleLineOpticalOffsetY : 0)))
-          .abs(), lessThanOrEqualTo(1));
+      expect((tester.getRect(editor).center.dy - fieldRect.center.dy).abs(),
+          lessThanOrEqualTo(1));
       final searchField = find.byType(AppTextField).last;
       final searchPaint = find.descendant(
         of: searchField,
@@ -297,7 +295,7 @@ void main() {
   }
 
   testWidgets('Timeline and Settings search paint their hint glyphs '
-      'at the SAME vertical center in the canonical capsule',
+      'and typed ink at the SAME vertical center in the canonical capsule',
       (tester) async {
     final timeline = TextEditingController();
     final settings = TextEditingController();
@@ -328,7 +326,7 @@ void main() {
                   AppQuickEntryRow(
                     controller: timeline,
                     focusNode: focus,
-                    hintText: 'Добавить запись',
+                    hintText: 'sdfdfds',
                     actionLabel: 'Старт',
                     actionIcon: Icons.play_arrow_rounded,
                     onAction: () {},
@@ -343,7 +341,7 @@ void main() {
                             AppTextField(
                               controller: settings,
                               variant: AppTextFieldVariant.search,
-                              hintText: 'Найти настройку',
+                              hintText: 'Результаты',
                             ),
                           ],
                         ),
@@ -416,10 +414,10 @@ void main() {
           boundaryRect.top;
     }
 
-    // The observed optical defect is in the Chrome web renderer. Native
-    // renderer typography uses different glyph metrics. Browser widget tests
-    // cannot synchronously load Onest; demand <=2.5px with fallback font and
-    // require separate screenshot verification for production Onest.
+    // A single widget must render empty and typed states through the same
+    // native line box. Compare identical strings so a script's ascenders
+    // and descenders cannot mask a layout mismatch. Chrome tests use the
+    // widget-test fallback font; production Onest still needs screenshot QA.
     final inkTolerance = kIsWeb ? 1.5 : 3.0;
     final timelineHintCenter = textOpticalCenter(
       r1, search: false, imageWidth: img.width, pixels: img.pixels);
@@ -432,9 +430,8 @@ void main() {
         lessThanOrEqualTo(inkTolerance),
         reason: 'Settings hint glyph ink must align with its capsule center (renderer: ${kIsWeb ? 'web' : 'native'})');
 
-    // The user's requirement includes INPUT text, not only placeholder hint.
-    // Controller changes also prove that the centered shared hint disappears.
-    // Regression: Latin input seen on Nov 9 screenshot was ~4 physical px low.
+    // Regression: typing must NOT move the glyph baseline compared with
+    // the placeholder. Check the same Latin and Cyrillic ink, not just boxes.
     timeline.text = 'sdfdfds';
     settings.text = 'Результаты';
     await tester.pump();
@@ -453,7 +450,14 @@ void main() {
       r1, search: false, imageWidth: typed.width, pixels: typed.pixels);
     final settingsTypedCenter = textOpticalCenter(
       r2, search: true, imageWidth: typed.width, pixels: typed.pixels);
-    debugPrint('INK_CENTERS web=$kIsWeb hintTL=${(timelineHintCenter - r1.center.dy).toStringAsFixed(3)} hintSettings=${(settingsHintCenter - r2.center.dy).toStringAsFixed(3)} typedTL=${(timelineTypedCenter - r1.center.dy).toStringAsFixed(3)} typedSettings=${(settingsTypedCenter - r2.center.dy).toStringAsFixed(3)} opticalOffset=${AppControlTokens.singleLineOpticalOffsetY}');
+    debugPrint('INK_PARITY web=$kIsWeb hintTL=${(timelineHintCenter - r1.center.dy).toStringAsFixed(3)} typedTL=${(timelineTypedCenter - r1.center.dy).toStringAsFixed(3)} hintSettings=${(settingsHintCenter - r2.center.dy).toStringAsFixed(3)} typedSettings=${(settingsTypedCenter - r2.center.dy).toStringAsFixed(3)}');
+    final baselineParityTolerance = kIsWeb ? 0.7 : 1.0;
+    expect((timelineTypedCenter - timelineHintCenter).abs(),
+        lessThanOrEqualTo(baselineParityTolerance),
+        reason: 'Typing must not shift Latin glyphs from their placeholder baseline');
+    expect((settingsTypedCenter - settingsHintCenter).abs(),
+        lessThanOrEqualTo(baselineParityTolerance),
+        reason: 'Typing must not shift Cyrillic glyphs from their placeholder baseline');
     expect((timelineTypedCenter - r1.center.dy).abs(),
         lessThanOrEqualTo(inkTolerance),
         reason: 'Typed Latin input ink must be centered within 1.5 logical px (renderer: ${kIsWeb ? 'web' : 'native'})');
