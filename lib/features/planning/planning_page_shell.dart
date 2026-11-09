@@ -3,7 +3,6 @@
 import 'dart:async';
 
 import 'package:counter/core/widgets/app_icon_button.dart';
-import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/planning_page.dart';
@@ -56,8 +55,8 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
     _timelineRangeReady =
         PlanningSheetTimelinePrefs.cachedVisibleDayRange != null;
     if (!_timelineRangeReady) unawaited(_loadTimelineRange());
-    // Warm only the initial date. Never eagerly build two neighbor pages.
-    DatabaseService.instance.ensurePlansWarmWindow(widget.selectedDate);
+    // No eager data warmup: the canonical global runtime flag disables it.
+    // Only the visible PlanningPage owns an active day stream.
   }
 
   Future<void> _loadTimelineRange() async {
