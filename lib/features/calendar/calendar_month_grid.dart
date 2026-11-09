@@ -272,7 +272,7 @@ class _CalendarDayNumberBadge extends StatelessWidget {
     required this.scheme,
   });
 
-  static const double _size = 34;
+  static const double _size = 30;
 
   final String label;
   final bool inMonth;
