@@ -208,41 +208,35 @@ class AppTextField extends StatelessWidget {
                       child: Center(
                         child: SizedBox(
                           height: AppControlTokens.singleLineEditorHeight,
-                          child: Transform.translate(
-                            offset: const Offset(
-                              0,
-                              AppControlTokens.singleLineOpticalOffsetY,
-                            ),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                // One visible hint implementation for plain
-                                // text, Timeline quick entry and Settings search.
-                                ValueListenableBuilder<TextEditingValue>(
-                                  valueListenable: controller,
-                                  builder: (context, value, _) =>
-                                      value.text.isNotEmpty || hintText.isEmpty
-                                          ? const SizedBox.shrink()
-                                          : IgnorePointer(
-                                              child: Align(
-                                                alignment: Alignment.centerLeft,
-                                                child: Text(
-                                                  hintText,
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: TextStyle(
-                                                    fontSize:
-                                                        AppControlTokens.fontSize,
-                                                    height: 1.2,
-                                                    color: meta,
-                                                  ),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              // One visible hint implementation for plain
+                              // text, Timeline quick entry and Settings search.
+                              ValueListenableBuilder<TextEditingValue>(
+                                valueListenable: controller,
+                                builder: (context, value, _) =>
+                                    value.text.isNotEmpty || hintText.isEmpty
+                                        ? const SizedBox.shrink()
+                                        : IgnorePointer(
+                                            child: Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(
+                                                hintText,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      AppControlTokens.fontSize,
+                                                  height: 1.2,
+                                                  color: meta,
                                                 ),
                                               ),
                                             ),
-                                ),
-                                inner,
-                              ],
-                            ),
+                                          ),
+                              ),
+                              inner,
+                            ],
                           ),
                         ),
                       ),
