@@ -9,9 +9,7 @@ abstract final class AppControlTokens {
   static const double fontSize = 16;
   // The borderless editor must have its own intrinsic line box, rather
   // than expanding to the capsule height and leaving glyphs at the top.
-  static const double singleLineEditorHeight = 24;
-  // Desktop/web glyph ink is optically low even when the editor is centered.
-  static const double singleLineOpticalOffsetY = -2;
+  static const double singleLineEditorHeight = 21;
   static const double horizontalGap = 8;
   static const double horizontalPadding = 16;
   static const double buttonHorizontalPadding = 14;
