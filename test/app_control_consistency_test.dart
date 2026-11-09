@@ -110,7 +110,7 @@ void main() {
       expect(tester.getRect(editor).height,
           lessThan(AppControlTokens.height));
       expect((tester.getRect(editor).center.dy - fieldRect.center.dy).abs(),
-          lessThanOrEqualTo(2.5));
+          lessThanOrEqualTo(1));
       final searchField = find.byType(AppTextField).last;
       final searchPaint = find.descendant(
         of: searchField,
@@ -470,7 +470,7 @@ void main() {
       matching: find.byType(AppTextField),
     );
     final bounds = tester.getRect(field);
-    // The actual text box is only 24px high inside the full 44px pill.
+    // The actual text box is only 21px high inside the full 44px pill.
     await tester.tapAt(Offset(bounds.left + 80, bounds.top + 3));
     await tester.pump();
     expect(focus.hasFocus, isTrue);
