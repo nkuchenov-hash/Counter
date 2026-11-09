@@ -1261,8 +1261,7 @@ class _PlanningPageState extends State<PlanningPage>
     final scheme = Theme.of(context).colorScheme;
 
     return StreamBuilder<List<PlanningTask>>(
-      // Reset snapshots when the day changes; never paint the prior day's tasks.
-      key: ValueKey<String>('planning-stream-${widget.selectedDateString}'),
+      // The stream object changes per day, but the chrome stays mounted.
       stream: _planningStream,
       builder: (context, snapshot) {
         List<PlanningTask>? displayedForChrome;
@@ -1278,12 +1277,15 @@ class _PlanningPageState extends State<PlanningPage>
                   ),
                 );
           }
-          if (snapshot.hasError && _latestPlanningDayTasks.isEmpty) {
+          if (snapshot.hasError &&
+              snapshot.connectionState != ConnectionState.waiting &&
+              _latestPlanningDayTasks.isEmpty) {
             body = AppErrorState(
               message: t(currentLocale.value, 'no_data_found'),
             );
           } else {
-            final server = snapshot.hasData
+            final server = snapshot.hasData &&
+                    snapshot.connectionState != ConnectionState.waiting
                 ? snapshot.data!
                 : _latestPlanningDayTasks;
             _latestPlanningDayTasks = server;
