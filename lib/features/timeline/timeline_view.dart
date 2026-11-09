@@ -105,6 +105,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   int? _pendingExternalPage;
   final DatePagerSettleGate _settleGate = DatePagerSettleGate();
   bool _showStatsView = false;
+  bool _restoreQuickEntryFocusOnReturn = false;
   String? _swipeFromDateKey;
 
   String _dateKeyFromDate(DateTime d) =>
@@ -230,8 +231,21 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   @override
   void didUpdateWidget(covariant TimelineSwipeWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.shellTabActive && !widget.shellTabActive) {
+      // Hidden tabs must not own the keyboard or reattach a shared FocusNode.
+      _restoreQuickEntryFocusOnReturn = widget.titleFocus.hasFocus;
+      widget.titleFocus.unfocus();
+    }
     if (!oldWidget.shellTabActive && widget.shellTabActive) {
       _syncOnTabActivated();
+      if (_restoreQuickEntryFocusOnReturn && !_showStatsView) {
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          if (mounted && widget.shellTabActive && !_showStatsView) {
+            widget.titleFocus.requestFocus();
+          }
+        });
+      }
+      _restoreQuickEntryFocusOnReturn = false;
       return;
     }
     if (!widget.shellTabActive) {
@@ -503,6 +517,7 @@ class _TimelinePageState extends State<TimelinePage> {
           children: [
             TimelineHeaderControls(
               showStatsView: widget.showStatsView,
+              inputActive: widget.isActivePage && widget.shellTabActive,
               visibleDate: _visibleDate,
               visibleIsFuture: _visibleIsFuture,
               titleController: widget.titleController,
