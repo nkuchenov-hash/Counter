@@ -9,6 +9,7 @@ import 'package:counter/data/ai/viktor_executor.dart';
 import 'package:counter/data/ai/viktor_historical_records.dart';
 import 'package:counter/data/ai/viktor_gateway.dart';
 import 'package:counter/data/ai/viktor_schedule_planner.dart';
+import 'package:counter/data/ai/viktor_tag_duration_reflow.dart';
 import 'package:counter/data/ai/viktor_voice_gateway.dart';
 import 'package:counter/data/ai/viktor_voice_recorder.dart';
 import 'package:counter/data/ai/viktor_voice_error.dart';
@@ -27,6 +28,7 @@ part 'viktor_composer.dart';
 part 'viktor_chat_layout.dart';
 part 'viktor_threads_ui.dart';
 part 'viktor_duration_review_dialog.dart';
+part 'viktor_duration_conflict_dialog.dart';
 const double kViktorChatContentMaxWidth = 840;
 class ViktorChatPage extends StatefulWidget {
   const ViktorChatPage({super.key, required this.wallDay,
@@ -122,19 +124,50 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       }
       if (ViktorTagDurationRepair.matches(input)) {
         final repair = ViktorTagDurationRepair(db);
-        final preview = await repair.prepare(profileToday);
+        var keepFeasibleOnly = false;
+        late ViktorBulkPreview preview;
+        try {
+          preview = await repair.prepare(profileToday);
+        } on ViktorTagDurationOverflow catch (conflict) {
+          if (!mounted) return;
+          final chooseSubset = await showDialog<bool>(
+            context: context,
+            builder: (_) => ViktorDurationConflictDialog(
+              conflict: conflict,
+            ),
+          ) ?? false;
+          if (!mounted) return;
+          if (!chooseSubset) {
+            _push('Пересчёт не применён. Можно перенести часть гибких '
+                'задач на другую дату или изменить их длительности. '
+                'Закреплённые встречи останутся на месте.');
+            return;
+          }
+          keepFeasibleOnly = true;
+          preview = await repair.prepare(
+            profileToday, keepFeasibleOnly: true,
+          );
+        }
         if (!mounted) return;
         final approved = await showDialog<bool>(
           context: context,
-          builder: (ctx) => ViktorTagDurationReviewDialog(preview: preview),
+          builder: (_) => ViktorTagDurationReviewDialog(preview: preview),
         ) ?? false;
         if (!mounted) return;
         if (!approved) {
           _push('Изменения отменены.');
           return;
         }
-        final result = await repair.apply(preview, profileToday, requestId);
-        if (mounted) _push(result);
+        final result = await repair.apply(
+          preview, profileToday, requestId,
+          keepFeasibleOnly: keepFeasibleOnly,
+        );
+        if (mounted) {
+          _push(preview.excludedPlanTitles.isEmpty
+              ? result
+              : '$result\nНе изменена базовая длительность по тегам: '
+                  '${preview.excludedPlanTitles.join(', ')}.');
+        }
         return;
       }
       final plans = await db.getPlanningTasksForWallDate(intentDay);
