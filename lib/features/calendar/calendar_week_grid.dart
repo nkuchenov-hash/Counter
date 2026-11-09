@@ -134,7 +134,7 @@ class _CalendarWeekPlannerGridState extends State<CalendarWeekPlannerGrid> {
                     Expanded(
                       child: Builder(
                         builder: (context) {
-                          final day = weekStart.add(Duration(days: i));
+                          final day = calendarAddDays(weekStart, i);
                           final isToday =
                               day.year == today.year &&
                               day.month == today.month &&
@@ -247,9 +247,7 @@ class _CalendarWeekPlannerGridState extends State<CalendarWeekPlannerGrid> {
                                   Expanded(
                                     child: Builder(
                                       builder: (context) {
-                                        final day = weekStart.add(
-                                          Duration(days: i),
-                                        );
+                                        final day = calendarAddDays(weekStart, i);
                                         final tasks = (tasksByDay[calendarDayKey(day)] ??
                                                 const <PlanningTask>[])
                                             .where((task) => task.startTime != null)
@@ -384,7 +382,7 @@ class _CalendarWeekPlannerGridState extends State<CalendarWeekPlannerGrid> {
                                                               if (local.dx < 0 || local.dx >= size.width ||
                                                                   local.dy < 0 || local.dy >= size.height) return;
                                                               final column = (local.dx / (size.width / 7)).floor().clamp(0, 6);
-                                                              final destinationDay = weekStart.add(Duration(days: column));
+                                                              final destinationDay = calendarAddDays(weekStart, column);
                                                               final minutesFromTop = ((local.dy - grabOffset) / _hourHeight * 60);
                                                               // Time View wall-clock snap: five-minute increments.
                                                               final snapped = (minutesFromTop / 5).round() * 5;
@@ -469,7 +467,7 @@ class CalendarWeekCompactStrip extends StatelessWidget {
           Expanded(
             child: Builder(
               builder: (context) {
-                final day = weekStart.add(Duration(days: i));
+                final day = calendarAddDays(weekStart, i);
                 final key = calendarDayKey(day);
                 final tasks = tasksByDay[key] ?? const <PlanningTask>[];
                 final selected =
