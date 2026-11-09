@@ -1,9 +1,9 @@
-## 2026-11-09 — Viktor tag-duration repair and malformed read handling [verification pending]
+## 2026-11-09 — Correct the visible quick-entry glyph baseline [pixel verification pending]
 
-- Added an explicitly scoped two-day command path for restoring existing plan durations from the owner's saved plan-tag defaults, without depending on an LLM proposal. Ambiguous defaults, completed/recurring/fixed-time plans, and unsafe cascades are not changed.
-- Approval preview is mandatory; subsequent fresh-day/tag revalidation and existing atomic PocketBase transaction enforce all-or-nothing writes, owner checks, collision rejection and post-commit verification.
-- Repeated AI continuations with no read tool now stop cleanly instead of looping through an internal StateError. Genuine provider content-filter refusals remain blocked.
-- Scope: Viktor only; no startup data scan, profile/timezone contract changes, or PocketBase schema updates.
+- Customer screenshot of the published 44 logical px Timeline capsule shows Latin typed glyph ink about four **screen** pixels below its vertical center at 1.5 device pixel ratio. Existing geometry-only tests did not reject that offset.
+- In Flutter Web only, move the editable glyphs and caret up by two logical pixels within the existing 21 px one-line editor. The already-centered controller-reactive hint and native renderers retain their prior typographic geometry; the 44 px capsule, full-surface hit target and focus logic remain unchanged.
+- Preserve native Onest raster tests and Chrome fallback-font raster checks at DPR 1.5 (<=1.5 logical px). Chrome widget-test FontLoader hangs, so actual production Onest alignment must additionally be checked in a live screenshot. Added repeated-tab-return focus regression.
+- Do not claim the live product fixed until Chrome CI, deployed SHA, and visible screenshot acceptance pass.
 
 ## 2026-11-09 — Timeline quick entry focus, hit target and 44 px canonical controls [CI / live verification pending]
 
