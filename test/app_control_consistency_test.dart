@@ -439,6 +439,7 @@ void main() {
       r1, search: false, imageWidth: typed.width, pixels: typed.pixels);
     final settingsTypedCenter = textOpticalCenter(
       r2, search: true, imageWidth: typed.width, pixels: typed.pixels);
+    debugPrint('INK_CENTERS web=$kIsWeb hintTL=${(timelineHintCenter - r1.center.dy).toStringAsFixed(3)} hintSettings=${(settingsHintCenter - r2.center.dy).toStringAsFixed(3)} typedTL=${(timelineTypedCenter - r1.center.dy).toStringAsFixed(3)} typedSettings=${(settingsTypedCenter - r2.center.dy).toStringAsFixed(3)} opticalOffset=${AppControlTokens.singleLineOpticalOffsetY}');
     expect((timelineTypedCenter - r1.center.dy).abs(),
         lessThanOrEqualTo(inkTolerance),
         reason: 'Typed Latin input ink must be centered within 1.5 logical px (renderer: ${kIsWeb ? 'web' : 'native'})');
