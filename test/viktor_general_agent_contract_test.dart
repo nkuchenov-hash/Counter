@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:counter/data/ai/viktor_executor.dart';
 import 'package:counter/data/ai/viktor_action_contract.dart';
 import 'package:counter/data/ai/viktor_agent_capabilities.dart';
@@ -11,6 +12,31 @@ Map<String, dynamic> batch(List<Map<String, dynamic>> actions) =>
     {'version': 1, 'request_id': 'request_20261021_abcdef', 'actions': actions};
 
 void main() {
+  test('PocketBase plan projection carries revision for atomic Viktor writes',
+      () async {
+    // A real production error resulted from dropping the top-level
+    // RecordModel.updated field before preparing 30 schedule updates.
+    final mapper = await File('lib/data/plan_service.dart').readAsString();
+    expect(mapper, contains("'updated': r.updated"));
+    expect(mapper, contains("'created': r.created"));
+    expect(mapper, contains(
+        "'recurrence_instance_date_key': d['recurrence_instance_date_key']"));
+    final gateway = await File('lib/data/ai/viktor_atomic_bulk_gateway.dart')
+        .readAsString();
+    expect(gateway, contains('current.updated.replaceFirst'));
+    expect(gateway, contains("current.data['tags_link']"));
+    expect(gateway, contains("current.data['is_done']"));
+    final planned = PlanningTask.fromJson({
+      'title': 'Duration repair',
+      'id': 0,
+      'dateKey': '2026-11-09',
+      'updated': '2026-11-09 17:40:10.321Z',
+      'created': '2026-11-08 10:00:00.000Z',
+    });
+    expect(planned.updatedAt?.toUtc(),
+        DateTime.utc(2026, 11, 9, 17, 40, 10, 321));
+  });
+
 
   test('Two-day tag default duration repair is explicit and safe', () {
     expect(ViktorTagDurationRepair.matches(
