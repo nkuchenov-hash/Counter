@@ -321,13 +321,11 @@ class PlanCardMenuButtonState extends State<PlanCardMenuButton> {
               height: widget.size,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: widget.subtleBackground
-                      ? (_hovered
-                            ? const Color(0xFFDEDEDE).withValues(alpha: 0.55)
-                            : PlanCardTokens.menuBg.withValues(alpha: 0.38))
-                      : (_hovered
-                            ? const Color(0xFFDEDEDE)
-                            : PlanCardTokens.menuBg),
+                  color: _hovered
+                      ? const Color(0xFFDEDEDE)
+                      : widget.subtleBackground
+                          ? PlanCardTokens.menuBg.withValues(alpha: 0.38)
+                          : PlanCardTokens.menuBg,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
