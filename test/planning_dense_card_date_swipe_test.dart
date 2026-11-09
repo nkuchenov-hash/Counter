@@ -69,10 +69,14 @@ void main() {
     );
 
     final gesture = await tester.startGesture(
-      Offset(600, y),
+      Offset(900, y),
       kind: kind,
     );
-    await gesture.moveBy(const Offset(-700, 1));
+    // First cross Flutter's drag slop, then send movement after it is claimed.
+    await gesture.moveBy(const Offset(-40, 0));
+    await tester.pump(const Duration(milliseconds: 16));
+    await gesture.moveBy(const Offset(-820, 1));
+    await tester.pump(const Duration(milliseconds: 16));
     await gesture.up();
     await tester.pumpAndSettle();
 
@@ -149,7 +153,10 @@ void main() {
       const Offset(600, 350),
       kind: PointerDeviceKind.touch,
     );
+    await gesture.moveBy(const Offset(0, -40));
+    await tester.pump(const Duration(milliseconds: 16));
     await gesture.moveBy(const Offset(0, -250));
+    await tester.pump(const Duration(milliseconds: 16));
     await gesture.up();
     await tester.pumpAndSettle();
     expect(scroll.offset, greaterThan(0));
