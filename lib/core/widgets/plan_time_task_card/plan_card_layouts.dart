@@ -573,9 +573,9 @@ class _TimeViewFooterStackLayout extends StatelessWidget {
                     top: contentTop,
                     height: PlanCardGeom.titleLineHeight,
                     child: Transform.translate(
-                      // Only lift the heading of the tall card. Tags remain
-                      // anchored at their existing position below this slot.
-                      offset: Offset(0, fullProgressSlot ? -2.0 : 0.0),
+                      // The tall card title sits 2px above the checkbox top.
+                      // Move only the title; keep tags and footer anchored.
+                      offset: Offset(0, fullProgressSlot ? 2.0 : 0.0),
                       child: PlanCardTitleRow(
                         title: common.task.title,
                         displayIsDone: common.displayIsDone,

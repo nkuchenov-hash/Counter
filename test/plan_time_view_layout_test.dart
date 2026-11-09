@@ -145,7 +145,12 @@ void main() {
       expect(topOf(PlanCardCheckbox), closeTo(12, 0.1));
       expect(topOf(PlanCardPlayButton), closeTo(topOf(PlanCardCheckbox), 0.1));
       expect(topOf(PlanCardMenuButton), closeTo(topOf(PlanCardCheckbox), 0.1));
-      expect(topOf(PlanCardTitleRow), closeTo(6, 0.1));
+      expect(topOf(PlanCardTitleRow), closeTo(10, 0.1));
+      expect(
+        topOf(PlanCardTitleRow) - topOf(PlanCardCheckbox),
+        closeTo(-2, 0.1),
+      );
+      // The tag stays at its former Y position while the heading moves.
       expect(topOf(TimeViewTagsRow), closeTo(34, 0.1));
       expect(
         topOf(PlanCardFooterRow),
