@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `ecd8d97b` on 2026-11-09.**
+**Generated from input HEAD `7ef25ba9` on 2026-11-09.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1002 — each appears **exactly once** below.
+**Tracked files:** 1003 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,7 +26,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 196 |
+| `production UI` | 197 |
 | `test` | 146 |
 | `Brain/data` | 115 |
 | `platform build` | 83 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 539 |
+| `PROVEN_REQUIRED` | 540 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 272 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 913 |
+| `HIGH` | 914 |
 | `MEDIUM` | 89 |
 
 ---
@@ -14960,10 +14960,10 @@ EN:
 - **Human purpose:** Brain helper for data/sync — Tagged plan-duration reflow around immutable recurring, completed, and fixed-time event barriers. Shared PocketBase/auth/parse logic used by multiple tabs.
 - **What this is:** Brain helper for data/sync — Tagged plan-duration reflow around immutable recurring, completed, and fixed-time event barriers.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **Contents:** Dart helpers and types (`ViktorTagDurationReflow`).
-- **Key code names:** `ViktorTagDurationReflow`
+- **Contents:** Dart helpers and types (`ViktorTagDurationOverflow`, `ViktorTagDurationSubset`, `ViktorTagDurationReflow`).
+- **Key code names:** `ViktorTagDurationOverflow`, `ViktorTagDurationSubset`, `ViktorTagDurationReflow`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14980,7 +14980,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `viktor_tag_duration_reflow`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -25482,6 +25482,44 @@ RU:
 - **Владелец / слой:** корень репозитория
 - **Обязанности:** Поддерживает поведение `viktor_dialogue_ui_state` в этой feature-зоне.
 - **Когда открывать:** Когда ломается поведение, связанное с `viktor_dialogue_ui_state.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/viktor/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/viktor/viktor_duration_conflict_dialog.dart`
+
+EN:
+
+- **Human purpose:** `viktor_duration_conflict_dialog.dart` on viktor area — Full-screen AI chat with expandable text and mic composer. Users see `viktor_duration_conflict_dialog.dart` when using viktor area.
+- **What this is:** `viktor_duration_conflict_dialog.dart` on viktor area — Full-screen AI chat with expandable text and mic composer.
+- **Why needed:** Users see `viktor_duration_conflict_dialog.dart` when using viktor area.
+- **Contents:** Primary symbols: `ViktorDurationConflictDialog`.
+- **Key code names:** `ViktorDurationConflictDialog`
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/features/viktor/viktor_chat_page.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/features/viktor/viktor_chat_page.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** repository root
+- **Responsibilities:** Full-screen AI chat with expandable text and mic composer
+- **When to open:** When behavior tied to `viktor_duration_conflict_dialog.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Brain/library compile failure in `lib/features/viktor/viktor_chat_page.dart` and broken related UI/data ops.
+- **Connected to:** APP_STRUCTURE role: Full-screen AI chat with expandable text and mic composer
+
+RU:
+
+- **Зачем файл человеку:** `viktor_duration_conflict_dialog.dart` на viktor — Пользователь открывает sheet/dialog из entry `viktor_duration_conflict_dialog`.. Пользователь видит UI из `viktor_duration_conflict_dialog.dart` на viktor.
+- **Что это:** `viktor_duration_conflict_dialog.dart` на viktor — Пользователь открывает sheet/dialog из entry `viktor_duration_conflict_dialog`..
+- **Зачем:** Пользователь видит UI из `viktor_duration_conflict_dialog.dart` на viktor.
+- **Содержимое:** Основные символы: `ViktorDurationConflictDialog`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/features/viktor/viktor_chat_page.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/features/viktor/viktor_chat_page.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Пользователь открывает sheet/dialog из entry `viktor_duration_conflict_dialog`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_duration_conflict_dialog.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/viktor/`, `docs/APP_STRUCTURE.md`
 

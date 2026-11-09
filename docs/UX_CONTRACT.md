@@ -1,3 +1,11 @@
+## Viktor duration overflow — conversational decisions (2026-11-09)
+
+- A scheduling overflow is not a terminal technical error. Victor must identify the exact date, plan and requested duration, explicitly state that no rows were saved and that fixed/recurring events stay anchored, then offer meaningful alternatives.
+- Option "show feasible subset" computes a new preview where only duration expansions that cause overflow are dropped. Duration reductions that free capacity must never be removed just to make an algorithm succeed. This option never applies writes until the user approves the new grouped review.
+- Other choices (moving flexible work to another day, changing individual durations, or freeing earlier time) are suggestions requiring separate user instructions; never imply they were performed.
+- The preview explicitly lists which requested tag-duration changes were omitted. Before atomic commit, re-read day plans, tags and fixed-tag settings, recompute the same alternative and require identical results. Every protected plan remains unchanged.
+- If no subset fits, explain that no safe partial change was available; do not present a success or perform a partial write.
+
 ## Viktor — fixed-time meeting and recurring schedule anchors (2026-11-09)
 
 - The same user's Time View fixed-time tag selections also define protected anchors on the current device; changes to those selections invalidate the preview snapshot before committing.
