@@ -413,6 +413,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
                       density: effectiveDensity,
                       cardWidth: w.isFinite ? w : PlanCardGeom.refWidth,
                       cardHeight: resolvedHeight,
+                      liftForTimeView: isTimeViewCard,
                     ),
                   bodyContent,
                   if (trailingControlCount > 0)
@@ -430,7 +431,10 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
                           if (timeViewTrailingPlay && timeViewTrailingMenu)
                             const SizedBox(width: 8),
                           if (timeViewTrailingMenu)
-                            PlanCardMenuButton(onOpenMenu: widget.onOpenMenu!),
+                            PlanCardMenuButton(
+                              onOpenMenu: widget.onOpenMenu!,
+                              subtleBackground: true,
+                            ),
                         ],
                       ),
                     ),

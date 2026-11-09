@@ -382,10 +382,7 @@ class TimeViewMediumLayout extends StatelessWidget {
 }
 
 class _TimeViewShortStackLayout extends StatelessWidget {
-  const _TimeViewShortStackLayout({
-    required this.common,
-    required this.heightPx,
-  });
+  const _TimeViewShortStackLayout({required this.common, required this.heightPx});
 
   final TimeViewCardCommon common;
   final double heightPx;
@@ -421,38 +418,64 @@ class _TimeViewShortStackLayout extends StatelessWidget {
             child: PlanCardBodyTapShell(
               onTap: common.onBodyTap,
               onLongPress: common.onBodyLongPress,
-              child: Stack(
-                children: [
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 5,
-                    height: PlanCardGeom.titleLineHeight,
-                    child: PlanCardTitleRow(
-                      title: common.task.title,
-                      displayIsDone: common.displayIsDone,
-                      hasRepeat: common.hasRepeat,
-                      maxLines: 1,
-                      metaIcons: common.metaIcons,
-                    ),
-                  ),
-                  if (common.visibleTags.isNotEmpty || common.timeLabel.isNotEmpty)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      top:
-                          5 +
-                          PlanCardGeom.titleLineHeight +
-                          PlanCardGeom.timeViewTitleToTagsGap,
-                      height: PlanCardGeom.tagRowHeight,
-                      child: TimeViewTagsRow(
-                        tags: common.visibleTags,
-                        trailing: common.timeLabel.isNotEmpty
-                            ? PlanCardTimeText(label: common.timeLabel)
-                            : null,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Keep the two-line format on narrow cards to avoid
+                  // sacrificing title and tag visibility.
+                  final timeOnRight = common.timeLabel.isNotEmpty &&
+                      constraints.maxWidth >= 290;
+                  final hasSecondLine = common.visibleTags.isNotEmpty ||
+                      (!timeOnRight && common.timeLabel.isNotEmpty);
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SizedBox(
+                              height: PlanCardGeom.titleLineHeight,
+                              child: PlanCardTitleRow(
+                                title: common.task.title,
+                                displayIsDone: common.displayIsDone,
+                                hasRepeat: common.hasRepeat,
+                                maxLines: 1,
+                                metaIcons: common.metaIcons,
+                              ),
+                            ),
+                            if (hasSecondLine) ...[
+                              const SizedBox(height: PlanCardGeom.timeViewTitleToTagsGap),
+                              TimeViewTagsRow(
+                                tags: common.visibleTags,
+                                trailing: !timeOnRight &&
+                                        common.timeLabel.isNotEmpty
+                                    ? PlanCardTimeText(label: common.timeLabel)
+                                    : null,
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                    ),
-                ],
+                      if (timeOnRight) ...[
+                        const SizedBox(width: 12),
+                        Container(
+                          width: 1,
+                          height: 22,
+                          color: PlanCardTokens.dividerColor,
+                        ),
+                        const SizedBox(width: 10),
+                        const Icon(
+                          Icons.calendar_today_outlined,
+                          size: 13,
+                          color: PlanCardTokens.timeColor,
+                        ),
+                        const SizedBox(width: 6),
+                        PlanCardTimeText(label: common.timeLabel),
+                      ],
+                    ],
+                  );
+                },
               ),
             ),
           ),

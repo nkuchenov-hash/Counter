@@ -289,10 +289,12 @@ class PlanCardMenuButton extends StatefulWidget {
   const PlanCardMenuButton({
     required this.onOpenMenu,
     this.size = PlanCardGeom.menuSize,
+    this.subtleBackground = false,
   });
 
   final void Function(BuildContext) onOpenMenu;
   final double size;
+  final bool subtleBackground;
 
   @override
   State<PlanCardMenuButton> createState() => PlanCardMenuButtonState();
@@ -319,9 +321,13 @@ class PlanCardMenuButtonState extends State<PlanCardMenuButton> {
               height: widget.size,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: _hovered
-                      ? const Color(0xFFDEDEDE)
-                      : PlanCardTokens.menuBg,
+                  color: widget.subtleBackground
+                      ? (_hovered
+                            ? const Color(0xFFDEDEDE).withValues(alpha: 0.55)
+                            : PlanCardTokens.menuBg.withValues(alpha: 0.38))
+                      : (_hovered
+                            ? const Color(0xFFDEDEDE)
+                            : PlanCardTokens.menuBg),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

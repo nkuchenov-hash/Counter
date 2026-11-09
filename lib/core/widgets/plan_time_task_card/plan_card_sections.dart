@@ -145,6 +145,7 @@ class PlanCardWatermark extends StatelessWidget {
     required this.density,
     required this.cardWidth,
     required this.cardHeight,
+    this.liftForTimeView = false,
   });
 
   final IconData? icon;
@@ -152,6 +153,7 @@ class PlanCardWatermark extends StatelessWidget {
   final PlanTimeTaskCardDensity density;
   final double cardWidth;
   final double cardHeight;
+  final bool liftForTimeView;
 
   static const double _opacity = 0.04;
 
@@ -175,7 +177,9 @@ class PlanCardWatermark extends StatelessWidget {
         : 1.0;
     final size = ref.size * wideBoost;
     final left = ref.left * widthScale;
-    final top = ref.top * (cardHeight / PlanCardGeom.refHeight(density));
+    final top =
+        ref.top * (cardHeight / PlanCardGeom.refHeight(density)) -
+        (liftForTimeView ? 7.0 : 0.0);
 
     return Positioned(
       left: left,
