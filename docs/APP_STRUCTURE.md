@@ -143,6 +143,7 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 | `ai/viktor_domain_tools.dart` | Scoped Brain-backed tool adapters for categories, tags, notes, Paths and safe profile settings; preview/read/execute |
 
 | `ai/viktor_schedule_planner.dart` | Pure plan order/time previews with collision protection |
+| `ai/viktor_tag_duration_reflow.dart` | Tagged plan-duration reflow around immutable recurring, completed, and fixed-time event barriers; produces consent-gated atomic patches for flexible plans only |
 | `ai/viktor_executor.dart` | Brain-backed approved changes and real schedule checks |
 | `ai/viktor_historical_records.dart` | Deterministic past-activity intent routing, authenticated Timeline anchor resolution, collision-safe record interval preview and approved completed-record backfill |
 | `ai/viktor_record_tools.dart` | Generic owner-scoped Timeline record reads and previewed creation of completed entries with explicit UTC intervals; validates duplicates and overlaps before Brain writes |
