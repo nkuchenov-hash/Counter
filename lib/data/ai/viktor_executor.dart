@@ -11,6 +11,7 @@ import 'viktor_existing_plan.dart';
 import 'viktor_plan_timezone.dart';
 import 'viktor_atomic_bulk_gateway.dart';
 import 'viktor_tag_duration_reflow.dart';
+import 'package:counter/data/time_view_fixed_time_policy.dart';
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -758,6 +759,7 @@ class ViktorTagDurationRepair {
     }
     final catalog = await db.fetchTagsForCurrentUser(
         scope: TagCatalogScope.plan);
+    final fixedTagIds = await TimeViewFixedTagPrefs.load();
     if (!catalog.any((tag) => tag.defaultPlanDurationMinutes != null)) {
       throw StateError('Не найдены базовые длительности тегов. '
           'Планы не изменены.');
@@ -773,6 +775,7 @@ class ViktorTagDurationRepair {
       snapshotPlans.addAll(plans);
       final targetDurations = <String, int>{};
       bool fixed(PlanningTask p) =>
+          isPlanFixedInTimeView(p, fixedTagIds) ||
           (db.getCategoryRuleById(p.categoryId)
                   ?.defaultPlanTime ?? '').trim().isNotEmpty;
       for (final plan in plans) {
@@ -810,9 +813,11 @@ class ViktorTagDurationRepair {
             tag.tagId.toString() + '|' +
             (tag.defaultPlanDurationMinutes?.toString() ?? ''),
     ]..sort();
+    final fixedTagSnapshot = fixedTagIds.toList()..sort();
     final signature = ViktorBulkPlanner.snapshot(
           snapshotPlans, const <PlanningTask>[]) +
-        '\n' + tagSnapshot.join('\n');
+        '\n' + tagSnapshot.join('\n') +
+        '\nfixed-tags:' + fixedTagSnapshot.join('|');
     return ViktorBulkPreview(moves, signature);
   }
 
