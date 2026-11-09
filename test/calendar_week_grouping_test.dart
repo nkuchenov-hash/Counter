@@ -78,7 +78,8 @@ void main() {
         .readAsStringSync();
     final monthGrid = File('lib/features/calendar/calendar_month_grid.dart')
         .readAsStringSync();
-    final weekGrid = File('lib/features/calendar/calendar_week_grid.dart');
+    final weekGrid = File('lib/features/calendar/calendar_week_grid.dart')
+        .readAsStringSync();
 
     expect(calendar, contains('unawaited(widget.onSelectDate(d, d));'));
     expect(calendar, isNot(contains('bool createPlan = true')));
