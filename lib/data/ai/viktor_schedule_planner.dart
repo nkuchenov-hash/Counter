@@ -359,8 +359,8 @@ class ViktorBulkPreview {
     return [
       'Проверка массового изменения (${moves.length} планов):',
       if (excludedPlanTitles.isNotEmpty)
-        'По выбору пользователя не изменяются: '
-        '${excludedPlanTitles.join(', ')}.',
+        'По выбору пользователя не пересчитывается длительность '
+        'по тегам у: ${excludedPlanTitles.join(', ')}.',
       for (final m in moves)
         '${m.kind == 'move' ? 'Перенести' : 'Уплотнить'} «${m.plan.title}»: '
         '${m.plan.dateKey} ${hm(m.plan.startTime!)} → '
