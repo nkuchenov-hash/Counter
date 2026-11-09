@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:counter/data/ai/viktor_voice_recorder.dart';
 import 'package:counter/features/viktor/viktor_chat_page.dart';
 import 'package:counter/data/ai/viktor_schedule_planner.dart';
+import 'package:counter/data/ai/viktor_tag_duration_reflow.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/core/theme.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,51 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('Viktor shows actionable conflict choices on narrow screens',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 720);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final day = DateTime(2026, 11, 9);
+    final plan = PlanningTask(
+      id: 1, pocketRecordId: 'aaaaabbbbbccccc',
+      title: 'GSG Temp Staffing ADD SIN Run',
+      categoryId: 1, dateKey: '2026-11-09',
+      startTime: day.add(const Duration(hours: 21)),
+      endDateTime: day.add(const Duration(hours: 22)),
+    );
+    bool? selected;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: Builder(builder: (ctx) => TextButton(
+        onPressed: () async {
+          selected = await showDialog<bool>(
+            context: ctx,
+            builder: (_) => ViktorDurationConflictDialog(
+              conflict: ViktorTagDurationOverflow(
+                day: day, plan: plan, minutes: 60,
+              ),
+            ),
+          );
+        },
+        child: const Text('Conflict'),
+      ))),
+    ));
+    await tester.tap(find.text('Conflict'));
+    await tester.pumpAndSettle();
+    expect(find.text('Расписание не помещается'), findsOneWidget);
+    expect(find.textContaining('GSG Temp Staffing ADD SIN Run'),
+        findsOneWidget);
+    expect(find.textContaining('Перенести часть гибких задач'), findsOneWidget);
+    expect(find.text('Показать частичный вариант'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('Показать частичный вариант'));
+    await tester.pumpAndSettle();
+    expect(selected, isTrue);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('Viktor 30-plan review has readable rows and fixed footer on mobile',
       (tester) async {
