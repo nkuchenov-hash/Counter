@@ -127,6 +127,74 @@ void main() {
     expect(meeting.endDateTime, DateTime(2026, 11, 9, 10, 45));
   });
 
+  test('overflow explains the exact task and requires a user decision', () {
+    final plans = [
+      item(flexible, 'Late flexible', 22 * 60, 30),
+      item(anchor, 'Protected', 22 * 60 + 30, 60),
+    ];
+    expect(() => planner.calculate(
+      day: day, plans: plans,
+      targetDurationMinutes: {flexible: 90},
+      fixedTime: (p) => p.pocketRecordId == anchor,
+    ), throwsA(isA<ViktorTagDurationOverflow>().having(
+      (e) => e.toString(), 'details', allOf(
+        contains('Late flexible'), contains('90 мин'), contains('9.11'),
+      ),
+    )));
+  });
+
+  test('feasible alternative keeps earlier expansion and skips only overflow',
+      () {
+    final plans = [
+      item(flexible, 'Earlier', 21 * 60, 15),
+      item(later, 'Overflow', 21 * 60 + 15, 15),
+      item(anchor, 'Late call', 22 * 60, 105),
+    ];
+    final subset = planner.calculateFeasibleSubset(
+      day: day, plans: plans,
+      targetDurationMinutes: {flexible: 30, later: 60},
+      fixedTime: (p) => p.pocketRecordId == anchor,
+    );
+    expect(subset.excludedPlans, ['Overflow']);
+    expect(subset.moves.any((m) => m.plan.pocketRecordId == anchor), isFalse);
+    final earlier = subset.moves.firstWhere(
+        (m) => m.plan.pocketRecordId == flexible);
+    expect(earlier.start, DateTime(2026, 11, 9, 21));
+    expect(earlier.end, DateTime(2026, 11, 9, 21, 30));
+    final next = subset.moves.firstWhere(
+        (m) => m.plan.pocketRecordId == later);
+    expect(next.start, DateTime(2026, 11, 9, 21, 30));
+    expect(next.end, DateTime(2026, 11, 9, 21, 45));
+  });
+
+  test('partial alternative never reverts reductions that free time', () {
+    final plans = [
+      item(flexible, 'Shorten first', 21 * 60, 60),
+      item(later, 'Too long', 22 * 60, 15),
+      item(anchor, 'Fixed late', 22 * 60 + 30, 75),
+    ];
+    final subset = planner.calculateFeasibleSubset(
+      day: day, plans: plans,
+      targetDurationMinutes: {flexible: 30, later: 120},
+      fixedTime: (p) => p.pocketRecordId == anchor,
+    );
+    expect(subset.excludedPlans, ['Too long']);
+    expect(subset.moves.first.plan.pocketRecordId, flexible);
+    expect(subset.moves.first.end, DateTime(2026, 11, 9, 21, 30));
+  });
+
+  test('if no requested expansion fits, the alternative has no silent writes',
+      () {
+    final subset = planner.calculateFeasibleSubset(
+      day: day,
+      plans: [item(flexible, 'Late', 23 * 60 + 15, 30)],
+      targetDurationMinutes: {flexible: 90},
+      fixedTime: (_) => false,
+    );
+    expect(subset.moves, isEmpty);
+    expect(subset.excludedPlans, ['Late']);
+  });
+
   test('unchanged protected-only day has no writes', () {
     final changes = planner.calculate(
       day: day,
