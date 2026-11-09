@@ -1,3 +1,8 @@
+## Text optical centering in canonical input (2026-11-09)
+
+- A geometrically centered 21 px editor is insufficient: rendered Onest glyph ink was approximately four physical pixels low at browser DPR 1.5 in the production Timeline screenshot. `AppControlTokens.singleLineOpticalOffsetY` moves the typed text and the one-line hint together within the already-centered 44 px field.
+- Keep the external capsule and focus hitbox stationary, and assert the rasterized text ink center within 1.5 logical px of the capsule center for both Timeline and Settings. Do not loosen visual tolerances to accommodate a baseline defect.
+
 ## Canonical quick-entry text/input contract (2026-11-09)
 
 - AppControlTokens.height is 44 logical px for standard single-line AppTextField, medium AppButton, medium AppIconButton, and AppQuickEntryRow. Radius is half the height (22 px), keeping full capsule ends and the shared 8 px input/action gap.
