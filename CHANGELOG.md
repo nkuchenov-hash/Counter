@@ -1,3 +1,9 @@
+## 2026-11-09 — Canonical input baseline parity correction [CI pending]
+
+- Removed the independent visible placeholder `Text` overlay and web-only typed-text translation in the canonical single-line `AppTextField`. Placeholder and typed text now use Flutter's same native TextField paint path, style line height and 21px centered editor within the 44px capsule.
+- Added screenshot pixel comparison of identical Latin and Cyrillic placeholder/typed text, with sub-pixel baseline parity tolerance at browser DPR 1.5. Preserved prior Timeline focus hitbox/tab reactivation regressions. Build and production Onest visual acceptance still require confirmation.
+
+
 ## 2026-11-09 — Viktor 30-plan duration save and review UI [CI / production verification pending]
 
 - Fixed PocketBase plan projection dropping top-level row `updated` (and `created`) metadata; the missing revision caused every two-day tag-duration commit to fail after preview with "Не получена полная версия исходного плана". Preserves recurrence instance metadata as well.
