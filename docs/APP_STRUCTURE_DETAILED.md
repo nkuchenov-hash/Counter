@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `c9471f93` on 2026-11-09.**
+**Generated from input HEAD `a8c436f7` on 2026-11-09.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -12434,7 +12434,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `date_pager_settle_gate.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/timeline/timeline_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12451,7 +12451,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `date_pager_settle_gate.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/timeline/timeline_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -12472,7 +12472,7 @@ EN:
 - **Contents:** Primary symbols: `LightDateSwipePhysics`, `FeatherDateSwipePhysics`.
 - **Key code names:** `LightDateSwipePhysics`, `FeatherDateSwipePhysics`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`, `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`, `lib/features/timeline/timeline_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12489,7 +12489,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `date_swipe_physics.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`, `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`, `lib/features/timeline/timeline_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -13750,7 +13750,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`MouseDragScrollBehavior`, `AppReorderItemBuilder`, `AppReorderItemKeyBuilder`, `AppReorderLabelBuilder`, `AppReorderHandleBuilder`, `AppHoldToReorderListener`).
 - **Key code names:** `MouseDragScrollBehavior`, `AppReorderItemBuilder`, `AppReorderItemKeyBuilder`, `AppReorderLabelBuilder`, `AppReorderHandleBuilder`, `AppHoldToReorderListener`, `AppReorderableList`, `AppReorderHandle`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_stage_card.dart`, `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_stage_card.dart`, `lib/features/timeline/timeline_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13767,7 +13767,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `mouse_drag_scroll_behavior`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_stage_card.dart`, `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/paths/paths_page.dart`, `lib/features/paths/widgets/path_stage_card.dart`, `lib/features/timeline/timeline_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21024,8 +21024,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `bulk_planning_edit_sheet.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit. Users see `bulk_planning_edit_sheet.dart` when using Plans tab (second bottom tab).
-- **What this is:** `bulk_planning_edit_sheet.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit.
+- **Human purpose:** `bulk_planning_edit_sheet.dart` on Plans tab (second bottom tab) — Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit. Users see `bulk_planning_edit_sheet.dart` when using Plans tab (second bottom tab).
+- **What this is:** `bulk_planning_edit_sheet.dart` on Plans tab (second bottom tab) — Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit.
 - **Why needed:** Users see `bulk_planning_edit_sheet.dart` when using Plans tab (second bottom tab).
 - **Contents:** Primary symbols: `BulkPlanningEditResult`, `BulkEditWallTimes`, `_BulkPlanningEditSheetBody`, `_BulkPlanningEditSheetBodyState`.
 - **Key code names:** `BulkPlanningEditResult`, `BulkEditWallTimes`, `_BulkPlanningEditSheetBody`, `_BulkPlanningEditSheetBodyState`
@@ -21035,10 +21035,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Planning UI
-- **Responsibilities:** Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
+- **Responsibilities:** Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, setting
 
 RU:
 
@@ -21062,8 +21062,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `plan_time_gesture_contract.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit. Users see `plan_time_gesture_contract.dart` when using Plans tab (second bottom tab).
-- **What this is:** `plan_time_gesture_contract.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit.
+- **Human purpose:** `plan_time_gesture_contract.dart` on Plans tab (second bottom tab) — Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit. Users see `plan_time_gesture_contract.dart` when using Plans tab (second bottom tab).
+- **What this is:** `plan_time_gesture_contract.dart` on Plans tab (second bottom tab) — Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit.
 - **Why needed:** Users see `plan_time_gesture_contract.dart` when using Plans tab (second bottom tab).
 - **Contents:** Dart module `plan_time_gesture_contract.dart` — open file for classes and helpers.
 - **Repository role:** production UI
@@ -21072,10 +21072,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Planning UI
-- **Responsibilities:** Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
+- **Responsibilities:** Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, setting
 
 RU:
 
@@ -21099,8 +21099,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `plan_time_view_layout.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit. Users see `plan_time_view_layout.dart` when using Plans tab (second bottom tab).
-- **What this is:** `plan_time_view_layout.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit.
+- **Human purpose:** `plan_time_view_layout.dart` on Plans tab (second bottom tab) — Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit. Users see `plan_time_view_layout.dart` when using Plans tab (second bottom tab).
+- **What this is:** `plan_time_view_layout.dart` on Plans tab (second bottom tab) — Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit.
 - **Why needed:** Users see `plan_time_view_layout.dart` when using Plans tab (second bottom tab).
 - **Contents:** Primary symbols: `TimeViewYScale`, `PlanTimeViewDurationGrid`, `PlanTimeViewBlockLayout`, `_PlanTimeViewCardSlot`, `PlanTimeViewLayoutCalculator`.
 - **Key code names:** `TimeViewYScale`, `PlanTimeViewDurationGrid`, `PlanTimeViewBlockLayout`, `_PlanTimeViewCardSlot`, `PlanTimeViewLayoutCalculator`
@@ -21110,10 +21110,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Planning UI
-- **Responsibilities:** Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
+- **Responsibilities:** Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, setting
 
 RU:
 
@@ -21175,21 +21175,21 @@ RU:
 
 EN:
 
-- **Human purpose:** `planning_day_start_prefs.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit. Users see `planning_day_start_prefs.dart` when using Plans tab (second bottom tab).
-- **What this is:** `planning_day_start_prefs.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit.
+- **Human purpose:** `planning_day_start_prefs.dart` on Plans tab (second bottom tab) — Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit. Users see `planning_day_start_prefs.dart` when using Plans tab (second bottom tab).
+- **What this is:** `planning_day_start_prefs.dart` on Plans tab (second bottom tab) — Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit.
 - **Why needed:** Users see `planning_day_start_prefs.dart` when using Plans tab (second bottom tab).
 - **Contents:** Primary symbols: `PlanningSheetTimelinePrefs`.
 - **Key code names:** `PlanningSheetTimelinePrefs`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/settings/planning_timeline_bounds_sheet.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_hour_grid.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page_shell.dart`, `lib/features/planning/settings/planning_timeline_bounds_sheet.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/planning/time_view/time_view_canvas.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Planning UI
-- **Responsibilities:** Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
+- **Responsibilities:** Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, setting
 
 RU:
 
@@ -21198,7 +21198,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `planning_day_start_prefs.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `planning_day_start_prefs.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/settings/planning_timeline_bounds_sheet.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_hour_grid.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page_shell.dart`, `lib/features/planning/settings/planning_timeline_bounds_sheet.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/planning/time_view/time_view_canvas.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21265,7 +21265,7 @@ EN:
 - **Responsibilities:** PlanningSwipeWrapper
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: `PlanningSwipeWrapper` date pager
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Persistent single-day `PlanningSwipeWrapper`, fixed chrome and previous/next date buttons (no full-page PageView)
 
 RU:
 
@@ -21416,7 +21416,7 @@ EN:
 - **Responsibilities:** Public entry surface for the Plans tab modules.
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, setting
 
 RU:
 
@@ -21440,8 +21440,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `planning_viktor_navigation.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit. Users see `planning_viktor_navigation.dart` when using Plans tab (second bottom tab).
-- **What this is:** `planning_viktor_navigation.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit.
+- **Human purpose:** `planning_viktor_navigation.dart` on Plans tab (second bottom tab) — Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit. Users see `planning_viktor_navigation.dart` when using Plans tab (second bottom tab).
+- **What this is:** `planning_viktor_navigation.dart` on Plans tab (second bottom tab) — Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit.
 - **Why needed:** Users see `planning_viktor_navigation.dart` when using Plans tab (second bottom tab).
 - **Contents:** Primary symbols: `PlanningViktorNavigation`.
 - **Key code names:** `PlanningViktorNavigation`
@@ -21451,10 +21451,10 @@ EN:
 - **Deletion consequence:** Brain/library compile failure in `lib/features/planning/planning_page.dart` and broken related UI/data ops.
 - **Confidence:** HIGH
 - **Owner / layer:** Planning UI
-- **Responsibilities:** Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
+- **Responsibilities:** Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** Brain/library compile failure in `lib/features/planning/planning_page.dart` and broken related UI/data ops.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, setting
 
 RU:
 
@@ -21478,8 +21478,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `recurrence_scope_dialog.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit. Users see `recurrence_scope_dialog.dart` when using Plans tab (second bottom tab).
-- **What this is:** `recurrence_scope_dialog.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit.
+- **Human purpose:** `recurrence_scope_dialog.dart` on Plans tab (second bottom tab) — Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit. Users see `recurrence_scope_dialog.dart` when using Plans tab (second bottom tab).
+- **What this is:** `recurrence_scope_dialog.dart` on Plans tab (second bottom tab) — Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit.
 - **Why needed:** Users see `recurrence_scope_dialog.dart` when using Plans tab (second bottom tab).
 - **Contents:** Primary symbols: `RecurrenceEditScopeGate`.
 - **Key code names:** `RecurrenceEditScopeGate`
@@ -21489,10 +21489,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Planning UI
-- **Responsibilities:** Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
+- **Responsibilities:** Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, quick-add tag controller, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, setting
 
 RU:
 
@@ -22385,6 +22385,44 @@ RU:
 - **Связано с:** Вкладка Plans (shell index 1)
 
 
+### `lib/features/planning/widgets/planning_day_swipe_region.dart`
+
+EN:
+
+- **Human purpose:** `planning_day_swipe_region.dart` on Plans tab (second bottom tab) — Gesture arena for horizontal date swipes scoped to the day body. Users see `planning_day_swipe_region.dart` when using Plans tab (second bottom tab).
+- **What this is:** `planning_day_swipe_region.dart` on Plans tab (second bottom tab) — Gesture arena for horizontal date swipes scoped to the day body.
+- **Why needed:** Users see `planning_day_swipe_region.dart` when using Plans tab (second bottom tab).
+- **Contents:** Primary symbols: `PlanningDaySwipeRegion`, `_PlanningDaySwipeRegionState`.
+- **Key code names:** `PlanningDaySwipeRegion`, `_PlanningDaySwipeRegionState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Planning UI
+- **Responsibilities:** Gesture arena for horizontal date swipes scoped to the day body
+- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Gesture arena for horizontal date swipes scoped to the day body
+
+RU:
+
+- **Зачем файл человеку:** `planning_day_swipe_region.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `planning_day_swipe_region` в этой feature-зоне.. Пользователь видит UI из `planning_day_swipe_region.dart` на вкладка Plans (вторая снизу).
+- **Что это:** `planning_day_swipe_region.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `planning_day_swipe_region` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `planning_day_swipe_region.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Dart-модуль `planning_day_swipe_region.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI планов
+- **Обязанности:** Поддерживает поведение `planning_day_swipe_region` в этой feature-зоне.
+- **Когда открывать:** Вкладка Plans: день, карточки, play.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Вкладка Plans (shell index 1)
+
+
 ### `lib/features/planning/widgets/planning_empty_states.dart`
 
 EN:
@@ -22606,44 +22644,6 @@ RU:
 - **Уверенность:** HIGH
 - **Владелец / слой:** UI планов
 - **Обязанности:** Поддерживает поведение `planning_list_helpers` в этой feature-зоне.
-- **Когда открывать:** Вкладка Plans: день, карточки, play.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Вкладка Plans (shell index 1)
-
-
-### `lib/features/planning/widgets/planning_day_swipe_region.dart`
-
-EN:
-
-- **Human purpose:** `planning_day_swipe_region.dart` on Plans tab (second bottom tab) — Content-only horizontal date swipe surface: keeps Planning tags, quick-entry and sort controls fixed; vertical scrolling remains native. Users see `planning_day_swipe_region.dart` when using Plans tab (second bottom tab).
-- **What this is:** `planning_day_swipe_region.dart` on Plans tab (second bottom tab) — Content-only horizontal date swipe surface: keeps Planning tags, quick-entry and sort controls fixed; vertical scrolling remains native.
-- **Why needed:** Users see `planning_day_swipe_region.dart` when using Plans tab (second bottom tab).
-- **Contents:** Primary symbols: `PlanningDaySwipeRegion`.
-- **Key code names:** `PlanningDaySwipeRegion`
-- **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** Planning UI
-- **Responsibilities:** Content-only horizontal date swipe surface: keeps Planning tags, quick-entry and sort controls fixed; vertical scrolling remains native
-- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Content-only horizontal date swipe surface: keeps Planning tags, quick-entry and sort controls fixed; vertical scrolling remains native
-
-RU:
-
-- **Зачем файл человеку:** `planning_day_swipe_region.dart` на вкладка Plans (вторая снизу) — Ограничивает свайп дат телом дня, не затрагивая меню тегов и поле создания планов.. Пользователь видит UI из `planning_day_swipe_region.dart` на вкладка Plans (вторая снизу).
-- **Что это:** `planning_day_swipe_region.dart` на вкладка Plans (вторая снизу) — Ограничивает свайп дат телом дня, не затрагивая меню тегов и поле создания планов..
-- **Зачем:** Пользователь видит UI из `planning_day_swipe_region.dart` на вкладка Plans (вторая снизу).
-- **Содержимое:** Dart-модуль `planning_day_swipe_region.dart` — классы и helpers в исходнике.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** UI планов
-- **Обязанности:** Ограничивает свайп дат телом дня, не затрагивая меню тегов и поле создания планов.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -26885,7 +26885,7 @@ EN:
 - **Why needed:** Runtime logs and kill switches must stay identical for Brain, shell, core, and features.
 - **Contents:** Diagnostics helper or kill-switch flag (logic in `runtime_flags`).
 - **Repository role:** shared diagnostics
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/data/database_service.dart`, `lib/data/plans/diagnostics/plan_duplicate_log.dart`, `lib/features/planning/planning_page.dart`, `lib/features/planning/planning_page_shell.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/data/database_service.dart`, `lib/data/plans/diagnostics/plan_duplicate_log.dart`, `lib/features/planning/planning_page.dart`, `lib/features/planning/time_view/planning_time_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -26902,7 +26902,7 @@ RU:
 - **Зачем:** Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
 - **Содержимое:** Diagnostics helper или kill-switch flag (logic in `runtime_flags`).
 - **Роль в репозитории:** shared diagnostics
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/data/database_service.dart`, `lib/data/plans/diagnostics/plan_duplicate_log.dart`, `lib/features/planning/planning_page.dart`, `lib/features/planning/planning_page_shell.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/data/database_service.dart`, `lib/data/plans/diagnostics/plan_duplicate_log.dart`, `lib/features/planning/planning_page.dart`, `lib/features/planning/time_view/planning_time_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -26960,7 +26960,7 @@ EN:
 - **Why needed:** Runtime logs and kill switches must stay identical for Brain, shell, core, and features.
 - **Contents:** Diagnostics helper or kill-switch flag (logic in `platform_log`).
 - **Repository role:** shared diagnostics
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`, `lib/main.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/timeline/timeline_view.dart`, `lib/main.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -26977,7 +26977,7 @@ RU:
 - **Зачем:** Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
 - **Содержимое:** Diagnostics helper или kill-switch flag (logic in `platform_log`).
 - **Роль в репозитории:** shared diagnostics
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`, `lib/main.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/timeline/timeline_view.dart`, `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -26998,7 +26998,7 @@ EN:
 - **Contents:** Diagnostics helper or kill-switch flag (`RuntimeLog`).
 - **Key code names:** `RuntimeLog`
 - **Repository role:** shared diagnostics
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`, `lib/main.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/timeline/timeline_view.dart`, `lib/main.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -27015,7 +27015,7 @@ RU:
 - **Зачем:** Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
 - **Содержимое:** Diagnostics helper или kill-switch flag (`RuntimeLog`).
 - **Роль в репозитории:** shared diagnostics
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/planning/planning_page_shell.dart`, `lib/features/timeline/timeline_view.dart`, `lib/main.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/timeline/timeline_view.dart`, `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -38915,7 +38915,7 @@ RU:
 
 EN:
 
-- **Human purpose:** Automated test `planning_content_only_swipe_test` — verifies only day content changes on swipe while tags stay fixed and vertical scroll works. Prevents regressions when related production code changes.
+- **Human purpose:** Automated test `planning_content_only_swipe_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
 - **What this is:** Automated test `planning_content_only_swipe_test` — verifies behavior without manual tapping.
 - **Why needed:** Prevents regressions when related production code changes.
 - **Contents:** Test cases (symbols: main).
@@ -38953,7 +38953,7 @@ RU:
 
 EN:
 
-- **Human purpose:** Automated test `planning_dense_card_date_swipe_test` — verifies gesture ownership for mouse/touch date swipes and scrolling. Prevents regressions when related production code changes.
+- **Human purpose:** Automated test `planning_dense_card_date_swipe_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
 - **What this is:** Automated test `planning_dense_card_date_swipe_test` — verifies behavior without manual tapping.
 - **Why needed:** Prevents regressions when related production code changes.
 - **Contents:** Test cases (symbols: main).
