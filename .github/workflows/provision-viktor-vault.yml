@@ -39,11 +39,39 @@ jobs:
           ssh -i "$RUNNER_TEMP/lifeos-vault-ssh" -p "$port" -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes "$user@$host" 'bash -se' <<'REMOTE'
           set -euo pipefail
           if [[ "$(id -u)" -eq 0 ]]; then SUDO=""; else SUDO="sudo -n"; fi
-          service="$($SUDO systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
-          [[ -n "$service" ]] || { echo "::error::PocketBase systemd service not found; no changes made"; exit 1; }
-          [[ "$($SUDO systemctl is-active "$service")" == active ]] || { echo "::error::PocketBase not active; no changes made"; exit 1; }
-          app_dir="$($SUDO systemctl show "$service" -p WorkingDirectory --value)"
-          [[ -d "$app_dir/pb_data" && -f "$app_dir/pb_data/data.db" ]] || { echo "::error::Cannot verify production PocketBase database; no changes made"; exit 1; }
+          # Caddy's public /api/* route targets 8102, not staging PocketBase at 8099.
+          # Identify the exact process before changing any systemd configuration.
+          readarray -t target < <($SUDO python3 - <<'PY'
+          import os,re
+          matches=[]
+          for name in os.listdir('/proc'):
+              if not name.isdigit(): continue
+              try:
+                  raw=open('/proc/'+name+'/cmdline','rb').read()
+                  args=[part.decode('utf8','replace') for part in raw.split(b'\0') if part]
+                  if not args or os.path.basename(args[0]) != 'pocketbase': continue
+                  if '--http=127.0.0.1:8102' not in args: continue
+                  dbargs=[v.removeprefix('--dir=') for v in args if v.startswith('--dir=')]
+                  if len(dbargs)!=1: continue
+                  cg=open('/proc/'+name+'/cgroup').read()
+                  units=re.findall(r'(?:^|/)([^/]+\.service)(?:/|$)',cg)
+                  if not units: continue
+                  matches.append((name,dbargs[0],units[-1]))
+              except (OSError,UnicodeError): pass
+          if len(matches)!=1: raise SystemExit('Expected exactly one public 8102 PocketBase process with a systemd unit')
+          pid,dbdir,service=matches[0]
+          if not dbdir.startswith('/opt/lifeos/') or '..' in dbdir:
+              raise SystemExit('Public PocketBase DB directory outside approved recovery deployment')
+          print(pid);print(dbdir);print(service)
+          PY
+          )
+          [[ "${#target[@]}" -eq 3 ]] || { echo "::error::Public PocketBase unit could not be identified; no changes made"; exit 1; }
+          original_pid="${target[0]}"
+          data_dir="${target[1]}"
+          service="${target[2]}"
+          [[ "$($SUDO systemctl is-active "$service")" == active ]] || { echo "::error::Public PocketBase unit not active"; exit 1; }
+          [[ -f "$data_dir/data.db" ]] || { echo "::error::Public PocketBase database missing; no changes made"; exit 1; }
+          echo "Public PocketBase identified by port 8102 and service unit; staging 8099 untouched."
           vault_dir=/etc/lifeos
           vault_file="$vault_dir/viktor-vault.env"
           $SUDO install -d -m 700 "$vault_dir"
@@ -53,7 +81,7 @@ jobs:
             echo "Existing persistent vault key preserved."
           else
             # Never generate a replacement for credentials encrypted under an unknown key.
-            existing="$($SUDO python3 - "$app_dir/pb_data/data.db" <<'PY'
+            existing="$($SUDO python3 - "$data_dir/data.db" <<'PY'
           import sqlite3,sys
           con=sqlite3.connect('file:'+sys.argv[1]+'?mode=ro',uri=True)
           try:
@@ -65,7 +93,7 @@ jobs:
           PY
             )"
             [[ "$existing" == 0 ]] || { echo "::error::Encrypted Viktor connections exist; missing master key cannot be replaced safely"; exit 1; }
-            pid="$(pgrep -f '[p]ocketbase.*serve' | head -n1 || true)"
+            pid="$original_pid"
             if [[ -n "$pid" ]] && $SUDO python3 - "$pid" <<'PY'
           import sys
           data=open('/proc/'+sys.argv[1]+'/environ','rb').read().split(b'\0')
@@ -94,8 +122,20 @@ jobs:
           $SUDO systemctl is-active --quiet "$service" ||
             { echo "::error::PocketBase did not restart successfully"; exit 1; }
           sleep 2
-          pid="$(pgrep -f '[p]ocketbase.*serve' | head -n1 || true)"
-          [[ -n "$pid" ]] || { echo "::error::PocketBase process missing after restart"; exit 1; }
+          pid="$($SUDO python3 - <<'PY'
+          import os
+          matches=[]
+          for name in os.listdir('/proc'):
+              if not name.isdigit(): continue
+              try:
+                  args=[v.decode('utf8','replace') for v in open('/proc/'+name+'/cmdline','rb').read().split(b'\0') if v]
+                  if args and os.path.basename(args[0])=='pocketbase' and '--http=127.0.0.1:8102' in args:
+                      matches.append(name)
+              except OSError: pass
+          if len(matches)==1: print(matches[0])
+          PY
+          )"
+          [[ -n "$pid" ]] || { echo "::error::Public PocketBase process missing after restart"; exit 1; }
           $SUDO python3 - "$pid" <<'PY'
           import sys
           env=open('/proc/'+sys.argv[1]+'/environ','rb').read().split(b'\0')
