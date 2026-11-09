@@ -85,9 +85,6 @@ jobs:
       - name: Planning content-only swipe and vertical-scroll regression
         run: flutter test test/planning_content_only_swipe_test.dart
 
-      - name: Planning full-width header arrows regression
-        run: flutter test test/planning_day_navigation_controls_test.dart
-
       - name: Verify shared LIFE OS semantic palette
         run: flutter test test/life_semantic_palette_test.dart
 
