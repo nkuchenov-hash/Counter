@@ -114,10 +114,10 @@ class _CalendarViewState extends State<CalendarView>
         final start = _dayFocusActive
             ? calendarWeekStartMonday(_selectedDay)
             : _weekAnchor;
-        return (start: start, end: start.add(const Duration(days: 6)));
+        return (start: start, end: calendarAddDays(start, 6));
       case CalendarViewMode.events:
         final start = calendarDateOnly(_selectedDay);
-        return (start: start, end: start.add(const Duration(days: 365)));
+        return (start: start, end: calendarAddDays(start, 365));
     }
   }
 
