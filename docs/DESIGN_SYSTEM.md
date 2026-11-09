@@ -1,3 +1,9 @@
+## Canonical quick-entry text/input contract (2026-11-09)
+
+- AppControlTokens.height is 44 logical px for standard single-line AppTextField, medium AppButton, medium AppIconButton, and AppQuickEntryRow. Radius is half the height (22 px), keeping full capsule ends and the shared 8 px input/action gap.
+- The compact one-line editor has a 24 px internal line box with a shared -2 px optical glyph offset; both typed text and the visible hint use the same alignment. Painted controls are still equal in height, tested at device pixel ratios 1/1.5/2.
+- AppQuickEntryRow must focus from its whole painted input surface, including top/bottom padding. In Timeline, the shared FocusNode belongs only to the visible active day, never hidden/offscreen fields.
+
 ## Settings visual contract (refined 2026-11-06)
 
 - **Keep bundled Onest.** Settings titles use 16 px / medium 500 with crisp neutral `#282828` ink; captions remain regular 400 / `#707070`. Do not substitute another font.
