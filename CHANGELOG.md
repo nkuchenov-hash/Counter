@@ -2,7 +2,7 @@
 
 - Customer screenshot of the published 44 logical px Timeline capsule shows Latin typed glyph ink about four **screen** pixels below its vertical center at 1.5 device pixel ratio. Existing geometry-only tests did not reject that offset.
 - In Flutter Web only, move the editable glyphs and caret up by three logical pixels within the existing 21 px one-line editor. The already-centered controller-reactive hint and native renderers retain their prior typographic geometry; the 44 px capsule, full-surface hit target and focus logic remain unchanged.
-- Tighten web rasterized Onest ink-center tests at DPR 1.5 to <=1.5 logical px, using the screenshot's Latin sample, plus Russian search text. Keep the existing native ±3px ink tolerance and strict physical surface, editor focus, and tab handling tests.
+- Preserve native Onest raster tests and Chrome fallback-font raster checks at DPR 1.5 (<=2.5 logical px). Chrome widget-test FontLoader hangs, so actual production Onest alignment must additionally be checked in a live screenshot. Added repeated-tab-return focus regression.
 - Do not claim the live product fixed until Chrome CI, deployed SHA, and visible screenshot acceptance pass.
 
 ## 2026-11-09 — Timeline quick entry focus, hit target and 44 px canonical controls [CI / live verification pending]
