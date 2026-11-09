@@ -3,8 +3,8 @@
 abstract final class AppControlTokens {
   // One compact capsule for text input, search and adjacent primary action.
   // This is the *painted* control height; do not increase the text input to
-  // match a taller button. 40 logical px provides a compact, comfortable pill.
-  static const double height = 40;
+  // match a taller button. 44 logical px improves the touch target.
+  static const double height = 44;
   static const double radius = height / 2;
   static const double fontSize = 16;
   // The borderless editor must have its own intrinsic line box, rather
@@ -15,7 +15,7 @@ abstract final class AppControlTokens {
   static const double buttonHorizontalPadding = 14;
 
   // Variants retain their scale; the default medium button and the input
-  // share the same 36px capsule. Larger controls are deliberate exceptions.
+  // share the same 44px capsule. Larger controls are deliberate exceptions.
   static const double smallHeight = 32;
   static const double largeHeight = 48;
 }

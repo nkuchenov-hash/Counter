@@ -167,7 +167,7 @@ class AppQuickEntryRow extends StatelessWidget {
   });
 
   final TextEditingController controller;
-  final FocusNode focusNode;
+  final FocusNode? focusNode;
   final String hintText;
   final String actionLabel;
   final IconData actionIcon;
@@ -187,14 +187,20 @@ class AppQuickEntryRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppControlTokens.radius),
-              child: AppTextField(
-                controller: controller,
-                focusNode: focusNode,
-                hintText: hintText,
-                textInputAction: TextInputAction.done,
-                onSubmitted: onSubmitted,
+            child: GestureDetector(
+              // The painted pill must be tappable across its FULL height,
+              // including above/below the compact EditableText line box.
+              behavior: HitTestBehavior.opaque,
+              onTap: focusNode?.requestFocus,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppControlTokens.radius),
+                child: AppTextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  hintText: hintText,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: onSubmitted,
+                ),
               ),
             ),
           ),

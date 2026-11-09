@@ -8,6 +8,7 @@ import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/features/settings/categories/category_tag_input_field.dart';
+import 'package:counter/features/timeline/timeline_header_controls.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,8 +18,8 @@ void main() {
     expect(AppTextField.height, AppControlTokens.height);
     expect(AppTextField.radius, AppControlTokens.radius);
     expect(kAppQuickEntryControlHeight, AppControlTokens.height);
-    expect(AppControlTokens.height, 40);
-    expect(AppControlTokens.radius, 20);
+    expect(AppControlTokens.height, 44);
+    expect(AppControlTokens.radius, 22);
     // Full pill, not the previous 14px rounded rectangle.
     expect(AppControlTokens.radius * 2, AppControlTokens.height);
     expect(AppControlTokens.fontSize, 16);
@@ -436,6 +437,104 @@ void main() {
     expect((settingsTypedCenter - r2.center.dy).abs(),
         lessThanOrEqualTo(3),
         reason: 'Typed Settings search text must be optically centered');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('quick-entry whole painted surface accepts taps, not just the text line',
+      (tester) async {
+    final draft = TextEditingController();
+    final focus = FocusNode();
+    addTearDown(() {
+      draft.dispose();
+      focus.dispose();
+    });
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: SizedBox(
+            width: 500,
+            child: AppQuickEntryRow(
+              controller: draft,
+              focusNode: focus,
+              hintText: 'Record',
+              actionLabel: 'Start',
+              actionIcon: Icons.play_arrow,
+              onAction: () {},
+            ),
+          ),
+        ),
+      ),
+    ));
+    final field = find.descendant(
+      of: find.byType(AppQuickEntryRow),
+      matching: find.byType(AppTextField),
+    );
+    final bounds = tester.getRect(field);
+    // The actual text box is only 21px high inside the full 44px pill.
+    await tester.tapAt(Offset(bounds.left + 80, bounds.top + 3));
+    await tester.pump();
+    expect(focus.hasFocus, isTrue);
+    await tester.enterText(find.descendant(
+      of: field, matching: find.byType(TextField),
+    ), 'AGE Planning');
+    expect(draft.text, 'AGE Planning');
+    focus.unfocus();
+    await tester.pump();
+    await tester.tapAt(Offset(bounds.left + 80, bounds.bottom - 3));
+    await tester.pump();
+    expect(focus.hasFocus, isTrue);
+    expect(draft.text, 'AGE Planning');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('inactive Timeline header cannot steal the live quick-entry FocusNode',
+      (tester) async {
+    final draft = TextEditingController();
+    final liveFocus = FocusNode();
+    addTearDown(() {
+      draft.dispose();
+      liveFocus.dispose();
+    });
+    final today = DateUtils.dateOnly(DateTime.now());
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: Column(children: [
+            TimelineHeaderControls(
+              showStatsView: false,
+              visibleDate: today,
+              visibleIsFuture: false,
+              titleController: draft,
+              titleFocus: liveFocus,
+              inputActive: true,
+              onShowStatsViewChanged: (_) {},
+              onStart: () {},
+              onPlan: () {},
+              onNewTaskForPastDate: () {},
+            ),
+            TimelineHeaderControls(
+              showStatsView: false,
+              visibleDate: today,
+              visibleIsFuture: false,
+              titleController: draft,
+              titleFocus: liveFocus,
+              inputActive: false,
+              onShowStatsViewChanged: (_) {},
+              onStart: () {},
+              onPlan: () {},
+              onNewTaskForPastDate: () {},
+            ),
+          ]),
+        ),
+      ),
+    ));
+    final fields = tester.widgetList<TextField>(find.byType(TextField)).toList();
+    expect(fields, hasLength(2));
+    expect(fields.where((field) => identical(field.focusNode, liveFocus)), hasLength(1));
+    expect(fields.where((field) => field.focusNode == null), hasLength(1));
+    await tester.tap(find.byType(AppQuickEntryRow).first);
+    await tester.pump();
+    expect(liveFocus.hasFocus, isTrue);
     expect(tester.takeException(), isNull);
   });
 

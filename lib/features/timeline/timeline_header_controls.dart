@@ -13,6 +13,7 @@ class TimelineHeaderControls extends StatelessWidget {
     required this.visibleIsFuture,
     required this.titleController,
     required this.titleFocus,
+    this.inputActive = true,
     required this.onShowStatsViewChanged,
     required this.onStart,
     required this.onPlan,
@@ -23,7 +24,8 @@ class TimelineHeaderControls extends StatelessWidget {
   final DateTime visibleDate;
   final bool visibleIsFuture;
   final TextEditingController titleController;
-  final FocusNode titleFocus;
+  final FocusNode? titleFocus;
+  final bool inputActive;
   final ValueChanged<bool> onShowStatsViewChanged;
   final VoidCallback onStart;
   final VoidCallback onPlan;
@@ -106,14 +108,20 @@ class TimelineHeaderControls extends StatelessWidget {
               desktopShell ? kShellDesktopContentHorizontalPadding : 16,
               8,
             ),
-            child: AppQuickEntryRow(
-              controller: titleController,
-              focusNode: titleFocus,
-              hintText: t(loc, 'input_placeholder_record'),
-              actionLabel: actionLabel,
-              actionIcon: actionIcon,
-              onAction: submit,
-              onSubmitted: (_) => submit(),
+            child: IgnorePointer(
+              ignoring: !inputActive,
+              child: ExcludeFocus(
+                excluding: !inputActive,
+                child: AppQuickEntryRow(
+                  controller: titleController,
+                  focusNode: inputActive ? titleFocus : null,
+                  hintText: t(loc, 'input_placeholder_record'),
+                  actionLabel: actionLabel,
+                  actionIcon: actionIcon,
+                  onAction: submit,
+                  onSubmitted: (_) => submit(),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 8),
