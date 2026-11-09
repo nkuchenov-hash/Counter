@@ -78,6 +78,7 @@ class TimelinePlanInteractionBlockState
   double _moveAccumulatedDy = 0;
   bool _resizing = false;
   bool _bodyDragActive = false;
+  bool _horizontalSwipeIntent = false;
   int? _activePointer;
   double _pendingGrabOffsetCanvasPx = 0;
   Offset? _pointerDownGlobal;
@@ -100,6 +101,7 @@ class TimelinePlanInteractionBlockState
 
   void _resetMoveGesture() {
     _bodyDragActive = false;
+    _horizontalSwipeIntent = false;
     _moveAccumulatedDy = 0;
     _pointerDownGlobal = null;
     _activePointer = null;
@@ -143,7 +145,8 @@ class TimelinePlanInteractionBlockState
   }
 
   void _captureMovePointer(PointerDownEvent event, double resizeInset) {
-    if (_activePointer != null) return;
+    // Touch and stylus use a hold-to-edit recognizer, preserving scrolling.
+    if (event.kind != PointerDeviceKind.mouse || _activePointer != null) return;
     _resetMoveGesture();
     _activePointer = event.pointer;
     _pendingGrabOffsetCanvasPx = event.localPosition.dy + resizeInset;
@@ -151,7 +154,6 @@ class TimelinePlanInteractionBlockState
     if (kDebugMode) {
       debugPrint('[TIME_VIEW_POINTER_CAPTURED_WITHOUT_VISUAL_JUMP]');
     }
-    widget.onMovePointerDown?.call();
   }
 
   void _startVisibleMove() {
@@ -161,6 +163,7 @@ class TimelinePlanInteractionBlockState
     if (kDebugMode) {
       debugPrint('[TIME_VIEW_DRAG_STARTED_ON_FIRST_MOVEMENT]');
     }
+    widget.onMovePointerDown?.call();
     widget.onVerticalDragStart?.call(_pendingGrabOffsetCanvasPx);
   }
 
@@ -169,8 +172,17 @@ class TimelinePlanInteractionBlockState
     final down = _pointerDownGlobal;
     if (down == null) return;
     final totalDelta = event.position - down;
+    if (_horizontalSwipeIntent) return;
     if (!_bodyDragActive) {
-      if (totalDelta.distanceSquared == 0) return;
+      // Keep the day pager in charge of horizontal motion on full cards.
+      // Do not lock the pager on pointer down or tiny click jitter.
+      if (totalDelta.dx.abs() >= kPlanTimeDragThresholdDesktopPx &&
+          totalDelta.dx.abs() > totalDelta.dy.abs()) {
+        _horizontalSwipeIntent = true;
+        return;
+      }
+      if (totalDelta.dy.abs() < kPlanTimeDragThresholdDesktopPx ||
+          totalDelta.dy.abs() <= totalDelta.dx.abs()) return;
       _startVisibleMove();
     }
     _trackVerticalVelocity(event.position.dy);
@@ -194,7 +206,7 @@ class TimelinePlanInteractionBlockState
     if (_activePointer != event.pointer) return;
     if (_bodyDragActive) {
       widget.onVerticalDragEnd?.call();
-    } else {
+    } else if (!_horizontalSwipeIntent) {
       widget.onMovePointerRelease?.call();
       _logBodyTap();
       widget.onBodyTap?.call();
@@ -321,12 +333,20 @@ class TimelinePlanInteractionBlockState
     _resetTouchEditMode();
   }
 
-  Widget _touchInteractionZone() {
+  Map<Type, GestureRecognizerFactory> _touchEditGestures({
+    bool touchOnly = false,
+  }) {
+    final supportedDevices = touchOnly
+        ? <PointerDeviceKind>{PointerDeviceKind.touch, PointerDeviceKind.stylus}
+        : null;
     final gestures = <Type, GestureRecognizerFactory>{};
     if (widget.onBodyTap != null) {
       gestures[TapGestureRecognizer] =
           GestureRecognizerFactoryWithHandlers<TapGestureRecognizer>(
-            () => TapGestureRecognizer(debugOwner: this),
+            () => TapGestureRecognizer(
+              debugOwner: this,
+              supportedDevices: supportedDevices,
+            ),
             (recognizer) {
               recognizer.onTap = () {
                 _logBodyTap();
@@ -341,6 +361,7 @@ class TimelinePlanInteractionBlockState
             () => LongPressGestureRecognizer(
               debugOwner: this,
               duration: _touchHoldDuration,
+              supportedDevices: supportedDevices,
             ),
             (recognizer) {
               recognizer
@@ -352,6 +373,10 @@ class TimelinePlanInteractionBlockState
           );
     }
 
+    return gestures;
+  }
+
+  Widget _touchInteractionZone() {
     return Positioned(
       top: 0,
       bottom: 0,
@@ -359,7 +384,7 @@ class TimelinePlanInteractionBlockState
       right: widget.controlsRightInset,
       child: RawGestureDetector(
         behavior: HitTestBehavior.translucent,
-        gestures: gestures,
+        gestures: _touchEditGestures(),
         child: const SizedBox.expand(),
       ),
     );
@@ -472,7 +497,10 @@ class TimelinePlanInteractionBlockState
       );
     }
 
-    return Stack(
+    return RawGestureDetector(
+      behavior: HitTestBehavior.translucent,
+      gestures: _touchEditGestures(touchOnly: true),
+      child: Stack(
       fit: StackFit.expand,
       children: [
         widget.child,
@@ -493,6 +521,7 @@ class TimelinePlanInteractionBlockState
             child: _resizeEdge(isTop: false, scheme: scheme),
           ),
       ],
+      ),
     );
   }
 }
@@ -525,33 +554,49 @@ class TimelineResizeEdgeHandle extends StatefulWidget {
 
 class TimelineResizeEdgeHandleState extends State<TimelineResizeEdgeHandle> {
   int? _activePointer;
-  double _startGlobalDy = 0;
+  Offset _startGlobalPosition = Offset.zero;
+  bool _resizeDragging = false;
+  bool _horizontalSwipeIntent = false;
 
   void _beginResize(PointerDownEvent event) {
-    if (_activePointer != null) return;
+    if (event.kind != PointerDeviceKind.mouse || _activePointer != null) return;
     _activePointer = event.pointer;
-    _startGlobalDy = event.position.dy;
-    widget.onResizeStart?.call();
+    _startGlobalPosition = event.position;
+    _resizeDragging = false;
+    _horizontalSwipeIntent = false;
   }
 
   void _updateResize(PointerMoveEvent event) {
-    if (_activePointer != event.pointer) return;
-    widget.onResizeUpdate?.call(
-      event.position.dy - _startGlobalDy,
-      event.position.dy,
-    );
+    if (_activePointer != event.pointer || _horizontalSwipeIntent) return;
+    final delta = event.position - _startGlobalPosition;
+    if (!_resizeDragging) {
+      if (delta.dx.abs() >= kPlanTimeDragThresholdDesktopPx &&
+          delta.dx.abs() > delta.dy.abs()) {
+        _horizontalSwipeIntent = true;
+        return;
+      }
+      if (delta.dy.abs() < kPlanTimeDragThresholdDesktopPx ||
+          delta.dy.abs() <= delta.dx.abs()) return;
+      _resizeDragging = true;
+      widget.onResizeStart?.call();
+    }
+    widget.onResizeUpdate?.call(delta.dy, event.position.dy);
   }
 
   void _endResize(PointerUpEvent event) {
     if (_activePointer != event.pointer) return;
     _activePointer = null;
-    widget.onResizeEnd?.call();
+    if (_resizeDragging) widget.onResizeEnd?.call();
+    _resizeDragging = false;
+    _horizontalSwipeIntent = false;
   }
 
   void _cancelResize(PointerCancelEvent event) {
     if (_activePointer != event.pointer) return;
     _activePointer = null;
-    widget.onResizeCancel?.call();
+    if (_resizeDragging) widget.onResizeCancel?.call();
+    _resizeDragging = false;
+    _horizontalSwipeIntent = false;
   }
 
   @override
