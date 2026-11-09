@@ -13,7 +13,8 @@ abstract final class AppControlTokens {
   // Optical position of visible glyph ink in Onest at browser DPR 1.5.
   // The 21px editor box is geometrically centered, but its glyph ink sits
   // ~2.7 logical px low (4 physical pixels in the 2026-11-09 screenshot).
-  // Shift ONLY the hint/editor ink, not the entire 44px tap surface.
+  // Shift ONLY the web editable text/caret, not the already-centered hint
+  // or the external 44px tap surface.
   static const double singleLineOpticalOffsetY = -3;
   static const double horizontalGap = 8;
   static const double horizontalPadding = 16;
