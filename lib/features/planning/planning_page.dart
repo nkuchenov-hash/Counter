@@ -5,10 +5,7 @@
 // ---------------------------------------------------------------------------
 
 import 'dart:async';
-import 'dart:math' as math;
 
-import 'package:counter/core/date_swipe_physics.dart';
-import 'package:counter/shared/diagnostics/performance/runtime_flags.dart';
 import 'package:counter/core/widgets/day_content_strip.dart';
 import 'package:counter/core/widgets/day_window.dart';
 import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
@@ -33,14 +30,12 @@ import 'package:counter/features/planning/time_view/planning_time_view.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_host.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
 import 'package:counter/features/planning/widgets/plan_card_reorder_settle.dart';
-import 'package:counter/features/planning/widgets/planning_day_card_list_keep_alive.dart';
 import 'package:counter/features/planning/widgets/planning_menu_overlay.dart';
 import 'package:counter/features/planning/planning_sort_mode.dart';
 import 'package:counter/features/planning/widgets/planning_bulk_bar.dart';
 import 'package:counter/features/planning/widgets/planning_empty_states.dart';
 import 'package:counter/features/planning/widgets/planning_filter_controls.dart';
 import 'package:counter/features/planning/widgets/planning_list_grouping.dart';
-import 'package:counter/features/planning/widgets/planning_frozen_day_list.dart';
 import 'package:counter/features/planning/widgets/planning_list_helpers.dart';
 import 'package:counter/features/planning/widgets/planning_category_grouped_list.dart';
 import 'package:counter/features/planning/widgets/planning_tag_grouped_list.dart';
@@ -1196,9 +1191,6 @@ class _PlanningPageState extends State<PlanningPage>
     );
   }
 
-  DateTime _dateForPageIndex(int index) =>
-      widget.mountedWindow?.dateAt(index) ?? (widget.selectedDate ?? _today);
-
   Widget _buildActiveDayBody(
     BuildContext context,
     ColorScheme scheme,
@@ -1210,95 +1202,6 @@ class _PlanningPageState extends State<PlanningPage>
         tasks,
         wallDay,
         enabled: _sortMode == PlanSortMode.time,
-      );
-    }
-    final planActualByPbId = DatabaseService.instance
-        .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
-    if (tasks.isEmpty) {
-      return PlanningDayEmptyState(
-        onFocusQuickAdd: () =>
-            FocusScope.of(context).requestFocus(_quickAddFocus),
-      );
-    }
-    if (_sortMode == PlanSortMode.time) {
-      return timeView.buildHourGridView(tasks, planActualByPbId);
-    }
-    if (_sortMode == PlanSortMode.category) {
-      return _buildCategoryGroupedView(tasks, planActualByPbId);
-    }
-    if (_sortMode == PlanSortMode.tags) {
-      return _buildTagGroupedListView(tasks, planActualByPbId);
-    }
-    return ReorderableListView.builder(
-      padding: EdgeInsets.symmetric(
-        horizontal: shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
-            ? kShellDesktopContentHorizontalPadding
-            : 8,
-        vertical: 8,
-      ),
-      buildDefaultDragHandles: false,
-      proxyDecorator: planningReorderProxyDecorator,
-      itemCount: tasks.length,
-      onReorder: (oldI, newI) => _onReorder(tasks, oldI, newI),
-      itemBuilder: (context, index) {
-        final task = tasks[index];
-        final key = _planKey(task);
-        final displayDone = _planDoneOverride[key] ?? task.isDone;
-        final canReorder = !_planSelectMode && _planCanReorderTask(task);
-        return ReorderableDelayedDragStartListener(
-          key: ValueKey(key),
-          index: index,
-          enabled: canReorder,
-          child: _planCardRow(
-            context: context,
-            task: task,
-            key: key,
-            displayDone: displayDone,
-            isSelected: _selectedPlanKeys.contains(key),
-            planActualByPbId: planActualByPbId,
-            omitLongPressForReorder: canReorder,
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDayContentForPageIndex(
-    BuildContext context,
-    ColorScheme scheme,
-    int index,
-    List<PlanningTask> visibleDayTasks,
-  ) {
-    final wallDay = _dateForPageIndex(index);
-    final isActive =
-        widget.shellTabActive &&
-        widget.selectedDate != null &&
-        (widget.mountedWindow == null ||
-            DayWindow.dateOnly(wallDay) ==
-                DayWindow.dateOnly(widget.selectedDate!));
-    final bodyEntry = DatabaseService.instance.plansBodyEntryForDate(wallDay);
-    final tasks = isActive ? visibleDayTasks : bodyEntry.tasks;
-    if (!isActive) {
-      final planActualByPbId = DatabaseService.instance
-          .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
-      if (_sortMode == PlanSortMode.time) {
-        return RepaintBoundary(
-          child: PlanningDayCardListKeepAlive(
-            child: AbsorbPointer(
-              child: timeView.buildHourGridView(tasks, planActualByPbId),
-            ),
-          ),
-        );
-      }
-      return RepaintBoundary(
-        child: PlanningDayCardListKeepAlive(
-          child: PlanningFrozenDayList(
-            tasks: tasks,
-            scheme: scheme,
-            wallDay: wallDay,
-            activeRecordingTitleNorm: _activeRecordingTitleNorm,
-          ),
-        ),
       );
     }
     final planActualByPbId = DatabaseService.instance
@@ -1508,72 +1411,27 @@ class _PlanningPageState extends State<PlanningPage>
           loading: _planQuickAddInFlight,
         ),
         Expanded(
-          child:
-              kUseMountedDayStrip &&
-                  widget.mountedWindow != null &&
-                  widget.stripController != null &&
-                  widget.onVisibleDateChanged != null
-              ? StreamBuilder<void>(
-                  stream: DatabaseService.instance.timeUpdates,
-                  builder: (context, _) {
-                    final window = widget.mountedWindow!;
-                    final visibleDate = widget.selectedDate ?? _today;
-                    final rawIdx = window.contains(visibleDate)
-                        ? window.indexOf(visibleDate)
-                        : window.indexOf(_today);
-                    final activeIndex = rawIdx
-                        .clamp(0, math.max(0, window.length - 1))
-                        .toInt();
-                    return EagerDayContentStrip(
-                      screen: 'Plans',
-                      dates: window.dates,
-                      initialIndex: activeIndex,
-                      activeIndex: activeIndex,
-                      controller: widget.stripController,
-                      physics: widget.datePagerLocked
-                          ? const NeverScrollableScrollPhysics()
-                          : const FeatherDateSwipePhysics(),
-                      scrollLocked: widget.datePagerLocked,
-                      onUserDragStart: widget.onUserDragStart,
-                      onUserDragEnd: widget.onUserDragEnd,
-                      onScrollTick: widget.onScrollTick,
-                      onIndexChanged: widget.onVisibleDateChanged!,
-                      itemBuilder: (context, date, index, isActive) {
-                        return RepaintBoundary(
-                          child: _buildDayContentForPageIndex(
-                            context,
-                            scheme,
-                            index,
-                            tasks,
-                          ),
-                        );
-                      },
-                    );
-                  },
-                )
-              : PlanningDaySwipeRegion(
-                  enabled: widget.shellTabActive &&
-                      widget.onAdjacentDayRequested != null,
-                  onDayChange: (direction) =>
-                      widget.onAdjacentDayRequested?.call(direction),
-                  child: TweenAnimationBuilder<double>(
-                    key: ValueKey<String>(
-                      'planning-content-${widget.selectedDateString}',
-                    ),
-                    tween: Tween<double>(begin: _daySlideFrom, end: 0),
-                    duration: const Duration(milliseconds: 150),
-                    curve: Curves.easeOutCubic,
-                    child: RepaintBoundary(
-                      child: _buildActiveDayBody(context, scheme, tasks),
-                    ),
-                    builder: (context, slide, dayBody) =>
-                        FractionalTranslation(
-                          translation: Offset(slide, 0),
-                          child: dayBody,
-                        ),
-                  ),
-                ),
-        ),
+          child: PlanningDaySwipeRegion(
+            enabled: widget.shellTabActive &&
+                widget.onAdjacentDayRequested != null,
+            onDayChange: (direction) =>
+                widget.onAdjacentDayRequested?.call(direction),
+            child: TweenAnimationBuilder<double>(
+              key: ValueKey<String>(
+                'planning-content-${widget.selectedDateString}',
+              ),
+              tween: Tween<double>(begin: _daySlideFrom, end: 0),
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOutCubic,
+              child: RepaintBoundary(
+                child: _buildActiveDayBody(context, scheme, tasks),
+              ),
+              builder: (context, slide, dayBody) => FractionalTranslation(
+                translation: Offset(slide, 0),
+                child: dayBody,
+              ),
+            ),
+          ),
       ],
     );
   }
