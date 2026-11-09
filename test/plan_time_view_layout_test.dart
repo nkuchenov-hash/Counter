@@ -1,4 +1,7 @@
 import 'package:counter/core/widgets/plan_time_task_card.dart';
+import 'package:counter/core/widgets/plan_time_task_card/plan_card_controls.dart';
+import 'package:counter/core/widgets/plan_time_task_card/plan_card_geometry.dart';
+import 'package:flutter/material.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/plan_time_view_layout.dart';
@@ -66,6 +69,34 @@ PlanTimeViewBlockLayout _layoutCard(
     layouts.firstWhere((l) => l.task.planRowId == id);
 
 void main() {
+  testWidgets('shared card title preserves lowercase descenders', (
+    tester,
+  ) async {
+    const title = 'Grouping, planning, typography — gyjpq';
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 340,
+              height: PlanCardGeom.titleLineHeight,
+              child: PlanCardTitleRow(
+                title: title,
+                displayIsDone: false,
+                hasRepeat: false,
+                maxLines: 1,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final textHeight = tester.getSize(find.text(title)).height;
+    expect(textHeight, greaterThan(18));
+    expect(textHeight, lessThanOrEqualTo(PlanCardGeom.titleLineHeight));
+    expect(tester.takeException(), isNull);
+  });
+
   group('Time View overlap lanes preserve every card', () {
     test('14:00–15:00 webinar and 14:30–15:15 work remain visible', () {
       final webinar = _proj(hour: 14, minute: 0, durationMin: 60, id: 'webinar');

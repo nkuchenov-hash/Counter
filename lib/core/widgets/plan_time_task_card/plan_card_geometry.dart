@@ -46,7 +46,8 @@ abstract final class PlanCardGeom {
   static const double footerTextHeight = 14;
   static const double footerBottomPad = 12;
   static const double titleTopInset = 0;
-  static const double titleLineHeight = 16;
+  // Fit the 16px title font without clipping descenders.
+  static const double titleLineHeight = 20;
   static const double titleRowHeight = 33;
   static const double timelineBlockAllowancePx = 2;
   static const double watermarkMinCardHeight = 90;

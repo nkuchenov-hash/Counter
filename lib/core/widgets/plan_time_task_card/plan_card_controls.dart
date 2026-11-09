@@ -391,7 +391,8 @@ class PlanCardTitleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final titleStyle = TextStyle(
       fontSize: 16,
-      height: 1.0,
+      // Allow full ascent and descent for letters such as g, p, q and y.
+      height: 1.2,
       fontWeight: FontWeight.w400,
       leadingDistribution: TextLeadingDistribution.even,
       decoration: displayIsDone
@@ -415,10 +416,6 @@ class PlanCardTitleRow extends StatelessWidget {
                     title,
                     maxLines: maxLines,
                     overflow: TextOverflow.ellipsis,
-                    textHeightBehavior: const TextHeightBehavior(
-                      applyHeightToFirstAscent: false,
-                      applyHeightToLastDescent: false,
-                    ),
                   ),
                 ),
               ),
