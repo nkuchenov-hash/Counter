@@ -2,7 +2,7 @@
 
 - Replaced the full-page Planning `PageView` (which translated quick-add, tags, and sort controls, and mounted multiple heavy day pages) with one persistent `PlanningPage`.
 - Horizontal swipes are now owned only by the expanded day content; drag visual feedback is capped at 60px without rebuilding the tag chrome. Vertical scrolling and deliberate card move/resize retain their own gesture ownership.
-- Date transitions use a short paint-only slide of the day canvas, keep the selected sort mode, and key the per-day stream so the previous date's tasks cannot briefly appear.
+- Date transitions use a short paint-only slide of the day canvas, keep the selected sort mode, and ignore retained waiting snapshots from the previous day without remounting the quick-entry controls.
 - Added dedicated widget regression tests for fixed controls, horizontal date navigation, vertical scroll, and jitter; added them to Windows CI. No PocketBase schema changes. Final web verification pending.
 
 ## 2026-11-09 — Correct live Onest placeholder AND typed optical center [CI and visual QA pending]
