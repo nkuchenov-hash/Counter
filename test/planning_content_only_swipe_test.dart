@@ -190,7 +190,6 @@ void main() {
               PlanningSortModeBar(
                 sortMode: PlanSortMode.custom,
                 onSortModeChanged: (_) {},
-                desktopTitle: 'Plans',
                 onAdjacentDayRequested: (direction) {
                   if (direction < 0) {
                     previous++;
