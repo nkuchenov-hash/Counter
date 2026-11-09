@@ -149,9 +149,22 @@ class ViktorTagDurationReflow {
       } on ViktorTagDurationOverflow catch (conflict) {
         final failingIndex = positions[conflict.plan.pocketRecordId] ??
             plans.length;
-        final candidates = remaining.keys
-            .where((id) => (positions[id] ?? plans.length) <= failingIndex)
-            .toList();
+        final original = <String, PlanningTask>{
+          for (final plan in plans)
+            if (plan.pocketRecordId != null) plan.pocketRecordId!: plan,
+        };
+        final candidates = remaining.keys.where((id) {
+          final source = original[id];
+          if (source == null ||
+              (positions[id] ?? plans.length) > failingIndex) {
+            return false;
+          }
+          final currentMinutes = source.endDateTime!
+              .difference(source.startTime!).inMinutes;
+          // Removing a requested reduction would consume MORE time;
+          // it cannot resolve an over-capacity day.
+          return remaining[id]! > currentMinutes;
+        }).toList();
         // Roll back the nearest preceding requested expansion, rather
         // than silently reducing a meeting or changing a recurring series.
         if (candidates.isEmpty) rethrow;
