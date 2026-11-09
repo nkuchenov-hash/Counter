@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `c80329a7` on 2026-11-09.**
+**Generated from input HEAD `1af77b1d` on 2026-11-09.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1000 — each appears **exactly once** below.
+**Tracked files:** 1002 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,8 +27,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 196 |
-| `test` | 145 |
-| `Brain/data` | 114 |
+| `test` | 146 |
+| `Brain/data` | 115 |
 | `platform build` | 83 |
 | `shared foundation` | 71 |
 | `developer tool` | 66 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 538 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 271 |
+| `PROVEN_REQUIRED` | 539 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 272 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 911 |
+| `HIGH` | 913 |
 | `MEDIUM` | 89 |
 
 ---
@@ -14925,7 +14925,7 @@ EN:
 - **Contents:** Dart helpers and types (`ViktorSchedulePreview`, `ViktorInsertionPreview`, `ViktorPlanInsertionPlanner`, `ViktorSchedulePlanner`).
 - **Key code names:** `ViktorSchedulePreview`, `ViktorInsertionPreview`, `ViktorPlanInsertionPlanner`, `ViktorSchedulePlanner`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_atomic_bulk_gateway.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/features/viktor/viktor_chat_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_atomic_bulk_gateway.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_tag_duration_reflow.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14942,13 +14942,51 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `viktor_schedule_planner`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_atomic_bulk_gateway.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/features/viktor/viktor_chat_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_atomic_bulk_gateway.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_tag_duration_reflow.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** Brain/data
 - **Обязанности:** Поддерживает операции данных в `viktor_schedule_planner`.
 - **Когда открывать:** Когда ломается поведение, связанное с `viktor_schedule_planner.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/ai/viktor_tag_duration_reflow.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — Tagged plan-duration reflow around immutable recurring, completed, and fixed-time event barriers. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Tagged plan-duration reflow around immutable recurring, completed, and fixed-time event barriers.
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`ViktorTagDurationReflow`).
+- **Key code names:** `ViktorTagDurationReflow`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** Tagged plan-duration reflow around immutable recurring, completed, and fixed-time event barriers; produces consent-gated atomic patches for flexible plans only
+- **When to open:** When behavior tied to `viktor_tag_duration_reflow.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Tagged plan-duration reflow around immutable recurring, completed, and fixed-time event barriers
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — viktor_tag_duration_reflow. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — viktor_tag_duration_reflow.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `viktor_tag_duration_reflow`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `viktor_tag_duration_reflow`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_tag_duration_reflow.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
@@ -18528,7 +18566,7 @@ EN:
 - **Contents:** Dart helpers and types (`TimeViewFixedTagPrefs`).
 - **Key code names:** `TimeViewFixedTagPrefs`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_drag_and_reschedule.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_drag_and_reschedule.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -18545,7 +18583,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `time_view_fixed_time_policy`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_drag_and_reschedule.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_drag_and_reschedule.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -40802,6 +40840,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `viktor_schedule_planner`.
 - **Когда открывать:** Падение CI или правка кода рядом с `viktor_schedule_planner`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/viktor_tag_duration_reflow_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `viktor_tag_duration_reflow_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `viktor_tag_duration_reflow_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/viktor_tag_duration_reflow_test.dart` / CI when enabled. (2) Namesake production subject: `lib/data/ai/viktor_tag_duration_reflow.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `viktor_tag_duration_reflow_test` scenario.
+- **When to open:** CI failure or changing code near `viktor_tag_duration_reflow`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `viktor_tag_duration_reflow`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `viktor_tag_duration_reflow` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `viktor_tag_duration_reflow` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `viktor_tag_duration_reflow`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/viktor_tag_duration_reflow_test.dart`. (2) Парный production-файл: `lib/data/ai/viktor_tag_duration_reflow.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `viktor_tag_duration_reflow`.
+- **Когда открывать:** Падение CI или правка кода рядом с `viktor_tag_duration_reflow`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 

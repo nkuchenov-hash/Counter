@@ -10,6 +10,8 @@ import 'viktor_plan_category.dart';
 import 'viktor_existing_plan.dart';
 import 'viktor_plan_timezone.dart';
 import 'viktor_atomic_bulk_gateway.dart';
+import 'viktor_tag_duration_reflow.dart';
+import 'package:counter/data/time_view_fixed_time_policy.dart';
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -757,6 +759,7 @@ class ViktorTagDurationRepair {
     }
     final catalog = await db.fetchTagsForCurrentUser(
         scope: TagCatalogScope.plan);
+    final fixedTagIds = await TimeViewFixedTagPrefs.load();
     if (!catalog.any((tag) => tag.defaultPlanDurationMinutes != null)) {
       throw StateError('Не найдены базовые длительности тегов. '
           'Планы не изменены.');
@@ -770,8 +773,9 @@ class ViktorTagDurationRepair {
     for (final day in days) {
       final plans = await db.getPlanningTasksForWallDate(day);
       snapshotPlans.addAll(plans);
-      final actions = <ViktorAction>[];
+      final targetDurations = <String, int>{};
       bool fixed(PlanningTask p) =>
+          isPlanFixedInTimeView(p, fixedTagIds) ||
           (db.getCategoryRuleById(p.categoryId)
                   ?.defaultPlanTime ?? '').trim().isNotEmpty;
       for (final plan in plans) {
@@ -787,37 +791,13 @@ class ViktorTagDurationRepair {
         final old = plan.endDateTime!
             .difference(plan.startTime!).inMinutes;
         if (old == duration || old < 10 || old > 1440) continue;
-        actions.add(ViktorAction.fromJson({
-          'name': 'update_plan_duration',
-          'arguments': {
-            'plan_id': plan.pocketRecordId!,
-            'expected_duration_minutes': old,
-            'duration_minutes': duration,
-            'wall_day': ViktorDateScope.key(day),
-          },
-        }));
+        targetDurations[plan.pocketRecordId!] = duration;
       }
-      if (actions.isEmpty) continue;
-      final result = const ViktorSchedulePlanner().calculate(
-          day: day, plans: plans, actions: actions, fixedTime: fixed);
-      final originals = {
-        for (final plan in plans) plan.recordIdForBackend: plan,
-      };
-      for (final changed in result.changed) {
-        final old = originals[changed.recordIdForBackend];
-        if (changed.isDone || old?.isDone == true) {
-          throw StateError('Пересчёт затрагивает завершённый план. '
-              'Ничего не изменено.');
-        }
-        if (old == null || old.startTime == null ||
-            old.endDateTime == null ||
-            changed.startTime == null ||
-            changed.endDateTime == null) {
-          throw StateError('Неполные данные плана. Изменения отменены.');
-        }
-        moves.add(ViktorBulkMove(old, changed.startTime!,
-            changed.endDateTime!, ViktorDateScope.key(day), 'compact'));
-      }
+      if (targetDurations.isEmpty) continue;
+      moves.addAll(const ViktorTagDurationReflow().calculate(
+        day: day, plans: plans, targetDurationMinutes: targetDurations,
+        fixedTime: fixed,
+      ));
     }
     if (moves.isEmpty) {
       throw StateError('Нет планов с однозначной базовой длительностью, '
@@ -833,9 +813,11 @@ class ViktorTagDurationRepair {
             tag.tagId.toString() + '|' +
             (tag.defaultPlanDurationMinutes?.toString() ?? ''),
     ]..sort();
+    final fixedTagSnapshot = fixedTagIds.toList()..sort();
     final signature = ViktorBulkPlanner.snapshot(
           snapshotPlans, const <PlanningTask>[]) +
-        '\n' + tagSnapshot.join('\n');
+        '\n' + tagSnapshot.join('\n') +
+        '\nfixed-tags:' + fixedTagSnapshot.join('|');
     return ViktorBulkPreview(moves, signature);
   }
 

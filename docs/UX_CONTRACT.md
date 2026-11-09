@@ -1,3 +1,12 @@
+## Viktor — fixed-time meeting and recurring schedule anchors (2026-11-09)
+
+- The same user's Time View fixed-time tag selections also define protected anchors on the current device; changes to those selections invalidate the preview snapshot before committing.
+- User command to restore today's and tomorrow's plan durations from tag settings must NOT shift a fixed-time meeting, recurring occurrence, completed or unsynced plan. Both start and end stay exactly as stored.
+- Recalculate flexible plan durations against canonical tag defaults, keeping each task's original relative order and placing them into the next free interval before or after protected anchors as space permits. Never patch protected tasks or recurring series.
+- For insufficient same-day space, identify the specific task and date rather than modifying fixed commitments, moving work to another day silently, or partially saving.
+- Review all resulting flexible changes together and apply only after consent, with fresh snapshot verification and an atomic server transaction.
+- This rule governs the explicit tag-duration workflow; generic user-driven edits retain their own contracts.
+
 ## Live Onest web ink correction for the *whole* editor (2026-11-09)
 
 - The deployed Timeline screenshot at DPR 1.5 reveals a 44 logical px (66 physical px) capsule centered at about physical y165, while native hint glyph ink centers about y169. The native `InputDecorator` is therefore optically low even when the editor is geometrically centered.
