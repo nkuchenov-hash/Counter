@@ -51,7 +51,7 @@ class CalendarDayEventList extends StatelessWidget {
                       ? '•'
                       : '${task.startTime!.hour.toString().padLeft(2, '0')}:${task.startTime!.minute.toString().padLeft(2, '0')}',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontSize: 10,
+                    fontSize: 12,
                     color: outsideMonth
                         ? scheme.onSurfaceVariant.withValues(alpha: 0.70)
                         : DatabaseService.instance.getCategoryColor(task.categoryId),
@@ -65,7 +65,7 @@ class CalendarDayEventList extends StatelessWidget {
             Text(
               '+$extra',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontSize: 9,
+                    fontSize: 12,
                     color: scheme.onSurfaceVariant,
                   ),
             ),
@@ -95,7 +95,7 @@ class CalendarDayEventList extends StatelessWidget {
           Text(
             t(loc, 'calendar_more_tasks').replaceFirst('%s', '$extra'),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  fontSize: 10,
+                  fontSize: 12,
                   color: scheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),
@@ -121,8 +121,11 @@ class CalendarEventPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final tone = DatabaseService.instance.getCategoryColor(task.categoryId);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+    return Tooltip(
+      message: '${_timePrefix()}${task.title}',
+      child: Container(
+      constraints: const BoxConstraints(minHeight: 23),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: tone.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(4),
@@ -135,12 +138,13 @@ class CalendarEventPill extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              fontSize: 10,
+              fontSize: 13,
               height: 1.15,
               fontWeight: FontWeight.w500,
               color: scheme.onSurface,
               decoration: task.isDone ? TextDecoration.lineThrough : null,
             ),
+      ),
       ),
     );
   }
