@@ -1,3 +1,4 @@
+import 'package:counter/core/app_control_tokens.dart';
 import 'dart:io';
 
 import 'package:counter/core/app_colors.dart';
@@ -372,7 +373,7 @@ void main() {
         find.byKey(const ValueKey('timeline-content-divider')));
       expect(divider.left, closeTo(quickEntry.left, 0.5));
       expect(divider.right, closeTo(quickEntry.right, 0.5));
-      expect(quickEntry.height, 40);
+      expect(quickEntry.height, AppControlTokens.height);
       expect(tester.takeException(), isNull);
     });
 
