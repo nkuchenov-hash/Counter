@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:counter/core/app_control_tokens.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -207,7 +208,19 @@ class AppTextField extends StatelessWidget {
                       child: Center(
                         child: SizedBox(
                           height: AppControlTokens.singleLineEditorHeight,
-                          child: inner,
+                          // Move the entire native editor as a single painted
+                          // unit; hint, input text, caret and selection remain
+                          // on the SAME baseline while compensating for the
+                          // deployed Onest font's web ink metrics.
+                          child: Transform.translate(
+                            offset: const Offset(
+                              0,
+                              kIsWeb
+                                  ? AppControlTokens.webSingleLineInkCorrectionY
+                                  : 0,
+                            ),
+                            child: inner,
+                          ),
                         ),
                       ),
                     ),

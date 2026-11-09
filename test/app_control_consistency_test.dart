@@ -123,7 +123,10 @@ void main() {
       );
       expect(tester.getRect(editor).height,
           lessThan(AppControlTokens.height));
-      expect((tester.getRect(editor).center.dy - fieldRect.center.dy).abs(),
+      // Both hint and typed editor receive a single Web ink correction.
+      final expectedCenter = fieldRect.center.dy +
+          (kIsWeb ? AppControlTokens.webSingleLineInkCorrectionY : 0);
+      expect((tester.getRect(editor).center.dy - expectedCenter).abs(),
           lessThanOrEqualTo(1));
       final searchField = find.byType(AppTextField).last;
       final searchPaint = find.descendant(
@@ -418,15 +421,22 @@ void main() {
     // native line box. Compare identical strings so a script's ascenders
     // and descenders cannot mask a layout mismatch. Chrome tests use the
     // widget-test fallback font; production Onest still needs screenshot QA.
+    // Chrome widget tests use a fallback font, which is optically ~1px
+    // above center BEFORE the production Onest correction. Absolute ink
+    // centering here cannot certify bundled Onest; validate same-string
+    // hint/typed parity rigorously and separately verify the production
+    // screenshot's ~4px downward Onest bias at DPR 1.5.
+    final expectedInkOffset =
+        kIsWeb ? AppControlTokens.webSingleLineInkCorrectionY : 0.0;
     final inkTolerance = kIsWeb ? 1.5 : 3.0;
     final timelineHintCenter = textOpticalCenter(
       r1, search: false, imageWidth: img.width, pixels: img.pixels);
     final settingsHintCenter = textOpticalCenter(
       r2, search: true, imageWidth: img.width, pixels: img.pixels);
-    expect((timelineHintCenter - r1.center.dy).abs(),
+    expect((timelineHintCenter - r1.center.dy - expectedInkOffset).abs(),
         lessThanOrEqualTo(inkTolerance),
         reason: 'Timeline hint glyph ink must align, not merely its layout box (renderer: ${kIsWeb ? 'web' : 'native'})');
-    expect((settingsHintCenter - r2.center.dy).abs(),
+    expect((settingsHintCenter - r2.center.dy - expectedInkOffset).abs(),
         lessThanOrEqualTo(inkTolerance),
         reason: 'Settings hint glyph ink must align with its capsule center (renderer: ${kIsWeb ? 'web' : 'native'})');
 
@@ -450,7 +460,7 @@ void main() {
       r1, search: false, imageWidth: typed.width, pixels: typed.pixels);
     final settingsTypedCenter = textOpticalCenter(
       r2, search: true, imageWidth: typed.width, pixels: typed.pixels);
-    debugPrint('INK_PARITY web=$kIsWeb hintTL=${(timelineHintCenter - r1.center.dy).toStringAsFixed(3)} typedTL=${(timelineTypedCenter - r1.center.dy).toStringAsFixed(3)} hintSettings=${(settingsHintCenter - r2.center.dy).toStringAsFixed(3)} typedSettings=${(settingsTypedCenter - r2.center.dy).toStringAsFixed(3)}');
+    debugPrint('INK_PARITY web=$kIsWeb hintTL=${(timelineHintCenter - r1.center.dy).toStringAsFixed(3)} typedTL=${(timelineTypedCenter - r1.center.dy).toStringAsFixed(3)} hintSettings=${(settingsHintCenter - r2.center.dy).toStringAsFixed(3)} typedSettings=${(settingsTypedCenter - r2.center.dy).toStringAsFixed(3)} expectedWebOffset=$expectedInkOffset');
     final baselineParityTolerance = kIsWeb ? 0.7 : 1.0;
     expect((timelineTypedCenter - timelineHintCenter).abs(),
         lessThanOrEqualTo(baselineParityTolerance),
@@ -458,10 +468,10 @@ void main() {
     expect((settingsTypedCenter - settingsHintCenter).abs(),
         lessThanOrEqualTo(baselineParityTolerance),
         reason: 'Typing must not shift Cyrillic glyphs from their placeholder baseline');
-    expect((timelineTypedCenter - r1.center.dy).abs(),
+    expect((timelineTypedCenter - r1.center.dy - expectedInkOffset).abs(),
         lessThanOrEqualTo(inkTolerance),
         reason: 'Typed Latin input ink must be centered within 1.5 logical px (renderer: ${kIsWeb ? 'web' : 'native'})');
-    expect((settingsTypedCenter - r2.center.dy).abs(),
+    expect((settingsTypedCenter - r2.center.dy - expectedInkOffset).abs(),
         lessThanOrEqualTo(inkTolerance),
         reason: 'Typed Settings text ink must be centered within 1.5 logical px (renderer: ${kIsWeb ? 'web' : 'native'})');
     expect(tester.takeException(), isNull);

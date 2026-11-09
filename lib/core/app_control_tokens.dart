@@ -10,6 +10,11 @@ abstract final class AppControlTokens {
   // The borderless editor must have its own intrinsic line box, rather
   // than expanding to the capsule height and leaving glyphs at the top.
   static const double singleLineEditorHeight = 21;
+  // Real deployed Onest on Flutter Web (DPR 1.5) paints both native hint
+  // and typed glyphs ~4 physical px below the capsule center despite a
+  // geometrically centered 21px editable box. Shift the WHOLE inner TextField
+  // (hint + typed ink + caret + selection), never one state independently.
+  static const double webSingleLineInkCorrectionY = -8 / 3;
   static const double horizontalGap = 8;
   static const double horizontalPadding = 16;
   static const double buttonHorizontalPadding = 14;

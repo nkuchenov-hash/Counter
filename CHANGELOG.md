@@ -1,3 +1,9 @@
+## 2026-11-09 — Correct live Onest placeholder AND typed optical center [CI and visual QA pending]
+
+- User's published screenshot proves the native hint from PR #448 is shifted about 4 physical pixels below the center of the 44px capsule at browser DPR 1.5. Chrome widget-test fallback fonts masked the real Onest ink bias.
+- Adjusted the **entire** canonical single-line native editor by −8/3 logical px on Web, so the placeholder, typed text, caret and selection remain exactly together. Kept one native text renderer, 44px pill, full hitbox and tab focus continuity; no native offset.
+- Updated Chrome geometry/pixel-parity expectations to distinguish fallback-font measurements from production Onest. Deployment and real screenshot visual acceptance remain separate gates.
+
 ## 2026-11-09 — Planning dense-card day swipes, hour-range stability and day arrows [verification pending]
 
 - Fixed a Planning Time View gesture conflict: pointer-down no longer locks the date pager; deliberate vertical drag or resize owns the gesture only after directional intent is established. Horizontal drags across cards and resize edges remain available for day paging.
