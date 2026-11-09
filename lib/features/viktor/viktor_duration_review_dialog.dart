@@ -153,10 +153,11 @@ class _ViktorTagDurationReviewDialogState
                           style: TextStyle(fontSize: 22,
                               fontWeight: FontWeight.w700)),
                       ),
-                      IconButton(
+                      AppIconButton(
                         tooltip: 'Закрыть',
                         onPressed: () => Navigator.pop(context, false),
-                        icon: const Icon(Icons.close),
+                        icon: Icons.close,
+                        variant: AppIconButtonVariant.subtle,
                       ),
                     ],
                   ),
