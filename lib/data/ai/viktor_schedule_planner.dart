@@ -346,15 +346,21 @@ class ViktorBulkMove {
 /// Status-based schedule changes resolved from actual Brain rows, not IDs
 /// guessed by a model. Both days must be previewed before writing.
 class ViktorBulkPreview {
-  const ViktorBulkPreview(this.moves, this.signature);
+  const ViktorBulkPreview(this.moves, this.signature,
+      {this.excludedPlanTitles = const <String>[]});
   final List<ViktorBulkMove> moves;
   final String signature;
+  /// Explicitly excluded changes chosen by the user after an overflow.
+  final List<String> excludedPlanTitles;
 
   String describe() {
     String hm(DateTime t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
     return [
       'Проверка массового изменения (${moves.length} планов):',
+      if (excludedPlanTitles.isNotEmpty)
+        'По выбору пользователя не изменяются: '
+        '${excludedPlanTitles.join(', ')}.',
       for (final m in moves)
         '${m.kind == 'move' ? 'Перенести' : 'Уплотнить'} «${m.plan.title}»: '
         '${m.plan.dateKey} ${hm(m.plan.startTime!)} → '
