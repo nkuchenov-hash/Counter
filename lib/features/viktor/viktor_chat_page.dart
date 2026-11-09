@@ -123,7 +123,12 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         final repair = ViktorTagDurationRepair(db);
         final preview = await repair.prepare(profileToday);
         if (!mounted) return;
-        final approved = await _confirmPreview(preview.describe());
+        final approved = await _confirmPreview(
+          'Длительности по тегам — сегодня и завтра.\n'
+          'Завершённые, закреплённые, повторяющиеся планы и планы без '
+          'однозначной базовой длительности не меняются.\n\n'
+          + preview.describe(),
+        );
         if (!mounted) return;
         if (!approved) {
           _push('Изменения отменены.');
