@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `2d8f8e3a` on 2026-11-09.**
+**Generated from input HEAD `660deebe` on 2026-11-09.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -25414,8 +25414,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `viktor_duration_review_dialog.dart` on viktor area — viktor duration review dialog. Users see `viktor_duration_review_dialog.dart` when using viktor area.
-- **What this is:** `viktor_duration_review_dialog.dart` on viktor area — viktor duration review dialog.
+- **Human purpose:** `viktor_duration_review_dialog.dart` on viktor area — Full-screen AI chat with expandable text and mic composer. Users see `viktor_duration_review_dialog.dart` when using viktor area.
+- **What this is:** `viktor_duration_review_dialog.dart` on viktor area — Full-screen AI chat with expandable text and mic composer.
 - **Why needed:** Users see `viktor_duration_review_dialog.dart` when using viktor area.
 - **Contents:** Primary symbols: `ViktorTagDurationReviewDialog`, `_ViktorTagDurationReviewDialogState`.
 - **Key code names:** `ViktorTagDurationReviewDialog`, `_ViktorTagDurationReviewDialogState`
@@ -25425,10 +25425,10 @@ EN:
 - **Deletion consequence:** Brain/library compile failure in `lib/features/viktor/viktor_chat_page.dart` and broken related UI/data ops.
 - **Confidence:** HIGH
 - **Owner / layer:** repository root
-- **Responsibilities:** Implements `ViktorTagDurationReviewDialog` and related API in `viktor_duration_review_dialog.dart`.
+- **Responsibilities:** Full-screen AI chat with expandable text and mic composer
 - **When to open:** When behavior tied to `viktor_duration_review_dialog.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Brain/library compile failure in `lib/features/viktor/viktor_chat_page.dart` and broken related UI/data ops.
-- **Connected to:** APP_STRUCTURE role: viktor duration review dialog
+- **Connected to:** APP_STRUCTURE role: Full-screen AI chat with expandable text and mic composer
 
 RU:
 
