@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `6b332fe7` on 2026-11-06; test manifest reconciled 2026-11-07.**
+**Generated from input HEAD `5f13be89` on 2026-11-09.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 995 — each appears **exactly once** below.
+**Tracked files:** 996 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -40,7 +40,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `PocketBase migration` | 21 |
 | `shared Voice system` | 20 |
 | `historical engineering record` | 18 |
-| `CI/deployment` | 16 |
+| `CI/deployment` | 17 |
 | `localization` | 13 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 537 |
+| `PROVEN_REQUIRED` | 538 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 267 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 908 |
+| `HIGH` | 909 |
 | `MEDIUM` | 87 |
 
 ---
@@ -5108,6 +5108,43 @@ RU:
 - **Связано с:** `.github/`, Flutter tooling.
 
 
+### `.github/workflows/provision-viktor-vault.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/provision-viktor-vault.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/provision-viktor-vault.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/provision-viktor-vault.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/provision-viktor-vault.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `provision-viktor-vault.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `provision-viktor-vault.yml`.
+- **When to open:** When behavior tied to `provision-viktor-vault.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `provision-viktor-vault.yml` для CI и операций репозитория. GitHub Actions читает `provision-viktor-vault.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `provision-viktor-vault.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `provision-viktor-vault.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `provision-viktor-vault.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `provision-viktor-vault.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `provision-viktor-vault.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
 ### `.github/workflows/publish-direct-apk.yml`
 
 EN:
@@ -5117,7 +5154,7 @@ EN:
 - **Why needed:** The CI system loads `.github/workflows/publish-direct-apk.yml` to run its declared triggers, permissions, jobs, and checks.
 - **Contents:** YAML workflow definition specific to `publish-direct-apk.yml`.
 - **Repository role:** CI/deployment
-- **Evidence of use:** GitHub Actions loads the direct APK publication workflow from `.github/workflows/`.
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
 - **Confidence:** HIGH
@@ -13335,7 +13372,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppTextFieldVariant`, `AppTextFieldSurface`, `AppTextField`).
 - **Key code names:** `AppTextFieldVariant`, `AppTextFieldSurface`, `AppTextField`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/app_button.dart`, `lib/core/widgets/compact_nav_controls.dart`, `lib/features/auth/auth_view.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/notes/notes_glm_surface.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/app_button.dart`, `lib/core/widgets/compact_nav_controls.dart`, `lib/core/widgets/global_app_header.dart`, `lib/core/widgets/omni_date_time_picker_dialog.dart`, `lib/core/widgets/timezone_quick_picker.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13352,7 +13389,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_text_field`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/app_button.dart`, `lib/core/widgets/compact_nav_controls.dart`, `lib/features/auth/auth_view.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/notes/notes_glm_surface.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/app_button.dart`, `lib/core/widgets/compact_nav_controls.dart`, `lib/core/widgets/global_app_header.dart`, `lib/core/widgets/omni_date_time_picker_dialog.dart`, `lib/core/widgets/timezone_quick_picker.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -15798,7 +15835,7 @@ EN:
 - **Contents:** Coordinator extensions plus links to `part` files under `health_sleep_syncs/` or `health_sleep_sync/`.
 - **Key code names:** `SleepSyncSourceTransport`, `HealthSleepSyncPhase`, `HealthSleepSyncState`, `HealthSleepSyncService`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`, `lib/features/settings/health/health_connect_settings_section.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -15815,7 +15852,7 @@ RU:
 - **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
 - **Содержимое:** Extensions + `part` файлы для health_sleep_sync.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`, `lib/features/settings/health/health_connect_settings_section.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -24888,10 +24925,10 @@ EN:
 - **Human purpose:** `timeline_continuous_history.dart` on Timeline tab (first bottom tab) — Timeline coordinator. Users see `timeline_continuous_history.dart` when using Timeline tab (first bottom tab).
 - **What this is:** `timeline_continuous_history.dart` on Timeline tab (first bottom tab) — Timeline coordinator.
 - **Why needed:** Users see `timeline_continuous_history.dart` when using Timeline tab (first bottom tab).
-- **Contents:** Primary symbols: `TimelineContinuousPage`, `_TimelineContinuousPageState`, `ContinuousTimelineHistory`, `_ContinuousTimelineHistoryState`, `_TimelineDateHeaderDelegate`.
-- **Key code names:** `TimelineContinuousPage`, `_TimelineContinuousPageState`, `ContinuousTimelineHistory`, `_ContinuousTimelineHistoryState`, `_TimelineDateHeaderDelegate`
+- **Contents:** Primary symbols: `TimelineContinuousPage`, `_TimelineContinuousPageState`, `ContinuousTimelineHistory`, `_ContinuousTimelineHistoryState`.
+- **Key code names:** `TimelineContinuousPage`, `_TimelineContinuousPageState`, `ContinuousTimelineHistory`, `_ContinuousTimelineHistoryState`
 - **Repository role:** production UI
-- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`.
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`, `test/shell_form_factor_test.dart`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Removing it breaks a required repository capability.
 - **Confidence:** MEDIUM
@@ -24908,7 +24945,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `timeline_continuous_history.dart` на вкладка Timeline (первая снизу).
 - **Содержимое:** Dart-модуль `timeline_continuous_history.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`.
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`, `test/shell_form_factor_test.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
 - **Уверенность:** MEDIUM

@@ -1,3 +1,10 @@
+## 2026-11-09 — Viktor tag-duration repair and malformed read handling [verification pending]
+
+- Added an explicitly scoped two-day command path for restoring existing plan durations from the owner's saved plan-tag defaults, without depending on an LLM proposal. Ambiguous defaults, completed/recurring/fixed-time plans, and unsafe cascades are not changed.
+- Approval preview is mandatory; subsequent fresh-day/tag revalidation and existing atomic PocketBase transaction enforce all-or-nothing writes, owner checks, collision rejection and post-commit verification.
+- Repeated AI continuations with no read tool now stop cleanly instead of looping through an internal StateError. Genuine provider content-filter refusals remain blocked.
+- Scope: Viktor only; no startup data scan, profile/timezone contract changes, or PocketBase schema updates.
+
 ## 2026-11-09 — Timeline quick entry focus, hit target and 44 px canonical controls [CI / live verification pending]
 
 - Corrected Timeline's shared quick-entry focus ownership: neighboring day pages no longer attach the same FocusNode, and inactive Timeline tabs cannot capture keyboard focus. Return to Timeline restores focus only when the draft had focus before leaving.

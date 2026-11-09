@@ -706,3 +706,149 @@ class ViktorExecutor {
           receipts.join('\n'));
   }
 }
+
+
+/// A deterministic, consent-gated operation for restoring today's and
+/// tomorrow's plan durations from the user's saved plan-tag defaults.
+/// The model never invents IDs or writes to PocketBase in this path.
+class ViktorTagDurationRepair {
+  ViktorTagDurationRepair(this.db);
+  final DatabaseService db;
+
+  static bool matches(String input) {
+    final text = input.trim().toLowerCase().replaceAll('ё', 'е');
+    return RegExp(
+      r'^(исправь|обнови|пересчитай|синхронизируй|приведи|выстави)(?:\s|$|[,.!])',
+    ).hasMatch(text) &&
+        text.contains('длительност') &&
+        text.contains('план') &&
+        text.contains('тег') &&
+        text.contains('сегодня') &&
+        text.contains('завтра') &&
+        !text.contains('не меняй') &&
+        !text.contains('не исправляй');
+  }
+
+  /// Unknown, duplicate, or conflicting tag defaults are never guessed.
+  static int? defaultMinutes(List<Tag> assigned, List<Tag> catalog) {
+    final minutes = <int>{};
+    if (assigned.isEmpty) return null;
+    for (final tag in assigned) {
+      final matches = catalog.where((item) {
+        final id = tag.pbRecordId?.trim() ?? '';
+        if (id.isNotEmpty) return item.pbRecordId == id;
+        if (tag.tagId > 0) return item.tagId == tag.tagId;
+        return item.name.trim().toLowerCase() ==
+            tag.name.trim().toLowerCase();
+      }).toList();
+      if (matches.length != 1) return null;
+      final fallback = matches.single.defaultPlanDurationMinutes;
+      if (fallback != null) minutes.add(fallback);
+    }
+    if (minutes.length != 1) return null;
+    final result = minutes.single;
+    return result >= 10 && result <= 1440 ? result : null;
+  }
+
+  Future<ViktorBulkPreview> prepare(DateTime today) async {
+    if (db.pocketBase.authStore.token.trim().isEmpty ||
+        db.pocketBase.authStore.record == null) {
+      throw StateError('Для изменения планов войдите в LIFE OS.');
+    }
+    final catalog = await db.fetchTagsForCurrentUser(
+        scope: TagCatalogScope.plan);
+    if (!catalog.any((tag) => tag.defaultPlanDurationMinutes != null)) {
+      throw StateError('Не найдены базовые длительности тегов. '
+          'Планы не изменены.');
+    }
+    final days = [
+      DateTime(today.year, today.month, today.day),
+      DateTime(today.year, today.month, today.day + 1),
+    ];
+    final snapshotPlans = <PlanningTask>[];
+    final moves = <ViktorBulkMove>[];
+    for (final day in days) {
+      final plans = await db.getPlanningTasksForWallDate(day);
+      snapshotPlans.addAll(plans);
+      final actions = <ViktorAction>[];
+      bool fixed(PlanningTask p) =>
+          (db.getCategoryRuleById(p.categoryId)
+                  ?.defaultPlanTime ?? '').trim().isNotEmpty;
+      for (final plan in plans) {
+        if (plan.isDone || plan.startTime == null ||
+            plan.endDateTime == null || plan.pocketRecordId == null ||
+            (plan.rrule ?? '').isNotEmpty ||
+            (plan.recurrenceInstanceDateKey ?? '').isNotEmpty ||
+            plan.recordIdForBackend.startsWith('virt-') ||
+            plan.recordIdForBackend.startsWith('optimistic-') ||
+            fixed(plan)) continue;
+        final duration = defaultMinutes(plan.tags, catalog);
+        if (duration == null) continue;
+        final old = plan.endDateTime!
+            .difference(plan.startTime!).inMinutes;
+        if (old == duration || old < 10 || old > 1440) continue;
+        actions.add(ViktorAction.fromJson({
+          'name': 'update_plan_duration',
+          'arguments': {
+            'plan_id': plan.pocketRecordId!,
+            'expected_duration_minutes': old,
+            'duration_minutes': duration,
+            'wall_day': ViktorDateScope.key(day),
+          },
+        }));
+      }
+      if (actions.isEmpty) continue;
+      final result = const ViktorSchedulePlanner().calculate(
+          day: day, plans: plans, actions: actions, fixedTime: fixed);
+      final originals = {
+        for (final plan in plans) plan.recordIdForBackend: plan,
+      };
+      for (final changed in result.changed) {
+        final old = originals[changed.recordIdForBackend];
+        if (changed.isDone || old?.isDone == true) {
+          throw StateError('Пересчёт затрагивает завершённый план. '
+              'Ничего не изменено.');
+        }
+        if (old == null || old.startTime == null ||
+            old.endDateTime == null ||
+            changed.startTime == null ||
+            changed.endDateTime == null) {
+          throw StateError('Неполные данные плана. Изменения отменены.');
+        }
+        moves.add(ViktorBulkMove(old, changed.startTime!,
+            changed.endDateTime!, ViktorDateScope.key(day), 'compact'));
+      }
+    }
+    if (moves.isEmpty) {
+      throw StateError('Нет планов с однозначной базовой длительностью, '
+          'требующих изменения. Планы не изменены.');
+    }
+    if (moves.length > 80) {
+      throw StateError('Более 80 затронутых планов. '
+          'Автоматическое изменение отменено.');
+    }
+    final tagSnapshot = [
+      for (final tag in catalog)
+        (tag.pbRecordId ?? '') + '|' +
+            tag.tagId.toString() + '|' +
+            (tag.defaultPlanDurationMinutes?.toString() ?? ''),
+    ]..sort();
+    final signature = ViktorBulkPlanner.snapshot(
+          snapshotPlans, const <PlanningTask>[]) +
+        '\n' + tagSnapshot.join('\n');
+    return ViktorBulkPreview(moves, signature);
+  }
+
+  Future<String> apply(ViktorBulkPreview approved,
+      DateTime today, String requestId) async {
+    final fresh = await prepare(today);
+    if (approved.signature != fresh.signature ||
+        approved.describe() != fresh.describe()) {
+      throw StateError('Планы или длительности тегов изменились '
+          'после подтверждения. Повторите предпросмотр.');
+    }
+    // One server-side transaction; no partial per-card PATCH fallback.
+    return ViktorAtomicBulkGateway(db).commit(
+        approved: fresh, requestId: requestId);
+  }
+}
