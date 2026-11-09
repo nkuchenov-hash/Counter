@@ -436,12 +436,15 @@ class _TimeViewShortStackLayout extends StatelessWidget {
                           children: [
                             SizedBox(
                               height: PlanCardGeom.titleLineHeight,
-                              child: PlanCardTitleRow(
-                                title: common.task.title,
-                                displayIsDone: common.displayIsDone,
-                                hasRepeat: common.hasRepeat,
-                                maxLines: 1,
-                                metaIcons: common.metaIcons,
+                              child: Transform.translate(
+                                offset: const Offset(0, -1),
+                                child: PlanCardTitleRow(
+                                  title: common.task.title,
+                                  displayIsDone: common.displayIsDone,
+                                  hasRepeat: common.hasRepeat,
+                                  maxLines: 1,
+                                  metaIcons: common.metaIcons,
+                                ),
                               ),
                             ),
                             if (hasSecondLine) ...[
@@ -466,7 +469,7 @@ class _TimeViewShortStackLayout extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         const Icon(
-                          Icons.calendar_today_outlined,
+                          Icons.access_time_rounded,
                           size: 13,
                           color: PlanCardTokens.timeColor,
                         ),
