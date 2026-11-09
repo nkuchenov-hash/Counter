@@ -434,7 +434,10 @@ void main() {
       'lib/features/planning/widgets/planning_day_swipe_region.dart',
     ).readAsStringSync();
     expect(swipe, contains('onHorizontalDragUpdate:'));
-    expect(swipe, contains('ValueListenableBuilder<double>'));
+    // Regressions must not restore the old 60px rubber-band GPU repaint.
+    expect(swipe, isNot(contains('ValueListenableBuilder<double>')));
+    expect(swipe, isNot(contains('Transform.translate(')));
+    expect(swipe, isNot(contains('_visualOffset')));
     expect(swipe, contains('onDayChange(direction < 0 ? 1 : -1)'));
   });
 
