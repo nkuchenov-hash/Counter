@@ -21,6 +21,7 @@ class TimelinePlanInteractionBlock extends StatefulWidget {
   const TimelinePlanInteractionBlock({
     required this.canMove,
     required this.canResize,
+    this.holdToEditOnWideTouch = false,
     required this.bulkSelectMode,
     required this.resizeHandlePx,
     required this.child,
@@ -44,6 +45,8 @@ class TimelinePlanInteractionBlock extends StatefulWidget {
 
   final bool canMove;
   final bool canResize;
+  /// Planning opts in; Calendar Week retains its immediate pointer drag.
+  final bool holdToEditOnWideTouch;
   final bool bulkSelectMode;
   final double resizeHandlePx;
   final bool isInteracting;
@@ -146,7 +149,8 @@ class TimelinePlanInteractionBlockState
 
   void _captureMovePointer(PointerDownEvent event, double resizeInset) {
     // Touch and stylus use a hold-to-edit recognizer, preserving scrolling.
-    if (event.kind != PointerDeviceKind.mouse || _activePointer != null) return;
+    if ((widget.holdToEditOnWideTouch && event.kind != PointerDeviceKind.mouse) ||
+        _activePointer != null) return;
     _resetMoveGesture();
     _activePointer = event.pointer;
     _pendingGrabOffsetCanvasPx = event.localPosition.dy + resizeInset;
@@ -441,6 +445,7 @@ class TimelinePlanInteractionBlockState
   }) {
     return TimelineResizeEdgeHandle(
       isTop: isTop,
+      mouseOnly: widget.holdToEditOnWideTouch,
       height: _resizeHandleHeight,
       active: _resizing,
       onResizeStart: widget.canResize
@@ -497,10 +502,7 @@ class TimelinePlanInteractionBlockState
       );
     }
 
-    return RawGestureDetector(
-      behavior: HitTestBehavior.translucent,
-      gestures: _touchEditGestures(touchOnly: true),
-      child: Stack(
+    final wideStack = Stack(
       fit: StackFit.expand,
       children: [
         widget.child,
@@ -521,7 +523,12 @@ class TimelinePlanInteractionBlockState
             child: _resizeEdge(isTop: false, scheme: scheme),
           ),
       ],
-      ),
+    );
+    if (!widget.holdToEditOnWideTouch) return wideStack;
+    return RawGestureDetector(
+      behavior: HitTestBehavior.translucent,
+      gestures: _touchEditGestures(touchOnly: true),
+      child: wideStack,
     );
   }
 }
@@ -529,6 +536,7 @@ class TimelinePlanInteractionBlockState
 class TimelineResizeEdgeHandle extends StatefulWidget {
   const TimelineResizeEdgeHandle({
     required this.isTop,
+    this.mouseOnly = false,
     required this.height,
     required this.active,
     required this.scheme,
@@ -539,6 +547,7 @@ class TimelineResizeEdgeHandle extends StatefulWidget {
   });
 
   final bool isTop;
+  final bool mouseOnly;
   final double height;
   final bool active;
   final ColorScheme scheme;
@@ -559,7 +568,8 @@ class TimelineResizeEdgeHandleState extends State<TimelineResizeEdgeHandle> {
   bool _horizontalSwipeIntent = false;
 
   void _beginResize(PointerDownEvent event) {
-    if (event.kind != PointerDeviceKind.mouse || _activePointer != null) return;
+    if ((widget.mouseOnly && event.kind != PointerDeviceKind.mouse) ||
+        _activePointer != null) return;
     _activePointer = event.pointer;
     _startGlobalPosition = event.position;
     _resizeDragging = false;

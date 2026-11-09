@@ -228,6 +228,7 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                     child: TimelinePlanInteractionBlock(
                   canMove: canMove,
                   canResize: canResize,
+                   holdToEditOnWideTouch: true,
                   bulkSelectMode: host.planSelectMode,
                   resizeHandlePx:
                       PlanningTimeViewCoordinator.kTimelineResizeHandlePx,

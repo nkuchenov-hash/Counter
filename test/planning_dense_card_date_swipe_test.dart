@@ -49,6 +49,7 @@ void main() {
                 TimelinePlanInteractionBlock(
                   canMove: true,
                   canResize: true,
+                  holdToEditOnWideTouch: true,
                   bulkSelectMode: false,
                   resizeHandlePx: 16,
                   blockHeightPx: 800,
@@ -126,6 +127,7 @@ void main() {
                   child: TimelinePlanInteractionBlock(
                     canMove: true,
                     canResize: true,
+                    holdToEditOnWideTouch: true,
                     bulkSelectMode: false,
                     resizeHandlePx: 16,
                     blockHeightPx: 750,
