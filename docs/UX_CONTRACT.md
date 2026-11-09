@@ -1,3 +1,9 @@
+## Live Onest web ink correction for the *whole* editor (2026-11-09)
+
+- The deployed Timeline screenshot at DPR 1.5 reveals a 44 logical px (66 physical px) capsule centered at about physical y165, while native hint glyph ink centers about y169. The native `InputDecorator` is therefore optically low even when the editor is geometrically centered.
+- Preserve **one TextField paint path** for hint and typed glyphs. Apply the measured **−4 physical px / −8⁄3 logical px** web-only correction to the **entire** native single-line editor: hint, typed text, selection and caret move together. Do not restore a separate overlay or apply a typed-only translation.
+- Browser widget tests using substitute fonts verify exact hint/typed glyph parity; they do not prove absolute Onest ink centering. Do not claim visual acceptance without viewing a fresh deployed Onest screenshot. Preserve the 44px capsule, complete tap hit surface, native alignment, and tab-reentry focus behavior.
+
 ## One rendering baseline for placeholder and typed input (2026-11-09)
 
 - Supersedes the separate-overlay/offset approach below: canonical single-line `AppTextField` must use **one native TextField/EditableText line** to render both placeholder and typed glyphs. No visually painted `Text` overlay for hint, and no web-only `Transform.translate` applied to typed text/caret.
