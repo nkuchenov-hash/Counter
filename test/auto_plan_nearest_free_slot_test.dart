@@ -409,51 +409,35 @@ void main() {
     },
   );
 
-  test(
-    'Time View date swipe prewarms adjacent day and activates after settle',
-    () {
-      final shell = File(
-        'lib/features/planning/planning_page_shell.dart',
-      ).readAsStringSync();
-      expect(shell, contains('late int _activePageIndex;'));
-      expect(shell, contains('allowImplicitScrolling: true,'));
-      expect(shell, contains('index == _activePageIndex'));
-      expect(shell, contains('if (n.depth != 0) return false;'));
-      expect(shell, contains('_activateVisiblePageAfterSettle();'));
+  test('Planning dates swipe only the content and never prewarm whole pages', () {
+    final shell = File(
+      'lib/features/planning/planning_page_shell.dart',
+    ).readAsStringSync();
+    expect(shell, contains("planning-single-persistent-page"));
+    expect(shell, contains('onAdjacentDayRequested: _stepDay'));
+    expect(shell, isNot(contains('PageView.builder(')));
+    expect(shell, isNot(contains('ensurePlansWarmWindow(')));
 
-      final pageChangedStart = shell.indexOf('onPageChanged: (int index) {');
-      final itemBuilderStart = shell.indexOf(
-        'itemBuilder: (context, index) {',
-        pageChangedStart,
-      );
-      expect(pageChangedStart, greaterThanOrEqualTo(0));
-      expect(itemBuilderStart, greaterThan(pageChangedStart));
-      final pageChangedBlock = shell.substring(
-        pageChangedStart,
-        itemBuilderStart,
-      );
-      expect(pageChangedBlock, isNot(contains('_activePageIndex')));
-      expect(pageChangedBlock, isNot(contains('onPageSettled(')));
+    final page = File(
+      'lib/features/planning/planning_page.dart',
+    ).readAsStringSync();
+    expect(page, contains('PlanningQuickAddChrome('));
+    expect(page, contains('PlanningDaySwipeRegion('));
+    expect(
+      page.indexOf('PlanningQuickAddChrome('),
+      lessThan(page.indexOf('PlanningDaySwipeRegion(')),
+    );
+    expect(page, isNot(contains('_buildDayContentForPageIndex(')));
+    expect(page, contains('snapshot.connectionState != ConnectionState.waiting'));
 
-      final planning = File(
-        'lib/features/planning/planning_page.dart',
-      ).readAsStringSync();
-      expect(planning, contains('timeView.buildFrozenHourGrid('));
+    final swipe = File(
+      'lib/features/planning/widgets/planning_day_swipe_region.dart',
+    ).readAsStringSync();
+    expect(swipe, contains('onHorizontalDragUpdate:'));
+    expect(swipe, contains('ValueListenableBuilder<double>'));
+    expect(swipe, contains('onDayChange(direction < 0 ? 1 : -1)'));
+  });
 
-      final hourGrid = File(
-        'lib/features/planning/time_view/time_view_hour_grid.dart',
-      ).readAsStringSync();
-      expect(hourGrid, contains('Widget buildFrozenHourGrid('));
-      expect(
-        hourGrid,
-        contains('aggregateSourcePlanActualSecondsForWallCalendarDay'),
-      );
-      expect(hourGrid, contains('TickerMode('));
-      expect(hourGrid, contains('enabled: false'));
-      expect(hourGrid, contains('IgnorePointer('));
-      expect(hourGrid, contains('buildHourGridView(tasks, actualByPlanId)'));
-    },
-  );
   group('workday rollover', () {
     final day = DateTime(2026, 10, 15);
 
