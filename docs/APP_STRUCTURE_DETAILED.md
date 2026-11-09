@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `e1fc908b` on 2026-11-09.**
+**Generated from input HEAD `bdb4c4d0` on 2026-11-09.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1004 — each appears **exactly once** below.
+**Tracked files:** 1003 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 197 |
-| `test` | 147 |
+| `test` | 146 |
 | `Brain/data` | 115 |
 | `platform build` | 83 |
 | `shared foundation` | 71 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 540 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 273 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 272 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 915 |
+| `HIGH` | 914 |
 | `MEDIUM` | 89 |
 
 ---
@@ -39021,44 +39021,6 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `planning_content_only_swipe`.
 - **Когда открывать:** Падение CI или правка кода рядом с `planning_content_only_swipe`.
-- **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Production files под `lib/` с похожим именем.
-
-
-### `test/planning_day_navigation_controls_test.dart`
-
-EN:
-
-- **Human purpose:** Automated test `planning_day_navigation_controls_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
-- **What this is:** Automated test `planning_day_navigation_controls_test` — verifies behavior without manual tapping.
-- **Why needed:** Prevents regressions when related production code changes.
-- **Contents:** Test cases (symbols: main).
-- **Key code names:** `main`
-- **Repository role:** test
-- **Evidence of use:** Flutter test file; exercised via `flutter test test/planning_day_navigation_controls_test.dart` / CI when enabled.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Lost automated coverage for its contract.
-- **Confidence:** HIGH
-- **Owner / layer:** tests
-- **Responsibilities:** Assert expected behavior for `planning_day_navigation_controls_test` scenario.
-- **When to open:** CI failure or changing code near `planning_day_navigation_controls`.
-- **Can it be deleted?** Lost automated coverage for its contract.
-- **Connected to:** `test/` suite; production subject near `planning_day_navigation_controls`.
-
-RU:
-
-- **Зачем файл человеку:** Автотест `planning_day_navigation_controls` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
-- **Что это:** Автотест `planning_day_navigation_controls` — проверяет поведение без ручного UI.
-- **Зачем:** Ловит регрессии при изменении связанного production-кода.
-- **Содержимое:** Test cases для сценария `planning_day_navigation_controls`.
-- **Роль в репозитории:** test
-- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/planning_day_navigation_controls_test.dart`.
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
-- **Уверенность:** HIGH
-- **Владелец / слой:** тесты
-- **Обязанности:** Assert ожидаемого поведения `planning_day_navigation_controls`.
-- **Когда открывать:** Падение CI или правка кода рядом с `planning_day_navigation_controls`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
