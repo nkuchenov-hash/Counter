@@ -1,5 +1,6 @@
 import 'package:counter/data/ai/viktor_tag_duration_reflow.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/data/time_view_fixed_time_policy.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 PlanningTask item(
@@ -98,6 +99,32 @@ void main() {
       fixedTime: (p) => p.pocketRecordId == anchor,
     ), throwsA(isA<StateError>().having(
       (e) => e.toString(), 'message', contains('Недостаточно места'))));
+  });
+
+  test('fixed-time tag protects meeting with a flexible-plan category', () {
+    const callTag = Tag(
+        tagId: 15, name: 'Meeting', pbRecordId: 'mmmmmnnnnnooooo');
+    final meeting = item(anchor, 'Client meeting', 10 * 60, 45)
+        .copyWith(tags: [callTag]);
+    final fixedTags = <String>{'mmmmmnnnnnooooo'};
+    expect(isPlanFixedInTimeView(meeting, fixedTags), isTrue);
+    final moves = planner.calculate(
+      day: day,
+      plans: [
+        item(flexible, 'Flexible work', 9 * 60, 60),
+        meeting,
+        item(later, 'Later work', 10 * 60 + 45, 30),
+      ],
+      targetDurationMinutes: {flexible: 90},
+      fixedTime: (p) => isPlanFixedInTimeView(p, fixedTags),
+    );
+    expect(moves.map((m) => m.plan.pocketRecordId), [flexible, later]);
+    expect(moves.first.start, DateTime(2026, 11, 9, 10, 45));
+    expect(moves.first.end, DateTime(2026, 11, 9, 12, 15));
+    expect(moves.last.start, DateTime(2026, 11, 9, 12, 15));
+    expect(moves.any((m) => m.plan.pocketRecordId == anchor), isFalse);
+    expect(meeting.startTime, DateTime(2026, 11, 9, 10));
+    expect(meeting.endDateTime, DateTime(2026, 11, 9, 10, 45));
   });
 
   test('unchanged protected-only day has no writes', () {
