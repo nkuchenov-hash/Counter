@@ -100,6 +100,9 @@ jobs:
       - name: Verify single canonical input and painted field-button alignment
         run: flutter test test/app_control_consistency_test.dart
 
+      - name: Verify Chrome quick-entry focus and painted text alignment
+        run: flutter test --platform chrome test/app_control_consistency_test.dart
+
       - name: Verify Android and Web production backend parity
         run: flutter test test/pocketbase_production_origin_test.dart
 
