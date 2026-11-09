@@ -2,7 +2,7 @@
 
 - Corrected Timeline's shared quick-entry focus ownership: neighboring day pages no longer attach the same FocusNode, and inactive Timeline tabs cannot capture keyboard focus. Return to Timeline restores focus only when the draft had focus before leaving.
 - Made the entire quick-entry capsule a tap target (not just its narrow editor line), while keeping the existing controller, draft persistence, start/plan behavior, and zero-await record creation unchanged.
-- Increased canonical single-line field and adjacent medium button height from 40 to 44 logical pixels, retained the full pill radius and optically adjusted hint/typed text alignment.
+- Increased canonical single-line field and adjacent medium button height from 40 to 44 logical pixels while retaining the existing proven centered text/hint line box and full pill radius.
 - Extended canonical control widget tests for full-height tapping and active-only FocusNode ownership. Web/Chrome widget execution and deployed-screen acceptance remain pending.
 
 ## 2026-11-07 — Use Xiaomi Cloud sleep sync on Android and Web [verification pending]
