@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `a8c436f7` on 2026-11-09.**
+**Generated from input HEAD `e9705e98` on 2026-11-09.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 540 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 269 |
+| `PROVEN_REQUIRED` | 538 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 271 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 913 |
-| `MEDIUM` | 87 |
+| `HIGH` | 911 |
+| `MEDIUM` | 89 |
 
 ---
 
@@ -12472,7 +12472,7 @@ EN:
 - **Contents:** Primary symbols: `LightDateSwipePhysics`, `FeatherDateSwipePhysics`.
 - **Key code names:** `LightDateSwipePhysics`, `FeatherDateSwipePhysics`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/timeline/timeline_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12489,7 +12489,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `date_swipe_physics.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`, `lib/features/timeline/timeline_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/timeline/timeline_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22357,14 +22357,14 @@ EN:
 - **Contents:** Primary symbols: `PlanningDayCardListKeepAliveState`.
 - **Key code names:** `PlanningDayCardListKeepAliveState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** Planning UI
 - **Responsibilities:** List keep-alive wrapper
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: List keep-alive wrapper
 
 RU:
@@ -22374,10 +22374,10 @@ RU:
 - **Зачем:** Пользователь видит UI из `planning_day_card_list_keep_alive.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `planning_day_card_list_keep_alive.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** UI планов
 - **Обязанности:** Поддерживает поведение `planning_day_card_list_keep_alive` в этой feature-зоне.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
@@ -22509,14 +22509,14 @@ EN:
 - **Contents:** Primary symbols: `PlanningFrozenDayList`.
 - **Key code names:** `PlanningFrozenDayList`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`, `docs/reports/PLANNING_PAGE_SEAM_AUDIT_2026-07-06.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** Planning UI
 - **Responsibilities:** Offscreen frozen day plan card list
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Offscreen frozen day plan card list
 
 RU:
@@ -22526,10 +22526,10 @@ RU:
 - **Зачем:** Пользователь видит UI из `planning_frozen_day_list.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `planning_frozen_day_list.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`, `docs/reports/PLANNING_PAGE_SEAM_AUDIT_2026-07-06.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** UI планов
 - **Обязанности:** Поддерживает поведение `planning_frozen_day_list` в этой feature-зоне.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
@@ -26885,7 +26885,7 @@ EN:
 - **Why needed:** Runtime logs and kill switches must stay identical for Brain, shell, core, and features.
 - **Contents:** Diagnostics helper or kill-switch flag (logic in `runtime_flags`).
 - **Repository role:** shared diagnostics
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/data/database_service.dart`, `lib/data/plans/diagnostics/plan_duplicate_log.dart`, `lib/features/planning/planning_page.dart`, `lib/features/planning/time_view/planning_time_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/data/database_service.dart`, `lib/data/plans/diagnostics/plan_duplicate_log.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/timeline/timeline_day_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -26902,7 +26902,7 @@ RU:
 - **Зачем:** Runtime logs и kill switches должны совпадать для Brain, shell, core и features.
 - **Содержимое:** Diagnostics helper или kill-switch flag (logic in `runtime_flags`).
 - **Роль в репозитории:** shared diagnostics
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/data/database_service.dart`, `lib/data/plans/diagnostics/plan_duplicate_log.dart`, `lib/features/planning/planning_page.dart`, `lib/features/planning/time_view/planning_time_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/data/database_service.dart`, `lib/data/plans/diagnostics/plan_duplicate_log.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/timeline/timeline_day_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
