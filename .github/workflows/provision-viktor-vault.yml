@@ -1,0 +1,119 @@
+name: Provision Viktor vault on recovered PocketBase VPS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/provision-viktor-vault.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pocketbase-production
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 8
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+    steps:
+      - name: Connect to the canonical recovered VPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${SSH_PRIVATE_KEY:-}" ]] || { echo "::error::Production SSH key missing"; exit 1; }
+          host=137.22.146.109
+          user="${SSH_USER:-root}"
+          port="${SSH_PORT:-22}"
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$RUNNER_TEMP/lifeos-vault-ssh"
+          chmod 600 "$RUNNER_TEMP/lifeos-vault-ssh"
+          ssh-keyscan -T 8 -p "$port" -H "$host" >> "$HOME/.ssh/known_hosts" 2>/dev/null
+          ssh -i "$RUNNER_TEMP/lifeos-vault-ssh" -p "$port" -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes "$user@$host" 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          if [[ "$(id -u)" -eq 0 ]]; then SUDO=""; else SUDO="sudo -n"; fi
+          service="$($SUDO systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
+          [[ -n "$service" ]] || { echo "::error::PocketBase systemd service not found; no changes made"; exit 1; }
+          [[ "$($SUDO systemctl is-active "$service")" == active ]] || { echo "::error::PocketBase not active; no changes made"; exit 1; }
+          app_dir="$($SUDO systemctl show "$service" -p WorkingDirectory --value)"
+          [[ -d "$app_dir/pb_data" && -f "$app_dir/pb_data/data.db" ]] || { echo "::error::Cannot verify production PocketBase database; no changes made"; exit 1; }
+          vault_dir=/etc/lifeos
+          vault_file="$vault_dir/viktor-vault.env"
+          $SUDO install -d -m 700 "$vault_dir"
+          if $SUDO test -f "$vault_file"; then
+            $SUDO grep -Eq '^VIKTOR_VAULT_KEY=[0-9a-f]{32}$' "$vault_file" ||
+              { echo "::error::Existing vault key invalid; refusing to overwrite"; exit 1; }
+            echo "Existing persistent vault key preserved."
+          else
+            # Never generate a replacement for credentials encrypted under an unknown key.
+            existing="$($SUDO python3 - "$app_dir/pb_data/data.db" <<'PY'
+          import sqlite3,sys
+          con=sqlite3.connect('file:'+sys.argv[1]+'?mode=ro',uri=True)
+          try:
+              table=con.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='viktor_connections'").fetchone()[0]
+              count=con.execute("SELECT count(*) FROM viktor_connections").fetchone()[0] if table else 0
+              print(count)
+          finally:
+              con.close()
+          PY
+            )"
+            [[ "$existing" == 0 ]] || { echo "::error::Encrypted Viktor connections exist; missing master key cannot be replaced safely"; exit 1; }
+            pid="$(pgrep -f '[p]ocketbase.*serve' | head -n1 || true)"
+            if [[ -n "$pid" ]] && $SUDO python3 - "$pid" <<'PY'
+          import sys
+          data=open('/proc/'+sys.argv[1]+'/environ','rb').read().split(b'\0')
+          raise SystemExit(0 if any(x.startswith(b'VIKTOR_VAULT_KEY=') for x in data) else 1)
+          PY
+            then
+              echo "::error::Process already has a Vault key but persistent key file is missing; refusing rotation"
+              exit 1
+            fi
+            printf 'VIKTOR_VAULT_KEY=%s\n' "$(openssl rand -hex 16)" | $SUDO tee "$vault_file" >/dev/null
+            $SUDO chmod 600 "$vault_file"
+            echo "New persistent master key generated on server, never exported."
+          fi
+          # Dedicated drop-in; never replace another service's environment config.
+          dropin_dir="/etc/systemd/system/${service}.d"
+          dropin_file="$dropin_dir/95-viktor-vault.conf"
+          $SUDO install -d -m 755 "$dropin_dir"
+          if $SUDO test -e "$dropin_file"; then
+            $SUDO grep -Fqx 'EnvironmentFile=/etc/lifeos/viktor-vault.env' "$dropin_file" ||
+              { echo "::error::Existing Viktor systemd drop-in differs; refusing overwrite"; exit 1; }
+          else
+            printf '[Service]\nEnvironmentFile=/etc/lifeos/viktor-vault.env\n' | $SUDO tee "$dropin_file" >/dev/null
+          fi
+          $SUDO systemctl daemon-reload
+          $SUDO systemctl restart "$service"
+          $SUDO systemctl is-active --quiet "$service" ||
+            { echo "::error::PocketBase did not restart successfully"; exit 1; }
+          sleep 2
+          pid="$(pgrep -f '[p]ocketbase.*serve' | head -n1 || true)"
+          [[ -n "$pid" ]] || { echo "::error::PocketBase process missing after restart"; exit 1; }
+          $SUDO python3 - "$pid" <<'PY'
+          import sys
+          env=open('/proc/'+sys.argv[1]+'/environ','rb').read().split(b'\0')
+          keys=[line.split(b'=',1)[1] for line in env if line.startswith(b'VIKTOR_VAULT_KEY=')]
+          assert len(keys)==1 and len(keys[0])==32, 'Vault key not loaded into PocketBase process'
+          print('VIKTOR_VAULT_KEY loaded into PocketBase: verified (secret redacted)')
+          PY
+          echo "Vault provisioning complete on canonical recovered VPS."
+          REMOTE
+
+      - name: Check production API remains healthy
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            code="$(curl -sS --connect-timeout 8 --max-time 12 -o /dev/null -w '%{http_code}' 'https://137-22-146-109.sslip.io/api/health' || true)"
+            if [[ "$code" == 200 ]]; then echo 'PocketBase production health: HTTP 200'; exit 0; fi
+            sleep 5
+          done
+          echo "::error::PocketBase health check did not return HTTP 200"
+          exit 1
