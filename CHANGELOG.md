@@ -1,3 +1,10 @@
+## 2026-11-09 — Planning dense-card day swipes, hour-range stability and day arrows [verification pending]
+
+- Fixed a Planning Time View gesture conflict: pointer-down no longer locks the date pager; deliberate vertical drag or resize owns the gesture only after directional intent is established. Horizontal drags across cards and resize edges remain available for day paging.
+- Shared the persisted visible-day hour range across Planning page instances so adjacent days no longer render an interim default 06:00 range before switching to the configured start hour (such as 09:00).
+- Added large, accessible previous/next-day icon buttons in separate side rails on Planning layouts at least 800 logical pixels wide; narrow layouts retain full-width swipe.
+- No PocketBase or data-schema changes. Flutter analyze, dense-day web/Android interaction checks, and real-device performance verification are pending; do not claim this is deployed.
+
 ## 2026-11-09 — Viktor tag-duration repair and malformed read handling [verification pending]
 
 - Added an explicitly scoped two-day command path for restoring existing plan durations from the owner's saved plan-tag defaults, without depending on an LLM proposal. Ambiguous defaults, completed/recurring/fixed-time plans, and unsafe cascades are not changed.
