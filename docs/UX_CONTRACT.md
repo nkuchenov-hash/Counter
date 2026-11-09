@@ -3,6 +3,13 @@
 - Typed text and placeholder glyphs must be optically centered within the entire field, not merely centered as an `EditableText` or `InputDecorator` box. For live Flutter Web with bundled Onest at DPR 1.5, target <=1.5 logical px ink displacement. The Chrome widget-test fallback-font check uses <=1.5 logical px and does **not** replace live screenshot acceptance. Native fonts retain their independently validated baseline.
 - Correct the web typed-text/caret glyph position without moving the already-centered hint or changing the 44 px full-surface click target, shared FocusNode ownership or draft preservation across Timeline tab/day transitions.
 
+## Viktor tag-duration commands and safe model fallback (2026-11-09)
+
+- An explicit imperative to correct today's and tomorrow's plan durations from saved tag defaults uses an application-owned deterministic read/preview/confirm path, not a speculative model-generated write.
+- Only current owned persisted flexible, incomplete, non-recurring scheduled plans with a uniquely resolved tag default may receive a duration change. Completed/fixed/recurring items must not be moved by the cascade.
+- Fetch both profile-wall days and current plan-tag defaults before preview; re-read and compare them after approval. Apply eligible patches in one existing server transaction and independently verify the saved timestamps. If preview, ownership or collision checks fail, do not partially write.
+- If an AI response repeats continue:true without a read action, end safely without inventing a read or mutation. Genuine provider content-filter refusals remain non-retryable; no automatic safety-filter bypass.
+
 ## Timeline quick-entry responsiveness (2026-11-09)
 
 - The entire painted quick-entry input surface must focus the editor on one click, including the upper/lower padding. A narrow internal EditableText hitbox must not leave dead zones.
