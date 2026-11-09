@@ -718,7 +718,7 @@ class ViktorTagDurationRepair {
   static bool matches(String input) {
     final text = input.trim().toLowerCase().replaceAll('ё', 'е');
     return RegExp(
-      r'^(исправь|обнови|пересчитай|синхронизируй|приведи|выстави)\b',
+      r'^(исправь|обнови|пересчитай|синхронизируй|приведи|выстави)(?:\s|$|[,.!])',
     ).hasMatch(text) &&
         text.contains('длительност') &&
         text.contains('план') &&
