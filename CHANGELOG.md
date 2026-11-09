@@ -1,3 +1,9 @@
+## 2026-11-09 — Viktor preserves fixed meetings and recurring events during tag duration repair [verification pending]
+
+- When restoring today's and tomorrow's plan durations, fixed-time meetings and recurring occurrences remain immovable anchors, along with completed and virtual plans.
+- Flexible tasks are reflowed around these intervals, rather than aborting the entire request on the first protected event. Existing preview, fresh data verification and atomic write safeguards are preserved.
+- Added anchored-reflow tests (fixed meeting, recurring and completed barriers, independent before/after changes, insufficient free time), wired into Android and Windows CI.
+
 ## 2026-11-09 — Planning day-content-only swipe and reduced transition work [verification pending]
 
 - Replaced the full-page Planning `PageView` (which translated quick-add, tags, and sort controls, and mounted multiple heavy day pages) with one persistent `PlanningPage`.
