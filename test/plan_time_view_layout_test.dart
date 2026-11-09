@@ -1,6 +1,8 @@
 import 'package:counter/core/widgets/plan_time_task_card.dart';
 import 'package:counter/core/widgets/plan_time_task_card/plan_card_controls.dart';
 import 'package:counter/core/widgets/plan_time_task_card/plan_card_geometry.dart';
+import 'package:counter/core/widgets/plan_time_task_card/plan_card_sections.dart';
+import 'package:counter/core/widgets/plan_time_task_card/plan_card_tags.dart';
 import 'package:flutter/material.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -98,6 +100,64 @@ void main() {
   });
 
   group('Time View overlap lanes preserve every card', () {
+    testWidgets('tall card keeps top action alignment and original tag/footer', (
+      tester,
+    ) async {
+      const height = 147.0;
+      final task = PlanningTask(
+        id: 171,
+        title: 'ASE EPA Mod task make',
+        categoryId: 1,
+        dateKey: '2026-11-09',
+        startTime: DateTime(2026, 11, 9, 9),
+        endDateTime: DateTime(2026, 11, 9, 9, 55),
+        tags: const [Tag(tagId: 81, name: 'task', color: '#FF4D4D')],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: 680,
+                height: height,
+                child: PlanTimeTaskCard(
+                  task: task,
+                  density: PlanTimeTaskCardDensity.medium,
+                  timelineVisualDensity: PlanTimeCardVisualDensity.medium,
+                  timelineBlockHeightPx: height,
+                  timeLabel: '09:00 – 09:55',
+                  showFooterBreadcrumb: false,
+                  showProgressBar: false,
+                  onPlay: () {},
+                  onOpenMenu: (_) {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      final cardTop = tester.getTopLeft(find.byType(PlanTimeTaskCard)).dy;
+      double topOf(Type widgetType) =>
+          tester.getTopLeft(find.byType(widgetType)).dy - cardTop;
+      expect(tester.getSize(find.byType(PlanTimeTaskCard)).height, height);
+      expect(topOf(PlanCardCheckbox), closeTo(12, 0.1));
+      expect(topOf(PlanCardPlayButton), closeTo(topOf(PlanCardCheckbox), 0.1));
+      expect(topOf(PlanCardMenuButton), closeTo(topOf(PlanCardCheckbox), 0.1));
+      expect(topOf(PlanCardTitleRow), closeTo(6, 0.1));
+      expect(topOf(TimeViewTagsRow), closeTo(34, 0.1));
+      expect(
+        topOf(PlanCardFooterRow),
+        closeTo(
+          height - PlanCardGeom.timeViewFooterBottomPad -
+              PlanCardGeom.footerTextHeight,
+          0.1,
+        ),
+      );
+      expect(tester.takeException(), isNull);
+    });
+
     test('14:00–15:00 webinar and 14:30–15:15 work remain visible', () {
       final webinar = _proj(hour: 14, minute: 0, durationMin: 60, id: 'webinar');
       final falcon = _proj(hour: 14, minute: 30, durationMin: 45, id: 'falcon');
