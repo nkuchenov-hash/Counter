@@ -1,3 +1,4 @@
+import 'package:counter/data/ai/viktor_executor.dart';
 import 'package:counter/data/ai/viktor_action_contract.dart';
 import 'package:counter/data/ai/viktor_agent_capabilities.dart';
 import 'package:counter/data/ai/viktor_domain_tools.dart';
@@ -10,6 +11,39 @@ Map<String, dynamic> batch(List<Map<String, dynamic>> actions) =>
     {'version': 1, 'request_id': 'request_20261021_abcdef', 'actions': actions};
 
 void main() {
+
+  test('Two-day tag default duration repair is explicit and safe', () {
+    expect(ViktorTagDurationRepair.matches(
+      'Исправь длительность всех текущих планов сегодня и завтра '
+      'учитывая их базовую длительность из настроек длительности по тегам'
+    ), isTrue);
+    expect(ViktorTagDurationRepair.matches(
+      'Какая длительность у планов сегодня и завтра по тегам?'
+    ), isFalse);
+    expect(ViktorTagDurationRepair.matches(
+      'Не меняй длительность планов сегодня и завтра по тегам'
+    ), isFalse);
+    expect(ViktorTagDurationRepair.matches(
+      'Исправь длительность планов сегодня по тегам'
+    ), isFalse);
+
+    const a = Tag(tagId: 1, name: 'Работа', pbRecordId: 'aaaaabbbbbccccc');
+    const b = Tag(tagId: 2, name: 'Здоровье', pbRecordId: 'dddddeeeeefffff');
+    const configuredA = Tag(tagId: 1, name: 'Работа',
+        pbRecordId: 'aaaaabbbbbccccc', defaultPlanDurationMinutes: 30);
+    const configuredB = Tag(tagId: 2, name: 'Здоровье',
+        pbRecordId: 'dddddeeeeefffff', defaultPlanDurationMinutes: 60);
+    expect(ViktorTagDurationRepair.defaultMinutes(
+      [a], [configuredA, configuredB]), 30);
+    expect(ViktorTagDurationRepair.defaultMinutes(
+      [a, b], [configuredA, configuredB]), isNull,
+      reason: 'Conflicting defaults may never be guessed');
+    expect(ViktorTagDurationRepair.defaultMinutes(
+      [a], [configuredB]), isNull,
+      reason: 'No tag-name fallback after a missing PocketBase relation id');
+    expect(ViktorTagDurationRepair.defaultMinutes([], [configuredA]), isNull);
+  });
+
   test('Historical notes search and exact read are safe read-only tools', () {
     expect(ViktorActionBatch.fromJson(batch([
       action('search_record_notes', {'year': 2023, 'month': 1}),
