@@ -160,8 +160,12 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           hasActions: response.actions != null,
         )) {
           if (repairedEmptyRead) {
-            throw StateError('Виктор повторно запросил данные без указания '
-                'операции чтения. Планы не изменены.');
+            // A second malformed continuation is not another read.
+            // Never invent a tool call or apply an unvalidated write.
+            if (latestReadAnswer != null) _push(latestReadAnswer);
+            _push('Модель не смогла выбрать допустимую операцию чтения. '
+                'Запрос завершён без изменений.');
+            return;
           }
           repairedEmptyRead = true;
           response = await _gateway.propose(
