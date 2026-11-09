@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 995 — each appears **exactly once** below.
+**Tracked files:** 996 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -40,7 +40,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `PocketBase migration` | 21 |
 | `shared Voice system` | 20 |
 | `historical engineering record` | 18 |
-| `CI/deployment` | 16 |
+| `CI/deployment` | 17 |
 | `localization` | 13 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 537 |
+| `PROVEN_REQUIRED` | 538 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 267 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 908 |
+| `HIGH` | 909 |
 | `MEDIUM` | 87 |
 
 ---
@@ -5141,6 +5141,43 @@ RU:
 - **Владелец / слой:** CI
 - **Обязанности:** Управляет CI-сценарием `publish-direct-apk.yml` и его границами выполнения.
 - **Когда открывать:** Когда ломается поведение, связанное с `publish-direct-apk.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
+### `.github/workflows/provision-viktor-vault.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/provision-viktor-vault.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/provision-viktor-vault.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/provision-viktor-vault.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/provision-viktor-vault.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `provision-viktor-vault.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions loads this production PocketBase/Viktor secret-vault provisioning workflow from `.github/workflows/`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `provision-viktor-vault.yml`.
+- **When to open:** When behavior tied to `provision-viktor-vault.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `provision-viktor-vault.yml` для CI и операций репозитория. GitHub Actions читает `provision-viktor-vault.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `provision-viktor-vault.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `provision-viktor-vault.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `provision-viktor-vault.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `provision-viktor-vault.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `provision-viktor-vault.yml`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `.github/`, Flutter tooling.
 
