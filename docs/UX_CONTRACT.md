@@ -1,3 +1,8 @@
+## Quick-entry visible glyph centering (2026-11-09)
+
+- Typed text and placeholder glyphs must be optically centered within the entire field, not merely centered as an `EditableText` or `InputDecorator` box. At browser DPR 1.5, use rasterized glyph measurements; target <=1.5 logical px displacement for Latin and Russian sample strings.
+- Correct visual glyph position without changing the 44 px full-surface click target, shared FocusNode ownership or draft preservation across Timeline tab/day transitions.
+
 ## Timeline quick-entry responsiveness (2026-11-09)
 
 - The entire painted quick-entry input surface must focus the editor on one click, including the upper/lower padding. A narrow internal EditableText hitbox must not leave dead zones.
