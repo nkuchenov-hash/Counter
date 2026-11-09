@@ -1,3 +1,9 @@
+## 2026-11-09 — Viktor repairs tag durations around immovable tasks [CI / deploy pending]
+
+- Corrected explicit two-day tag-duration repair to treat completed, recurring, fixed-time, unsynced, and virtual plans as immovable intervals. Flexible work is moved to subsequent free slots instead of aborting at the first protected task.
+- The scope stays narrow: no change to unrelated manual scheduling or generic AI actions, no recurrence-series mutation, and no direct client writes. Preview, fresh snapshot comparison, PocketBase atomic commit, ownership/stale checks and readback are preserved.
+- Added regression tests for fixed barriers, recurrence and completed obstacles, independent flexible changes, and unsatisfiable end-of-day schedules; included in Android and Windows CI.
+
 ## 2026-11-09 — Correct live Onest placeholder AND typed optical center [CI and visual QA pending]
 
 - User's published screenshot proves the native hint from PR #448 is shifted about 4 physical pixels below the center of the 44px capsule at browser DPR 1.5. Chrome widget-test fallback fonts masked the real Onest ink bias.
