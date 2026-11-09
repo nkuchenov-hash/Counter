@@ -1,6 +1,6 @@
 ## Quick-entry visible glyph centering (2026-11-09)
 
-- Typed text and placeholder glyphs must be optically centered within the entire field, not merely centered as an `EditableText` or `InputDecorator` box. At browser DPR 1.5, use rasterized glyph measurements; target <=1.5 logical px displacement for Latin and Russian sample strings.
+- Typed text and placeholder glyphs must be optically centered within the entire field, not merely centered as an `EditableText` or `InputDecorator` box. For Flutter Web at DPR 1.5, use rasterized glyph measurements; target <=1.5 logical px displacement for Latin and Russian sample strings. Native fonts retain their independently validated baseline.
 - Correct visual glyph position without changing the 44 px full-surface click target, shared FocusNode ownership or draft preservation across Timeline tab/day transitions.
 
 ## Timeline quick-entry responsiveness (2026-11-09)
