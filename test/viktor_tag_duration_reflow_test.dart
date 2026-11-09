@@ -97,7 +97,7 @@ void main() {
       ],
       targetDurationMinutes: {flexible: 90},
       fixedTime: (p) => p.pocketRecordId == anchor,
-    ), throwsA(isA<StateError>().having(
+    ), throwsA(isA<ViktorTagDurationOverflow>().having(
       (e) => e.toString(), 'message', contains('Недостаточно места'))));
   });
 
