@@ -1,3 +1,12 @@
+## 2026-11-09 — Planning full-width date controls [CI and device performance unverified]
+
+- Removed 96px date-navigation side rails on both sides of the persistent Planning page, restoring the full day viewport.
+- Matched desktop Planning list-card max width to the responsive Timeline record-card width, and mobile Planning list/card gutters to Timeline's 12px gutters across Custom, Category and Tags modes.
+- Moved previous/next day actions into the stationary Planning sort/control row (40px away from the segmented selector); compact phones keep content-only date swipe. Date buttons remain mounted but disabled during Time View drag/resize.
+- Avoided synchronous per-day record-duration aggregation when navigating into an empty Planning day.
+- Added layout/interaction widget regressions and a PR CI test step. No new full-page animation or per-pointer day repaint was introduced: smoothness and CPU usage still require Chrome/Android profiling before introducing real two-day sliding.
+
+
 ## 2026-11-09 — Viktor explains schedule overflow and offers feasible alternatives [verification pending]
 
 - Replaced blind failure when the two-day tag-duration repair exceeds available space with a user choice dialog identifying the conflicting plan/date/duration and explaining possible resolutions.

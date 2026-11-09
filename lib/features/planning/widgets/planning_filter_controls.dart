@@ -17,11 +17,15 @@ class PlanningSortModeBar extends StatelessWidget {
     required this.sortMode,
     required this.onSortModeChanged,
     this.desktopTitle,
+    this.onAdjacentDayRequested,
+    this.dayNavigationEnabled = true,
   });
 
   final PlanSortMode sortMode;
   final ValueChanged<PlanSortMode> onSortModeChanged;
   final String? desktopTitle;
+  final ValueChanged<int>? onAdjacentDayRequested;
+  final bool dayNavigationEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -69,6 +73,42 @@ class PlanningSortModeBar extends StatelessWidget {
         },
       ),
     );
+    // Navigation stays with fixed controls instead of taking 192px from
+    // every plan card. Narrow phones use the existing day-content swipe.
+    final showDayButtons = MediaQuery.sizeOf(context).width >= 600 &&
+        onAdjacentDayRequested != null;
+    final navigation = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AppIconButton(
+          icon: Icons.chevron_left_rounded,
+          tooltip: t(currentLocale.value, 'date_previous_day'),
+          onPressed: dayNavigationEnabled && onAdjacentDayRequested != null
+              ? () => onAdjacentDayRequested!.call(-1)
+              : null,
+          size: AppIconButtonSize.m,
+        ),
+        const SizedBox(width: 8),
+        AppIconButton(
+          icon: Icons.chevron_right_rounded,
+          tooltip: t(currentLocale.value, 'date_next_day'),
+          onPressed: dayNavigationEnabled && onAdjacentDayRequested != null
+              ? () => onAdjacentDayRequested!.call(1)
+              : null,
+          size: AppIconButtonSize.m,
+        ),
+      ],
+    );
+    final controls = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        selector,
+        if (showDayButtons) ...[
+          const SizedBox(width: 40),
+          navigation,
+        ],
+      ],
+    );
     final title = desktopTitle;
     if (title != null) {
       return Align(
@@ -81,7 +121,7 @@ class PlanningSortModeBar extends StatelessWidget {
             width: double.infinity,
             child: AppDesktopSectionControlRow(
               title: title,
-              controls: selector,
+              controls: controls,
             ),
           ),
         ),
@@ -89,10 +129,18 @@ class PlanningSortModeBar extends StatelessWidget {
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
-      child: Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: selector,
-      ),
+      child: showDayButtons
+          ? Row(
+              children: [
+                selector,
+                const Spacer(),
+                navigation,
+              ],
+            )
+          : Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: selector,
+            ),
     );
   }
 }
