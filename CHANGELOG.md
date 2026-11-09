@@ -1,3 +1,10 @@
+## 2026-11-09 — Planning dense-card day swipes, hour-range stability and day arrows [verification pending]
+
+- Fixed a Planning Time View gesture conflict: pointer-down no longer locks the date pager; deliberate vertical drag or resize owns the gesture only after directional intent is established. Horizontal drags across cards and resize edges remain available for day paging.
+- Loads the saved timeline hour range before the first page is mounted and shares it across adjacent days, preventing the interim default 06:00 range.
+- Added large, accessible previous/next-day buttons in independent side rails on Planning layouts at least 800 logical pixels wide, with 190 ms animated navigation. Narrow layouts retain swipe.
+- Touch/stylus gestures on wide screens now preserve vertical scrolling and require a hold to edit a card; immediate mouse edits remain available. Added CI regression coverage. No PocketBase or data-schema changes. Flutter analyze, dense-day web/Android interaction checks, and real-device performance verification are pending; do not claim this is deployed.
+
 ## 2026-11-09 — Canonical input baseline parity correction [CI pending]
 
 - Removed the independent visible placeholder `Text` overlay and web-only typed-text translation in the canonical single-line `AppTextField`. Placeholder and typed text now use Flutter's same native TextField paint path, style line height and 21px centered editor within the 44px capsule.
