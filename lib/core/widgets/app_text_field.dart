@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:counter/core/app_control_tokens.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -235,7 +236,13 @@ class AppTextField extends StatelessWidget {
                                             ),
                                           ),
                               ),
-                              inner,
+                              Transform.translate(
+                                offset: const Offset(
+                                  0,
+                                  kIsWeb ? AppControlTokens.singleLineOpticalOffsetY : 0,
+                                ),
+                                child: inner,
+                              ),
                             ],
                           ),
                         ),

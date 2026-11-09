@@ -1,3 +1,8 @@
+## Quick-entry visible glyph centering (2026-11-09)
+
+- Typed text and placeholder glyphs must be optically centered within the entire field, not merely centered as an `EditableText` or `InputDecorator` box. For live Flutter Web with bundled Onest at DPR 1.5, target <=1.5 logical px ink displacement. The Chrome widget-test fallback-font check uses <=1.5 logical px and does **not** replace live screenshot acceptance. Native fonts retain their independently validated baseline.
+- Correct the web typed-text/caret glyph position without moving the already-centered hint or changing the 44 px full-surface click target, shared FocusNode ownership or draft preservation across Timeline tab/day transitions.
+
 ## Viktor tag-duration commands and safe model fallback (2026-11-09)
 
 - An explicit imperative to correct today's and tomorrow's plan durations from saved tag defaults uses an application-owned deterministic read/preview/confirm path, not a speculative model-generated write.

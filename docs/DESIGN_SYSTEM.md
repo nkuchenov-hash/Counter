@@ -1,3 +1,8 @@
+## Text optical centering in canonical input (2026-11-09)
+
+- A geometrically centered 21 px editor is insufficient on Web: rendered typed Onest glyph ink was approximately four physical pixels low at browser DPR 1.5 in the production Timeline screenshot. `AppControlTokens.singleLineOpticalOffsetY` moves only the editable text and caret on Flutter Web; the separately rendered hint is already centered and stays put, as does native text.
+- Keep the external capsule and focus hitbox stationary. Chrome widget tests use a fallback font because loading Onest there can hang; their raster tolerance is 1.5 logical px. Native Onest tests retain a 3 px tolerance. Live-browser Onest screenshot acceptance is a separate requirement (target <=1.5 logical px), not something the fallback-font test can prove.
+
 ## Canonical quick-entry text/input contract (2026-11-09)
 
 - AppControlTokens.height is 44 logical px for standard single-line AppTextField, medium AppButton, medium AppIconButton, and AppQuickEntryRow. Radius is half the height (22 px), keeping full capsule ends and the shared 8 px input/action gap.

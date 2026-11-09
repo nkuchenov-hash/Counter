@@ -1,3 +1,10 @@
+## 2026-11-09 — Correct the visible quick-entry glyph baseline [pixel verification pending]
+
+- Customer screenshot of the published 44 logical px Timeline capsule shows Latin typed glyph ink about four **screen** pixels below its vertical center at 1.5 device pixel ratio. Existing geometry-only tests did not reject that offset.
+- In Flutter Web only, move the editable glyphs and caret up by 1.5 logical pixels within the existing 21 px one-line editor. The already-centered controller-reactive hint and native renderers retain their prior typographic geometry; the 44 px capsule, full-surface hit target and focus logic remain unchanged.
+- Preserve native Onest raster tests and Chrome fallback-font raster checks at DPR 1.5 (<=1.5 logical px). Chrome widget-test FontLoader hangs, so actual production Onest alignment must additionally be checked in a live screenshot. Added repeated-tab-return focus regression.
+- Do not claim the live product fixed until Chrome CI, deployed SHA, and visible screenshot acceptance pass.
+
 ## 2026-11-09 — Viktor tag-duration repair and malformed read handling [verification pending]
 
 - Added an explicitly scoped two-day command path for restoring existing plan durations from the owner's saved plan-tag defaults, without depending on an LLM proposal. Ambiguous defaults, completed/recurring/fixed-time plans, and unsafe cascades are not changed.
