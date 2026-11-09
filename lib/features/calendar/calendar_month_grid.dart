@@ -83,7 +83,10 @@ class CalendarMonthGrid extends StatelessWidget {
             builder: (context, constraints) {
               final cellH = constraints.maxHeight / monthRowCount;
               // Reserve the day header and a visible "+N more" overflow line.
-              final maxEvents = ((cellH - 42 - 18) / 25).floor().clamp(1, 6).toInt();
+              final maxEvents = ((cellH - 42 - 18) / 25)
+                  .floor()
+                  .clamp(1, 6)
+                  .toInt();
               return Stack(
                 children: [
                   Column(
@@ -209,7 +212,7 @@ class CalendarMonthDayCell extends StatelessWidget {
           ? scheme.onSurface.withValues(alpha: 0.045)
           : day.weekday >= DateTime.saturday
               ? scheme.onSurface.withValues(alpha: 0.022)
-              : Colors.transparent,
+              : scheme.surface.withValues(alpha: 0),
       clipBehavior: Clip.antiAlias,
       child: DecoratedBox(
         decoration: BoxDecoration(
@@ -221,7 +224,7 @@ class CalendarMonthDayCell extends StatelessWidget {
         child: InkWell(
           onTap: () => onTap(day),
           child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
