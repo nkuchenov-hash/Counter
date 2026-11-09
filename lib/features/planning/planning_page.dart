@@ -1432,9 +1432,9 @@ class _PlanningPageState extends State<PlanningPage>
               ),
             ),
           ),
+        ),
       ],
     );
   }
 }
 
-/// Keeps offscreen plan day bodies alive in [PageView] (P0P render warm).
