@@ -41,12 +41,8 @@ class CalendarMonthGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
-    final first = DateTime(focusedMonth.year, focusedMonth.month, 1);
-    final last = DateTime(focusedMonth.year, focusedMonth.month + 1, 0);
-    final gridStart = first.subtract(Duration(days: first.weekday - 1));
-    final gridEnd = last.add(Duration(days: 7 - last.weekday));
     final monthRowCount = currentMonthOnly
-        ? (gridEnd.difference(gridStart).inDays + 1) ~/ 7
+        ? calendarMonthWeekCount(focusedMonth)
         : 6;
     final weekdayLabels = List<String>.generate(
       7,
@@ -86,11 +82,8 @@ class CalendarMonthGrid extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final cellH = constraints.maxHeight / monthRowCount;
-              final maxEvents = cellH >= 100
-                  ? 4
-                  : cellH >= 72
-                  ? 3
-                  : 2;
+              // Reserve the day header and a visible "+N more" overflow line.
+              final maxEvents = ((cellH - 42 - 18) / 25).floor().clamp(1, 6);
               return Stack(
                 children: [
                   Column(
@@ -104,8 +97,8 @@ class CalendarMonthGrid extends StatelessWidget {
                                 Expanded(
                                   child: Builder(
                                     builder: (context) {
-                                      final day = gridStart.add(
-                                        Duration(days: row * 7 + col),
+                                      final day = calendarMonthGridDay(
+                                        focusedMonth, row, col,
                                       );
                                       return DragTarget<CalendarDragPayload>(
                                         onWillAcceptWithDetails: (details) => details.data.canMove,
@@ -212,19 +205,28 @@ class CalendarMonthDayCell extends StatelessWidget {
     final scheduled = tasks.where((t) => t.startTime != null).toList();
 
     return Material(
-      color: _inMonth
-          ? Colors.transparent
-          : scheme.surfaceContainerLow.withValues(alpha: 0.48),
+      color: !_inMonth
+          ? scheme.onSurface.withValues(alpha: 0.045)
+          : day.weekday >= DateTime.saturday
+              ? scheme.onSurface.withValues(alpha: 0.022)
+              : Colors.transparent,
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(
+            right: BorderSide(color: scheme.onSurface.withValues(alpha: 0.14)),
+            bottom: BorderSide(color: scheme.onSurface.withValues(alpha: 0.14)),
+          ),
+        ),
+        child: InkWell(
         onTap: () => onTap(day),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(
-                  height: 40,
+                  height: 30,
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: _CalendarDayNumberBadge(
@@ -251,6 +253,7 @@ class CalendarMonthDayCell extends StatelessWidget {
               ],
             ),
         ),
+        ),
       ),
     );
   }
@@ -266,7 +269,7 @@ class _CalendarDayNumberBadge extends StatelessWidget {
     required this.scheme,
   });
 
-  static const double _size = 40;
+  static const double _size = 34;
 
   final String label;
   final bool inMonth;
@@ -309,7 +312,7 @@ class _CalendarDayNumberBadge extends StatelessWidget {
               fontWeight: selected || isToday
                   ? FontWeight.w700
                   : FontWeight.w500,
-              fontSize: 18,
+              fontSize: 17,
               height: 1,
               color: selected ? scheme.surface : (isToday ? scheme.primary : fg),
             ),
