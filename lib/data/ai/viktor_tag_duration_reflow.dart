@@ -1,6 +1,31 @@
 import 'package:counter/data/models.dart';
 import 'viktor_schedule_planner.dart';
 
+/// An explicit scheduling conflict, not a provider or database failure.
+/// Consumers can offer a feasible subset without changing protected events.
+class ViktorTagDurationOverflow implements Exception {
+  const ViktorTagDurationOverflow({
+    required this.day,
+    required this.plan,
+    required this.minutes,
+  });
+  final DateTime day;
+  final PlanningTask plan;
+  final int minutes;
+
+  @override
+  String toString() => 'Недостаточно места '
+      '${day.day}.${day.month} для плана «${plan.title}» '
+      '(${minutes} мин). Закреплённые и повторяющиеся '
+      'события остаются на месте. Ничего не сохранено.';
+}
+
+class ViktorTagDurationSubset {
+  const ViktorTagDurationSubset(this.moves, this.excludedPlans);
+  final List<ViktorBulkMove> moves;
+  final List<String> excludedPlans;
+}
+
 /// Resolve flexible plan durations around immovable calendar reservations.
 ///
 /// The ordinary AI edit planner must stay conservative for arbitrary moves.
@@ -82,10 +107,9 @@ class ViktorTagDurationReflow {
           candidate.month != day.month || candidate.day != day.day ||
           end.year != day.year || end.month != day.month ||
           end.day != day.day) {
-        throw StateError('Недостаточно места ${day.day}.${day.month} '
-            'для плана «${plan.title}» (${minutes} мин): '
-            'нельзя сдвигать закреплённые или повторяющиеся события. '
-            'Ничего не сохранено.');
+        throw ViktorTagDurationOverflow(
+          day: day, plan: plan, minutes: minutes,
+        );
       }
       if (candidate != originalStart || end != originalEnd) {
         moves.add(ViktorBulkMove(
@@ -95,5 +119,50 @@ class ViktorTagDurationReflow {
       cursor = end;
     }
     return moves;
+  }
+
+  /// Recompute a genuine alternative: revert only conflicting duration
+  /// requests until all remaining requested changes fit the day. Every
+  /// iteration uses the exact same protected barriers and standard preview.
+  /// No writes occur here; the user must still approve atomic commit.
+  ViktorTagDurationSubset calculateFeasibleSubset({
+    required DateTime day,
+    required List<PlanningTask> plans,
+    required Map<String, int> targetDurationMinutes,
+    required bool Function(PlanningTask) fixedTime,
+  }) {
+    final remaining = Map<String, int>.from(targetDurationMinutes);
+    final excluded = <String>[];
+    final positions = <String, int>{
+      for (var i = 0; i < plans.length; i++)
+        if (plans[i].pocketRecordId != null) plans[i].pocketRecordId!: i,
+    };
+    while (remaining.isNotEmpty) {
+      try {
+        return ViktorTagDurationSubset(
+          calculate(
+            day: day, plans: plans,
+            targetDurationMinutes: remaining, fixedTime: fixedTime,
+          ),
+          List<String>.unmodifiable(excluded),
+        );
+      } on ViktorTagDurationOverflow catch (conflict) {
+        final failingIndex = positions[conflict.plan.pocketRecordId] ??
+            plans.length;
+        final candidates = remaining.keys
+            .where((id) => (positions[id] ?? plans.length) <= failingIndex)
+            .toList();
+        // Roll back the nearest preceding requested expansion, rather
+        // than silently reducing a meeting or changing a recurring series.
+        if (candidates.isEmpty) rethrow;
+        candidates.sort((a, b) =>
+            (positions[b] ?? 0).compareTo(positions[a] ?? 0));
+        final removedId = candidates.first;
+        remaining.remove(removedId);
+        final old = plans.firstWhere((p) => p.pocketRecordId == removedId);
+        excluded.add(old.title);
+      }
+    }
+    return ViktorTagDurationSubset(const [], List.unmodifiable(excluded));
   }
 }
