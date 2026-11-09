@@ -1,3 +1,10 @@
+## 2026-11-09 — Planning swipe paint reduction and arrow spacing [verification pending]
+
+- Removed the fake 60px drag translation and 150ms incoming-day slide that made the timeline snap and caused expensive whole-canvas repaints during horizontal pointer motion.
+- Date swipe now accumulates direction without rebuilding or repainting day content during the drag and commits exactly one day change on release. Vertical scrolling and card drag/resize gesture handling remain unchanged.
+- Expanded independent side arrow rails from 64px to 96px: each large 48px arrow is separated by 40px of empty space from the Planning content.
+- Added a widget regression asserting stable day position/build count through 20 pointer updates. No backend or data-model changes; profile-mode performance measurement still pending.
+
 ## 2026-11-09 — Viktor preserves fixed meetings and recurring events during tag duration repair [verification pending]
 
 - Protected-tag detection also uses existing Time View fixed-tag preferences on the current device; preview signatures include those selections.

@@ -122,4 +122,50 @@ void main() {
     await tester.pumpAndSettle();
     expect(changes, 0);
   });
+
+  testWidgets('dragging never repaints or displaces the large day canvas', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1100, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var builds = 0;
+    final changes = <int>[];
+    const bodyKey = ValueKey('stable-day-content');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PlanningDaySwipeRegion(
+            onDayChange: changes.add,
+            child: Builder(
+              builder: (context) {
+                builds++;
+                return const SizedBox.expand(
+                  key: bodyKey,
+                  child: ColoredBox(color: Colors.white),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    final initialPosition = tester.getTopLeft(find.byKey(bodyKey));
+    final initialBuilds = builds;
+    final gesture = await tester.startGesture(
+      const Offset(900, 400),
+      kind: PointerDeviceKind.touch,
+    );
+    await gesture.moveBy(const Offset(-32, 0));
+    await tester.pump(const Duration(milliseconds: 16));
+    for (var i = 0; i < 20; i++) {
+      await gesture.moveBy(const Offset(-12, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(tester.getTopLeft(find.byKey(bodyKey)), initialPosition);
+      expect(builds, initialBuilds);
+      expect(changes, isEmpty);
+    }
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(changes, <int>[1]);
+  });
 }

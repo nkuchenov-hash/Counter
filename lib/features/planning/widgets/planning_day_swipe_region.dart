@@ -7,6 +7,10 @@ import 'package:flutter/material.dart';
 /// Unlike an outer PageView, this does not mount three whole Planning pages or
 /// rebuild the tag catalog with every swipe. The surrounding vertical scroll
 /// keeps ownership of vertical motion; card hold-to-edit owns long presses.
+///
+/// Never visually translate a heavy day during drag: without a mounted adjacent
+/// page that creates a fake 60px rubber-band snap and forces GPU repaints on
+/// every pointer update. The selected day changes once, on release.
 class PlanningDaySwipeRegion extends StatefulWidget {
   const PlanningDaySwipeRegion({
     super.key,
@@ -27,27 +31,16 @@ class PlanningDaySwipeRegion extends StatefulWidget {
 class _PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
   static const double _commitDistancePx = 12;
   static const double _commitVelocityPxPerSecond = 140;
-  static const double _visualDragLimitPx = 60;
-
-  final ValueNotifier<double> _visualOffset = ValueNotifier<double>(0);
   double _dragDx = 0;
-
-  @override
-  void dispose() {
-    _visualOffset.dispose();
-    super.dispose();
-  }
 
   void _reset() {
     _dragDx = 0;
-    _visualOffset.value = 0;
   }
 
   void _onDragUpdate(DragUpdateDetails details) {
     if (!widget.enabled) return;
+    // No setState, notifier, layout or paint updates while the finger moves.
     _dragDx += details.primaryDelta ?? details.delta.dx;
-    _visualOffset.value =
-        _dragDx.clamp(-_visualDragLimitPx, _visualDragLimitPx).toDouble();
   }
 
   void _onDragEnd(DragEndDetails details) {
@@ -72,16 +65,7 @@ class _PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
       onHorizontalDragUpdate: widget.enabled ? _onDragUpdate : null,
       onHorizontalDragEnd: widget.enabled ? _onDragEnd : null,
       onHorizontalDragCancel: widget.enabled ? _reset : null,
-      child: ClipRect(
-        child: ValueListenableBuilder<double>(
-          valueListenable: _visualOffset,
-          child: widget.child,
-          builder: (context, offset, child) => Transform.translate(
-            offset: Offset(offset, 0),
-            child: child,
-          ),
-        ),
-      ),
+      child: widget.child,
     );
   }
 }

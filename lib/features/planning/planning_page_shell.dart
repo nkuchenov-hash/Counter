@@ -115,7 +115,13 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
   Widget _sideArrow(BuildContext context, {required bool previous}) {
     final scheme = Theme.of(context).colorScheme;
     return Center(
-      child: DecoratedBox(
+      // Keep a full 40px clear gutter between the 48px arrow and day body.
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: previous ? 8 : 40,
+          right: previous ? 40 : 8,
+        ),
+        child: DecoratedBox(
         decoration: BoxDecoration(
           color: scheme.surface,
           borderRadius: BorderRadius.circular(14),
@@ -135,6 +141,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
               ? () => _stepDay(previous ? -1 : 1)
               : null,
         ),
+      ),
       ),
     );
   }
@@ -164,12 +171,12 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
         return Row(
           children: [
             SizedBox(
-              width: 64,
+              width: 96,
               child: _sideArrow(context, previous: true),
             ),
             Expanded(child: planningPage),
             SizedBox(
-              width: 64,
+              width: 96,
               child: _sideArrow(context, previous: false),
             ),
           ],
