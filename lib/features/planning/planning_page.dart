@@ -5,10 +5,7 @@
 // ---------------------------------------------------------------------------
 
 import 'dart:async';
-import 'dart:math' as math;
 
-import 'package:counter/core/date_swipe_physics.dart';
-import 'package:counter/shared/diagnostics/performance/runtime_flags.dart';
 import 'package:counter/core/widgets/day_content_strip.dart';
 import 'package:counter/core/widgets/day_window.dart';
 import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
@@ -33,19 +30,18 @@ import 'package:counter/features/planning/time_view/planning_time_view.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_host.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
 import 'package:counter/features/planning/widgets/plan_card_reorder_settle.dart';
-import 'package:counter/features/planning/widgets/planning_day_card_list_keep_alive.dart';
 import 'package:counter/features/planning/widgets/planning_menu_overlay.dart';
 import 'package:counter/features/planning/planning_sort_mode.dart';
 import 'package:counter/features/planning/widgets/planning_bulk_bar.dart';
 import 'package:counter/features/planning/widgets/planning_empty_states.dart';
 import 'package:counter/features/planning/widgets/planning_filter_controls.dart';
 import 'package:counter/features/planning/widgets/planning_list_grouping.dart';
-import 'package:counter/features/planning/widgets/planning_frozen_day_list.dart';
 import 'package:counter/features/planning/widgets/planning_list_helpers.dart';
 import 'package:counter/features/planning/widgets/planning_category_grouped_list.dart';
 import 'package:counter/features/planning/widgets/planning_tag_grouped_list.dart';
 import 'package:counter/features/planning/widgets/planning_select_mode_header.dart';
 import 'package:counter/features/planning/widgets/planning_quick_add_strip.dart';
+import 'package:counter/features/planning/widgets/planning_day_swipe_region.dart';
 
 part 'planning_quick_add_schedule.dart';
 part 'planning_bulk_edit_actions.dart';
@@ -71,6 +67,7 @@ class PlanningPage extends StatefulWidget {
     required this.onEditTask,
     this.onDatePicked,
     this.onDateChanged,
+    this.onAdjacentDayRequested,
     this.onDatePagerLockChanged,
   });
 
@@ -99,6 +96,8 @@ class PlanningPage extends StatefulWidget {
   final void Function(PlanningTask task) onEditTask;
   final void Function(DateTime date)? onDatePicked;
   final void Function(DateTime date)? onDateChanged;
+  /// A date-swipe callback owned by the day content, never by page chrome.
+  final ValueChanged<int>? onAdjacentDayRequested;
   final void Function(bool locked)? onDatePagerLockChanged;
 
   @override
@@ -134,6 +133,7 @@ class _PlanningPageState extends State<PlanningPage>
   List<PlanningTask>? _dragOrder;
   bool _planSelectMode = false;
   PlanSortMode _sortMode = PlanSortMode.custom;
+  double _daySlideFrom = 0;
   late final PlanningTimeViewCoordinator timeView;
   bool _activePlanningResourcesLoaded = false;
 
@@ -418,6 +418,11 @@ class _PlanningPageState extends State<PlanningPage>
   @override
   void didUpdateWidget(covariant PlanningPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedDateString != widget.selectedDateString) {
+      final previous = oldWidget.selectedDate ?? _today;
+      final current = widget.selectedDate ?? _today;
+      _daySlideFrom = current.isAfter(previous) ? 0.035 : -0.035;
+    }
     if (oldWidget.selectedDate != widget.selectedDate ||
         oldWidget.selectedDateString != widget.selectedDateString ||
         oldWidget.isActivePlanningDay != widget.isActivePlanningDay ||
@@ -443,7 +448,7 @@ class _PlanningPageState extends State<PlanningPage>
           _dragOrder = null;
           _selectedPlanKeys.clear();
           _planSelectMode = false;
-          _sortMode = PlanSortMode.custom;
+          // Keep the user's selected Time/Category/Tags/Custom view across days.
         }
       });
       _syncPlanningShellFabBulkReserve();
@@ -1186,9 +1191,6 @@ class _PlanningPageState extends State<PlanningPage>
     );
   }
 
-  DateTime _dateForPageIndex(int index) =>
-      widget.mountedWindow?.dateAt(index) ?? (widget.selectedDate ?? _today);
-
   Widget _buildActiveDayBody(
     BuildContext context,
     ColorScheme scheme,
@@ -1253,101 +1255,13 @@ class _PlanningPageState extends State<PlanningPage>
     );
   }
 
-  Widget _buildDayContentForPageIndex(
-    BuildContext context,
-    ColorScheme scheme,
-    int index,
-    List<PlanningTask> visibleDayTasks,
-  ) {
-    final wallDay = _dateForPageIndex(index);
-    final isActive =
-        widget.shellTabActive &&
-        widget.selectedDate != null &&
-        (widget.mountedWindow == null ||
-            DayWindow.dateOnly(wallDay) ==
-                DayWindow.dateOnly(widget.selectedDate!));
-    final bodyEntry = DatabaseService.instance.plansBodyEntryForDate(wallDay);
-    final tasks = isActive ? visibleDayTasks : bodyEntry.tasks;
-    if (!isActive) {
-      final planActualByPbId = DatabaseService.instance
-          .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
-      if (_sortMode == PlanSortMode.time) {
-        return RepaintBoundary(
-          child: PlanningDayCardListKeepAlive(
-            child: AbsorbPointer(
-              child: timeView.buildHourGridView(tasks, planActualByPbId),
-            ),
-          ),
-        );
-      }
-      return RepaintBoundary(
-        child: PlanningDayCardListKeepAlive(
-          child: PlanningFrozenDayList(
-            tasks: tasks,
-            scheme: scheme,
-            wallDay: wallDay,
-            activeRecordingTitleNorm: _activeRecordingTitleNorm,
-          ),
-        ),
-      );
-    }
-    final planActualByPbId = DatabaseService.instance
-        .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
-    if (tasks.isEmpty) {
-      return PlanningDayEmptyState(
-        onFocusQuickAdd: () =>
-            FocusScope.of(context).requestFocus(_quickAddFocus),
-      );
-    }
-    if (_sortMode == PlanSortMode.time) {
-      return timeView.buildHourGridView(tasks, planActualByPbId);
-    }
-    if (_sortMode == PlanSortMode.category) {
-      return _buildCategoryGroupedView(tasks, planActualByPbId);
-    }
-    if (_sortMode == PlanSortMode.tags) {
-      return _buildTagGroupedListView(tasks, planActualByPbId);
-    }
-    return ReorderableListView.builder(
-      padding: EdgeInsets.symmetric(
-        horizontal: shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
-            ? kShellDesktopContentHorizontalPadding
-            : 8,
-        vertical: 8,
-      ),
-      buildDefaultDragHandles: false,
-      proxyDecorator: planningReorderProxyDecorator,
-      itemCount: tasks.length,
-      onReorder: (oldI, newI) => _onReorder(tasks, oldI, newI),
-      itemBuilder: (context, index) {
-        final task = tasks[index];
-        final key = _planKey(task);
-        final displayDone = _planDoneOverride[key] ?? task.isDone;
-        final canReorder = !_planSelectMode && _planCanReorderTask(task);
-        return ReorderableDelayedDragStartListener(
-          key: ValueKey(key),
-          index: index,
-          enabled: canReorder,
-          child: _planCardRow(
-            context: context,
-            task: task,
-            key: key,
-            displayDone: displayDone,
-            isSelected: _selectedPlanKeys.contains(key),
-            planActualByPbId: planActualByPbId,
-            omitLongPressForReorder: canReorder,
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     rebuildMetricsTick('PlanningPage');
     final scheme = Theme.of(context).colorScheme;
 
     return StreamBuilder<List<PlanningTask>>(
+      // The stream object changes per day, but the chrome stays mounted.
       stream: _planningStream,
       builder: (context, snapshot) {
         List<PlanningTask>? displayedForChrome;
@@ -1363,12 +1277,15 @@ class _PlanningPageState extends State<PlanningPage>
                   ),
                 );
           }
-          if (snapshot.hasError && _latestPlanningDayTasks.isEmpty) {
+          if (snapshot.hasError &&
+              snapshot.connectionState != ConnectionState.waiting &&
+              _latestPlanningDayTasks.isEmpty) {
             body = AppErrorState(
               message: t(currentLocale.value, 'no_data_found'),
             );
           } else {
-            final server = snapshot.hasData
+            final server = snapshot.hasData &&
+                    snapshot.connectionState != ConnectionState.waiting
                 ? snapshot.data!
                 : _latestPlanningDayTasks;
             _latestPlanningDayTasks = server;
@@ -1496,56 +1413,29 @@ class _PlanningPageState extends State<PlanningPage>
           loading: _planQuickAddInFlight,
         ),
         Expanded(
-          child:
-              kUseMountedDayStrip &&
-                  widget.mountedWindow != null &&
-                  widget.stripController != null &&
-                  widget.onVisibleDateChanged != null
-              ? StreamBuilder<void>(
-                  stream: DatabaseService.instance.timeUpdates,
-                  builder: (context, _) {
-                    final window = widget.mountedWindow!;
-                    final visibleDate = widget.selectedDate ?? _today;
-                    final rawIdx = window.contains(visibleDate)
-                        ? window.indexOf(visibleDate)
-                        : window.indexOf(_today);
-                    final activeIndex = rawIdx
-                        .clamp(0, math.max(0, window.length - 1))
-                        .toInt();
-                    return EagerDayContentStrip(
-                      screen: 'Plans',
-                      dates: window.dates,
-                      initialIndex: activeIndex,
-                      activeIndex: activeIndex,
-                      controller: widget.stripController,
-                      physics: widget.datePagerLocked
-                          ? const NeverScrollableScrollPhysics()
-                          : const FeatherDateSwipePhysics(),
-                      scrollLocked: widget.datePagerLocked,
-                      onUserDragStart: widget.onUserDragStart,
-                      onUserDragEnd: widget.onUserDragEnd,
-                      onScrollTick: widget.onScrollTick,
-                      onIndexChanged: widget.onVisibleDateChanged!,
-                      itemBuilder: (context, date, index, isActive) {
-                        return RepaintBoundary(
-                          child: _buildDayContentForPageIndex(
-                            context,
-                            scheme,
-                            index,
-                            tasks,
-                          ),
-                        );
-                      },
-                    );
-                  },
-                )
-              : RepaintBoundary(
-                  child: _buildActiveDayBody(context, scheme, tasks),
-                ),
+          child: PlanningDaySwipeRegion(
+            enabled: widget.shellTabActive &&
+                widget.onAdjacentDayRequested != null,
+            onDayChange: (direction) =>
+                widget.onAdjacentDayRequested?.call(direction),
+            child: TweenAnimationBuilder<double>(
+              key: ValueKey<String>(
+                'planning-content-${widget.selectedDateString}',
+              ),
+              tween: Tween<double>(begin: _daySlideFrom, end: 0),
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOutCubic,
+              child: RepaintBoundary(
+                child: _buildActiveDayBody(context, scheme, tasks),
+              ),
+              builder: (context, slide, dayBody) => FractionalTranslation(
+                translation: Offset(slide, 0),
+                child: dayBody,
+              ),
+            ),
+          ),
         ),
       ],
     );
   }
 }
-
-/// Keeps offscreen plan day bodies alive in [PageView] (P0P render warm).
