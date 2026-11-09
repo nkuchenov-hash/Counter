@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `780df8a1` on 2026-11-09.**
+**Generated from input HEAD `1af77b1d` on 2026-11-09.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -18566,7 +18566,7 @@ EN:
 - **Contents:** Dart helpers and types (`TimeViewFixedTagPrefs`).
 - **Key code names:** `TimeViewFixedTagPrefs`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_drag_and_reschedule.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_drag_and_reschedule.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -18583,7 +18583,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `time_view_fixed_time_policy`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_drag_and_reschedule.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/plan_time_sequential_cascade.dart`, `lib/features/calendar/calendar_drag_and_reschedule.dart`, `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/time_view_drag_controller.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
