@@ -83,7 +83,7 @@ class CalendarMonthGrid extends StatelessWidget {
             builder: (context, constraints) {
               final cellH = constraints.maxHeight / monthRowCount;
               // Reserve the day header and a visible "+N more" overflow line.
-              final maxEvents = ((cellH - 42 - 18) / 25).floor().clamp(1, 6);
+              final maxEvents = ((cellH - 42 - 18) / 25).floor().clamp(1, 6).toInt();
               return Stack(
                 children: [
                   Column(
@@ -219,8 +219,8 @@ class CalendarMonthDayCell extends StatelessWidget {
           ),
         ),
         child: InkWell(
-        onTap: () => onTap(day),
-        child: Padding(
+          onTap: () => onTap(day),
+          child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -252,7 +252,7 @@ class CalendarMonthDayCell extends StatelessWidget {
                 ),
               ],
             ),
-        ),
+          ),
         ),
       ),
     );
