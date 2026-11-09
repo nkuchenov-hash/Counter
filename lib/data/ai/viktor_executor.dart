@@ -805,6 +805,10 @@ class ViktorTagDurationRepair {
       };
       for (final changed in result.changed) {
         final old = originals[changed.recordIdForBackend];
+        if (changed.isDone || old?.isDone == true) {
+          throw StateError('Пересчёт затрагивает завершённый план. '
+              'Ничего не изменено.');
+        }
         if (old == null || old.startTime == null ||
             old.endDateTime == null ||
             changed.startTime == null ||
