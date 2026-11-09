@@ -381,18 +381,12 @@ extension PlanServiceExtension on DatabaseService {
       'notes_delta': d['notes_delta'],
       'parent_plan_id': d['parent_plan_id'],
       'initial_date_key': d['initial_date_key'],
-      'is_postponed': d['is_postponed'],
-      'rrule': d['rrule'],
+      'is_postponed': d['is_postponed'], 'rrule': d['rrule'],
       'recurrence_instance_date_key': d['recurrence_instance_date_key'],
-      'exception_dates': d['exception_dates'],
-      'reminder_offset': d['reminder_offset'],
+      'exception_dates': d['exception_dates'], 'reminder_offset': d['reminder_offset'],
       'expand': ?expandJson,
       'tags_link': d['tags_link'],
-      // PocketBase's audit timestamps are top-level RecordModel fields,
-      // NOT custom collection data. Dropping updated made Viktor's atomic
-      // schedule commit reject every otherwise valid plan from this mapper.
-      'created': r.created,
-      'updated': r.updated,
+      'created': r.created, 'updated': r.updated,
     }, pocketTagCatalog: pocketTagCatalog).copyWith(
       startUtcInstant: startUtc?.toUtc(),
       endUtcInstant: endUtc?.toUtc(),
