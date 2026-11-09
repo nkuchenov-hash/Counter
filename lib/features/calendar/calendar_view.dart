@@ -107,8 +107,8 @@ class _CalendarViewState extends State<CalendarView>
       case CalendarViewMode.month:
         final first = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
         final last = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0);
-        final gridStart = first.subtract(Duration(days: first.weekday - 1));
-        final gridEnd = last.add(Duration(days: 7 - last.weekday));
+        final gridStart = calendarWeekStartMonday(first);
+        final gridEnd = calendarAddDays(last, 7 - last.weekday);
         return (start: gridStart, end: gridEnd);
       case CalendarViewMode.week:
         final start = _dayFocusActive
@@ -136,16 +136,23 @@ class _CalendarViewState extends State<CalendarView>
 
   bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
   void _collapseDayFocus() { if (_dayFocusActive) setState(() => _dayFocusActive = false); }
-  void _onDayTapped(DateTime day, {DateTime? startTime, bool createPlan = true}) {
+  void _selectDay(DateTime day) {
     final d = calendarDateOnly(day);
     setState(() {
       _selectedDay = d;
       _dayFocusActive = false;
       _dayStream = _createDayStream(d);
       _weekAnchor = calendarWeekStartMonday(d);
+      _focusedMonth = DateTime(d.year, d.month);
     });
     unawaited(_reloadIndicators());
-    if (createPlan) _openAddPlanForSelectedDay('', startTime);
+  }
+
+  /// A day selects the existing Plans view; it never implicitly creates a plan.
+  void _onDayTapped(DateTime day) {
+    final d = calendarDateOnly(day);
+    _selectDay(d);
+    unawaited(widget.onSelectDate(d, d));
   }
 
   void _goToday() {
@@ -178,14 +185,14 @@ class _CalendarViewState extends State<CalendarView>
 
   void _shiftWeek(int delta) {
     setState(() {
-      _weekAnchor = _weekAnchor.add(Duration(days: delta * 7));
+      _weekAnchor = calendarAddDays(_weekAnchor, delta * 7);
       _focusedMonth = DateTime(_weekAnchor.year, _weekAnchor.month);
     });
     unawaited(_reloadIndicators());
   }
 
   void _shiftDay(int delta) {
-    _onDayTapped(_selectedDay.add(Duration(days: delta)), createPlan: false);
+    _selectDay(calendarAddDays(_selectedDay, delta));
   }
 
   void _shiftEventsMonth(int delta) {
@@ -332,7 +339,7 @@ class _CalendarViewState extends State<CalendarView>
                                   leading: const AppSettingsMenuIcon(icon: Icons.event_outlined),
                                   onTap: () {
                                     Navigator.of(sheetContext).pop();
-                                    _onDayTapped(day, createPlan: false);
+                                    _selectDay(day);
                                     widget.onEditTask(task);
                                   },
                                 ),
@@ -490,7 +497,7 @@ class _CalendarViewState extends State<CalendarView>
                   showEventPills: showPills,
                   onDayTap: _onDayTapped,
                   onTaskTap: widget.onEditTask,
-                  onSlotTap: (time) => _onDayTapped(time, startTime: time),
+                  onSlotTap: _onDayTapped,
                   onPlanDrop: (tasks, target, fingerWall) => calendarReschedulePlans(context, tasks, target, fingerWall),
                   onDragActiveChanged: (active) { _calendarPlanDragging = active; if (!active) _lastCalendarPlanDragEnd = DateTime.now(); },
                   onGroupTap: (day, category, grouped) => showCalendarTaskGroupSheet(
