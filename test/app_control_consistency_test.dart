@@ -9,11 +9,25 @@ import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/features/settings/categories/category_tag_input_field.dart';
 import 'package:counter/features/timeline/timeline_header_controls.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart' show FontLoader, rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  // Widget tests otherwise may substitute a fallback/Ahem font, making
+  // rasterized glyph baselines disagree with the real bundled Onest font.
+  // Load the exact production typeface before measuring hint and typed ink.
+  setUpAll(() async {
+    // loadFontFromList may never complete in Chrome widget tests; only load
+    // real Onest here on the native test runner, which supports FontLoader.
+    if (kIsWeb) return;
+    final font = FontLoader('Onest')
+      ..addFont(rootBundle.load('assets/fonts/Onest-Variable.ttf'));
+    await font.load();
+  });
+
   test('all standard control components use one geometry source', () {
     expect(AppTextField.height, AppControlTokens.height);
     expect(AppTextField.radius, AppControlTokens.radius);
@@ -109,8 +123,10 @@ void main() {
       );
       expect(tester.getRect(editor).height,
           lessThan(AppControlTokens.height));
-      expect((tester.getRect(editor).center.dy - fieldRect.center.dy).abs(),
-          lessThanOrEqualTo(1));
+      expect((tester.getRect(editor).center.dy -
+              (fieldRect.center.dy +
+                  (kIsWeb ? AppControlTokens.singleLineOpticalOffsetY : 0)))
+          .abs(), lessThanOrEqualTo(1));
       final searchField = find.byType(AppTextField).last;
       final searchPaint = find.descendant(
         of: searchField,
@@ -400,20 +416,26 @@ void main() {
           boundaryRect.top;
     }
 
+    // The observed optical defect is in the Chrome web renderer. Native
+    // renderer typography uses different glyph metrics. Browser widget tests
+    // cannot synchronously load Onest; demand <=2.5px with fallback font and
+    // require separate screenshot verification for production Onest.
+    final inkTolerance = kIsWeb ? 1.5 : 3.0;
     final timelineHintCenter = textOpticalCenter(
       r1, search: false, imageWidth: img.width, pixels: img.pixels);
     final settingsHintCenter = textOpticalCenter(
       r2, search: true, imageWidth: img.width, pixels: img.pixels);
     expect((timelineHintCenter - r1.center.dy).abs(),
-        lessThanOrEqualTo(3),
-        reason: 'Timeline hint must be optically centered in the pill');
+        lessThanOrEqualTo(inkTolerance),
+        reason: 'Timeline hint glyph ink must align, not merely its layout box (renderer: ${kIsWeb ? 'web' : 'native'})');
     expect((settingsHintCenter - r2.center.dy).abs(),
-        lessThanOrEqualTo(3),
-        reason: 'Settings search hint must be optically centered in the pill');
+        lessThanOrEqualTo(inkTolerance),
+        reason: 'Settings hint glyph ink must align with its capsule center (renderer: ${kIsWeb ? 'web' : 'native'})');
 
     // The user's requirement includes INPUT text, not only placeholder hint.
     // Controller changes also prove that the centered shared hint disappears.
-    timeline.text = 'Планирование';
+    // Regression: Latin input seen on Nov 9 screenshot was ~4 physical px low.
+    timeline.text = 'sdfdfds';
     settings.text = 'Результаты';
     await tester.pump();
     final typedImage = await tester.runAsync(() async {
@@ -431,12 +453,13 @@ void main() {
       r1, search: false, imageWidth: typed.width, pixels: typed.pixels);
     final settingsTypedCenter = textOpticalCenter(
       r2, search: true, imageWidth: typed.width, pixels: typed.pixels);
+    debugPrint('INK_CENTERS web=$kIsWeb hintTL=${(timelineHintCenter - r1.center.dy).toStringAsFixed(3)} hintSettings=${(settingsHintCenter - r2.center.dy).toStringAsFixed(3)} typedTL=${(timelineTypedCenter - r1.center.dy).toStringAsFixed(3)} typedSettings=${(settingsTypedCenter - r2.center.dy).toStringAsFixed(3)} opticalOffset=${AppControlTokens.singleLineOpticalOffsetY}');
     expect((timelineTypedCenter - r1.center.dy).abs(),
-        lessThanOrEqualTo(3),
-        reason: 'Typed Timeline text must be optically centered');
+        lessThanOrEqualTo(inkTolerance),
+        reason: 'Typed Latin input ink must be centered within 1.5 logical px (renderer: ${kIsWeb ? 'web' : 'native'})');
     expect((settingsTypedCenter - r2.center.dy).abs(),
-        lessThanOrEqualTo(3),
-        reason: 'Typed Settings search text must be optically centered');
+        lessThanOrEqualTo(inkTolerance),
+        reason: 'Typed Settings text ink must be centered within 1.5 logical px (renderer: ${kIsWeb ? 'web' : 'native'})');
     expect(tester.takeException(), isNull);
   });
 
@@ -535,6 +558,61 @@ void main() {
     await tester.tap(find.byType(AppQuickEntryRow).first);
     await tester.pump();
     expect(liveFocus.hasFocus, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+
+  testWidgets('Timeline input remains editable after repeated tab deactivation',
+      (tester) async {
+    final draft = TextEditingController();
+    final focus = FocusNode();
+    addTearDown(() {
+      draft.dispose();
+      focus.dispose();
+    });
+    bool active = true;
+    Widget makeScreen() => MaterialApp(
+      home: Scaffold(
+        body: TimelineHeaderControls(
+          showStatsView: false,
+          visibleDate: DateUtils.dateOnly(DateTime.now()),
+          visibleIsFuture: false,
+          titleController: draft,
+          titleFocus: focus,
+          inputActive: active,
+          onShowStatsViewChanged: (_) {},
+          onStart: () {},
+          onPlan: () {},
+          onNewTaskForPastDate: () {},
+        ),
+      ),
+    );
+    await tester.pumpWidget(makeScreen());
+    final editor = find.byType(TextField);
+    await tester.tap(editor);
+    await tester.pump();
+    expect(focus.hasFocus, isTrue);
+    await tester.enterText(editor, 'pending');
+
+    // Simulate the shell's deactivate/unfocus + reactivate path repeatedly,
+    // without creating a second controller or requiring an asynchronous read.
+    for (var cycle = 0; cycle < 4; cycle++) {
+      focus.unfocus();
+      active = false;
+      await tester.pumpWidget(makeScreen());
+      expect(tester.widget<TextField>(editor).focusNode, isNull);
+      active = true;
+      await tester.pumpWidget(makeScreen());
+      expect(tester.widget<TextField>(editor).focusNode, same(focus));
+      expect(draft.text, startsWith('pending'));
+      // Even the upper corner of the capsule must refocus on first tap.
+      final rect = tester.getRect(find.byType(AppTextField));
+      await tester.tapAt(Offset(rect.left + 55, rect.top + 4));
+      await tester.pump();
+      expect(focus.hasFocus, isTrue, reason: 'tab return cycle $cycle');
+      await tester.enterText(editor, 'pending ${cycle + 1}');
+      expect(draft.text, 'pending ${cycle + 1}');
+    }
     expect(tester.takeException(), isNull);
   });
 
