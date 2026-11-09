@@ -228,6 +228,7 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                     child: TimelinePlanInteractionBlock(
                   canMove: canMove,
                   canResize: canResize,
+                   holdToEditOnWideTouch: true,
                   bulkSelectMode: host.planSelectMode,
                   resizeHandlePx:
                       PlanningTimeViewCoordinator.kTimelineResizeHandlePx,
@@ -239,16 +240,6 @@ extension PlanningTimeViewTimeViewCardLayer on PlanningTimeViewCoordinator {
                   controlsRightInset: planCardBodyGestureRightInsetPx(
                     hasPlay: hasTrailingPlay,
                   ),
-                  onMovePointerDown: canMove
-                      ? () {
-                          setTimelineInteractionLock(true);
-                        }
-                      : null,
-                  onMovePointerRelease: canMove
-                      ? () {
-                          setTimelineInteractionLock(false);
-                        }
-                      : null,
                   onBodyTap: () {
                     if (host.planSelectMode) {
                       if (kDebugMode) {
