@@ -119,6 +119,20 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         await _createIndependentDateOnlyPlan(independentPlan, executor, requestId);
         return;
       }
+      if (ViktorTagDurationRepair.matches(input)) {
+        final repair = ViktorTagDurationRepair(db);
+        final preview = await repair.prepare(profileToday);
+        if (!mounted) return;
+        final approved = await _confirmPreview(preview.describe());
+        if (!mounted) return;
+        if (!approved) {
+          _push('Изменения отменены.');
+          return;
+        }
+        final result = await repair.apply(preview, profileToday, requestId);
+        if (mounted) _push(result);
+        return;
+      }
       final plans = await db.getPlanningTasksForWallDate(intentDay);
       final lastTwoIds = ViktorSchedulePlanner.resolveLastTwoSwap(input, plans);
       final toolObservations = <String>[];
@@ -294,7 +308,10 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       if (mounted) setState(() { _busy = false; _voiceNotice = null; });
     }
   }
-  Future<bool> _confirm(ViktorActionBatch batch, String preview) async {
+  Future<bool> _confirm(ViktorActionBatch batch, String preview) =>
+      _confirmPreview(preview);
+
+  Future<bool> _confirmPreview(String preview) async {
     final answer = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
