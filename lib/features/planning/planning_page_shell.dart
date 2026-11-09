@@ -8,6 +8,7 @@ import 'package:counter/shared/diagnostics/runtime_log.dart';
 import 'package:counter/shared/diagnostics/platform_log.dart';
 import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -231,6 +232,36 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
     }
   }
 
+  Widget _dayNavigationArrow(BuildContext context, {required bool previous}) {
+    final scheme = Theme.of(context).colorScheme;
+    final targetIndex = _visiblePageIndex + (previous ? -1 : 1);
+    final canNavigate = widget.shellTabActive &&
+        !_datePagerLocked &&
+        targetIndex >= 0 &&
+        targetIndex < _totalPageCount;
+    return Center(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: scheme.outlineVariant),
+        ),
+        child: AppIconButton(
+          icon: previous ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+          tooltip: t(
+            currentLocale.value,
+            previous ? 'date_previous_day' : 'date_next_day',
+          ),
+          size: AppIconButtonSize.l,
+          variant: AppIconButtonVariant.standard,
+          onPressed: canNavigate
+              ? () => _jumpToDate(_dateForIndex(targetIndex))
+              : null,
+        ),
+      ),
+    );
+  }
+
   void _activateVisiblePageAfterSettle() {
     final page = _visiblePageIndex;
     if (_activePageIndex != page) {
@@ -254,7 +285,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
       return _buildMountedStripFallback(context);
     }
     try {
-      return ScrollConfiguration(
+      final pager = ScrollConfiguration(
         behavior: const MouseDragScrollBehavior(),
         child: NotificationListener<ScrollNotification>(
           onNotification: (n) {
@@ -310,6 +341,26 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
             },
           ),
         ),
+      );
+      // The rails sit OUTSIDE the plan canvas, so even a densely packed day
+      // has independent, accessible previous/next navigation on wide screens.
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 800) return pager;
+          return Row(
+            children: [
+              SizedBox(
+                width: 64,
+                child: _dayNavigationArrow(context, previous: true),
+              ),
+              Expanded(child: pager),
+              SizedBox(
+                width: 64,
+                child: _dayNavigationArrow(context, previous: false),
+              ),
+            ],
+          );
+        },
       );
     } catch (e, st) {
       if (kDebugMode) debugPrint('PlanningSwipeWrapper: $e\n$st');
