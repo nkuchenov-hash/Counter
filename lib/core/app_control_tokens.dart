@@ -10,12 +10,6 @@ abstract final class AppControlTokens {
   // The borderless editor must have its own intrinsic line box, rather
   // than expanding to the capsule height and leaving glyphs at the top.
   static const double singleLineEditorHeight = 21;
-  // Optical position of visible glyph ink in Onest at browser DPR 1.5.
-  // The 21px editor box is geometrically centered, but its glyph ink sits
-  // ~2.7 logical px low (4 physical pixels in the 2026-11-09 screenshot).
-  // Shift ONLY the web editable text/caret, not the already-centered hint
-  // or the external 44px tap surface.
-  static const double singleLineOpticalOffsetY = -1.5;
   static const double horizontalGap = 8;
   static const double horizontalPadding = 16;
   static const double buttonHorizontalPadding = 14;
