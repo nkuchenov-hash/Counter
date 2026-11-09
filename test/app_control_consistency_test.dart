@@ -546,6 +546,61 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+
+  testWidgets('Timeline input remains editable after repeated tab deactivation',
+      (tester) async {
+    final draft = TextEditingController();
+    final focus = FocusNode();
+    addTearDown(() {
+      draft.dispose();
+      focus.dispose();
+    });
+    bool active = true;
+    Widget makeScreen() => MaterialApp(
+      home: Scaffold(
+        body: TimelineHeaderControls(
+          showStatsView: false,
+          visibleDate: DateUtils.dateOnly(DateTime.now()),
+          visibleIsFuture: false,
+          titleController: draft,
+          titleFocus: focus,
+          inputActive: active,
+          onShowStatsViewChanged: (_) {},
+          onStart: () {},
+          onPlan: () {},
+          onNewTaskForPastDate: () {},
+        ),
+      ),
+    );
+    await tester.pumpWidget(makeScreen());
+    final editor = find.byType(TextField);
+    await tester.tap(editor);
+    await tester.pump();
+    expect(focus.hasFocus, isTrue);
+    await tester.enterText(editor, 'pending');
+
+    // Simulate the shell's deactivate/unfocus + reactivate path repeatedly,
+    // without creating a second controller or requiring an asynchronous read.
+    for (var cycle = 0; cycle < 4; cycle++) {
+      focus.unfocus();
+      active = false;
+      await tester.pumpWidget(makeScreen());
+      expect(tester.widget<TextField>(editor).focusNode, isNull);
+      active = true;
+      await tester.pumpWidget(makeScreen());
+      expect(tester.widget<TextField>(editor).focusNode, same(focus));
+      expect(draft.text, startsWith('pending'));
+      // Even the upper corner of the capsule must refocus on first tap.
+      final rect = tester.getRect(find.byType(AppTextField));
+      await tester.tapAt(Offset(rect.left + 55, rect.top + 4));
+      await tester.pump();
+      expect(focus.hasFocus, isTrue, reason: 'tab return cycle $cycle');
+      await tester.enterText(editor, 'pending ${cycle + 1}');
+      expect(draft.text, 'pending ${cycle + 1}');
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('tag input and its adjacent Add button share painted geometry',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
