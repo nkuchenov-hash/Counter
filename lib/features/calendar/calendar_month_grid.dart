@@ -114,7 +114,7 @@ class CalendarMonthGrid extends StatelessWidget {
                                           decoration: BoxDecoration(
                                             color: candidates.isNotEmpty
                                                 ? scheme.primary.withValues(alpha: 0.13)
-                                                : Colors.transparent,
+                                                : scheme.surface.withValues(alpha: 0),
                                           ),
                                           child: CalendarMonthDayCell(
                                             day: day,
