@@ -1,3 +1,10 @@
+## Timeline quick-entry responsiveness (2026-11-09)
+
+- The entire painted quick-entry input surface must focus the editor on one click, including the upper/lower padding. A narrow internal EditableText hitbox must not leave dead zones.
+- Only the active, visible Timeline day may attach the shell-owned quick-entry FocusNode. Inactive neighboring PageView days and hidden shell tabs must not capture keyboard focus or receive text-entry taps.
+- A partially typed draft survives day or shell-tab navigation. When returning to Timeline after leaving with its editor focused, restore focus after the active field is mounted; otherwise never steal focus from another control.
+- Keep keyboard/tap feedback immediate (about 100 ms). Do not introduce navigation-time async reads, expensive preloads, or PocketBase waits.
+
 ## Cloud sleep synchronization (2026-11-07)
 
 - Android, iOS and Web expose the same server-owned Xiaomi Cloud/Mi Fitness sleep connection in Settings → Health and sleep. Health Connect is not required to connect this source.
