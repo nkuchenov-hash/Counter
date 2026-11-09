@@ -322,7 +322,9 @@ class PlanCardMenuButtonState extends State<PlanCardMenuButton> {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: _hovered
-                      ? const Color(0xFFDEDEDE)
+                      ? PlanCardTokens.checkboxStroke.withValues(
+                          alpha: widget.subtleBackground ? 0.52 : 0.72,
+                        )
                       : widget.subtleBackground
                           ? PlanCardTokens.menuBg.withValues(alpha: 0.38)
                           : PlanCardTokens.menuBg,
