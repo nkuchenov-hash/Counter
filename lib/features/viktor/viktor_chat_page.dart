@@ -824,4 +824,3 @@ class _ViktorChatPageState extends State<ViktorChatPage>
   Widget build(BuildContext context) => _buildViktorLayout(context);
 
 }
-
