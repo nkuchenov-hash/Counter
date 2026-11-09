@@ -752,7 +752,8 @@ class ViktorTagDurationRepair {
     return result >= 10 && result <= 1440 ? result : null;
   }
 
-  Future<ViktorBulkPreview> prepare(DateTime today) async {
+  Future<ViktorBulkPreview> prepare(DateTime today,
+      {bool keepFeasibleOnly = false}) async {
     if (db.pocketBase.authStore.token.trim().isEmpty ||
         db.pocketBase.authStore.record == null) {
       throw StateError('Для изменения планов войдите в LIFE OS.');
@@ -770,6 +771,7 @@ class ViktorTagDurationRepair {
     ];
     final snapshotPlans = <PlanningTask>[];
     final moves = <ViktorBulkMove>[];
+    final excludedPlanTitles = <String>[];
     for (final day in days) {
       final plans = await db.getPlanningTasksForWallDate(day);
       snapshotPlans.addAll(plans);
@@ -794,12 +796,28 @@ class ViktorTagDurationRepair {
         targetDurations[plan.pocketRecordId!] = duration;
       }
       if (targetDurations.isEmpty) continue;
-      moves.addAll(const ViktorTagDurationReflow().calculate(
-        day: day, plans: plans, targetDurationMinutes: targetDurations,
-        fixedTime: fixed,
-      ));
+      if (keepFeasibleOnly) {
+        final subset = const ViktorTagDurationReflow().calculateFeasibleSubset(
+          day: day, plans: plans, targetDurationMinutes: targetDurations,
+          fixedTime: fixed,
+        );
+        moves.addAll(subset.moves);
+        excludedPlanTitles.addAll(subset.excludedPlans);
+      } else {
+        moves.addAll(const ViktorTagDurationReflow().calculate(
+          day: day, plans: plans, targetDurationMinutes: targetDurations,
+          fixedTime: fixed,
+        ));
+      }
     }
     if (moves.isEmpty) {
+      if (excludedPlanTitles.isNotEmpty) {
+        throw StateError('Даже частичный вариант не удалось составить '
+            'без сдвига закреплённых событий. Ничего не сохранено. '
+            'Можно перенести гибкие задачи на другую дату, '
+            'сократить их длительность или освободить более '
+            'раннее время.');
+      }
       throw StateError('Нет планов с однозначной базовой длительностью, '
           'требующих изменения. Планы не изменены.');
     }
@@ -818,12 +836,15 @@ class ViktorTagDurationRepair {
           snapshotPlans, const <PlanningTask>[]) +
         '\n' + tagSnapshot.join('\n') +
         '\nfixed-tags:' + fixedTagSnapshot.join('|');
-    return ViktorBulkPreview(moves, signature);
+    return ViktorBulkPreview(moves, signature,
+        excludedPlanTitles: List.unmodifiable(excludedPlanTitles));
   }
 
   Future<String> apply(ViktorBulkPreview approved,
-      DateTime today, String requestId) async {
-    final fresh = await prepare(today);
+      DateTime today, String requestId,
+      {bool keepFeasibleOnly = false}) async {
+    final fresh = await prepare(today,
+        keepFeasibleOnly: keepFeasibleOnly);
     if (approved.signature != fresh.signature ||
         approved.describe() != fresh.describe()) {
       throw StateError('Планы или длительности тегов изменились '

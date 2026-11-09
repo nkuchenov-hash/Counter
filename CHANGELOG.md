@@ -4,6 +4,12 @@
 - Calendar day taps route to the selected date in the existing Plans tab; implicit new-plan editor was removed from day clicks. Explicit Add actions and existing task edit interactions remain available.
 - Added visible month-cell borders/weekend tint, larger readable event pills with full-title tooltips, and overflow-aware task-count sizing. Added DST/date/navigation regression tests. No PocketBase or plan/record data changes. Flutter/CI and production screenshot verification pending.
 
+## 2026-11-09 — Viktor explains schedule overflow and offers feasible alternatives [verification pending]
+
+- Replaced blind failure when the two-day tag-duration repair exceeds available space with a user choice dialog identifying the conflicting plan/date/duration and explaining possible resolutions.
+- Implemented one fully actionable alternative: compute a fresh, safe subset that skips only selected expansions required to fit; user reviews omitted duration changes and all resulting moves before the existing atomic save. No protected event is patched.
+- Alternatives requiring separate decisions (another date, revised task duration or an earlier start) are offered as discussion options, not silently executed. Added calculation and mobile dialog regressions.
+
 ## 2026-11-09 — Planning swipe paint reduction and arrow spacing [verification pending]
 
 - Removed the fake 60px drag translation and 150ms incoming-day slide that made the timeline snap and caused expensive whole-canvas repaints during horizontal pointer motion.

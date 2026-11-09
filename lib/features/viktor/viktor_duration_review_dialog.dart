@@ -110,7 +110,29 @@ class _ViktorTagDurationReviewDialogState
       move.plan.endDateTime!.difference(move.plan.startTime!).inMinutes !=
       move.end.difference(move.start).inMinutes).length;
     final shiftCount = widget.preview.moves.length - durationCount;
+    final excluded = widget.preview.excludedPlanTitles;
     final entries = <Widget>[];
+    if (excluded.isNotEmpty) {
+      entries.add(Padding(
+        padding: const EdgeInsets.only(top: 14, bottom: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Без пересчёта длительности: ${excluded.length}',
+                style: const TextStyle(fontSize: 16,
+                    fontWeight: FontWeight.w700)),
+            const SizedBox(height: 5),
+            for (final title in excluded)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text('• $title',
+                    style: TextStyle(fontSize: 16,
+                        color: scheme.onSurfaceVariant)),
+              ),
+          ],
+        ),
+      ));
+    }
     for (final group in groups.entries) {
       entries.add(Padding(
         padding: const EdgeInsets.only(top: 16, bottom: 5),
@@ -164,7 +186,9 @@ class _ViktorTagDurationReviewDialogState
                   const SizedBox(height: 10),
                   Text(
                     durationCount.toString() + ' изменений длительности · ' +
-                        shiftCount.toString() + ' сдвигов',
+                        shiftCount.toString() + ' сдвигов' +
+                        (excluded.isEmpty ? '' :
+                          ' · ${excluded.length} без пересчёта'),
                     style: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.w600),
                   ),
