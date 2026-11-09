@@ -1,7 +1,7 @@
 ## Text optical centering in canonical input (2026-11-09)
 
-- A geometrically centered 21 px editor is insufficient: rendered Onest glyph ink was approximately four physical pixels low at browser DPR 1.5 in the production Timeline screenshot. `AppControlTokens.singleLineOpticalOffsetY` moves the typed text and the one-line hint together within the already-centered 44 px field.
-- Keep the external capsule and focus hitbox stationary, and assert the rasterized text ink center within 1.5 logical px of the capsule center for both Timeline and Settings. Do not loosen visual tolerances to accommodate a baseline defect.
+- A geometrically centered 21 px editor is insufficient on Web: rendered Onest glyph ink was approximately four physical pixels low at browser DPR 1.5 in the production Timeline screenshot. `AppControlTokens.singleLineOpticalOffsetY` moves typed text and the one-line hint together only in Flutter Web; native keeps its previous alignment.
+- Keep the external capsule and focus hitbox stationary. Assert rasterized text ink within 1.5 logical px on Chrome for both Timeline and Settings; the separate native font renderer retains its existing 3 px tolerance. Do not relax Chrome tolerances to accommodate the production baseline defect.
 
 ## Canonical quick-entry text/input contract (2026-11-09)
 
