@@ -1,3 +1,10 @@
+## 2026-11-10 — Restore side date arrows and optimistic Planning pager
+
+- Returned previous/next arrows to the **left/right edges of Planning's day body**, not the top selector; stationary overlay leaves day/card width intact. Buttons remain visible but disabled during date locks; mobile continues native horizontal swipe.
+- Promote the next Planning day at the native PageView's page-center transition instead of waiting for ScrollEndNotification; the selected day is interactive from locally cached plans without waiting for PocketBase.
+- Adjacent Time View renders the same production `PlanCard` content, labels, tags, metadata, and progress components as the live page.
+- Added widget regressions for edge placement, arrows, full width, locked/mobile layout, early interactive promotion, and touch swipe.
+
 ## 2026-11-10 — Viktor investigates rejected actions and honours three-day durations [PR verification]
 
 - Extended the duration-from-tag repair scope from only today/tomorrow to **yesterday/today/tomorrow** when explicitly requested; the original day scope is preserved through partial preview and fresh-state atomic commit. Completed, recurring and fixed-time plans remain protected.
