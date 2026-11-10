@@ -434,13 +434,14 @@ void main() {
       'lib/features/planning/widgets/planning_day_swipe_region.dart',
     ).readAsStringSync();
     expect(swipe, contains('onHorizontalDragUpdate:'));
-    // The old per-pointer rubber-band must stay removed. A 170ms one-shot
-    // composited arrival after a real date change is allowed.
+    // No drag-time paints: after a committed date only, two composited
+    // fractional translations form one full-width 200ms slide.
     expect(swipe, isNot(contains('ValueListenableBuilder<double>')));
     expect(swipe, isNot(contains('_visualOffset')));
     expect(swipe, contains('dayKey'));
     expect(swipe, contains('AnimatedBuilder('));
-    expect(swipe, contains('Transform.translate('));
+    expect(swipe, contains('FractionalTranslation('));
+    expect(swipe, contains('keepOutgoingContent'));
     expect(swipe, contains('child: widget.child'));
     expect(swipe, contains('onDayChange(direction < 0 ? 1 : -1)'));
   });
