@@ -260,7 +260,9 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
           crossAxisCount: count,
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
-          childAspectRatio: availableWidth <= 520 ? 0.82 : 1.04,
+          childAspectRatio: availableWidth <= 520
+              ? (availableWidth >= 400 ? 0.95 : 0.82)
+              : 1.04,
         ),
         itemCount: cards.length,
         itemBuilder: (context, index) => _card(
