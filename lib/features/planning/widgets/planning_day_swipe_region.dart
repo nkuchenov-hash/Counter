@@ -137,12 +137,17 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
                 child: widget.child,
               );
             }
-            return RepaintBoundary(
-              key: ValueKey('planning-cache-preview-$index'),
-              child: widget.adjacentDayBuilder?.call(
-                    context, _dayForPage(index),
-                  ) ??
-                  const SizedBox.expand(),
+            return IgnorePointer(
+              child: TickerMode(
+                enabled: false,
+                child: RepaintBoundary(
+                  key: ValueKey('planning-cache-preview-$index'),
+                  child: widget.adjacentDayBuilder?.call(
+                        context, _dayForPage(index),
+                      ) ??
+                      const SizedBox.expand(),
+                ),
+              ),
             );
           },
         ),
