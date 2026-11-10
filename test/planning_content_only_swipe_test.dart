@@ -332,6 +332,34 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('sidebars and constrained panels never reveal overflow arrows', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1100, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 520,
+              child: PlanningSortModeBar(
+                sortMode: PlanSortMode.custom,
+                onSortModeChanged: (_) {},
+                desktopTitle: 'Planning',
+                onAdjacentDayRequested: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   test('Planning card width and gutters follow Timeline records', () {
     final planCard = File('lib/core/widgets/plan_card.dart').readAsStringSync();
     final timeline =
