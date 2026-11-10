@@ -460,7 +460,9 @@ void main() {
     ).readAsStringSync();
     expect(source, contains('PlanTimeViewLayoutCalculator.compute('));
     expect(source, contains('projectPlanForTimeMode('));
-    expect(source, contains('PlanTimeTaskCard('));
+    expect(source, contains('child: PlanCard('));
+    expect(source, contains('timelineBlock: true'));
+    expect(source, contains('timelineBlockHeightPx: layout.heightPx'));
     expect(source, contains('layout.overlapLaneIndex'));
     expect(source, isNot(contains('static const double _hourPx = 152')));
     expect(source, isNot(contains('task.startTime!.difference(windowStart)')));
