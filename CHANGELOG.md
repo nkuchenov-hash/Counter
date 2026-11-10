@@ -1,3 +1,10 @@
+## 2026-11-10 — Fix top clipping after Planning Time View horizontal date swipe
+
+- Correct the first-hour label/dot clipped by negative top placement: live and cached Time View canvases now share 12px safe top inset beyond 8px normal padding.
+- Reset and disable restoration of a previous day's Time View vertical scroll offset whenever the selected date changes, keeping one live scroll controller and unchanged native horizontal swipe physics.
+- Cancel delayed auto-scroll-to-now callbacks if the selected date has changed, preventing the outgoing day's scroll command from moving the incoming day.
+- Add regression tests for changing dates after scrolling vertically, preserving the fixed tags, and matching live/preview first-hour inset.
+
 ## 2026-11-10 — Restore minimal calendar surface [verification pending]
 
 - Removed unrequested gray backgrounds from weekend and neighboring-month day cells. Every cell now shares the calendar's original neutral canvas; date numerals still distinguish adjacent months.
