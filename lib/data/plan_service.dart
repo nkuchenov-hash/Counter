@@ -91,14 +91,14 @@ extension PlanServiceExtension on DatabaseService {
   Future<void> _ensureAllPlansUserCacheFresh({bool force = false}) async {
     if (!_isPlansTableConfigured) return;
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return;
-    if (!force &&
-        _allPlansUserCache.isNotEmpty &&
-        _allPlansUserCacheFetchedAt != null &&
-        DateTime.now().difference(_allPlansUserCacheFetchedAt!) <
-            _allPlansUserCacheFreshTtl) {
-      return;
-    }
-    await _fetchAllPlanningTasksForCurrentUser();
+    if (!force && hasFreshCompletePlanningCatalog(
+      currentUser: currentProfileId,
+      fetchedOwner: _plansLastCompleteCatalogOwnerId,
+      completedAt: _plansLastCompleteCatalogFetchAt,
+      now: DateTime.now(),
+      ttl: _allPlansUserCacheFreshTtl,
+    )) return;
+    await _singleFlightPlanFetch(currentProfileId, _fetchAllPlanningTasksForCurrentUser);
   }
 
   Stream<List<PlanningTask>> get tasksStream => Stream.multi((c) {
@@ -224,7 +224,7 @@ extension PlanServiceExtension on DatabaseService {
   }
 
   Future<List<PlanningTask>> _fetchPlanningTasksForDate(
-    DateTime selectedDate,
+    DateTime selectedDate, {bool allowDayScopedFallback = true},
   ) async {
     return RebuildMetrics.instance.perfBlockAsync(
       'Planning._fetchPlanningTasksForDate',
@@ -245,8 +245,8 @@ extension PlanServiceExtension on DatabaseService {
               _allPlansUserCache,
               selectedDate,
             );
-            if (plans.isEmpty) {
-              // Day fallback protects Planning and Viktor duplicate checks.
+            if (plans.isEmpty && allowDayScopedFallback) {
+              // Explicit/day-aware calls retain the legacy untimed fallback.
               await _fetchOwnedUntimedPlansForDay(targetDayStr);
               plans = _filterPlansForWallDay(
                 _allPlansUserCache, selectedDate);
