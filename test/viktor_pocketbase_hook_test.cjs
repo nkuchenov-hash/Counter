@@ -124,14 +124,14 @@ assert.equal(context.user_request, 'Выбираю второй вариант')
 assert.equal(JSON.parse(lastRequest.body).messages[0].role, 'system');
 
 // The read-only recovery route cannot forward model-proposed actions.
-const recovered = invoke({...base, advice_only: true,
+const adviceResponse = invoke({...base, advice_only: true,
   recovery_context: '2026-11-09 GSG needs 60 min; fixed barrier blocks reflow',
   text: 'Restore plan durations without moving my meetings',
 });
-assert.equal(recovered.status, 200);
-assert.equal(recovered.value.actions.length, 0,
+assert.equal(adviceResponse.status, 200);
+assert.equal(adviceResponse.value.actions.length, 0,
   'Recovery advice cannot become a mutation or tool call');
-assert.equal(recovered.value.continue, false,
+assert.equal(adviceResponse.value.continue, false,
   'Recovery must not request more tools in a hidden loop');
 const recoverySent = JSON.parse(lastRequest.body);
 assert.match(recoverySent.messages[0].content, /Find two or three practical NEXT options/);
