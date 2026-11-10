@@ -9,6 +9,7 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:counter/features/planning/plan_time_view_layout.dart';
 import 'package:counter/features/planning/time_view/planning_time_view.dart';
 import 'package:counter/features/planning/time_view/time_view_canvas.dart';
 
@@ -241,9 +242,11 @@ extension PlanningTimeViewTimeViewHourGrid on PlanningTimeViewCoordinator {
       physics: timelineScrollLocked
           ? const NeverScrollableScrollPhysics()
           : null,
-      padding: EdgeInsets.symmetric(
-        horizontal: timelineCompactLayout(host.context) ? 4 : 8,
-        vertical: 8,
+      padding: EdgeInsets.fromLTRB(
+        timelineCompactLayout(host.context) ? 4 : 8,
+        8 + kPlanningTimeViewTopInsetPx,
+        timelineCompactLayout(host.context) ? 4 : 8,
+        8,
       ),
       children: children,
     );
