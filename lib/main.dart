@@ -20,6 +20,7 @@ import 'package:counter/shared/voice/platforms/desktop/desktop_stt_orchestrator.
 import 'package:counter/data/local_sync/offline_sync_state.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/health/sleep_foreground_reconcile_service.dart';
+import 'package:counter/data/context/context_awareness_coordinator.dart';
 import 'package:counter/services/notification_service.dart';
 import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -480,6 +481,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
       if (!appWearHost) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           unawaited(SleepForegroundReconcileService.instance.reconcile());
+          ContextAwarenessCoordinator.instance.attach(id);
         });
       }
       StartupLog.markFirstShellBuild();
@@ -528,6 +530,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
         _authMessageKey = 'auth_session_expired';
       });
     }
+    unawaited(ContextAwarenessCoordinator.instance.stopForSignOut());
     try {
       await AuthBridge.signOut();
     } catch (_) {}
