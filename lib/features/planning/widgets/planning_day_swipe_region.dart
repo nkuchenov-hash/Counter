@@ -51,7 +51,7 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
           DateTime.utc(day.year, day.month, day.day)
               .difference(DateTime.utc(
                   _anchorDay.year, _anchorDay.month, _anchorDay.day))
-              .inDays).clamp(0, _pageCount - 1);
+              .inDays).clamp(0, _pageCount - 1).toInt();
 
   @override
   void initState() {
