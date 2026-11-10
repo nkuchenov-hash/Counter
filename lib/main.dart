@@ -530,7 +530,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
         _authMessageKey = 'auth_session_expired';
       });
     }
-    unawaited(ContextAwarenessCoordinator.instance.stopForSignOut());
+    await ContextAwarenessCoordinator.instance.stopForSignOut();
     try {
       await AuthBridge.signOut();
     } catch (_) {}
@@ -568,6 +568,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
   }
 
   void clearSession() {
+    unawaited(ContextAwarenessCoordinator.instance.stopForSignOut());
     setState(() {
       _profileId = null;
       _checked = true;
