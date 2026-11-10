@@ -105,11 +105,21 @@ class ContextTimelinePolicy {
   static String visitTitle({required bool russian}) =>
       russian ? 'Вне дома' : 'Away from home';
 
+  static List<String> transportTitles({required bool russian}) => russian
+      ? const ['Метро', 'Автобус', 'Автомобиль', 'Такси', 'Трамвай',
+          'Электричка', 'Другой транспорт']
+      : const ['Metro', 'Bus', 'Car', 'Taxi', 'Tram', 'Commuter train',
+          'Other transport'];
+
+  static bool isSpecificTransportTitle(String title) =>
+      transportTitles(russian: true).contains(title.trim()) ||
+      transportTitles(russian: false).contains(title.trim());
+
   static bool isAutoTravelTitle(String title) {
     return const {
       'В пути', 'Travel', 'Пешком', 'Walking',
       'Поездка на транспорте', 'Vehicle trip',
       'На велосипеде', 'Cycling',
-    }.contains(title.trim());
+    }.contains(title.trim()) || isSpecificTransportTitle(title);
   }
 }

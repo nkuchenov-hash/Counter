@@ -112,9 +112,66 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
   static String _activeKey(String owner) => 'context_auto_record_$owner';
   static String _kindKey(String owner) => 'context_auto_kind_$owner';
   static String _visitReviewKey(String owner) => 'context_visit_reviews_$owner';
+  static String _transportReviewKey(String owner) => 'context_transport_reviews_$owner';
 
   String? get _ownerForReview =>
       _profileId ?? DatabaseService.instance.currentProfileId;
+
+  Future<List<Map<String, dynamic>>> pendingTransportReviews() async {
+    final owner = _ownerForReview;
+    if (owner == null || owner.isEmpty) return const [];
+    final prefs = await SharedPreferences.getInstance();
+    try {
+      final rows = jsonDecode(prefs.getString(_transportReviewKey(owner)) ?? '[]');
+      if (rows is! List) return const [];
+      return [
+        for (final row in rows)
+          if (row is Map<String, dynamic>) Map<String, dynamic>.from(row),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> _queueTransportReview(
+      String owner, ContextAwarenessEvent event, String recordId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final all = await pendingTransportReviews();
+    if (all.any((row) => row['eventId'] == event.id)) return;
+    all.add({
+      'eventId': event.id,
+      'recordId': recordId,
+      'atUtc': event.atUtc.toIso8601String(),
+    });
+    if (all.length > 40) all.removeRange(0, all.length - 40);
+    await prefs.setString(_transportReviewKey(owner), jsonEncode(all));
+  }
+
+  Future<void> dismissTransportReview(String eventId) async {
+    final owner = _ownerForReview;
+    if (owner == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final all = await pendingTransportReviews();
+    all.removeWhere((row) => row['eventId'] == eventId);
+    await prefs.setString(_transportReviewKey(owner), jsonEncode(all));
+  }
+
+  Future<bool> labelTransport(String eventId, String title) async {
+    final owner = _ownerForReview;
+    if (owner == null || owner != DatabaseService.instance.currentProfileId ||
+        !ContextTimelinePolicy.isSpecificTransportTitle(title)) return false;
+    final all = await pendingTransportReviews();
+    final found = all.where((row) => row['eventId'] == eventId);
+    if (found.isEmpty) return false;
+    final id = found.first['recordId']?.toString() ?? '';
+    if (id.isEmpty) return false;
+    final updated = await DatabaseService.instance.updateRecord(
+      recordId: id, title: title,
+    );
+    if (updated == null) return false;
+    await dismissTransportReview(eventId);
+    return true;
+  }
 
   Future<List<Map<String, dynamic>>> pendingVisitReviews() async {
     final owner = _ownerForReview;
@@ -309,6 +366,9 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
       );
       if (written == null) return false;
       if (kind == 'visit') await _queueVisitReview(owner, event, written);
+      if (kind == 'travel' && event.mode == 'vehicle') {
+        await _queueTransportReview(owner, event, written);
+      }
       await prefs.setString(_activeKey(owner), written);
       await prefs.setString(_kindKey(owner), kind);
       return true;
@@ -336,21 +396,36 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
         return startAuto(
           'travel', ContextTimelinePolicy.titleForTravel('', russian: russian));
       case 'moving':
+        final title = ContextTimelinePolicy.titleForTravel(
+          event.mode, russian: russian,
+        );
         if (ourActive && autoKind == 'travel') {
-          final title = ContextTimelinePolicy.titleForTravel(
-            event.mode, russian: russian,
-          );
-          if (active?['title'] == title) return true;
-          final changed = await db.updateRecord(
-            recordId: activeId, title: title,
-          );
-          return changed != null;
+          final currentTitle = (active?['title'] ?? '').toString().trim();
+          if (currentTitle == title) return true;
+          // A confirmed user label such as 'Metro' is more precise than the
+          // vehicle classifier. Do not erase it with generic 'Vehicle trip'.
+          if (event.mode == 'vehicle' &&
+              ContextTimelinePolicy.isSpecificTransportTitle(currentTitle)) {
+            return true;
+          }
+          if (currentTitle == 'В пути' || currentTitle == 'Travel') {
+            // The first mode resolves the initial undifferentiated segment.
+            final changed = await db.updateRecord(
+              recordId: activeId, title: title,
+            );
+            if (changed == null) return false;
+            if (event.mode == 'vehicle') {
+              await _queueTransportReview(owner, event, activeId);
+            }
+            return true;
+          }
+          // Preserve each leg (walk -> vehicle -> walk) as a real interval.
+          if (!await endAuto()) return false;
+          return startAuto('travel', title);
         }
         if (ourActive && autoKind == 'visit') {
           if (!await endAuto()) return false;
-          return startAuto('travel', ContextTimelinePolicy.titleForTravel(
-            event.mode, russian: russian,
-          ));
+          return startAuto('travel', title);
         }
         return true;
       case 'stationary_away':

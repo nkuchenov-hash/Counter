@@ -49,6 +49,9 @@ void main() {
   test('travel inference does not claim bus, metro or restaurant', () {
     expect(ContextTimelinePolicy.titleForTravel('vehicle', russian: false), 'Vehicle trip');
     expect(ContextTimelinePolicy.titleForTravel('walking', russian: true), 'Пешком');
+    expect(ContextTimelinePolicy.isAutoTravelTitle('Метро'), true);
+    expect(ContextTimelinePolicy.isAutoTravelTitle('Bus'), true);
+    expect(ContextTimelinePolicy.transportTitles(russian: true), contains('Автобус'));
     expect(ContextTimelinePolicy.visitTitle(russian: true), 'Вне дома');
   });
 }
