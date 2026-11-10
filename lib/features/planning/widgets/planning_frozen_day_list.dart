@@ -242,26 +242,36 @@ class PlanningFrozenTimeCanvas extends StatelessWidget {
                                   'planning-frozen-time-${layout.task.planRowIdForBackend}'),
                                 top: layout.topPx,
                                 left: layout.overlapLaneIndex *
-                                    (box.maxWidth / math.max(1,layout.overlapLaneCount)) + blockPad,
-                                width: box.maxWidth /
-                                        math.max(1, layout.overlapLaneCount) -
-                                    2 * blockPad,
+                                    (math.max(0.0,
+                                      (box.maxWidth - 6.0 *
+                                        (math.max(1, layout.overlapLaneCount) - 1)) /
+                                          math.max(1, layout.overlapLaneCount)) + 6.0),
+                                right: (math.max(1, layout.overlapLaneCount) -
+                                        layout.overlapLaneIndex - 1) *
+                                    (math.max(0.0,
+                                      (box.maxWidth - 6.0 *
+                                        (math.max(1, layout.overlapLaneCount) - 1)) /
+                                          math.max(1, layout.overlapLaneCount)) + 6.0),
                                 height: layout.heightPx,
-                                child: PlanTimeTaskCard(
-                                  task: layout.task,
-                                  density: layout.density,
-                                  timelineVisualDensity: layout.visualDensity,
-                                  timelineBlockHeightPx: layout.heightPx,
-                                  timelineFillHeight: true,
-                                  timeLabel: layout.projection?.plannedTimeLabel ?? '',
-                                  displayIsDone: layout.task.isDone,
-                                  toggleDoneEnabled: false,
-                                  showProgressBar: planTimeCardShowProgressForVisual(
-                                      layout.visualDensity),
-                                  showFooterBreadcrumb:
-                                      planTimeCardShowFooterBreadcrumbForVisual(
-                                          layout.visualDensity),
-                                  planEstimatedSeconds: planningWallEstimateSeconds(layout.task),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: blockPad),
+                                  child: PlanTimeTaskCard(
+                                    task: layout.task,
+                                    density: layout.density,
+                                    timelineVisualDensity: layout.visualDensity,
+                                    timelineBlockHeightPx: layout.heightPx,
+                                    timelineFillHeight: true,
+                                    timeLabel: layout.projection?.plannedTimeLabel ?? '',
+                                    displayIsDone: layout.task.isDone,
+                                    toggleDoneEnabled: false,
+                                    showProgressBar: planTimeCardShowProgressForVisual(
+                                        layout.visualDensity),
+                                    showFooterBreadcrumb:
+                                        planTimeCardShowFooterBreadcrumbForVisual(
+                                            layout.visualDensity),
+                                    planEstimatedSeconds: planningWallEstimateSeconds(layout.task),
+                                  ),
                                 ),
                               ),
                           ]),
