@@ -29,6 +29,7 @@ part 'viktor_chat_layout.dart';
 part 'viktor_threads_ui.dart';
 part 'viktor_duration_review_dialog.dart';
 part 'viktor_duration_conflict_dialog.dart';
+part 'viktor_recovery.dart';
 const double kViktorChatContentMaxWidth = 840;
 class ViktorChatPage extends StatefulWidget {
   const ViktorChatPage({super.key, required this.wallDay,
@@ -48,6 +49,10 @@ class _ViktorChatPageState extends State<ViktorChatPage>
   final _messages = <ViktorDialogueTurn>[];
   final _gateway = const ViktorGateway();
   bool _busy = false;
+  // A conversational follow-up can resume a rejected tag-duration request.
+  // Only a fresh, explicitly requested preview may result in a write.
+  bool _durationConflictPending = false;
+  bool _durationConflictIncludesYesterday = false;
   bool _listening = false;
   bool _startingMic = false;
   bool _transcribing = false;
@@ -95,6 +100,8 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           nowUtc: DateTime.now().toUtc(),
         ))) {
       _startNewConversation();
+      _durationConflictPending = false;
+      _durationConflictIncludesYesterday = false;
     }
     final dialogContext = ViktorDialogueTurn.modelContext(_messages.skip(1));
     if (independentPlan == null &&
@@ -110,43 +117,76 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         dialogContext, revision: revisionOfDraft, profileToday: profileToday);
     _push(input, mine: true);
     if (ViktorReadAnswer.isExplicitCancellation(input)) {
+      _durationConflictPending = false;
+      _durationConflictIncludesYesterday = false;
       _push('Команда отменена. Изменения не выполнялись.');
       return;
     }
     if (_showCorrectedScheduleDraft(input)) return;
     setState(() => _busy = true);
+    final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
+    List<PlanningTask> plansForRecovery = const [];
+    var writeStarted = false;
     try {
       final executor = ViktorExecutor(db);
-      final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
       if (independentPlan != null) {
         await _createIndependentDateOnlyPlan(independentPlan, executor, requestId);
         return;
       }
-      if (ViktorTagDurationRepair.matches(input)) {
+      final resumePartialDuration =
+          ViktorDurationConversation.wantsFeasibleSubset(
+            input, pending: _durationConflictPending,
+          );
+      final directDurationRepair = ViktorTagDurationRepair.matches(input);
+      if (directDurationRepair || resumePartialDuration) {
+        if (directDurationRepair) {
+          _durationConflictIncludesYesterday =
+              ViktorTagDurationRepair.includesYesterday(input);
+        }
+        final includeYesterday = _durationConflictIncludesYesterday;
         final repair = ViktorTagDurationRepair(db);
-        var keepFeasibleOnly = false;
+        var keepFeasibleOnly = resumePartialDuration;
         late ViktorBulkPreview preview;
         try {
-          preview = await repair.prepare(profileToday);
+          preview = await repair.prepare(
+            profileToday, keepFeasibleOnly: keepFeasibleOnly,
+            includeYesterday: includeYesterday,
+          );
+          _durationConflictPending = false;
         } on ViktorTagDurationOverflow catch (conflict) {
+          _durationConflictPending = true;
           if (!mounted) return;
-          final chooseSubset = await showDialog<bool>(
+          final choice = await showDialog<ViktorDurationConflictChoice>(
             context: context,
             builder: (_) => ViktorDurationConflictDialog(
               conflict: conflict,
             ),
-          ) ?? false;
+          );
           if (!mounted) return;
-          if (!chooseSubset) {
-            _push('Пересчёт не применён. Можно перенести часть гибких '
-                'задач на другую дату или изменить их длительности. '
-                'Закреплённые встречи останутся на месте.');
+          if (choice == null ||
+              choice == ViktorDurationConflictChoice.dismiss) {
+            _push('Изменения отменены. Если хотите обсудить другие '
+                'варианты, просто напишите Виктору.');
+            return;
+          }
+          if (choice == ViktorDurationConflictChoice.discuss) {
+            // A failed plan is context for a conversation, not an error wall.
+            // A later explicit subset request will still re-preview fresh data.
+            plansForRecovery =
+                await db.getPlanningTasksForWallDate(conflict.day);
+            await _offerRecovery(
+              input: input, failure: conflict, day: conflict.day,
+              plans: plansForRecovery, requestId: requestId,
+              conversation: dialogContext,
+            );
             return;
           }
           keepFeasibleOnly = true;
           preview = await repair.prepare(
             profileToday, keepFeasibleOnly: true,
+            includeYesterday: includeYesterday,
           );
+          _durationConflictPending = false;
         }
         if (!mounted) return;
         final approved = await showDialog<bool>(
@@ -158,9 +198,11 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           _push('Изменения отменены.');
           return;
         }
+        writeStarted = true;
         final result = await repair.apply(
           preview, profileToday, requestId,
           keepFeasibleOnly: keepFeasibleOnly,
+          includeYesterday: includeYesterday,
         );
         if (mounted) {
           _push(preview.excludedPlanTitles.isEmpty
@@ -171,6 +213,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         return;
       }
       final plans = await db.getPlanningTasksForWallDate(intentDay);
+      plansForRecovery = plans;
       final lastTwoIds = ViktorSchedulePlanner.resolveLastTwoSwap(input, plans);
       final toolObservations = <String>[];
       final seenReads = <String>{};
@@ -200,8 +243,13 @@ class _ViktorChatPageState extends State<ViktorChatPage>
             // A second malformed continuation is not another read.
             // Never invent a tool call or apply an unvalidated write.
             if (latestReadAnswer != null) _push(latestReadAnswer);
-            _push('Модель не смогла выбрать допустимую операцию чтения. '
-                'Запрос завершён без изменений.');
+            await _offerRecovery(
+              input: input,
+              failure: StateError('Для ответа не удалось выбрать '
+                  'допустимую операцию чтения из каталога.'),
+              day: intentDay, plans: plans, requestId: requestId,
+              conversation: dialogContext,
+            );
             return;
           }
           repairedEmptyRead = true;
@@ -268,8 +316,12 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           input, response, plans, toolObservations, requestId, dialogContext,
           intentDay);
       if (completed == null) {
-        _push('Виктор не сформировал полный согласованный черновик '
-            'с нужным часовым поясом. Планы не изменены.');
+        await _offerRecovery(
+          input: input, failure: StateError(
+            'Черновик требует уточнения часового пояса или расписания.'),
+          day: intentDay, plans: plans, requestId: requestId,
+          conversation: dialogContext,
+        );
         return;
       }
       response = completed;
@@ -293,24 +345,58 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         if (mounted) _push(draft);
         return;
       }
-      final preview = await executor.describe(actions, intentDay);
+      var finalActions = actions;
+      var recoveredProposal = false;
+      late String preview;
+      try {
+        preview = await executor.describe(finalActions, intentDay);
+      } on StateError catch (failure) {
+        // The recovery agent can inspect up to two real read observations
+        // and retry a different proposal. It may never apply a write.
+        final recovered = await _retryRejectedProposal(
+          input: input, failure: failure,
+          day: intentDay, plans: plans,
+          requestId: requestId, conversation: dialogContext,
+          priorObservations: toolObservations,
+          rejected: finalActions, executor: executor,
+        );
+        if (!mounted) return;
+        if (recovered.actions == null || recovered.preview == null) {
+          final answer = recovered.answer?.trim() ?? '';
+          if (answer.isNotEmpty) {
+            _push(answer);
+          } else {
+            await _offerRecovery(
+              input: input, failure: failure, day: intentDay,
+              plans: plans, requestId: requestId,
+              conversation: dialogContext,
+            );
+          }
+          return;
+        }
+        preview = recovered.preview!;
+        finalActions = recovered.actions!;
+        response = ViktorResponse(
+          message: recovered.answer ?? '', actions: finalActions);
+        recoveredProposal = true;
+      }
       if (!mounted) return;
-      if (!actions.hasMutations) {
+      if (!finalActions.hasMutations) {
         if (response.message.trim().isNotEmpty) {
           _push(response.message.trim());
         }
-        final onlyDayReads = actions.actions.every(
+        final onlyDayReads = finalActions.actions.every(
             (action) => action.name == 'list_day_plans');
         _push(onlyDayReads
             ? ViktorReadAnswer.format(input, preview) : preview);
         return;
       }
-      if (actions.isSingleReversibleWrite) {
+      if (finalActions.isSingleReversibleWrite && !recoveredProposal) {
         _push(preview);
       }
-      final swapArgs = actions.actions.length == 1 &&
-              actions.actions.single.name == 'swap_plan_positions'
-          ? actions.actions.single.arguments
+      final swapArgs = finalActions.actions.length == 1 &&
+              finalActions.actions.single.name == 'swap_plan_positions'
+          ? finalActions.actions.single.arguments
           : null;
       final firstId = swapArgs?['first_plan_id'] as String?;
       final secondId = swapArgs?['second_plan_id'] as String?;
@@ -330,20 +416,25 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           firstId != secondId &&
           (groundedByPosition || matchedSelection ||
               (titleSpoken(firstId) && titleSpoken(secondId)));
-      final approved = !repairedRepeatedRead &&
-              (isUnambiguousSwap || actions.isSingleReversibleWrite)
-          ? true : await _confirm(actions, preview);
+      final approved = !repairedRepeatedRead && !recoveredProposal &&
+              (isUnambiguousSwap || finalActions.isSingleReversibleWrite)
+          ? true : await _confirm(finalActions, preview);
       if (!mounted) return;
       if (!approved) {
         _push('Изменения отменены.');
         return;
       }
-      final result = await executor.apply(actions, intentDay,
+      writeStarted = true;
+      final result = await executor.apply(finalActions, intentDay,
         approvedPreview: preview);
       if (mounted) _push(result);
     } catch (error) {
       if (mounted) {
-        _push('Не удалось выполнить запрос. ${_friendlyError(error)}');
+        await _offerRecovery(
+          input: input, failure: error, day: intentDay,
+          plans: plansForRecovery, requestId: requestId,
+          conversation: dialogContext, writeStarted: writeStarted,
+        );
       }
     } finally {
       if (mounted) setState(() { _busy = false; _voiceNotice = null; });

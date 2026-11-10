@@ -1,3 +1,16 @@
+## 2026-11-10 — Viktor investigates rejected actions and honours three-day durations [PR verification]
+
+- Extended the duration-from-tag repair scope from only today/tomorrow to **yesterday/today/tomorrow** when explicitly requested; the original day scope is preserved through partial preview and fresh-state atomic commit. Completed, recurring and fixed-time plans remain protected.
+- After a rejected AI action, Viktor can perform up to two read-only observations to gather real data, re-propose a different solution, and show a new consent-gated preview. A failed or unavailable provider yields plain-language next options instead of a technical exception wall.
+- Added three-day and year-boundary regression tests, as well as read-only recovery contract assertions. PR checks and production deployment remain separate.
+
+## 2026-11-10 — Viktor conversational recovery after failed plan changes [PR pending]
+
+- After a pre-write scheduling rejection, Viktor asks the configured AI provider for one different proposal and runs the Brain preview again; recovered proposals always require confirmation.
+- If no valid proposal fits, a strict read-only AI response explains the obstacle, proposes grounded alternatives, and asks what to try next. Server forcibly strips generated actions and tool continuations from recovery replies.
+- A duration-overflow discussion now supports a subsequent explicit "покажи частичный вариант" follow-up, recomputing the verified subset before the normal approval dialog.
+- No automatic replay after uncertain writes; fixed/recurring plans, permissions and PocketBase schema unchanged. Added server-hook and duration-follow-up regressions; production release not yet verified.
+
 ## 2026-11-10 — Prevent the first Time View hour marker from clipping after date swipe
 
 - Correct the remaining visual clipping shown in the refreshed Nov 10 screenshot: the first `09:00` hour label and rail dot used to be drawn at negative Y inside a clipped `Stack`. Both live and cached date-swipe Time View canvases now clamp marker positions to the visible canvas top using one shared geometry function.

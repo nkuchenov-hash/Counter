@@ -302,6 +302,8 @@ class ViktorGateway {
     String? proposalFeedback,
     List<Map<String, String>> conversationHistory = const [],
     bool allowRepair = true,
+    bool adviceOnly = false,
+    String? recoveryContext,
   }) async {
     final service = DatabaseService.instance;
     await service.ensurePocketBaseReady();
@@ -474,6 +476,9 @@ class ViktorGateway {
       'saved_plan_clock_uncertain': reproject &&
           allCandidates.any((p) =>
               p.startTime != null && p.startUtcInstant == null),
+      if (adviceOnly) 'advice_only': true,
+      if (adviceOnly && recoveryContext != null)
+        'recovery_context': recoveryContext,
       'available_tools': ViktorAgentCapabilities.tools
           .map((tool) => tool.name).toList(growable: false),
       'categories': categoryRows,
@@ -617,6 +622,14 @@ class ViktorGateway {
     }
     final raw = map['actions'];
     if (raw is! List) throw const FormatException('Invalid action list.');
+    // Recovery can never execute or even return model-proposed mutations.
+    if (adviceOnly) {
+      return ViktorResponse(
+        message: (map['message'] ?? '').toString(),
+        actions: null,
+        needsMoreContext: false,
+      );
+    }
     ViktorActionBatch? actions;
     try {
       actions = raw.isEmpty ? null : ViktorActionBatch.fromJson({

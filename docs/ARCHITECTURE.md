@@ -112,6 +112,10 @@
 
 ---
 
+### Viktor recovery boundary
+
+Viktor's model may propose a different application action after a **pre-write** validation failure, with at most two additional non-mutating read observations before finalizing a different proposal. A changed proposal is always previewed against fresh Brain state and explicitly approved before execution, even if the ordinary one-action policy would auto-apply it. If the attempt still fails, the `advice_only` provider path sends sanitized, scoped recovery context and **server-forces `actions: []`, `continue: false`**. Flutter also ignores returned actions in this mode. No write replay after a commit has started because the outcome may be uncertain. Existing PocketBase ownership, fixed-time, recurrence, timezone, offline-first, and optimistic UI laws remain intact.
+
 ## 4. API shape
 
 - **No Noco `fields` wrapper.** Requests use flat JSON maps. Checklist / long JSON fields are stringified where the schema expects strings.
