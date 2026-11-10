@@ -62,9 +62,13 @@ final class _PlanningDayStreamHub {
   }
 
   void _bind(DatabaseService db) {
-    // _pump emits the cache synchronously before its first await. Do not emit
-    // twice and rebuild the whole Time graph twice on stream subscription.
-    unawaited(_pump(db, network: true));
+    // A day change reads the shared authoritative cache; it must not
+    // unconditionally start another fetch and emit the same day twice.
+    // Stale/missing cache still triggers the network pump as before.
+    final cacheFresh = _allPlansUserCacheFetchedAt != null &&
+        DateTime.now().difference(_allPlansUserCacheFetchedAt!) <
+            _allPlansUserCacheFreshTtl;
+    unawaited(_pump(db, network: !cacheFresh));
     if (!listenGlobal) return;
     _pokeSub = _planningRefreshController.stream.listen((_) {
       final wantsNetwork = _planningRefreshWantsNetworkPump;
