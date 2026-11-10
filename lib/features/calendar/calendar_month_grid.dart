@@ -208,17 +208,15 @@ class CalendarMonthDayCell extends StatelessWidget {
     final scheduled = tasks.where((t) => t.startTime != null).toList();
 
     return Material(
-      color: !_inMonth
-          ? scheme.onSurface.withValues(alpha: 0.045)
-          : day.weekday >= DateTime.saturday
-              ? scheme.onSurface.withValues(alpha: 0.022)
-              : scheme.surface.withValues(alpha: 0),
+      // Keep every date cell on the same neutral calendar canvas. Adjacent
+      // months and weekends are distinguished by date text, never gray fills.
+      color: scheme.surface.withValues(alpha: 0),
       clipBehavior: Clip.antiAlias,
       child: DecoratedBox(
         decoration: BoxDecoration(
           border: Border(
-            right: BorderSide(color: scheme.onSurface.withValues(alpha: 0.14)),
-            bottom: BorderSide(color: scheme.onSurface.withValues(alpha: 0.14)),
+            right: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.55)),
+            bottom: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.55)),
           ),
         ),
         child: InkWell(
