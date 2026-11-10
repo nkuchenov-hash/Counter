@@ -267,6 +267,69 @@ void main() {
     expect(gridScroll.positions.length, 1);
   });
 
+  testWidgets('settled pager always mounts the real selected day', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(980, 680));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var selected = DateTime(2026, 11, 9);
+    final commits = <int>[];
+    await tester.pumpWidget(MaterialApp(
+      home: StatefulBuilder(builder: (context, setState) {
+        final day = '${selected.year}-${selected.month.toString().padLeft(2,'0')}-'
+            '${selected.day.toString().padLeft(2,'0')}';
+        return Scaffold(
+          body: Column(children: [
+            const SizedBox(height: 100, child: Text('Fixed tags')),
+            Expanded(child: PlanningDaySwipeRegion(
+              dayKey: day,
+              onDayChange: (delta) => setState(() {
+                commits.add(delta);
+                selected = DateTime(
+                  selected.year, selected.month, selected.day + delta);
+              }),
+              adjacentDayBuilder: (context, day) => Center(
+                child: Text('Cached ${day.day}')),
+              child: Center(
+                key: ValueKey('real-$day'),
+                child: Text('Real plan day $day'),
+              ),
+            )),
+          ]),
+        );
+      }),
+    ));
+    Future<void> swipeLeft() async {
+      final gesture = await tester.startGesture(
+        const Offset(760, 370), kind: PointerDeviceKind.touch);
+      await gesture.moveBy(const Offset(-45, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+      await gesture.moveBy(const Offset(-660, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+      await gesture.up();
+      await tester.pumpAndSettle();
+    }
+    expect(find.text('Real plan day 2026-11-09'), findsOneWidget);
+    await swipeLeft();
+    expect(find.text('Real plan day 2026-11-10'), findsOneWidget);
+    await swipeLeft();
+    expect(find.text('Real plan day 2026-11-11'), findsOneWidget);
+    expect(find.text('Fixed tags'), findsOneWidget);
+    expect(commits, <int>[1, 1]);
+  });
+
+  test('Time swipe preview uses canonical projection, layout and cards', () {
+    final source = File(
+      'lib/features/planning/widgets/planning_frozen_day_list.dart',
+    ).readAsStringSync();
+    expect(source, contains('PlanTimeViewLayoutCalculator.compute('));
+    expect(source, contains('projectPlanForTimeMode('));
+    expect(source, contains('PlanTimeTaskCard('));
+    expect(source, contains('layout.overlapLaneIndex'));
+    expect(source, isNot(contains('static const double _hourPx = 152')));
+    expect(source, isNot(contains('task.startTime!.difference(windowStart)')));
+  });
+
   test('Timeline header lives above, not inside, the date PageView', () {
     final source = File('lib/features/timeline/timeline_view.dart')
         .readAsStringSync();
