@@ -191,10 +191,23 @@ jobs:
           $SUDO rm -rf "$preflight_dir"
           trap - EXIT
 
+          # LIFEOS2 recovered services may load Google Fit settings from a
+          # systemd EnvironmentFile outside the active PocketBase data folder.
+          # Never replace an existing unit override with a nonexistent file.
           fit_env="$app_dir/.lifeos-google-fit.env"
-          [[ -f "$fit_env" ]]
-          grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=' "$fit_env"
-          grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=' "$fit_env"
+          if [[ ! -f "$fit_env" && -f /opt/lifeos/.lifeos-google-fit.env ]]; then
+            fit_env="/opt/lifeos/.lifeos-google-fit.env"
+          fi
+          fit_available=false
+          if [[ -f "$fit_env" ]]; then
+            grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_ID=' "$fit_env" ||
+              { echo "Google Fit file is incomplete; preserving the existing unit and aborting." >&2; exit 1; }
+            grep -q '^SLEEP_SYNC_GOOGLE_FIT_CLIENT_SECRET=' "$fit_env" ||
+              { echo "Google Fit secret is absent; preserving the existing unit and aborting." >&2; exit 1; }
+            fit_available=true
+          else
+            echo "No Google Fit credentials file found in known locations; preserving existing systemd Google Fit configuration."
+          fi
 
           # Generate the server-held AES key ONCE. Never rotate on deploy.
           # Keep it outside git and SQLite, with root-only file permissions.
@@ -209,7 +222,17 @@ jobs:
 
           override_dir="/etc/systemd/system/${service_name}.d"
           $SUDO mkdir -p "$override_dir"
-          printf '[Service]\nEnvironmentFile=%s\nEnvironmentFile=%s\n' "$fit_env" "$vault_env" | $SUDO tee "$override_dir/lifeos-google-fit.conf" >/dev/null
+          # Keep the previously configured Google Fit unit settings if this
+          # recovered host does not have the expected env file.
+          if [[ "$fit_available" == true ]]; then
+            printf '[Service]\nEnvironmentFile=%s\n' "$fit_env" |
+              $SUDO tee "$override_dir/lifeos-google-fit.conf" >/dev/null
+          fi
+          # Add the Viktor vault without removing any preexisting unit
+          # EnvironmentFile settings (Google Fit, OAuth, etc.).
+          printf '[Service]\nEnvironmentFile=%s\n' "$vault_env" |
+            $SUDO tee "$override_dir/lifeos-viktor-vault.conf" >/dev/null
+          echo "Required Viktor vault configured; existing Google Fit environment preserved."
 
           $SUDO mkdir -p "$app_dir/pb_hooks" "$app_dir/pb_migrations"
           $SUDO tar -xzf "$ARCHIVE" -C "$app_dir" pb_hooks pb_migrations
