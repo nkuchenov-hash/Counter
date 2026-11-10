@@ -296,6 +296,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     await DatabaseService.instance.updatePlanningTaskWithRecurrenceScope(
       draft.planRowIdForBackend,
       scope: scope,
+      allowProtectedTimeChange: true,
       planBusinessId: draft.planRowId,
       title: draft.title,
       categoryId: draft.categoryId,
