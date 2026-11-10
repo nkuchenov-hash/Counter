@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `4f4c683f` on 2026-11-10.**
+**Generated from input HEAD `9c259aec` on 2026-11-10.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -14960,8 +14960,8 @@ EN:
 - **Human purpose:** Brain helper for data/sync — Tagged plan-duration reflow around immutable recurring, completed, and fixed-time event barriers. Shared PocketBase/auth/parse logic used by multiple tabs.
 - **What this is:** Brain helper for data/sync — Tagged plan-duration reflow around immutable recurring, completed, and fixed-time event barriers.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **Contents:** Dart helpers and types (`ViktorTagDurationOverflow`, `ViktorTagDurationSubset`, `ViktorTagDurationReflow`).
-- **Key code names:** `ViktorTagDurationOverflow`, `ViktorTagDurationSubset`, `ViktorTagDurationReflow`
+- **Contents:** Dart helpers and types (`ViktorDurationConversation`, `ViktorTagDurationOverflow`, `ViktorTagDurationSubset`, `ViktorTagDurationReflow`).
+- **Key code names:** `ViktorDurationConversation`, `ViktorTagDurationOverflow`, `ViktorTagDurationSubset`, `ViktorTagDurationReflow`
 - **Repository role:** Brain/data
 - **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -21143,7 +21143,7 @@ EN:
 - **Contents:** Primary symbols: `TimeViewYScale`, `PlanTimeViewDurationGrid`, `PlanTimeViewBlockLayout`, `_PlanTimeViewCardSlot`, `PlanTimeViewLayoutCalculator`.
 - **Key code names:** `TimeViewYScale`, `PlanTimeViewDurationGrid`, `PlanTimeViewBlockLayout`, `_PlanTimeViewCardSlot`, `PlanTimeViewLayoutCalculator`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/planning/time_view/time_view_drop_preview.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/planning/time_view/time_view_drop_preview.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21160,7 +21160,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `plan_time_view_layout.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `plan_time_view_layout.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/planning/time_view/time_view_drop_preview.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/planning_time_view.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/planning/time_view/time_view_canvas.dart`, `lib/features/planning/time_view/time_view_card_layer.dart`, `lib/features/planning/time_view/time_view_drop_preview.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22544,8 +22544,8 @@ EN:
 - **Human purpose:** `planning_frozen_day_list.dart` on Plans tab (second bottom tab) — Offscreen frozen day plan card list. Users see `planning_frozen_day_list.dart` when using Plans tab (second bottom tab).
 - **What this is:** `planning_frozen_day_list.dart` on Plans tab (second bottom tab) — Offscreen frozen day plan card list.
 - **Why needed:** Users see `planning_frozen_day_list.dart` when using Plans tab (second bottom tab).
-- **Contents:** Primary symbols: `PlanningFrozenDayList`, `_FrozenTimePreview`.
-- **Key code names:** `PlanningFrozenDayList`, `_FrozenTimePreview`
+- **Contents:** Primary symbols: `PlanningFrozenDayList`, `PlanningFrozenTimeCanvas`.
+- **Key code names:** `PlanningFrozenDayList`, `PlanningFrozenTimeCanvas`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
