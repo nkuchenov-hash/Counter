@@ -224,7 +224,7 @@ extension PlanServiceExtension on DatabaseService {
   }
 
   Future<List<PlanningTask>> _fetchPlanningTasksForDate(
-    DateTime selectedDate, {bool allowDayScopedFallback = true},
+    DateTime selectedDate, {bool allowDayScopedFallback = true}
   ) async {
     return RebuildMetrics.instance.perfBlockAsync(
       'Planning._fetchPlanningTasksForDate',
