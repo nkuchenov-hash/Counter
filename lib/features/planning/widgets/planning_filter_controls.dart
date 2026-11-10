@@ -28,7 +28,12 @@ class PlanningSortModeBar extends StatelessWidget {
   final bool dayNavigationEnabled;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) =>
+        _buildForWidth(context, constraints.maxWidth),
+  );
+
+  Widget _buildForWidth(BuildContext context, double availableWidth) {
     final selector = SizedBox(
       height: kAppCompactControlHeight,
       child: SegmentedButton<PlanSortMode>(
@@ -75,7 +80,8 @@ class PlanningSortModeBar extends StatelessWidget {
     );
     // Navigation stays with fixed controls instead of taking 192px from
     // every plan card. Narrow phones use the existing day-content swipe.
-    final showDayButtons = MediaQuery.sizeOf(context).width >= 600 &&
+    final minWidth = desktopTitle == null ? 600.0 : 900.0;
+    final showDayButtons = availableWidth >= minWidth &&
         onAdjacentDayRequested != null;
     final navigation = Row(
       mainAxisSize: MainAxisSize.min,
