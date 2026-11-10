@@ -248,6 +248,11 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
               onNotification: _onPagerNotification,
               child: PageView.builder(
                 controller: _controller,
+                // Native viewport cache prepares both complete neighboring
+                // pages while idle; the finger then moves already-rendered
+                // PlanCards rather than constructing a whole Time View mid-drag.
+                // No second live Planning stream or remote fetch is created.
+                allowImplicitScrolling: true,
                 onPageChanged: _queueLiveDayCommit,
                 scrollDirection: Axis.horizontal,
                 physics: widget.enabled

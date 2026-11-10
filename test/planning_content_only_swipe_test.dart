@@ -276,6 +276,27 @@ void main() {
     expect(changes, <int>[1]);
   });
 
+  testWidgets('neighbor cards are prepared before horizontal drag', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(950, 720));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final builtDays = <int>[];
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: PlanningDaySwipeRegion(
+        dayKey: '2026-11-10',
+        onDayChange: (_) {},
+        adjacentDayBuilder: (_, day) {
+          builtDays.add(day.day);
+          return Center(child: Text('Full cached plan day ${day.day}'));
+        },
+        child: const Center(child: Text('Interactive day 10')),
+      )),
+    ));
+    await tester.pump();
+    expect(builtDays, contains(9));
+    expect(builtDays, contains(11));
+    expect(find.text('Interactive day 10'), findsOneWidget);
+  });
+
   testWidgets('native arrow step promotes the new day during motion', (
     tester,
   ) async {

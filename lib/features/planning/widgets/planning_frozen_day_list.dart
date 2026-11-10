@@ -194,11 +194,12 @@ class _PlanningFrozenTimeCanvasState
       _cachedTimeZoneKey = timeZoneKey;
       _cachedGeometry = geometry;
     }
-    if (geometry.layouts.isEmpty && geometry.untimed.isEmpty) {
+    final stableGeometry = geometry!;
+    if (stableGeometry.layouts.isEmpty && stableGeometry.untimed.isEmpty) {
       return PlanningFrozenListEmptyState(scheme: scheme);
     }
-    final untimed = geometry.untimed;
-    final grid = geometry.grid;
+    final untimed = stableGeometry.untimed;
+    final grid = stableGeometry.grid;
     final canvasHeight = grid.totalHeightPx;
     final compact = MediaQuery.sizeOf(context).width < 600;
     final railWidth = compact ? 28.0 : 88.0;
@@ -297,7 +298,7 @@ class _PlanningFrozenTimeCanvasState
                                   height: 1, thickness: 1,
                                   color: scheme.outlineVariant.withValues(alpha: 0.30)),
                               ),
-                            for (final layout in geometry.layouts)
+                            for (final layout in stableGeometry.layouts)
                               Positioned(
                                 key: ValueKey(
                                   'planning-frozen-time-${layout.task.planRowIdForBackend}'),
