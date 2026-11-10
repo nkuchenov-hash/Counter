@@ -1,4 +1,5 @@
 import 'package:counter/core/date_swipe_physics.dart';
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
@@ -165,7 +166,12 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
     return LayoutBuilder(builder: (context, size) {
       // The arrows are stationary at the outer edges of the day body.
       // Overlay them rather than shrinking cards or moving them into chrome.
-      final showSideArrows = size.maxWidth >= 900;
+      // Desktop shell starts at 900 logical px, but its 272px side rail
+      // leaves a narrower Plans pane. Keep arrows on that pane's edges
+      // without narrowing cards; suppress only in truly narrow panels.
+      final showSideArrows =
+          shellUsesSideNavigation(MediaQuery.sizeOf(context).width) &&
+          size.maxWidth >= 600;
       final arrowTop = (size.maxHeight - 48).clamp(0.0, double.infinity) / 2;
       return Stack(
         fit: StackFit.expand,

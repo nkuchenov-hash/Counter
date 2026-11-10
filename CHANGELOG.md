@@ -1,3 +1,8 @@
+## 2026-11-10 — Keep Planning side arrows visible beside the desktop sidebar [PR verification]
+
+- Correct the desktop breakpoint mismatch: at window widths from 900 logical px, the 272px side navigation makes the Planning body narrower than 900px. Keep both side navigation arrows visible whenever the actual pane is at least 600px, without reducing full-width cards.
+- Add a 1020px desktop / 748px Planning-pane regression test, preserve phone/constrained behavior, and remove the contradictory old top-bar arrow rule from the UX contract.
+
 ## 2026-11-10 — Restore side date arrows and optimistic Planning pager
 
 - Returned previous/next arrows to the **left/right edges of Planning's day body**, not the top selector; stationary overlay leaves day/card width intact. Buttons remain visible but disabled during date locks; mobile continues native horizontal swipe.

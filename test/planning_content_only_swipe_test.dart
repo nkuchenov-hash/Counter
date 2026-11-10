@@ -231,6 +231,33 @@ void main() {
     expect(changes, <int>[1]);
   });
 
+  testWidgets('desktop sidebar does not hide day arrows at pane width 748', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1020, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: 748,
+          height: 650,
+          child: PlanningDaySwipeRegion(
+            dayKey: '2026-11-10',
+            onDayChange: (_) {},
+            child: const SizedBox.expand(),
+          ),
+        ),
+      )),
+    ));
+    expect(find.byKey(const ValueKey('planning-side-previous-day')),
+        findsOneWidget);
+    expect(find.byKey(const ValueKey('planning-side-next-day')),
+        findsOneWidget);
+    expect(tester.getSize(find.byType(PageView)).width, 748);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('native arrow step promotes the new day during motion', (
     tester,
   ) async {
