@@ -111,7 +111,10 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
       final raw = await _channel.invokeMethod<String>(
         'events', {'profileId': owner},
       ) ?? '[]';
-      for (final event in ContextAwarenessEvent.decode(raw)) {
+      final events = ContextAwarenessEvent.decode(raw);
+      // Hydrate only once per batch; never fetch all history for every signal.
+      if (events.isNotEmpty) await db.fetchRecords();
+      for (final event in events) {
         // Old signals cannot be applied safely to an already-edited Timeline.
         final age = DateTime.now().toUtc().difference(event.atUtc);
         if (age.isNegative || age > _maxEventAge) {
@@ -171,7 +174,7 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
     final autoId = prefs.getString(_activeKey(owner));
     final autoKind = prefs.getString(_kindKey(owner));
     // No full-history projection or refresh after each row mutation.
-    final rows = await db.fetchRecords();
+    final rows = db.contextAwarenessCachedRecords();
     final running = _runningPrimaries(rows);
     if (running.length > 1) return true; // ambiguous: do not risk another record
     final active = running.isEmpty ? null : running.single;
@@ -180,8 +183,7 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
         (autoKind == 'travel'
             ? ContextTimelinePolicy.isAutoTravelTitle(
                 (active?['title'] ?? '').toString())
-            : (active?['title'] ?? '').toString().trim() == 'Вне дома' ||
-              (active?['title'] ?? '').toString().trim() == 'Away from home');
+            : autoKind == 'visit');
 
     Future<bool> endAuto() async {
       if (!ourActive || active == null) return true;
@@ -220,12 +222,14 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
     final russian = currentLocale.value.toLowerCase().startsWith('ru');
     switch (event.kind) {
       case 'left_home':
+        // Signals can be delivered late: never rewrite newer manual facts.
+        if (_laterManualFactsExist(rows, event.atUtc, activeAutoId: autoId)) return true;
         // The same native event can replay after a crash before acknowledgement.
         // Never terminate and recreate its already-running inferred trip.
         if (ourActive && autoKind == 'travel') return true;
         if (active != null && !ourActive) {
-          if (!ContextTimelinePolicy.canEndHomeRecord(active, event.atUtc)) {
-            return true; // not a location-bound record: never overwrite it
+          if (!ContextTimelinePolicy.canEndOnDeparture(active, event.atUtc)) {
+            return true; // never overwrite a later or non-running record
           }
           final changed = await db.updateRecord(
             recordId: activeId, endTime: event.atUtc,

@@ -47,7 +47,7 @@ class ContextAwarenessEvent {
 }
 
 /// Deliberately conservative. Being away cannot prove what someone is doing.
-/// Only explicit location-bound titles are eligible for automatic truncation.
+/// Departures normally close the active record, with a user-correctable review.
 class ContextTimelinePolicy {
   const ContextTimelinePolicy._();
 
@@ -70,13 +70,12 @@ class ContextTimelinePolicy {
     return raw == null ? null : DateTime.tryParse(raw.toString())?.toUtc();
   }
 
-  static bool canEndHomeRecord(
+  static bool canEndOnDeparture(
     Map<String, dynamic> row,
     DateTime departedAtUtc,
   ) {
     final start = startedAt(row);
     return isRunning(row) &&
-        isHomeBoundTitle((row['title'] ?? '').toString()) &&
         start != null &&
         start.isBefore(departedAtUtc.toUtc());
   }

@@ -19,7 +19,7 @@ void main() {
     expect(ContextTimelinePolicy.isHomeBoundTitle('Домашние дела'), false);
   });
 
-  test('never truncate a manual record without explicit home context', () {
+  test('departure closes any running record, regardless of title', () {
     final departed = DateTime.utc(2026, 11, 10, 13, 0);
     Map<String, dynamic> row(String title) => {
       'title': title,
@@ -27,10 +27,11 @@ void main() {
       'start_time': DateTime.utc(2026, 11, 10, 12, 30).toIso8601String(),
       'end_time': null,
     };
-    expect(ContextTimelinePolicy.canEndHomeRecord(row('Reading at home'), departed), true);
-    expect(ContextTimelinePolicy.canEndHomeRecord(row('Reading'), departed), false);
-    expect(ContextTimelinePolicy.canEndHomeRecord(row('Reading at home'), departed.subtract(const Duration(hours: 1))), false);
-    expect(ContextTimelinePolicy.canEndHomeRecord({...row('Reading at home'), 'end_time': departed.toIso8601String()}, departed), false);
+    expect(ContextTimelinePolicy.canEndOnDeparture(row('Reading at home'), departed), true);
+    expect(ContextTimelinePolicy.canEndOnDeparture(row('Reading'), departed), true);
+    expect(ContextTimelinePolicy.canEndOnDeparture(row('Work on project'), departed), true);
+    expect(ContextTimelinePolicy.canEndOnDeparture(row('Reading at home'), departed.subtract(const Duration(hours: 1))), false);
+    expect(ContextTimelinePolicy.canEndOnDeparture({...row('Reading at home'), 'end_time': departed.toIso8601String()}, departed), false);
   });
 
   test('travel inference does not claim bus, metro or restaurant', () {
