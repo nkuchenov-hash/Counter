@@ -231,6 +231,47 @@ void main() {
     expect(changes, <int>[1]);
   });
 
+  testWidgets('desktop arrows sit in outer gutters, not beside cards', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1536, 985));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final changes = <int>[];
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: SizedBox(
+            width: 1140,
+            height: 750,
+            child: PlanningDaySwipeRegion(
+              dayKey: '2026-11-10',
+              onDayChange: changes.add,
+              adjacentDayBuilder: (_, day) => Center(child: Text('Day ${day.day}')),
+              child: const SizedBox.expand(
+                key: ValueKey('full-size-day-canvas'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    final left = find.byKey(const ValueKey('planning-side-previous-day'));
+    final right = find.byKey(const ValueKey('planning-side-next-day'));
+    final canvas = find.byKey(const ValueKey('full-size-day-canvas'));
+    expect(left, findsOneWidget);
+    expect(right, findsOneWidget);
+    expect(tester.getSize(find.byType(PageView)).width, 1140);
+    // Canvas begins at 198, ends at 1338. Controls must be roughly
+    // centered in the 198px outer gutters, not intrude on plan cards.
+    expect(tester.getCenter(left).dx, lessThan(130));
+    expect(tester.getCenter(right).dx, greaterThan(1400));
+    expect(tester.getCenter(left).dx, lessThan(tester.getTopLeft(canvas).dx - 48));
+    expect(tester.getCenter(right).dx, greaterThan(tester.getTopRight(canvas).dx + 48));
+    await tester.tap(right);
+    await tester.pumpAndSettle();
+    expect(changes, <int>[1]);
+  });
+
   testWidgets('native arrow step promotes the new day during motion', (
     tester,
   ) async {
