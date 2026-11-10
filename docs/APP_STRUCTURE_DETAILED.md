@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `03815f6a` on 2026-11-10.**
+**Generated from input HEAD `eac28923` on 2026-11-10.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1004 — each appears **exactly once** below.
+**Tracked files:** 1009 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,10 +26,10 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 198 |
-| `test` | 146 |
-| `Brain/data` | 115 |
-| `platform build` | 83 |
+| `production UI` | 199 |
+| `test` | 147 |
+| `Brain/data` | 117 |
+| `platform build` | 84 |
 | `shared foundation` | 71 |
 | `developer tool` | 66 |
 | `governing documentation` | 45 |
@@ -57,9 +57,9 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 542 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 271 |
-| `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
+| `PROVEN_REQUIRED` | 545 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 272 |
+| `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
 | `GENERATED_CANONICAL_OUTPUT` | 1 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 916 |
+| `HIGH` | 921 |
 | `MEDIUM` | 88 |
 
 ---
@@ -115,6 +115,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/data/cache/`](#folder-libdatacache)
 - [`lib/data/calendar_integrations/`](#folder-libdatacalendar_integrations)
 - [`lib/data/categories/`](#folder-libdatacategories)
+- [`lib/data/context/`](#folder-libdatacontext)
 - [`lib/data/health/`](#folder-libdatahealth)
 - [`lib/data/local_sync/`](#folder-libdatalocal_sync)
 - [`lib/data/models/`](#folder-libdatamodels)
@@ -177,7 +178,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/shared/voice/routing/`](#folder-libsharedvoicerouting)
 - [`lib/shared/voice/ui/`](#folder-libsharedvoiceui)
 - [`lib/shared/voice/platforms/desktop/`](#folder-libsharedvoiceplatformsdesktop)
-- [`lib/shared/voice/platforms/mobile/`](#folder-libsharedvoiceplatformsmobile)
+- …and 1 more folders in detailed sections below.
 
 ### Tests
 
@@ -2233,6 +2234,30 @@ RU:
 - **Когда открывать:** Категории пропали, неверный color/icon, fuzzy match выбрал не того клиента, запись без category.
 - **Можно удалить?** Нет — это часть исходного кода приложения, пока владелец присутствует в архитектуре.
 - **Связанные пути:** `lib/data/category_service.dart`, `lib/features/settings/categories/`, `lib/shared/categories/`.
+
+---
+
+## Folder: `lib/data/context/`
+
+EN:
+
+- **What this folder is:** Dart source subtree `lib/data/context/` — part of app code for data/context.
+- **Why it exists:** Code under `lib/` ships in every platform build; this folder groups related Dart modules.
+- **What lives here:** Dart modules listed in file entries below.
+- **What part of the app it affects:** App behavior for the feature or layer named in the path.
+- **When to open it:** Bug or feature work in `data/context`.
+- **Can it be deleted?** No — required for app runtime unless explicitly deprecated in ROADMAP.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
+
+RU:
+
+- **Что это за папка:** Каталог исходного Dart-кода `lib/data/context/`, отвечающий за область `data/context`.
+- **Зачем нужна:** Собирает рядом файлы одного владельца, чтобы UI, данные и общая инфраструктура не смешивали обязанности.
+- **Что здесь лежит:** Dart-файлы и дочерние каталоги этого владельца; каждый файл описан ниже.
+- **На что влияет в приложении:** Поведение приложения в области `data/context` и связанные с ней потоки данных или интерфейс.
+- **Когда открывать:** Открывать при изменениях или ошибках в области `data/context`.
+- **Можно удалить?** Нет — нужен для работы приложения unless explicitly deprecated in ROADMAP.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
 
 ---
 
@@ -5846,6 +5871,43 @@ RU:
 - **Когда открывать:** Permission denied на устройстве, неверное имя app, intent filters.
 - **Можно удалить?** Нет — без него не соберётся Android APK.
 - **Связано с:** `android/app/build.gradle.kts`, Kotlin MainActivity.
+
+
+### `android/app/src/main/kotlin/com/example/counter/ContextAwarenessBridge.kt`
+
+EN:
+
+- **Human purpose:** android build file `ContextAwarenessBridge.kt` in `android/app/src/main/kotlin/com/example/counter` — required by Flutter/native toolchain. Without `ContextAwarenessBridge.kt`, android compile or packaging step for this folder may fail.
+- **What this is:** android build file `ContextAwarenessBridge.kt` in `android/app/src/main/kotlin/com/example/counter` — required by Flutter/native toolchain.
+- **Why needed:** Without `ContextAwarenessBridge.kt`, android compile or packaging step for this folder may fail.
+- **Contents:** Native/config source for `android/app/src/main/kotlin/com/example/counter` (open file only when build errors cite it).
+- **Repository role:** platform build
+- **Evidence of use:** (1) Tracked Flutter platform file under `android/app/src/main/kotlin/com/example/counter/` (individual role: `ContextAwarenessBridge.kt` for that platform project). (2) Also referenced by: `docs/APP_STRUCTURE.md`.
+- **Necessity status:** REQUIRED_BY_PLATFORM_CONVENTION
+- **Deletion consequence:** Unavailable or broken platform build for that OS target.
+- **Confidence:** HIGH
+- **Owner / layer:** Android runner
+- **Responsibilities:** Support android embedder build for `android/app/src/main/kotlin/com/example/counter` — not Dart business logic.
+- **When to open:** Build log mentions `ContextAwarenessBridge.kt` or `android/app/src/main/kotlin/com/example/counter`.
+- **Can it be deleted?** Unavailable or broken platform build for that OS target.
+- **Connected to:** `android/` platform folder, Flutter embedder.
+
+RU:
+
+- **Зачем файл человеку:** Platform file `contextawarenessbridge.kt` в `android/app/src/main/kotlin/com/example/counter` — читает Gradle/Android Gradle Plugin при сборке APK/AAB Counter. Без этого файла Gradle/Android Gradle Plugin может не собрать или упаковать APK/AAB Counter.
+- **Что это:** Platform file `contextawarenessbridge.kt` в `android/app/src/main/kotlin/com/example/counter` — читает Gradle/Android Gradle Plugin при сборке APK/AAB Counter.
+- **Зачем:** Без этого файла Gradle/Android Gradle Plugin может не собрать или упаковать APK/AAB Counter.
+- **Содержимое:** Содержимое native/config слоя `android/app/src/main/kotlin/com/example/counter` (смотреть файл при build errors).
+- **Роль в репозитории:** platform build
+- **Доказательства использования:** Файл Flutter platform-проекта `android/app/src/main/kotlin/com/example/counter/ContextAwarenessBridge.kt`.
+- **Статус необходимости:** REQUIRED_BY_PLATFORM_CONVENTION
+- **Что будет, если удалить:** Сломается сборка этой платформы.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Android runner
+- **Обязанности:** Участвует в Gradle/Android Gradle Plugin pipeline для APK/AAB Counter — не Dart business logic.
+- **Когда открывать:** Build log android ссылается на `contextawarenessbridge.kt` или `android/app/src/main/kotlin/com/example/counter`.
+- **Можно удалить?** Нет — без него не соберётся Android APK.
+- **Связано с:** `android/`, Flutter embedder, Gradle/Android Gradle Plugin.
 
 
 ### `android/app/src/main/kotlin/com/example/counter/MainActivity.kt`
@@ -15711,6 +15773,82 @@ RU:
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
 
+### `lib/data/context/context_awareness_coordinator.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — Post-auth foreground replay of native events via canonical optimistic record Brain / outbox.. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Post-auth foreground replay of native events via canonical optimistic record Brain / outbox..
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`ContextAwarenessCoordinator`).
+- **Key code names:** `ContextAwarenessCoordinator`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/settings/context_awareness_settings_section.dart`, `lib/main.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** Post-auth foreground replay of native events via canonical optimistic record Brain / outbox.
+- **When to open:** When behavior tied to `context_awareness_coordinator.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Post-auth foreground replay of native events via canonical optimistic record Brain / outbox.
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — context_awareness_coordinator. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — context_awareness_coordinator.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `context_awareness_coordinator`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/settings/context_awareness_settings_section.dart`, `lib/main.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `context_awareness_coordinator`.
+- **Когда открывать:** Когда ломается поведение, связанное с `context_awareness_coordinator.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/context/context_awareness_policy.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — Pure event parser, home-bound title safety policy and coarse travel label rules.. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Pure event parser, home-bound title safety policy and coarse travel label rules..
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`ContextAwarenessEvent`, `ContextTimelinePolicy`).
+- **Key code names:** `ContextAwarenessEvent`, `ContextTimelinePolicy`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/context/context_awareness_coordinator.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** Pure event parser, home-bound title safety policy and coarse travel label rules.
+- **When to open:** When behavior tied to `context_awareness_policy.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Pure event parser, home-bound title safety policy and coarse travel label rules.
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — context_awareness_policy. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — context_awareness_policy.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `context_awareness_policy`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/data/context/context_awareness_coordinator.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `context_awareness_policy`.
+- **Когда открывать:** Когда ломается поведение, связанное с `context_awareness_policy.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
 ### `lib/data/database_service.dart`
 
 EN:
@@ -22884,8 +23022,8 @@ EN:
 - **Human purpose:** `life_os_menu_page.dart` on More → Profile and settings — life os menu page. Users see `life_os_menu_page.dart` when using More → Profile and settings.
 - **What this is:** `life_os_menu_page.dart` on More → Profile and settings — life os menu page.
 - **Why needed:** Users see `life_os_menu_page.dart` when using More → Profile and settings.
-- **Contents:** Primary symbols: `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`, `_LifeOsMenuPageState`.
-- **Key code names:** `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`, `_LifeOsMenuPageState`
+- **Contents:** Primary symbols: `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`.
+- **Key code names:** `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -23139,6 +23277,44 @@ RU:
 - **Владелец / слой:** UI профиля
 - **Обязанности:** Поддерживает поведение `account_settings_section` в этой feature-зоне.
 - **Когда открывать:** Когда ломается поведение, связанное с `account_settings_section.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/profile/settings/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/profile/settings/context_awareness_settings_section.dart`
+
+EN:
+
+- **Human purpose:** `context_awareness_settings_section.dart` on More → Profile and settings — Android opt-in, permission state, home anchor and Stop settings UI.. Users see `context_awareness_settings_section.dart` when using More → Profile and settings.
+- **What this is:** `context_awareness_settings_section.dart` on More → Profile and settings — Android opt-in, permission state, home anchor and Stop settings UI..
+- **Why needed:** Users see `context_awareness_settings_section.dart` when using More → Profile and settings.
+- **Contents:** Primary symbols: `ContextAwarenessSettingsSection`, `_ContextAwarenessSettingsSectionState`.
+- **Key code names:** `ContextAwarenessSettingsSection`, `_ContextAwarenessSettingsSectionState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/profile_view.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Profile UI
+- **Responsibilities:** Android opt-in, permission state, home anchor and Stop settings UI.
+- **When to open:** When behavior tied to `context_awareness_settings_section.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Android opt-in, permission state, home anchor and Stop settings UI.
+
+RU:
+
+- **Зачем файл человеку:** `context_awareness_settings_section.dart` на More → Profile и настройки — Поддерживает поведение `context_awareness_settings_section` в этой feature-зоне.. Пользователь видит UI из `context_awareness_settings_section.dart` на More → Profile и настройки.
+- **Что это:** `context_awareness_settings_section.dart` на More → Profile и настройки — Поддерживает поведение `context_awareness_settings_section` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `context_awareness_settings_section.dart` на More → Profile и настройки.
+- **Содержимое:** Dart-модуль `context_awareness_settings_section.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/profile_view.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI профиля
+- **Обязанности:** Поддерживает поведение `context_awareness_settings_section` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `context_awareness_settings_section.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/settings/`, `docs/APP_STRUCTURE.md`
 
@@ -35167,6 +35343,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `daily_routine_contract`.
 - **Когда открывать:** Падение CI или правка кода рядом с `daily_routine_contract`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/data/context_awareness_policy_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `context_awareness_policy_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `context_awareness_policy_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/data/context_awareness_policy_test.dart` / CI when enabled. (2) Namesake production subject: `lib/data/context/context_awareness_policy.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `context_awareness_policy_test` scenario.
+- **When to open:** CI failure or changing code near `context_awareness_policy`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `context_awareness_policy`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `context_awareness_policy` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `context_awareness_policy` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `context_awareness_policy`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/data/context_awareness_policy_test.dart`. (2) Парный production-файл: `lib/data/context/context_awareness_policy.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `context_awareness_policy`.
+- **Когда открывать:** Падение CI или правка кода рядом с `context_awareness_policy`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
