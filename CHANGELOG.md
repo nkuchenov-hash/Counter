@@ -1,3 +1,8 @@
+## 2026-11-10 — Restore minimal calendar surface [verification pending]
+
+- Removed unrequested gray backgrounds from weekend and neighboring-month day cells. Every cell now shares the calendar's original neutral canvas; date numerals still distinguish adjacent months.
+- Kept thin, semantic day boundaries, correct DST-safe date positions, task previews, selected-date badge, and day-to-Plans navigation. Added a no-gray-fill regression assertion. No plan data or backend changes.
+
 ## 2026-11-09 — Calendar DST correction and day-to-Plans navigation [verification pending]
 
 - Replaced 24-hour day offsets in month/week calendar grids, calendar range bounds, and date paging with civil-day calculations. November 2026 now places November 1 on Sunday once, November 2 on Monday, November 9 on Monday, and November 30 on Monday.
