@@ -817,6 +817,18 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
       orderAfter = resolved.map(host.planKey).toList();
     }
 
+    final forbidden = firstAutomaticallyChangedFixedPlan(
+      before: scheduledInRange,
+      after: resolved,
+      fixedTagIds: timeViewFixedTagIds,
+      explicitlyEditedPlanIds: {movedTask.planRowIdForBackend},
+    );
+    if (forbidden != null) {
+      AppSnack.warning(currentLocale.value == 'ru'
+        ? 'Фиксированная встреча блокирует сдвиг'
+        : 'Fixed-time meeting blocks this move');
+      return;
+    }
     final patchParts = <String>[];
     for (final task in resolved) {
       final key = host.planKey(task);
@@ -846,6 +858,7 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
         DatabaseService.instance.updatePlanningTask(
           task.planRowIdForBackend,
           planBusinessId: task.planRowId,
+          allowProtectedTimeChange: key == movedKey,
           startTimeDisplay: task.startTime,
           endDateTimeDisplay: task.endDateTime,
           clearEnd: task.endDateTime == null,
