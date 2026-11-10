@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/plan_card.dart';
-import 'package:counter/core/widgets/plan_time_task_card.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/plan_time_view_layout.dart';
@@ -153,6 +152,8 @@ class PlanningFrozenTimeCanvas extends StatelessWidget {
     final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
     final canvasInset = desktop ? kShellDesktopContentHorizontalPadding : 8.0;
     const blockPad = 8.0;
+    final actualByPlanId =
+        db.aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
 
     return ColoredBox(
       color: scheme.surface,
@@ -263,21 +264,24 @@ class PlanningFrozenTimeCanvas extends StatelessWidget {
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: blockPad),
-                                  child: PlanTimeTaskCard(
+                                  child: PlanCard(
                                     task: layout.task,
-                                    density: layout.density,
-                                    timelineVisualDensity: layout.visualDensity,
-                                    timelineBlockHeightPx: layout.heightPx,
-                                    timelineFillHeight: true,
-                                    timeLabel: layout.projection?.plannedTimeLabel ?? '',
+                                    planTrackedSeconds:
+                                        actualByPlanId[layout.task.pocketRecordId] ?? 0,
+                                    planEstimatedSeconds:
+                                        planningWallEstimateSeconds(layout.task),
                                     displayIsDone: layout.task.isDone,
+                                    selectMode: false,
+                                    isSelected: false,
+                                    highlightAsRunning: false,
                                     toggleDoneEnabled: false,
-                                    showProgressBar: planTimeCardShowProgressForVisual(
-                                        layout.visualDensity),
-                                    showFooterBreadcrumb:
-                                        planTimeCardShowFooterBreadcrumbForVisual(
-                                            layout.visualDensity),
-                                    planEstimatedSeconds: planningWallEstimateSeconds(layout.task),
+                                    onToggleDone: () {},
+                                    onBodyTap: () {},
+                                    onOpenMenu: (_) {},
+                                    timelineBlock: true,
+                                    timelineTimeLabel:
+                                        layout.projection?.plannedTimeLabel,
+                                    timelineBlockHeightPx: layout.heightPx,
                                   ),
                                 ),
                               ),
