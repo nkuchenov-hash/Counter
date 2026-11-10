@@ -296,7 +296,22 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     }
     final visibleDate = _dateForIndex(_visiblePageIndex);
     try {
-      return ScrollConfiguration(
+      return Column(
+        children: [
+          TimelineHeaderControls(
+            showStatsView: _showStatsView,
+            inputActive: widget.shellTabActive,
+            visibleDate: visibleDate,
+            visibleIsFuture: visibleDate.isAfter(_anchorToday),
+            titleController: widget.titleController,
+            titleFocus: widget.titleFocus,
+            onShowStatsViewChanged: (v) => setState(() => _showStatsView = v),
+            onStart: widget.onStart,
+            onPlan: widget.onPlan,
+            onNewTaskForPastDate: widget.onNewTaskForPastDate,
+          ),
+          Expanded(
+            child: ScrollConfiguration(
         behavior: const MouseDragScrollBehavior(),
         child: NotificationListener<ScrollNotification>(
           onNotification: (n) {
@@ -366,6 +381,9 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
             },
           ),
         ),
+            ),
+          ),
+        ],
       );
     } catch (e, st) {
       if (kDebugMode) debugPrint('TimelineSwipeWrapper: $e\n$st');
@@ -515,18 +533,6 @@ class _TimelinePageState extends State<TimelinePage> {
         top: false,
         child: Column(
           children: [
-            TimelineHeaderControls(
-              showStatsView: widget.showStatsView,
-              inputActive: widget.isActivePage && widget.shellTabActive,
-              visibleDate: _visibleDate,
-              visibleIsFuture: _visibleIsFuture,
-              titleController: widget.titleController,
-              titleFocus: widget.titleFocus,
-              onShowStatsViewChanged: widget.onShowStatsViewChanged,
-              onStart: widget.onStart,
-              onPlan: widget.onPlan,
-              onNewTaskForPastDate: widget.onNewTaskForPastDate,
-            ),
             Expanded(
               child: MorningStartGate(
                 selectedDate: _visibleDate,

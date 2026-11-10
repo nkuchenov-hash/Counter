@@ -8,21 +8,24 @@ import 'package:flutter/material.dart';
 /// rebuild the tag catalog with every swipe. The surrounding vertical scroll
 /// keeps ownership of vertical motion; card hold-to-edit owns long presses.
 ///
-/// Never visually translate a heavy day during drag: without a mounted adjacent
-/// page that creates a fake 60px rubber-band snap and forces GPU repaints on
-/// every pointer update. The selected day changes once, on release.
+/// Drag accumulation is logic-only: no per-pointer card layout or paint.
+/// On date commitment, slide the old and new day canvases a full viewport
+/// in 200ms without re-mounting Planning chrome or fetching adjacent days.
 class PlanningDaySwipeRegion extends StatefulWidget {
   const PlanningDaySwipeRegion({
     super.key,
     required this.child,
     required this.onDayChange,
     this.dayKey,
+    this.keepOutgoingContent = true,
     this.enabled = true,
   });
 
   final Widget child;
-  /// The visible YYYY-MM-DD date. A change triggers one bounded arrival motion.
+  /// The visible YYYY-MM-DD date. A change triggers a full-width settle slide.
   final String? dayKey;
+  /// False for Time mode: never mount two grids on one ScrollController.
+  final bool keepOutgoingContent;
   /// -1 = previous day, +1 = next day.
   final ValueChanged<int> onDayChange;
   final bool enabled;
@@ -33,21 +36,27 @@ class PlanningDaySwipeRegion extends StatefulWidget {
 
 class _PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion>
     with SingleTickerProviderStateMixin {
-  // Single short arrival, not the old rubber-band + second slide. Never animate
-  // or rebuild the heavy card canvas while the user is dragging.
-  static const Duration _arrivalDuration = Duration(milliseconds: 170);
-  static const double _arrivalDistancePx = 18;
-  late final AnimationController _arrival;
-  int _arrivalSign = 1;
+  // One full-width, two-surface date slide after release. The previous
+  // content is kept for only the settling animation; no neighboring Planning
+  // streams, page mounts, warmup or network calls during a pointer gesture.
+  static const Duration _settleDuration = Duration(milliseconds: 200);
+  late final AnimationController _slide;
+  Widget? _outgoingBody;
+  int _travelSign = 1;
 
   @override
   void initState() {
     super.initState();
-    _arrival = AnimationController(
+    _slide = AnimationController(
       vsync: this,
-      duration: _arrivalDuration,
+      duration: _settleDuration,
       value: 1,
-    );
+    )..addStatusListener((status) {
+      if (status == AnimationStatus.completed && _outgoingBody != null &&
+          mounted) {
+        setState(() => _outgoingBody = null);
+      }
+    });
   }
 
   @override
@@ -56,15 +65,17 @@ class _PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion>
     final oldDay = oldWidget.dayKey;
     final nextDay = widget.dayKey;
     if (oldDay != null && nextDay != null && nextDay != oldDay) {
-      // Newer day enters from right; earlier day enters from left.
-      _arrivalSign = nextDay.compareTo(oldDay) > 0 ? 1 : -1;
-      _arrival.forward(from: 0);
+      _travelSign = nextDay.compareTo(oldDay) > 0 ? 1 : -1;
+      _outgoingBody = oldWidget.keepOutgoingContent
+          ? oldWidget.child
+          : const SizedBox.expand();
+      _slide.forward(from: 0);
     }
   }
 
   @override
   void dispose() {
-    _arrival.dispose();
+    _slide.dispose();
     super.dispose();
   }
 
@@ -106,16 +117,37 @@ class _PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion>
       onHorizontalDragCancel: widget.enabled ? _reset : null,
       child: ClipRect(
         child: AnimatedBuilder(
-          animation: _arrival,
-          // The RepaintBoundary-heavy day stays a *child*, not rebuilt by
-          // animation ticks. Transform is composited; no opacity saveLayer,
-          // neighbor page, data fetch, layout pass, or snap-back on pointer-up.
+          animation: _slide,
+          // The card canvases are fixed children: only composited fractional
+          // translations update for 200ms. Never lay out pages per animation
+          // tick; the header, tags and quick entry remain outside this region.
           child: widget.child,
-          builder: (context, dayBody) {
-            final t = Curves.easeOutCubic.transform(_arrival.value);
-            return Transform.translate(
-              offset: Offset(_arrivalSign * _arrivalDistancePx * (1 - t), 0),
-              child: dayBody,
+          builder: (context, activeBody) {
+            final t = Curves.easeOutCubic.transform(_slide.value);
+            final outgoing = _outgoingBody;
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                if (outgoing != null)
+                  IgnorePointer(
+                    key: const ValueKey('planning-outgoing-slide'),
+                    child: TickerMode(
+                      enabled: false,
+                      child: FractionalTranslation(
+                        translation: Offset(-_travelSign * t, 0),
+                        child: outgoing,
+                      ),
+                    ),
+                  ),
+                // Stable key prevents reparent/remount of the expensive
+                // active Time/list content when the outgoing surface exits.
+                FractionalTranslation(
+                  key: const ValueKey('planning-active-slide'),
+                  translation: Offset(
+                    outgoing == null ? 0 : _travelSign * (1 - t), 0),
+                  child: activeBody,
+                ),
+              ],
             );
           },
         ),

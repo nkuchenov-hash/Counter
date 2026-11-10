@@ -1,3 +1,10 @@
+## 2026-11-10 — Fixed Timeline controls and full-width Planning swipe [CI and browser profiling pending]
+
+- Timeline now retains its existing native horizontal `PageView.builder` and `FeatherDateSwipePhysics`, but mounts `TimelineHeaderControls` once above the pager. The list/stats switch and record quick-entry no longer slide with days.
+- Planning replaces the virtually invisible 18px arrival with one 200ms, full-viewport two-surface directional slide of the expanded day body only; quick-entry, tags, sort controls and shell remain fixed. Existing 12px drag threshold, vertical scrolling and card edit locks are unchanged.
+- To avoid a new Time View performance failure, Time mode does **not** mount an outgoing grid with the same shared ScrollController. List modes retain the previous view only during the 200ms settle. No additional Planning streams or adjacent network fetches are introduced.
+- Added widget regression checks for full-width forward/backward motion, stationary chrome, no per-animation card rebuilds, single Time View scroll-controller attachment, and Timeline header ownership. Target-browser profiling and release verification are still required.
+
 ## 2026-11-10 — Planning single-pass directional arrival motion [PR verification]
 
 - Reintroduced a 170ms directional arrival animation for the **day content only**, keyed on real date changes. Uses an 18px GPU-composited translation outside the day RepaintBoundary, rather than the original 60px drag-time rubber band or 150ms follow-up slide.
