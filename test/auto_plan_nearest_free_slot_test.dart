@@ -207,6 +207,38 @@ void main() {
     expect(categoryDefaultLookup, greaterThan(afterLastBranch));
   });
 
+  test('explicit 13:30 meeting keeps exact time despite overlapping work', () {
+    final busy = _plan(
+      'busy', DateTime(2026, 7, 24, 13),
+      DateTime(2026, 7, 24, 14));
+    final start = DateTime(2026, 7, 24, 13, 30);
+    final end = DateTime(2026, 7, 24, 14);
+    final result = DatabaseService.instance.resolveAutoPlanSchedule(
+      wallDay: DateTime(2026, 7, 24),
+      categoryId: 1,
+      tags: const [Tag(tagId: 0, name: 'meeting')],
+      existingDayPlans: [busy],
+      explicitStartWall: start,
+      explicitEndWall: end,
+      hasExplicitTimeRange: true,
+    );
+    expect(result.startWall, start);
+    expect(result.endWall, end);
+  });
+
+  test('opening Time View does not call any background schedule writer', () {
+    final source = File(
+      'lib/features/planning/time_view/planning_time_view.dart',
+    ).readAsStringSync();
+    final start = source.indexOf('void maybeNormalizeTimeViewOverlapsOnce(');
+    final end = source.indexOf('void logTimeDurationLayout(', start);
+    expect(start, greaterThan(0));
+    expect(end, greaterThan(start));
+    final method = source.substring(start, end);
+    expect(method, isNot(contains('applySequentialTimeViewCascadeIfNeeded(')));
+    expect(method, isNot(contains('updatePlanningTask(')));
+  });
+
   test('explicit plan stays in a gap when its full duration fits', () {
     final first = _plan(
       'a',

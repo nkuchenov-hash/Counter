@@ -88,6 +88,28 @@ routerAdd("POST", "/api/viktor/schedule/commit", function(e) {
             !sameMoment(p.getString("end_time"), item.raw.expected_end)) {
           throw new Error("stale_plan");
         }
+        // A local settings cache is NOT an authority for meetings.
+        // Enforce the built-in appointment tag barrier using live server tags
+        // as well; an old or buggy Viktor client must not shift a meeting.
+        const lockedNames = new Set([
+          "meeting", "meetings", "встреча", "встречи",
+          "appointment", "appointments", "созвон", "созвоны",
+          "call", "calls", "звонок", "звонки",
+        ]);
+        const linked = p.get("tags_link");
+        const ids = Array.isArray(linked) ? linked :
+          (typeof linked === "string" && linked ? [linked] : []);
+        for (const tagId of ids) {
+          let tag;
+          try {
+            tag = txApp.findRecordById("tags", String(tagId));
+          } catch (_) {
+            throw new Error("fixed_time_tag_lookup_failed");
+          }
+          if (lockedNames.has(tag.getString("name").trim().toLowerCase())) {
+            throw new Error("fixed_time_tag");
+          }
+        }
         // The planner rejects fixed-time categories; enforce the immediate
         // category lock again on the server in case it changed meanwhile.
         const categoryId = p.getString("category_id");
@@ -150,7 +172,8 @@ routerAdd("POST", "/api/viktor/schedule/commit", function(e) {
   } catch (error) {
     const reason = String(error && error.message || error);
     const safe = new Set(["plan_not_owned", "protected_plan", "stale_plan",
-      "fixed_time_category", "new_plan_overlap", "existing_plan_overlap",
+      "fixed_time_category", "fixed_time_tag", "fixed_time_tag_lookup_failed",
+      "new_plan_overlap", "existing_plan_overlap",
       "too_many_affected_plans", "invalid_existing_plan"]);
     return e.json(409, {ok:false,
       error:safe.has(reason) ? reason : "schedule_transaction_failed"});

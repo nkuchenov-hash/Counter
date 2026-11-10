@@ -43,6 +43,7 @@ function mockRecord(id, values) {
   return {
     id, data: values,
     getString(key) {return String(values[key] ?? '');},
+    get(key) {return values[key] ?? null;},
     getBool(key) {return values[key] === true;},
     set(key, value) {values[key] = value;},
   };
@@ -52,6 +53,10 @@ const app = {
     const staged = copy(data);
     const tx = {
       findRecordById(collection, id) {
+        if (collection === 'tags') {
+          if (id === 'fixedmeeting001') return mockRecord(id, {name:'meeting'});
+          throw new Error('tag_missing');
+        }
         assert.equal(collection, 'plans');
         if (!staged[id]) throw new Error('plan_missing');
         return mockRecord(id, staged[id]);
@@ -135,4 +140,16 @@ assert.equal(data[two].start_time,'2026-10-21T10:00:00.000Z');
 assert.equal(data[one].is_postponed,true);
 assert.equal(call(moves).status,409,
  'stale retry must not blindly apply the same command a second time');
+reset();
+data[one].tags_link = ['fixedmeeting001'];
+const fixedMeeting = call([moves[0]]);
+assert.equal(fixedMeeting.status, 409,
+  'even an approved Viktor batch cannot shift the protected meeting');
+assert.equal(fixedMeeting.body.error, 'fixed_time_tag');
+assert.equal(data[one].start_time, t1, 'fixed meeting remains at official time');
+reset();
+data[one].tags_link = ['unknown_tag_id'];
+assert.equal(call([moves[0]]).status, 409,
+  'unresolvable linked tag fails closed; no silent meeting move');
+assert.equal(data[one].start_time, t1);
 process.stdout.write('Viktor atomic multi-day schedule commit verified\n');

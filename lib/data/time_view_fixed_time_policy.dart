@@ -5,20 +5,51 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Local-only Time View setting: tag ids treated as fixed-time barriers.
 const String kTimeViewFixedTagIdsPrefsKey = 'time_view_fixed_tag_ids_v1';
 
-/// True when [task] has at least one tag id in [fixedTagIds].
+/// Meeting/call appointments are schedule anchors, not flexible work.
+/// This rule is independent of the browser's local tag-settings cache. The
+/// explicit fixed-tag selection extends this built-in protection.
+const Set<String> kInherentlyFixedTimeTagNames = {
+  'meeting', 'meetings', 'встреча', 'встречи',
+  'appointment', 'appointments', 'созвон', 'созвоны',
+  'call', 'calls', 'звонок', 'звонки',
+};
+
+/// A locked appointment MUST keep its persisted start and end unless the
+/// user explicitly edits that appointment or confirms Viktor's exact change.
+/// Never make protection conditional on local SharedPreferences being loaded.
 bool isPlanFixedInTimeView(PlanningTask task, Set<String> fixedTagIds) {
-  if (fixedTagIds.isEmpty) return false;
   for (final tag in task.tags) {
+    if (kInherentlyFixedTimeTagNames.contains(
+      tag.name.trim().toLowerCase(),
+    )) return true;
     final pbId = tag.pbRecordId?.trim() ?? '';
-    if (pbId.isNotEmpty && fixedTagIds.contains(pbId)) {
-      return true;
-    }
-    final legacyId = tag.tagId.toString();
-    if (legacyId.isNotEmpty && fixedTagIds.contains(legacyId)) {
+    if (pbId.isNotEmpty && fixedTagIds.contains(pbId)) return true;
+    if (tag.tagId != 0 && fixedTagIds.contains(tag.tagId.toString())) {
       return true;
     }
   }
   return false;
+}
+
+/// Return the first protected row changed by an automatic schedule rewrite.
+/// Both start AND end are immutable. An explicit manual edit must be handled
+/// separately from a generic cascade/reflow.
+PlanningTask? firstAutomaticallyChangedFixedPlan({
+  required List<PlanningTask> before,
+  required List<PlanningTask> after,
+  Set<String> fixedTagIds = const {},
+  Set<String> explicitlyEditedPlanIds = const {},
+}) {
+  final byId = {for (final task in after) task.planRowIdForBackend: task};
+  for (final task in before) {
+    final id = task.planRowIdForBackend;
+    if (explicitlyEditedPlanIds.contains(id) ||
+        !isPlanFixedInTimeView(task, fixedTagIds)) continue;
+    final next = byId[id];
+    if (next != null && (task.startTime != next.startTime ||
+        task.endDateTime != next.endDateTime)) return task;
+  }
+  return null;
 }
 
 /// Fixed-time tag ids for Time View cascade barriers (SharedPreferences, profile-local).
@@ -100,8 +131,18 @@ List<PlanningTask>? cascadeTimeViewAffectedChain({
     } else if (!collision && !moved && draggedPlanIds.isNotEmpty) {
       activeChain = false;
     }
-    final end = start.add(Duration(minutes: durationMinutes(task)));
-    out.add(task.copyWith(startTime: start, endDateTime: end, clearEnd: false));
+    final inferredEnd = start.add(Duration(minutes: durationMinutes(task)));
+    // A non-selected fixed-time card is an immutable absolute interval,
+    // including its explicit end; do not overwrite it with tag defaults.
+    final protected = !moved &&
+        (fixedPlanIds.contains(id) || isPlanFixedInTimeView(task, const {}));
+    if (protected && start != originalStart) return null;
+    final end = protected
+        ? (task.endDateTime ?? inferredEnd)
+        : inferredEnd;
+    out.add(protected
+        ? task
+        : task.copyWith(startTime: start, endDateTime: end, clearEnd: false));
     if (occupiedUntil == null || end.isAfter(occupiedUntil)) {
       occupiedUntil = end;
     }

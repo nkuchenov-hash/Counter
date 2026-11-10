@@ -72,10 +72,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   final EditSheetAutosaveGate _planAutosaveGate = EditSheetAutosaveGate();
   final RecurrenceEditScopeGate _recurrenceScopeGate = RecurrenceEditScopeGate();
   Timer? _titleAssistDebounce;
-
   bool get _isPersistedPlan => widget.task.planRowIdForBackend.trim().isNotEmpty;
   bool get _baselineIsRecurring => DatabaseService.instance.planningTaskIsRecurringForScope(_baselineTask);
-
   @override
   void initState() {
     super.initState();
@@ -140,10 +138,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
         DateTime.now();
     _date = DateTime(_date.year, _date.month, _date.day);
   }
-
   bool get _shouldShowGraduateUi =>
       _startedAsUndatedBacklog && _scheduledTime != null;
-
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -296,6 +292,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     await DatabaseService.instance.updatePlanningTaskWithRecurrenceScope(
       draft.planRowIdForBackend,
       scope: scope,
+      allowProtectedTimeChange: true,
       planBusinessId: draft.planRowId,
       title: draft.title,
       categoryId: draft.categoryId,

@@ -328,7 +328,11 @@ extension PlanTimeCascadeExtension on DatabaseService {
   bool applySequentialTimeViewCascadeIfNeeded({
     required DateTime wallDay,
     List<PlanningTask>? scheduledSubset,
+    bool explicitlyApproved = false,
   }) {
+    // Opening a day, background sync, or timezone refresh is NOT permission
+    // to rewrite other people's meeting appointments.
+    if (!explicitlyApproved) return false;
     final dayKey =
         '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
     final dayTasks =
@@ -342,7 +346,9 @@ extension PlanTimeCascadeExtension on DatabaseService {
       dayTasks,
       cascaded,
     );
-    if (patches.isEmpty) return false;
+    if (patches.isEmpty ||
+        firstAutomaticallyChangedFixedPlan(
+          before: dayTasks, after: cascaded) != null) return false;
     var applied = 0;
     final appliedPatches = <plan_time_seq.PlanTimeSequentialCascadePatch>[];
     for (final p in patches) {
@@ -538,6 +544,13 @@ extension PlanTimeCascadeExtension on DatabaseService {
     if (hasExplicitTimeRange &&
         explicitStartWall != null &&
         explicitEndWall != null) {
+      // An explicitly entered meeting time is an absolute appointment,
+      // never a suggestion to be nudged to the next free slot.
+      if (tags.any((t) => kInherentlyFixedTimeTagNames.contains(
+          t.name.trim().toLowerCase()))) {
+        return (startWall: explicitStartWall, endWall: explicitEndWall,
+          startUtcInstant: null, endUtcInstant: null);
+      }
       final requestedDurationMin = max(
         1,
         explicitEndWall.difference(explicitStartWall).inMinutes,
@@ -643,11 +656,15 @@ extension PlanTimeCascadeExtension on DatabaseService {
       }
     }
 
-    var resolvedStart = _avoidPlanWallScheduleCollisions(
-      startWall: startWall,
-      durationMin: durationMin,
-      existingDayPlans: relevantDayPlans,
-    );
+    var resolvedStart = explicitStartWall != null &&
+        tags.any((t) => kInherentlyFixedTimeTagNames.contains(
+          t.name.trim().toLowerCase()))
+        ? explicitStartWall
+        : _avoidPlanWallScheduleCollisions(
+          startWall: startWall,
+          durationMin: durationMin,
+          existingDayPlans: relevantDayPlans,
+        );
 
     var endWall =
         explicitEndWall != null &&
@@ -656,27 +673,8 @@ extension PlanTimeCascadeExtension on DatabaseService {
         ? explicitEndWall
         : resolvedStart.add(Duration(minutes: durationMin));
 
-    final dayKey =
-        '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
-    const probePlanId = '__auto_schedule_probe__';
-    final probe = PlanningTask(
-      id: 0,
-      title: '',
-      categoryId: categoryId,
-      isDone: false,
-      dateKey: dayKey,
-      order: 999999,
-      startTime: resolvedStart,
-      endDateTime: endWall,
-      tags: tags,
-      planRowId: probePlanId,
-    );
-    final cascadedProbe = normalizeSequentialPlanTimesForDay([
-      ...relevantDayPlans,
-      probe,
-    ]).firstWhere((t) => t.planRowId == probePlanId);
-    resolvedStart = cascadedProbe.startTime ?? resolvedStart;
-    endWall = cascadedProbe.endDateTime ?? endWall;
+    // Final placement is the new plan alone; never normalize persisted rows
+    // just to determine where the new card belongs.
 
     if (usedCategoryDefault) {
       final startUtc = wallUtcForCategoryDefaultWall(

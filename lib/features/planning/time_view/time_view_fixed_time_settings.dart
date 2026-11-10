@@ -1,4 +1,4 @@
-import 'dart:async';import 'package:counter/data/database_service.dart';import 'package:counter/data/models.dart';import 'package:counter/l10n/dictionary.dart';import 'package:flutter/material.dart';/// Local Time View setting: tags whose plans block cascade shifts.
+import 'dart:async';import 'package:counter/data/database_service.dart';import 'package:counter/data/models.dart';import 'package:counter/data/time_view_fixed_time_policy.dart';import 'package:counter/l10n/dictionary.dart';import 'package:flutter/material.dart';/// Local Time View setting: tags whose plans block cascade shifts.
 class TimeViewFixedTagsSettingsBlock extends StatefulWidget {
   const TimeViewFixedTagsSettingsBlock({
     required this.initialSelectedIds,
@@ -43,7 +43,11 @@ class TimeViewFixedTagsSettingsBlockState
     return tag.tagId.toString();
   }
 
+  bool _alwaysFixed(Tag tag) =>
+      kInherentlyFixedTimeTagNames.contains(tag.name.trim().toLowerCase());
+
   Future<void> _toggle(Tag tag) async {
+    if (_alwaysFixed(tag)) return; // Meetings are immutable by default.
     final key = _tagKey(tag);
     setState(() {
       if (_selected.contains(key)) {
@@ -62,8 +66,8 @@ class TimeViewFixedTagsSettingsBlockState
         ? 'Теги с фиксированным временем'
         : 'Fixed-time tags';
     final subtitle = loc == 'ru'
-        ? 'Планы с этими тегами не сдвигаются другими карточками.'
-        : 'Plans with these tags are not pushed by other cards.';
+        ? 'Встречи и звонки защищены всегда. Остальные выбранные теги также не сдвигаются.'
+        : 'Meetings and calls are always fixed. Other selected tags also block shifts.';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -103,8 +107,10 @@ class TimeViewFixedTagsSettingsBlockState
               for (final tag in _tags)
                 FilterChip(
                   label: Text(tag.name),
-                  selected: _selected.contains(_tagKey(tag)),
-                  onSelected: (_) => unawaited(_toggle(tag)),
+                  selected: _alwaysFixed(tag) || _selected.contains(_tagKey(tag)),
+                  onSelected: _alwaysFixed(tag)
+                      ? null
+                      : (_) => unawaited(_toggle(tag)),
                 ),
             ],
           ),

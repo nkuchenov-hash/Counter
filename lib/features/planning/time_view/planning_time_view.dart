@@ -343,21 +343,11 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     DateTime planWallDay,
     List<PlanningTask> schedulable,
   ) {
-    if (host.sortMode != PlanSortMode.time) return;
-    final dayKey =
-        '${planWallDay.year}-'
-        '${planWallDay.month.toString().padLeft(2, '0')}-'
-        '${planWallDay.day.toString().padLeft(2, '0')}';
-    if (timeViewCascadeNormalizedDayKey == dayKey) return;
-    timeViewCascadeNormalizedDayKey = dayKey;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!host.mounted || host.sortMode != PlanSortMode.time) return;
-      DatabaseService.instance.applySequentialTimeViewCascadeIfNeeded(
-        wallDay: planWallDay,
-        scheduledSubset: schedulable,
-      );
-      if (host.mounted) host.notifySetState(() {});
-    });
+    // READ-ONLY: Rendering a day must NEVER rewrite its schedule.
+    // Old code silently persisted cascaded start/end times just by opening
+    // Time View. Even a fixed meeting could be shifted by that path.
+    // Existing overlaps remain visible until the user explicitly resolves
+    // them; intentional drag/resize has its own fixed-time guards.
   }
 
   void logTimeDurationLayout({
@@ -559,7 +549,7 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
   }
 
   Set<String> timeViewFixedPlanIdsForTasks(Iterable<PlanningTask> tasks) {
-    if (timeViewFixedTagIds.isEmpty) return {};
+    // Built-in meeting protection applies even before local prefs load.
     final out = <String>{};
     for (final task in tasks) {
       if (isPlanFixedInTimeView(task, timeViewFixedTagIds)) {
@@ -707,6 +697,7 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
       DatabaseService.instance.updatePlanningTask(
         task.planRowIdForBackend,
         planBusinessId: task.planRowId,
+        allowProtectedTimeChange: true,
         startTimeDisplay: newStartWall,
         endDateTimeDisplay: newEndWall,
         clearEnd: newEndWall == null,
@@ -719,8 +710,24 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
   void persistTimeViewCascadePatches({
     required List<PlanningTask> resolved,
     required List<PlanningTask> scheduledBefore,
+    Set<String> explicitlyEditedPlanIds = const {},
     String? commitSource,
   }) {
+    final forbidden = firstAutomaticallyChangedFixedPlan(
+      before: scheduledBefore,
+      after: resolved,
+      fixedTagIds: timeViewFixedTagIds,
+      explicitlyEditedPlanIds: explicitlyEditedPlanIds,
+    );
+    if (forbidden != null) {
+      // Fail the entire write group, before even its optimistic overlays.
+      if (host.mounted) {
+        AppSnack.warning(currentLocale.value == 'ru'
+          ? 'Фиксированное время «${forbidden.title}» нельзя сдвинуть автоматически'
+          : 'Fixed-time appointment cannot be moved automatically');
+      }
+      return;
+    }
     if (kDebugMode) {
       debugPrint('[TIME_VIEW_INSERTION_COMMIT_PATCHES] source=$commitSource');
       debugPrint('[TIME_VIEW_BRAIN_PATCH_STARTED]');
@@ -747,6 +754,8 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
       unawaited(
         DatabaseService.instance.updatePlanningTask(
           task.planRowIdForBackend,
+          allowProtectedTimeChange: explicitlyEditedPlanIds.contains(
+            task.planRowIdForBackend),
           planBusinessId: task.planRowId,
           startTimeDisplay: task.startTime,
           endDateTimeDisplay: task.endDateTime,
@@ -808,6 +817,18 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
       orderAfter = resolved.map(host.planKey).toList();
     }
 
+    final forbidden = firstAutomaticallyChangedFixedPlan(
+      before: scheduledInRange,
+      after: resolved,
+      fixedTagIds: timeViewFixedTagIds,
+      explicitlyEditedPlanIds: {movedTask.planRowIdForBackend},
+    );
+    if (forbidden != null) {
+      AppSnack.warning(currentLocale.value == 'ru'
+        ? 'Фиксированная встреча блокирует сдвиг'
+        : 'Fixed-time meeting blocks this move');
+      return;
+    }
     final patchParts = <String>[];
     for (final task in resolved) {
       final key = host.planKey(task);
@@ -837,6 +858,7 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
         DatabaseService.instance.updatePlanningTask(
           task.planRowIdForBackend,
           planBusinessId: task.planRowId,
+          allowProtectedTimeChange: key == movedKey,
           startTimeDisplay: task.startTime,
           endDateTimeDisplay: task.endDateTime,
           clearEnd: task.endDateTime == null,

@@ -634,6 +634,7 @@ extension PlanningTimeViewRecurringInteractionController
         .updatePlanningTaskWithRecurrenceScope(
           mutationRowId,
           scope: scope,
+          allowProtectedTimeChange: true,
           planBusinessId: businessId.isEmpty || businessId.startsWith('virt-')
               ? null
               : businessId,

@@ -62,6 +62,18 @@ extension PlanningBulkEditActions on _PlanningPageState {
         durationMinutesForTask: (task) =>
             db.resolvePlanDurationMinutesFromTags(task.tags),
       );
+      // Selection is user intent; collateral destination shifts are NOT.
+      // Never relocate a fixed meeting to make room for a bulk edit.
+      final protectedIds = timeView.timeViewFixedPlanIdsForTasks(incumbents);
+      if (shifts.any((shift) =>
+          protectedIds.contains(shift.task.planRowIdForBackend))) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(loc == 'ru'
+            ? 'Фиксированная встреча блокирует перенос'
+            : 'Fixed-time meeting blocks this move')),
+        );
+        return;
+      }
       // A recurring virtual instance or still-unsaved optimistic plan cannot
       // be reliably PATCHed. Abort before changing *any* plans.
       if (shifts.any((shift) =>
@@ -128,7 +140,12 @@ extension PlanningBulkEditActions on _PlanningPageState {
     if (patches.isEmpty) return;
     db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
     if (mounted) setState(() {});
-    final ok = await db.bulkUpdatePlans(patches, suppressAppSnack: true);
+    final ok = await db.bulkUpdatePlans(
+      patches,
+      suppressAppSnack: true,
+      explicitlyEditedPlanIds: selected
+          .map((t) => t.planRowIdForBackend).toSet(),
+    );
     if (!mounted) return;
     if (ok) {
       setState(() {

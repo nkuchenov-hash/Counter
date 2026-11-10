@@ -1,3 +1,14 @@
+## 2026-11-10 — P0 iron-rule fixed meetings: forbid automatic timetable rewrites
+
+- Audited Planning Time View, resize/cascade, bulk day moves, auto placement, recurring editing, sync persistence and Viktor.
+- Removed the read-time implicit day normalization that could write unrelated meetings merely from opening the Time View.
+- Meeting/call/appointment tags in English/Russian are fixed by default even when local selected-tag preferences have not loaded; the settings UI indicates those tags are not toggleable.
+- Automatic cascades, collateral resize and bulk moves, legacy drag, and client single/bulk persistence reject changes to protected start/end before network writes; only the deliberately edited plan receives a manual exception.
+- Explicit meeting start/end times are preserved when inserting over existing work; flexible work must be rescheduled or the operation rejected instead.
+- Viktor schedule previews include meeting locks and the atomic backend rejects tagged meeting changes, including unresolved linked tag metadata (fail closed).
+- Added regression cases for 13:30 meeting, illegal resize, exact explicit-time creation, read-only Time View render, and server transaction rejection.
+- No historical user plan times were guessed or automatically changed. Account-level timeline audit and future server-grade owner-approved exception protocol remain separate work.
+
 ## 2026-11-10 — Prevent the first Time View hour marker from clipping after date swipe
 
 - Correct the remaining visual clipping shown in the refreshed Nov 10 screenshot: the first `09:00` hour label and rail dot used to be drawn at negative Y inside a clipped `Stack`. Both live and cached date-swipe Time View canvases now clamp marker positions to the visible canvas top using one shared geometry function.
