@@ -142,10 +142,7 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
               child: widget.adjacentDayBuilder?.call(
                     context, _dayForPage(index),
                   ) ??
-                  const ColoredBox(
-                    color: Colors.transparent,
-                    child: SizedBox.expand(),
-                  ),
+                  const SizedBox.expand(),
             );
           },
         ),
