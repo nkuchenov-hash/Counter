@@ -214,7 +214,8 @@ void main() {
 
     await tester.pumpWidget(screen('2026-11-10'));
     final firstFrameX = tester.getTopLeft(find.byKey(contentKey)).dx;
-    expect(firstFrameX, greaterThan(baselineX + 1));
+    // Unlike the previous imperceptible 18px nudge, a full viewport slides.
+    expect(firstFrameX, greaterThan(baselineX + 800));
     final buildsAfterDateChange = bodyBuilds;
 
     for (var i = 0; i < 8; i++) {
@@ -233,6 +234,52 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.getTopLeft(find.byKey(contentKey)).dx,
         closeTo(baselineX, 0.01));
+  });
+
+  testWidgets('Time mode never attaches two day grids to one controller', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final gridScroll = ScrollController();
+    addTearDown(gridScroll.dispose);
+    Widget buildDay(String date) => MaterialApp(
+      home: Scaffold(
+        body: PlanningDaySwipeRegion(
+          dayKey: date,
+          keepOutgoingContent: false,
+          onDayChange: (_) {},
+          child: ListView(
+            controller: gridScroll,
+            children: const [SizedBox(height: 1800)],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpWidget(buildDay('2026-11-09'));
+    expect(gridScroll.positions.length, 1);
+    await tester.pumpWidget(buildDay('2026-11-10'));
+    expect(gridScroll.positions.length, 1);
+    await tester.pump(const Duration(milliseconds: 70));
+    expect(gridScroll.positions.length, 1);
+    await tester.pumpAndSettle();
+    expect(gridScroll.positions.length, 1);
+  });
+
+  test('Timeline header lives above, not inside, the date PageView', () {
+    final source = File('lib/features/timeline/timeline_view.dart')
+        .readAsStringSync();
+    final wrapper = source.substring(
+      source.indexOf('class _TimelineSwipeWrapperState'),
+      source.indexOf('class TimelinePage extends'),
+    );
+    final pageBody = source.substring(
+      source.indexOf('class _TimelinePageState'),
+    );
+    expect(wrapper.indexOf('TimelineHeaderControls('),
+        lessThan(wrapper.indexOf('PageView.builder(')));
+    expect(wrapper, contains('Expanded('));
+    expect(pageBody, isNot(contains('TimelineHeaderControls(')));
   });
 
   testWidgets('fixed desktop date controls work without narrowing day body', (
