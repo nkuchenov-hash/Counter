@@ -1,6 +1,20 @@
 import 'package:counter/data/models.dart';
 import 'viktor_schedule_planner.dart';
 
+/// Resolve a follow-up to an already discussed duration overflow.
+/// A question mentioning "partial" is NOT consent to apply anything.
+abstract final class ViktorDurationConversation {
+  static bool wantsFeasibleSubset(String input, {required bool pending}) {
+    if (!pending) return false;
+    return RegExp(
+      r'^(?:покажи|примени|сделай|давай|пересчитай|'
+      r'используй|show|apply|try).{0,90}'
+      r'(?:частичн|subset|what fits)',
+      caseSensitive: false,
+    ).hasMatch(input.trim());
+  }
+}
+
 /// An explicit scheduling conflict, not a provider or database failure.
 /// Consumers can offer a feasible subset without changing protected events.
 class ViktorTagDurationOverflow implements Exception {
