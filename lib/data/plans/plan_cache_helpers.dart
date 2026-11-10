@@ -6,6 +6,9 @@ int _plansFullFetchesInFlight = 0;
 // A slower earlier GET must never roll back a later successful list read.
 int _plansNetworkFetchSequence = 0;
 int _plansLastAppliedFetchSequence = 0;
+// Distinguish an authoritative full-user list from partial local/SSE upserts.
+DateTime? _plansLastCompleteCatalogFetchAt;
+String? _plansLastCompleteCatalogOwnerId;
 final Map<String, PlanningTask?> _plansRealtimeDuringFullFetch = {};
 // Local confirmed creates must survive a REST list started before their POST.
 final Map<String, PlanningTask> _plansLocalCommitsDuringFullFetch = {};
@@ -208,6 +211,8 @@ extension PlanCacheProjectionExtension on DatabaseService {
         }
       }
       _allPlansUserCacheFetchedAt = DateTime.now();
+      _plansLastCompleteCatalogFetchAt = _allPlansUserCacheFetchedAt;
+      _plansLastCompleteCatalogOwnerId = fetchProfileId;
       return _allPlansUserCache;
     } catch (e) {
       DatabaseService._log('PLANS_FULL_LIST_FETCH: $e');
