@@ -1,4 +1,6 @@
 import 'package:counter/core/date_swipe_physics.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
+import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:flutter/material.dart';
 
@@ -136,43 +138,89 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
     super.dispose();
   }
 
+  Widget _sideDayButton(BuildContext context, int step) {
+    final scheme = Theme.of(context).colorScheme;
+    final previous = step < 0;
+    return Material(
+      color: scheme.surface,
+      elevation: 1,
+      shape: CircleBorder(side: BorderSide(color: scheme.outlineVariant)),
+      child: AppIconButton(
+        icon: previous
+            ? Icons.chevron_left_rounded
+            : Icons.chevron_right_rounded,
+        tooltip: t(
+          currentLocale.value,
+          previous ? 'date_previous_day' : 'date_next_day',
+        ),
+        size: AppIconButtonSize.l,
+        onPressed: () => animateToAdjacentDay(step),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedIndex = _indexForDay(_parseDay(widget.dayKey));
-    return ScrollConfiguration(
-      behavior: const MouseDragScrollBehavior(),
-      child: NotificationListener<ScrollNotification>(
-        onNotification: _onPagerNotification,
-        child: PageView.builder(
-          controller: _controller,
-          onPageChanged: _queueLiveDayCommit,
-          scrollDirection: Axis.horizontal,
-          physics: widget.enabled
-              ? const FeatherDateSwipePhysics()
-              : const NeverScrollableScrollPhysics(),
-          itemCount: _pageCount,
-          itemBuilder: (context, index) {
-            if (index == selectedIndex) {
-              return RepaintBoundary(
-                key: ValueKey('planning-live-page-$index'),
-                child: widget.child,
-              );
-            }
-            return IgnorePointer(
-              child: TickerMode(
-                enabled: false,
-                child: RepaintBoundary(
-                  key: ValueKey('planning-cache-preview-$index'),
-                  child: widget.adjacentDayBuilder?.call(
-                        context, _dayForPage(index),
-                      ) ??
-                      const SizedBox.expand(),
-                ),
+    return LayoutBuilder(builder: (context, size) {
+      // The arrows are stationary at the outer edges of the day body.
+      // Overlay them rather than shrinking cards or moving them into chrome.
+      final showSideArrows = widget.enabled && size.maxWidth >= 900;
+      final arrowTop = (size.maxHeight - 48).clamp(0.0, double.infinity) / 2;
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          ScrollConfiguration(
+            behavior: const MouseDragScrollBehavior(),
+            child: NotificationListener<ScrollNotification>(
+              onNotification: _onPagerNotification,
+              child: PageView.builder(
+                controller: _controller,
+                onPageChanged: _queueLiveDayCommit,
+                scrollDirection: Axis.horizontal,
+                physics: widget.enabled
+                    ? const FeatherDateSwipePhysics()
+                    : const NeverScrollableScrollPhysics(),
+                itemCount: _pageCount,
+                itemBuilder: (context, index) {
+                  if (index == selectedIndex) {
+                    return RepaintBoundary(
+                      key: ValueKey('planning-live-page-$index'),
+                      child: widget.child,
+                    );
+                  }
+                  return IgnorePointer(
+                    child: TickerMode(
+                      enabled: false,
+                      child: RepaintBoundary(
+                        key: ValueKey('planning-cache-preview-$index'),
+                        child: widget.adjacentDayBuilder?.call(
+                              context, _dayForPage(index),
+                            ) ??
+                            const SizedBox.expand(),
+                      ),
+                    ),
+                  );
+                },
               ),
-            );
-          },
-        ),
-      ),
-    );
+            ),
+          ),
+          if (showSideArrows) ...[
+            Positioned(
+              key: const ValueKey('planning-side-previous-day'),
+              left: 4,
+              top: arrowTop,
+              child: _sideDayButton(context, -1),
+            ),
+            Positioned(
+              key: const ValueKey('planning-side-next-day'),
+              right: 4,
+              top: arrowTop,
+              child: _sideDayButton(context, 1),
+            ),
+          ],
+        ],
+      );
+    });
   }
 }
