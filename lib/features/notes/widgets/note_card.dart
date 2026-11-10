@@ -110,20 +110,16 @@ class _GridCard extends StatelessWidget {
         ? t(loc, 'notes_v3_untitled')
         : data.task.title.trim();
     final preview = _plainPreview(data);
-    final activePalette = NotesSectionPaletteScope.of(context);
-    final baseFill = dark ? scheme.surfaceContainerHigh : activePalette.note;
+    final categoryPalette = _categoryPalette(data);
+    final baseFill = dark ? scheme.surfaceContainerHigh : Colors.white;
     final doneFill = dark
         ? Color.lerp(baseFill, scheme.surfaceContainerHighest, 0.40)!
-        : Color.lerp(baseFill, activePalette.pane, 0.40)!;
+        : const Color(0xFFF8F9FA);
     final borderColor = selected
-        ? scheme.primary.withValues(alpha: 0.40)
+        ? scheme.primary.withValues(alpha: 0.48)
         : dark
             ? scheme.outlineVariant.withValues(alpha: 0.62)
-            : Color.lerp(
-                activePalette.tab,
-                kNotesCardBorder,
-                0.76,
-              )!;
+            : const Color(0xFFE1E5EA);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -155,6 +151,15 @@ class _GridCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                   ],
+                  Container(
+                    width: 3,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: categoryPalette.accent.withValues(alpha: 0.90),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Opacity(
                       opacity: isDone ? 0.60 : 1,
@@ -165,13 +170,13 @@ class _GridCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 17),
+            const SizedBox(height: 12),
             Opacity(
               opacity: isDone ? 0.60 : 1,
               child: _LifeSelectableText(
                 title,
                 onTap: onOpen,
-                maxLines: 3,
+                maxLines: 2,
                 style: TextStyle(
                   fontSize: 16,
                   height: 1.22,
@@ -191,7 +196,7 @@ class _GridCard extends StatelessWidget {
               child: _LifeSelectableText(
                 preview.isEmpty ? t(loc, 'notes_library_no_text') : preview,
                 onTap: onOpen,
-                maxLines: 4,
+                maxLines: 3,
                 style: TextStyle(
                   fontSize: 13,
                   height: 1.4,
@@ -248,13 +253,12 @@ class _ListRow extends StatelessWidget {
         ? t(loc, 'notes_v3_untitled')
         : data.task.title.trim();
     final preview = _plainPreview(data);
-    final activePalette = NotesSectionPaletteScope.of(context);
     final normalFill = dark
         ? scheme.surfaceContainerHigh.withValues(alpha: 0.72)
-        : Colors.white.withValues(alpha: 0.56);
+        : Colors.white;
     final doneFill = dark
         ? Color.lerp(normalFill, scheme.surfaceContainerHighest, 0.38)!
-        : Color.lerp(Colors.white, activePalette.pane, 0.38)!;
+        : const Color(0xFFF8F9FA);
     final selectedFill = dark
         ? scheme.surfaceContainerHighest
         : const Color(0xFFF3F7FB);
@@ -274,7 +278,7 @@ class _ListRow extends StatelessWidget {
             onLongPress: onLongPress,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 140),
-              constraints: const BoxConstraints(minHeight: 92),
+              constraints: const BoxConstraints(minHeight: 76),
               padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
               decoration: BoxDecoration(
                 color: selected
@@ -362,7 +366,7 @@ class _ListRow extends StatelessWidget {
           onLongPress: onLongPress,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 140),
-            constraints: const BoxConstraints(minHeight: 76),
+            constraints: const BoxConstraints(minHeight: 68),
             decoration: BoxDecoration(
               color: selected ? selectedFill : (isDone ? doneFill : normalFill),
               border: Border(
