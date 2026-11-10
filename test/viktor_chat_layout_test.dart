@@ -29,11 +29,11 @@ void main() {
       startTime: day.add(const Duration(hours: 21)),
       endDateTime: day.add(const Duration(hours: 22)),
     );
-    bool? selected;
+    ViktorDurationConflictChoice? selected;
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(body: Builder(builder: (ctx) => TextButton(
         onPressed: () async {
-          selected = await showDialog<bool>(
+          selected = await showDialog<ViktorDurationConflictChoice>(
             context: ctx,
             builder: (_) => ViktorDurationConflictDialog(
               conflict: ViktorTagDurationOverflow(
@@ -55,7 +55,22 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.tap(find.text('Показать частичный вариант'));
     await tester.pumpAndSettle();
-    expect(selected, isTrue);
+    expect(selected, ViktorDurationConflictChoice.previewSubset);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Conflict'));
+    await tester.pumpAndSettle();
+    expect(find.text('Обсудить варианты'), findsOneWidget);
+    await tester.tap(find.text('Обсудить варианты'));
+    await tester.pumpAndSettle();
+    expect(selected, ViktorDurationConflictChoice.discuss);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Conflict'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Отмена'));
+    await tester.pumpAndSettle();
+    expect(selected, ViktorDurationConflictChoice.dismiss);
     expect(tester.takeException(), isNull);
   });
 
