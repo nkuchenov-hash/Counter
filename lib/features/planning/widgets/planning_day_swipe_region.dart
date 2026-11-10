@@ -17,12 +17,15 @@ class PlanningDaySwipeRegion extends StatefulWidget {
     required this.child,
     required this.onDayChange,
     this.dayKey,
+    this.keepOutgoingContent = true,
     this.enabled = true,
   });
 
   final Widget child;
   /// The visible YYYY-MM-DD date. A change triggers a full-width settle slide.
   final String? dayKey;
+  /// False for Time mode: never mount two grids on one ScrollController.
+  final bool keepOutgoingContent;
   /// -1 = previous day, +1 = next day.
   final ValueChanged<int> onDayChange;
   final bool enabled;
@@ -63,7 +66,9 @@ class _PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion>
     final nextDay = widget.dayKey;
     if (oldDay != null && nextDay != null && nextDay != oldDay) {
       _travelSign = nextDay.compareTo(oldDay) > 0 ? 1 : -1;
-      _outgoingBody = oldWidget.child;
+      _outgoingBody = oldWidget.keepOutgoingContent
+          ? oldWidget.child
+          : const SizedBox.expand();
       _slide.forward(from: 0);
     }
   }
