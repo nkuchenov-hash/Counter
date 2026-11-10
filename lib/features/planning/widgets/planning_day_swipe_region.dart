@@ -154,7 +154,7 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
           previous ? 'date_previous_day' : 'date_next_day',
         ),
         size: AppIconButtonSize.l,
-        onPressed: () => animateToAdjacentDay(step),
+        onPressed: widget.enabled ? () => animateToAdjacentDay(step) : null,
       ),
     );
   }
@@ -165,7 +165,7 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
     return LayoutBuilder(builder: (context, size) {
       // The arrows are stationary at the outer edges of the day body.
       // Overlay them rather than shrinking cards or moving them into chrome.
-      final showSideArrows = widget.enabled && size.maxWidth >= 900;
+      final showSideArrows = size.maxWidth >= 900;
       final arrowTop = (size.maxHeight - 48).clamp(0.0, double.infinity) / 2;
       return Stack(
         fit: StackFit.expand,
