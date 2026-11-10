@@ -7,12 +7,18 @@ class ContextAwarenessEvent {
     required this.kind,
     required this.atUtc,
     this.mode = '',
+    this.latitude,
+    this.longitude,
+    this.accuracy,
   });
 
   final String id;
   final String kind;
   final DateTime atUtc;
   final String mode;
+  final double? latitude;
+  final double? longitude;
+  final double? accuracy;
 
   factory ContextAwarenessEvent.fromJson(Map<String, dynamic> json) {
     final at = DateTime.parse(json['at'] as String).toUtc();
@@ -21,6 +27,9 @@ class ContextAwarenessEvent {
       kind: (json['kind'] as String).trim(),
       atUtc: at,
       mode: (json['mode'] as String? ?? '').trim(),
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+      accuracy: (json['accuracy'] as num?)?.toDouble(),
     );
   }
 

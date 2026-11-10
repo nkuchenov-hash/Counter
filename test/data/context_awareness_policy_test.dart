@@ -9,6 +9,18 @@ void main() {
       '{"id":"","kind":"moving","at":"bad"}]',
     );
     expect(list.map((e) => e.id), ['early', 'late']);
+    expect(list.first.latitude, isNull);
+  });
+
+  test('stop coordinates are optional and parsed without inventing place names', () {
+    final events = ContextAwarenessEvent.decode(
+      '[{"id":"stop","kind":"stationary_away",'
+      '"at":"2026-11-10T13:30:00Z","latitude":59.9,'
+      '"longitude":30.3,"accuracy":45}]',
+    );
+    expect(events.single.latitude, 59.9);
+    expect(events.single.longitude, 30.3);
+    expect(events.single.accuracy, 45);
   });
 
   test('home-bound explicit titles only', () {

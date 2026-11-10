@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:counter/data/context/context_awareness_policy.dart';
 import 'package:counter/data/database_service.dart';
@@ -97,6 +98,86 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
 
   static String _activeKey(String owner) => 'context_auto_record_$owner';
   static String _kindKey(String owner) => 'context_auto_kind_$owner';
+  static String _visitReviewKey(String owner) => 'context_visit_reviews_$owner';
+
+  String? get _ownerForReview =>
+      _profileId ?? DatabaseService.instance.currentProfileId;
+
+  Future<List<Map<String, dynamic>>> pendingVisitReviews() async {
+    final owner = _ownerForReview;
+    if (owner == null || owner.isEmpty) return const [];
+    final prefs = await SharedPreferences.getInstance();
+    try {
+      final decoded = jsonDecode(prefs.getString(_visitReviewKey(owner)) ?? '[]');
+      if (decoded is! List) return const [];
+      return [
+        for (final row in decoded)
+          if (row is Map<String, dynamic>) Map<String, dynamic>.from(row),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> _queueVisitReview(
+      String owner, ContextAwarenessEvent event, String recordId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final all = await pendingVisitReviews();
+    if (all.any((row) => row['eventId'] == event.id)) return;
+    all.add({
+      'eventId': event.id,
+      'recordId': recordId,
+      'atUtc': event.atUtc.toIso8601String(),
+      if (event.latitude != null) 'latitude': event.latitude,
+      if (event.longitude != null) 'longitude': event.longitude,
+      if (event.accuracy != null) 'accuracy': event.accuracy,
+    });
+    // Bound the local review inbox; old items remain ordinary editable records.
+    if (all.length > 40) all.removeRange(0, all.length - 40);
+    await prefs.setString(_visitReviewKey(owner), jsonEncode(all));
+  }
+
+  Future<void> dismissVisitReview(String eventId) async {
+    final owner = _ownerForReview;
+    if (owner == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final all = await pendingVisitReviews();
+    all.removeWhere((row) => row['eventId'] == eventId);
+    await prefs.setString(_visitReviewKey(owner), jsonEncode(all));
+  }
+
+  Future<List<String>> suggestVisitAddresses(Map<String, dynamic> review) async {
+    if (!supported) return const [];
+    final lat = review['latitude'];
+    final lng = review['longitude'];
+    if (lat is! num || lng is! num) return const [];
+    try {
+      return await _channel.invokeListMethod<String>('suggestPlaces', {
+        'latitude': lat.toDouble(),
+        'longitude': lng.toDouble(),
+      }) ?? const [];
+    } on PlatformException {
+      return const [];
+    }
+  }
+
+  Future<bool> labelVisit(String eventId, String title) async {
+    final owner = _ownerForReview;
+    final cleaned = title.trim();
+    if (owner == null || cleaned.isEmpty || cleaned.length > 160 ||
+        owner != DatabaseService.instance.currentProfileId) return false;
+    final reviews = await pendingVisitReviews();
+    final matches = reviews.where((row) => row['eventId'] == eventId);
+    if (matches.isEmpty) return false;
+    final recordId = matches.first['recordId']?.toString() ?? '';
+    if (recordId.isEmpty) return false;
+    final updated = await DatabaseService.instance.updateRecord(
+      recordId: recordId, title: cleaned,
+    );
+    if (updated == null) return false;
+    await dismissVisitReview(eventId);
+    return true;
+  }
 
   Future<void> poll() async {
     final owner = _profileId;
@@ -214,6 +295,7 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
         stableCreateBusinessId: id,
       );
       if (written == null) return false;
+      if (kind == 'visit') await _queueVisitReview(owner, event, written);
       await prefs.setString(_activeKey(owner), written);
       await prefs.setString(_kindKey(owner), kind);
       return true;

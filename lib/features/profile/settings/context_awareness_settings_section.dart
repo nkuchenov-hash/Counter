@@ -5,6 +5,7 @@ import 'package:counter/data/context/context_awareness_coordinator.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Opt-in Android-only settings: geofence/home, permissions, tracking, privacy.
@@ -19,6 +20,9 @@ class ContextAwarenessSettingsSection extends StatefulWidget {
 class _ContextAwarenessSettingsSectionState
     extends State<ContextAwarenessSettingsSection> {
   Map<String, dynamic> _status = const {};
+  List<Map<String, dynamic>> _reviews = const [];
+  final Map<String, TextEditingController> _controllers = {};
+  final Map<String, List<String>> _addresses = {};
   bool _busy = false;
   String? _error;
 
@@ -35,7 +39,11 @@ class _ContextAwarenessSettingsSectionState
   Future<void> _refresh() async {
     try {
       final state = await _engine.status();
-      if (mounted) setState(() => _status = state);
+      final reviews = await _engine.pendingVisitReviews();
+      if (mounted) setState(() {
+        _status = state;
+        _reviews = reviews;
+      });
     } catch (_) {
       if (mounted) setState(() => _error = _t(
         'Не удалось получить статус датчиков.',
@@ -61,6 +69,110 @@ class _ContextAwarenessSettingsSectionState
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  TextEditingController _controllerFor(String eventId) =>
+      _controllers.putIfAbsent(eventId, () => TextEditingController());
+
+  Future<void> _applyVisitReview(String eventId) async {
+    final title = _controllerFor(eventId).text.trim();
+    if (title.isEmpty) {
+      throw StateError(_t('Укажите название места или занятия.',
+          'Enter a place or activity name.'));
+    }
+    if (!await _engine.labelVisit(eventId, title)) {
+      throw StateError(_t('Не удалось обновить запись. Повторите.',
+          'Could not update the record. Retry.'));
+    }
+  }
+
+  Future<void> _loadAddresses(Map<String, dynamic> review) async {
+    final id = review['eventId']?.toString() ?? '';
+    final found = await _engine.suggestVisitAddresses(review);
+    if (mounted) setState(() => _addresses[id] = found);
+  }
+
+  Widget _buildVisitReview(Map<String, dynamic> review, ThemeData theme) {
+    final id = review['eventId']?.toString() ?? '';
+    final at = DateTime.tryParse(review['atUtc']?.toString() ?? '');
+    final wall = at == null ? '' : DateFormat('dd.MM HH:mm')
+        .format(DatabaseService.instance.applyUserOffset(at));
+    final controller = _controllerFor(id);
+    final choices = _addresses[id] ?? const <String>[];
+    final hasPoint = review['latitude'] is num &&
+        review['longitude'] is num;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(_t('Остановка · $wall', 'Stop · $wall'),
+              style: theme.textTheme.titleSmall),
+          const SizedBox(height: 8),
+          TextField(
+            controller: controller,
+            maxLength: 160,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              labelText: _t('Где вы были?', 'Where were you?'),
+              hintText: _t('Например: кафе, магазин, у друзей',
+                  'For example: cafe, store, visiting friends'),
+            ),
+          ),
+          if (choices.isNotEmpty) ...[
+            Text(_t('Адресные подсказки (не названия заведений):',
+                'Address hints (not verified venue names):'),
+                style: theme.textTheme.bodySmall),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 5,
+              children: [
+                for (final candidate in choices)
+                  ChoiceChip(
+                    label: Text(candidate),
+                    selected: controller.text == candidate,
+                    onSelected: _busy ? null : (_) => setState(() {
+                      controller.text = candidate;
+                    }),
+                  ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 8),
+          if (hasPoint)
+            AppButton.secondary(
+              label: _t('Предложить адрес', 'Suggest address'),
+              icon: Icons.place_outlined,
+              onPressed: _busy ? null
+                  : () => unawaited(_run(() => _loadAddresses(review))),
+            ),
+          const SizedBox(height: 6),
+          AppButton.primary(
+            label: _t('Сохранить название', 'Save place'),
+            icon: Icons.check,
+            onPressed: _busy ? null
+                : () => unawaited(_run(() => _applyVisitReview(id))),
+          ),
+          const SizedBox(height: 6),
+          AppButton.secondary(
+            label: _t('Оставить «Вне дома»', 'Keep generic label'),
+            icon: Icons.close,
+            onPressed: _busy ? null
+                : () => unawaited(_run(() => _engine.dismissVisitReview(id))),
+          ),
+          const Divider(height: 24),
+        ],
+      ),
+    );
   }
 
   Future<void> _saveHome() async {
@@ -117,11 +229,11 @@ class _ContextAwarenessSettingsSectionState
       children: [
         Text(_t(
           'LIFE OS замечает выход из дома, ходьбу и поездки и может '
-          'корректировать записи с явной привязкой к дому. '
-          'Обычные записи приложение не прерывает по догадке.',
-          'LIFE OS notices home departures, walking and vehicle trips. '
-          'It can correct records explicitly tied to home. '
-          'Other manual records are not interrupted on a guess.',
+          'завершать активную запись при выходе из домашней зоны. '
+          'Остановки можно уточнять вручную.',
+          'LIFE OS notices departures, walking and vehicle trips. '
+          'It ends the active record when you leave your home zone. '
+          'You can label detected stops.',
         ), style: theme.textTheme.bodyMedium),
         const SizedBox(height: 16),
         Text(
@@ -169,15 +281,26 @@ class _ContextAwarenessSettingsSectionState
           ),
           const SizedBox(height: 8),
         ],
+        if (_reviews.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Text(_t('Уточнить обнаруженные места', 'Review detected places'),
+              style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Text(_t('Названия ещё неизвестны. Выберите адресную подсказку '
+              'или впишите, где вы были.',
+              'Place names are uncertain. Choose an address hint '
+              'or enter where you were.'), style: theme.textTheme.bodySmall),
+          for (final review in _reviews) _buildVisitReview(review, theme),
+        ],
         Text(_t(
           'Требуется доступ к геолокации «всегда» и распознаванию активности. '
-          'На устройстве сохраняются домашняя точка и короткая очередь событий, '
-          'а не история координат. Автоматические записи появятся в Timeline '
+          'На устройстве сохраняются домашняя точка, короткая очередь событий '
+          'и отдельные координаты остановок (когда доступны), но не маршрут. Автоматические записи появятся в Timeline '
           'при следующем запуске или возвращении в приложение. '
           'Время обнаружения может отличаться от фактического.',
           'Allow all-the-time location and activity recognition. '
-          'The device stores the home point and a short event queue, '
-          'not a GPS route. Timeline reconciles these events when '
+          'The device stores a home point, a short event queue and '
+          'individual stop coordinates when available, not a GPS route. Timeline reconciles these events when '
           'LIFE OS is opened or resumed. Detection can be delayed.',
         ), style: theme.textTheme.bodySmall?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
