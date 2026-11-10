@@ -410,8 +410,15 @@ class _PlanningPageState extends State<PlanningPage>
   @override
   void didUpdateWidget(covariant PlanningPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedDate != widget.selectedDate ||
-        oldWidget.selectedDateString != widget.selectedDateString ||
+    final dayChanged =
+        oldWidget.selectedDate != widget.selectedDate ||
+        oldWidget.selectedDateString != widget.selectedDateString;
+    if (dayChanged && _sortMode == PlanSortMode.time) {
+      // The pager's preview has its own scroll extent. Reusing the previous
+      // live day's pixels clips the new day's first hour and first card.
+      timeView.resetHourGridScrollForNewDay();
+    }
+    if (dayChanged ||
         oldWidget.isActivePlanningDay != widget.isActivePlanningDay ||
         oldWidget.shellTabActive != widget.shellTabActive) {
       setState(() {
