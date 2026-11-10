@@ -129,13 +129,10 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         await _createIndependentDateOnlyPlan(independentPlan, executor, requestId);
         return;
       }
-      final resumePartialDuration = _durationConflictPending &&
-          RegExp(
-            r'^(?:покажи|примени|сделай|давай|пересчитай|'
-            r'используй|show|apply|try).{0,90}'
-            r'(?:частичн|subset|what fits)',
-            caseSensitive: false,
-          ).hasMatch(input);
+      final resumePartialDuration =
+          ViktorDurationConversation.wantsFeasibleSubset(
+            input, pending: _durationConflictPending,
+          );
       if (ViktorTagDurationRepair.matches(input) ||
           resumePartialDuration) {
         final repair = ViktorTagDurationRepair(db);
