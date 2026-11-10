@@ -673,24 +673,8 @@ extension PlanTimeCascadeExtension on DatabaseService {
         ? explicitEndWall
         : resolvedStart.add(Duration(minutes: durationMin));
 
-    final dayKey =
-        '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
-    const probePlanId = '__auto_schedule_probe__';
-    final probe = PlanningTask(
-      id: 0,
-      title: '',
-      categoryId: categoryId,
-      isDone: false,
-      dateKey: dayKey,
-      order: 999999,
-      startTime: resolvedStart,
-      endDateTime: endWall,
-      tags: tags,
-      planRowId: probePlanId,
-    );
-    // Auto placement only computes a time for the new probe. Never rerun
-    // a full-day cascade, which may rewrite an existing fixed appointment.
-    assert(probe.planRowId == probePlanId);
+    // Final placement is the new plan alone; never normalize persisted rows
+    // just to determine where the new card belongs.
 
     if (usedCategoryDefault) {
       final startUtc = wallUtcForCategoryDefaultWall(
