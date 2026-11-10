@@ -207,6 +207,14 @@ typedef PlanTimeViewDurationGrid = TimeViewYScale;
 /// Shared by live and cached neighboring Time View canvases.
 const double kPlanningTimeViewTopInsetPx = 12.0;
 
+/// In a clipped scroll viewport, the first hour label and rail dot must not
+/// straddle the top of the canvas. Clamp both markers to the canvas origin;
+/// other hours remain centered on their normal hour line.
+double timeViewSafeHourMarkerTopPx(
+  double hourLineY,
+  double markerHeight,
+) => math.max(0.0, hourLineY - markerHeight / 2.0);
+
 /// Absolute placement for one scheduled task on the Time View canvas.
 class PlanTimeViewBlockLayout {
   const PlanTimeViewBlockLayout({
