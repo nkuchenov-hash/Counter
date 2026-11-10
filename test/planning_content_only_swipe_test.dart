@@ -289,6 +289,7 @@ void main() {
         rebuild = setState;
         return Scaffold(body: PlanningDaySwipeRegion(
           enabled: active,
+          visible: active,
           dayKey: '2026-11-10',
           onDayChange: (_) {},
           adjacentDayBuilder: (_, day) {
@@ -301,6 +302,7 @@ void main() {
     ));
     await tester.pump();
     expect(builtDays, isEmpty);
+    expect(find.byKey(const ValueKey('planning-side-previous-day')), findsNothing);
     rebuild(() => active = true);
     await tester.pump();
     expect(builtDays, contains(9));

@@ -17,11 +17,14 @@ class PlanningDaySwipeRegion extends StatefulWidget {
     this.adjacentDayBuilder,
     this.dayKey,
     this.enabled = true,
+    this.visible = true,
   });
 
   final Widget child;
   final String? dayKey;
   final bool enabled;
+  /// Planning tab visibility, independent of drag/resize date locking.
+  final bool visible;
   final ValueChanged<int> onDayChange;
   final Widget Function(BuildContext context, DateTime day)? adjacentDayBuilder;
 
@@ -65,7 +68,7 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
   @override
   void initState() {
     super.initState();
-    _hasMountedActiveDay = widget.enabled;
+    _hasMountedActiveDay = widget.enabled && widget.visible;
     _anchorDay = _parseDay(widget.dayKey);
     _controller = PageController(initialPage: _initialPage);
     // The root Overlay can be mounted after this region's first frame.
@@ -78,7 +81,7 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
   @override
   void didUpdateWidget(covariant PlanningDaySwipeRegion oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.enabled) _hasMountedActiveDay = true;
+    if (widget.enabled && widget.visible) _hasMountedActiveDay = true;
     if (oldWidget.dayKey == widget.dayKey) return;
     final target = _indexForDay(_parseDay(widget.dayKey));
     if (target == _committedPage) return;
@@ -188,7 +191,7 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
               // Check the real root overlay width. Test and embedded surfaces
               // may have a MediaQuery width different from their render view.
               final viewportWidth = overlaySize.maxWidth;
-              if (viewportWidth < 900 || size.maxWidth < 600) {
+              if (!widget.visible || viewportWidth < 900 || size.maxWidth < 600) {
                 return const SizedBox.shrink();
               }
           // The target's global X position is computed once per layout.

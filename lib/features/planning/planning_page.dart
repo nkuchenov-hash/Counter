@@ -1394,6 +1394,7 @@ class _PlanningPageState extends State<PlanningPage>
               scheme: scheme, wallDay: day,
               timeMode: _sortMode == PlanSortMode.time,
             ),
+            visible: widget.shellTabActive,
             enabled: widget.shellTabActive && !widget.datePagerLocked &&
                 widget.onAdjacentDayRequested != null,
             onDayChange: (dir) {
