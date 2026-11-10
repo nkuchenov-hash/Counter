@@ -113,9 +113,17 @@ List<PlanningTask> cascadeScheduledPlansForTimeViewDay(
     prevEnd = newEnd;
   }
 
-  return tasks
+  final result = tasks
       .map((t) => cascadedById[t.planRowIdForBackend] ?? t)
       .toList(growable: false);
+  // Never "repair" collisions by moving an appointment. An automatic
+  // normalization is rejected as a whole, rather than silently rewriting
+  // the fixed meeting or partially persisting a cascade.
+  if (firstAutomaticallyChangedFixedPlan(
+        before: tasks, after: result) != null) {
+    return List<PlanningTask>.from(tasks);
+  }
+  return result;
 }
 
 /// Applies one manual resize, then pushes only the following overlap chain.
@@ -126,6 +134,7 @@ List<PlanningTask> cascadeScheduledPlansAfterManualResize({
   required List<PlanningTask> scheduledTasks,
   required PlanningTask resizedTask,
   required int Function(List<Tag> tags) resolveDurationMinutes,
+  Set<String> fixedPlanIds = const {},
 }) {
   final resizedStart = resizedTask.startTime;
   if (resizedStart == null) return List<PlanningTask>.from(scheduledTasks);
@@ -162,6 +171,11 @@ List<PlanningTask> cascadeScheduledPlansAfterManualResize({
       resolveDurationMinutes: resolveDurationMinutes,
     );
     if (!originalStart.isBefore(cursorEnd)) break;
+    // A user resizing a different card has not authorized a meeting move.
+    if (fixedPlanIds.contains(task.planRowIdForBackend) ||
+        isPlanFixedInTimeView(task, const {})) {
+      return List<PlanningTask>.from(scheduledTasks);
+    }
     final hadExplicitEnd = task.endDateTime != null;
     final shiftedStart = cursorEnd;
     final effectiveEnd = shiftedStart.add(Duration(minutes: duration));
