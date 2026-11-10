@@ -24,8 +24,31 @@ extension _ViktorRecoveryDialogue on _ViktorChatPageState {
     final reason = _friendlyError(failure);
     if (failure is FormatException ||
         failure is! StateError && failure is! ViktorTagDurationOverflow) {
-      _push('Не получилось обработать запрос: $reason '
-          'Попробуйте уточнить условие или повторить запрос.');
+      final providerIssue = reason.contains('провайдер') ||
+          reason.contains('модел') || reason.contains('Viktor:') ||
+          reason.contains('provider_');
+      final scheduleRequest = RegExp(
+        r'план|расписан|длительност|перенес|сдвин|встреч|schedule|duration',
+        caseSensitive: false,
+      ).hasMatch(input);
+      if (scheduleRequest) {
+        _push(providerIssue
+            ? 'Выбранная модель не дала пригодного ответа, но '
+              'расписание не изменено. Можно проверить частичный '
+              'пересчёт длительностей, попробовать перенести гибкие '
+              'задачи на другую дату или пересмотреть отдельные '
+              'ограничения. Доступность этих вариантов ещё нужно '
+              'проверить по расписанию. Что проверяем первым?'
+            : 'Не удалось завершить проверку расписания. Ничего '
+              'не изменено. Могу проверить частичный вариант, '
+              'перенос гибких задач или другой временной интервал. '
+              'Какой путь выбрать?');
+      } else {
+        _push('Не удалось подтвердить действие, поэтому ничего '
+            'не изменено. Можем проверить исходные данные или '
+            'разбить запрос на более узкие действия. '
+            'Что проверить первым?');
+      }
       return;
     }
     final groundedContext = failure is ViktorTagDurationOverflow
@@ -38,7 +61,6 @@ extension _ViktorRecoveryDialogue on _ViktorChatPageState {
         : 'Application validation rejected the requested operation '
           'before writing: $reason. Any new action must pass a fresh '
           'Brain preview and user confirmation.';
-    _push('Этот вариант не прошёл проверку. Ищу безопасную альтернативу.');
     try {
       final result = await _gateway.propose(
         input: input, wallDay: day, plans: plans,
@@ -58,13 +80,24 @@ extension _ViktorRecoveryDialogue on _ViktorChatPageState {
       // the grounded original rejection or initiate any mutation.
     }
     if (!mounted) return;
+    final scheduleRequest = RegExp(
+      r'план|расписан|длительност|перенес|сдвин|встреч|schedule|duration',
+      caseSensitive: false,
+    ).hasMatch(input);
     _push(failure is ViktorTagDurationOverflow
-        ? 'Могу показать частичный пересчёт, сохранив базовую '
-          'длительность у задач, которые не помещаются. '
-          'Или обсудим перенос гибких задач на другой день. '
-          'Какой вариант проверить?'
-        : 'Могу пересчитать гибкие задачи с другими ограничениями '
-          'или проверить другой день. Какие изменения допустимы?');
+        ? 'В расписании не помещается «${failure.plan.title}» '
+          '(${failure.minutes} мин.). Могу показать проверяемый '
+          'частичный пересчёт, при котором закреплённые встречи '
+          'не сдвигаются, либо сначала проверить перенос гибких '
+          'задач на другой день. Что выбрать?'
+        : scheduleRequest
+            ? 'Первая попытка не подошла. Могу проверить '
+              'другое размещение гибких задач, перенос на '
+              'соседний день или сохранение только допустимых '
+              'изменений. Что важнее сохранить без изменений?'
+            : 'Действие не прошло проверку. Можно сначала '
+              'изучить актуальные данные или уточнить, какую '
+              'часть запроса выполнить. Что проверим?');
   }
 
 }
