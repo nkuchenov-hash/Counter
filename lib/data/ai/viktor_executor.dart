@@ -731,6 +731,24 @@ class ViktorTagDurationRepair {
         !text.contains('не исправляй');
   }
 
+  /// This special command must honour the user's actual date scope.
+  /// "Yesterday" cannot silently disappear when the user says
+  /// "yesterday, today and tomorrow". Use civil calendar dates, not
+  /// 24-hour offsets across DST boundaries.
+  static bool includesYesterday(String input) {
+    final text = input.toLowerCase().replaceAll('ё', 'е');
+    return RegExp(r'(?<![а-яa-z])(?:вчера|yesterday)(?![а-яa-z])')
+        .hasMatch(text);
+  }
+
+  static List<DateTime> targetDays(DateTime today,
+      {bool includeYesterday = false}) => [
+    if (includeYesterday)
+      DateTime(today.year, today.month, today.day - 1),
+    DateTime(today.year, today.month, today.day),
+    DateTime(today.year, today.month, today.day + 1),
+  ];
+
   /// Unknown, duplicate, or conflicting tag defaults are never guessed.
   static int? defaultMinutes(List<Tag> assigned, List<Tag> catalog) {
     final minutes = <int>{};
@@ -753,7 +771,8 @@ class ViktorTagDurationRepair {
   }
 
   Future<ViktorBulkPreview> prepare(DateTime today,
-      {bool keepFeasibleOnly = false}) async {
+      {bool keepFeasibleOnly = false,
+      bool includeYesterday = false}) async {
     if (db.pocketBase.authStore.token.trim().isEmpty ||
         db.pocketBase.authStore.record == null) {
       throw StateError('Для изменения планов войдите в LIFE OS.');
@@ -765,10 +784,7 @@ class ViktorTagDurationRepair {
       throw StateError('Не найдены базовые длительности тегов. '
           'Планы не изменены.');
     }
-    final days = [
-      DateTime(today.year, today.month, today.day),
-      DateTime(today.year, today.month, today.day + 1),
-    ];
+    final days = targetDays(today, includeYesterday: includeYesterday);
     final snapshotPlans = <PlanningTask>[];
     final moves = <ViktorBulkMove>[];
     final excludedPlanTitles = <String>[];
@@ -842,9 +858,11 @@ class ViktorTagDurationRepair {
 
   Future<String> apply(ViktorBulkPreview approved,
       DateTime today, String requestId,
-      {bool keepFeasibleOnly = false}) async {
+      {bool keepFeasibleOnly = false,
+      bool includeYesterday = false}) async {
     final fresh = await prepare(today,
-        keepFeasibleOnly: keepFeasibleOnly);
+        keepFeasibleOnly: keepFeasibleOnly,
+        includeYesterday: includeYesterday);
     if (approved.signature != fresh.signature ||
         approved.describe() != fresh.describe()) {
       throw StateError('Планы или длительности тегов изменились '
