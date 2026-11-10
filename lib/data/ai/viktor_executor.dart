@@ -207,6 +207,7 @@ class ViktorExecutor {
       '${d.day.toString().padLeft(2, '0')}';
 
   bool _fixed(PlanningTask p) =>
+      isPlanFixedInTimeView(p, const {}) ||
       (db.getCategoryRuleById(p.categoryId)?.defaultPlanTime ?? '')
           .trim().isNotEmpty;
 
