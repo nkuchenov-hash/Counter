@@ -25,7 +25,7 @@ extension _ViktorRecoveryDialogue on _ViktorChatPageState {
         ? '${rejectedJson.substring(0, 400)}…' : rejectedJson;
     final feedback = 'Previous action was rejected BEFORE any writes: '
         '$rejectedSummary. Constraint: ${_friendlyError(failure)}. '
-        'Preserve the user's original goal and try a DIFFERENT approach. '
+        'Preserve the original user goal and try a DIFFERENT approach. '
         'If more real data is needed, request only read tools with '
         'continue:true. Otherwise propose a fresh actionable change, '
         'or give concrete alternatives with actions:[].';
