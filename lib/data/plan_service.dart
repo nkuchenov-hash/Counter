@@ -59,7 +59,6 @@ extension PlanServiceExtension on DatabaseService {
     if (byPb.isEmpty) return tags;
     return [for (final tag in tags) byPb[tag.pbRecordId ?? ''] ?? tag];
   }
-
   /// After tag catalog PATCH/create/delete, refresh embedded tag chips on cached plans.
   void syncEmbeddedPlanTagsFromCatalog() {
     var changed = false;
@@ -87,7 +86,6 @@ extension PlanServiceExtension on DatabaseService {
       notifyPlanningRefresh(scheduleNetworkRefresh: false);
     }
   }
-
   Future<void> _ensureAllPlansUserCacheFresh({bool force = false}) async {
     if (!_isPlansTableConfigured) return;
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return;
@@ -100,14 +98,11 @@ extension PlanServiceExtension on DatabaseService {
     )) return;
     await singleFlightPlanningCatalogFetch(currentProfileId, _fetchAllPlanningTasksForCurrentUser);
   }
-
   Stream<List<PlanningTask>> get tasksStream => Stream.multi((c) {
     c.add(List.from(_tasksCache));
     _tasksController.stream.listen(c.add, onError: c.addError);
   });
-
   /// 0..1 title similarity for plan–record linking heuristics (not category matching).
-
   /// One row: `plans.plan_id` (UUID) → system `id`.
   Future<String?> _fetchPbPlanSysIdByPlanIdField(String planBizId) async {
     final key = planBizId.trim();
@@ -129,7 +124,6 @@ extension PlanServiceExtension on DatabaseService {
       return null;
     }
   }
-
   /// Resolves planning row REST id when UI holds legacy `plan_id` UUID or mixed keys.
   Future<String> _resolvePlanRestId(
     String planRowIdForBackend, {
@@ -153,7 +147,6 @@ extension PlanServiceExtension on DatabaseService {
     }
     return p;
   }
-
   Future<void> _loadPlanningTasksForToday() async {
     try {
       final today = getTimelineDeviceLocalToday();
@@ -163,15 +156,12 @@ extension PlanServiceExtension on DatabaseService {
       _tasksCache = [];
     }
   }
-
   /// Wall-day plans used by Planning and source-plan linking.
   Future<List<PlanningTask>> getPlanningTasksForWallDate(DateTime wallDay) =>
       _fetchPlanningTasksForDate(wallDay);
-
   /// Warm plans cache for Calendar month indicators (no per-day network fan-out).
   Future<void> warmPlanningCacheForCalendar() =>
       _ensureAllPlansUserCacheFresh();
-
   /// Group scheduled plans by wall `YYYY-MM-DD` for [startWall]…[endWall] from Brain cache.
   Map<String, List<PlanningTask>> planningTasksGroupedByWallDayForRange(
     DateTime startWall,
@@ -199,9 +189,7 @@ extension PlanServiceExtension on DatabaseService {
     }
     return map;
   }
-
   /// Wall-clock estimate from plan start/end (profile wall [PlanningTask] times). Null if unknown.
-
   Future<int> nextPlanningOrderForDate(DateTime selectedDate) async {
     final list = await _fetchPlanningTasksForDate(selectedDate);
     if (list.isEmpty) return 0;
@@ -211,7 +199,6 @@ extension PlanServiceExtension on DatabaseService {
     }
     return m + 1;
   }
-
   /// Next [PlanningTask.order] for undated backlog plans (Lists tab). Not tied to calendar day.
   Future<int> nextBacklogPlanningOrder() async {
     final list = await fetchBacklogPlans(categoryId: null);
@@ -222,7 +209,6 @@ extension PlanServiceExtension on DatabaseService {
     }
     return m + 1;
   }
-
   Future<List<PlanningTask>> _fetchPlanningTasksForDate(
     DateTime selectedDate, {bool allowDayScopedFallback = true}
   ) async {
@@ -268,14 +254,12 @@ extension PlanServiceExtension on DatabaseService {
       },
     );
   }
-
   /// Audit anchor: [PlanningTask.initialDateKey] or, for legacy rows, current schedule key.
   String planningAuditAnchorDateKey(PlanningTask t) {
     final i = t.initialDateKey?.trim() ?? '';
     if (i.length >= 10) return i.substring(0, 10);
     return planningWallScheduleDateKey(t);
   }
-
   /// True when [newScheduleKey] is strictly after [anchorKey] (lexicographic `YYYY-MM-DD`).
   bool planningShouldMarkPostponed({
     required String anchorKey,
@@ -284,7 +268,6 @@ extension PlanServiceExtension on DatabaseService {
     if (anchorKey.length < 10 || newScheduleKey.length < 10) return false;
     return newScheduleKey.compareTo(anchorKey) > 0;
   }
-
   /// Backlog rows for Lists; optionally excludes completed/optimistic rows.
   Future<List<PlanningTask>> fetchBacklogPlans({
     int? categoryId,
@@ -305,7 +288,6 @@ extension PlanServiceExtension on DatabaseService {
       );
     }
   }
-
   PlanningTask _planningTaskFromPocketRecord(
     RecordModel r, {
     required List<Tag> pocketTagCatalog,
@@ -1003,6 +985,9 @@ extension PlanServiceExtension on DatabaseService {
     DateTime? endDateTime,
     DateTime? endDateTimeDisplay,
     bool clearEnd = false,
+    /// Only the explicitly selected plan in an actual manual edit may use
+    /// this flag. Auto cascade, background updates and unapproved AI must not.
+    bool allowProtectedTimeChange = false,
 
     /// When true, `AppSnack` success/failure toasts are omitted (caller handles UX).
     bool suppressAppSnack = false,
@@ -1108,6 +1093,21 @@ extension PlanServiceExtension on DatabaseService {
       rid,
       planBusinessId: planBusinessId,
     );
+    final changingSchedule =
+        startTime != null || startTimeDisplay != null ||
+        endDateTime != null || endDateTimeDisplay != null || clearEnd;
+    if (changingSchedule && !allowProtectedTimeChange) {
+      // Fail closed if a background writer has no reliable plan baseline.
+      // Also check tag ids selected as fixed in settings, not merely names.
+      final fixedIds = await TimeViewFixedTagPrefs.load();
+      if (existingTask == null ||
+          isPlanFixedInTimeView(existingTask, fixedIds)) {
+        DatabaseService._log(
+          'FIXED_TIME_DENIED automatic plan time update id=$rid');
+        if (!suppressAppSnack) AppSnack.failed();
+        return false;
+      }
+    }
     if (existingTask?.rrule?.trim().isNotEmpty == true &&
         (startTime != null ||
             startTimeDisplay != null ||
