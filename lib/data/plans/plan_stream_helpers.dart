@@ -95,6 +95,20 @@ final class _PlanningDayStreamHub {
     if (_allPlansUserCache.isNotEmpty) {
       base = db._filterPlansForWallDay(_allPlansUserCache, wallDay);
     }
+    // Restored day bodies must not disappear while the complete catalog is
+    // still loading / offline. They belong to the currently scoped user.
+    if (base.isEmpty && !hasFreshCompletePlanningCatalog(
+      currentUser: db.currentProfileId,
+      fetchedOwner: _plansLastCompleteCatalogOwnerId,
+      completedAt: _plansLastCompleteCatalogFetchAt,
+      now: DateTime.now(),
+      ttl: _allPlansUserCacheFreshTtl,
+    )) {
+      final restored = db.plansDayBodyCache.peek(dayKey);
+      if (restored?.bodyReady == true && restored!.tasks.isNotEmpty) {
+        base = restored.tasks;
+      }
+    }
     final merged = db._mergePlanningOptimistic(dayKey, base);
     db._logPlanDupTraceLayer(source: 'stream', tasks: merged, dayKey: dayKey);
     _logPlanningStreamEmit(merged);
@@ -116,6 +130,29 @@ final class _PlanningDayStreamHub {
         tasks = <PlanningTask>[];
       }
       if (!_disposed && !controller.isClosed) {
+        // An unsuccessful refresh can return an empty list without proving
+        // the owner has zero plans. Do not overwrite a populated cached day
+        // with that synthetic empty response. A *successful* complete fetch,
+        // including a legitimately empty day, remains authoritative.
+        final verified = hasFreshCompletePlanningCatalog(
+          currentUser: db.currentProfileId,
+          fetchedOwner: _plansLastCompleteCatalogOwnerId,
+          completedAt: _plansLastCompleteCatalogFetchAt,
+          now: DateTime.now(),
+          ttl: _allPlansUserCacheFreshTtl,
+        );
+        if (tasks.isEmpty && !verified) {
+          final cacheDay = db.planningDayTasksSnapshot(wallDay);
+          if (cacheDay.isNotEmpty) {
+            tasks = cacheDay;
+          } else {
+            final restored = db.plansDayBodyCache.peek(dayKey);
+            if (restored?.bodyReady == true &&
+                restored!.tasks.isNotEmpty) {
+              tasks = restored.tasks;
+            }
+          }
+        }
         final merged = db._mergePlanningOptimistic(dayKey, tasks);
         db._logPlanDupTraceLayer(
           source: 'stream',
