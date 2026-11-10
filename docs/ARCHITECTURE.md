@@ -1,3 +1,12 @@
+## Context awareness (Android; opt-in, gated)
+
+- Android owns background home-geofence and motion callbacks in `ContextAwarenessBridge.kt`; Flutter does not poll continuous GPS, and no location samples are sent to PocketBase.
+- The local native event queue contains only event kind, coarse transport class, UTC timestamp and opaque event ID; a private home anchor is stored on the Android device. Collection begins only after explicit location/activity grants and an Enable action.
+- `lib/data/context/context_awareness_coordinator.dart` replays events after authenticated first-frame hydration and on resume, never on a gesture/startup hot path. All record corrections pass through the existing `DatabaseService.updateRecord` / `writeRecord` and record outbox, retaining Singleton Timeline and optimistic UI laws.
+- A location event may truncate only a primary running record explicitly stating that it is at home. Unrelated or ambiguous manual records and later manually entered facts are protected. Deterministic event-linked UUIDs prevent duplicate auto-starts.
+- GPS and motion cannot prove a particular restaurant, bus or metro: automatic labels remain generic. Do not add inferred specificity without distinct evidence and an explicit revised consent flow.
+- **Kill switch:** user Stop removes registered Android detectors and pending events. If startup, swipe, optimistic record visibility, offline durability or permissions regress, disable registration and restore the stable record path before resuming the feature. Android device testing is required before merging.
+
 # LIFE OS: Architecture (PocketBase)
 
 **Runtime law:** The app’s primary backend is **PocketBase** (`pocketbase` Dart SDK). URL, collection names, auth, and **record → category** relations (`category_id`, `category_link` + expand) are defined in **`POCKETBASE_MANIFEST.md`**. **`docs/DATA_MAP.md`** remains the vocabulary for **field names** and business IDs (`user_id`, `record_id`, `plan_id`, `categories.category_id`, etc.).
