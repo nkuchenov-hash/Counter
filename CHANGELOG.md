@@ -4,6 +4,7 @@
 - Cached Time View swipe previews reuse the production `PlanCard` timeline implementation with full content/meta/progress information rather than a reduced `PlanTimeTaskCard` surrogate. The same layout calculator and time geometry remain shared.
 - Added a regression that crosses the page boundary before the finger is released and verifies the new day is immediately active and its cards can be tapped after release.
 - Date navigation and data rendering are offline-first; the page transition does not wait for PocketBase.
+- Restored date navigation arrows to the left and right sides of the Planning day canvas, overlaying the full-width content without taking card width or moving into the sort controls. Added widget placement and click regression.
 
 ## 2026-11-10 — Prevent the first Time View hour marker from clipping after date swipe
 
