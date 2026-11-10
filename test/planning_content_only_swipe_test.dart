@@ -173,6 +173,68 @@ void main() {
     expect(changes, <int>[1]);
   });
 
+  testWidgets('date update animates only the day, with no tick-time rebuilds', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1100, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var bodyBuilds = 0;
+    const contentKey = ValueKey('animated-planning-body');
+
+    Widget screen(String day) => MaterialApp(
+      home: Scaffold(
+        body: Column(
+          children: [
+            const SizedBox(height: 120, child: Text('Stationary controls')),
+            Expanded(
+              child: PlanningDaySwipeRegion(
+                dayKey: day,
+                onDayChange: (_) {},
+                child: RepaintBoundary(
+                  child: Builder(
+                    builder: (context) {
+                      bodyBuilds++;
+                      return const SizedBox.expand(
+                        key: contentKey,
+                        child: ColoredBox(color: Colors.white),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(screen('2026-11-09'));
+    final chromePosition = tester.getTopLeft(find.text('Stationary controls'));
+    final baselineX = tester.getTopLeft(find.byKey(contentKey)).dx;
+
+    await tester.pumpWidget(screen('2026-11-10'));
+    final firstFrameX = tester.getTopLeft(find.byKey(contentKey)).dx;
+    expect(firstFrameX, greaterThan(baselineX + 1));
+    final buildsAfterDateChange = bodyBuilds;
+
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(bodyBuilds, buildsAfterDateChange);
+      expect(tester.getTopLeft(find.text('Stationary controls')), chromePosition);
+    }
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.byKey(contentKey)).dx,
+        closeTo(baselineX, 0.01));
+    expect(bodyBuilds, buildsAfterDateChange);
+
+    await tester.pumpWidget(screen('2026-11-09'));
+    expect(tester.getTopLeft(find.byKey(contentKey)).dx,
+        lessThan(baselineX - 1));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.byKey(contentKey)).dx,
+        closeTo(baselineX, 0.01));
+  });
+
   testWidgets('fixed desktop date controls work without narrowing day body', (
     tester,
   ) async {
