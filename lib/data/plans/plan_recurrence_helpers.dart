@@ -780,6 +780,7 @@ extension PlanRecurrenceExtension on DatabaseService {
   /// Applies [scope] for recurring plan edits (virtual, materialized, or series row).
   Future<bool> updatePlanningTaskWithRecurrenceScope(
     String planRowId, {
+    bool allowProtectedTimeChange = false,
     required RecurrenceEditScope scope,
     String? planBusinessId,
     String? title,
@@ -895,6 +896,7 @@ extension PlanRecurrenceExtension on DatabaseService {
       planReminderOffset: planReminderOffset,
       planExceptionDates: planExceptionDates,
       recurrenceInstanceDateKey: recurrenceInstanceDateKey,
+      allowProtectedTimeChange: allowProtectedTimeChange,
     );
   }
 
