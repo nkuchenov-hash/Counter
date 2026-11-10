@@ -125,21 +125,26 @@ class _PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion>
           builder: (context, activeBody) {
             final t = Curves.easeOutCubic.transform(_slide.value);
             final outgoing = _outgoingBody;
-            if (outgoing == null) return activeBody!;
             return Stack(
               fit: StackFit.expand,
               children: [
-                IgnorePointer(
-                  child: TickerMode(
-                    enabled: false,
-                    child: FractionalTranslation(
-                      translation: Offset(-_travelSign * t, 0),
-                      child: outgoing,
+                if (outgoing != null)
+                  IgnorePointer(
+                    key: const ValueKey('planning-outgoing-slide'),
+                    child: TickerMode(
+                      enabled: false,
+                      child: FractionalTranslation(
+                        translation: Offset(-_travelSign * t, 0),
+                        child: outgoing,
+                      ),
                     ),
                   ),
-                ),
+                // Stable key prevents reparent/remount of the expensive
+                // active Time/list content when the outgoing surface exits.
                 FractionalTranslation(
-                  translation: Offset(_travelSign * (1 - t), 0),
+                  key: const ValueKey('planning-active-slide'),
+                  translation: Offset(
+                    outgoing == null ? 0 : _travelSign * (1 - t), 0),
                   child: activeBody,
                 ),
               ],
