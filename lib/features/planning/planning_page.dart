@@ -1369,9 +1369,6 @@ class _PlanningPageState extends State<PlanningPage>
             sortMode: _sortMode,
             onSortModeChanged: (mode) => setState(() => _sortMode = mode),
             desktopTitle: desktop ? t(currentLocale.value, 'tab_planning') : null,
-            onAdjacentDayRequested: (d) =>
-                _dayPagerKey.currentState?.animateToAdjacentDay(d),
-            dayNavigationEnabled: widget.shellTabActive && !widget.datePagerLocked,
           ),
         PlanningQuickAddChrome(
           desktop: desktop,
