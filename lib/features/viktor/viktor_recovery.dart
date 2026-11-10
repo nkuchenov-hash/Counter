@@ -3,6 +3,85 @@ part of 'viktor_chat_page.dart';
 // Error handling stays out of the large hot-path chat widget.
 // This extension shares the same library and cannot bypass Brain execution.
 extension _ViktorRecoveryDialogue on _ViktorChatPageState {
+  /// Give the assistant one bounded opportunity to inspect additional real
+  /// data and propose a different operation after a pre-write rejection.
+  /// Reads cannot mutate. The caller re-previews and explicitly confirms any
+  /// recovered write; no operation is applied inside this method.
+  Future<({ViktorActionBatch? actions, String? preview, String? answer})>
+      _retryRejectedProposal({
+    required String input,
+    required StateError failure,
+    required DateTime day,
+    required List<PlanningTask> plans,
+    required String requestId,
+    required List<Map<String, String>> conversation,
+    required List<String> priorObservations,
+    required ViktorActionBatch rejected,
+    required ViktorExecutor executor,
+  }) async {
+    final rejectedJson = jsonEncode(
+        rejected.actions.map((a) => a.toJson()).toList());
+    final rejectedSummary = rejectedJson.length > 400
+        ? '${rejectedJson.substring(0, 400)}…' : rejectedJson;
+    final feedback = 'Previous action was rejected BEFORE any writes: '
+        '$rejectedSummary. Constraint: ${_friendlyError(failure)}. '
+        'Preserve the user's original goal and try a DIFFERENT approach. '
+        'If more real data is needed, request only read tools with '
+        'continue:true. Otherwise propose a fresh actionable change, '
+        'or give concrete alternatives with actions:[].';
+    final observations = [...priorObservations];
+    var response = await _gateway.propose(
+      input: input, wallDay: day, plans: plans,
+      settings: _settings, selectedPlanIds: widget.selectedPlanIds,
+      requestId: requestId, conversationHistory: conversation,
+      toolObservations: observations, proposalFeedback: feedback,
+      allowRepair: false,
+    );
+    final seen = <String>{};
+    for (var readStep = 0; readStep < 2 && response.needsMoreContext;
+        readStep++) {
+      final batch = response.actions;
+      if (batch == null || batch.hasMutations) {
+        return (actions: null, preview: null, answer: null);
+      }
+      final signature = jsonEncode(
+          batch.actions.map((a) => a.toJson()).toList());
+      if (!seen.add(signature)) {
+        return (actions: null, preview: null, answer: null);
+      }
+      String observed;
+      try {
+        observed = await executor.describe(batch, day);
+      } on StateError {
+        return (actions: null, preview: null, answer: null);
+      }
+      observations.add(jsonEncode({
+        'tools': batch.actions.map((a) => a.toJson()).toList(),
+        'result': observed,
+      }));
+      response = await _gateway.propose(
+        input: input, wallDay: day, plans: plans,
+        settings: _settings, selectedPlanIds: widget.selectedPlanIds,
+        requestId: requestId, conversationHistory: conversation,
+        toolObservations: observations, proposalFeedback: feedback,
+        allowRepair: false,
+      );
+    }
+    if (response.needsMoreContext) {
+      return (actions: null, preview: null, answer: null);
+    }
+    final batch = response.actions;
+    if (batch == null) {
+      return (actions: null, preview: null, answer: response.message);
+    }
+    try {
+      final preview = await executor.describe(batch, day);
+      return (actions: batch, preview: preview, answer: response.message);
+    } on StateError {
+      return (actions: null, preview: null, answer: null);
+    }
+  }
+
   Future<void> _offerRecovery({
     required String input,
     required Object failure,
@@ -24,9 +103,12 @@ extension _ViktorRecoveryDialogue on _ViktorChatPageState {
     final reason = _friendlyError(failure);
     if (failure is FormatException ||
         failure is! StateError && failure is! ViktorTagDurationOverflow) {
-      final providerIssue = reason.contains('провайдер') ||
-          reason.contains('модел') || reason.contains('Viktor:') ||
-          reason.contains('provider_');
+      final providerReason = reason.toLowerCase();
+      final providerIssue = providerReason.contains('провайдер') ||
+          providerReason.contains('модел') ||
+          providerReason.contains('yandex') ||
+          providerReason.contains('viktor:') ||
+          providerReason.contains('provider_');
       final scheduleRequest = RegExp(
         r'план|расписан|длительност|перенес|сдвин|встреч|schedule|duration',
         caseSensitive: false,
