@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `45464399` on 2026-11-10.**
+**Generated from input HEAD `9f17206d` on 2026-11-10.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -25493,8 +25493,8 @@ EN:
 - **Human purpose:** `viktor_duration_conflict_dialog.dart` on viktor area — Full-screen AI chat with expandable text and mic composer. Users see `viktor_duration_conflict_dialog.dart` when using viktor area.
 - **What this is:** `viktor_duration_conflict_dialog.dart` on viktor area — Full-screen AI chat with expandable text and mic composer.
 - **Why needed:** Users see `viktor_duration_conflict_dialog.dart` when using viktor area.
-- **Contents:** Primary symbols: `ViktorDurationConflictDialog`.
-- **Key code names:** `ViktorDurationConflictDialog`
+- **Contents:** Primary symbols: `ViktorDurationConflictChoice`, `ViktorDurationConflictDialog`.
+- **Key code names:** `ViktorDurationConflictChoice`, `ViktorDurationConflictDialog`
 - **Repository role:** production UI
 - **Evidence of use:** Included by `lib/features/viktor/viktor_chat_page.dart` through a `part` directive (not imported directly).
 - **Necessity status:** PROVEN_REQUIRED
@@ -25511,7 +25511,7 @@ RU:
 - **Зачем файл человеку:** `viktor_duration_conflict_dialog.dart` на viktor — Пользователь открывает sheet/dialog из entry `viktor_duration_conflict_dialog`.. Пользователь видит UI из `viktor_duration_conflict_dialog.dart` на viktor.
 - **Что это:** `viktor_duration_conflict_dialog.dart` на viktor — Пользователь открывает sheet/dialog из entry `viktor_duration_conflict_dialog`..
 - **Зачем:** Пользователь видит UI из `viktor_duration_conflict_dialog.dart` на viktor.
-- **Содержимое:** Основные символы: `ViktorDurationConflictDialog`.
+- **Содержимое:** Основные символы: `ViktorDurationConflictChoice`, `ViktorDurationConflictDialog`.
 - **Роль в репозитории:** production UI
 - **Доказательства использования:** Подключён из `lib/features/viktor/viktor_chat_page.dart` через `part` (не импортируется напрямую).
 - **Статус необходимости:** PROVEN_REQUIRED
