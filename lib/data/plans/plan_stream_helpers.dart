@@ -108,7 +108,10 @@ final class _PlanningDayStreamHub {
     try {
       List<PlanningTask> tasks;
       try {
-        tasks = await db._fetchPlanningTasksForDate(wallDay);
+        // A day swipe uses the complete cached catalog; do not issue an
+        // extra per-empty-day fallback GET. Explicit reads keep that fallback.
+        tasks = await db._fetchPlanningTasksForDate(
+          wallDay, allowDayScopedFallback: false);
       } catch (_) {
         tasks = <PlanningTask>[];
       }
