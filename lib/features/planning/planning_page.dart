@@ -100,11 +100,9 @@ class PlanningPage extends StatefulWidget {
   /// A date-swipe callback owned by the day content, never by page chrome.
   final ValueChanged<int>? onAdjacentDayRequested;
   final void Function(bool locked)? onDatePagerLockChanged;
-
   @override
   State<PlanningPage> createState() => _PlanningPageState();
 }
-
 class _PlanningPageState extends State<PlanningPage>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin
     implements PlanningTimeViewHost {
@@ -161,12 +159,10 @@ class _PlanningPageState extends State<PlanningPage>
     if (p.isNotEmpty) return p;
     return 'plan-fallback-${t.id}-${t.order}-${t.dateKey}-${t.categoryId}-${t.title}';
   }
-
   bool _planCanReorderTask(PlanningTask task) {
     final id = task.planRowIdForBackend;
     return !id.startsWith('optimistic-') && !id.startsWith('virt-');
   }
-
   void _commitPlanningReorder({
     required String mode,
     required PlanningTask moved,
@@ -181,7 +177,6 @@ class _PlanningPageState extends State<PlanningPage>
     );
     setState(() => _dragOrder = null);
   }
-
   Stream<List<PlanningTask>> _planningStreamForCurrentDay() {
     final day = widget.selectedDate ?? _today;
     final listen = widget.isActivePlanningDay && widget.shellTabActive;
@@ -197,42 +192,30 @@ class _PlanningPageState extends State<PlanningPage>
     );
     return _planningStream!;
   }
-
   @override
   BuildContext get context => super.context;
-
   @override
   PlanningPage get pageWidget => widget;
-
   @override
   DateTime get today => _today;
-
   @override
   PlanSortMode get sortMode => _sortMode;
-
   @override
   bool get planSelectMode => _planSelectMode;
-
   @override
   Set<String> get selectedPlanKeys => _selectedPlanKeys;
-
   @override
   Map<String, bool> get planDoneOverride => _planDoneOverride;
-
   @override
   bool get noTagsChipVisible => _quickAddTags.noTagsChipVisible;
-
   @override
   String get noTagsColorHex => _quickAddTags.noTagsColorHex;
-
   @override
   String get prefsKeyNoTagsVisible =>
       PlanningQuickAddTagsController.prefsKeyNoTagsVisible;
-
   @override
   String get prefsKeyNoTagsColor =>
       PlanningQuickAddTagsController.prefsKeyNoTagsColor;
-
   @override
   void notifySetState([VoidCallback? fn]) {
     if (fn == null) {
@@ -241,27 +224,21 @@ class _PlanningPageState extends State<PlanningPage>
       setState(fn);
     }
   }
-
   @override
   void onDatePagerLockChanged(bool locked) {
     widget.onDatePagerLockChanged?.call(locked);
   }
-
   @override
   Future<void> reloadQuickAddTags() => _quickAddTags.reload();
-
   @override
   void applyNoTagsChipSettings(bool visible, String colorHex) {
     _quickAddTags.applyNoTagsChipSettings(visible, colorHex);
   }
-
   @override
   String planKey(PlanningTask task) => _planKey(task);
-
   @override
   int taskSortCmp(PlanningTask a, PlanningTask b) =>
       planningTaskSortCmp(a, b, sortTreatAsDone: _sortTreatAsDone);
-
   @override
   Widget planCardRow({
     required BuildContext context,
@@ -296,7 +273,6 @@ class _PlanningPageState extends State<PlanningPage>
     onHourGridDragGlobalDy: onHourGridDragGlobalDy,
     onHourGridDragEnded: onHourGridDragEnded,
   );
-
   @override
   void openQuickAddForHour(int hour) => _openQuickAddForHour(hour);
 
