@@ -12,6 +12,26 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  test('Planning swipes use cache only for fresh complete catalog of same user', () {
+    final now = DateTime(2026, 11, 10, 8, 0);
+    const ttl = Duration(seconds: 30);
+    bool fresh({String? active = 'userA', String? owner = 'userA',
+        DateTime? fetched}) => hasFreshCompletePlanningCatalog(
+      currentUser: active,
+      fetchedOwner: owner,
+      completedAt: fetched,
+      now: now,
+      ttl: ttl,
+    );
+
+    expect(fresh(fetched: now.subtract(const Duration(seconds: 5))), isTrue);
+    expect(fresh(fetched: now.subtract(const Duration(seconds: 31))), isFalse);
+    expect(fresh(fetched: now.add(const Duration(seconds: 1))), isFalse);
+    expect(fresh(fetched: null), isFalse);
+    expect(fresh(owner: 'userB', fetched: now), isFalse);
+    expect(fresh(active: null, fetched: now), isFalse);
+  });
+
   group('Planning snapshot / body cache pipeline', () {
     test('plansBodyEntryForDate emergency build is bodyReady with source', () {
       final day = DateTime(2026, 7, 20);
