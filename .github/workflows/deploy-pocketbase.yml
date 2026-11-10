@@ -112,19 +112,48 @@ jobs:
           if [[ -z "$service_name" ]]; then
             service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
           fi
-          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
-          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
-          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
-          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          # LIFEOS2's active unit was installed as lifeos-recovery-live.service.
+          # Detect it only if systemd confirms that the unit is loaded.
+          if [[ -z "$service_name" ]] &&
+              [[ "$(systemctl show lifeos-recovery-live.service -p LoadState --value 2>/dev/null || true)" == "loaded" ]]; then
+            service_name="lifeos-recovery-live.service"
+          fi
           if [[ -z "$service_name" ]]; then
             echo "PocketBase systemd service not found; configure POCKETBASE_SERVICE." >&2
             exit 1
           fi
-          if [[ -z "$app_dir" || ! -d "$app_dir" ]]; then
-            echo "PocketBase working directory not found; configure POCKETBASE_DEPLOY_DIR." >&2
+          service_exec="$(systemctl show "$service_name" -p ExecStart --value 2>/dev/null || true)"
+          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+          app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          if [[ -z "$app_dir" && "$service_name" == "lifeos-recovery-live.service" ]]; then
+            # This recovery unit stores its live database under recovery-candidate
+            # even when its PocketBase executable lives at /opt/lifeos/pocketbase.
+            candidate="/opt/lifeos/recovery-candidate"
+            if [[ "$service_exec" == *"$candidate/pb_data"* &&
+                  -f "$candidate/pb_data/data.db" ]]; then
+              app_dir="$candidate"
+            else
+              echo "LIFEOS2 active data path did not match the known recovery-candidate layout; aborting." >&2
+              exit 1
+            fi
+          fi
+          if [[ -z "$app_dir" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
+          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          if [[ -z "$app_dir" || ! -f "$app_dir/pb_data/data.db" ]]; then
+            echo "Live PocketBase data.db not found under verified working directory; aborting." >&2
             exit 1
           fi
-          echo "PocketBase service and working directory resolved; beginning isolated preflight."
+          pb_binary="$app_dir/pocketbase"
+          if [[ ! -x "$pb_binary" && "$service_name" == "lifeos-recovery-live.service" &&
+                "$service_exec" == *"/opt/lifeos/pocketbase"* &&
+                -x /opt/lifeos/pocketbase ]]; then
+            pb_binary="/opt/lifeos/pocketbase"
+          fi
+          if [[ ! -x "$pb_binary" || "$service_exec" != *"$pb_binary"* ]]; then
+            echo "PocketBase executable does not match active service; aborting." >&2
+            exit 1
+          fi
+          echo "Existing PocketBase service, live data path and binary verified; beginning isolated preflight."
 
           # P0: migrations MUST succeed on a disposable, consistent SQLite
           # snapshot before writing any production hooks/migrations or restarting.
@@ -154,7 +183,7 @@ jobs:
           print("Consistent SQLite snapshot created for migration preflight")
           PY
           echo "Running isolated PocketBase migration preflight (production untouched)..."
-          $SUDO timeout 120s "$app_dir/pocketbase" migrate up \
+          $SUDO timeout 120s "$pb_binary" migrate up \
             --dir="$preflight_dir/pb_data" \
             --migrationsDir="$preflight_dir/pb_migrations" \
             --hooksDir="$preflight_dir/empty_hooks"
