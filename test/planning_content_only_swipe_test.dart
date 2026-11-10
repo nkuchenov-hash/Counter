@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:counter/features/planning/planning_sort_mode.dart';
+import 'package:counter/features/planning/widgets/planning_filter_controls.dart';
 import 'package:counter/features/planning/widgets/planning_day_swipe_region.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -168,4 +172,218 @@ void main() {
     await tester.pumpAndSettle();
     expect(changes, <int>[1]);
   });
+
+  testWidgets('date update animates only the day, with no tick-time rebuilds', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1100, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var bodyBuilds = 0;
+    const contentKey = ValueKey('animated-planning-body');
+
+    Widget screen(String day) => MaterialApp(
+      home: Scaffold(
+        body: Column(
+          children: [
+            const SizedBox(height: 120, child: Text('Stationary controls')),
+            Expanded(
+              child: PlanningDaySwipeRegion(
+                dayKey: day,
+                onDayChange: (_) {},
+                child: RepaintBoundary(
+                  child: Builder(
+                    builder: (context) {
+                      bodyBuilds++;
+                      return const SizedBox.expand(
+                        key: contentKey,
+                        child: ColoredBox(color: Colors.white),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(screen('2026-11-09'));
+    final chromePosition = tester.getTopLeft(find.text('Stationary controls'));
+    final baselineX = tester.getTopLeft(find.byKey(contentKey)).dx;
+
+    await tester.pumpWidget(screen('2026-11-10'));
+    final firstFrameX = tester.getTopLeft(find.byKey(contentKey)).dx;
+    expect(firstFrameX, greaterThan(baselineX + 1));
+    final buildsAfterDateChange = bodyBuilds;
+
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(bodyBuilds, buildsAfterDateChange);
+      expect(tester.getTopLeft(find.text('Stationary controls')), chromePosition);
+    }
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.byKey(contentKey)).dx,
+        closeTo(baselineX, 0.01));
+    expect(bodyBuilds, buildsAfterDateChange);
+
+    await tester.pumpWidget(screen('2026-11-09'));
+    expect(tester.getTopLeft(find.byKey(contentKey)).dx,
+        lessThan(baselineX - 1));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.byKey(contentKey)).dx,
+        closeTo(baselineX, 0.01));
+  });
+
+  testWidgets('fixed desktop date controls work without narrowing day body', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(628, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var previous = 0;
+    var next = 0;
+    const dayBodyKey = ValueKey('day-content');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              PlanningSortModeBar(
+                sortMode: PlanSortMode.custom,
+                onSortModeChanged: (_) {},
+                onAdjacentDayRequested: (direction) {
+                  if (direction < 0) {
+                    previous++;
+                  } else {
+                    next++;
+                  }
+                },
+              ),
+              const Expanded(
+                child: ColoredBox(
+                  key: dayBodyKey,
+                  color: Colors.white,
+                  child: SizedBox.expand(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
+    final bodyWidth = tester.getSize(find.byKey(dayBodyKey)).width;
+    expect(bodyWidth, 628);
+
+    await tester.tap(find.byIcon(Icons.chevron_left_rounded));
+    await tester.tap(find.byIcon(Icons.chevron_right_rounded));
+    expect(previous, 1);
+    expect(next, 1);
+    expect(tester.getSize(find.byKey(dayBodyKey)).width, bodyWidth);
+  });
+
+  testWidgets('date navigation keeps its footprint while temporarily locked', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(950, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var changes = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PlanningSortModeBar(
+            sortMode: PlanSortMode.time,
+            onSortModeChanged: (_) {},
+            onAdjacentDayRequested: (_) => changes++,
+            dayNavigationEnabled: false,
+          ),
+        ),
+      ),
+    );
+    expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.chevron_right_rounded));
+    expect(changes, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('phone layout uses day swipe rather than cramped arrow controls', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(520, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PlanningSortModeBar(
+            sortMode: PlanSortMode.custom,
+            onSortModeChanged: (_) {},
+            onAdjacentDayRequested: (_) {},
+          ),
+        ),
+      ),
+    );
+    expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('sidebars and constrained panels never reveal overflow arrows', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1100, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 520,
+              child: PlanningSortModeBar(
+                sortMode: PlanSortMode.custom,
+                onSortModeChanged: (_) {},
+                desktopTitle: 'Planning',
+                onAdjacentDayRequested: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  test('Planning card width and gutters follow Timeline records', () {
+    final planCard = File('lib/core/widgets/plan_card.dart').readAsStringSync();
+    final timeline =
+        File('lib/features/timeline/timeline_day_page.dart').readAsStringSync();
+    final planning =
+        File('lib/features/planning/planning_page.dart').readAsStringSync();
+    expect(planCard, contains('shellReadableContentMaxWidth(viewportWidth)'));
+    expect(timeline, contains('shellReadableContentMaxWidth(viewportWidth)'));
+    expect(planCard, contains('2 * kShellDesktopContentHorizontalPadding'));
+    expect(planning, contains(': 12,'));
+    for (final path in [
+      'lib/features/planning/widgets/planning_category_grouped_list.dart',
+      'lib/features/planning/widgets/planning_tag_grouped_list.dart',
+    ]) {
+      expect(File(path).readAsStringSync(), contains(': 12.0;'));
+    }
+  });
+
+  test('Planning wrapper does not subtract horizontal side-arrow rails', () {
+    final shell =
+        File('lib/features/planning/planning_page_shell.dart').readAsStringSync();
+    expect(shell, contains('return planningPage;'));
+    expect(shell, isNot(contains('width: 96')));
+    expect(shell, isNot(contains('Expanded(child: planningPage)')));
+  });
+
 }

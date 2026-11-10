@@ -1,3 +1,20 @@
+## 2026-11-10 — Planning single-pass directional arrival motion [PR verification]
+
+- Reintroduced a 170ms directional arrival animation for the **day content only**, keyed on real date changes. Uses an 18px GPU-composited translation outside the day RepaintBoundary, rather than the original 60px drag-time rubber band or 150ms follow-up slide.
+- Horizontal drags still update only a numeric accumulator and commit a single date; fixed tags, quick-entry and sort controls never move. Date pager gestures are disabled during deliberate Time View drag/resize.
+- Added widget regression for forward/backward arrival, stationary fixed controls and no day-card rebuilds during the animation; corrected arrow breakpoints to use constrained panel width (including sidebar and narrow layouts) after CI caught a 32px overflow. The source guard allows only bounded post-commit motion.
+- Removed redundant day-stream REST fetches and duplicate renders while a fully fetched plans catalog remains fresh for the same user (30s TTL). Coalesced concurrent stale-catalog GETs across rapid swipes; skipped unnecessary day-scoped fallback GETs during ordinary swipe streams while retaining them for explicit reads. Account changes and partial caches still force refresh, and explicit refresh/realtime remain intact. Added TTL, parallel-request and owner-isolation tests.
+- No preloaded adjacent day pages, animations during drag, opacity saveLayers, backend schema or optimistic/offline mutation changes. Actual browser/device smoothness remains subject to profile validation.
+
+## 2026-11-09 — Planning full-width date controls [CI and device performance unverified]
+
+- Removed 96px date-navigation side rails on both sides of the persistent Planning page, restoring the full day viewport.
+- Matched desktop Planning list-card max width to the responsive Timeline record-card width, and mobile Planning list/card gutters to Timeline's 12px gutters across Custom, Category and Tags modes.
+- Moved previous/next day actions into the stationary Planning sort/control row (40px away from the segmented selector); compact phones keep content-only date swipe. Date buttons remain mounted but disabled during Time View drag/resize.
+- Avoided synchronous per-day record-duration aggregation when navigating into an empty Planning day.
+- Extended the existing Planning content-only swipe regression suite with fixed-navigation, lock-state, breakpoint and card-width checks; retained the current PR CI step. No new full-page animation or per-pointer day repaint was introduced: smoothness and CPU usage still require Chrome/Android profiling before introducing real two-day sliding.
+
+
 ## 2026-11-09 — Viktor explains schedule overflow and offers feasible alternatives [verification pending]
 
 - Replaced blind failure when the two-day tag-duration repair exceeds available space with a user choice dialog identifying the conflicting plan/date/duration and explaining possible resolutions.

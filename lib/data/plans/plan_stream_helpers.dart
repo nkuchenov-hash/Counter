@@ -62,9 +62,17 @@ final class _PlanningDayStreamHub {
   }
 
   void _bind(DatabaseService db) {
-    // _pump emits the cache synchronously before its first await. Do not emit
-    // twice and rebuild the whole Time graph twice on stream subscription.
-    unawaited(_pump(db, network: true));
+    // A day change reads the shared authoritative cache; it must not
+    // unconditionally start another fetch and emit the same day twice.
+    // Stale/missing cache still triggers the network pump as before.
+    final cacheFresh = hasFreshCompletePlanningCatalog(
+      currentUser: db.currentProfileId,
+      fetchedOwner: _plansLastCompleteCatalogOwnerId,
+      completedAt: _plansLastCompleteCatalogFetchAt,
+      now: DateTime.now(),
+      ttl: _allPlansUserCacheFreshTtl,
+    );
+    unawaited(_pump(db, network: !cacheFresh));
     if (!listenGlobal) return;
     _pokeSub = _planningRefreshController.stream.listen((_) {
       final wantsNetwork = _planningRefreshWantsNetworkPump;
@@ -100,7 +108,10 @@ final class _PlanningDayStreamHub {
     try {
       List<PlanningTask> tasks;
       try {
-        tasks = await db._fetchPlanningTasksForDate(wallDay);
+        // A day swipe uses the complete cached catalog; do not issue an
+        // extra per-empty-day fallback GET. Explicit reads keep that fallback.
+        tasks = await db._fetchPlanningTasksForDate(
+          wallDay, allowDayScopedFallback: false);
       } catch (_) {
         tasks = <PlanningTask>[];
       }

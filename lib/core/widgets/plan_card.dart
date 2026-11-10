@@ -3,13 +3,12 @@
 // Used by Planning screens and Component Lab (same widget, no fake clones).
 // ---------------------------------------------------------------------------
 
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/plan_time_task_card.dart';
 import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
 import 'package:counter/shared/time/plan_time_labels.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter/material.dart';
-
-const double _kPlanningListCardMaxWidth = 1192;
 
 /// Meta icons for notes / checklist / parent plan (shared list + time cards).
 List<Widget> planningTaskMetaIcons(BuildContext context, PlanningTask task) {
@@ -152,10 +151,17 @@ class PlanCard extends StatelessWidget {
         overlayColor: WidgetStateProperty.all(Colors.transparent),
       ),
     );
+    // Match the desktop record-card content width rather than using a
+    // separate 1192px Planning-only cap. The scroll viewport stays full width.
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final maxWidth = shellUsesSideNavigation(viewportWidth)
+        ? shellReadableContentMaxWidth(viewportWidth) -
+            2 * kShellDesktopContentHorizontalPadding
+        : double.infinity;
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _kPlanningListCardMaxWidth),
+        constraints: BoxConstraints(maxWidth: maxWidth),
         child: SizedBox(
           width: double.infinity,
           child: Theme(

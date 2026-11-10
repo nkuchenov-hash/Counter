@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `a590820a` on 2026-11-09.**
+**Generated from input HEAD `64feb488` on 2026-11-10.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -21303,7 +21303,7 @@ EN:
 - **Responsibilities:** PlanningSwipeWrapper
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Persistent single-day `PlanningSwipeWrapper`, fixed chrome and previous/next date buttons (no full-page PageView)
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Persistent single-day `PlanningSwipeWrapper`, full-width Planning page without side-arrow rails (no full-page PageView)
 
 RU:
 

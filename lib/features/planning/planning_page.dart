@@ -1198,14 +1198,14 @@ class _PlanningPageState extends State<PlanningPage>
         enabled: _sortMode == PlanSortMode.time,
       );
     }
-    final planActualByPbId = DatabaseService.instance
-        .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
     if (tasks.isEmpty) {
       return PlanningDayEmptyState(
         onFocusQuickAdd: () =>
             FocusScope.of(context).requestFocus(_quickAddFocus),
       );
     }
+    final planActualByPbId = DatabaseService.instance
+        .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
     if (_sortMode == PlanSortMode.time) {
       return timeView.buildHourGridView(tasks, planActualByPbId);
     }
@@ -1219,7 +1219,7 @@ class _PlanningPageState extends State<PlanningPage>
       padding: EdgeInsets.symmetric(
         horizontal: shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
             ? kShellDesktopContentHorizontalPadding
-            : 8,
+            : 12,
         vertical: 8,
       ),
       buildDefaultDragHandles: false,
@@ -1387,9 +1387,9 @@ class _PlanningPageState extends State<PlanningPage>
           PlanningSortModeBar(
             sortMode: _sortMode,
             onSortModeChanged: (mode) => setState(() => _sortMode = mode),
-            desktopTitle: desktop
-                ? t(currentLocale.value, 'tab_planning')
-                : null,
+            desktopTitle: desktop ? t(currentLocale.value, 'tab_planning') : null,
+            onAdjacentDayRequested: widget.onAdjacentDayRequested,
+            dayNavigationEnabled: widget.shellTabActive && !widget.datePagerLocked,
           ),
         PlanningQuickAddChrome(
           desktop: desktop,
@@ -1408,10 +1408,10 @@ class _PlanningPageState extends State<PlanningPage>
         ),
         Expanded(
           child: PlanningDaySwipeRegion(
-            enabled: widget.shellTabActive &&
+            dayKey: widget.selectedDateString,
+            enabled: widget.shellTabActive && !widget.datePagerLocked &&
                 widget.onAdjacentDayRequested != null,
-            onDayChange: (direction) =>
-                widget.onAdjacentDayRequested?.call(direction),
+            onDayChange: (dir) => widget.onAdjacentDayRequested?.call(dir),
             child: RepaintBoundary(
               child: _buildActiveDayBody(context, scheme, tasks),
             ),

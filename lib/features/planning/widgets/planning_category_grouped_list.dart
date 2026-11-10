@@ -95,7 +95,7 @@ class PlanningCategoryGroupedList extends StatelessWidget {
     final sidePadding =
         shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
         ? kShellDesktopContentHorizontalPadding
-        : 8.0;
+        : 12.0;
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
