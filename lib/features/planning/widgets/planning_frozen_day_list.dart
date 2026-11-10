@@ -119,9 +119,9 @@ class _FrozenTimePreview extends StatelessWidget {
                 for (final task in entries)
                   Positioned(
                     top: (task.startTime!.difference(windowStart).inMinutes
-                        * _hourPx / 60).clamp(0.0, height - 38.0),
+                        * _hourPx / 60).clamp(0.0, height - 38.0).toDouble(),
                     left: rail + 8, right: 8,
-                    height: math.max(38, math.min(
+                    height: math.max(38.0, math.min(
                       task.endDateTime == null ? 55.0 :
                       task.endDateTime!.difference(task.startTime!).inMinutes
                           * _hourPx / 60, _hourPx * 4)),
