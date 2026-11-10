@@ -1408,7 +1408,7 @@ class _PlanningPageState extends State<PlanningPage>
         ),
         Expanded(
           child: PlanningDaySwipeRegion(
-            dayKey: widget.selectedDateString,
+            dayKey: widget.selectedDateString, keepOutgoingContent: _sortMode != PlanSortMode.time,
             enabled: widget.shellTabActive && !widget.datePagerLocked &&
                 widget.onAdjacentDayRequested != null,
             onDayChange: (dir) => widget.onAdjacentDayRequested?.call(dir),
