@@ -220,6 +220,9 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
     final russian = currentLocale.value.toLowerCase().startsWith('ru');
     switch (event.kind) {
       case 'left_home':
+        // The same native event can replay after a crash before acknowledgement.
+        // Never terminate and recreate its already-running inferred trip.
+        if (ourActive && autoKind == 'travel') return true;
         if (active != null && !ourActive) {
           if (!ContextTimelinePolicy.canEndHomeRecord(active, event.atUtc)) {
             return true; // not a location-bound record: never overwrite it
@@ -252,6 +255,7 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
         }
         return true;
       case 'stationary_away':
+        if (ourActive && autoKind == 'visit') return true;
         if (!ourActive || autoKind != 'travel') return true;
         if (!await endAuto()) return false;
         return startAuto('visit', ContextTimelinePolicy.visitTitle(russian: russian));
