@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:counter/data/database_service.dart';
@@ -30,6 +31,55 @@ void main() {
     expect(fresh(fetched: null), isFalse);
     expect(fresh(owner: 'userB', fetched: now), isFalse);
     expect(fresh(active: null, fetched: now), isFalse);
+  });
+
+  test('concurrent swipe refreshes share a single complete-catalog GET', () async {
+    final pending = Completer<List<PlanningTask>>();
+    var calls = 0;
+    Future<List<PlanningTask>> fetch() {
+      calls++;
+      return pending.future;
+    }
+    final first = singleFlightPlanningCatalogFetch('owner-1', fetch);
+    final second = singleFlightPlanningCatalogFetch('owner-1', fetch);
+    expect(identical(first, second), isTrue);
+    expect(calls, 1);
+    pending.complete(const <PlanningTask>[]);
+    await Future.wait([first, second]);
+    await Future<void>.delayed(Duration.zero);
+
+    await singleFlightPlanningCatalogFetch('owner-1', () async {
+      calls++;
+      return <PlanningTask>[];
+    });
+    expect(calls, 2);
+  });
+
+  test('catalog fetch is never reused for a different signed-in owner', () async {
+    final firstPending = Completer<List<PlanningTask>>();
+    final nextPending = Completer<List<PlanningTask>>();
+    var calls = 0;
+    final first = singleFlightPlanningCatalogFetch('owner-A', () {
+      calls++;
+      return firstPending.future;
+    });
+    final next = singleFlightPlanningCatalogFetch('owner-B', () {
+      calls++;
+      return nextPending.future;
+    });
+    expect(identical(first, next), isFalse);
+    expect(calls, 2);
+    firstPending.complete(const <PlanningTask>[]);
+    await first;
+    // Finishing the old owner's request must not release owner B's flight.
+    final reused = singleFlightPlanningCatalogFetch('owner-B', () async {
+      calls++;
+      return <PlanningTask>[];
+    });
+    expect(identical(next, reused), isTrue);
+    expect(calls, 2);
+    nextPending.complete(const <PlanningTask>[]);
+    await Future.wait([next, reused]);
   });
 
   group('Planning snapshot / body cache pipeline', () {
