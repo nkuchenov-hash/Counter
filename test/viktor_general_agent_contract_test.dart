@@ -52,6 +52,36 @@ void main() {
     expect(gateway, contains('actions: null'));
   });
 
+  test('Viktor honours all three explicitly requested days', () async {
+    const requested = 'Исправь длительность всех текущих планов вчера, '
+        'сегодня и завтра по настройкам длительности по тегам.';
+    expect(ViktorTagDurationRepair.matches(requested), isTrue);
+    expect(ViktorTagDurationRepair.includesYesterday(requested), isTrue);
+    expect(ViktorTagDurationRepair.includesYesterday(
+      'Исправь вчера, сегодня и завтра, но без вчера'), isFalse);
+    expect(ViktorTagDurationRepair.includesYesterday(
+      'Планы сегодня и завтра'), isFalse);
+    expect(ViktorTagDurationRepair.targetDays(DateTime(2026, 11, 10),
+      includeYesterday: true), [
+        DateTime(2026, 11, 9),
+        DateTime(2026, 11, 10),
+        DateTime(2026, 11, 11),
+      ]);
+    expect(ViktorTagDurationRepair.targetDays(DateTime(2026, 12, 31),
+      includeYesterday: true), [
+        DateTime(2026, 12, 30),
+        DateTime(2026, 12, 31),
+        DateTime(2027, 1, 1),
+      ]);
+    final code = await File('lib/features/viktor/viktor_chat_page.dart')
+        .readAsString();
+    expect(code, contains('ViktorTagDurationRepair.includesYesterday(input)'));
+    expect(RegExp(r'includeYesterday: includeYesterday')
+        .allMatches(code).length, 3,
+        reason: 'Initial proposal, partial preview, and commit must '
+                'operate over the same user-selected day scope');
+  });
+
   test('Two-day tag default duration repair is explicit and safe', () {
     expect(ViktorTagDurationRepair.matches(
       'Исправь длительность всех текущих планов сегодня и завтра '
