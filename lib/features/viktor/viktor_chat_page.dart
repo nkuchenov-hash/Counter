@@ -354,6 +354,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         try {
           preview = await executor.describe(repaired.actions!, intentDay);
           finalActions = repaired.actions!;
+          response = repaired;
           recoveredProposal = true;
         } on StateError {
           await _offerRecovery(
@@ -369,7 +370,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         if (response.message.trim().isNotEmpty) {
           _push(response.message.trim());
         }
-        final onlyDayReads = actions.actions.every(
+        final onlyDayReads = finalActions.actions.every(
             (action) => action.name == 'list_day_plans');
         _push(onlyDayReads
             ? ViktorReadAnswer.format(input, preview) : preview);
@@ -446,8 +447,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     if (failure is FormatException ||
         failure is! StateError && failure is! ViktorTagDurationOverflow) {
       _push('Не получилось обработать запрос: $reason '
-          'Изменение не запускалось. Можно уточнить запрос или повторить '
-          'после восстановления соединения.');
+          'Попробуйте уточнить условие или повторить запрос.');
       return;
     }
     final groundedContext = failure is ViktorTagDurationOverflow
@@ -460,8 +460,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         : 'Application validation rejected the requested operation '
           'before writing: $reason. Any new action must pass a fresh '
           'Brain preview and user confirmation.';
-    _push('Этот вариант не прошёл проверку. Ищу другие способы '
-        'выполнить задачу без изменения закреплённых событий.');
+    _push('Этот вариант не прошёл проверку. Ищу безопасную альтернативу.');
     try {
       final result = await _gateway.propose(
         input: input, wallDay: day, plans: plans,
