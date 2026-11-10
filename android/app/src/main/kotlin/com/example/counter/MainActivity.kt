@@ -40,6 +40,12 @@ class MainActivity : FlutterFragmentActivity() {
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "status" -> result.success(ContextAwarenessBridge.status(this))
+                "suggestPlaces" -> ContextAwarenessBridge.suggestPlaces(
+                    this,
+                    call.argument<Double>("latitude") ?: Double.NaN,
+                    call.argument<Double>("longitude") ?: Double.NaN,
+                    result,
+                )
                 "setHome" -> ContextAwarenessBridge.setHome(this, result)
                 "enable" -> ContextAwarenessBridge.enable(
                     this, call.argument<String>("profileId") ?: "", result,
