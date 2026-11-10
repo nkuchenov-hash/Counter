@@ -38,6 +38,8 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
   int _committedPage = _initialPage;
   bool _dayCommitQueued = false;
   int? _pendingDayIndex;
+  // Never prepaint hidden Planning tabs on initial app startup.
+  bool _hasMountedActiveDay = false;
   // Date controls live in the root overlay so they remain tappable outside
   // the constrained Planning canvas, without expanding its hit region.
   final LayerLink _sideArrowsLink = LayerLink();
@@ -63,6 +65,7 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
   @override
   void initState() {
     super.initState();
+    _hasMountedActiveDay = widget.enabled;
     _anchorDay = _parseDay(widget.dayKey);
     _controller = PageController(initialPage: _initialPage);
     // The root Overlay can be mounted after this region's first frame.
@@ -75,6 +78,7 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
   @override
   void didUpdateWidget(covariant PlanningDaySwipeRegion oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.enabled) _hasMountedActiveDay = true;
     if (oldWidget.dayKey == widget.dayKey) return;
     final target = _indexForDay(_parseDay(widget.dayKey));
     if (target == _committedPage) return;
@@ -252,7 +256,7 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
                 // pages while idle; the finger then moves already-rendered
                 // PlanCards rather than constructing a whole Time View mid-drag.
                 // No second live Planning stream or remote fetch is created.
-                allowImplicitScrolling: true,
+                allowImplicitScrolling: _hasMountedActiveDay,
                 onPageChanged: _queueLiveDayCommit,
                 scrollDirection: Axis.horizontal,
                 physics: widget.enabled

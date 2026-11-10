@@ -276,6 +276,38 @@ void main() {
     expect(changes, <int>[1]);
   });
 
+  testWidgets('hidden Planning tab does not prepaint neighbors at startup', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(950, 720));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var active = false;
+    late StateSetter rebuild;
+    final builtDays = <int>[];
+    await tester.pumpWidget(MaterialApp(
+      home: StatefulBuilder(builder: (_, setState) {
+        rebuild = setState;
+        return Scaffold(body: PlanningDaySwipeRegion(
+          enabled: active,
+          dayKey: '2026-11-10',
+          onDayChange: (_) {},
+          adjacentDayBuilder: (_, day) {
+            builtDays.add(day.day);
+            return Text('Cached day ${day.day}');
+          },
+          child: const Center(child: Text('Visible day')),
+        ));
+      }),
+    ));
+    await tester.pump();
+    expect(builtDays, isEmpty);
+    rebuild(() => active = true);
+    await tester.pump();
+    expect(builtDays, contains(9));
+    expect(builtDays, contains(11));
+    expect(find.text('Visible day'), findsOneWidget);
+  });
+
   testWidgets('neighbor cards are prepared before horizontal drag', (tester) async {
     await tester.binding.setSurfaceSize(const Size(950, 720));
     addTearDown(() => tester.binding.setSurfaceSize(null));
