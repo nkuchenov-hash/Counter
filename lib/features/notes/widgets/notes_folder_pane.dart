@@ -5,21 +5,20 @@ import 'package:counter/data/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 
-/// One category-tinted folder-paper surface for Notes.
-/// Desktop retains the 18px interior gap under the tabs; mobile uses an
-/// edge-to-edge tint with only a single 12px inset for the note cards.
+/// Muted category color for the physical folder tabs only.
+/// The note workspace stays neutral: category colors do not flood the page.
 Color notesFolderPaper(BuildContext context, int? categoryId) {
   final scheme = Theme.of(context).colorScheme;
   final dark = Theme.of(context).brightness == Brightness.dark;
   if (categoryId == null) {
-    return dark ? scheme.surfaceContainerLow : const Color(0xFFF2F4F7);
+    return dark ? scheme.surfaceContainerLow : const Color(0xFFEDEFF2);
   }
   final accent = DatabaseService.instance.getCategoryRuleById(categoryId)?.colorOrDefault;
   if (accent == null) return scheme.surface;
   // Restrained category tint, same as the selected spine's lower edge.
   return Color.alphaBlend(
-    accent.withValues(alpha: dark ? 0.22 : 0.15),
-    dark ? scheme.surface : const Color(0xFFF9FAFB),
+    accent.withValues(alpha: dark ? 0.16 : 0.085),
+    dark ? scheme.surface : const Color(0xFFFDFDFE),
   );
 }
 
@@ -33,7 +32,7 @@ class NotesFolderPane extends StatelessWidget {
 
   final int? categoryId;
   final Widget child;
-  /// Mobile notes use the folder tint as a full-bleed section background.
+  /// Kept for API compatibility; all modes use the same edge-to-edge content.
   final bool edgeToEdge;
 
   @override
@@ -42,20 +41,12 @@ class NotesFolderPane extends StatelessWidget {
       key: const ValueKey('notes-folder-paper'),
       duration: const Duration(milliseconds: 260),
       curve: Curves.easeInOutCubic,
+      // The outer LIFE OS page already owns its gutter. Do not nest cards or
+      // list rows inside a second tinted, padded and rounded container.
       decoration: BoxDecoration(
-        color: notesFolderPaper(context, categoryId),
-        borderRadius: edgeToEdge
-            ? BorderRadius.zero
-            : const BorderRadius.only(
-                topRight: Radius.circular(15),
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
+        color: Theme.of(context).colorScheme.surface,
       ),
-      clipBehavior: Clip.antiAlias,
-      padding: edgeToEdge
-          ? const EdgeInsets.fromLTRB(12, 12, 12, 12)
-          : const EdgeInsets.fromLTRB(16, 18, 16, 16),
+      padding: EdgeInsets.zero,
       child: child,
     );
   }
