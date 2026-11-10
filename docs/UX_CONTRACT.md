@@ -1,3 +1,12 @@
+## Context awareness — explicit location consent (Android MVP, pending device acceptance)
+
+- The Location/Activity settings screen is accessed through Menu → Planning & time → Context awareness. Opening Settings must not request permissions.
+- Set home from a precise current reading; Enable requires precise location, allow-all-the-time location and physical-activity recognition. Off is the default and sign-out turns off native registrations.
+- When enabled, native Android may record home enter/exit and coarse motion events while Flutter is closed. Reconciliation into Timeline occurs on authenticated app resume or while the app is active; system delivery may be delayed.
+- Only explicitly home-bound manual records may be automatically truncated. A supported departure can start Travel; a sufficiently corroborated stationary-away signal may replace Travel with Away from home. Do not assert restaurant or bus/metro details without verification.
+- Events are owner-scoped, acknowledged after processing, bounded and stored on the device. Stop clears pending observations; retaining the home anchor should be visible. No raw GPS journey is stored.
+- Undo and manual corrections remain authoritative; if facts are ambiguous, skip the automatic mutation rather than interrupt an unrelated timer. All edits must be offline-durable and have the same instant UI behavior as existing records.
+
 ## Calendar visual minimalism (2026-11-10)
 
 - Month-view days must share one uniform, unfilled canvas. Do **not** shade weekends or adjacent-month cells gray; distinguish neighboring months only with date-label contrast. Use subtle design-system outline tokens for cell separation, with no blanket tinted backgrounds.
