@@ -147,17 +147,22 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         } on ViktorTagDurationOverflow catch (conflict) {
           _durationConflictPending = true;
           if (!mounted) return;
-          final chooseSubset = await showDialog<bool>(
+          final choice = await showDialog<ViktorDurationConflictChoice>(
             context: context,
             builder: (_) => ViktorDurationConflictDialog(
               conflict: conflict,
             ),
-          ) ?? false;
+          );
           if (!mounted) return;
-          if (!chooseSubset) {
-            // A dismissed dialog is not the end of the conversation.
-            // Discuss grounded alternatives; a subsequent "покажи частичный"
-            // will still open a fresh preview for explicit approval.
+          if (choice == null ||
+              choice == ViktorDurationConflictChoice.dismiss) {
+            _push('Изменения отменены. Если хотите обсудить другие '
+                'варианты, просто напишите Виктору.');
+            return;
+          }
+          if (choice == ViktorDurationConflictChoice.discuss) {
+            // A failed plan is context for a conversation, not an error wall.
+            // A later explicit subset request will still re-preview fresh data.
             plansForRecovery =
                 await db.getPlanningTasksForWallDate(conflict.day);
             await _offerRecovery(
