@@ -65,7 +65,28 @@ class PlanningTimeViewCoordinator {
   int timelineHourEnd =
       PlanningSheetTimelinePrefs.cachedVisibleDayRange?.end ??
       PlanningSheetTimelinePrefs.defaultEndExtended;
-  final ScrollController hourGridScrollController = ScrollController();
+  // A different day must not restore a previous day's pixel scroll offset.
+  final ScrollController hourGridScrollController =
+      ScrollController(keepScrollOffset: false);
+
+  /// Reset the currently attached timeline without remounting a second grid.
+  /// If the old grid is detached, keepScrollOffset:false initializes the next
+  /// attachment at zero rather than restoring the previous day's position.
+  static void resetAttachedDayScrollToTop(ScrollController controller) {
+    for (final position in controller.positions.toList()) {
+      if (position.pixels != 0.0) position.jumpTo(0.0);
+    }
+  }
+
+  void resetHourGridScrollForNewDay() {
+    timeModeDidAutoScrollToNow = true;
+    hourGridScrollVelocityPxPerSec = 0;
+    hourGridTickerElapsedLast = null;
+    if (hourGridEdgeScrollTicker.isActive) {
+      hourGridEdgeScrollTicker.stop();
+    }
+    resetAttachedDayScrollToTop(hourGridScrollController);
+  }
   List<TimeModeProjectedPlan> cachedTimeModeProjections = const [];
   List<PlanTimeViewBlockLayout> dragInsertLayoutsCache = const [];
   Set<String> timeViewFixedTagIds = {};

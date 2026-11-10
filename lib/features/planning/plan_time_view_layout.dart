@@ -203,6 +203,10 @@ class TimeViewYScale {
 /// Legacy name retained for [planning_view.dart] call sites.
 typedef PlanTimeViewDurationGrid = TimeViewYScale;
 
+/// Inset keeps the first hour label/dot fully inside a clipped scroll viewport.
+/// Shared by live and cached neighboring Time View canvases.
+const double kPlanningTimeViewTopInsetPx = 12.0;
+
 /// Absolute placement for one scheduled task on the Time View canvas.
 class PlanTimeViewBlockLayout {
   const PlanTimeViewBlockLayout({

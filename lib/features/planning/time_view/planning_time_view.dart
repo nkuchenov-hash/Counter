@@ -536,8 +536,15 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
           math.max(0.0, hourGridScrollController.position.maxScrollExtent),
         )
         .toDouble();
+    final autoScrollDay = host.pageWidget.selectedDateString;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!hourGridScrollController.hasClients) return;
+      // Do not apply a previously queued "today" jump to the next swiped day.
+      if (!host.mounted ||
+          host.pageWidget.selectedDateString != autoScrollDay ||
+          !isProfileTodaySelectedForPlanning() ||
+          !hourGridScrollController.hasClients) {
+        return;
+      }
       hourGridScrollController.animateTo(
         target,
         duration: const Duration(milliseconds: 350),

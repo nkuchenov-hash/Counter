@@ -157,8 +157,12 @@ class PlanningFrozenTimeCanvas extends StatelessWidget {
     return ColoredBox(
       color: scheme.surface,
       child: ListView(
-        padding: EdgeInsets.symmetric(
-            horizontal: compact ? 4 : 8, vertical: 8),
+        padding: EdgeInsets.fromLTRB(
+          compact ? 4 : 8,
+          8 + kPlanningTimeViewTopInsetPx,
+          compact ? 4 : 8,
+          8,
+        ),
         children: [
           if (untimed.isNotEmpty)
             ...untimed.map((t) => Padding(
