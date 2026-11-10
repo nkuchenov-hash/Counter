@@ -43,6 +43,13 @@ void main() {
         .readAsString();
     final gateway = await File('lib/data/ai/viktor_gateway.dart')
         .readAsString();
+    final recovery = await File('lib/features/viktor/viktor_recovery.dart')
+        .readAsString();
+    expect(recovery, contains('_retryRejectedProposal('));
+    expect(recovery, contains('readStep < 2'));
+    expect(recovery, contains('batch.hasMutations'));
+    expect(recovery, contains('executor.describe(batch, day)'));
+    expect(recovery, contains('toolObservations: observations'));
     expect(chat, contains('recoveredProposal = true'));
     expect(chat, contains('!recoveredProposal'));
     expect(chat, contains('_offerRecovery('));
