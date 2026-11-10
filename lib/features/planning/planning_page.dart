@@ -414,9 +414,14 @@ class _PlanningPageState extends State<PlanningPage>
         oldWidget.selectedDate != widget.selectedDate ||
         oldWidget.selectedDateString != widget.selectedDateString;
     if (dayChanged && _sortMode == PlanSortMode.time) {
-      // The pager's preview has its own scroll extent. Reusing the previous
-      // live day's pixels clips the new day's first hour and first card.
-      timeView.resetHourGridScrollForNewDay();
+      // External date pickers may change the day during a widget build. A
+      // viewport jump there can notify listeners mid-build; settle afterward.
+      // Swipe callbacks reset synchronously before committing the new day.
+      final expectedDay = widget.selectedDateString;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || widget.selectedDateString != expectedDay) return;
+        timeView.resetHourGridScrollForNewDay();
+      });
     }
     if (dayChanged ||
         oldWidget.isActivePlanningDay != widget.isActivePlanningDay ||
@@ -1418,7 +1423,14 @@ class _PlanningPageState extends State<PlanningPage>
             ),
             enabled: widget.shellTabActive && !widget.datePagerLocked &&
                 widget.onAdjacentDayRequested != null,
-            onDayChange: (dir) => widget.onAdjacentDayRequested?.call(dir),
+            onDayChange: (dir) {
+              if (_sortMode == PlanSortMode.time) {
+                // Clear the old vertical position before the settled pager
+                // swaps the cached preview for the real selected day's grid.
+                timeView.resetHourGridScrollForNewDay();
+              }
+              widget.onAdjacentDayRequested?.call(dir);
+            },
             child: RepaintBoundary(
               child: _buildActiveDayBody(context, scheme, tasks),
             ),
