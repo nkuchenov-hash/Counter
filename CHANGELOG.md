@@ -1,3 +1,10 @@
+## 2026-11-10 — Planning day visibility and canonical Time View swipe previews [CI pending]
+
+- Fixed a potential data-visibility regression after the native pager redesign: while the complete PocketBase catalog is unverified or unavailable, the Planning stream preserves previously restored populated day snapshots instead of overwriting them with an unsuccessful empty refresh. A successfully fetched empty catalog remains authoritative.
+- Removed the visually inconsistent 152px/hour grey placeholder Time View. Adjacent-day Time previews now render cached plans through the same timezone projections, piecewise hour scale, collision lanes and `PlanTimeTaskCard` components as the live Time View, without mounting an extra active plan stream or sharing its ScrollController.
+- Added regression tests that traverse November 9, 10 and 11 while verifying that the newly selected day's live body replaces its inert preview, and enforce canonical Time View neighbor geometry.
+- Live account-side PocketBase plan counts and browser frame-time measurements are not verified by these automated tests.
+
 ## 2026-11-10 — Planning real finger-following date pager [CI and browser profiling pending]
 
 - Replaced the previous post-release fake day slide with a real `PageView.builder` using Timeline's `FeatherDateSwipePhysics`: the selected Planning day follows horizontal mouse/touch motion continuously, with native page spring/settle.
