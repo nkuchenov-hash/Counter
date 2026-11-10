@@ -1,3 +1,9 @@
+## 2026-11-10 — Viktor investigates rejected actions and honours three-day durations [PR verification]
+
+- Extended the duration-from-tag repair scope from only today/tomorrow to **yesterday/today/tomorrow** when explicitly requested; the original day scope is preserved through partial preview and fresh-state atomic commit. Completed, recurring and fixed-time plans remain protected.
+- After a rejected AI action, Viktor can perform up to two read-only observations to gather real data, re-propose a different solution, and show a new consent-gated preview. A failed or unavailable provider yields plain-language next options instead of a technical exception wall.
+- Added three-day and year-boundary regression tests, as well as read-only recovery contract assertions. PR checks and production deployment remain separate.
+
 ## 2026-11-10 — Viktor conversational recovery after failed plan changes [PR pending]
 
 - After a pre-write scheduling rejection, Viktor asks the configured AI provider for one different proposal and runs the Brain preview again; recovered proposals always require confirmation.
