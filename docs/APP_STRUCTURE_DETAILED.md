@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `f5fa7d75` on 2026-11-10.**
+**Generated from input HEAD `45464399` on 2026-11-10.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1003 — each appears **exactly once** below.
+**Tracked files:** 1004 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,7 +26,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 197 |
+| `production UI` | 198 |
 | `test` | 146 |
 | `Brain/data` | 115 |
 | `platform build` | 83 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 541 |
+| `PROVEN_REQUIRED` | 542 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 271 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 127 |
 | `GOVERNING_DOCUMENTATION` | 45 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 915 |
+| `HIGH` | 916 |
 | `MEDIUM` | 88 |
 
 ---
@@ -25558,6 +25558,44 @@ RU:
 - **Владелец / слой:** корень репозитория
 - **Обязанности:** Пользователь открывает sheet/dialog из entry `viktor_duration_review_dialog`.
 - **Когда открывать:** Когда ломается поведение, связанное с `viktor_duration_review_dialog.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/viktor/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/viktor/viktor_recovery.dart`
+
+EN:
+
+- **Human purpose:** `viktor_recovery.dart` on viktor area — Full-screen AI chat with expandable text and mic composer. Users see `viktor_recovery.dart` when using viktor area.
+- **What this is:** `viktor_recovery.dart` on viktor area — Full-screen AI chat with expandable text and mic composer.
+- **Why needed:** Users see `viktor_recovery.dart` when using viktor area.
+- **Contents:** Primary symbols: `_ViktorRecoveryDialogue`.
+- **Key code names:** `_ViktorRecoveryDialogue`
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/features/viktor/viktor_chat_page.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/features/viktor/viktor_chat_page.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** repository root
+- **Responsibilities:** Full-screen AI chat with expandable text and mic composer
+- **When to open:** When behavior tied to `viktor_recovery.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Brain/library compile failure in `lib/features/viktor/viktor_chat_page.dart` and broken related UI/data ops.
+- **Connected to:** APP_STRUCTURE role: Full-screen AI chat with expandable text and mic composer
+
+RU:
+
+- **Зачем файл человеку:** `viktor_recovery.dart` на viktor — Поддерживает поведение `viktor_recovery` в этой feature-зоне.. Пользователь видит UI из `viktor_recovery.dart` на viktor.
+- **Что это:** `viktor_recovery.dart` на viktor — Поддерживает поведение `viktor_recovery` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `viktor_recovery.dart` на viktor.
+- **Содержимое:** Dart-модуль `viktor_recovery.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/features/viktor/viktor_chat_page.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/features/viktor/viktor_chat_page.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Поддерживает поведение `viktor_recovery` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_recovery.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/viktor/`, `docs/APP_STRUCTURE.md`
 
