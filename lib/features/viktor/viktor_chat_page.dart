@@ -351,50 +351,34 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       try {
         preview = await executor.describe(finalActions, intentDay);
       } on StateError catch (failure) {
-        // One bounded model retry with the real validator rejection.
-        // Include the failed action to avoid repeating an unknown proposal.
-        // Any replacement is previewed and needs an explicit approval.
-        final rejectedJson = jsonEncode(
-          finalActions.actions.map((a) => a.toJson()).toList(),
-        );
-        final rejectedSummary = rejectedJson.length > 400
-            ? '${rejectedJson.substring(0, 400)}…'
-            : rejectedJson;
-        final repaired = await _gateway.propose(
-          input: input, wallDay: intentDay, plans: plans,
-          settings: _settings, selectedPlanIds: widget.selectedPlanIds,
-          requestId: requestId, conversationHistory: dialogContext,
-          toolObservations: toolObservations,
-          proposalFeedback:
-            'Rejected action: $rejectedSummary. '
-            'The app rejected it BEFORE writes: '
-            '${_friendlyError(failure)}. Preserve the user goal, '
-            'find a DIFFERENT feasible supported action or explain '
-            'concrete alternatives in message with actions:[]. '
-            'Do not repeat the rejected proposal.',
-          allowRepair: false,
+        // The recovery agent can inspect up to two real read observations
+        // and retry a different proposal. It may never apply a write.
+        final recovered = await _retryRejectedProposal(
+          input: input, failure: failure,
+          day: intentDay, plans: plans,
+          requestId: requestId, conversation: dialogContext,
+          priorObservations: toolObservations,
+          rejected: finalActions, executor: executor,
         );
         if (!mounted) return;
-        if (repaired.actions == null || repaired.needsMoreContext) {
-          _push(repaired.message.trim().isNotEmpty
-              ? repaired.message.trim()
-              : 'Этот вариант не подходит. Уточните, какие гибкие '
-                'задачи можно перенести, либо измените ограничение.');
+        if (recovered.actions == null || recovered.preview == null) {
+          final answer = recovered.answer?.trim() ?? '';
+          if (answer.isNotEmpty) {
+            _push(answer);
+          } else {
+            await _offerRecovery(
+              input: input, failure: failure, day: intentDay,
+              plans: plans, requestId: requestId,
+              conversation: dialogContext,
+            );
+          }
           return;
         }
-        try {
-          preview = await executor.describe(repaired.actions!, intentDay);
-          finalActions = repaired.actions!;
-          response = repaired;
-          recoveredProposal = true;
-        } on StateError {
-          await _offerRecovery(
-            input: input, failure: failure, day: intentDay,
-            plans: plans, requestId: requestId,
-            conversation: dialogContext,
-          );
-          return;
-        }
+        preview = recovered.preview!;
+        finalActions = recovered.actions!;
+        response = ViktorResponse(
+          message: recovered.answer ?? '', actions: finalActions);
+        recoveredProposal = true;
       }
       if (!mounted) return;
       if (!finalActions.hasMutations) {
