@@ -712,7 +712,7 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `planning/widgets/planning_bulk_bar.dart` | Bulk selection bottom bar |
 | `planning/widgets/planning_filter_controls.dart` | Sort-mode segmented control |
 | `planning/widgets/planning_empty_states.dart` | Planning empty-state widgets |
-| `planning/widgets/planning_day_swipe_region.dart` | Gesture arena for horizontal date swipes scoped to the day body; vertical scroll stays native |
+| `planning/widgets/planning_day_swipe_region.dart` | Native finger-following horizontal PageView of Planning day body, cache-only neighbor previews and settle-only date commits; fixed controls remain outside the pager |
 | `planning/widgets/planning_quick_add_strip.dart` | Quick-add tag strip above inline task field |
 | `planning/widgets/planning_list_helpers.dart` | Reorder list proxy decorator |
 | `planning/widgets/planning_list_grouping.dart` | Category/tag sort grouping helpers |

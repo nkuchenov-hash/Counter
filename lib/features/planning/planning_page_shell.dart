@@ -106,7 +106,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
     _pickDate(DateTime(
       _visibleDate.year,
       _visibleDate.month,
-      _visibleDate.day + (delta < 0 ? -1 : 1),
+      _visibleDate.day + delta,
     ));
   }
 

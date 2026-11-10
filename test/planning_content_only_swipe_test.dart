@@ -127,128 +127,118 @@ void main() {
     expect(changes, 0);
   });
 
-  testWidgets('dragging never repaints or displaces the large day canvas', (
+  testWidgets('Planning PageView follows the finger, without moving fixed chrome', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1100, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    var builds = 0;
+    var heavyBuilds = 0;
     final changes = <int>[];
-    const bodyKey = ValueKey('stable-day-content');
+    const bodyKey = ValueKey('live-planning-body');
+    const chromeKey = ValueKey('fixed-planning-controls');
+
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: PlanningDaySwipeRegion(
-            onDayChange: changes.add,
-            child: Builder(
-              builder: (context) {
-                builds++;
-                return const SizedBox.expand(
-                  key: bodyKey,
-                  child: ColoredBox(color: Colors.white),
-                );
-              },
-            ),
+          body: Column(
+            children: [
+              const SizedBox(height: 120,
+                  child: Center(key: chromeKey, child: Text('Fixed controls'))),
+              Expanded(
+                child: PlanningDaySwipeRegion(
+                  dayKey: '2026-11-09',
+                  onDayChange: changes.add,
+                  adjacentDayBuilder: (context, day) => ColoredBox(
+                    color: Colors.grey.shade100,
+                    child: Center(child: Text('Cached day ${day.day}')),
+                  ),
+                  child: Builder(builder: (context) {
+                    heavyBuilds++;
+                    return const SizedBox.expand(
+                      key: bodyKey,
+                      child: ColoredBox(color: Colors.white),
+                    );
+                  }),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
-    final initialPosition = tester.getTopLeft(find.byKey(bodyKey));
-    final initialBuilds = builds;
-    final gesture = await tester.startGesture(
-      const Offset(900, 400),
-      kind: PointerDeviceKind.touch,
-    );
-    await gesture.moveBy(const Offset(-32, 0));
+    final initialX = tester.getTopLeft(find.byKey(bodyKey)).dx;
+    final headerPos = tester.getTopLeft(find.byKey(chromeKey));
+    final initialBuilds = heavyBuilds;
+    final drag = await tester.startGesture(
+      const Offset(900, 400), kind: PointerDeviceKind.touch);
+    await drag.moveBy(const Offset(-180, 0));
     await tester.pump(const Duration(milliseconds: 16));
-    for (var i = 0; i < 20; i++) {
-      await gesture.moveBy(const Offset(-12, 0));
-      await tester.pump(const Duration(milliseconds: 16));
-      expect(tester.getTopLeft(find.byKey(bodyKey)), initialPosition);
-      expect(builds, initialBuilds);
-      expect(changes, isEmpty);
-    }
-    await gesture.up();
+    expect(tester.getTopLeft(find.byKey(bodyKey)).dx,
+        lessThan(initialX - 80));
+    expect(heavyBuilds, initialBuilds);
+    expect(changes, isEmpty);
+    expect(tester.getTopLeft(find.byKey(chromeKey)), headerPos);
+    await drag.moveBy(const Offset(-390, 0));
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(changes, isEmpty);
+    await drag.up();
+    await tester.pumpAndSettle();
+    expect(changes, <int>[1]);
+    expect(tester.getTopLeft(find.byKey(chromeKey)), headerPos);
+  });
+
+  testWidgets('native arrow step uses pager motion and commits only at settle', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final pager = GlobalKey<PlanningDaySwipeRegionState>();
+    final changes = <int>[];
+    const contentKey = ValueKey('live-day');
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: PlanningDaySwipeRegion(
+          key: pager,
+          dayKey: '2026-11-09',
+          onDayChange: changes.add,
+          adjacentDayBuilder: (context, day) => SizedBox.expand(
+            child: Center(child: Text('Day ${day.day}')),
+          ),
+          child: const SizedBox.expand(key: contentKey),
+        ),
+      ),
+    ));
+    final origin = tester.getTopLeft(find.byKey(contentKey)).dx;
+    pager.currentState!.animateToAdjacentDay(1);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 95));
+    expect(tester.getTopLeft(find.byKey(contentKey)).dx,
+        lessThan(origin - 100));
+    expect(changes, isEmpty);
     await tester.pumpAndSettle();
     expect(changes, <int>[1]);
   });
 
-  testWidgets('date update animates only the day, with no tick-time rebuilds', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(1100, 800));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    var bodyBuilds = 0;
-    Key contentKey(String day) => ValueKey('animated-planning-body-$day');
-
-    Widget screen(String day) => MaterialApp(
-      home: Scaffold(
-        body: Column(
-          children: [
-            const SizedBox(height: 120, child: Text('Stationary controls')),
-            Expanded(
-              child: PlanningDaySwipeRegion(
-                dayKey: day,
-                onDayChange: (_) {},
-                child: RepaintBoundary(
-                  child: Builder(
-                    builder: (context) {
-                      bodyBuilds++;
-                      return SizedBox.expand(
-                        key: ValueKey('animated-planning-body-$day'),
-                        child: const ColoredBox(color: Colors.white),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    await tester.pumpWidget(screen('2026-11-09'));
-    final chromePosition = tester.getTopLeft(find.text('Stationary controls'));
-    final baselineX = tester.getTopLeft(find.byKey(contentKey('2026-11-09'))).dx;
-
-    await tester.pumpWidget(screen('2026-11-10'));
-    final firstFrameX = tester.getTopLeft(find.byKey(contentKey('2026-11-10'))).dx;
-    // Unlike the previous imperceptible 18px nudge, a full viewport slides.
-    expect(firstFrameX, greaterThan(baselineX + 800));
-    final buildsAfterDateChange = bodyBuilds;
-
-    for (var i = 0; i < 8; i++) {
-      await tester.pump(const Duration(milliseconds: 20));
-      expect(bodyBuilds, buildsAfterDateChange);
-      expect(tester.getTopLeft(find.text('Stationary controls')), chromePosition);
-    }
-    await tester.pumpAndSettle();
-    expect(tester.getTopLeft(find.byKey(contentKey('2026-11-10'))).dx,
-        closeTo(baselineX, 0.01));
-    expect(bodyBuilds, buildsAfterDateChange);
-
-    await tester.pumpWidget(screen('2026-11-09'));
-    expect(tester.getTopLeft(find.byKey(contentKey('2026-11-09'))).dx,
-        lessThan(baselineX - 800));
-    await tester.pumpAndSettle();
-    expect(tester.getTopLeft(find.byKey(contentKey('2026-11-09'))).dx,
-        closeTo(baselineX, 0.01));
-  });
-
-  testWidgets('Time mode never attaches two day grids to one controller', (
+  testWidgets('Time mode has one live ScrollController during native swipe', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(900, 700));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final gridScroll = ScrollController();
     addTearDown(gridScroll.dispose);
-    Widget buildDay(String date) => MaterialApp(
+    String selected = '2026-11-09';
+    final changes = <int>[];
+    Widget screen() => MaterialApp(
       home: Scaffold(
         body: PlanningDaySwipeRegion(
-          dayKey: date,
-          keepOutgoingContent: false,
-          onDayChange: (_) {},
+          dayKey: selected,
+          onDayChange: (d) {
+            changes.add(d);
+            selected = d > 0 ? '2026-11-10' : '2026-11-08';
+          },
+          adjacentDayBuilder: (ctx, day) => const SizedBox.expand(
+            child: ColoredBox(color: Colors.white),
+          ),
           child: ListView(
             controller: gridScroll,
             children: const [SizedBox(height: 1800)],
@@ -256,12 +246,23 @@ void main() {
         ),
       ),
     );
-    await tester.pumpWidget(buildDay('2026-11-09'));
+    await tester.pumpWidget(screen());
     expect(gridScroll.positions.length, 1);
-    await tester.pumpWidget(buildDay('2026-11-10'));
+    final drag = await tester.startGesture(
+      const Offset(700, 350), kind: PointerDeviceKind.touch);
+    // Real touch drags deliver a sequence of moves. First slop claims the
+    // horizontal arena; subsequent frames physically displace the pager.
+    for (var i = 0; i < 12; i++) {
+      await drag.moveBy(const Offset(-50, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    final pager = tester.widget<PageView>(find.byType(PageView));
+    expect(pager.controller!.page!, greaterThan(50000.2));
     expect(gridScroll.positions.length, 1);
-    await tester.pump(const Duration(milliseconds: 70));
-    expect(gridScroll.positions.length, 1);
+    await drag.up();
+    await tester.pumpAndSettle();
+    expect(changes, <int>[1]);
+    await tester.pumpWidget(screen());
     await tester.pumpAndSettle();
     expect(gridScroll.positions.length, 1);
   });

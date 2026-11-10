@@ -1,3 +1,10 @@
+## 2026-11-10 — Planning real finger-following date pager [CI and browser profiling pending]
+
+- Replaced the previous post-release fake day slide with a real `PageView.builder` using Timeline's `FeatherDateSwipePhysics`: the selected Planning day follows horizontal mouse/touch motion continuously, with native page spring/settle.
+- Kept Planning sort selector, tags and quick-add **outside** the pager; the full-width body alone moves. Date selection commits only when the scroll settles. Stationary date arrows animate the same PageController.
+- Pager neighbors use read-only local cache snapshots, without extra active Planning pages, Planning stream subscriptions or network requests; Time View neighbors show a lightweight static proportional rail rather than mounting multiple heavy interactive hour grids/ScrollControllers.
+- Updated regression coverage for finger-position tracking, stable top controls and live canvas, vertical scrolling, page-settle callbacks, arrow motion and a single Time View scroll attachment. Real-browser frame-time verification is still required.
+
 ## 2026-11-10 — Fixed Timeline controls and full-width Planning swipe [CI and browser profiling pending]
 
 - Timeline now retains its existing native horizontal `PageView.builder` and `FeatherDateSwipePhysics`, but mounts `TimelineHeaderControls` once above the pager. The list/stats switch and record quick-entry no longer slide with days.
