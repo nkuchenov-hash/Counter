@@ -34,7 +34,8 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
   late final DateTime _anchorDay;
   late final PageController _controller;
   int _committedPage = _initialPage;
-  bool _settleCallbackQueued = false;
+  bool _dayCommitQueued = false;
+  int? _pendingDayIndex;
 
   DateTime _parseDay(String? key) {
     final parsed = key == null ? null : DateTime.tryParse(key);
@@ -70,6 +71,7 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
     // through animateToAdjacentDay, so the old live page remains in place
     // during their movement instead of swapping content at animation start.
     _committedPage = target;
+    _pendingDayIndex = null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_controller.hasClients) return;
       _controller.jumpToPage(target);
@@ -90,22 +92,40 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
     );
   }
 
+  /// Commit from the native PageView's page-center transition, rather than
+  /// keeping the new day in an IgnorePointer preview until animation ends.
+  /// Updating the shell after this frame makes the winning day interactive
+  /// immediately, using its already-cached Planning snapshot.
+  void _queueLiveDayCommit(int index) {
+    _pendingDayIndex = index;
+    if (_dayCommitQueued) return;
+    _dayCommitQueued = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _dayCommitQueued = false;
+      if (!mounted || !_controller.hasClients) return;
+      final next = _pendingDayIndex;
+      _pendingDayIndex = null;
+      if (next == null || next == _committedPage) return;
+      // A fast swipe can cross and reverse within the same frame; commit the
+      // actual page selected by PageView, not an obsolete target.
+      final physical = _controller.page?.round() ?? next;
+      if (physical != next) {
+        _queueLiveDayCommit(physical);
+        return;
+      }
+      final delta = next - _committedPage;
+      _committedPage = next;
+      widget.onDayChange(delta);
+    });
+  }
+
   bool _onPagerNotification(ScrollNotification notification) {
     if (notification.depth != 0 ||
         notification.metrics.axis != Axis.horizontal) return false;
-    if (notification is ScrollEndNotification && !_settleCallbackQueued) {
-      _settleCallbackQueued = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _settleCallbackQueued = false;
-        if (!mounted || !_controller.hasClients) return;
-        final next = _controller.page?.round() ?? _committedPage;
-        if (next == _committedPage) return;
-        final delta = next - _committedPage;
-        _committedPage = next;
-        // Parent changes only after the physical pager settles. Its active
-        // body is never swapped halfway through the user's finger motion.
-        widget.onDayChange(delta);
-      });
+    if (notification is ScrollEndNotification) {
+      // Fallback for tiny velocity-driven gestures that settle to a new page
+      // without delivering an intermediate onPageChanged frame.
+      _queueLiveDayCommit(_controller.page?.round() ?? _committedPage);
     }
     return false;
   }
@@ -125,6 +145,7 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
         onNotification: _onPagerNotification,
         child: PageView.builder(
           controller: _controller,
+          onPageChanged: _queueLiveDayCommit,
           scrollDirection: Axis.horizontal,
           physics: widget.enabled
               ? const FeatherDateSwipePhysics()
