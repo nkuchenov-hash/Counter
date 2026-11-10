@@ -147,7 +147,8 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
       records.where((row) {
         if (!ContextTimelinePolicy.isRunning(row)) return false;
         final parent = row['parent_id'];
-        return parent == null || parent.toString().trim().isEmpty;
+        final parentText = parent?.toString().trim() ?? '';
+        return parentText.isEmpty || parentText == '0';
       }).toList();
 
   static bool _laterManualFactsExist(
