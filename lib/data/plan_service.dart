@@ -98,7 +98,7 @@ extension PlanServiceExtension on DatabaseService {
       now: DateTime.now(),
       ttl: _allPlansUserCacheFreshTtl,
     )) return;
-    await _singleFlightPlanFetch(currentProfileId, _fetchAllPlanningTasksForCurrentUser);
+    await singleFlightPlanningCatalogFetch(currentProfileId, _fetchAllPlanningTasksForCurrentUser);
   }
 
   Stream<List<PlanningTask>> get tasksStream => Stream.multi((c) {
