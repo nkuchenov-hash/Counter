@@ -1,6 +1,11 @@
 part of '../database_service.dart';
 
 extension RecordCacheProjectionExtension on DatabaseService {
+  /// Context reconciliation reads already-hydrated records without a second
+  /// full-user PocketBase query for each motion transition.
+  List<Map<String, dynamic>> contextAwarenessCachedRecords() =>
+      List<Map<String, dynamic>>.from(_cachedFlatRecords);
+
   List<Map<String, dynamic>> _filterCachedRecordsForDate(DateTime date) {
     try {
       final targetDayStr = _timelineDateKeyFromDate(date);

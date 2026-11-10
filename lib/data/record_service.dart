@@ -440,11 +440,6 @@ extension RecordServiceExtension on DatabaseService {
   Future<List<Map<String, dynamic>>> getRecords({bool forceNetwork = false}) =>
       fetchRecords(forceNetwork: forceNetwork);
 
-  /// Snapshot only. Context event batches must not refetch every record for
-  /// each transition and must not drive Timeline rebuilds on a timer.
-  List<Map<String, dynamic>> contextAwarenessCachedRecords() =>
-      List<Map<String, dynamic>>.from(_cachedFlatRecords);
-
   // --- Record CRUD, optimistic UI, streams ---
 
   Future<String?> _finalizeRecordCreateHandshake({
