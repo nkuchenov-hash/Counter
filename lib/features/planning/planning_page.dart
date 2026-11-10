@@ -42,6 +42,7 @@ import 'package:counter/features/planning/widgets/planning_tag_grouped_list.dart
 import 'package:counter/features/planning/widgets/planning_select_mode_header.dart';
 import 'package:counter/features/planning/widgets/planning_quick_add_strip.dart';
 import 'package:counter/features/planning/widgets/planning_day_swipe_region.dart';
+import 'package:counter/features/planning/widgets/planning_frozen_day_list.dart';
 
 part 'planning_quick_add_schedule.dart';
 part 'planning_bulk_edit_actions.dart';
@@ -109,15 +110,14 @@ class _PlanningPageState extends State<PlanningPage>
     implements PlanningTimeViewHost {
   final _textController = TextEditingController();
   final _quickAddFocus = FocusNode();
+  final _dayPagerKey = GlobalKey<PlanningDaySwipeRegionState>();
   final Set<String> _selectedPlanKeys = {};
   final List<PlanningTask> _optimisticTasks = [];
   bool _planQuickAddInFlight = false;
   int _planQuickAddCreateGeneration = 0;
-
   /// Last server list for this day from [planningStream] (avoids `nextPlanningOrderForDate` network on quick-add).
   List<PlanningTask> _latestPlanningDayTasks = const [];
   final Map<String, bool> _planDoneOverride = {};
-
   /// Keeps completed cards at their list index until the completion moment finishes.
   final Set<String> _planCompletionHoldKeys = {};
   final Map<String, Timer> _planCompletionHoldTimers = {};
@@ -135,18 +135,13 @@ class _PlanningPageState extends State<PlanningPage>
   PlanSortMode _sortMode = PlanSortMode.custom;
   late final PlanningTimeViewCoordinator timeView;
   bool _activePlanningResourcesLoaded = false;
-
   static const double _kShellBulkBarReservePx = 56;
-
   StreamSubscription<void>? _planningTimeSub;
   StreamSubscription<void>? _tagsCatalogSub;
   StreamSubscription<UserSettings>? _settingsSub;
   String? _activeRecordingTitleNorm;
-
   late final PlanningQuickAddTagsController _quickAddTags;
-
   DateTime get _today => DatabaseService.instance.getTimelineDeviceLocalToday();
-
   int _nextPlanOrderForQuickAdd() {
     var m = -1;
     for (final t in _latestPlanningDayTasks) {
@@ -157,10 +152,8 @@ class _PlanningPageState extends State<PlanningPage>
     }
     return m + 1;
   }
-
   String _dateKeyFromDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-
   /// Stable unique key for list tiles. Never use bare `id` alone — Noco `id` can be 0 for
   /// multiple rows before sync, which duplicates [ValueKey]s and crashes the Time grid.
   static String _planKey(PlanningTask t) {
@@ -1388,7 +1381,8 @@ class _PlanningPageState extends State<PlanningPage>
             sortMode: _sortMode,
             onSortModeChanged: (mode) => setState(() => _sortMode = mode),
             desktopTitle: desktop ? t(currentLocale.value, 'tab_planning') : null,
-            onAdjacentDayRequested: widget.onAdjacentDayRequested,
+            onAdjacentDayRequested: (d) =>
+                _dayPagerKey.currentState?.animateToAdjacentDay(d),
             dayNavigationEnabled: widget.shellTabActive && !widget.datePagerLocked,
           ),
         PlanningQuickAddChrome(
@@ -1408,7 +1402,13 @@ class _PlanningPageState extends State<PlanningPage>
         ),
         Expanded(
           child: PlanningDaySwipeRegion(
-            dayKey: widget.selectedDateString, keepOutgoingContent: _sortMode != PlanSortMode.time,
+            key: _dayPagerKey,
+            dayKey: widget.selectedDateString,
+            adjacentDayBuilder: (ctx, day) => PlanningFrozenDayList(
+              tasks: DatabaseService.instance.planningDayTasksSnapshot(day),
+              scheme: scheme, wallDay: day,
+              timeMode: _sortMode == PlanSortMode.time,
+            ),
             enabled: widget.shellTabActive && !widget.datePagerLocked &&
                 widget.onAdjacentDayRequested != null,
             onDayChange: (dir) => widget.onAdjacentDayRequested?.call(dir),
