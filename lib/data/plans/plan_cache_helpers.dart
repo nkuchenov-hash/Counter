@@ -10,6 +10,28 @@ int _plansLastAppliedFetchSequence = 0;
 DateTime? _plansLastCompleteCatalogFetchAt;
 String? _plansLastCompleteCatalogOwnerId;
 
+// One full-list REST request shared by all day streams during rapid swipes.
+// Do not share a pending request across different signed-in profiles.
+Future<List<PlanningTask>>? _plansCatalogFetchInFlight;
+String? _plansCatalogFetchOwner;
+Future<List<PlanningTask>> _singleFlightPlanFetch(
+  String? owner,
+  Future<List<PlanningTask>> Function() request,
+) {
+  final pending = _plansCatalogFetchInFlight;
+  if (pending != null && _plansCatalogFetchOwner == owner) return pending;
+  final next = request();
+  _plansCatalogFetchInFlight = next;
+  _plansCatalogFetchOwner = owner;
+  next.whenComplete(() {
+    if (identical(_plansCatalogFetchInFlight, next)) {
+      _plansCatalogFetchInFlight = null;
+      _plansCatalogFetchOwner = null;
+    }
+  });
+  return next;
+}
+
 bool hasFreshCompletePlanningCatalog({
   required String? currentUser,
   required String? fetchedOwner,
