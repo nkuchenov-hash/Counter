@@ -1408,10 +1408,10 @@ class _PlanningPageState extends State<PlanningPage>
         ),
         Expanded(
           child: PlanningDaySwipeRegion(
-            enabled: widget.shellTabActive &&
+            dayKey: widget.selectedDateString,
+            enabled: widget.shellTabActive && !widget.datePagerLocked &&
                 widget.onAdjacentDayRequested != null,
-            onDayChange: (direction) =>
-                widget.onAdjacentDayRequested?.call(direction),
+            onDayChange: (dir) => widget.onAdjacentDayRequested?.call(dir),
             child: RepaintBoundary(
               child: _buildActiveDayBody(context, scheme, tasks),
             ),
