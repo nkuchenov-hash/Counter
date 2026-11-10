@@ -172,8 +172,13 @@ internal object ContextAwarenessBridge {
     }
 
     private fun unregister(context: Context) {
-        LocationServices.getGeofencingClient(context).removeGeofences(homeIntent(context))
-        ActivityRecognition.getClient(context).removeActivityUpdates(activityIntent(context))
+        // Permission removal must not crash the account/logout flow.
+        try {
+            LocationServices.getGeofencingClient(context).removeGeofences(homeIntent(context))
+        } catch (_: Exception) { }
+        try {
+            ActivityRecognition.getClient(context).removeActivityUpdates(activityIntent(context))
+        } catch (_: Exception) { }
     }
 
     fun disable(context: Context) {
