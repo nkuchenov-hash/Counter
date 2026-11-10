@@ -57,7 +57,7 @@ jobs:
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             changed=false
           elif [[ "${{ github.event_name }}" == "push" && -n "${BEFORE_SHA:-}" && ! "$BEFORE_SHA" =~ ^0+$ ]]; then
-            if git diff --quiet "$BEFORE_SHA" "$GITHUB_SHA" -- pb_hooks pb_migrations; then changed=false; fi
+            if git diff --quiet "$BEFORE_SHA" "$GITHUB_SHA" -- pb_hooks pb_migrations .github/workflows/deploy-pocketbase.yml; then changed=false; fi
           fi
           echo "SERVER_CHANGED=$changed" >> "$GITHUB_ENV"
           echo "server_changed=$changed" >> "$GITHUB_OUTPUT"
@@ -102,9 +102,11 @@ jobs:
           ARCHIVE="/tmp/lifeos-pocketbase-${GITHUB_SHA}.tar.gz"
           tar -czf "$ARCHIVE" pb_hooks pb_migrations
           scp -i ~/.ssh/lifeos_pocketbase -P "$SSH_PORT" "$ARCHIVE" "$SSH_USER@$SSH_HOST:$ARCHIVE"
+          echo "PocketBase bundle transferred to configured host."
           ssh -i ~/.ssh/lifeos_pocketbase -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
             "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' ARCHIVE='$ARCHIVE' bash -s" <<'REMOTE'
           set -euo pipefail
+          echo "SSH connected; detecting PocketBase service and working directory."
           if [[ "$(id -u)" -eq 0 ]]; then SUDO=""; else SUDO="sudo -n"; fi
           service_name="${POCKETBASE_SERVICE:-}"
           if [[ -z "$service_name" ]]; then
@@ -114,7 +116,15 @@ jobs:
           app_dir="${POCKETBASE_DEPLOY_DIR:-}"
           if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
           if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
-          [[ -n "$service_name" && -n "$app_dir" && -d "$app_dir" ]]
+          if [[ -z "$service_name" ]]; then
+            echo "PocketBase systemd service not found; configure POCKETBASE_SERVICE." >&2
+            exit 1
+          fi
+          if [[ -z "$app_dir" || ! -d "$app_dir" ]]; then
+            echo "PocketBase working directory not found; configure POCKETBASE_DEPLOY_DIR." >&2
+            exit 1
+          fi
+          echo "PocketBase service and working directory resolved; beginning isolated preflight."
 
           # P0: migrations MUST succeed on a disposable, consistent SQLite
           # snapshot before writing any production hooks/migrations or restarting.
@@ -181,25 +191,25 @@ jobs:
           # PocketBase can take several minutes to bind its HTTPS port after
           # a migration/restart. Do not falsely mark a good deployment failed.
           for attempt in {1..120}; do
-            health="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/health || true)"
-            route="$(curl -sS -o /dev/null -w '%{http_code}' https://217-114-0-201.sslip.io/api/sleep-sync/status || true)"
+            health="$(curl -sS -o /dev/null -w '%{http_code}' https://137-22-146-109.sslip.io/api/health || true)"
+            route="$(curl -sS -o /dev/null -w '%{http_code}' https://137-22-146-109.sslip.io/api/sleep-sync/status || true)"
             viktor="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 -X POST \
               -H 'Content-Type: application/json' \
-              --data '{}' https://217-114-0-201.sslip.io/api/viktor/propose || true)"
+              --data '{}' https://137-22-146-109.sslip.io/api/viktor/propose || true)"
             viktor_audio="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 -X POST \
               -H 'Content-Type: application/json' \
-              --data '{}' https://217-114-0-201.sslip.io/api/viktor/transcribe || true)"
+              --data '{}' https://137-22-146-109.sslip.io/api/viktor/transcribe || true)"
             viktor_yandex_start="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 -X POST \
               -H 'Content-Type: application/json' \
-              --data '{}' https://217-114-0-201.sslip.io/api/viktor/transcribe-yandex || true)"
+              --data '{}' https://137-22-146-109.sslip.io/api/viktor/transcribe-yandex || true)"
             viktor_yandex_poll="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 -X POST \
               -H 'Content-Type: application/json' \
-              --data '{}' https://217-114-0-201.sslip.io/api/viktor/transcribe-yandex/status || true)"
+              --data '{}' https://137-22-146-109.sslip.io/api/viktor/transcribe-yandex/status || true)"
             viktor_vault_get="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 \
-              https://217-114-0-201.sslip.io/api/viktor/connection || true)"
+              https://137-22-146-109.sslip.io/api/viktor/connection || true)"
             viktor_vault_save="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 -X POST \
               -H 'Content-Type: application/json' \
-              --data '{}' https://217-114-0-201.sslip.io/api/viktor/connection || true)"
+              --data '{}' https://137-22-146-109.sslip.io/api/viktor/connection || true)"
             if [[ "$health" == "200" &&
                   ( "$route" == "401" || "$route" == "403" ) &&
                   "$viktor" == "401" && "$viktor_audio" == "401" &&
