@@ -123,6 +123,25 @@ assert.equal(context.conversation_history, undefined,
 assert.equal(context.user_request, 'Выбираю второй вариант');
 assert.equal(JSON.parse(lastRequest.body).messages[0].role, 'system');
 
+// The read-only recovery route cannot forward model-proposed actions.
+const recovered = invoke({...base, advice_only: true,
+  recovery_context: '2026-11-09 GSG needs 60 min; fixed barrier blocks reflow',
+  text: 'Restore plan durations without moving my meetings',
+});
+assert.equal(recovered.status, 200);
+assert.equal(recovered.value.actions.length, 0,
+  'Recovery advice cannot become a mutation or tool call');
+assert.equal(recovered.value.continue, false,
+  'Recovery must not request more tools in a hidden loop');
+const recoverySent = JSON.parse(lastRequest.body);
+assert.match(recoverySent.messages[0].content, /Find two or three practical NEXT options/);
+assert.match(recoverySent.messages[0].content, /Never invent free slots/);
+const recoveryData = JSON.parse(recoverySent.messages.at(-1).content);
+assert.equal(recoveryData.recovery_only, true);
+assert.match(recoveryData.recovery_context, /GSG needs 60 min/);
+assert.equal(recoveryData.user_request,
+  'Restore plan durations without moving my meetings');
+
 // Russian model providers have independent request/authentication contracts.
 const yandex = invoke({...base,
   provider: 'yandex',
