@@ -343,21 +343,11 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     DateTime planWallDay,
     List<PlanningTask> schedulable,
   ) {
-    if (host.sortMode != PlanSortMode.time) return;
-    final dayKey =
-        '${planWallDay.year}-'
-        '${planWallDay.month.toString().padLeft(2, '0')}-'
-        '${planWallDay.day.toString().padLeft(2, '0')}';
-    if (timeViewCascadeNormalizedDayKey == dayKey) return;
-    timeViewCascadeNormalizedDayKey = dayKey;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!host.mounted || host.sortMode != PlanSortMode.time) return;
-      DatabaseService.instance.applySequentialTimeViewCascadeIfNeeded(
-        wallDay: planWallDay,
-        scheduledSubset: schedulable,
-      );
-      if (host.mounted) host.notifySetState(() {});
-    });
+    // READ-ONLY: Rendering a day must NEVER rewrite its schedule.
+    // Old code silently persisted cascaded start/end times just by opening
+    // Time View. Even a fixed meeting could be shifted by that path.
+    // Existing overlaps remain visible until the user explicitly resolves
+    // them; intentional drag/resize has its own fixed-time guards.
   }
 
   void logTimeDurationLayout({
