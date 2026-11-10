@@ -709,8 +709,24 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
   void persistTimeViewCascadePatches({
     required List<PlanningTask> resolved,
     required List<PlanningTask> scheduledBefore,
+    Set<String> explicitlyEditedPlanIds = const {},
     String? commitSource,
   }) {
+    final forbidden = firstAutomaticallyChangedFixedPlan(
+      before: scheduledBefore,
+      after: resolved,
+      fixedTagIds: timeViewFixedTagIds,
+      explicitlyEditedPlanIds: explicitlyEditedPlanIds,
+    );
+    if (forbidden != null) {
+      // Fail the entire write group, before even its optimistic overlays.
+      if (host.mounted) {
+        AppSnack.warning(currentLocale.value == 'ru'
+          ? 'Фиксированное время «${forbidden.title}» нельзя сдвинуть автоматически'
+          : 'Fixed-time appointment cannot be moved automatically');
+      }
+      return;
+    }
     if (kDebugMode) {
       debugPrint('[TIME_VIEW_INSERTION_COMMIT_PATCHES] source=$commitSource');
       debugPrint('[TIME_VIEW_BRAIN_PATCH_STARTED]');
@@ -737,6 +753,8 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
       unawaited(
         DatabaseService.instance.updatePlanningTask(
           task.planRowIdForBackend,
+          allowProtectedTimeChange: explicitlyEditedPlanIds.contains(
+            task.planRowIdForBackend),
           planBusinessId: task.planRowId,
           startTimeDisplay: task.startTime,
           endDateTimeDisplay: task.endDateTime,
