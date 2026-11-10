@@ -411,6 +411,14 @@ This document defines how Life OS behaves when people interact with it. It is th
 - Empty states must explain what is empty and, when useful, offer the next safe action.
 - Do not show empty states while data is still loading.
 
+## Viktor conversational failure recovery
+
+- A rejected schedule proposal is an opportunity to investigate constraints, not a terminal technical error. Viktor may request **one** revised proposal using the real application validation reason; its replacement must be freshly validated and always requires explicit user approval.
+- If no alternative passes validation, the model receives a **read-only recovery context** and responds with grounded options, trade-offs, and at most one next decision question. In this mode the server and Flutter client ignore every generated action.
+- A tag-default-duration overflow retains the protected fixed/recurring plans, offers a reviewed feasible subset, and allows an explicit conversational follow-up to preview that subset later.
+- Recovery must never replay an uncertain mutation, invent available times, modify recurring events, bypass protected barriers, or automatically commit an unapproved alternative. If writing has started, report uncertain status and require inspection before trying again.
+- AI-provider/auth/configuration errors remain visible as connection problems; recovery must not mask the actual cause or bypass content refusals.
+
 ## Error States
 
 - Use `AppErrorState` for blocking surface-level failures.
