@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:counter/core/widgets/plan_card.dart';
-import 'package:counter/data/database_service.dart';
+import 'package:counter/shared/time/plan_time_labels.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/widgets/planning_empty_states.dart';
@@ -46,7 +46,7 @@ class PlanningFrozenDayList extends StatelessWidget {
               key: ValueKey('planning-preview-${task.planRowIdForBackend}'),
               task: task,
               planTrackedSeconds: 0,
-              planEstimatedSeconds: 0,
+              planEstimatedSeconds: planningWallEstimateSeconds(task),
               displayIsDone: task.isDone,
               selectMode: false,
               isSelected: false,
@@ -139,7 +139,7 @@ class _FrozenTimePreview extends StatelessWidget {
                         child: Text(task.title,
                           maxLines: 2, overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: scheme.onSurface, fontSize: 13,
+                            color: scheme.onSurface, fontSize: 16,
                             fontWeight: FontWeight.w500),
                         ),
                       ),
