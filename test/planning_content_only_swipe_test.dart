@@ -182,14 +182,16 @@ void main() {
     expect(tester.getTopLeft(find.byKey(chromeKey)), headerPos);
     await drag.moveBy(const Offset(-390, 0));
     await tester.pump(const Duration(milliseconds: 16));
-    expect(changes, isEmpty);
+    // As soon as the incoming page becomes primary it must be live;
+    // delaying until pointer-up previously left cards disabled.
+    expect(changes, <int>[1]);
     await drag.up();
     await tester.pumpAndSettle();
     expect(changes, <int>[1]);
     expect(tester.getTopLeft(find.byKey(chromeKey)), headerPos);
   });
 
-  testWidgets('native arrow step uses pager motion and commits only at settle', (
+  testWidgets('native arrow step promotes the new day during motion', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(900, 760));
@@ -210,13 +212,14 @@ void main() {
         ),
       ),
     ));
-    final origin = tester.getTopLeft(find.byKey(contentKey)).dx;
+
     pager.currentState!.animateToAdjacentDay(1);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 95));
-    expect(tester.getTopLeft(find.byKey(contentKey)).dx,
-        lessThan(origin - 100));
-    expect(changes, isEmpty);
+    final position = tester.widget<PageView>(find.byType(PageView))
+        .controller!.page!;
+    expect(position, greaterThan(50000.5));
+    expect(changes, <int>[1]);
     await tester.pumpAndSettle();
     expect(changes, <int>[1]);
   });
@@ -267,6 +270,55 @@ void main() {
     await tester.pumpWidget(screen());
     await tester.pumpAndSettle();
     expect(gridScroll.positions.length, 1);
+  });
+
+  testWidgets('cached next day becomes a tappable real day before release', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var date = DateTime(2026, 11, 10);
+    var taps = 0;
+    final changes = <int>[];
+    await tester.pumpWidget(MaterialApp(
+      home: StatefulBuilder(builder: (context, setState) {
+        final dayKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-'
+            '${date.day.toString().padLeft(2, '0')}';
+        return Scaffold(body: Column(children: [
+          const SizedBox(height: 100, child: Text('Fixed header')),
+          Expanded(child: PlanningDaySwipeRegion(
+            dayKey: dayKey,
+            adjacentDayBuilder: (context, day) => Center(
+              child: Text('Static cached day ${day.day}')),
+            onDayChange: (delta) => setState(() {
+              changes.add(delta);
+              date = DateTime(date.year, date.month, date.day + delta);
+            }),
+            child: Center(child: ElevatedButton(
+              key: ValueKey('active-day-$dayKey'),
+              onPressed: () => taps++,
+              child: Text('Interactive $dayKey'),
+            )),
+          )),
+        ]));
+      }),
+    ));
+    final swipe = await tester.startGesture(
+      const Offset(760, 360), kind: PointerDeviceKind.touch);
+    await swipe.moveBy(const Offset(-50, 0));
+    await tester.pump(const Duration(milliseconds: 16));
+    await swipe.moveBy(const Offset(-570, 0));
+    await tester.pump(const Duration(milliseconds: 16));
+    await tester.pump();
+    expect(changes, <int>[1]);
+    expect(find.byKey(const ValueKey('active-day-2026-11-11')), findsOneWidget);
+    expect(find.text('Fixed header'), findsOneWidget);
+    await swipe.up();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('active-day-2026-11-11')));
+    await tester.pump();
+    expect(taps, 1);
+    expect(find.text('Static cached day 11'), findsNothing);
   });
 
   testWidgets('settled pager always mounts the real selected day', (
