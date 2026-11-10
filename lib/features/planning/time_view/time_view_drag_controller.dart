@@ -686,6 +686,7 @@ extension PlanningTimeViewTimeViewDragController on PlanningTimeViewCoordinator 
     persistTimeViewCascadePatches(
       resolved: cascadeResult.previewRows,
       scheduledBefore: scheduledInRange,
+      explicitlyEditedPlanIds: draggedPlanIds,
       commitSource: commitSource,
     );
     if (kDebugMode && draggedPlanIds.length > 1) {
