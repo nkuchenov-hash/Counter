@@ -1,3 +1,8 @@
+## Calendar visual minimalism (2026-11-10)
+
+- Month-view days must share one uniform, unfilled canvas. Do **not** shade weekends or adjacent-month cells gray; distinguish neighboring months only with date-label contrast. Use subtle design-system outline tokens for cell separation, with no blanket tinted backgrounds.
+- Retain correct Monday-first civil dates and opening the selected day in Plans instead of creating a new plan.
+
 ## Calendar month/week navigation and civil dates (2026-11-09)
 
 - Calendar month and week cells use **civil-day arithmetic** (year/month/day constructors), never `DateTime.add(Duration(days: ...))` for day indexing, week shifts, or month-grid bounds. This prevents duplicate/misplaced days on DST changes such as New York's 2026-11-01 rollback.
