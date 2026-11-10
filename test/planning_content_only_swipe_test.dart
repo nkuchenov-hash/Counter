@@ -592,6 +592,19 @@ void main() {
     expect(preview, isNot(contains('top: grid.hourLineY(i) - 10')));
   });
 
+  test('read-only adjacent cards retain full play and tracked-progress visuals', () {
+    final preview = File(
+      'lib/features/planning/widgets/planning_frozen_day_list.dart',
+    ).readAsStringSync();
+    // The parent IgnorePointer owns input blocking; preview cards still
+    // render all controls and the same tracked-progress calculation as live.
+    expect(RegExp(r'onPlay: \\(\\) \\{\\},').allMatches(preview).length, 3);
+    expect(preview, contains('aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay)'));
+    expect(preview, contains('pocketRelationIdOrNull(task.pocketRecordId)'));
+    expect(preview, contains('pocketRelationIdOrNull(t.pocketRecordId)'));
+    expect(preview, contains("!layout.task.planRowIdForBackend.startsWith('optimistic-')"));
+  });
+
   test('Time swipe preview uses canonical projection, layout and cards', () {
     final source = File(
       'lib/features/planning/widgets/planning_frozen_day_list.dart',

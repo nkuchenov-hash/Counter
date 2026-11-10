@@ -36,6 +36,8 @@ class PlanningFrozenDayList extends StatelessWidget {
       );
     }
     if (tasks.isEmpty) return PlanningFrozenListEmptyState(scheme: scheme);
+    final actualByPlanId =
+        DatabaseService.instance.aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
     return ColoredBox(
       color: scheme.surface,
       child: ListView.builder(
@@ -49,16 +51,19 @@ class PlanningFrozenDayList extends StatelessWidget {
             child: PlanCard(
               key: ValueKey('planning-preview-${task.planRowIdForBackend}'),
               task: task,
-              planTrackedSeconds: 0,
+              planTrackedSeconds: actualByPlanId[
+                  DatabaseService.pocketRelationIdOrNull(task.pocketRecordId)
+                ] ?? 0,
               planEstimatedSeconds: planningWallEstimateSeconds(task),
               displayIsDone: task.isDone,
               selectMode: false,
               isSelected: false,
               highlightAsRunning: false,
-              toggleDoneEnabled: false,
+              toggleDoneEnabled:
+                  !task.planRowIdForBackend.startsWith('optimistic-'),
               onToggleDone: () {},
               onBodyTap: () {},
-              onPlay: null,
+              onPlay: () {},
               onOpenMenu: (_) {},
             ),
           );
@@ -224,15 +229,19 @@ class _PlanningFrozenTimeCanvasState
               padding: const EdgeInsets.only(bottom: 8),
               child: PlanCard(
                 task: t,
-                planTrackedSeconds: 0,
+                planTrackedSeconds: actualByPlanId[
+                    DatabaseService.pocketRelationIdOrNull(t.pocketRecordId)
+                  ] ?? 0,
                 planEstimatedSeconds: planningWallEstimateSeconds(t),
                 displayIsDone: t.isDone,
                 selectMode: false,
                 isSelected: false,
                 highlightAsRunning: false,
-                toggleDoneEnabled: false,
+                toggleDoneEnabled:
+                    !t.planRowIdForBackend.startsWith('optimistic-'),
                 onBodyTap: () {},
                 onToggleDone: () {},
+                onPlay: () {},
                 onOpenMenu: (_) {},
               ),
             )),
@@ -328,8 +337,10 @@ class _PlanningFrozenTimeCanvasState
                                     selectMode: false,
                                     isSelected: false,
                                     highlightAsRunning: false,
-                                    toggleDoneEnabled: false,
+                                    toggleDoneEnabled:
+                    !layout.task.planRowIdForBackend.startsWith('optimistic-'),
                                     onToggleDone: () {},
+                                    onPlay: () {},
                                     onBodyTap: () {},
                                     onOpenMenu: (_) {},
                                     timelineBlock: true,
