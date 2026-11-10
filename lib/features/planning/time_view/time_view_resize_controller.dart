@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/core/widgets/plan_time_task_card.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -219,10 +221,15 @@ extension PlanningTimeViewTimeViewResizeController
     host.notifySetState(clearTimelineInteractionState);
     // A fixed meeting is a hard stop: reject the entire resize, rather
     // than leaving the adjacent work and meeting in an inconsistent state.
+    if (task.startTime == resizedTask.startTime &&
+        task.endDateTime == resizedTask.endDateTime) return;
     if (!resolved.any((row) =>
         row.planRowIdForBackend == resizedTask.planRowIdForBackend &&
         (row.startTime != task.startTime ||
             row.endDateTime != task.endDateTime))) {
+      AppSnack.warning(currentLocale.value == 'ru'
+        ? 'Фиксированная встреча не может быть сдвинута'
+        : 'A fixed meeting blocks this resize');
       return;
     }
     persistTimeViewCascadePatches(
