@@ -433,7 +433,7 @@ void main() {
     final swipe = File(
       'lib/features/planning/widgets/planning_day_swipe_region.dart',
     ).readAsStringSync();
-    expect(swipe, contains('onHorizontalDragUpdate:'));
+    expect(swipe, contains('onNotification: _onPagerNotification'));
     // Finger-following native pager, with only one live day canvas.
     expect(swipe, contains('PageView.builder('));
     expect(swipe, contains('FeatherDateSwipePhysics('));
