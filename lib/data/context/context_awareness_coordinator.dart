@@ -200,7 +200,7 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
       }
       // The stable id makes replay after app/process failure idempotent.
       final id = const Uuid().v5(
-        Namespace.url, 'lifeos/context/$owner/${event.id}/$kind',
+        Namespace.url.value, 'lifeos/context/$owner/${event.id}/$kind',
       );
       final projected = db.applyUserOffset(event.atUtc);
       final dateKey = DateFormat('yyyy-MM-dd').format(projected);
