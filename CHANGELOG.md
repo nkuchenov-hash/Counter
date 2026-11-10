@@ -1,3 +1,9 @@
+## 2026-11-10 — Context awareness Android MVP (feature branch; unverified)
+
+- Add explicit Android location/activity opt-in and native home geofence + motion recognition with local event queue; no continuous GPS trail or raw coordinate upload.
+- Add conservative home-bound Timeline correction and inferred travel/away records through existing optimistic/offline Brain paths, plus a first-frame/resume reconciliation coordinator and settings entry.
+- Add event-order and no-false-truncation unit tests. Not deployed: Android build, permission integration, real-device behavior, and chronology/undo acceptance still require CI and testing.
+
 ## 2026-11-10 — Prevent the first Time View hour marker from clipping after date swipe
 
 - Correct the remaining visual clipping shown in the refreshed Nov 10 screenshot: the first `09:00` hour label and rail dot used to be drawn at negative Y inside a clipped `Stack`. Both live and cached date-swipe Time View canvases now clamp marker positions to the visible canvas top using one shared geometry function.

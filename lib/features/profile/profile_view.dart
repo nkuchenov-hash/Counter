@@ -21,6 +21,7 @@ import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/features/profile/settings/account_settings_section.dart';
 import 'package:counter/features/profile/calendar_integrations/calendar_integrations_section.dart';
 import 'package:counter/features/profile/settings/notification_settings_section.dart';
+import 'package:counter/features/profile/settings/context_awareness_settings_section.dart';
 import 'package:counter/features/profile/settings/security_settings_section.dart';
 import 'package:counter/features/settings/health/health_connect_settings_section.dart';
 import 'package:counter/features/settings/voice/desktop_voice_settings_section.dart';
@@ -67,6 +68,7 @@ enum ProfileSettingsDestination {
   appearance,
   appearanceRegion,
   notifications,
+  contextAwareness,
   notificationsRoutines,
   morning,
   viktor,
@@ -346,6 +348,8 @@ class _ProfilePageState extends State<ProfilePage> {
       ProfileSettingsDestination.appearance => t(locale, 'appearance'),
       ProfileSettingsDestination.appearanceRegion => locale.startsWith('ru') ? 'Оформление и язык' : 'Appearance & region',
       ProfileSettingsDestination.notifications => t(locale, 'profile_notifications_section'),
+      ProfileSettingsDestination.contextAwareness => locale.startsWith('ru')
+          ? 'Распознавание активности' : 'Context awareness',
       ProfileSettingsDestination.notificationsRoutines => locale.startsWith('ru') ? 'Уведомления и ритуалы' : 'Notifications & routines',
       ProfileSettingsDestination.morning => t(locale, 'morning_prompt_section'),
       ProfileSettingsDestination.viktor => locale.startsWith('ru') ? 'Виктор · ИИ' : 'Viktor · AI',
@@ -429,6 +433,8 @@ class _ProfilePageState extends State<ProfilePage> {
       ProfileSettingsDestination.appearanceRegion => _buildAppearanceFields(context, locale),
       ProfileSettingsDestination.notifications =>
           ProfileNotificationsSection(embedded: true),
+      ProfileSettingsDestination.contextAwareness =>
+          const ContextAwarenessSettingsSection(),
       ProfileSettingsDestination.notificationsRoutines =>
           ProfileNotificationsSection(embedded: true),
       ProfileSettingsDestination.morning => const MorningStartSettingsSection(),
