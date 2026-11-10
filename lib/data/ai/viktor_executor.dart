@@ -51,6 +51,7 @@ class ViktorExecutor {
   }
   String? _bulkSignature;
   String? _insertionSignature;
+  Set<String> _fixedTimeTagIds = const {};
 
   bool _isPriorityInsertion(ViktorAction a) =>
       a.name == 'create_plan' && a.arguments['conflict_policy'] == 'shift';
@@ -207,7 +208,7 @@ class ViktorExecutor {
       '${d.day.toString().padLeft(2, '0')}';
 
   bool _fixed(PlanningTask p) =>
-      isPlanFixedInTimeView(p, const {}) ||
+      isPlanFixedInTimeView(p, _fixedTimeTagIds) ||
       (db.getCategoryRuleById(p.categoryId)?.defaultPlanTime ?? '')
           .trim().isNotEmpty;
 
@@ -269,6 +270,7 @@ class ViktorExecutor {
         day: day, plans: plans, actions: batch.actions, fixedTime: _fixed);
 
   Future<String> describe(ViktorActionBatch batch, DateTime day) async {
+    _fixedTimeTagIds = await TimeViewFixedTagPrefs.load();
     _checkScope(batch, day);
     if (batch.actions.any((a) => a.name == 'read_day_records') &&
         !batch.hasMutations) {
