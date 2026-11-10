@@ -119,11 +119,13 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
   }
 
   int _gridColumnCount(double availableWidth) {
-    // Grid mode must remain visually distinct from list mode on phones:
-    // compact mobile workspaces render two note tiles per row.
-    if (availableWidth <= 931) return 2;
-    if (availableWidth <= 1168) return 4;
-    final wideCount = ((availableWidth + 12) / 252).floor();
+    // Responsive columns use the actual workspace width, rather than forcing
+    // two oversized cards across tablet-sized content areas.
+    if (availableWidth <= 520) return 2;
+    if (availableWidth <= 750) return 3;
+    if (availableWidth <= 1000) return 4;
+    if (availableWidth <= 1250) return 5;
+    final wideCount = ((availableWidth + 10) / 248).floor();
     return wideCount.clamp(5, 8).toInt();
   }
 
@@ -248,12 +250,17 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
       final count = _gridColumnCount(availableWidth);
       return GridView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.zero,
+        padding: EdgeInsets.only(
+          left: availableWidth <= 520 ? 6 : 0,
+          right: availableWidth <= 520 ? 6 : 0,
+          top: 8,
+          bottom: 8,
+        ),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: count,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: availableWidth <= 520 ? 0.82 : 1,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          childAspectRatio: availableWidth <= 520 ? 0.82 : 1.04,
         ),
         itemCount: cards.length,
         itemBuilder: (context, index) => _card(
@@ -266,41 +273,26 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
       );
     }
 
-    final scheme = Theme.of(context).colorScheme;
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final palette = NotesSectionPaletteScope.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: dark
-            ? scheme.surfaceContainerHigh.withValues(alpha: 0.42)
-            : Colors.white.withValues(alpha: 0.42),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: dark
-              ? scheme.outlineVariant.withValues(alpha: 0.68)
-              : Color.lerp(palette.pane, const Color(0xFFD8E0E9), 0.52)!,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          if (!compactList) const _NotesListHeader(),
-          Expanded(
-            child: ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
-              itemCount: cards.length,
-              itemBuilder: (context, index) => _card(
-                context,
-                cards[index],
-                db,
-                view: view,
-                selected: cards[index].task.planRowIdForBackend == selectedId,
-              ),
+    // List rows span the full available workspace; no tinted outer panel,
+    // duplicate border or inset around the table.
+    return Column(
+      children: [
+        if (!compactList) const _NotesListHeader(),
+        Expanded(
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            itemCount: cards.length,
+            itemBuilder: (context, index) => _card(
+              context,
+              cards[index],
+              db,
+              view: view,
+              selected: cards[index].task.planRowIdForBackend == selectedId,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -377,7 +369,6 @@ class _NotesListHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final palette = NotesSectionPaletteScope.of(context);
     final labelStyle = TextStyle(
       fontSize: 10.5,
       fontWeight: FontWeight.w700,
@@ -397,7 +388,7 @@ class _NotesListHeader extends StatelessWidget {
           decoration: BoxDecoration(
             color: dark
                 ? scheme.surfaceContainerHigh.withValues(alpha: 0.72)
-                : palette.pane,
+                : const Color(0xFFF5F6F8),
             border: Border(
               bottom: BorderSide(
                 color: scheme.outlineVariant.withValues(alpha: 0.62),
