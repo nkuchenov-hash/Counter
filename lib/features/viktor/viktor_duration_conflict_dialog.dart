@@ -1,5 +1,7 @@
 part of 'viktor_chat_page.dart';
 
+enum ViktorDurationConflictChoice { dismiss, discuss, previewSubset }
+
 /// A capacity conflict is a decision, not a terminal chat exception.
 /// The only active alternative computes a NEW preview; it never writes.
 class ViktorDurationConflictDialog extends StatelessWidget {
@@ -74,11 +76,18 @@ class ViktorDurationConflictDialog extends StatelessWidget {
       actions: [
         AppButton.ghost(
           label: 'Отмена',
-          onPressed: () => Navigator.pop(context, false),
+          onPressed: () => Navigator.pop(
+            context, ViktorDurationConflictChoice.dismiss),
+        ),
+        AppButton.secondary(
+          label: 'Обсудить варианты',
+          onPressed: () => Navigator.pop(
+              context, ViktorDurationConflictChoice.discuss),
         ),
         AppButton.primary(
           label: 'Показать частичный вариант',
-          onPressed: () => Navigator.pop(context, true),
+          onPressed: () => Navigator.pop(
+              context, ViktorDurationConflictChoice.previewSubset),
         ),
       ],
     );
