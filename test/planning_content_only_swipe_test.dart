@@ -250,12 +250,14 @@ void main() {
     expect(gridScroll.positions.length, 1);
     final drag = await tester.startGesture(
       const Offset(700, 350), kind: PointerDeviceKind.touch);
-    // Flutter's first movement claims the gesture arena; move again after
-    // touch slop to produce an actual PageView scroll before releasing.
-    await drag.moveBy(const Offset(-40, 0));
-    await tester.pump(const Duration(milliseconds: 16));
-    await drag.moveBy(const Offset(-380, 0));
-    await tester.pump(const Duration(milliseconds: 16));
+    // Real touch drags deliver a sequence of moves. First slop claims the
+    // horizontal arena; subsequent frames physically displace the pager.
+    for (var i = 0; i < 12; i++) {
+      await drag.moveBy(const Offset(-50, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    final pager = tester.widget<PageView>(find.byType(PageView));
+    expect(pager.controller!.page!, greaterThan(50000.2));
     expect(gridScroll.positions.length, 1);
     await drag.up();
     await tester.pumpAndSettle();
