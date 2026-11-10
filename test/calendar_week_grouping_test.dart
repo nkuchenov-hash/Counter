@@ -71,6 +71,16 @@ void main() {
         DateTime(2027, 3, 15));
   });
 
+  test('month calendar has uniform transparent day cells without gray shading', () {
+    final source = File('lib/features/calendar/calendar_month_grid.dart')
+        .readAsStringSync();
+    expect(source, contains('color: scheme.surface.withValues(alpha: 0)'));
+    expect(source, isNot(contains('day.weekday >= DateTime.saturday')));
+    expect(source, isNot(contains('scheme.onSurface.withValues(alpha: 0.045)')));
+    expect(source, isNot(contains('scheme.onSurface.withValues(alpha: 0.022)')));
+    expect(source, contains('scheme.outlineVariant.withValues(alpha: 0.55)'));
+  });
+
   test('calendar day taps open the Plans tab, without implicit plan creation', () {
     final calendar = File('lib/features/calendar/calendar_view.dart')
         .readAsStringSync();
