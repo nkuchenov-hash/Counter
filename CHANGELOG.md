@@ -1,3 +1,10 @@
+## 2026-11-10 — Viktor conversational recovery after failed plan changes [PR pending]
+
+- After a pre-write scheduling rejection, Viktor asks the configured AI provider for one different proposal and runs the Brain preview again; recovered proposals always require confirmation.
+- If no valid proposal fits, a strict read-only AI response explains the obstacle, proposes grounded alternatives, and asks what to try next. Server forcibly strips generated actions and tool continuations from recovery replies.
+- A duration-overflow discussion now supports a subsequent explicit "покажи частичный вариант" follow-up, recomputing the verified subset before the normal approval dialog.
+- No automatic replay after uncertain writes; fixed/recurring plans, permissions and PocketBase schema unchanged. Added server-hook and duration-follow-up regressions; production release not yet verified.
+
 ## 2026-11-10 — Fix top clipping after Planning Time View horizontal date swipe
 
 - Correct the first-hour label/dot clipped by negative top placement: live and cached Time View canvases now share 12px safe top inset beyond 8px normal padding.
