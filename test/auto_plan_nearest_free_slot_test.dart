@@ -434,16 +434,14 @@ void main() {
       'lib/features/planning/widgets/planning_day_swipe_region.dart',
     ).readAsStringSync();
     expect(swipe, contains('onHorizontalDragUpdate:'));
-    // No drag-time paints: after a committed date only, two composited
-    // fractional translations form one full-width 200ms slide.
-    expect(swipe, isNot(contains('ValueListenableBuilder<double>')));
-    expect(swipe, isNot(contains('_visualOffset')));
-    expect(swipe, contains('dayKey'));
-    expect(swipe, contains('AnimatedBuilder('));
-    expect(swipe, contains('FractionalTranslation('));
-    expect(swipe, contains('keepOutgoingContent'));
-    expect(swipe, contains('child: widget.child'));
-    expect(swipe, contains('onDayChange(direction < 0 ? 1 : -1)'));
+    // Finger-following native pager, with only one live day canvas.
+    expect(swipe, contains('PageView.builder('));
+    expect(swipe, contains('FeatherDateSwipePhysics('));
+    expect(swipe, contains('adjacentDayBuilder'));
+    expect(swipe, contains('ScrollEndNotification'));
+    expect(swipe, isNot(contains('AnimatedBuilder(')));
+    expect(swipe, isNot(contains('FractionalTranslation(')));
+    expect(swipe, isNot(contains('keepOutgoingContent')));
   });
 
   group('workday rollover', () {
