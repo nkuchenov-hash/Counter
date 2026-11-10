@@ -65,9 +65,13 @@ final class _PlanningDayStreamHub {
     // A day change reads the shared authoritative cache; it must not
     // unconditionally start another fetch and emit the same day twice.
     // Stale/missing cache still triggers the network pump as before.
-    final cacheFresh = _allPlansUserCacheFetchedAt != null &&
-        DateTime.now().difference(_allPlansUserCacheFetchedAt!) <
-            _allPlansUserCacheFreshTtl;
+    final cacheFresh = hasFreshCompletePlanningCatalog(
+      currentUser: db.currentProfileId,
+      fetchedOwner: _plansLastCompleteCatalogOwnerId,
+      completedAt: _plansLastCompleteCatalogFetchAt,
+      now: DateTime.now(),
+      ttl: _allPlansUserCacheFreshTtl,
+    );
     unawaited(_pump(db, network: !cacheFresh));
     if (!listenGlobal) return;
     _pokeSub = _planningRefreshController.stream.listen((_) {
