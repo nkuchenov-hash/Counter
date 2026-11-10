@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/context/context_awareness_coordinator.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -117,15 +119,13 @@ class _ContextAwarenessSettingsSectionState
           Text(_t('Остановка · $wall', 'Stop · $wall'),
               style: theme.textTheme.titleSmall),
           const SizedBox(height: 8),
-          TextField(
+          AppTextField(
             controller: controller,
-            maxLength: 160,
+            inputFormatters: [LengthLimitingTextInputFormatter(160)],
             textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(
-              labelText: _t('Где вы были?', 'Where were you?'),
-              hintText: _t('Например: кафе, магазин, у друзей',
-                  'For example: cafe, store, visiting friends'),
-            ),
+            labelText: _t('Где вы были?', 'Where were you?'),
+            hintText: _t('Например: кафе, магазин, у друзей',
+                'For example: cafe, store, visiting friends'),
           ),
           if (choices.isNotEmpty) ...[
             Text(_t('Адресные подсказки (не названия заведений):',
