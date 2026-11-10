@@ -5,6 +5,7 @@ import 'package:counter/shared/diagnostics/performance/shell_flags.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
+import 'package:counter/features/planning/plan_time_view_layout.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -118,7 +119,8 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                         ),
                         for (var i = 0; i < visibleHours.length; i++) ...[
                           Positioned(
-                            top: grid.hourLineY(i) - hourLabelHeight / 2,
+                            top: timeViewSafeHourMarkerTopPx(
+                              grid.hourLineY(i), hourLabelHeight),
                             left: 0,
                             width: hourLabelWidth,
                             height: hourLabelHeight,
@@ -143,7 +145,8 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
                             ),
                           ),
                           Positioned(
-                            top: grid.hourLineY(i) - hourDotSize / 2,
+                            top: timeViewSafeHourMarkerTopPx(
+                              grid.hourLineY(i), hourDotSize),
                             left: axisX - hourDotSize / 2,
                             child: IgnorePointer(
                               child: Container(

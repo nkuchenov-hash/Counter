@@ -1,3 +1,8 @@
+## 2026-11-10 — Prevent the first Time View hour marker from clipping after date swipe
+
+- Correct the remaining visual clipping shown in the refreshed Nov 10 screenshot: the first `09:00` hour label and rail dot used to be drawn at negative Y inside a clipped `Stack`. Both live and cached date-swipe Time View canvases now clamp marker positions to the visible canvas top using one shared geometry function.
+- Preserve canonical card geometry and native horizontal swipe unchanged. Add regression coverage for first and subsequent hour-marker positions in both rendering paths.
+
 ## 2026-11-10 — Fix top clipping after Planning Time View horizontal date swipe
 
 - Correct the first-hour label/dot clipped by negative top placement: live and cached Time View canvases now share 12px safe top inset beyond 8px normal padding.

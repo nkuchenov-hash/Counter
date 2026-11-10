@@ -203,7 +203,7 @@ class PlanningFrozenTimeCanvas extends StatelessWidget {
                           ),
                           for (var i = 0; i < hours.length; i++) ...[
                             Positioned(
-                              top: grid.hourLineY(i) - 10,
+                              top: timeViewSafeHourMarkerTopPx(grid.hourLineY(i), 20),
                               left: 0, right: 0, height: 20,
                               child: Text(
                                 compact
@@ -218,7 +218,7 @@ class PlanningFrozenTimeCanvas extends StatelessWidget {
                             ),
                             Positioned(
                               left: railWidth - 14,
-                              top: grid.hourLineY(i) - 4,
+                              top: timeViewSafeHourMarkerTopPx(grid.hourLineY(i), 8),
                               child: SizedBox(
                                 height: 8, width: 8,
                                 child: DecoratedBox(

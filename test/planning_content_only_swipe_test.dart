@@ -381,6 +381,27 @@ void main() {
     expect(coordinator, contains('ScrollController(keepScrollOffset: false)'));
   });
 
+  test('first hour labels and dots never paint outside clipped canvas', () {
+    // Both live and swipe-preview timelines use the same safe placement:
+    // the original 09:00 marker was centered at -10px above the canvas.
+    expect(timeViewSafeHourMarkerTopPx(0, 20), 0);
+    expect(timeViewSafeHourMarkerTopPx(0, 8), 0);
+    expect(timeViewSafeHourMarkerTopPx(5, 20), 0);
+    expect(timeViewSafeHourMarkerTopPx(140, 20), 130);
+    expect(timeViewSafeHourMarkerTopPx(140, 8), 136);
+
+    final live = File(
+      'lib/features/planning/time_view/time_view_canvas.dart',
+    ).readAsStringSync();
+    final preview = File(
+      'lib/features/planning/widgets/planning_frozen_day_list.dart',
+    ).readAsStringSync();
+    expect(live, contains('timeViewSafeHourMarkerTopPx('));
+    expect(preview, contains('timeViewSafeHourMarkerTopPx('));
+    expect(live, isNot(contains('top: grid.hourLineY(i) - hourLabelHeight / 2')));
+    expect(preview, isNot(contains('top: grid.hourLineY(i) - 10')));
+  });
+
   test('Time swipe preview uses canonical projection, layout and cards', () {
     final source = File(
       'lib/features/planning/widgets/planning_frozen_day_list.dart',
