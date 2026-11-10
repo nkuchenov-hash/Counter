@@ -1,3 +1,10 @@
+## 2026-11-10 — Planning single-pass directional arrival motion [PR verification]
+
+- Reintroduced a 170ms directional arrival animation for the **day content only**, keyed on real date changes. Uses an 18px GPU-composited translation outside the day RepaintBoundary, rather than the original 60px drag-time rubber band or 150ms follow-up slide.
+- Horizontal drags still update only a numeric accumulator and commit a single date; fixed tags, quick-entry and sort controls never move. Date pager gestures are disabled during deliberate Time View drag/resize.
+- Added widget regression for forward/backward arrival, stationary fixed controls and no day-card rebuilds during the animation; relaxed the old source guard only for the bounded post-commit composited transform.
+- No preloaded adjacent day pages, animations during drag, opacity saveLayers, backend schema or optimistic/offline mutation changes. Actual browser/device smoothness remains subject to profile validation.
+
 ## 2026-11-09 — Planning full-width date controls [CI and device performance unverified]
 
 - Removed 96px date-navigation side rails on both sides of the persistent Planning page, restoring the full day viewport.
