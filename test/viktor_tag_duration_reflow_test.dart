@@ -32,6 +32,21 @@ void main() {
   const later = 'ggggghhhhhiiiii';
   const completed = 'jjjjjkkkkklllll';
 
+  test('conversational subset requires a pending conflict and explicit choice', () {
+    expect(ViktorDurationConversation.wantsFeasibleSubset(
+      'покажи частичный вариант', pending: true), isTrue);
+    expect(ViktorDurationConversation.wantsFeasibleSubset(
+      'давай пересчитай частично', pending: true), isTrue);
+    expect(ViktorDurationConversation.wantsFeasibleSubset(
+      'show subset', pending: true), isTrue);
+    expect(ViktorDurationConversation.wantsFeasibleSubset(
+      'покажи частичный вариант', pending: false), isFalse);
+    expect(ViktorDurationConversation.wantsFeasibleSubset(
+      'почему частично?', pending: true), isFalse);
+    expect(ViktorDurationConversation.wantsFeasibleSubset(
+      'перенеси задачи на завтра', pending: true), isFalse);
+  });
+
   test('fixed event stays put and flexible tasks use the next free slot', () {
     final plans = [
       item(flexible, 'Working block', 9 * 60, 60),
