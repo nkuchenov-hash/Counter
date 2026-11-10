@@ -737,7 +737,9 @@ class ViktorTagDurationRepair {
   /// 24-hour offsets across DST boundaries.
   static bool includesYesterday(String input) {
     final text = input.toLowerCase().replaceAll('ё', 'е');
-    return RegExp(r'(?<![а-яa-z])(?:вчера|yesterday)(?![а-яa-z])')
+    if (RegExp(r'(?:не\s+трогай|не\s+меняй|кроме|без)\s+вчера')
+        .hasMatch(text)) return false;
+    return RegExp(r'(?:^|[^а-яa-z])(?:вчера|yesterday)(?:$|[^а-яa-z])')
         .hasMatch(text);
   }
 
