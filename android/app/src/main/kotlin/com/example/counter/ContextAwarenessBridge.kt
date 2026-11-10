@@ -230,7 +230,6 @@ internal object ContextAwarenessBridge {
     }
 
     @Synchronized
-    @Synchronized
     private fun emit(context: Context, kind: String, mode: String = "", atMillis: Long = System.currentTimeMillis()): String? {
         val store = prefs(context)
         if (!store.getBoolean("enabled", false)) return null
