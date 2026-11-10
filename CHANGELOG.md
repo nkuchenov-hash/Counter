@@ -1,3 +1,9 @@
+## 2026-11-09 — Calendar DST correction and day-to-Plans navigation [verification pending]
+
+- Replaced 24-hour day offsets in month/week calendar grids, calendar range bounds, and date paging with civil-day calculations. November 2026 now places November 1 on Sunday once, November 2 on Monday, November 9 on Monday, and November 30 on Monday.
+- Calendar day taps route to the selected date in the existing Plans tab; implicit new-plan editor was removed from day clicks. Explicit Add actions and existing task edit interactions remain available.
+- Added visible month-cell borders/weekend tint, larger readable event pills with full-title tooltips, and overflow-aware task-count sizing. Added DST/date/navigation regression tests. No PocketBase or plan/record data changes. Flutter/CI and production screenshot verification pending.
+
 ## 2026-11-10 — Planning day visibility and canonical Time View swipe previews [CI pending]
 
 - Fixed a potential data-visibility regression after the native pager redesign: while the complete PocketBase catalog is unverified or unavailable, the Planning stream preserves previously restored populated day snapshots instead of overwriting them with an unsuccessful empty refresh. A successfully fetched empty catalog remains authoritative.

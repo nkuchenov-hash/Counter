@@ -1,3 +1,10 @@
+## Calendar month/week navigation and civil dates (2026-11-09)
+
+- Calendar month and week cells use **civil-day arithmetic** (year/month/day constructors), never `DateTime.add(Duration(days: ...))` for day indexing, week shifts, or month-grid bounds. This prevents duplicate/misplaced days on DST changes such as New York's 2026-11-01 rollback.
+- The month grid is Monday-first, shows each calendar date once, and uses visible day boundaries, readable event labels, and an unclipped `+N more` overflow label. Category colors continue to identify tasks.
+- **Click/tap a day** in month, week, or year calendar -> open **Plans** on that selected date. Never create a plan implicitly. Clicking an existing task opens the task editor; explicit Add actions may create a new plan. Horizontal calendar paging remains in Calendar.
+- Calendar-to-Plans navigation updates the existing shared shell selected date and tab index without changing PocketBase schemas, record/plan mutation paths, or optimistic UI.
+
 ## Viktor duration overflow — conversational decisions (2026-11-09)
 
 - A scheduling overflow is not a terminal technical error. Victor must identify the exact date, plan and requested duration, explicitly state that no rows were saved and that fixed/recurring events stay anchored, then offer meaningful alternatives.

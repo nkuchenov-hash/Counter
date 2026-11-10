@@ -57,7 +57,7 @@ class _CalendarChromeHeaderState extends State<CalendarChromeHeader> {
         final start = widget.dayFocusActive
             ? calendarWeekStartMonday(widget.selectedDay)
             : widget.weekAnchor;
-        final end = start.add(const Duration(days: 6));
+        final end = calendarAddDays(start, 6);
         if (start.month == end.month) {
           return DateFormat.MMMM(widget.loc).format(start);
         }

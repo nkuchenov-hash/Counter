@@ -10,8 +10,25 @@ DateTime calendarDateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 String calendarDayKey(DateTime d) =>
     '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
+/// Civil-day math: Duration(days: 1) is 24 hours, not necessarily one
+/// calendar day when a local timezone crosses a daylight-saving change.
+DateTime calendarAddDays(DateTime date, int days) =>
+    DateTime(date.year, date.month, date.day + days);
+
 DateTime calendarWeekStartMonday(DateTime anchor) =>
-    anchor.subtract(Duration(days: anchor.weekday - 1));
+    calendarAddDays(anchor, 1 - anchor.weekday);
+
+DateTime calendarMonthGridStart(DateTime month) =>
+    calendarWeekStartMonday(DateTime(month.year, month.month, 1));
+
+int calendarMonthWeekCount(DateTime month) {
+  final first = DateTime(month.year, month.month, 1);
+  final days = DateTime(month.year, month.month + 1, 0).day;
+  return ((first.weekday - 1 + days + 6) ~/ 7);
+}
+
+DateTime calendarMonthGridDay(DateTime month, int row, int column) =>
+    calendarAddDays(calendarMonthGridStart(month), row * 7 + column);
 
 bool calendarIsCompactPhoneWidth(double width) =>
     width < kShellDesktopNavBreakpoint;

@@ -78,9 +78,12 @@ mixin ShellTabHost on ShellTaskActions, ShellEditHosts {
       selectedDate: selectedDate,
       focusedDay: focusedDay,
       onSelectDate: (d, f) async {
+        // Calendar day selection opens that day's Plans, not the new-plan sheet.
+        // Update the shared date before switching the tab's rendered content.
         setState(() {
           selectedDate = shellDateOnly(d);
           focusedDay = shellDateOnly(f);
+          setShellPageIndex(1);
         });
         selectedDateListenable.value = selectedDate;
       },
