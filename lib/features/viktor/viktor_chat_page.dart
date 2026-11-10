@@ -226,8 +226,13 @@ class _ViktorChatPageState extends State<ViktorChatPage>
             // A second malformed continuation is not another read.
             // Never invent a tool call or apply an unvalidated write.
             if (latestReadAnswer != null) _push(latestReadAnswer);
-            _push('Модель не смогла выбрать допустимую операцию чтения. '
-                'Запрос завершён без изменений.');
+            await _offerRecovery(
+              input: input,
+              failure: StateError('Для ответа не удалось выбрать '
+                  'допустимую операцию чтения из каталога.'),
+              day: intentDay, plans: plans, requestId: requestId,
+              conversation: dialogContext,
+            );
             return;
           }
           repairedEmptyRead = true;
@@ -294,8 +299,12 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           input, response, plans, toolObservations, requestId, dialogContext,
           intentDay);
       if (completed == null) {
-        _push('Виктор не сформировал полный согласованный черновик '
-            'с нужным часовым поясом. Планы не изменены.');
+        await _offerRecovery(
+          input: input, failure: StateError(
+            'Черновик требует уточнения часового пояса или расписания.'),
+          day: intentDay, plans: plans, requestId: requestId,
+          conversation: dialogContext,
+        );
         return;
       }
       response = completed;
@@ -326,14 +335,22 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         preview = await executor.describe(finalActions, intentDay);
       } on StateError catch (failure) {
         // One bounded model retry with the real validator rejection.
-        // This can produce a different draft, but never silently commit it.
+        // Include the failed action to avoid repeating an unknown proposal.
+        // Any replacement is previewed and needs an explicit approval.
+        final rejectedJson = jsonEncode(
+          finalActions.actions.map((a) => a.toJson()).toList(),
+        );
+        final rejectedSummary = rejectedJson.length > 400
+            ? '${rejectedJson.substring(0, 400)}…'
+            : rejectedJson;
         final repaired = await _gateway.propose(
           input: input, wallDay: intentDay, plans: plans,
           settings: _settings, selectedPlanIds: widget.selectedPlanIds,
           requestId: requestId, conversationHistory: dialogContext,
           toolObservations: toolObservations,
           proposalFeedback:
-            'The app rejected the previous proposal BEFORE writes: '
+            'Rejected action: $rejectedSummary. '
+            'The app rejected it BEFORE writes: '
             '${_friendlyError(failure)}. Preserve the user goal, '
             'find a DIFFERENT feasible supported action or explain '
             'concrete alternatives in message with actions:[]. '
