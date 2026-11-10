@@ -130,8 +130,9 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
       datePagerLocked: _datePagerLocked,
       onDatePagerLockChanged: _onDatePagerLockChanged,
     );
-    // The Planning page owns the whole width, identical to Timeline/Records.
-    // Date arrows belong to the fixed top control row, not side rails.
+    // The Planning page preserves the full width, like Timeline/Records.
+    // Desktop date arrows live in an independent outer-gutter overlay, never
+    // in the sort controls or card width. Only day content swipes.
     return planningPage;
   }
 }
