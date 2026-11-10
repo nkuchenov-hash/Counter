@@ -194,9 +194,9 @@ void main() {
                   child: Builder(
                     builder: (context) {
                       bodyBuilds++;
-                      return const SizedBox.expand(
+                      return SizedBox.expand(
                         key: ValueKey('animated-planning-body-$day'),
-                        child: ColoredBox(color: Colors.white),
+                        child: const ColoredBox(color: Colors.white),
                       );
                     },
                   ),
@@ -229,8 +229,8 @@ void main() {
     expect(bodyBuilds, buildsAfterDateChange);
 
     await tester.pumpWidget(screen('2026-11-09'));
-    expect(tester.getTopLeft(find.byKey(contentKey('2026-11-10'))).dx,
-        lessThan(baselineX - 1));
+    expect(tester.getTopLeft(find.byKey(contentKey('2026-11-09'))).dx,
+        lessThan(baselineX - 800));
     await tester.pumpAndSettle();
     expect(tester.getTopLeft(find.byKey(contentKey('2026-11-09'))).dx,
         closeTo(baselineX, 0.01));
