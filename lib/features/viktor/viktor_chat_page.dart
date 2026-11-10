@@ -52,6 +52,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
   // A conversational follow-up can resume a rejected tag-duration request.
   // Only a fresh, explicitly requested preview may result in a write.
   bool _durationConflictPending = false;
+  bool _durationConflictIncludesYesterday = false;
   bool _listening = false;
   bool _startingMic = false;
   bool _transcribing = false;
@@ -100,6 +101,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         ))) {
       _startNewConversation();
       _durationConflictPending = false;
+      _durationConflictIncludesYesterday = false;
     }
     final dialogContext = ViktorDialogueTurn.modelContext(_messages.skip(1));
     if (independentPlan == null &&
@@ -116,6 +118,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     _push(input, mine: true);
     if (ViktorReadAnswer.isExplicitCancellation(input)) {
       _durationConflictPending = false;
+      _durationConflictIncludesYesterday = false;
       _push('Команда отменена. Изменения не выполнялись.');
       return;
     }
@@ -134,14 +137,20 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           ViktorDurationConversation.wantsFeasibleSubset(
             input, pending: _durationConflictPending,
           );
-      if (ViktorTagDurationRepair.matches(input) ||
-          resumePartialDuration) {
+      final directDurationRepair = ViktorTagDurationRepair.matches(input);
+      if (directDurationRepair || resumePartialDuration) {
+        if (directDurationRepair) {
+          _durationConflictIncludesYesterday =
+              ViktorTagDurationRepair.includesYesterday(input);
+        }
+        final includeYesterday = _durationConflictIncludesYesterday;
         final repair = ViktorTagDurationRepair(db);
         var keepFeasibleOnly = resumePartialDuration;
         late ViktorBulkPreview preview;
         try {
           preview = await repair.prepare(
             profileToday, keepFeasibleOnly: keepFeasibleOnly,
+            includeYesterday: includeYesterday,
           );
           _durationConflictPending = false;
         } on ViktorTagDurationOverflow catch (conflict) {
@@ -175,6 +184,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           keepFeasibleOnly = true;
           preview = await repair.prepare(
             profileToday, keepFeasibleOnly: true,
+            includeYesterday: includeYesterday,
           );
           _durationConflictPending = false;
         }
@@ -192,6 +202,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         final result = await repair.apply(
           preview, profileToday, requestId,
           keepFeasibleOnly: keepFeasibleOnly,
+          includeYesterday: includeYesterday,
         );
         if (mounted) {
           _push(preview.excludedPlanTitles.isEmpty
