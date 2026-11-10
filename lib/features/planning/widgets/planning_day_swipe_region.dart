@@ -65,6 +65,11 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
     super.initState();
     _anchorDay = _parseDay(widget.dayKey);
     _controller = PageController(initialPage: _initialPage);
+    // The root Overlay can be mounted after this region's first frame.
+    // Re-issue show once it is attached so the controls never stay hidden.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _sideArrowsOverlay.show();
+    });
   }
 
   @override
@@ -172,7 +177,8 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
       // card edges. A sidebar can reduce the pane below 900px; the relevant
       // minimum is the actual 600px Planning pane, not its former breakpoint.
       final showSideArrows = viewportWidth >= 900 && size.maxWidth >= 600;
-      return OverlayPortal.targetsRootOverlay(
+      return OverlayPortal(
+        overlayLocation: OverlayChildLocation.rootOverlay,
         controller: _sideArrowsOverlay,
         overlayChildBuilder: (overlayContext) {
           if (!showSideArrows) return const SizedBox.shrink();

@@ -215,6 +215,8 @@ void main() {
         )),
       ])),
     ));
+    // The overlay portal attaches its root entry after the first frame.
+    await tester.pump();
     final left = find.byKey(const ValueKey('planning-side-previous-day'));
     final right = find.byKey(const ValueKey('planning-side-next-day'));
     final page = find.byType(PageView);
@@ -255,6 +257,8 @@ void main() {
         ),
       ),
     ));
+    // The overlay portal attaches its root entry after the first frame.
+    await tester.pump();
     final left = find.byKey(const ValueKey('planning-side-previous-day'));
     final right = find.byKey(const ValueKey('planning-side-next-day'));
     final canvas = find.byKey(const ValueKey('full-size-day-canvas'));
@@ -587,6 +591,8 @@ void main() {
         )),
       ])),
     ));
+    // The overlay portal attaches its root entry after the first frame.
+    await tester.pump();
     final left = find.byKey(const ValueKey('planning-side-previous-day'));
     final right = find.byKey(const ValueKey('planning-side-next-day'));
     expect(left, findsOneWidget);
@@ -617,6 +623,8 @@ void main() {
         child: const SizedBox.expand(),
       )),
     ));
+    // The overlay portal attaches its root entry after the first frame.
+    await tester.pump();
     final left = find.byKey(const ValueKey('planning-side-previous-day'));
     final right = find.byKey(const ValueKey('planning-side-next-day'));
     expect(left, findsOneWidget);
