@@ -1,3 +1,9 @@
+## Context awareness / automatic Timeline (2026-11-10)
+
+- **Android MVP (feature branch; not shipped):** opt-in home anchor, background home geofence, coarse Google Activity Recognition, private bounded event queue, first-frame/resume reconciliation through Brain, Menu settings, policy regression tests.
+- **Release gates:** Android CI analyzer, build/architecture tests, real-device permission flow, screen-off/out-of-app departure, stationary visit, reboot behavior, battery profile, offline replay and account-switch recovery. No live-web or production claims before validation.
+- **Next phases:** nearby-place verification, persistent auto-record provenance/Undo, public transport (metro/bus/car) inference with confidence, iOS native event adapter. Never invent restaurant type from GPS alone.
+
 # Life OS — Roadmap
 
 **Single canonical plan.** Drawn from the April 2026 audit (findings captured in Phase 1 below). Last architecture/documentation parity verification: 2026-08-18.
