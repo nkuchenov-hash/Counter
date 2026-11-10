@@ -1,3 +1,10 @@
+## 2026-11-10 — Promote swiped Planning day immediately, preserve full-card preview
+
+- Fixed a regression where a day was visually visible but remained a disabled read-only preview until the pager reached its final resting position. PageView's primary-page change now promotes cached day content into the single interactive Planning body immediately, with a settled-scroll fallback.
+- Cached Time View swipe previews reuse the production `PlanCard` timeline implementation with full content/meta/progress information rather than a reduced `PlanTimeTaskCard` surrogate. The same layout calculator and time geometry remain shared.
+- Added a regression that crosses the page boundary before the finger is released and verifies the new day is immediately active and its cards can be tapped after release.
+- Date navigation and data rendering are offline-first; the page transition does not wait for PocketBase.
+
 ## 2026-11-10 — Prevent the first Time View hour marker from clipping after date swipe
 
 - Correct the remaining visual clipping shown in the refreshed Nov 10 screenshot: the first `09:00` hour label and rail dot used to be drawn at negative Y inside a clipped `Stack`. Both live and cached date-swipe Time View canvases now clamp marker positions to the visible canvas top using one shared geometry function.
