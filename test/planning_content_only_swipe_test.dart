@@ -598,7 +598,7 @@ void main() {
     ).readAsStringSync();
     // The parent IgnorePointer owns input blocking; preview cards still
     // render all controls and the same tracked-progress calculation as live.
-    expect(RegExp(r'onPlay: \\(\\) \\{\\},').allMatches(preview).length, 3);
+    expect('onPlay: () {},'.allMatches(preview).length, 3);
     expect(preview, contains('aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay)'));
     expect(preview, contains('pocketRelationIdOrNull(task.pocketRecordId)'));
     expect(preview, contains('pocketRelationIdOrNull(t.pocketRecordId)'));
