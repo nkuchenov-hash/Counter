@@ -131,8 +131,18 @@ List<PlanningTask>? cascadeTimeViewAffectedChain({
     } else if (!collision && !moved && draggedPlanIds.isNotEmpty) {
       activeChain = false;
     }
-    final end = start.add(Duration(minutes: durationMinutes(task)));
-    out.add(task.copyWith(startTime: start, endDateTime: end, clearEnd: false));
+    final inferredEnd = start.add(Duration(minutes: durationMinutes(task)));
+    // A non-selected fixed-time card is an immutable absolute interval,
+    // including its explicit end; do not overwrite it with tag defaults.
+    final protected = !moved &&
+        (fixedPlanIds.contains(id) || isPlanFixedInTimeView(task, const {}));
+    if (protected && start != originalStart) return null;
+    final end = protected
+        ? (task.endDateTime ?? inferredEnd)
+        : inferredEnd;
+    out.add(protected
+        ? task
+        : task.copyWith(startTime: start, endDateTime: end, clearEnd: false));
     if (occupiedUntil == null || end.isAfter(occupiedUntil)) {
       occupiedUntil = end;
     }
