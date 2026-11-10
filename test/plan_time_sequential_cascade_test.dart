@@ -31,6 +31,45 @@ PlanningTask _task({
 }
 
 void main() {
+  test('13:30 meeting is never shifted by automatic day normalization', () {
+    final work = _task(
+      id: 'work', order: 0, startH: 13, startM: 0,
+      endH: 14, endM: 0,
+    );
+    final meeting = _task(
+      id: 'meeting', order: 1, startH: 13, startM: 30,
+      endH: 14, endM: 0,
+    ).copyWith(tags: const [Tag(tagId: 42, name: 'Meeting')]);
+    final out = cascadeScheduledPlansForTimeViewDay(
+      [work, meeting], resolveDurationMinutes: _resolveDuration,
+    );
+    // The input conflict is shown to the user, NEVER "fixed" by
+    // changing the meeting's persisted official clock time.
+    expect(out.singleWhere((p) => p.planRowId == 'meeting').startTime,
+      DateTime(2026, 6, 15, 13, 30));
+    expect(out.singleWhere((p) => p.planRowId == 'meeting').endDateTime,
+      DateTime(2026, 6, 15, 14));
+    expect(out.singleWhere((p) => p.planRowId == 'work').startTime,
+      work.startTime);
+  });
+
+  test('resizing flexible work must not push the 13:30 meeting', () {
+    final flex = _task(
+      id: 'work', order: 0, startH: 12, startM: 45,
+      endH: 13, endM: 15);
+    final meeting = _task(
+      id: 'meeting', order: 1, startH: 13, startM: 30,
+      endH: 14, endM: 0,
+    ).copyWith(tags: const [Tag(tagId: 42, name: 'Встречи')]);
+    final enlarged = flex.copyWith(endDateTime: DateTime(2026, 6, 15, 14));
+    final out = cascadeScheduledPlansAfterManualResize(
+      scheduledTasks: [flex, meeting], resizedTask: enlarged,
+      resolveDurationMinutes: _resolveDuration);
+    expect(out[0].endDateTime, flex.endDateTime);
+    expect(out[1].startTime, meeting.startTime);
+    expect(out[1].endDateTime, meeting.endDateTime);
+  });
+
   group('cascadeScheduledPlansForTimeViewDay', () {
     test('normalizes existing overlap A 19:40–20:25, B 20:05–20:50', () {
       final a = _task(
