@@ -549,7 +549,7 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
   }
 
   Set<String> timeViewFixedPlanIdsForTasks(Iterable<PlanningTask> tasks) {
-    if (timeViewFixedTagIds.isEmpty) return {};
+    // Built-in meeting protection applies even before local prefs load.
     final out = <String>{};
     for (final task in tasks) {
       if (isPlanFixedInTimeView(task, timeViewFixedTagIds)) {
