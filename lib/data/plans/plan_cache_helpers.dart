@@ -14,7 +14,7 @@ String? _plansLastCompleteCatalogOwnerId;
 // Do not share a pending request across different signed-in profiles.
 Future<List<PlanningTask>>? _plansCatalogFetchInFlight;
 String? _plansCatalogFetchOwner;
-Future<List<PlanningTask>> _singleFlightPlanFetch(
+Future<List<PlanningTask>> singleFlightPlanningCatalogFetch(
   String? owner,
   Future<List<PlanningTask>> Function() request,
 ) {
@@ -23,12 +23,17 @@ Future<List<PlanningTask>> _singleFlightPlanFetch(
   final next = request();
   _plansCatalogFetchInFlight = next;
   _plansCatalogFetchOwner = owner;
-  next.whenComplete(() {
+  void clearIfCurrent() {
     if (identical(_plansCatalogFetchInFlight, next)) {
       _plansCatalogFetchInFlight = null;
       _plansCatalogFetchOwner = null;
     }
-  });
+  }
+  // Handle error completion here too; do not create an unobserved error Future.
+  unawaited(next.then<void>(
+    (_) => clearIfCurrent(),
+    onError: (Object _, StackTrace __) => clearIfCurrent(),
+  ));
   return next;
 }
 
