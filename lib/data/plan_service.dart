@@ -49,7 +49,6 @@ extension PlanServiceExtension on DatabaseService {
     }
     return true;
   }
-
   List<Tag> _refreshTaskTagsFromCatalog(List<Tag> tags) {
     if (tags.isEmpty || _userTagsCatalogCache.isEmpty) return tags;
     final byPb = <String, Tag>{
@@ -374,7 +373,6 @@ extension PlanServiceExtension on DatabaseService {
       endUtcInstant: endUtc?.toUtc(),
     );
   }
-
   /// All **plans** for the current user (raw maps; includes `tags_link` expand when present).
   Future<List<Map<String, dynamic>>> fetchPlans() async {
     if (!(currentProfileId?.isNotEmpty ?? false)) return [];
@@ -403,7 +401,6 @@ extension PlanServiceExtension on DatabaseService {
       return [];
     }
   }
-
   /// Business key for plan rows: prefer **plan_id** (UUID); bulk PATCH outer `id` is [recordsTablePk] / [PlanningTask.id].
   static String planRowBusinessIdFromRow(Map<String, dynamic> row) {
     for (final key in <String>['plan_id', 'Plan_id']) {
@@ -424,17 +421,13 @@ extension PlanServiceExtension on DatabaseService {
     }
     return '';
   }
-
   int newId() => -DateTime.now().millisecondsSinceEpoch - _random.nextInt(9999);
-
   String _tasksKeyForDate(DateTime date) {
     final d = DateTime(date.year, date.month, date.day);
     return 'tasks_${d.year}_${_two(d.month)}_${_two(d.day)}';
   }
-
   /// Planning [SegmentedButton] sort segment: 0=category, 1=time, 2=tags, 3=custom (my order).
   static const String kPrefsPlanActiveTab = 'prefs_plan_active_tab';
-
   /// Sync read for [PlanningPage.initState] — no flicker when [_prefs] is already loaded.
   int? getPlanActiveTabIndexOrNull() {
     final prefs = _prefs;
@@ -444,7 +437,6 @@ extension PlanServiceExtension on DatabaseService {
     if (raw < 0 || raw > 3) return null;
     return raw;
   }
-
   Future<void> persistPlanActiveTabIndex(int index) async {
     final clamped = index < 0 ? 0 : (index > 3 ? 3 : index);
     try {
@@ -452,7 +444,6 @@ extension PlanServiceExtension on DatabaseService {
       await prefs.setInt(kPrefsPlanActiveTab, clamped);
     } catch (_) {}
   }
-
   Future<void> addPlannedTask(
     String dateKey,
     String taskText, {
@@ -485,7 +476,6 @@ extension PlanServiceExtension on DatabaseService {
       );
     } catch (_) {}
   }
-
   /// Planning-only voice / quick-add: same parsing as Planning UI, then [addPlanningTask].
   Future<bool> addPlanningTaskFromVoiceText({
     required String rawText,
@@ -498,7 +488,6 @@ extension PlanServiceExtension on DatabaseService {
       DatabaseService._log('TABLE_GUARD: blocked addPlanningTaskFromVoiceText');
       return false;
     }
-
     if (isBacklog) {
       final stripped = SmartInputParser.backlogTitleFromRaw(rawText);
       final gt = getCleanTitleAndTags(stripped);
@@ -510,17 +499,14 @@ extension PlanServiceExtension on DatabaseService {
           categoryIdHint ??
           defaultCategoryId ??
           (rules.isNotEmpty ? rules.first.id : 0);
-
       if (getCategoryRuleById(categoryId) == null) {
         DatabaseService._log(
           'VOICE_PLAN: blocked — unknown category $categoryId',
         );
         return false;
       }
-
       final nextOrder = await nextBacklogPlanningOrder();
       final clientPlanId = DatabaseService.newClientUuid();
-
       return addPlanningTask(
         PlanningTask(
           id: 0,
@@ -540,7 +526,6 @@ extension PlanServiceExtension on DatabaseService {
         clientPlanId: clientPlanId,
       );
     }
-
     final ymd = DateTime(wallDay.year, wallDay.month, wallDay.day);
     final taskDateKey = '${ymd.year}-${_two(ymd.month)}-${_two(ymd.day)}';
 
@@ -1255,6 +1240,7 @@ extension PlanServiceExtension on DatabaseService {
   Future<bool> bulkUpdatePlans(
     List<PlanningBulkPatch> patches, {
     bool suppressAppSnack = false,
+    Set<String> explicitlyEditedPlanIds = const {},
   }) async {
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       return false;
@@ -1264,6 +1250,20 @@ extension PlanServiceExtension on DatabaseService {
       return false;
     }
     if (patches.isEmpty) return false;
+    // Preflight the whole group BEFORE its first PATCH. Viktor and cascade
+    // callers cannot move appointments that were not explicitly selected by
+    // the user, even if an optimistic cache has already shifted their times.
+    final fixedIds = await TimeViewFixedTagPrefs.load();
+    for (final patch in patches) {
+      if (explicitlyEditedPlanIds.contains(patch.planRowId)) continue;
+      final task = _findCachedPlanningTaskForEdit(
+        patch.planRowId, planBusinessId: patch.planBusinessId);
+      if (task == null || isPlanFixedInTimeView(task, fixedIds)) {
+        DatabaseService._log('FIXED_TIME_DENIED bulk plan edit id=${patch.planRowId}');
+        if (!suppressAppSnack) AppSnack.failed();
+        return false;
+      }
+    }
     var allOk = true;
     try {
       for (final p in patches) {
