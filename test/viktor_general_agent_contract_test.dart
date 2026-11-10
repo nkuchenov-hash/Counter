@@ -38,6 +38,20 @@ void main() {
   });
 
 
+  test('rejected proposals return to dialogue, not automatic commits', () async {
+    final chat = await File('lib/features/viktor/viktor_chat_page.dart')
+        .readAsString();
+    final gateway = await File('lib/data/ai/viktor_gateway.dart')
+        .readAsString();
+    expect(chat, contains('recoveredProposal = true'));
+    expect(chat, contains('!recoveredProposal'));
+    expect(chat, contains('_offerRecovery('));
+    expect(chat, contains('writeStarted = true'));
+    expect(gateway, contains("'advice_only': true"));
+    expect(gateway, contains('if (adviceOnly) {'));
+    expect(gateway, contains('actions: null'));
+  });
+
   test('Two-day tag default duration repair is explicit and safe', () {
     expect(ViktorTagDurationRepair.matches(
       'Исправь длительность всех текущих планов сегодня и завтра '
