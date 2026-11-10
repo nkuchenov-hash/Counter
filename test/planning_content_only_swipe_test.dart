@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:counter/features/planning/plan_time_view_layout.dart';
+import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
 import 'package:counter/features/planning/planning_sort_mode.dart';
 import 'package:counter/features/planning/widgets/planning_filter_controls.dart';
 import 'package:counter/features/planning/widgets/planning_day_swipe_region.dart';
@@ -316,6 +318,67 @@ void main() {
     expect(find.text('Real plan day 2026-11-11'), findsOneWidget);
     expect(find.text('Fixed tags'), findsOneWidget);
     expect(commits, <int>[1, 1]);
+  });
+
+  testWidgets('next day resets inherited Time View scroll and shows first row', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final scroll = ScrollController(keepScrollOffset: false);
+    addTearDown(scroll.dispose);
+    var selectedDay = 9;
+    late StateSetter changeSelectedDay;
+    await tester.pumpWidget(MaterialApp(
+      home: StatefulBuilder(builder: (context, setState) {
+        changeSelectedDay = setState;
+        return Scaffold(
+          body: Column(children: [
+            const SizedBox(height: 140, child: Text('Fixed tags')),
+            Expanded(child: ListView(
+              key: ValueKey('time-view-day-$selectedDay'),
+              controller: scroll,
+              children: [
+                SizedBox(height: 65, child: Text('09:00 day $selectedDay')),
+                const SizedBox(height: 1500),
+              ],
+            )),
+          ]),
+        );
+      }),
+    ));
+    await tester.drag(find.byType(ListView), const Offset(0, -420));
+    await tester.pumpAndSettle();
+    expect(scroll.offset, greaterThan(200));
+    PlanningTimeViewCoordinator.resetAttachedDayScrollToTop(scroll);
+    changeSelectedDay(() => selectedDay = 10);
+    await tester.pumpAndSettle();
+    expect(scroll.offset, 0);
+    expect(tester.getTopLeft(find.text('09:00 day 10')).dy,
+        greaterThanOrEqualTo(140));
+    expect(tester.getTopLeft(find.text('09:00 day 10')).dy,
+        lessThan(220));
+    expect(find.text('Fixed tags'), findsOneWidget);
+  });
+
+  test('live and cached Time View always pad first hour inside viewport', () {
+    final live = File(
+      'lib/features/planning/time_view/time_view_hour_grid.dart',
+    ).readAsStringSync();
+    final cached = File(
+      'lib/features/planning/widgets/planning_frozen_day_list.dart',
+    ).readAsStringSync();
+    final page = File('lib/features/planning/planning_page.dart')
+        .readAsStringSync();
+    final coordinator = File(
+      'lib/features/planning/time_view/planning_time_view_coordinator.dart',
+    ).readAsStringSync();
+    expect(kPlanningTimeViewTopInsetPx, greaterThanOrEqualTo(10));
+    expect(8 + kPlanningTimeViewTopInsetPx - 10, greaterThanOrEqualTo(0));
+    expect(live, contains('8 + kPlanningTimeViewTopInsetPx'));
+    expect(cached, contains('8 + kPlanningTimeViewTopInsetPx'));
+    expect(page, contains('timeView.resetHourGridScrollForNewDay()'));
+    expect(coordinator, contains('ScrollController(keepScrollOffset: false)'));
   });
 
   test('Time swipe preview uses canonical projection, layout and cards', () {
