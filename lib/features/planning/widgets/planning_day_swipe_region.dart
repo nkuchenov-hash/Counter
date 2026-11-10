@@ -172,16 +172,21 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
   Widget build(BuildContext context) {
     final selectedIndex = _indexForDay(_parseDay(widget.dayKey));
     return LayoutBuilder(builder: (context, size) {
-      final viewportWidth = MediaQuery.sizeOf(context).width;
       // On desktop, controls belong in the empty *outer gutters*, not at
       // card edges. A sidebar can reduce the pane below 900px; the relevant
       // minimum is the actual 600px Planning pane, not its former breakpoint.
-      final showSideArrows = viewportWidth >= 900 && size.maxWidth >= 600;
       return OverlayPortal(
         overlayLocation: OverlayChildLocation.rootOverlay,
         controller: _sideArrowsOverlay,
         overlayChildBuilder: (overlayContext) {
-          if (!showSideArrows) return const SizedBox.shrink();
+          return Positioned.fill(
+            child: LayoutBuilder(builder: (overlayContext, overlaySize) {
+              // Check the real root overlay width. Test and embedded surfaces
+              // may have a MediaQuery width different from their render view.
+              final viewportWidth = overlaySize.maxWidth;
+              if (viewportWidth < 900 || size.maxWidth < 600) {
+                return const SizedBox.shrink();
+              }
           // The target's global X position is computed once per layout.
           // CompositedTransformFollower then tracks it in the compositor,
           // with no per-scroll rebuild and no extra active Planning pages.
@@ -198,8 +203,7 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
               leftGutter >= 72 ? -leftGutter / 2 : 28.0;
           final rightOffset =
               rightGutter >= 72 ? rightGutter / 2 : -28.0;
-          return Positioned.fill(
-            child: Stack(
+          return Stack(
               children: [
                 Positioned(
                   left: 0,
@@ -232,7 +236,8 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
                   ),
                 ),
               ],
-            ),
+          );
+            }),
           );
         },
         child: CompositedTransformTarget(

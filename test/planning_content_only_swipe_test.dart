@@ -222,8 +222,8 @@ void main() {
     final page = find.byType(PageView);
     expect(left, findsOneWidget);
     expect(right, findsOneWidget);
-    expect(tester.getTopLeft(left).dx, lessThan(10));
-    expect(tester.getTopRight(right).dx, greaterThan(1090));
+    expect(tester.getCenter(left).dx, closeTo(28, 5));
+    expect(tester.getCenter(right).dx, closeTo(1072, 5));
     expect(tester.getTopLeft(left).dy, greaterThan(120));
     expect(tester.getTopLeft(right).dy, greaterThan(120));
     expect(tester.getSize(page).width, 1100);
@@ -597,8 +597,8 @@ void main() {
     final right = find.byKey(const ValueKey('planning-side-next-day'));
     expect(left, findsOneWidget);
     expect(right, findsOneWidget);
-    expect(tester.getTopLeft(left).dx, lessThan(10));
-    expect(tester.getTopRight(right).dx, greaterThan(1090));
+    expect(tester.getCenter(left).dx, closeTo(28, 5));
+    expect(tester.getCenter(right).dx, closeTo(1072, 5));
     expect(tester.getSize(find.byKey(dayBodyKey)).width, 1100);
     expect(tester.takeException(), isNull);
     await tester.tap(left);
@@ -629,8 +629,8 @@ void main() {
     final right = find.byKey(const ValueKey('planning-side-next-day'));
     expect(left, findsOneWidget);
     expect(right, findsOneWidget);
-    expect(tester.getTopLeft(left).dx, lessThan(10));
-    expect(tester.getTopRight(right).dx, greaterThan(1090));
+    expect(tester.getCenter(left).dx, closeTo(28, 5));
+    expect(tester.getCenter(right).dx, closeTo(1072, 5));
     await tester.tap(right);
     await tester.pumpAndSettle();
     expect(changes, 0);
