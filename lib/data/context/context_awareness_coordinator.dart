@@ -73,11 +73,24 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
     if (!supported || profileId.isEmpty) return;
     if (_profileId == profileId && _timer != null) return;
     _timer?.cancel();
+    _timer = null;
     WidgetsBinding.instance.removeObserver(this);
     _profileId = profileId;
-    WidgetsBinding.instance.addObserver(this);
-    _timer = Timer.periodic(_pollInterval, (_) => unawaited(poll()));
-    unawaited(poll());
+    unawaited(_attachIfEnabled(profileId));
+  }
+
+  Future<void> _attachIfEnabled(String profileId) async {
+    try {
+      final current = await status();
+      if (_profileId != profileId || current['enabled'] != true) return;
+      WidgetsBinding.instance.removeObserver(this);
+      WidgetsBinding.instance.addObserver(this);
+      _timer?.cancel();
+      _timer = Timer.periodic(_pollInterval, (_) => unawaited(poll()));
+      unawaited(poll());
+    } catch (_) {
+      // Optional feature: never hold the shell or throw on a missing bridge.
+    }
   }
 
   Future<void> stopForSignOut() async {

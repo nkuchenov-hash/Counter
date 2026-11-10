@@ -230,7 +230,8 @@ internal object ContextAwarenessBridge {
     }
 
     @Synchronized
-    private fun emit(context: Context, kind: String, mode: String = ""): String? {
+    @Synchronized
+    private fun emit(context: Context, kind: String, mode: String = "", atMillis: Long = System.currentTimeMillis()): String? {
         val store = prefs(context)
         if (!store.getBoolean("enabled", false)) return null
         val id = UUID.randomUUID().toString()
@@ -241,7 +242,7 @@ internal object ContextAwarenessBridge {
             .put("mode", mode)
             .put("at", SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
                 timeZone = TimeZone.getTimeZone("UTC")
-            }.format(Date()))
+            }.format(Date(atMillis)))
         val remaining = JSONArray()
         val from = (original.length() - 63).coerceAtLeast(0)
         for (i in from until original.length()) remaining.put(original.get(i))
@@ -270,8 +271,8 @@ internal object ContextAwarenessBridge {
         }
     }
 
-    private fun emitStop(context: Context) {
-        val eventId = emit(context, "stationary_away") ?: return
+    private fun emitStop(context: Context, stillStartedMillis: Long) {
+        val eventId = emit(context, "stationary_away", atMillis = stillStartedMillis) ?: return
         if (!has(context, Manifest.permission.ACCESS_FINE_LOCATION)) return
         try {
             LocationServices.getFusedLocationProviderClient(context).lastLocation
@@ -303,7 +304,7 @@ internal object ContextAwarenessBridge {
         val elapsed = System.currentTimeMillis() - first
         if (elapsed < 4 * 60_000L) return
         store.edit().putBoolean("stillSent", true).apply()
-        emitStop(context)
+        emitStop(context, first)
     }
 
     // Android Geocoder provides address candidates, not verified venue identity.
@@ -344,6 +345,10 @@ internal object ContextAwarenessBridge {
             .setInitialTrigger(0).addGeofence(geofence).build()
         try {
             LocationServices.getGeofencingClient(context).addGeofences(request, homeIntent(context))
+                .addOnSuccessListener {
+                    store.edit().putBoolean("away", false)
+                        .remove("mode").remove("stillSince").remove("stillSent").apply()
+                }
             ActivityRecognition.getClient(context)
                 .requestActivityUpdates(120_000L, activityIntent(context))
         } catch (_: Exception) { /* Show permission state on next app open. */ }
