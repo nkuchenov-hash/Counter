@@ -89,11 +89,11 @@ jobs:
           set -euo pipefail
           [[ -n "$SSH_PRIVATE_KEY" ]]
           echo "SSH_USER=${SSH_USER:-root}" >> "$GITHUB_ENV"
-          echo "SSH_HOST=${SSH_HOST:-217.114.0.201}" >> "$GITHUB_ENV"
+          echo "SSH_HOST=${SSH_HOST:-137.22.146.109}" >> "$GITHUB_ENV"
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lifeos_pocketbase
           chmod 600 ~/.ssh/lifeos_pocketbase
-          ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-217.114.0.201}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "$SSH_PORT" -H "${SSH_HOST:-137.22.146.109}" >> ~/.ssh/known_hosts
 
       - name: Upload and install PocketBase bundle
         shell: bash
