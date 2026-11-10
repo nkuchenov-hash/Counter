@@ -48,6 +48,9 @@ class _ViktorChatPageState extends State<ViktorChatPage>
   final _messages = <ViktorDialogueTurn>[];
   final _gateway = const ViktorGateway();
   bool _busy = false;
+  // A conversational follow-up can resume a rejected tag-duration request.
+  // Only a fresh, explicitly requested preview may result in a write.
+  bool _durationConflictPending = false;
   bool _listening = false;
   bool _startingMic = false;
   bool _transcribing = false;
@@ -95,6 +98,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           nowUtc: DateTime.now().toUtc(),
         ))) {
       _startNewConversation();
+      _durationConflictPending = false;
     }
     final dialogContext = ViktorDialogueTurn.modelContext(_messages.skip(1));
     if (independentPlan == null &&
@@ -110,25 +114,40 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         dialogContext, revision: revisionOfDraft, profileToday: profileToday);
     _push(input, mine: true);
     if (ViktorReadAnswer.isExplicitCancellation(input)) {
+      _durationConflictPending = false;
       _push('Команда отменена. Изменения не выполнялись.');
       return;
     }
     if (_showCorrectedScheduleDraft(input)) return;
     setState(() => _busy = true);
+    final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
+    List<PlanningTask> plansForRecovery = const [];
+    var writeStarted = false;
     try {
       final executor = ViktorExecutor(db);
-      final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
       if (independentPlan != null) {
         await _createIndependentDateOnlyPlan(independentPlan, executor, requestId);
         return;
       }
-      if (ViktorTagDurationRepair.matches(input)) {
+      final resumePartialDuration = _durationConflictPending &&
+          RegExp(
+            r'^(?:покажи|примени|сделай|давай|пересчитай|'
+            r'используй|show|apply|try).{0,90}'
+            r'(?:частичн|subset|what fits)',
+            caseSensitive: false,
+          ).hasMatch(input);
+      if (ViktorTagDurationRepair.matches(input) ||
+          resumePartialDuration) {
         final repair = ViktorTagDurationRepair(db);
-        var keepFeasibleOnly = false;
+        var keepFeasibleOnly = resumePartialDuration;
         late ViktorBulkPreview preview;
         try {
-          preview = await repair.prepare(profileToday);
+          preview = await repair.prepare(
+            profileToday, keepFeasibleOnly: keepFeasibleOnly,
+          );
+          _durationConflictPending = false;
         } on ViktorTagDurationOverflow catch (conflict) {
+          _durationConflictPending = true;
           if (!mounted) return;
           final chooseSubset = await showDialog<bool>(
             context: context,
@@ -138,15 +157,23 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           ) ?? false;
           if (!mounted) return;
           if (!chooseSubset) {
-            _push('Пересчёт не применён. Можно перенести часть гибких '
-                'задач на другую дату или изменить их длительности. '
-                'Закреплённые встречи останутся на месте.');
+            // A dismissed dialog is not the end of the conversation.
+            // Discuss grounded alternatives; a subsequent "покажи частичный"
+            // will still open a fresh preview for explicit approval.
+            plansForRecovery =
+                await db.getPlanningTasksForWallDate(conflict.day);
+            await _offerRecovery(
+              input: input, failure: conflict, day: conflict.day,
+              plans: plansForRecovery, requestId: requestId,
+              conversation: dialogContext,
+            );
             return;
           }
           keepFeasibleOnly = true;
           preview = await repair.prepare(
             profileToday, keepFeasibleOnly: true,
           );
+          _durationConflictPending = false;
         }
         if (!mounted) return;
         final approved = await showDialog<bool>(
@@ -158,6 +185,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           _push('Изменения отменены.');
           return;
         }
+        writeStarted = true;
         final result = await repair.apply(
           preview, profileToday, requestId,
           keepFeasibleOnly: keepFeasibleOnly,
@@ -171,6 +199,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         return;
       }
       final plans = await db.getPlanningTasksForWallDate(intentDay);
+      plansForRecovery = plans;
       final lastTwoIds = ViktorSchedulePlanner.resolveLastTwoSwap(input, plans);
       final toolObservations = <String>[];
       final seenReads = <String>{};
@@ -293,9 +322,50 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         if (mounted) _push(draft);
         return;
       }
-      final preview = await executor.describe(actions, intentDay);
+      var finalActions = actions;
+      var recoveredProposal = false;
+      late String preview;
+      try {
+        preview = await executor.describe(finalActions, intentDay);
+      } on StateError catch (failure) {
+        // One bounded model retry with the real validator rejection.
+        // This can produce a different draft, but never silently commit it.
+        final repaired = await _gateway.propose(
+          input: input, wallDay: intentDay, plans: plans,
+          settings: _settings, selectedPlanIds: widget.selectedPlanIds,
+          requestId: requestId, conversationHistory: dialogContext,
+          toolObservations: toolObservations,
+          proposalFeedback:
+            'The app rejected the previous proposal BEFORE writes: '
+            '${_friendlyError(failure)}. Preserve the user goal, '
+            'find a DIFFERENT feasible supported action or explain '
+            'concrete alternatives in message with actions:[]. '
+            'Do not repeat the rejected proposal.',
+          allowRepair: false,
+        );
+        if (!mounted) return;
+        if (repaired.actions == null || repaired.needsMoreContext) {
+          _push(repaired.message.trim().isNotEmpty
+              ? repaired.message.trim()
+              : 'Этот вариант не подходит. Уточните, какие гибкие '
+                'задачи можно перенести, либо измените ограничение.');
+          return;
+        }
+        try {
+          preview = await executor.describe(repaired.actions!, intentDay);
+          finalActions = repaired.actions!;
+          recoveredProposal = true;
+        } on StateError {
+          await _offerRecovery(
+            input: input, failure: failure, day: intentDay,
+            plans: plans, requestId: requestId,
+            conversation: dialogContext,
+          );
+          return;
+        }
+      }
       if (!mounted) return;
-      if (!actions.hasMutations) {
+      if (!finalActions.hasMutations) {
         if (response.message.trim().isNotEmpty) {
           _push(response.message.trim());
         }
@@ -305,12 +375,12 @@ class _ViktorChatPageState extends State<ViktorChatPage>
             ? ViktorReadAnswer.format(input, preview) : preview);
         return;
       }
-      if (actions.isSingleReversibleWrite) {
+      if (finalActions.isSingleReversibleWrite && !recoveredProposal) {
         _push(preview);
       }
-      final swapArgs = actions.actions.length == 1 &&
-              actions.actions.single.name == 'swap_plan_positions'
-          ? actions.actions.single.arguments
+      final swapArgs = finalActions.actions.length == 1 &&
+              finalActions.actions.single.name == 'swap_plan_positions'
+          ? finalActions.actions.single.arguments
           : null;
       final firstId = swapArgs?['first_plan_id'] as String?;
       final secondId = swapArgs?['second_plan_id'] as String?;
@@ -330,25 +400,96 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           firstId != secondId &&
           (groundedByPosition || matchedSelection ||
               (titleSpoken(firstId) && titleSpoken(secondId)));
-      final approved = !repairedRepeatedRead &&
-              (isUnambiguousSwap || actions.isSingleReversibleWrite)
-          ? true : await _confirm(actions, preview);
+      final approved = !repairedRepeatedRead && !recoveredProposal &&
+              (isUnambiguousSwap || finalActions.isSingleReversibleWrite)
+          ? true : await _confirm(finalActions, preview);
       if (!mounted) return;
       if (!approved) {
         _push('Изменения отменены.');
         return;
       }
-      final result = await executor.apply(actions, intentDay,
+      writeStarted = true;
+      final result = await executor.apply(finalActions, intentDay,
         approvedPreview: preview);
       if (mounted) _push(result);
     } catch (error) {
       if (mounted) {
-        _push('Не удалось выполнить запрос. ${_friendlyError(error)}');
+        await _offerRecovery(
+          input: input, failure: error, day: intentDay,
+          plans: plansForRecovery, requestId: requestId,
+          conversation: dialogContext, writeStarted: writeStarted,
+        );
       }
     } finally {
       if (mounted) setState(() { _busy = false; _voiceNotice = null; });
     }
   }
+  Future<void> _offerRecovery({
+    required String input,
+    required Object failure,
+    required DateTime day,
+    required List<PlanningTask> plans,
+    required String requestId,
+    required List<Map<String, String>> conversation,
+    bool writeStarted = false,
+  }) async {
+    if (!mounted) return;
+    // After a write starts, its result may be uncertain. Never recommend
+    // replaying a potentially committed command, which could duplicate work.
+    if (writeStarted) {
+      _push('Не удалось подтвердить результат изменения. '
+          'Проверьте текущее расписание перед повторной командой. '
+          'Я не буду повторять запись автоматически.');
+      return;
+    }
+    final reason = _friendlyError(failure);
+    if (failure is FormatException ||
+        failure is! StateError && failure is! ViktorTagDurationOverflow) {
+      _push('Не получилось обработать запрос: $reason '
+          'Изменение не запускалось. Можно уточнить запрос или повторить '
+          'после восстановления соединения.');
+      return;
+    }
+    final groundedContext = failure is ViktorTagDurationOverflow
+        ? 'Расписание ${ViktorDateScope.key(failure.day)}: план '
+          '«${failure.plan.title}» на ${failure.minutes} минут '
+          'не помещается. Закреплённые и повторяющиеся планы нельзя '
+          'сдвигать. Проверяемый частичный вариант доступен по '
+          'запросу «покажи частичный вариант». Перенос на другую дату '
+          'ещё не проверен; ни один вариант не сохранён.'
+        : 'Application validation rejected the requested operation '
+          'before writing: $reason. Any new action must pass a fresh '
+          'Brain preview and user confirmation.';
+    _push('Этот вариант не прошёл проверку. Ищу другие способы '
+        'выполнить задачу без изменения закреплённых событий.');
+    try {
+      final result = await _gateway.propose(
+        input: input, wallDay: day, plans: plans,
+        settings: _settings, selectedPlanIds: widget.selectedPlanIds,
+        requestId: requestId, conversationHistory: conversation,
+        adviceOnly: true, recoveryContext: groundedContext,
+        allowRepair: false,
+      );
+      if (!mounted) return;
+      final explanation = result.message.trim();
+      if (explanation.isNotEmpty) {
+        _push(explanation);
+        return;
+      }
+    } catch (_) {
+      // Advice is optional; never allow a second provider error to overwrite
+      // the grounded original rejection or initiate any mutation.
+    }
+    if (!mounted) return;
+    _push(failure is ViktorTagDurationOverflow
+        ? 'Могу показать частичный пересчёт, сохранив базовую '
+          'длительность у задач, которые не помещаются. '
+          'Или обсудим перенос гибких задач на другой день. '
+          'Какой вариант проверить?'
+        : 'Могу пересчитать гибкие задачи с другими ограничениями '
+          'или проверить другой день. Какие изменения допустимы?');
+  }
+
   Future<bool> _confirm(ViktorActionBatch batch, String preview) =>
       _confirmPreview(preview);
 
