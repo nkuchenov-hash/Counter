@@ -697,6 +697,7 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
       DatabaseService.instance.updatePlanningTask(
         task.planRowIdForBackend,
         planBusinessId: task.planRowId,
+        allowProtectedTimeChange: true,
         startTimeDisplay: newStartWall,
         endDateTimeDisplay: newEndWall,
         clearEnd: newEndWall == null,
