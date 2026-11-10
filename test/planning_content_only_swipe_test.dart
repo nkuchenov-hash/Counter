@@ -524,128 +524,119 @@ void main() {
     expect(pageBody, isNot(contains('TimelineHeaderControls(')));
   });
 
-  testWidgets('fixed desktop date controls work without narrowing day body', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(628, 760));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    var previous = 0;
-    var next = 0;
-    const dayBodyKey = ValueKey('day-content');
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Column(
-            children: [
-              PlanningSortModeBar(
-                sortMode: PlanSortMode.custom,
-                onSortModeChanged: (_) {},
-                onAdjacentDayRequested: (direction) {
-                  if (direction < 0) {
-                    previous++;
-                  } else {
-                    next++;
-                  }
-                },
-              ),
-              const Expanded(
-                child: ColoredBox(
-                  key: dayBodyKey,
-                  color: Colors.white,
-                  child: SizedBox.expand(),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    expect(tester.takeException(), isNull);
-    expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
-    final bodyWidth = tester.getSize(find.byKey(dayBodyKey)).width;
-    expect(bodyWidth, 628);
-
-    await tester.tap(find.byIcon(Icons.chevron_left_rounded));
-    await tester.tap(find.byIcon(Icons.chevron_right_rounded));
-    expect(previous, 1);
-    expect(next, 1);
-    expect(tester.getSize(find.byKey(dayBodyKey)).width, bodyWidth);
-  });
-
-  testWidgets('date navigation keeps its footprint while temporarily locked', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(950, 760));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    var changes = 0;
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: PlanningSortModeBar(
-            sortMode: PlanSortMode.time,
-            onSortModeChanged: (_) {},
-            onAdjacentDayRequested: (_) => changes++,
-            dayNavigationEnabled: false,
-          ),
-        ),
-      ),
-    );
-    expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.chevron_right_rounded));
-    expect(changes, 0);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('phone layout uses day swipe rather than cramped arrow controls', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(520, 760));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: PlanningSortModeBar(
-            sortMode: PlanSortMode.custom,
-            onSortModeChanged: (_) {},
-            onAdjacentDayRequested: (_) {},
-          ),
-        ),
-      ),
-    );
-    expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
-    expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('sidebars and constrained panels never reveal overflow arrows', (
+  testWidgets('desktop day arrows stay outside sort bar with full body width', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1100, 760));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Align(
-            alignment: Alignment.topLeft,
-            child: SizedBox(
-              width: 520,
-              child: PlanningSortModeBar(
-                sortMode: PlanSortMode.custom,
-                onSortModeChanged: (_) {},
-                desktopTitle: 'Planning',
-                onAdjacentDayRequested: (_) {},
-              ),
-            ),
-          ),
+    final changes = <int>[];
+    const dayBodyKey = ValueKey('day-content');
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: Column(children: [
+        PlanningSortModeBar(
+          sortMode: PlanSortMode.custom,
+          onSortModeChanged: (_) {},
         ),
-      ),
-    );
+        Expanded(child: PlanningDaySwipeRegion(
+          dayKey: '2026-11-10',
+          onDayChange: changes.add,
+          adjacentDayBuilder: (context, day) => Center(
+            child: Text('Cached ${day.day}')),
+          child: const SizedBox.expand(key: dayBodyKey),
+        )),
+      ])),
+    ));
+    final left = find.byKey(const ValueKey('planning-side-previous-day'));
+    final right = find.byKey(const ValueKey('planning-side-next-day'));
+    expect(left, findsOneWidget);
+    expect(right, findsOneWidget);
+    expect(tester.getTopLeft(left).dx, lessThan(10));
+    expect(tester.getTopRight(right).dx, greaterThan(1090));
+    expect(tester.getSize(find.byKey(dayBodyKey)).width, 1100);
+    expect(tester.takeException(), isNull);
+    await tester.tap(left);
+    await tester.pumpAndSettle();
+    expect(changes, <int>[-1]);
+    await tester.tap(right);
+    await tester.pumpAndSettle();
+    expect(changes, <int>[-1, 1]);
+  });
+
+  testWidgets('side arrows keep position but disable during date lock', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1100, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var changes = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: PlanningDaySwipeRegion(
+        dayKey: '2026-11-10',
+        enabled: false,
+        onDayChange: (_) => changes++,
+        child: const SizedBox.expand(),
+      )),
+    ));
+    final left = find.byKey(const ValueKey('planning-side-previous-day'));
+    final right = find.byKey(const ValueKey('planning-side-next-day'));
+    expect(left, findsOneWidget);
+    expect(right, findsOneWidget);
+    expect(tester.getTopLeft(left).dx, lessThan(10));
+    expect(tester.getTopRight(right).dx, greaterThan(1090));
+    await tester.tap(right);
+    await tester.pumpAndSettle();
+    expect(changes, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('phone uses body swipe, never arrows in sort bar', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(520, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: Column(children: [
+        PlanningSortModeBar(
+          sortMode: PlanSortMode.custom,
+          onSortModeChanged: (_) {},
+        ),
+        Expanded(child: PlanningDaySwipeRegion(
+          onDayChange: (_) {},
+          child: const SizedBox.expand(),
+        )),
+      ])),
+    ));
+    expect(find.byKey(const ValueKey('planning-side-previous-day')), findsNothing);
+    expect(find.byKey(const ValueKey('planning-side-next-day')), findsNothing);
     expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
     expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('constrained panels show no overflow side arrows', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1100, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(width: 520, height: 650,
+          child: Column(children: [
+            PlanningSortModeBar(
+              sortMode: PlanSortMode.custom,
+              onSortModeChanged: (_) {},
+              desktopTitle: 'Planning',
+            ),
+            Expanded(child: PlanningDaySwipeRegion(
+              onDayChange: (_) {},
+              child: const SizedBox.expand(),
+            )),
+          ]),
+        ),
+      )),
+    ));
+    expect(find.byKey(const ValueKey('planning-side-previous-day')), findsNothing);
+    expect(find.byKey(const ValueKey('planning-side-next-day')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
