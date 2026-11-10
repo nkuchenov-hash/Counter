@@ -25,6 +25,7 @@ class _ContextAwarenessSettingsSectionState
   Map<String, dynamic> _status = const {};
   List<Map<String, dynamic>> _reviews = const [];
   List<Map<String, dynamic>> _transportReviews = const [];
+  List<Map<String, dynamic>> _departureReviews = const [];
   final Map<String, TextEditingController> _controllers = {};
   final Map<String, List<String>> _addresses = {};
   bool _busy = false;
@@ -45,10 +46,12 @@ class _ContextAwarenessSettingsSectionState
       final state = await _engine.status();
       final reviews = await _engine.pendingVisitReviews();
       final transportReviews = await _engine.pendingTransportReviews();
+      final departureReviews = await _engine.pendingDepartureReviews();
       if (mounted) setState(() {
         _status = state;
         _reviews = reviews;
         _transportReviews = transportReviews;
+        _departureReviews = departureReviews;
       });
     } catch (_) {
       if (mounted) setState(() => _error = _t(
@@ -235,6 +238,57 @@ class _ContextAwarenessSettingsSectionState
     );
   }
 
+
+  Future<void> _correctDeparture(String eventId) async {
+    if (!await _engine.correctDeparture(eventId)) {
+      throw StateError(_t(
+        'Не удалось исправить автоматическую запись.',
+        'Could not correct the inferred record.',
+      ));
+    }
+  }
+
+  Widget _buildDepartureReview(Map<String, dynamic> review, ThemeData theme) {
+    final id = review['eventId']?.toString() ?? '';
+    final title = (review['priorTitle'] ?? '').toString().trim();
+    final at = DateTime.tryParse(review['atUtc']?.toString() ?? '');
+    final wall = at == null ? '' : DateFormat('dd.MM HH:mm')
+        .format(DatabaseService.instance.applyUserOffset(at));
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(_t('Выход из дома · $wall', 'Left home · $wall'),
+              style: theme.textTheme.titleSmall),
+          const SizedBox(height: 6),
+          Text(_t('Запись «$title» завершена автоматически. '
+              'Продолжалось ли занятие в дороге?',
+              'The "$title" record ended automatically. '
+              'Did the activity continue while travelling?'),
+              style: theme.textTheme.bodyMedium),
+          const SizedBox(height: 8),
+          AppButton.secondary(
+            label: _t('Завершение верное', 'End time is correct'),
+            icon: Icons.check,
+            onPressed: _busy ? null : () => unawaited(
+              _run(() => _engine.dismissDepartureReview(id)),
+            ),
+          ),
+          const SizedBox(height: 6),
+          AppButton.primary(
+            label: _t('Продолжал это занятие', 'Continued the activity'),
+            icon: Icons.edit_outlined,
+            onPressed: _busy ? null : () => unawaited(
+              _run(() => _correctDeparture(id)),
+            ),
+          ),
+          const Divider(height: 24),
+        ],
+      ),
+    );
+  }
+
   Future<void> _saveHome() async {
     var location = await Permission.locationWhenInUse.request();
     if (!location.isGranted) {
@@ -340,6 +394,14 @@ class _ContextAwarenessSettingsSectionState
             onPressed: () => unawaited(openAppSettings()),
           ),
           const SizedBox(height: 8),
+        ],
+        if (_departureReviews.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Text(_t('Уточнить завершение записей', 'Review ended records'),
+              style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          for (final review in _departureReviews)
+            _buildDepartureReview(review, theme),
         ],
         if (_transportReviews.isNotEmpty) ...[
           const SizedBox(height: 20),

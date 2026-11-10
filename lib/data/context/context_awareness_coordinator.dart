@@ -94,8 +94,15 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
   }
 
   Future<void> stopForSignOut() async {
+    final priorOwner = _profileId;
     try {
       await disable();
+      if (priorOwner != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove(_visitReviewKey(priorOwner));
+        await prefs.remove(_transportReviewKey(priorOwner));
+        await prefs.remove(_departureReviewKey(priorOwner));
+      }
     } catch (_) {
       _timer?.cancel();
       _timer = null;
@@ -112,6 +119,7 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
   static String _activeKey(String owner) => 'context_auto_record_$owner';
   static String _kindKey(String owner) => 'context_auto_kind_$owner';
   static String _visitReviewKey(String owner) => 'context_visit_reviews_$owner';
+  static String _departureReviewKey(String owner) => 'context_departure_reviews_$owner';
   static String _transportReviewKey(String owner) => 'context_transport_reviews_$owner';
 
   String? get _ownerForReview =>
@@ -170,6 +178,74 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
     );
     if (updated == null) return false;
     await dismissTransportReview(eventId);
+    return true;
+  }
+
+
+  Future<List<Map<String, dynamic>>> pendingDepartureReviews() async {
+    final owner = _ownerForReview;
+    if (owner == null || owner.isEmpty) return const [];
+    final prefs = await SharedPreferences.getInstance();
+    try {
+      final data = jsonDecode(prefs.getString(_departureReviewKey(owner)) ?? '[]');
+      if (data is! List) return const [];
+      return [
+        for (final row in data)
+          if (row is Map<String, dynamic>) Map<String, dynamic>.from(row),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> _queueDepartureReview(String owner,
+      ContextAwarenessEvent event, String priorTitle, String tripId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final reviews = await pendingDepartureReviews();
+    if (reviews.any((row) => row['eventId'] == event.id)) return;
+    reviews.add({
+      'eventId': event.id,
+      'priorTitle': priorTitle,
+      'tripId': tripId,
+      'atUtc': event.atUtc.toIso8601String(),
+    });
+    if (reviews.length > 40) reviews.removeRange(0, reviews.length - 40);
+    await prefs.setString(_departureReviewKey(owner), jsonEncode(reviews));
+  }
+
+  Future<void> dismissDepartureReview(String eventId) async {
+    final owner = _ownerForReview;
+    if (owner == null || owner.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    final reviews = await pendingDepartureReviews();
+    reviews.removeWhere((row) => row['eventId'] == eventId);
+    await prefs.setString(_departureReviewKey(owner), jsonEncode(reviews));
+  }
+
+  /// Correct a proposed travel interval into continuation of the manual
+  /// activity, without silently changing the original manual record.
+  Future<bool> correctDeparture(String eventId) async {
+    final owner = _ownerForReview;
+    if (owner == null || owner != DatabaseService.instance.currentProfileId) {
+      return false;
+    }
+    final reviews = await pendingDepartureReviews();
+    final match = reviews.where((row) => row['eventId'] == eventId);
+    if (match.isEmpty) return false;
+    final title = (match.first['priorTitle'] ?? '').toString().trim();
+    final tripId = (match.first['tripId'] ?? '').toString().trim();
+    if (title.isEmpty || tripId.isEmpty) return false;
+    final updated = await DatabaseService.instance.updateRecord(
+      recordId: tripId, title: title,
+    );
+    if (updated == null) return false;
+    // Once corrected, this is no longer an engine-owned travel segment.
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getString(_activeKey(owner)) == tripId) {
+      await prefs.remove(_activeKey(owner));
+      await prefs.remove(_kindKey(owner));
+    }
+    await dismissDepartureReview(eventId);
     return true;
   }
 
@@ -379,6 +455,8 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
       case 'left_home':
         // Signals can be delivered late: never rewrite newer manual facts.
         if (_laterManualFactsExist(rows, event.atUtc, activeAutoId: autoId)) return true;
+        final priorManualTitle = active != null && !ourActive
+            ? (active['title'] ?? '').toString().trim() : '';
         // The same native event can replay after a crash before acknowledgement.
         // Never terminate and recreate its already-running inferred trip.
         if (ourActive && autoKind == 'travel') return true;
@@ -393,8 +471,17 @@ class ContextAwarenessCoordinator with WidgetsBindingObserver {
         } else if (ourActive && !await endAuto()) {
           return false;
         }
-        return startAuto(
+        final created = await startAuto(
           'travel', ContextTimelinePolicy.titleForTravel('', russian: russian));
+        if (!created) return false;
+        if (priorManualTitle.isNotEmpty &&
+            !ContextTimelinePolicy.isHomeBoundTitle(priorManualTitle)) {
+          final tripId = prefs.getString(_activeKey(owner));
+          if (tripId != null) {
+            await _queueDepartureReview(owner, event, priorManualTitle, tripId);
+          }
+        }
+        return true;
       case 'moving':
         final title = ContextTimelinePolicy.titleForTravel(
           event.mode, russian: russian,
