@@ -9,6 +9,20 @@ int _plansLastAppliedFetchSequence = 0;
 // Distinguish an authoritative full-user list from partial local/SSE upserts.
 DateTime? _plansLastCompleteCatalogFetchAt;
 String? _plansLastCompleteCatalogOwnerId;
+
+bool hasFreshCompletePlanningCatalog({
+  required String? currentUser,
+  required String? fetchedOwner,
+  required DateTime? completedAt,
+  required DateTime now,
+  required Duration ttl,
+}) =>
+    currentUser != null &&
+    currentUser.isNotEmpty &&
+    currentUser == fetchedOwner &&
+    completedAt != null &&
+    !now.isBefore(completedAt) &&
+    now.difference(completedAt) < ttl;
 final Map<String, PlanningTask?> _plansRealtimeDuringFullFetch = {};
 // Local confirmed creates must survive a REST list started before their POST.
 final Map<String, PlanningTask> _plansLocalCommitsDuringFullFetch = {};
