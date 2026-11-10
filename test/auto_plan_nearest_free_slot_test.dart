@@ -433,12 +433,15 @@ void main() {
     final swipe = File(
       'lib/features/planning/widgets/planning_day_swipe_region.dart',
     ).readAsStringSync();
-    expect(swipe, contains('onHorizontalDragUpdate:'));
-    // Regressions must not restore the old 60px rubber-band GPU repaint.
-    expect(swipe, isNot(contains('ValueListenableBuilder<double>')));
-    expect(swipe, isNot(contains('Transform.translate(')));
-    expect(swipe, isNot(contains('_visualOffset')));
-    expect(swipe, contains('onDayChange(direction < 0 ? 1 : -1)'));
+    expect(swipe, contains('onNotification: _onPagerNotification'));
+    // Finger-following native pager, with only one live day canvas.
+    expect(swipe, contains('PageView.builder('));
+    expect(swipe, contains('FeatherDateSwipePhysics('));
+    expect(swipe, contains('adjacentDayBuilder'));
+    expect(swipe, contains('ScrollEndNotification'));
+    expect(swipe, isNot(contains('AnimatedBuilder(')));
+    expect(swipe, isNot(contains('FractionalTranslation(')));
+    expect(swipe, isNot(contains('keepOutgoingContent')));
   });
 
   group('workday rollover', () {

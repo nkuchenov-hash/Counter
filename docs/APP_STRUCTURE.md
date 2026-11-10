@@ -707,12 +707,12 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `planning/planning_bulk_edit_actions.dart` | Bulk multi-select calendar+time placement, source order, duration preservation and destination-day collision cascade |
 | `planning/planning_quick_add_schedule.dart` | Quick-add and Smart Plan placement logic (private PlanningPageState part; bounded workday rollover) |
 | `planning/planning_quick_add_tags_controller.dart` | Quick-add tag strip state: catalog merge, “No Tags” prefs, creation selection, reorder persistence |
-| `planning/planning_page_shell.dart` | Persistent single-day `PlanningSwipeWrapper`, fixed chrome and previous/next date buttons (no full-page PageView) |
+| `planning/planning_page_shell.dart` | Persistent single-day `PlanningSwipeWrapper`, full-width Planning page without side-arrow rails (no full-page PageView) |
 | `planning/planning_sort_mode.dart` | `PlanSortMode` + persist index helpers |
 | `planning/widgets/planning_bulk_bar.dart` | Bulk selection bottom bar |
 | `planning/widgets/planning_filter_controls.dart` | Sort-mode segmented control |
 | `planning/widgets/planning_empty_states.dart` | Planning empty-state widgets |
-| `planning/widgets/planning_day_swipe_region.dart` | Gesture arena for horizontal date swipes scoped to the day body; vertical scroll stays native |
+| `planning/widgets/planning_day_swipe_region.dart` | Native finger-following horizontal PageView of Planning day body, cache-only neighbor previews and settle-only date commits; fixed controls remain outside the pager |
 | `planning/widgets/planning_quick_add_strip.dart` | Quick-add tag strip above inline task field |
 | `planning/widgets/planning_list_helpers.dart` | Reorder list proxy decorator |
 | `planning/widgets/planning_list_grouping.dart` | Category/tag sort grouping helpers |

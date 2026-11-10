@@ -2,11 +2,9 @@
 // Date swipes belong to the day content inside PlanningPage, not its chrome.
 import 'dart:async';
 
-import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/planning_page.dart';
-import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -108,42 +106,8 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
     _pickDate(DateTime(
       _visibleDate.year,
       _visibleDate.month,
-      _visibleDate.day + (delta < 0 ? -1 : 1),
+      _visibleDate.day + delta,
     ));
-  }
-
-  Widget _sideArrow(BuildContext context, {required bool previous}) {
-    final scheme = Theme.of(context).colorScheme;
-    return Center(
-      // Keep a full 40px clear gutter between the 48px arrow and day body.
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: previous ? 8 : 40,
-          right: previous ? 40 : 8,
-        ),
-        child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: scheme.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: scheme.outlineVariant),
-        ),
-        child: AppIconButton(
-          icon: previous
-              ? Icons.chevron_left_rounded
-              : Icons.chevron_right_rounded,
-          tooltip: t(
-            currentLocale.value,
-            previous ? 'date_previous_day' : 'date_next_day',
-          ),
-          size: AppIconButtonSize.l,
-          variant: AppIconButtonVariant.standard,
-          onPressed: widget.shellTabActive && !_datePagerLocked
-              ? () => _stepDay(previous ? -1 : 1)
-              : null,
-        ),
-      ),
-      ),
-    );
   }
 
   @override
@@ -163,25 +127,11 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
       onDatePicked: _pickDate,
       onDateChanged: _pickDate,
       onAdjacentDayRequested: _stepDay,
+      datePagerLocked: _datePagerLocked,
       onDatePagerLockChanged: _onDatePagerLockChanged,
     );
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 800) return planningPage;
-        return Row(
-          children: [
-            SizedBox(
-              width: 96,
-              child: _sideArrow(context, previous: true),
-            ),
-            Expanded(child: planningPage),
-            SizedBox(
-              width: 96,
-              child: _sideArrow(context, previous: false),
-            ),
-          ],
-        );
-      },
-    );
+    // The Planning page owns the whole width, identical to Timeline/Records.
+    // Date arrows belong to the fixed top control row, not side rails.
+    return planningPage;
   }
 }

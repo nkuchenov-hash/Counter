@@ -4,6 +4,44 @@
 - Calendar day taps route to the selected date in the existing Plans tab; implicit new-plan editor was removed from day clicks. Explicit Add actions and existing task edit interactions remain available.
 - Added visible month-cell borders/weekend tint, larger readable event pills with full-title tooltips, and overflow-aware task-count sizing. Added DST/date/navigation regression tests. No PocketBase or plan/record data changes. Flutter/CI and production screenshot verification pending.
 
+## 2026-11-10 — Planning day visibility and canonical Time View swipe previews [CI pending]
+
+- Fixed a potential data-visibility regression after the native pager redesign: while the complete PocketBase catalog is unverified or unavailable, the Planning stream preserves previously restored populated day snapshots instead of overwriting them with an unsuccessful empty refresh. A successfully fetched empty catalog remains authoritative.
+- Removed the visually inconsistent 152px/hour grey placeholder Time View. Adjacent-day Time previews now render cached plans through the same timezone projections, piecewise hour scale, collision lanes and `PlanTimeTaskCard` components as the live Time View, without mounting an extra active plan stream or sharing its ScrollController.
+- Added regression tests that traverse November 9, 10 and 11 while verifying that the newly selected day's live body replaces its inert preview, and enforce canonical Time View neighbor geometry.
+- Live account-side PocketBase plan counts and browser frame-time measurements are not verified by these automated tests.
+
+## 2026-11-10 — Planning real finger-following date pager [CI and browser profiling pending]
+
+- Replaced the previous post-release fake day slide with a real `PageView.builder` using Timeline's `FeatherDateSwipePhysics`: the selected Planning day follows horizontal mouse/touch motion continuously, with native page spring/settle.
+- Kept Planning sort selector, tags and quick-add **outside** the pager; the full-width body alone moves. Date selection commits only when the scroll settles. Stationary date arrows animate the same PageController.
+- Pager neighbors use read-only local cache snapshots, without extra active Planning pages, Planning stream subscriptions or network requests; Time View neighbors show a lightweight static proportional rail rather than mounting multiple heavy interactive hour grids/ScrollControllers.
+- Updated regression coverage for finger-position tracking, stable top controls and live canvas, vertical scrolling, page-settle callbacks, arrow motion and a single Time View scroll attachment. Real-browser frame-time verification is still required.
+
+## 2026-11-10 — Fixed Timeline controls and full-width Planning swipe [CI and browser profiling pending]
+
+- Timeline now retains its existing native horizontal `PageView.builder` and `FeatherDateSwipePhysics`, but mounts `TimelineHeaderControls` once above the pager. The list/stats switch and record quick-entry no longer slide with days.
+- Planning replaces the virtually invisible 18px arrival with one 200ms, full-viewport two-surface directional slide of the expanded day body only; quick-entry, tags, sort controls and shell remain fixed. Existing 12px drag threshold, vertical scrolling and card edit locks are unchanged.
+- To avoid a new Time View performance failure, Time mode does **not** mount an outgoing grid with the same shared ScrollController. List modes retain the previous view only during the 200ms settle. No additional Planning streams or adjacent network fetches are introduced.
+- Added widget regression checks for full-width forward/backward motion, stationary chrome, no per-animation card rebuilds, single Time View scroll-controller attachment, and Timeline header ownership. Target-browser profiling and release verification are still required.
+
+## 2026-11-10 — Planning single-pass directional arrival motion [PR verification]
+
+- Reintroduced a 170ms directional arrival animation for the **day content only**, keyed on real date changes. Uses an 18px GPU-composited translation outside the day RepaintBoundary, rather than the original 60px drag-time rubber band or 150ms follow-up slide.
+- Horizontal drags still update only a numeric accumulator and commit a single date; fixed tags, quick-entry and sort controls never move. Date pager gestures are disabled during deliberate Time View drag/resize.
+- Added widget regression for forward/backward arrival, stationary fixed controls and no day-card rebuilds during the animation; corrected arrow breakpoints to use constrained panel width (including sidebar and narrow layouts) after CI caught a 32px overflow. The source guard allows only bounded post-commit motion.
+- Removed redundant day-stream REST fetches and duplicate renders while a fully fetched plans catalog remains fresh for the same user (30s TTL). Coalesced concurrent stale-catalog GETs across rapid swipes; skipped unnecessary day-scoped fallback GETs during ordinary swipe streams while retaining them for explicit reads. Account changes and partial caches still force refresh, and explicit refresh/realtime remain intact. Added TTL, parallel-request and owner-isolation tests.
+- No preloaded adjacent day pages, animations during drag, opacity saveLayers, backend schema or optimistic/offline mutation changes. Actual browser/device smoothness remains subject to profile validation.
+
+## 2026-11-09 — Planning full-width date controls [CI and device performance unverified]
+
+- Removed 96px date-navigation side rails on both sides of the persistent Planning page, restoring the full day viewport.
+- Matched desktop Planning list-card max width to the responsive Timeline record-card width, and mobile Planning list/card gutters to Timeline's 12px gutters across Custom, Category and Tags modes.
+- Moved previous/next day actions into the stationary Planning sort/control row (40px away from the segmented selector); compact phones keep content-only date swipe. Date buttons remain mounted but disabled during Time View drag/resize.
+- Avoided synchronous per-day record-duration aggregation when navigating into an empty Planning day.
+- Extended the existing Planning content-only swipe regression suite with fixed-navigation, lock-state, breakpoint and card-width checks; retained the current PR CI step. No new full-page animation or per-pointer day repaint was introduced: smoothness and CPU usage still require Chrome/Android profiling before introducing real two-day sliding.
+
+
 ## 2026-11-09 — Viktor explains schedule overflow and offers feasible alternatives [verification pending]
 
 - Replaced blind failure when the two-day tag-duration repair exceeds available space with a user choice dialog identifying the conflicting plan/date/duration and explaining possible resolutions.

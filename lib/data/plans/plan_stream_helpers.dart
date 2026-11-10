@@ -62,9 +62,17 @@ final class _PlanningDayStreamHub {
   }
 
   void _bind(DatabaseService db) {
-    // _pump emits the cache synchronously before its first await. Do not emit
-    // twice and rebuild the whole Time graph twice on stream subscription.
-    unawaited(_pump(db, network: true));
+    // A day change reads the shared authoritative cache; it must not
+    // unconditionally start another fetch and emit the same day twice.
+    // Stale/missing cache still triggers the network pump as before.
+    final cacheFresh = hasFreshCompletePlanningCatalog(
+      currentUser: db.currentProfileId,
+      fetchedOwner: _plansLastCompleteCatalogOwnerId,
+      completedAt: _plansLastCompleteCatalogFetchAt,
+      now: DateTime.now(),
+      ttl: _allPlansUserCacheFreshTtl,
+    );
+    unawaited(_pump(db, network: !cacheFresh));
     if (!listenGlobal) return;
     _pokeSub = _planningRefreshController.stream.listen((_) {
       final wantsNetwork = _planningRefreshWantsNetworkPump;
@@ -87,6 +95,20 @@ final class _PlanningDayStreamHub {
     if (_allPlansUserCache.isNotEmpty) {
       base = db._filterPlansForWallDay(_allPlansUserCache, wallDay);
     }
+    // Restored day bodies must not disappear while the complete catalog is
+    // still loading / offline. They belong to the currently scoped user.
+    if (base.isEmpty && !hasFreshCompletePlanningCatalog(
+      currentUser: db.currentProfileId,
+      fetchedOwner: _plansLastCompleteCatalogOwnerId,
+      completedAt: _plansLastCompleteCatalogFetchAt,
+      now: DateTime.now(),
+      ttl: _allPlansUserCacheFreshTtl,
+    )) {
+      final restored = db.plansDayBodyCache.peek(dayKey);
+      if (restored?.bodyReady == true && restored!.tasks.isNotEmpty) {
+        base = restored.tasks;
+      }
+    }
     final merged = db._mergePlanningOptimistic(dayKey, base);
     db._logPlanDupTraceLayer(source: 'stream', tasks: merged, dayKey: dayKey);
     _logPlanningStreamEmit(merged);
@@ -100,11 +122,37 @@ final class _PlanningDayStreamHub {
     try {
       List<PlanningTask> tasks;
       try {
-        tasks = await db._fetchPlanningTasksForDate(wallDay);
+        // A day swipe uses the complete cached catalog; do not issue an
+        // extra per-empty-day fallback GET. Explicit reads keep that fallback.
+        tasks = await db._fetchPlanningTasksForDate(
+          wallDay, allowDayScopedFallback: false);
       } catch (_) {
         tasks = <PlanningTask>[];
       }
       if (!_disposed && !controller.isClosed) {
+        // An unsuccessful refresh can return an empty list without proving
+        // the owner has zero plans. Do not overwrite a populated cached day
+        // with that synthetic empty response. A *successful* complete fetch,
+        // including a legitimately empty day, remains authoritative.
+        final verified = hasFreshCompletePlanningCatalog(
+          currentUser: db.currentProfileId,
+          fetchedOwner: _plansLastCompleteCatalogOwnerId,
+          completedAt: _plansLastCompleteCatalogFetchAt,
+          now: DateTime.now(),
+          ttl: _allPlansUserCacheFreshTtl,
+        );
+        if (tasks.isEmpty && !verified) {
+          final cacheDay = db.planningDayTasksSnapshot(wallDay);
+          if (cacheDay.isNotEmpty) {
+            tasks = cacheDay;
+          } else {
+            final restored = db.plansDayBodyCache.peek(dayKey);
+            if (restored?.bodyReady == true &&
+                restored!.tasks.isNotEmpty) {
+              tasks = restored.tasks;
+            }
+          }
+        }
         final merged = db._mergePlanningOptimistic(dayKey, tasks);
         db._logPlanDupTraceLayer(
           source: 'stream',

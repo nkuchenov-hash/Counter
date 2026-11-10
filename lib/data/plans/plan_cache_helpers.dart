@@ -6,6 +6,50 @@ int _plansFullFetchesInFlight = 0;
 // A slower earlier GET must never roll back a later successful list read.
 int _plansNetworkFetchSequence = 0;
 int _plansLastAppliedFetchSequence = 0;
+// Distinguish an authoritative full-user list from partial local/SSE upserts.
+DateTime? _plansLastCompleteCatalogFetchAt;
+String? _plansLastCompleteCatalogOwnerId;
+
+// One full-list REST request shared by all day streams during rapid swipes.
+// Do not share a pending request across different signed-in profiles.
+Future<List<PlanningTask>>? _plansCatalogFetchInFlight;
+String? _plansCatalogFetchOwner;
+Future<List<PlanningTask>> singleFlightPlanningCatalogFetch(
+  String? owner,
+  Future<List<PlanningTask>> Function() request,
+) {
+  final pending = _plansCatalogFetchInFlight;
+  if (pending != null && _plansCatalogFetchOwner == owner) return pending;
+  final next = request();
+  _plansCatalogFetchInFlight = next;
+  _plansCatalogFetchOwner = owner;
+  void clearIfCurrent() {
+    if (identical(_plansCatalogFetchInFlight, next)) {
+      _plansCatalogFetchInFlight = null;
+      _plansCatalogFetchOwner = null;
+    }
+  }
+  // Handle error completion here too; do not create an unobserved error Future.
+  unawaited(next.then<void>(
+    (_) => clearIfCurrent(),
+    onError: (Object _, StackTrace __) => clearIfCurrent(),
+  ));
+  return next;
+}
+
+bool hasFreshCompletePlanningCatalog({
+  required String? currentUser,
+  required String? fetchedOwner,
+  required DateTime? completedAt,
+  required DateTime now,
+  required Duration ttl,
+}) =>
+    currentUser != null &&
+    currentUser.isNotEmpty &&
+    currentUser == fetchedOwner &&
+    completedAt != null &&
+    !now.isBefore(completedAt) &&
+    now.difference(completedAt) < ttl;
 final Map<String, PlanningTask?> _plansRealtimeDuringFullFetch = {};
 // Local confirmed creates must survive a REST list started before their POST.
 final Map<String, PlanningTask> _plansLocalCommitsDuringFullFetch = {};
@@ -208,6 +252,8 @@ extension PlanCacheProjectionExtension on DatabaseService {
         }
       }
       _allPlansUserCacheFetchedAt = DateTime.now();
+      _plansLastCompleteCatalogFetchAt = _allPlansUserCacheFetchedAt;
+      _plansLastCompleteCatalogOwnerId = fetchProfileId;
       return _allPlansUserCache;
     } catch (e) {
       DatabaseService._log('PLANS_FULL_LIST_FETCH: $e');
