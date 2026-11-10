@@ -69,7 +69,7 @@ internal object ContextAwarenessBridge {
         val store = prefs(context)
         return mapOf(
             "enabled" to store.getBoolean("enabled", false),
-            "homeSet" to store.contains("homeLat") && store.contains("homeLng"),
+            "homeSet" to (store.contains("homeLat") && store.contains("homeLng")),
             "hasFineLocation" to has(context, Manifest.permission.ACCESS_FINE_LOCATION),
             "hasBackgroundLocation" to (Build.VERSION.SDK_INT < 29 ||
                 has(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION)),
