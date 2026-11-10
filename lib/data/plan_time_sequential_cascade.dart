@@ -75,15 +75,11 @@ List<PlanningTask> cascadeScheduledPlansForTimeViewDay(
   required int Function(List<Tag> tags) resolveDurationMinutes,
 }) {
   if (tasks.isEmpty) return const [];
-
   final scheduled = tasks.where((t) => t.startTime != null).toList()
     ..sort(_planCascadeSortCompare);
-
   if (scheduled.isEmpty) return List<PlanningTask>.from(tasks);
-
   final cascadedById = <String, PlanningTask>{};
   DateTime? prevEnd;
-
   for (final task in scheduled) {
     final origStart = task.startTime!;
     final durMin = planWallDurationMinutesForCascade(
@@ -112,7 +108,6 @@ List<PlanningTask> cascadeScheduledPlansForTimeViewDay(
     cascadedById[task.planRowIdForBackend] = updated;
     prevEnd = newEnd;
   }
-
   final result = tasks
       .map((t) => cascadedById[t.planRowIdForBackend] ?? t)
       .toList(growable: false);
@@ -125,7 +120,6 @@ List<PlanningTask> cascadeScheduledPlansForTimeViewDay(
   }
   return result;
 }
-
 /// Applies one manual resize, then pushes only the following overlap chain.
 ///
 /// Cards before [resizedTask] never move. Every pushed card keeps its original
@@ -138,7 +132,6 @@ List<PlanningTask> cascadeScheduledPlansAfterManualResize({
 }) {
   final resizedStart = resizedTask.startTime;
   if (resizedStart == null) return List<PlanningTask>.from(scheduledTasks);
-
   final resizedId = resizedTask.planRowIdForBackend;
   final scheduled =
       scheduledTasks
@@ -153,7 +146,6 @@ List<PlanningTask> cascadeScheduledPlansAfterManualResize({
     (task) => task.planRowIdForBackend == resizedId,
   );
   if (resizedIndex < 0) return List<PlanningTask>.from(scheduledTasks);
-
   final changedById = <String, PlanningTask>{resizedId: resizedTask};
   final resizedDuration = planWallDurationMinutesForCascade(
     resizedTask,
@@ -162,7 +154,6 @@ List<PlanningTask> cascadeScheduledPlansAfterManualResize({
   var cursorEnd =
       resizedTask.endDateTime ??
       resizedStart.add(Duration(minutes: resizedDuration));
-
   for (var index = resizedIndex + 1; index < scheduled.length; index += 1) {
     final task = scheduled[index];
     final originalStart = task.startTime!;
@@ -186,12 +177,10 @@ List<PlanningTask> cascadeScheduledPlansAfterManualResize({
     );
     cursorEnd = effectiveEnd;
   }
-
   return scheduledTasks
       .map((task) => changedById[task.planRowIdForBackend] ?? task)
       .toList(growable: false);
 }
-
 /// Patches where cascade changed wall start/end.
 List<PlanTimeSequentialCascadePatch> diffSequentialCascadePatches(
   List<PlanningTask> before,
@@ -218,7 +207,6 @@ List<PlanTimeSequentialCascadePatch> diffSequentialCascadePatches(
   }
   return patches;
 }
-
 /// Target-card insertion schedule for Time View drag/drop (zero scheduled-time gap).
 class TimeViewTargetDropSchedule {
   const TimeViewTargetDropSchedule({
@@ -226,12 +214,10 @@ class TimeViewTargetDropSchedule {
     this.endWall,
     required this.insertBefore,
   });
-
   final DateTime startWall;
   final DateTime? endWall;
   final bool insertBefore;
 }
-
 /// Exact adjacent insertion when dropping onto another scheduled card.
 ///
 /// After target: `start = targetEnd`, `end = start + duration`.
@@ -260,13 +246,10 @@ TimeViewTargetDropSchedule computeTimeViewTargetDropSchedule({
     insertBefore: false,
   );
 }
-
 /// Stable target insertion captured during drag-over (not at pointer-up).
 enum TimeViewInsertPosition { before, after }
-
 /// How the insertion intent was produced (target card vs empty canvas).
 enum TimeViewInsertionSource { targetCard, emptyCanvas }
-
 class TimeViewInsertionIntent {
   const TimeViewInsertionIntent({
     required this.draggedPlanId,
@@ -279,7 +262,6 @@ class TimeViewInsertionIntent {
     this.source = TimeViewInsertionSource.targetCard,
     this.dragSequenceId,
   });
-
   final String draggedPlanId;
   final String targetPlanId;
   final TimeViewInsertPosition insertPosition;
@@ -289,12 +271,9 @@ class TimeViewInsertionIntent {
   final bool draggedHadEnd;
   final TimeViewInsertionSource source;
   final int? dragSequenceId;
-
   bool get insertBefore => insertPosition == TimeViewInsertPosition.before;
-
   bool get isTargetCardMode => source == TimeViewInsertionSource.targetCard;
 }
-
 /// Whether a plan may be vertically dragged on the Time View canvas.
 bool isPlanTimelineVerticallyDraggable(PlanningTask task) {
   if (task.startTime == null) return false;
@@ -305,7 +284,6 @@ bool isPlanTimelineVerticallyDraggable(PlanningTask task) {
   if (inst.isNotEmpty) return false;
   return true;
 }
-
 /// Refresh target wall times from the live scheduled list before commit.
 TimeViewInsertionIntent? refreshTimeViewInsertionIntentFromScheduled({
   required TimeViewInsertionIntent intent,
@@ -313,7 +291,6 @@ TimeViewInsertionIntent? refreshTimeViewInsertionIntentFromScheduled({
   required int Function(List<Tag> tags) resolveDurationMinutes,
 }) {
   if (!intent.isTargetCardMode) return intent;
-
   PlanningTask? target;
   for (final t in scheduled) {
     if (t.planRowIdForBackend == intent.targetPlanId) {
@@ -323,14 +300,12 @@ TimeViewInsertionIntent? refreshTimeViewInsertionIntentFromScheduled({
   }
   final targetStart = target?.startTime;
   if (target == null || targetStart == null) return null;
-
   final targetDurMin = planWallDurationMinutesForCascade(
     target,
     resolveDurationMinutes: resolveDurationMinutes,
   );
   final targetEnd =
       target.endDateTime ?? targetStart.add(Duration(minutes: targetDurMin));
-
   return TimeViewInsertionIntent(
     draggedPlanId: intent.draggedPlanId,
     targetPlanId: intent.targetPlanId,
