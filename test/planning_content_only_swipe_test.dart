@@ -191,6 +191,46 @@ void main() {
     expect(tester.getTopLeft(find.byKey(chromeKey)), headerPos);
   });
 
+  testWidgets('day navigation arrows stay at both body edges, not the header', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1100, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final changes = <int>[];
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: Column(children: [
+        const SizedBox(
+          height: 120,
+          child: Center(child: Text('Fixed sort selector and tags')),
+        ),
+        Expanded(child: PlanningDaySwipeRegion(
+          dayKey: '2026-11-10',
+          onDayChange: changes.add,
+          adjacentDayBuilder: (context, day) => Center(
+            child: Text('Preview day ${day.day}'),
+          ),
+          child: const SizedBox.expand(
+            child: Center(child: Text('Full width plans')),
+          ),
+        )),
+      ])),
+    ));
+    final left = find.byKey(const ValueKey('planning-side-previous-day'));
+    final right = find.byKey(const ValueKey('planning-side-next-day'));
+    final page = find.byType(PageView);
+    expect(left, findsOneWidget);
+    expect(right, findsOneWidget);
+    expect(tester.getTopLeft(left).dx, lessThan(10));
+    expect(tester.getTopRight(right).dx, greaterThan(1090));
+    expect(tester.getTopLeft(left).dy, greaterThan(120));
+    expect(tester.getTopLeft(right).dy, greaterThan(120));
+    expect(tester.getSize(page).width, 1100);
+    expect(find.text('Fixed sort selector and tags'), findsOneWidget);
+    await tester.tap(right);
+    await tester.pumpAndSettle();
+    expect(changes, <int>[1]);
+  });
+
   testWidgets('native arrow step promotes the new day during motion', (
     tester,
   ) async {
