@@ -212,13 +212,23 @@ extension PlanningTimeViewTimeViewResizeController
     final resolved = cascadeScheduledPlansAfterManualResize(
       scheduledTasks: scheduledInRange,
       resizedTask: resizedTask,
+      fixedPlanIds: timeViewFixedPlanIdsForTasks(scheduledInRange),
       resolveDurationMinutes:
           DatabaseService.instance.resolvePlanDurationMinutesFromTags,
     );
     host.notifySetState(clearTimelineInteractionState);
+    // A fixed meeting is a hard stop: reject the entire resize, rather
+    // than leaving the adjacent work and meeting in an inconsistent state.
+    if (!resolved.any((row) =>
+        row.planRowIdForBackend == resizedTask.planRowIdForBackend &&
+        (row.startTime != task.startTime ||
+            row.endDateTime != task.endDateTime))) {
+      return;
+    }
     persistTimeViewCascadePatches(
       resolved: resolved,
       scheduledBefore: scheduledInRange,
+      explicitlyEditedPlanIds: {task.planRowIdForBackend},
       commitSource: 'resizeCascade',
     );
   }
