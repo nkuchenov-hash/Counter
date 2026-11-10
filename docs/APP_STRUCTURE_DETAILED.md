@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `514cd9ff` on 2026-11-10.**
+**Generated from input HEAD `f97cdc11` on 2026-11-10.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -27225,7 +27225,7 @@ EN:
 - **Why needed:** UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
 - **Contents:** Time helper or injectable clock hook (logic in `plan_time_labels`).
 - **Repository role:** shared time
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_card.dart`, `lib/data/database_service.dart`, `lib/features/planning/widgets/planning_frozen_day_list.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/plan_card.dart`, `lib/data/database_service.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -27242,7 +27242,7 @@ RU:
 - **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
 - **Содержимое:** Time helper или injectable clock hook (logic in `plan_time_labels`).
 - **Роль в репозитории:** shared time
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_card.dart`, `lib/data/database_service.dart`, `lib/features/planning/widgets/planning_frozen_day_list.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/plan_card.dart`, `lib/data/database_service.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
