@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/context/context_awareness_coordinator.dart';
+import 'package:counter/data/context/context_awareness_policy.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +24,7 @@ class _ContextAwarenessSettingsSectionState
     extends State<ContextAwarenessSettingsSection> {
   Map<String, dynamic> _status = const {};
   List<Map<String, dynamic>> _reviews = const [];
+  List<Map<String, dynamic>> _transportReviews = const [];
   final Map<String, TextEditingController> _controllers = {};
   final Map<String, List<String>> _addresses = {};
   bool _busy = false;
@@ -42,9 +44,11 @@ class _ContextAwarenessSettingsSectionState
     try {
       final state = await _engine.status();
       final reviews = await _engine.pendingVisitReviews();
+      final transportReviews = await _engine.pendingTransportReviews();
       if (mounted) setState(() {
         _status = state;
         _reviews = reviews;
+        _transportReviews = transportReviews;
       });
     } catch (_) {
       if (mounted) setState(() => _error = _t(
@@ -175,6 +179,62 @@ class _ContextAwarenessSettingsSectionState
     );
   }
 
+  Future<void> _chooseTransport(String eventId, String title) async {
+    if (!await _engine.labelTransport(eventId, title)) {
+      throw StateError(_t(
+        'Не удалось уточнить транспорт. Повторите попытку.',
+        'Could not update the transport mode. Retry.',
+      ));
+    }
+  }
+
+  Widget _buildTransportReview(Map<String, dynamic> review, ThemeData theme) {
+    final id = review['eventId']?.toString() ?? '';
+    final at = DateTime.tryParse(review['atUtc']?.toString() ?? '');
+    final wall = at == null ? '' : DateFormat('dd.MM HH:mm')
+        .format(DatabaseService.instance.applyUserOffset(at));
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(_t('Поездка · $wall', 'Trip · $wall'),
+              style: theme.textTheme.titleSmall),
+          const SizedBox(height: 8),
+          Text(_t(
+            'Какой транспорт вы использовали?',
+            'Which type of transport did you use?',
+          ), style: theme.textTheme.bodyMedium),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              for (final mode in ContextTimelinePolicy.transportTitles(
+                  russian: _ru))
+                ChoiceChip(
+                  label: Text(mode),
+                  selected: false,
+                  onSelected: _busy ? null : (_) => unawaited(
+                    _run(() => _chooseTransport(id, mode)),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          AppButton.secondary(
+            label: _t('Не уточнять', 'Leave as generic transport'),
+            icon: Icons.close,
+            onPressed: _busy ? null : () => unawaited(
+              _run(() => _engine.dismissTransportReview(id)),
+            ),
+          ),
+          const Divider(height: 24),
+        ],
+      ),
+    );
+  }
+
   Future<void> _saveHome() async {
     var location = await Permission.locationWhenInUse.request();
     if (!location.isGranted) {
@@ -280,6 +340,14 @@ class _ContextAwarenessSettingsSectionState
             onPressed: () => unawaited(openAppSettings()),
           ),
           const SizedBox(height: 8),
+        ],
+        if (_transportReviews.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Text(_t('Уточнить транспорт', 'Review transport trips'),
+              style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          for (final review in _transportReviews)
+            _buildTransportReview(review, theme),
         ],
         if (_reviews.isNotEmpty) ...[
           const SizedBox(height: 20),
