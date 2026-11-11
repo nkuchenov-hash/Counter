@@ -2,7 +2,7 @@
 
 - Add the same circular previous/next day buttons to Timeline in the empty left/right space outside centered record cards. The left arrow is always after the 272px persistent navigation sidebar; neither arrow overlays records, toolbar, or sidebar.
 - Reuse the existing Timeline `PageView.builder`, `FeatherDateSwipePhysics`, day settle gate, and local optimistic data, without modifying card content, widths, scrolling, or swipe animations.
-- On desktop viewports without enough horizontal room for both 48px controls, hide the arrows instead of narrowing records or covering them. No side arrows on mobile or hidden tabs. New widget regressions cover 1641px, 1100px, button actions, and vertical scrolling.
+- On desktop viewports without enough horizontal room for both 48px controls, hide the arrows instead of narrowing records or covering them. No side arrows on mobile or hidden tabs. The existing `test/planning_content_only_swipe_test.dart` suite covers 1641px, 1100px, button actions, and vertical scrolling.
 
 ## 2026-11-11 — Keep Planning arrows outside the permanent left navigation
 

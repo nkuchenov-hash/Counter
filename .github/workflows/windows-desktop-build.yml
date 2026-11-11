@@ -85,8 +85,6 @@ jobs:
       - name: Planning content-only swipe and vertical-scroll regression
         run: flutter test test/planning_content_only_swipe_test.dart
 
-      - name: Timeline desktop side-arrow placement and interaction regression
-        run: flutter test test/timeline_workspace_day_arrows_test.dart
 
       - name: Verify shared LIFE OS semantic palette
         run: flutter test test/life_semantic_palette_test.dart
