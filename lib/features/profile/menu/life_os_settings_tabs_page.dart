@@ -10,6 +10,7 @@ import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/data/database_service.dart';
+import 'package:counter/data/models.dart';
 import 'package:counter/data/records/unfilled_time_gap_service.dart';
 import 'package:counter/features/lists/notes_library_preferences.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
