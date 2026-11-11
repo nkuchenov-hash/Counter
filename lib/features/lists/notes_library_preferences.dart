@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// the unified Settings menu. The persisted key remains unchanged.
 abstract final class NotesLibraryPreferences {
   static const String key = 'lifeos.notes.view';
+  static const String checkboxModeKey = 'lifeos.notes.checkboxMode';
+  static final ValueNotifier<bool> checkboxMode = ValueNotifier<bool>(false);
   static final ValueNotifier<String> mode = ValueNotifier<String>('grid');
   static final ValueNotifier<int> categoryBarRequests = ValueNotifier<int>(0);
   static void requestCategoryBarEditor() => categoryBarRequests.value++;
@@ -13,6 +15,15 @@ abstract final class NotesLibraryPreferences {
     final prefs = await SharedPreferences.getInstance();
     final stored = prefs.getString(key);
     mode.value = stored == 'list' ? 'list' : 'grid';
+    checkboxMode.value = prefs.getBool(checkboxModeKey) ?? false;
+  }
+
+  static Future<void> setCheckboxMode(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!(await prefs.setBool(checkboxModeKey, enabled))) {
+      throw StateError('Could not persist checkbox mode');
+    }
+    checkboxMode.value = enabled;
   }
 
   static Future<void> select(String next) async {
