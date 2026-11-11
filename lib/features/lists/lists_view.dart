@@ -126,21 +126,8 @@ class _ListsPageState extends State<ListsPage>
   }
 
   Future<void> _loadNotesLibraryPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final v = prefs.getString(NotesLibraryPreferences.key);
-      final c = prefs.getBool(NotesLibraryPreferences.checkboxModeKey);
-      if (!mounted) return;
-      setState(() {
-        if (v == 'grid') _notesView = NotesLibraryView.grid;
-        if (v == 'list') _notesView = NotesLibraryView.list;
-        _notesCheckboxesOn = c ?? false;
-      });
-      if (v == 'list' || v == 'grid') {
-        NotesLibraryPreferences.mode.value = v!;
-      }
-      NotesLibraryPreferences.checkboxMode.value = c ?? false;
-    } catch (_) {}
+    // Shared preference notifiers update this page through existing listeners.
+    try { await NotesLibraryPreferences.load(); } catch (_) {}
   }
   Future<void> _persistNotesView(NotesLibraryView v) async {
     try {
