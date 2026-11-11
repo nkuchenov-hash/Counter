@@ -179,6 +179,8 @@ def main() -> int:
 
     for token in (
         "python3 -m venv /opt/lifeos-xiaomi-sleep",
+        "python${py_version}-venv",
+        "apt-get install -y --no-install-recommends",
         "mi-fitness==0.2.0",
         "from mi_fitness import MiHealthClient, XiaomiAuth",
     ):
