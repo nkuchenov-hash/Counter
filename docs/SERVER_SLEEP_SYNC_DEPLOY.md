@@ -95,6 +95,7 @@ If the immediately preceding root non-sleep record has no end or extends through
 - Repeated Connect taps reuse a non-expired in-progress authorization attempt. A worker-reported failure allows a clean retry; status surfaces that failure instead of claiming the login is still pending.
 - The dedicated `/opt/lifeos-xiaomi-sleep/bin/python` environment is **not** part of the PocketBase hook archive. The PocketBase deployment workflow must verify its import of `MiHealthClient` and `XiaomiAuth`, and install pinned `mi-fitness==0.2.0` before restarting PocketBase if the environment is absent.
 - If either Python or the bridge file is missing, Connect returns a sanitized runtime-unavailable error rather than an indefinite spinner. Never log or expose Xiaomi tokens, raw bridge state, or shell command output.
+- On the LIFEOS2 production host, the QR authorization page must use `https://137-22-146-109.sslip.io` (the same host as `kPocketBaseProductionUrl`). Ignore the retired `217-114-0-201.sslip.io` if it survived in the server's environment settings.
 - Connection success is **not** a claim that a completed night has been imported. Confirm data freshness separately by reading status and recent sleep records.
 
 ## Connection and fallback rules
