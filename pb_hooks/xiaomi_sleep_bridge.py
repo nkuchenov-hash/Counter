@@ -13,7 +13,7 @@ import asyncio
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -293,7 +293,9 @@ async def _login(args: argparse.Namespace) -> int:
     state_path = Path(args.state_path)
     _atomic_json(state_path, {"status": "starting", "updated_at": _utc_now()})
 
-    total_wait = max(540.0, float(args.max_wait))
+    # The generated Xiaomi QR/loginUrl has its own much shorter lifetime than
+    # the overall LIFE OS authorization page. Rotate it proactively.
+    total_wait = max(60.0, min(540.0, float(args.max_wait)))
     loop = asyncio.get_running_loop()
     deadline = loop.time() + total_wait
     generation = 0
@@ -302,7 +304,7 @@ async def _login(args: argparse.Namespace) -> int:
     while loop.time() < deadline:
         generation += 1
         remaining = max(1.0, deadline - loop.time())
-        attempt_wait = min(240.0, remaining)
+        attempt_wait = min(75.0, remaining)
         try:
             async with XiaomiAuth() as auth:
                 async def on_qr(qr_image_url: str, login_url: str) -> None:
@@ -313,6 +315,11 @@ async def _login(args: argparse.Namespace) -> int:
                             "qr_image_url": str(qr_image_url or ""),
                             "login_url": str(login_url or ""),
                             "generation": generation,
+                            # The user-facing login link is valid only while
+                            # fresh; do not expose a several-minute-old link.
+                            "fresh_until": (
+                                datetime.now(timezone.utc) + timedelta(seconds=45)
+                            ).isoformat().replace("+00:00", "Z"),
                             "updated_at": _utc_now(),
                         },
                     )
@@ -341,7 +348,8 @@ async def _login(args: argparse.Namespace) -> int:
                     "updated_at": _utc_now(),
                 },
             )
-            await asyncio.sleep(0.25)
+            # Avoid rapid credential/QR endpoint retries if Xiaomi is throttling.
+            await asyncio.sleep(2.0)
 
     _atomic_json(
         state_path,
