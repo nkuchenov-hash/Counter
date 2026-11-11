@@ -167,7 +167,7 @@ void main() {
       final routes = File('lib/app/shell/shared/shell_more_menu.dart')
           .readAsStringSync();
       expect(chrome, contains("desktopShell ? 'LIFE OS'"));
-      expect(chrome, contains("initialSection: 'account'"));
+      expect(chrome, contains("initialTab: 'profile'"));
       expect(chrome, contains('embeddedInShell: true'));
       expect(sidebar, contains('AppNeutralTones.gray100'));
       expect(sidebar, isNot(contains("'LIFE OS'")));
