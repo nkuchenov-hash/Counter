@@ -138,8 +138,8 @@ class _ListsPageState extends State<ListsPage>
       });
       if (v == 'list' || v == 'grid') {
         NotesLibraryPreferences.mode.value = v!;
-        NotesLibraryPreferences.checkboxMode.value = c ?? false;
       }
+      NotesLibraryPreferences.checkboxMode.value = c ?? false;
     } catch (_) {}
   }
   Future<void> _persistNotesView(NotesLibraryView v) async {
@@ -161,7 +161,14 @@ class _ListsPageState extends State<ListsPage>
   }
 
   Future<void> _persistNotesCheckboxMode(bool on) async {
-    await NotesLibraryPreferences.setCheckboxMode(on);
+    try {
+      await NotesLibraryPreferences.setCheckboxMode(on);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _notesCheckboxesOn =
+            NotesLibraryPreferences.checkboxMode.value);
+      }
+    }
   }
   /// GLM v3 sort: unfinished first, pinned first, updated desc, stable fallback.
   void _notesLibrarySort(List<PlanningTask> list) {
