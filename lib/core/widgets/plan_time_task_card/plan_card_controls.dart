@@ -186,7 +186,7 @@ class PlanCardPlayButtonState extends State<PlanCardPlayButton> {
                       fill: _hovered
                           ? (PlanCardTokens.isDark(context)
                               ? Theme.of(context).colorScheme.onSurface
-                              : const Color(0xFF4A4A4A))
+                              : PlanCardTokens.playHoverFill)
                           : PlanCardTokens.playFor(context),
                       cornerRadius: PlanCardGeom.playIconCornerRadius,
                     ),
