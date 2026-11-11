@@ -23,6 +23,7 @@ def main() -> int:
     xiaomi_runtime = XIAOMI_RUNTIME.read_text(encoding="utf-8")
     xiaomi_bridge = XIAOMI_BRIDGE.read_text(encoding="utf-8")
     sleep_doc = SLEEP_DOC.read_text(encoding="utf-8")
+    xiaomi_validation = (ROOT / ".github/workflows/install-xiaomi-sleep-runtime.yml").read_text(encoding="utf-8")
     violations: list[str] = []
 
     for token in (
@@ -147,6 +148,14 @@ def main() -> int:
     ):
         if token not in xiaomi_runtime:
             violations.append(f"XIAOMI_SLEEP_RUNTIME_CONTRACT_MISSING {token}")
+
+    # Legacy Xiaomi provisioning must never deploy to an old host in parallel
+    # with the canonical production PocketBase deployment.
+    for forbidden in ("ssh -i", "provision:", "SSH_HOST="):
+        if forbidden in xiaomi_validation:
+            violations.append(f"XIAOMI_DUPLICATE_REMOTE_PROVISION_FORBIDDEN {forbidden}")
+    if "python -m py_compile pb_hooks/xiaomi_sleep_bridge.py" not in xiaomi_validation:
+        violations.append("XIAOMI_BRIDGE_VALIDATION_MISSING")
 
     # Xiaomi sign-in runs in a separate process. Regressions that wait for QR
     # generation inside POST /connect or forget to provision its venv prevent
