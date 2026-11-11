@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:counter/core/date_swipe_physics.dart';
+import 'package:counter/core/date_pager_settle_gate.dart';
 import 'package:counter/features/planning/plan_time_view_layout.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
 import 'package:counter/features/planning/planning_sort_mode.dart';
@@ -42,6 +43,23 @@ void main() {
     expect(target(page: 0.70, origin: null), 1);
     expect(target(page: 0.70, origin: 0, velocity: -900), 0);
     expect(target(page: 0.70, origin: 0, velocity: 900), 1);
+  });
+
+  testWidgets('rapid back-to-back gestures cancel stale shell commits', (
+    tester,
+  ) async {
+    final gate = DatePagerSettleGate();
+    addTearDown(gate.dispose);
+    final commits = <int>[];
+    gate.onPageSettled(pageIndex: 1, onShellCommit: commits.add);
+    // A second swipe starts before the first 36ms shell debounce fires.
+    gate.onUserDragStart();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(commits, isEmpty);
+    gate.onUserDragEnd();
+    gate.onPageSettled(pageIndex: 2, onShellCommit: commits.add);
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(commits, <int>[2]);
   });
 
   test('Timeline adjacent day renders full records, never empty paint', () {

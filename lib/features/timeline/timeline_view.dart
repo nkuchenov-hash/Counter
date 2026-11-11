@@ -351,6 +351,9 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
             if (n.depth != 0 || n.metrics.axis != Axis.horizontal) {
               return false;
             }
+            if (n is ScrollStartNotification) {
+              _settleGate.cancelPendingCommit();
+            }
             if (n is ScrollStartNotification && n.dragDetails != null) {
               _gestureStartPage = _controller.page?.round() ?? _visiblePageIndex;
               _settleGate.onUserDragStart();

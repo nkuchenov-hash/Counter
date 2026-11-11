@@ -17,7 +17,14 @@ final class DatePagerSettleGate {
   bool get blocksExternalDateSync =>
       userDragInFlight || programmaticAnimInFlight;
 
-  void onUserDragStart() => userDragInFlight = true;
+  void onUserDragStart() {
+    userDragInFlight = true;
+    _commitTimer?.cancel();
+  }
+
+  /// A second touch or button-driven animation can start within the 36ms
+  /// settle debounce. Suppress stale shell commits until its final ScrollEnd.
+  void cancelPendingCommit() => _commitTimer?.cancel();
 
   void onUserDragEnd() => userDragInFlight = false;
 

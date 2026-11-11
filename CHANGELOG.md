@@ -2,6 +2,7 @@
 
 - Fix shared slow-swipe snap choosing the *opposite* page after crossing the midpoint (from page 0 at 70% movement, previous algorithm snapped back to page 0). Use the true pointer-down page as threshold anchor, preserving the established 20% acceptance rule for both directions.
 - Timeline previously rendered a transparent, completely empty sibling page; at midpoint it created the entire record list during the gesture. Render full cached Timeline record cards on adjacent days, read-only until the selected day becomes active, and prepaint ±1 adjacent days after the first visible frame (never hidden-tab startup).
+- Cancel stale Timeline shell date commits when another horizontal swipe starts inside the 36ms debounce, including rapid consecutive gestures. A regression test confirms only the latest settled page propagates.
 - Defer Timeline's global shell `onDateChanged`/prefetch work until horizontal `ScrollEndNotification`; keep local active-day promotion instant at pager midpoint. Nested vertical record list notifications no longer enter the date-settle path.
 - Do not retain every visited Timeline day indefinitely via `AutomaticKeepAliveClientMixin`; only the active day requests keep-alive while immediate neighbors are covered by bounded native prepaint.
 - Keep an identical `RepaintBoundary > IgnorePointer > TimelineDayCardList` widget tree before and after midpoint activation. This prevents the previous full list element/state from being discarded and rebuilt on every swipe.
