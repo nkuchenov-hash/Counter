@@ -99,6 +99,14 @@ If the immediately preceding root non-sleep record has no end or extends through
 - On the LIFEOS2 production host, the QR authorization page must use `https://137-22-146-109.sslip.io` (the same host as `kPocketBaseProductionUrl`). Ignore the retired `217-114-0-201.sslip.io` if it survived in the server's environment settings.
 - Connection success is **not** a claim that a completed night has been imported. Confirm data freshness separately by reading status and recent sleep records.
 
+## Xiaomi QR-expiration recovery
+
+- Xiaomi issues a short-lived QR/login link independent of LIFE OS's longer authorization state. A live LIFE OS sign-in page is **not** evidence that an older Xiaomi link is still valid.
+- `xiaomi_sleep_bridge.py` rotates Xiaomi QR requests by limiting each login attempt to 75 seconds. Each QR callback records a conservative 45-second `fresh_until` timestamp alongside the link and image.
+- `/api/sleep-sync/xiaomi/authorize` checks `fresh_until` on **each page load**. It shows a direct Xiaomi sign-in link and QR only while that specific generation is fresh; while the Python worker rotates it, the page shows a preparing state and refreshes every three seconds.
+- If Xiaomi says the QR code expired, returning to the LIFE OS authorization page presents the newer generated link when available. Do **not** repeatedly reload the expired `account.xiaomi.com` page.
+- These checks prevent LIFE OS from displaying expired URLs; Xiaomi may still reject a fresh URL for upstream risk-control or account-policy reasons. Successful QR sign-in and newly imported sleep must be verified with the actual account before declaring the full integration working.
+
 ## Connection and fallback rules
 
 - One Xiaomi connection is the primary active sleep source for a user.
