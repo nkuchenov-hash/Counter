@@ -77,7 +77,6 @@ double contrastRatio(Color foreground, Color background) {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -161,7 +160,6 @@ void main() {
     });
   });
 
-
   group('Plan card light and dark theme contrast', () {
     Future<void> pumpCardControls(WidgetTester tester, {required bool dark}) async {
       await tester.pumpWidget(
@@ -199,7 +197,7 @@ void main() {
       );
       await tester.pump();
     }
-  
+
     testWidgets('dark plan card keeps title and time readable', (tester) async {
       await pumpCardControls(tester, dark: true);
       final scheme = appDarkTheme.colorScheme;
@@ -210,17 +208,17 @@ void main() {
         ),
       );
       expect(titleStyle.style.color, scheme.onSurface);
-  
+
       final time = tester.widget<Text>(find.text('17:00 – 17:30'));
       expect(time.style!.color, scheme.onSurfaceVariant);
-  
+
       final breadcrumb = tester.widget<Text>(find.text('Работа'));
       expect(
         contrastRatio(breadcrumb.style!.color!, scheme.surfaceContainerHigh),
         greaterThanOrEqualTo(4.5),
       );
     });
-  
+
     testWidgets('dark plan card controls use dark surfaces and visible icons', (tester) async {
       await pumpCardControls(tester, dark: true);
       final scheme = appDarkTheme.colorScheme;
@@ -233,7 +231,7 @@ void main() {
       final checkboxDecoration = checkbox.decoration as BoxDecoration;
       expect(checkboxDecoration.color, scheme.surfaceContainerHigh);
       expect(checkboxDecoration.border!.top.color, scheme.onSurfaceVariant);
-  
+
       final menu = tester.widget<DecoratedBox>(
         find.descendant(
           of: find.byType(PlanCardMenuButton),
@@ -243,7 +241,7 @@ void main() {
       expect((menu.decoration as BoxDecoration).color, isNot(PlanCardTokens.menuBg));
       final menuIcon = tester.widget<Icon>(find.byIcon(Icons.more_vert_rounded));
       expect(menuIcon.color, scheme.onSurface);
-  
+
       final iconPaint = tester.widgetList<CustomPaint>(
         find.descendant(
           of: find.byType(PlanCardPlayButton),
@@ -255,7 +253,7 @@ void main() {
         scheme.onSurfaceVariant,
       );
     });
-  
+
     testWidgets('light plan card retains the existing canonical colors', (tester) async {
       await pumpCardControls(tester, dark: false);
       final titleStyle = tester.widget<AnimatedDefaultTextStyle>(
