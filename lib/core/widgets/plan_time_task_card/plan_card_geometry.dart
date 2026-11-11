@@ -134,6 +134,65 @@ abstract final class PlanCardTokens {
   static final Color tagPurpleBg = tagLetterChipPlate(kNordicStudy[500]!, AppColors.appBackground);
   static const Color tagPurpleText = kNordicStudy;
 
+  // Card surfaces are theme-aware; their foregrounds must follow the same
+  // brightness. Keep legacy light tokens stable for existing light UI.
+  static bool isDark(BuildContext context) =>
+      Theme.of(context).colorScheme.brightness == Brightness.dark;
+
+  static Color titleFor(BuildContext context) =>
+      isDark(context) ? Theme.of(context).colorScheme.onSurface : titleColor;
+
+  static Color timeFor(BuildContext context) =>
+      isDark(context) ? Theme.of(context).colorScheme.onSurfaceVariant : timeColor;
+
+  static Color mutedFor(BuildContext context) => isDark(context)
+      ? Theme.of(context).colorScheme.onSurfaceVariant
+      : breadcrumbFallbackColor;
+
+  static Color dividerFor(BuildContext context) =>
+      isDark(context) ? Theme.of(context).colorScheme.outline : dividerColor;
+
+  static Color playFor(BuildContext context) =>
+      isDark(context) ? Theme.of(context).colorScheme.onSurfaceVariant : playFill;
+
+  static Color checkboxStrokeFor(BuildContext context) => isDark(context)
+      ? Theme.of(context).colorScheme.onSurfaceVariant
+      : checkboxStroke;
+
+  static Color checkboxFillFor(BuildContext context) => isDark(context)
+      ? Theme.of(context).colorScheme.surfaceContainerHigh
+      : surface;
+
+  static Color menuBackgroundFor(BuildContext context) =>
+      isDark(context) ? AppNeutralTones.gray700 : menuBg;
+
+  static Color menuStrokeFor(BuildContext context) =>
+      isDark(context) ? Theme.of(context).colorScheme.onSurface : menuStroke;
+
+  // Small category breadcrumbs must remain readable even when the persisted
+  // category uses a dark/black hue. Do not recolor stored category data.
+  static Color categoryTextFor(BuildContext context, Color color) {
+    final scheme = Theme.of(context).colorScheme;
+    if (color.a == 0) return mutedFor(context);
+    if (scheme.brightness != Brightness.dark) return color;
+    var adjusted = color;
+    final backgroundLuminance = scheme.surfaceContainerHigh.computeLuminance();
+    for (var i = 0; i < 12; i++) {
+      final textLuminance = adjusted.computeLuminance();
+      final brighter = textLuminance > backgroundLuminance
+          ? textLuminance
+          : backgroundLuminance;
+      final darker = textLuminance > backgroundLuminance
+          ? backgroundLuminance
+          : textLuminance;
+      if ((brighter + 0.05) / (darker + 0.05) >= 4.5) {
+        return adjusted;
+      }
+      adjusted = Color.lerp(adjusted, scheme.onSurface, 0.2)!;
+    }
+    return scheme.onSurface;
+  }
+
   static List<BoxShadow> cardShadow(bool interacting, {bool hovered = false}) =>
       [
         BoxShadow(
