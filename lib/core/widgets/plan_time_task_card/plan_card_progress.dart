@@ -104,11 +104,11 @@ class _PlanCardProgressSlotState extends State<PlanCardProgressSlot> {
                       maxLines: 1,
                       softWrap: false,
                       overflow: TextOverflow.clip,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
                         height: 1.2,
                         fontWeight: FontWeight.w500,
-                        color: PlanCardTokens.timeColor,
+                        color: PlanCardTokens.timeFor(context),
                       ),
                     ),
                   )
@@ -382,7 +382,7 @@ class PlanCardProgressRow extends StatelessWidget {
     final over = estimatedSeconds > 0 && trackedSeconds > estimatedSeconds;
     final accent = categoryColor.a > 0
         ? categoryColor
-        : PlanCardTokens.breadcrumbFallbackColor;
+        : PlanCardTokens.mutedFor(context);
     final showFill = estimatedSeconds > 0;
     final fraction = showFill
         ? (trackedSeconds <= estimatedSeconds
@@ -432,7 +432,7 @@ class PlanCardProgressRow extends StatelessWidget {
               height: 1.1,
               color: over
                   ? Theme.of(context).colorScheme.error
-                  : PlanCardTokens.timeColor,
+                  : PlanCardTokens.timeFor(context),
             ),
           ),
         ],

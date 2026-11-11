@@ -465,13 +465,13 @@ class _TimeViewShortStackLayout extends StatelessWidget {
                         Container(
                           width: 1,
                           height: 22,
-                          color: PlanCardTokens.dividerColor,
+                          color: PlanCardTokens.dividerFor(context),
                         ),
                         const SizedBox(width: 10),
-                        const Icon(
+                        Icon(
                           Icons.access_time_rounded,
                           size: 13,
-                          color: PlanCardTokens.timeColor,
+                          color: PlanCardTokens.timeFor(context),
                         ),
                         const SizedBox(width: 6),
                         PlanCardTimeText(label: common.timeLabel),

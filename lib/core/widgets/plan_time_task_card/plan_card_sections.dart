@@ -61,11 +61,11 @@ class PlanCardTimeText extends StatelessWidget {
       maxLines: 1,
       softWrap: false,
       overflow: TextOverflow.visible,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 11,
         height: 1.0,
         fontWeight: FontWeight.w400,
-        color: PlanCardTokens.timeColor,
+        color: PlanCardTokens.timeFor(context),
       ),
     );
   }
@@ -87,9 +87,7 @@ class PlanCardFooterRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final trailColor = categoryColor.a > 0
-        ? categoryColor
-        : PlanCardTokens.breadcrumbFallbackColor;
+    final trailColor = PlanCardTokens.categoryTextFor(context, categoryColor);
     return ConstrainedBox(
       constraints: const BoxConstraints(
         minHeight: PlanCardGeom.footerTextHeight,
