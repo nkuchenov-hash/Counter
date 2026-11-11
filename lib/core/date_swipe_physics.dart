@@ -74,8 +74,9 @@ class LightDateSwipePhysics extends PageScrollPhysics {
 class FeatherDateSwipePhysics extends LightDateSwipePhysics {
   const FeatherDateSwipePhysics({
     ScrollPhysics? parent,
-    super.gestureOriginPage,
+    int? Function()? gestureOriginPage,
   }) : super(
+        gestureOriginPage: gestureOriginPage,
         parent: parent ?? const BouncingScrollPhysics(),
         pageAcceptThreshold: 0.20,
         motionThreshold: 8.0,
