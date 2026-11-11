@@ -651,6 +651,7 @@ Copy `pb_hooks/` beside the PocketBase executable on the server. Client Brain co
 | `planning/time_view/time_view_settings_sheet.dart` | Time View settings + default plan times |
 | `planning/time_view/time_view_search_delegate.dart` | Category default-time search UI |
 | `timeline/timeline_header_controls.dart` | List/stats segmented control + record input row |
+| `timeline/timeline_workspace_day_arrows.dart` | Desktop Timeline day arrows overlay, positioned in navigation-safe workspace gutters without altering PageView or record width |
 | `timeline/timeline_morning_start.dart` | Morning Start Day check-in: sleep confirmation + first Timeline record, gated by device-local preference |
 | `shared/sleep_record_policy.dart` | Shared Timeline/Stats policy for sleep detection and wake-to-bed day boundaries |
 | `timeline/timeline_day_page.dart` | `TimelineDayCardList`, lazy record list |

@@ -24,6 +24,7 @@ import 'package:intl/intl.dart';
 import 'package:counter/features/timeline/timeline_helpers.dart';
 import 'package:counter/features/timeline/timeline_day_page.dart';
 import 'package:counter/features/timeline/timeline_header_controls.dart';
+import 'package:counter/features/timeline/timeline_workspace_day_arrows.dart';
 import 'package:counter/features/timeline/timeline_morning_start.dart';
 // ---------------------------------------------------------------------------
 // TIMELINE FEATURE вЂ” UI_ISOLATION (В§7). PLANETARY TIME PROTOCOL (В§5). ACTIVE_STATUS_LAW (В§2).
@@ -311,7 +312,21 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
             onNewTaskForPastDate: widget.onNewTaskForPastDate,
           ),
           Expanded(
-            child: ScrollConfiguration(
+            child: TimelineWorkspaceDayArrows(
+              visible: widget.shellTabActive,
+              onStep: (delta) {
+                if (!_controller.hasClients ||
+                    _controller.position.isScrollingNotifier.value) return;
+                final current = _controller.page?.round() ?? _visiblePageIndex;
+                final next = (current + delta).clamp(0, _totalPageCount - 1);
+                if (next == current) return;
+                _controller.animateToPage(
+                  next,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                );
+              },
+              child: ScrollConfiguration(
         behavior: const MouseDragScrollBehavior(),
         child: NotificationListener<ScrollNotification>(
           onNotification: (n) {
@@ -381,6 +396,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
             },
           ),
         ),
+            ),
             ),
           ),
         ],
