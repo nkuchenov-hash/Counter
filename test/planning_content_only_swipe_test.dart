@@ -51,6 +51,16 @@ void main() {
     expect(source, contains('isActive: widget.isActivePage,'));
     expect(source, contains('ignoring: !widget.isActivePage,'));
     expect(source, contains('Keep the SAME element tree'));
+    final scrollEnd = source.indexOf('if (n is ScrollEndNotification)');
+    final onPageChanged = source.indexOf('onPageChanged: (int index)');
+    expect(scrollEnd, greaterThan(0));
+    expect(onPageChanged, greaterThan(scrollEnd));
+    final dragBody = source.substring(scrollEnd, onPageChanged);
+    expect(dragBody, contains('_settleGate.onPageSettled('));
+    final midpointBody = source.substring(onPageChanged,
+        source.indexOf('itemBuilder: (context, index)', onPageChanged));
+    expect(midpointBody, isNot(contains('_settleGate.onPageSettled(')));
+    expect(source, contains('n.metrics.axis != Axis.horizontal'));
     final cardList = File('lib/features/timeline/timeline_day_page.dart')
         .readAsStringSync();
     expect(cardList, contains('bool get wantKeepAlive => widget.isActive;'));

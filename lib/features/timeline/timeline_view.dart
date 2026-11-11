@@ -346,6 +346,11 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
         behavior: const MouseDragScrollBehavior(),
         child: NotificationListener<ScrollNotification>(
           onNotification: (n) {
+            // The nested record ListView also bubbles scroll notifications.
+            // Its vertical scrolls must not touch horizontal date ownership.
+            if (n.depth != 0 || n.metrics.axis != Axis.horizontal) {
+              return false;
+            }
             if (n is ScrollStartNotification && n.dragDetails != null) {
               _gestureStartPage = _controller.page?.round() ?? _visiblePageIndex;
               _settleGate.onUserDragStart();
@@ -359,6 +364,18 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
               _gestureStartPage = null;
               _settleGate.onUserDragEnd();
               _applyPendingExternalPageIfNeeded();
+              // Do not fan out shell/Brain date changes in the middle of a
+              // finger-following animation. The selected Timeline page is
+              // already live at midpoint; publish globally once settled.
+              _settleGate.onPageSettled(
+                pageIndex: _visiblePageIndex,
+                onShellCommit: (page) {
+                  if (!mounted || !widget.shellTabActive) return;
+                  final committed = _dateForIndex(page);
+                  _schedulePrefetch(committed);
+                  widget.onDateChanged(_dateOnly(committed));
+                },
+              );
               SchedulerBinding.instance.addPostFrameCallback((_) {
                 RebuildMetrics.instance.dateSwipeEnd(section: 'Timeline');
               });
@@ -374,16 +391,11 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
             itemCount: _totalPageCount,
             onPageChanged: (int index) {
               if (index < 0 || index >= _totalPageCount) return;
-              setState(() => _visiblePageIndex = index);
-              _settleGate.onPageSettled(
-                pageIndex: index,
-                onShellCommit: (page) {
-                  if (!mounted) return;
-                  final committed = _dateForIndex(page);
-                  _schedulePrefetch(committed);
-                  widget.onDateChanged(_dateOnly(committed));
-                },
-              );
+              // Midpoint promotion is immediately visible and interactive.
+              // Global shell commit belongs to horizontal ScrollEnd above.
+              if (_visiblePageIndex != index) {
+                setState(() => _visiblePageIndex = index);
+              }
             },
             itemBuilder: (context, index) {
               final date = _dateForIndex(index);
