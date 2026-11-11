@@ -76,8 +76,8 @@ class PlanCardCheckboxState extends State<PlanCardCheckbox>
     final pulse = Curves.easeOut.transform(_checkPulseCtrl.value);
     final borderColor = Color.lerp(
       _hovered && enabled
-          ? PlanCardTokens.playFill.withValues(alpha: 0.55)
-          : PlanCardTokens.checkboxStroke,
+          ? PlanCardTokens.playFor(context).withValues(alpha: 0.55)
+          : PlanCardTokens.checkboxStrokeFor(context),
       scheme.primary,
       checked && !widget.selectMode ? 0.35 * pulse : 0.0,
     )!;
@@ -100,7 +100,7 @@ class PlanCardCheckboxState extends State<PlanCardCheckbox>
             height: widget.size,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: PlanCardTokens.checkboxFillFor(context),
                 borderRadius: BorderRadius.circular(widget.size * 0.28),
                 border: Border.all(color: borderColor),
                 boxShadow: const [
@@ -123,7 +123,7 @@ class PlanCardCheckboxState extends State<PlanCardCheckbox>
                         child: Icon(
                           Icons.check_rounded,
                           size: widget.size * 0.56,
-                          color: PlanCardTokens.playFill,
+                          color: PlanCardTokens.playFor(context),
                         ),
                       ),
                     )
@@ -170,7 +170,7 @@ class PlanCardPlayButtonState extends State<PlanCardPlayButton> {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: _hovered
-                    ? PlanCardTokens.menuBg
+                    ? PlanCardTokens.menuBackgroundFor(context)
                     : Colors.transparent,
                 shape: BoxShape.circle,
               ),
@@ -184,8 +184,10 @@ class PlanCardPlayButtonState extends State<PlanCardPlayButton> {
                     ),
                     painter: PlanCardPlayIconPainter(
                       fill: _hovered
-                          ? const Color(0xFF4A4A4A)
-                          : PlanCardTokens.playFill,
+                          ? (PlanCardTokens.isDark(context)
+                              ? Theme.of(context).colorScheme.onSurface
+                              : const Color(0xFF4A4A4A))
+                          : PlanCardTokens.playFor(context),
                       cornerRadius: PlanCardGeom.playIconCornerRadius,
                     ),
                   ),
@@ -275,8 +277,8 @@ class PlanCardRecurringGlyph extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = displayIsDone
-        ? PlanCardTokens.breadcrumbFallbackColor.withValues(alpha: 0.45)
-        : PlanCardTokens.breadcrumbFallbackColor.withValues(alpha: 0.88);
+        ? PlanCardTokens.mutedFor(context).withValues(alpha: 0.45)
+        : PlanCardTokens.mutedFor(context).withValues(alpha: 0.88);
     return Icon(
       Icons.autorenew_rounded,
       size: PlanCardGeom.recurringIconSize,
@@ -322,18 +324,18 @@ class PlanCardMenuButtonState extends State<PlanCardMenuButton> {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: _hovered
-                      ? PlanCardTokens.checkboxStroke.withValues(
+                      ? PlanCardTokens.checkboxStrokeFor(context).withValues(
                           alpha: widget.subtleBackground ? 0.52 : 0.72,
                         )
                       : widget.subtleBackground
-                          ? PlanCardTokens.menuBg.withValues(alpha: 0.38)
-                          : PlanCardTokens.menuBg,
+                          ? PlanCardTokens.menuBackgroundFor(context).withValues(alpha: 0.38)
+                          : PlanCardTokens.menuBackgroundFor(context),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.more_vert_rounded,
                   size: 18,
-                  color: PlanCardTokens.menuStroke,
+                  color: PlanCardTokens.menuStrokeFor(context),
                 ),
               ),
             ),
@@ -399,8 +401,8 @@ class PlanCardTitleRow extends StatelessWidget {
           ? TextDecoration.lineThrough
           : TextDecoration.none,
       color: displayIsDone
-          ? PlanCardTokens.titleColor.withValues(alpha: 0.55)
-          : PlanCardTokens.titleColor,
+          ? PlanCardTokens.titleFor(context).withValues(alpha: 0.55)
+          : PlanCardTokens.titleFor(context),
     );
     return Row(
       children: [
