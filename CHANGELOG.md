@@ -1,3 +1,9 @@
+## 2026-11-11 — P0 Timeline + Planning date swipe snap and full-card prepaint
+
+- Fix shared slow-swipe snap choosing the *opposite* page after crossing the midpoint (from page 0 at 70% movement, previous algorithm snapped back to page 0). Use the true pointer-down page as threshold anchor, preserving the established 20% acceptance rule for both directions.
+- Timeline previously rendered a transparent, completely empty sibling page; at midpoint it created the entire record list during the gesture. Render full cached Timeline record cards on adjacent days, read-only until the selected day becomes active, and prepaint ±1 adjacent days after the first visible frame (never hidden-tab startup).
+- Preserve original PageView animation, headers, tags, card sizes/content, real-time active streams and immediate optimistic activation. Add slow-gesture physics and nonblank Timeline preview regression tests.
+
 ## 2026-11-11 — Timeline desktop workspace date arrows
 
 - Add the same desktop left/right day arrows as Planning to the Timeline day body; the canonical APP_STRUCTURE_DETAILED has been regenerated for the two new tracked files. Each sits in its own spare workspace gutter outside record cards and outside the fixed left navigation.

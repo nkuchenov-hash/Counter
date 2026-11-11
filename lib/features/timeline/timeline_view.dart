@@ -108,6 +108,8 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   bool _showStatsView = false;
   bool _restoreQuickEntryFocusOnReturn = false;
   String? _swipeFromDateKey;
+  int? _gestureStartPage;
+  bool _prepaintNeighbors = false;
 
   String _dateKeyFromDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -210,6 +212,13 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     _visiblePageIndex = _initialPage + daysOffset;
     _controller = PageController(initialPage: _visiblePageIndex);
     _controller.addListener(_onPageControllerTick);
+    // Paint the complete two adjacent days only after the first visible
+    // frame, not as blocking work before Timeline initially appears.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.shellTabActive && !_prepaintNeighbors) {
+        setState(() => _prepaintNeighbors = true);
+      }
+    });
     if (!kUseMountedDayStrip) {
       DatabaseService.instance.ensureTimelineWarmWindow(widget.selectedDate);
       if (widget.shellTabActive) {
@@ -239,6 +248,13 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     }
     if (!oldWidget.shellTabActive && widget.shellTabActive) {
       _syncOnTabActivated();
+      if (!_prepaintNeighbors) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && widget.shellTabActive && !_prepaintNeighbors) {
+            setState(() => _prepaintNeighbors = true);
+          }
+        });
+      }
       if (_restoreQuickEntryFocusOnReturn && !_showStatsView) {
         SchedulerBinding.instance.addPostFrameCallback((_) {
           if (mounted && widget.shellTabActive && !_showStatsView) {
@@ -331,6 +347,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
         child: NotificationListener<ScrollNotification>(
           onNotification: (n) {
             if (n is ScrollStartNotification && n.dragDetails != null) {
+              _gestureStartPage = _controller.page?.round() ?? _visiblePageIndex;
               _settleGate.onUserDragStart();
               _swipeFromDateKey = _dateKeyFromDate(visibleDate);
               RebuildMetrics.instance.dateSwipeStart(
@@ -339,6 +356,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
               );
             }
             if (n is ScrollEndNotification) {
+              _gestureStartPage = null;
               _settleGate.onUserDragEnd();
               _applyPendingExternalPageIfNeeded();
               SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -349,7 +367,10 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
           },
           child: PageView.builder(
             controller: _controller,
-            physics: const FeatherDateSwipePhysics(),
+            physics: FeatherDateSwipePhysics(
+              gestureOriginPage: () => _gestureStartPage,
+            ),
+            allowImplicitScrolling: widget.shellTabActive && _prepaintNeighbors,
             itemCount: _totalPageCount,
             onPageChanged: (int index) {
               if (index < 0 || index >= _totalPageCount) return;
@@ -636,9 +657,29 @@ class _TimelinePageState extends State<TimelinePage> {
                           titleFocus: widget.titleFocus,
                         ),
                       )
-                    : const ColoredBox(
-                        color: Colors.transparent,
-                        child: SizedBox.expand(),
+                    : RepaintBoundary(
+                        child: IgnorePointer(
+                          // No editing an offscreen day. When onPageChanged
+                          // promotes the day at midpoint this immediately
+                          // becomes the real live Timeline page.
+                          child: TimelineDayCardList(
+                            key: ValueKey<String>(
+                              'tl-day-${_dateKey(_visibleDate)}',
+                            ),
+                            date: _visibleDate,
+                            dateKey: _dateKey(_visibleDate),
+                            isFutureDate: _visibleIsFuture,
+                            isActive: false,
+                            showStatsView: widget.showStatsView,
+                            rules: widget.rules,
+                            liveRecordMaps: null,
+                            onStop: widget.onStopRecord,
+                            onDelete: widget.onDeleteRecord,
+                            onEdit: (data) => _showEditRecordSheet(context, data),
+                            onNavigateToDate: widget.onNavigateToDate,
+                            titleFocus: widget.titleFocus,
+                          ),
+                        ),
                       ),
               ),
             ),
