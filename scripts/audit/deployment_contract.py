@@ -170,6 +170,13 @@ def main() -> int:
     for token in ('phase === "starting" || phase === "refreshing"', "http-equiv='refresh'"):
         if token not in authorize_handler:
             violations.append(f"XIAOMI_AUTH_PENDING_PAGE_MISSING {token}")
+    # Auth page must use the same active host as Android/Web, not the
+    # retired PocketBase host from the pre-recovery installation.
+    if 'return "https://137-22-146-109.sslip.io"' not in xiaomi_runtime:
+        violations.append("XIAOMI_AUTH_CURRENT_PRODUCTION_ORIGIN_MISSING")
+    if 'configured !== "https://217-114-0-201.sslip.io"' not in xiaomi_runtime:
+        violations.append("XIAOMI_AUTH_STALE_ORIGIN_OVERRIDE_MISSING")
+
     for token in (
         "python3 -m venv /opt/lifeos-xiaomi-sleep",
         "mi-fitness==0.2.0",
