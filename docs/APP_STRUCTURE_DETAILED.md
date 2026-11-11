@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `9e095305` on 2026-11-11.**
+**Generated from input HEAD `b624be97` on 2026-11-11.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 546 |
+| `PROVEN_REQUIRED` | 547 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 273 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 923 |
+| `HIGH` | 924 |
 | `MEDIUM` | 88 |
 
 ---
@@ -12345,7 +12345,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Barrel `export` lines: `life_color_compat.dart`.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/profile/tag_manager_page.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/create_category_dialog.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/tag_manager_page.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12362,7 +12362,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `category_color_palette.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/profile/tag_manager_page.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`, `lib/features/settings/categories/create_category_dialog.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/tag_manager_page.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -15214,7 +15214,7 @@ EN:
 - **Contents:** Dart helpers and types (`OAuthSignInResult`, `PasswordResetRequestResult`, `AuthBridgeException`, `AuthBridgeCancelled`, `AuthBridge`).
 - **Key code names:** `OAuthSignInResult`, `PasswordResetRequestResult`, `AuthBridgeException`, `AuthBridgeCancelled`, `AuthBridge`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/health/health_sleep_sync_service.dart`, `lib/features/auth/auth_view.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/settings/account_settings_section.dart`, `lib/main.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/health/health_sleep_sync_service.dart`, `lib/features/auth/auth_view.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/settings/account_settings_section.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -15231,7 +15231,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `auth_bridge`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/health/health_sleep_sync_service.dart`, `lib/features/auth/auth_view.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/settings/account_settings_section.dart`, `lib/main.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/health/health_sleep_sync_service.dart`, `lib/features/auth/auth_view.dart`, `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/settings/account_settings_section.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -18590,7 +18590,7 @@ EN:
 - **Contents:** Coordinator extensions plus links to `part` files under `unfilled_time_gaps/` or `unfilled_time_gap/`.
 - **Key code names:** `UnfilledTimeGapSettings`, `UnfilledTimeGapService`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/features/settings/notifications/unfilled_time_notifications_section.dart`, `lib/features/timeline/unfilled_time_gap_banner.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/settings/notifications/unfilled_time_notifications_section.dart`, `lib/features/timeline/unfilled_time_gap_banner.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -18607,7 +18607,7 @@ RU:
 - **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
 - **Содержимое:** Extensions + `part` файлы для unfilled_time_gap.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/features/settings/notifications/unfilled_time_notifications_section.dart`, `lib/features/timeline/unfilled_time_gap_banner.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/settings/notifications/unfilled_time_notifications_section.dart`, `lib/features/timeline/unfilled_time_gap_banner.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20257,7 +20257,7 @@ EN:
 - **Contents:** Primary symbols: `NotesLibraryPreferences`.
 - **Key code names:** `NotesLibraryPreferences`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/lists/lists_view.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/lists/lists_view.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20274,7 +20274,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `notes_library_preferences.dart` на вкладка Lists (четвёртая снизу).
 - **Содержимое:** Dart-модуль `notes_library_preferences.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/lists/lists_view.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/lists/lists_view.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -23025,7 +23025,7 @@ EN:
 - **Contents:** Primary symbols: `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`.
 - **Key code names:** `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -23042,7 +23042,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `life_os_menu_page.dart` на More → Profile и настройки.
 - **Содержимое:** Компоновка экрана и state в `life_os_menu_page.dart`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -23051,44 +23051,6 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `life_os_menu_page.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/menu/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/features/profile/menu/life_os_settings_tabs_page.dart`
-
-EN:
-
-- **Human purpose:** Settings are divided into accessible subject tabs. Desktop tabs wrap without sideways scrolling; phone users select a section from a list.
-- **What this is:** Native Flutter settings workspace, reused for the shell's Profile and Settings destinations.
-- **Why needed:** Keeps everyday controls editable in place and avoids multiple unrelated settings catalogs.
-- **Contents:** `LifeOsSettingsTabsPage`, nine color-family tabs and the direct controls for plan hours, placement, Notes preferences, gaps and theme.
-- **Key code names:** `LifeOsSettingsTabsPage`, `_LifeOsSettingsTabsPageState`, `_SettingsTab`.
-- **Repository role:** production UI
-- **Evidence of use:** Imported by `lib/app/shell/app_shell.dart` and built by `lib/app/shell/shared/shell_chrome.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Settings tab destinations in the shell would fail to compile.
-- **Confidence:** HIGH
-- **Owner / layer:** Profile UI
-- **Responsibilities:** Present feature-owned settings via canonical `AppSettingsPageBody`, `AppSettingsSectionCard`, `AppTextField`, and approved `kNordic*` color families; route complex editors without duplicating stored preferences.
-- **When to open:** When changing Settings information architecture or a quick preference control.
-- **Can it be deleted?** No, shell destinations rely on it.
-- **Connected to:** `lib/features/lists/notes_library_preferences.dart`, `lib/features/planning/planning_day_start_prefs.dart`, `lib/data/records/unfilled_time_gap_service.dart`.
-
-RU:
-
-- **Зачем файл человеку:** Все настройки доступны в тематических вкладках без дополнительного каталога переходов.
-- **Что это:** Общий экран настроек Flutter для разделов «Профиль» и «Настройки».
-- **Зачем:** Частые параметры доступны сразу; длинные редакторы открываются отдельно.
-- **Содержимое:** Девять вкладок, настройки видимого времени, размещения планов, заметок, напоминаний о пробелах и темы.
-- **Роль в репозитории:** production UI
-- **Доказательства использования:** Экран создаётся в `lib/app/shell/shared/shell_chrome.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Не соберётся оболочка настроек приложения.
-- **Уверенность:** HIGH
-- **Владелец / слой:** Интерфейс профиля
-- **Обязанности:** Использовать существующие компоненты и цвета дизайн-системы; читать и сохранять параметры через действующие сервисы разделов.
-- **Когда открывать:** При изменении вкладок настроек и быстрых переключателей.
-- **Можно удалить?** Нет, на экран ссылается оболочка приложения.
-- **Связано с:** `lib/features/profile/menu/`, `lib/features/lists/`, `docs/APP_STRUCTURE.md`.
 
 
 ### `lib/features/profile/menu/life_os_notes_settings_page.dart`
@@ -23163,6 +23125,44 @@ RU:
 - **Владелец / слой:** UI профиля
 - **Обязанности:** Отвечает за видимый UI, собранный в `life_os_planning_settings_page.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `life_os_planning_settings_page.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/profile/menu/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/profile/menu/life_os_settings_tabs_page.dart`
+
+EN:
+
+- **Human purpose:** `life_os_settings_tabs_page.dart` on More → Profile and settings — life os settings tabs page. Users see `life_os_settings_tabs_page.dart` when using More → Profile and settings.
+- **What this is:** `life_os_settings_tabs_page.dart` on More → Profile and settings — life os settings tabs page.
+- **Why needed:** Users see `life_os_settings_tabs_page.dart` when using More → Profile and settings.
+- **Contents:** Primary symbols: `LifeOsSettingsTabsPage`, `_SettingsTab`, `_LifeOsSettingsTabsPageState`.
+- **Key code names:** `LifeOsSettingsTabsPage`, `_SettingsTab`, `_LifeOsSettingsTabsPageState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Profile UI
+- **Responsibilities:** Implements `LifeOsSettingsTabsPage` and related API in `life_os_settings_tabs_page.dart`.
+- **When to open:** When behavior tied to `life_os_settings_tabs_page.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: life os settings tabs page
+
+RU:
+
+- **Зачем файл человеку:** `life_os_settings_tabs_page.dart` на More → Profile и настройки — Отвечает за видимый UI, собранный в `life_os_settings_tabs_page.dart`.. Пользователь видит UI из `life_os_settings_tabs_page.dart` на More → Profile и настройки.
+- **Что это:** `life_os_settings_tabs_page.dart` на More → Profile и настройки — Отвечает за видимый UI, собранный в `life_os_settings_tabs_page.dart`..
+- **Зачем:** Пользователь видит UI из `life_os_settings_tabs_page.dart` на More → Profile и настройки.
+- **Содержимое:** Компоновка экрана и state в `life_os_settings_tabs_page.dart`.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI профиля
+- **Обязанности:** Отвечает за видимый UI, собранный в `life_os_settings_tabs_page.dart`.
+- **Когда открывать:** Когда ломается поведение, связанное с `life_os_settings_tabs_page.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/menu/`, `docs/APP_STRUCTURE.md`
 
@@ -23253,7 +23253,7 @@ EN:
 - **Contents:** Primary symbols: `ProfilePage`, `ProfileSettingsDestination`, `_ProfilePageState`.
 - **Key code names:** `ProfilePage`, `ProfileSettingsDestination`, `_ProfilePageState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -23270,7 +23270,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `profile_view.dart` на More → Profile и настройки.
 - **Содержимое:** Компоновка экрана и state в `profile_view.dart`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -26835,7 +26835,7 @@ EN:
 - **Contents:** Platform service code in `notification_service.dart` (`PlanAlarmPermissionStatus`, `NotificationService`).
 - **Key code names:** `PlanAlarmPermissionStatus`, `NotificationService`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/data/records/unfilled_time_gap_service.dart`, `lib/features/profile/settings/notification_settings_section.dart`, `lib/features/settings/people/people_person_editor.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/data/records/unfilled_time_gap_service.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/settings/notification_settings_section.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -26852,7 +26852,7 @@ RU:
 - **Зачем:** OS API (уведомления, voice, tray) не могут жить в PocketBase brain.
 - **Содержимое:** Platform-код сервиса в `notification_service.dart` (logic in `notification_service`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/data/records/unfilled_time_gap_service.dart`, `lib/features/profile/settings/notification_settings_section.dart`, `lib/features/settings/people/people_person_editor.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/people/people_service.dart`, `lib/data/records/unfilled_time_gap_service.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/settings/notification_settings_section.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
