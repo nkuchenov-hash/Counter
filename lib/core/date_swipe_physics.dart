@@ -8,6 +8,7 @@ class LightDateSwipePhysics extends PageScrollPhysics {
     super.parent,
     this.pageAcceptThreshold = 0.22,
     this.motionThreshold = 12.0,
+    this.gestureOriginPage,
   });
 
   /// Fraction of viewport (0–0.5) away from the nearest page center required
@@ -15,6 +16,12 @@ class LightDateSwipePhysics extends PageScrollPhysics {
   final double pageAcceptThreshold;
 
   final double motionThreshold;
+
+  /// Page at pointer-down, held until ballistic settling finishes. Without
+  /// this anchor a fractional position like 0.7 used to snap BACK to 0
+  /// because the old algorithm rounded to 1 and then subtracted 1.
+  /// With no active drag use native nearest-page semantics.
+  final int? Function()? gestureOriginPage;
 
   @override
   double get dragStartDistanceMotionThreshold => motionThreshold;
@@ -25,6 +32,7 @@ class LightDateSwipePhysics extends PageScrollPhysics {
       parent: buildParent(ancestor),
       pageAcceptThreshold: pageAcceptThreshold,
       motionThreshold: motionThreshold,
+      gestureOriginPage: gestureOriginPage,
     );
   }
 
@@ -37,31 +45,38 @@ class LightDateSwipePhysics extends PageScrollPhysics {
     Tolerance tolerance,
     double velocity,
   ) {
-    final page = position.pixels / position.viewportDimension;
-    if (velocity < -tolerance.velocity) {
-      return page.floorToDouble() * position.viewportDimension;
-    }
-    if (velocity > tolerance.velocity) {
-      return page.ceilToDouble() * position.viewportDimension;
-    }
-    final nearest = page.round();
-    final distToNearest = (page - nearest).abs();
+    final viewport = position.viewportDimension;
+    if (viewport <= 0) return position.pixels;
+    final page = position.pixels / viewport;
     final double targetPage;
-    if (distToNearest < pageAcceptThreshold) {
-      targetPage = nearest.toDouble();
-    } else if (page > nearest) {
-      targetPage = nearest + 1.0;
+    if (velocity < -tolerance.velocity) {
+      targetPage = page.floorToDouble();
+    } else if (velocity > tolerance.velocity) {
+      targetPage = page.ceilToDouble();
     } else {
-      targetPage = nearest - 1.0;
+      final origin = gestureOriginPage?.call();
+      if (origin == null || (page - origin).abs() < pageAcceptThreshold) {
+        targetPage = origin?.toDouble() ?? page.roundToDouble();
+      } else {
+        // One monotonic step from the gesture's actual origin. Never choose
+        // a target backwards after crossing 50% of a forward drag.
+        targetPage = (origin + (page > origin ? 1 : -1)).toDouble();
+      }
     }
-    return targetPage * position.viewportDimension;
+    return (targetPage * viewport).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    ).toDouble();
   }
 }
 
 /// Planning: feather-light day pager (~20% drag, lower fling threshold).
 class FeatherDateSwipePhysics extends LightDateSwipePhysics {
-  const FeatherDateSwipePhysics({ScrollPhysics? parent})
-    : super(
+  const FeatherDateSwipePhysics({
+    ScrollPhysics? parent,
+    int? Function()? gestureOriginPage,
+  }) : super(
+        gestureOriginPage: gestureOriginPage,
         parent: parent ?? const BouncingScrollPhysics(),
         pageAcceptThreshold: 0.20,
         motionThreshold: 8.0,
@@ -72,7 +87,10 @@ class FeatherDateSwipePhysics extends LightDateSwipePhysics {
 
   @override
   FeatherDateSwipePhysics applyTo(ScrollPhysics? ancestor) {
-    return FeatherDateSwipePhysics(parent: buildParent(ancestor));
+    return FeatherDateSwipePhysics(
+      parent: buildParent(ancestor),
+      gestureOriginPage: gestureOriginPage,
+    );
   }
 }
 void logDateSwipeThresholdOnScrollEnd({

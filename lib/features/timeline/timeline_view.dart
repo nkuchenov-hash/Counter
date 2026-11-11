@@ -108,6 +108,8 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   bool _showStatsView = false;
   bool _restoreQuickEntryFocusOnReturn = false;
   String? _swipeFromDateKey;
+  int? _gestureStartPage;
+  bool _prepaintNeighbors = false;
 
   String _dateKeyFromDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -210,6 +212,13 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     _visiblePageIndex = _initialPage + daysOffset;
     _controller = PageController(initialPage: _visiblePageIndex);
     _controller.addListener(_onPageControllerTick);
+    // Paint the complete two adjacent days only after the first visible
+    // frame, not as blocking work before Timeline initially appears.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.shellTabActive && !_prepaintNeighbors) {
+        setState(() => _prepaintNeighbors = true);
+      }
+    });
     if (!kUseMountedDayStrip) {
       DatabaseService.instance.ensureTimelineWarmWindow(widget.selectedDate);
       if (widget.shellTabActive) {
@@ -239,6 +248,13 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     }
     if (!oldWidget.shellTabActive && widget.shellTabActive) {
       _syncOnTabActivated();
+      if (!_prepaintNeighbors) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && widget.shellTabActive && !_prepaintNeighbors) {
+            setState(() => _prepaintNeighbors = true);
+          }
+        });
+      }
       if (_restoreQuickEntryFocusOnReturn && !_showStatsView) {
         SchedulerBinding.instance.addPostFrameCallback((_) {
           if (mounted && widget.shellTabActive && !_showStatsView) {
@@ -330,7 +346,16 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
         behavior: const MouseDragScrollBehavior(),
         child: NotificationListener<ScrollNotification>(
           onNotification: (n) {
+            // The nested record ListView also bubbles scroll notifications.
+            // Its vertical scrolls must not touch horizontal date ownership.
+            if (n.depth != 0 || n.metrics.axis != Axis.horizontal) {
+              return false;
+            }
+            if (n is ScrollStartNotification) {
+              _settleGate.cancelPendingCommit();
+            }
             if (n is ScrollStartNotification && n.dragDetails != null) {
+              _gestureStartPage = _controller.page?.round() ?? _visiblePageIndex;
               _settleGate.onUserDragStart();
               _swipeFromDateKey = _dateKeyFromDate(visibleDate);
               RebuildMetrics.instance.dateSwipeStart(
@@ -339,8 +364,21 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
               );
             }
             if (n is ScrollEndNotification) {
+              _gestureStartPage = null;
               _settleGate.onUserDragEnd();
               _applyPendingExternalPageIfNeeded();
+              // Do not fan out shell/Brain date changes in the middle of a
+              // finger-following animation. The selected Timeline page is
+              // already live at midpoint; publish globally once settled.
+              _settleGate.onPageSettled(
+                pageIndex: _visiblePageIndex,
+                onShellCommit: (page) {
+                  if (!mounted || !widget.shellTabActive) return;
+                  final committed = _dateForIndex(page);
+                  _schedulePrefetch(committed);
+                  widget.onDateChanged(_dateOnly(committed));
+                },
+              );
               SchedulerBinding.instance.addPostFrameCallback((_) {
                 RebuildMetrics.instance.dateSwipeEnd(section: 'Timeline');
               });
@@ -349,20 +387,18 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
           },
           child: PageView.builder(
             controller: _controller,
-            physics: const FeatherDateSwipePhysics(),
+            physics: FeatherDateSwipePhysics(
+              gestureOriginPage: () => _gestureStartPage,
+            ),
+            allowImplicitScrolling: widget.shellTabActive && _prepaintNeighbors,
             itemCount: _totalPageCount,
             onPageChanged: (int index) {
               if (index < 0 || index >= _totalPageCount) return;
-              setState(() => _visiblePageIndex = index);
-              _settleGate.onPageSettled(
-                pageIndex: index,
-                onShellCommit: (page) {
-                  if (!mounted) return;
-                  final committed = _dateForIndex(page);
-                  _schedulePrefetch(committed);
-                  widget.onDateChanged(_dateOnly(committed));
-                },
-              );
+              // Midpoint promotion is immediately visible and interactive.
+              // Global shell commit belongs to horizontal ScrollEnd above.
+              if (_visiblePageIndex != index) {
+                setState(() => _visiblePageIndex = index);
+              }
             },
             itemBuilder: (context, index) {
               final date = _dateForIndex(index);
@@ -616,29 +652,33 @@ class _TimelinePageState extends State<TimelinePage> {
                           );
                         },
                       )
-                    : widget.isActivePage
-                    ? RepaintBoundary(
-                        child: TimelineDayCardList(
-                          key: ValueKey<String>(
-                            'tl-day-${_dateKey(_visibleDate)}',
+                    : RepaintBoundary(
+                        // Keep the SAME element tree and TimelineDayCardList
+                        // State on both sides of onPageChanged. Switching
+                        // between a bare list and IgnorePointer remounted the
+                        // entire full-card list at the pager midpoint.
+                        child: IgnorePointer(
+                          ignoring: !widget.isActivePage,
+                          child: TimelineDayCardList(
+                            key: ValueKey<String>(
+                              'tl-day-${_dateKey(_visibleDate)}',
+                            ),
+                            date: _visibleDate,
+                            dateKey: _dateKey(_visibleDate),
+                            isFutureDate: _visibleIsFuture,
+                            isActive: widget.isActivePage,
+                            showStatsView: widget.showStatsView,
+                            rules: widget.rules,
+                            liveRecordMaps: widget.isActivePage
+                                ? _liveRecordsForVisibleDay()
+                                : null,
+                            onStop: widget.onStopRecord,
+                            onDelete: widget.onDeleteRecord,
+                            onEdit: (data) => _showEditRecordSheet(context, data),
+                            onNavigateToDate: widget.onNavigateToDate,
+                            titleFocus: widget.titleFocus,
                           ),
-                          date: _visibleDate,
-                          dateKey: _dateKey(_visibleDate),
-                          isFutureDate: _visibleIsFuture,
-                          isActive: true,
-                          showStatsView: widget.showStatsView,
-                          rules: widget.rules,
-                          liveRecordMaps: _liveRecordsForVisibleDay(),
-                          onStop: widget.onStopRecord,
-                          onDelete: widget.onDeleteRecord,
-                          onEdit: (data) => _showEditRecordSheet(context, data),
-                          onNavigateToDate: widget.onNavigateToDate,
-                          titleFocus: widget.titleFocus,
                         ),
-                      )
-                    : const ColoredBox(
-                        color: Colors.transparent,
-                        child: SizedBox.expand(),
                       ),
               ),
             ),
