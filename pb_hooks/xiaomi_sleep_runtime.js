@@ -477,7 +477,8 @@ function connect(e) {
     var expires = __xiaomiDate(connection.get("oauth_state_expires_at"));
     // A live login must survive repeat taps and slow Xiaomi QR generation.
     // Only a worker-reported failure or an expired state starts a new attempt.
-    var reusable = !!oauthState && !!expires &&
+    var reusable = String(connection.get("status") || "") === "connecting" &&
+        !!oauthState && !!expires &&
         expires.getTime() > Date.now() + 60000 && previousStatus !== "error";
 
     if (!reusable) {
