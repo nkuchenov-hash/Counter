@@ -23,16 +23,13 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
         );
       },
     ),
-    LifeOsMenuPage(
+    LifeOsSettingsTabsPage(
       onAction: onLifeOsMenuAction,
-      activeTab: shellPageIndexListenable,
-      initialSection: 'account',
-      onBackToMenu: () => setState(() => setShellPageIndex(7)),
+      initialTab: 'profile',
     ),
     const PathsPage(),
-    LifeOsMenuPage(
+    LifeOsSettingsTabsPage(
       onAction: onLifeOsMenuAction,
-      activeTab: shellPageIndexListenable,
     ),
     PeopleSettingsPage(
       key: ValueKey(peopleDestination),
