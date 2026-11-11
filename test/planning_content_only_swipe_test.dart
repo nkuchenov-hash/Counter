@@ -48,7 +48,9 @@ void main() {
     final source = File('lib/features/timeline/timeline_view.dart')
         .readAsStringSync();
     expect(source, contains('allowImplicitScrolling: widget.shellTabActive && _prepaintNeighbors'));
-    expect(source, contains('isActive: false,'));
+    expect(source, contains('isActive: widget.isActivePage,'));
+    expect(source, contains('ignoring: !widget.isActivePage,'));
+    expect(source, contains('Keep the SAME element tree'));
     expect(source, contains('liveRecordMaps: null,'));
     expect(source, isNot(contains('color: Colors.transparent,\\n                        child: SizedBox.expand()')));
   });

@@ -637,31 +637,13 @@ class _TimelinePageState extends State<TimelinePage> {
                           );
                         },
                       )
-                    : widget.isActivePage
-                    ? RepaintBoundary(
-                        child: TimelineDayCardList(
-                          key: ValueKey<String>(
-                            'tl-day-${_dateKey(_visibleDate)}',
-                          ),
-                          date: _visibleDate,
-                          dateKey: _dateKey(_visibleDate),
-                          isFutureDate: _visibleIsFuture,
-                          isActive: true,
-                          showStatsView: widget.showStatsView,
-                          rules: widget.rules,
-                          liveRecordMaps: _liveRecordsForVisibleDay(),
-                          onStop: widget.onStopRecord,
-                          onDelete: widget.onDeleteRecord,
-                          onEdit: (data) => _showEditRecordSheet(context, data),
-                          onNavigateToDate: widget.onNavigateToDate,
-                          titleFocus: widget.titleFocus,
-                        ),
-                      )
                     : RepaintBoundary(
+                        // Keep the SAME element tree and TimelineDayCardList
+                        // State on both sides of onPageChanged. Switching
+                        // between a bare list and IgnorePointer remounted the
+                        // entire full-card list at the pager midpoint.
                         child: IgnorePointer(
-                          // No editing an offscreen day. When onPageChanged
-                          // promotes the day at midpoint this immediately
-                          // becomes the real live Timeline page.
+                          ignoring: !widget.isActivePage,
                           child: TimelineDayCardList(
                             key: ValueKey<String>(
                               'tl-day-${_dateKey(_visibleDate)}',
@@ -669,10 +651,12 @@ class _TimelinePageState extends State<TimelinePage> {
                             date: _visibleDate,
                             dateKey: _dateKey(_visibleDate),
                             isFutureDate: _visibleIsFuture,
-                            isActive: false,
+                            isActive: widget.isActivePage,
                             showStatsView: widget.showStatsView,
                             rules: widget.rules,
-                            liveRecordMaps: null,
+                            liveRecordMaps: widget.isActivePage
+                                ? _liveRecordsForVisibleDay()
+                                : null,
                             onStop: widget.onStopRecord,
                             onDelete: widget.onDeleteRecord,
                             onEdit: (data) => _showEditRecordSheet(context, data),
