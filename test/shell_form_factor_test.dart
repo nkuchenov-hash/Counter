@@ -46,14 +46,35 @@ void main() {
   });
 
   group('single settings navigation', () {
-    test('Menu uses one shared settings index without a second rail', () {
-      final menu = File('lib/features/profile/menu/life_os_menu_page.dart')
+    test('Settings use one native tab workspace across both shell entries', () {
+      final chrome = File('lib/app/shell/shared/shell_chrome.dart')
           .readAsStringSync();
-      expect(menu, contains('child: AppSettingsPageBody('));
-      expect(menu, isNot(contains('_quickTile(')));
-      expect(menu, isNot(contains('maxWidth: 680')));
-      expect(menu, contains('onTap: () => _openSection(entry.id)'));
-      expect(menu, contains('if (!desktop) ...['));
+      final settings = File(
+        'lib/features/profile/menu/life_os_settings_tabs_page.dart',
+      ).readAsStringSync();
+      expect('LifeOsSettingsTabsPage('.allMatches(chrome).length, 2);
+      expect(chrome, isNot(contains('LifeOsMenuPage(')));
+      expect(settings, contains('AppSettingsPageBody(children:'));
+      expect(settings, contains('return Wrap('));
+      expect(settings, contains('DropdownButtonFormField<String>('));
+      expect(settings, isNot(contains('SingleChildScrollView(')));
+      expect(settings, isNot(contains('Color(0x')));
+    });
+
+    test('Notes and notification settings edit feature-owned preferences', () {
+      final settings = File(
+        'lib/features/profile/menu/life_os_settings_tabs_page.dart',
+      ).readAsStringSync();
+      final notes = File('lib/features/lists/lists_view.dart')
+          .readAsStringSync();
+      expect(settings, contains('NotesLibraryPreferences.checkboxMode'));
+      expect(settings, contains('NotesLibraryPreferences.setCheckboxMode'));
+      expect(notes, contains('NotesLibraryPreferences.checkboxMode.addListener'));
+      expect(settings, contains('UnfilledTimeGapService.instance.setMinimumGapMinutes'));
+      expect(settings, contains('UnfilledTimeGapService.instance.setNotificationDelayMinutes'));
+      expect(settings, contains('kNordicEntertainment'));
+      expect(settings, contains('AppTextField('));
+      expect(settings, contains('AppButton.primary('));
     });
 
     test('Profile never opens a parallel desktop settings hub', () {
@@ -167,7 +188,7 @@ void main() {
       final routes = File('lib/app/shell/shared/shell_more_menu.dart')
           .readAsStringSync();
       expect(chrome, contains("desktopShell ? 'LIFE OS'"));
-      expect(chrome, contains("initialSection: 'account'"));
+      expect(chrome, contains("initialTab: 'profile'"));
       expect(chrome, contains('embeddedInShell: true'));
       expect(sidebar, contains('AppNeutralTones.gray100'));
       expect(sidebar, isNot(contains("'LIFE OS'")));
