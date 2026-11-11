@@ -123,6 +123,7 @@ abstract final class PlanCardTokens {
   static const Color titleColor = AppNeutralTones.gray900;
   static const Color checkboxStroke = AppNeutralTones.gray300;
   static const Color playFill = AppNeutralTones.gray600;
+  static const Color playHoverFill = AppNeutralTones.gray700;
   static const Color menuBg = AppNeutralTones.gray200;
   static const Color menuStroke = AppNeutralTones.gray500;
   static const Color dividerColor = AppNeutralTones.gray200;
