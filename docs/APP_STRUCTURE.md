@@ -841,3 +841,13 @@ One-off Pass 3/Pass 2 extraction scripts (`scripts/pass3_*`, `scripts/extract_*`
 - `lib/features/settings/categories/category_icon_picker.dart` is the responsive shared selector used by `category_appearance_sheet.dart` and `category_editor_sheet.dart`, with bilingual search, groups, preview, Outline/Fill switch, and confirmation/cancel.
 - Existing `icon_code_point` data is not modified by icon picker choices. **Current SVG key/style storage is device-local SharedPreferences**. This is intentionally not marked as fully released: migration of PocketBase category schema, offline outbox and cross-device synchronization is still required; likewise full-app icon renderer adoption beyond the category tree, and catalog expansion beyond the verified starter 14 keys.
 - Dedicated GitHub Actions `.github/workflows/icon-packs-qa.yml` uses the **same Flutter 3.41.6 as production** to gate Flutter tests, analyzer errors and a web build. All new native icon registries must compile and their independent catalogs pass tests before publication.
+
+### Context awareness (Android location + Timeline inference)
+
+| File | Role |
+| :--- | :--- |
+| `lib/data/context/context_awareness_policy.dart` | Pure event parser, home-bound title safety policy and coarse travel label rules. |
+| `lib/data/context/context_awareness_coordinator.dart` | Post-auth foreground replay of native events via canonical optimistic record Brain / outbox. |
+| `lib/features/profile/settings/context_awareness_settings_section.dart` | Android opt-in, permission state, home anchor and Stop settings UI. |
+
+Native entry: `android/app/src/main/kotlin/com/example/counter/ContextAwarenessBridge.kt` plus MainActivity MethodChannel; no new PocketBase schema. Off unless the user explicitly enables it.

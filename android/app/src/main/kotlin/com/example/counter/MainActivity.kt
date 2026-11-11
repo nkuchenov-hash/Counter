@@ -36,6 +36,40 @@ class MainActivity : FlutterFragmentActivity() {
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
+            "counter/context_awareness",
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "status" -> result.success(ContextAwarenessBridge.status(this))
+                "suggestPlaces" -> ContextAwarenessBridge.suggestPlaces(
+                    this,
+                    call.argument<Double>("latitude") ?: Double.NaN,
+                    call.argument<Double>("longitude") ?: Double.NaN,
+                    result,
+                )
+                "setHome" -> ContextAwarenessBridge.setHome(this, result)
+                "enable" -> ContextAwarenessBridge.enable(
+                    this, call.argument<String>("profileId") ?: "", result,
+                )
+                "disable" -> {
+                    ContextAwarenessBridge.disable(this)
+                    result.success(ContextAwarenessBridge.status(this))
+                }
+                "events" -> result.success(ContextAwarenessBridge.events(
+                    this, call.argument<String>("profileId") ?: "",
+                ))
+                "acknowledge" -> {
+                    ContextAwarenessBridge.acknowledge(
+                        this, call.argument<String>("profileId") ?: "",
+                        call.argument<String>("eventId") ?: "",
+                    )
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
             "counter/people_contacts",
         ).setMethodCallHandler { call, result ->
             when (call.method) {
