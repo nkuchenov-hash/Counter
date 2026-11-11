@@ -45,6 +45,7 @@ jobs:
           node test/viktor_turns_migration_test.cjs
           node test/viktor_thread_context_migration_test.cjs
           node test/viktor_atomic_schedule_hook_test.cjs
+          node test/xiaomi_sleep_auth_contract_test.cjs
 
       - name: Detect PocketBase bundle changes
         id: changes
@@ -190,6 +191,20 @@ jobs:
           echo "PocketBase migration preflight passed; proceeding with deployment."
           $SUDO rm -rf "$preflight_dir"
           trap - EXIT
+
+          # The Xiaomi bridge runs in its own Python venv, outside pb_hooks.
+          # A recovered/replaced PocketBase host must provision it BEFORE the
+          # service is restarted, otherwise Connect Xiaomi fails on every tap.
+          # Preserve an existing working venv; do not modify any token files.
+          xiaomi_python="/opt/lifeos-xiaomi-sleep/bin/python"
+          if ! $SUDO test -x "$xiaomi_python" ||
+             ! $SUDO "$xiaomi_python" -c 'from mi_fitness import MiHealthClient, XiaomiAuth' >/dev/null 2>&1; then
+            python3 -c 'import sys; assert sys.version_info >= (3, 11), "Xiaomi bridge requires Python >=3.11"'
+            $SUDO python3 -m venv /opt/lifeos-xiaomi-sleep
+            $SUDO "$xiaomi_python" -m pip install --disable-pip-version-check --no-input 'mi-fitness==0.2.0'
+          fi
+          $SUDO "$xiaomi_python" -c 'from mi_fitness import MiHealthClient, XiaomiAuth'
+          echo "Xiaomi Python bridge dependency verified; login worker can start."
 
           # LIFEOS2 recovered services may load Google Fit settings from a
           # systemd EnvironmentFile outside the active PocketBase data folder.
