@@ -52,7 +52,17 @@ class TimelineDayCardList extends StatefulWidget {
 class TimelineDayCardListState extends State<TimelineDayCardList>
     with AutomaticKeepAliveClientMixin {
   @override
-  bool get wantKeepAlive => true;
+  // Do not retain every Timeline day ever visited in PageView's sliver.
+  // Keep only the selected day alive; the native viewport already prepaints
+  // the two immediate read-only neighbors with their complete cards.
+  @override
+  bool get wantKeepAlive => widget.isActive;
+
+  @override
+  void didUpdateWidget(covariant TimelineDayCardList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isActive != widget.isActive) updateKeepAlive();
+  }
 
   List<Map<String, dynamic>> _recordMaps() {
     final db = DatabaseService.instance;

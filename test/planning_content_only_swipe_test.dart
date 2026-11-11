@@ -51,6 +51,11 @@ void main() {
     expect(source, contains('isActive: widget.isActivePage,'));
     expect(source, contains('ignoring: !widget.isActivePage,'));
     expect(source, contains('Keep the SAME element tree'));
+    final cardList = File('lib/features/timeline/timeline_day_page.dart')
+        .readAsStringSync();
+    expect(cardList, contains('bool get wantKeepAlive => widget.isActive;'));
+    expect(cardList, contains('updateKeepAlive();'));
+    expect(cardList, isNot(contains('bool get wantKeepAlive => true;')));
     expect(source, contains('liveRecordMaps: null,'));
     expect(source, isNot(contains('color: Colors.transparent,\\n                        child: SizedBox.expand()')));
   });
