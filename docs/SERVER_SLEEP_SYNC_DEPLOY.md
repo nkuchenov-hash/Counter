@@ -118,7 +118,7 @@ If the immediately preceding root non-sleep record has no end or extends through
 
 PocketBase deployment must include `pb_hooks/**` and `pb_migrations/**`, validate JavaScript syntax, restart the PocketBase service when the server bundle changes, and run the sanitized production verifier.
 
-The Xiaomi runtime provisioning workflow pins the server-side `mi-fitness` dependency and verifies that the bridge can read the production account without exposing credentials.
+The canonical `.github/workflows/deploy-pocketbase.yml` provisions the server-side `mi-fitness==0.2.0` dependency on verified LIFEOS2 and checks the live service. `.github/workflows/install-xiaomi-sleep-runtime.yml` performs **credential-free source validation only**; it must never SSH to the retired PocketBase server or independently replace the production Python environment.
 
 The deployment verifier must report at least:
 
