@@ -13,7 +13,7 @@ function __xiaomiEnv(name) {
 }
 
 function __xiaomiPublicBaseUrl() {
-    var configured = __xiaomiEnv("SLEEP_SYNC_PUBLIC_BASE_URL").replace(/\\/+$/, "");
+    var configured = __xiaomiEnv("SLEEP_SYNC_PUBLIC_BASE_URL").replace(/[/]+$/, "");
     // LIFEOS2 is the canonical production backend. Ignore a stale origin
     // inherited from the retired server's EnvironmentFile.
     if (configured && configured !== "https://217-114-0-201.sslip.io") return configured;
