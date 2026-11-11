@@ -3,8 +3,7 @@
 // PLANNING FEATURE — Day planning & task list tab. UI_ISOLATION (§7). FEATURE-FIRST (§17).
 // All strings via t(). Use Theme.of(context). No hardcoded colors.
 // ---------------------------------------------------------------------------
-import 'dart:async';
-
+import 'dart:async'; 
 import 'package:counter/core/widgets/day_content_strip.dart';
 import 'package:counter/core/widgets/day_window.dart';
 import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
@@ -446,7 +445,6 @@ class _PlanningPageState extends State<PlanningPage>
 
   /// While dragging in the hour grid, set scroll velocity from global Y bands
   /// (top/bottom 10% of viewport); motion is applied in [_onHourGridEdgeScrollTick].
-
   static String? _planBusinessUuidForMerge(PlanningTask t) {
     final row = t.planRowId?.trim() ?? '';
     if (row.isNotEmpty) {
@@ -1393,6 +1391,7 @@ class _PlanningPageState extends State<PlanningPage>
               timeMode: _sortMode == PlanSortMode.time,
             ),
             visible: widget.shellTabActive,
+            workspaceLeftEdgePx: desktop ? kShellSideNavWidth : 0,
             enabled: widget.shellTabActive && !widget.datePagerLocked &&
                 widget.onAdjacentDayRequested != null,
             onDayChange: (dir) {

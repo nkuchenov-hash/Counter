@@ -276,6 +276,50 @@ void main() {
     expect(changes, <int>[1]);
   });
 
+  testWidgets('desktop left arrow stays in workspace, never in sidebar', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1641, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    const navWidth = 272.0;
+    const canvasWidth = 905.0;
+    final changes = <int>[];
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: Row(children: [
+        const SizedBox(width: navWidth, child: Text('Permanent navigation')),
+        Expanded(child: Center(child: SizedBox(
+          width: canvasWidth,
+          height: 720,
+          child: PlanningDaySwipeRegion(
+            dayKey: '2026-11-11',
+            workspaceLeftEdgePx: navWidth,
+            onDayChange: changes.add,
+            adjacentDayBuilder: (_, day) => Center(child: Text('Day ${day.day}')),
+            child: const SizedBox.expand(key: ValueKey('plans-body')),
+          ),
+        ))),
+      ])),
+    ));
+    await tester.pump();
+    final left = find.byKey(const ValueKey('planning-side-previous-day'));
+    final right = find.byKey(const ValueKey('planning-side-next-day'));
+    final canvas = find.byKey(const ValueKey('plans-body'));
+    final canvasLeft = tester.getTopLeft(canvas).dx;
+    final canvasRight = tester.getTopRight(canvas).dx;
+    final leftX = tester.getCenter(left).dx;
+    final rightX = tester.getCenter(right).dx;
+    expect(canvasLeft, greaterThan(navWidth + 100));
+    expect(tester.getSize(find.byType(PageView)).width, canvasWidth);
+    expect(leftX, greaterThan(navWidth + 30));
+    expect(leftX, lessThan(canvasLeft - 40));
+    expect(leftX, closeTo((navWidth + canvasLeft) / 2, 6));
+    expect(rightX, closeTo((canvasRight + 1641) / 2, 6));
+    expect(rightX, greaterThan(canvasRight + 40));
+    await tester.tap(left);
+    await tester.pumpAndSettle();
+    expect(changes, [-1]);
+  });
+
   testWidgets('hidden Planning tab does not prepaint neighbors at startup', (
     tester,
   ) async {
