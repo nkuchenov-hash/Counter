@@ -80,7 +80,6 @@ class _ListsPageState extends State<ListsPage>
   final TextEditingController _notesSearchController = TextEditingController();
   final FocusNode _notesSearchFocus = FocusNode();
   // GLM Notes v3 library view preferences.
-  static const String _kPrefNotesCheckboxMode = 'lifeos.notes.checkboxMode';
   NotesLibraryView _notesView = NotesLibraryView.grid;
   bool _notesCheckboxesOn = false;
   bool _creatingNote = false;
@@ -130,15 +129,16 @@ class _ListsPageState extends State<ListsPage>
     try {
       final prefs = await SharedPreferences.getInstance();
       final v = prefs.getString(NotesLibraryPreferences.key);
-      final c = prefs.getBool(_kPrefNotesCheckboxMode);
+      final c = prefs.getBool(NotesLibraryPreferences.checkboxModeKey);
       if (!mounted) return;
       setState(() {
         if (v == 'grid') _notesView = NotesLibraryView.grid;
         if (v == 'list') _notesView = NotesLibraryView.list;
-        if (c == true) _notesCheckboxesOn = true;
+        _notesCheckboxesOn = c ?? false;
       });
       if (v == 'list' || v == 'grid') {
         NotesLibraryPreferences.mode.value = v!;
+        NotesLibraryPreferences.checkboxMode.value = c ?? false;
       }
     } catch (_) {}
   }
@@ -153,11 +153,15 @@ class _ListsPageState extends State<ListsPage>
         ? NotesLibraryView.list : NotesLibraryView.grid;
     if (mounted && _notesView != view) setState(() => _notesView = view);
   }
+  void _onSharedCheckboxModeChanged() {
+    final enabled = NotesLibraryPreferences.checkboxMode.value;
+    if (mounted && _notesCheckboxesOn != enabled) {
+      setState(() => _notesCheckboxesOn = enabled);
+    }
+  }
+
   Future<void> _persistNotesCheckboxMode(bool on) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_kPrefNotesCheckboxMode, on);
-    } catch (_) {}
+    await NotesLibraryPreferences.setCheckboxMode(on);
   }
   /// GLM v3 sort: unfinished first, pinned first, updated desc, stable fallback.
   void _notesLibrarySort(List<PlanningTask> list) {
@@ -308,6 +312,7 @@ class _ListsPageState extends State<ListsPage>
     super.initState();
     _inlineController = TextEditingController();
     NotesLibraryPreferences.mode.addListener(_onSharedNotesViewChanged);
+    NotesLibraryPreferences.checkboxMode.addListener(_onSharedCheckboxModeChanged);
     NotesLibraryPreferences.categoryBarRequests.addListener(
       _onCategoryBarRequested,
     );
@@ -648,6 +653,7 @@ class _ListsPageState extends State<ListsPage>
     _planRefreshSub?.cancel();
     _tagsCatalogSub?.cancel();
     NotesLibraryPreferences.mode.removeListener(_onSharedNotesViewChanged);
+    NotesLibraryPreferences.checkboxMode.removeListener(_onSharedCheckboxModeChanged);
     NotesLibraryPreferences.categoryBarRequests.removeListener(
       _onCategoryBarRequested,
     );
