@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `35f5d4b6` on 2026-11-11.**
+**Generated from input HEAD `4a827b4a` on 2026-11-11.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1009 — each appears **exactly once** below.
+**Tracked files:** 1011 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,8 +26,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 199 |
-| `test` | 147 |
+| `production UI` | 200 |
+| `test` | 148 |
 | `Brain/data` | 117 |
 | `platform build` | 84 |
 | `shared foundation` | 71 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 545 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 272 |
+| `PROVEN_REQUIRED` | 546 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 273 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 921 |
+| `HIGH` | 923 |
 | `MEDIUM` | 88 |
 
 ---
@@ -22682,8 +22682,8 @@ EN:
 - **Human purpose:** `planning_frozen_day_list.dart` on Plans tab (second bottom tab) — Offscreen frozen day plan card list. Users see `planning_frozen_day_list.dart` when using Plans tab (second bottom tab).
 - **What this is:** `planning_frozen_day_list.dart` on Plans tab (second bottom tab) — Offscreen frozen day plan card list.
 - **Why needed:** Users see `planning_frozen_day_list.dart` when using Plans tab (second bottom tab).
-- **Contents:** Primary symbols: `PlanningFrozenDayList`, `PlanningFrozenTimeCanvas`.
-- **Key code names:** `PlanningFrozenDayList`, `PlanningFrozenTimeCanvas`
+- **Contents:** Primary symbols: `PlanningFrozenDayList`, `PlanningFrozenTimeCanvas`, `_PlanningFrozenTimeCanvasState`.
+- **Key code names:** `PlanningFrozenDayList`, `PlanningFrozenTimeCanvas`, `_PlanningFrozenTimeCanvasState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -25467,6 +25467,44 @@ RU:
 - **Уверенность:** HIGH
 - **Владелец / слой:** UI таймлайна
 - **Обязанности:** Собирает UI Timeline; day keys по profile timezone; warm-window paging.
+- **Когда открывать:** Вкладка Timeline: записи, день, stats.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Вкладка Timeline (shell index 0)
+
+
+### `lib/features/timeline/timeline_workspace_day_arrows.dart`
+
+EN:
+
+- **Human purpose:** `timeline_workspace_day_arrows.dart` on Timeline tab (first bottom tab) — Desktop Timeline day arrows overlay, positioned in navigation-safe workspace gutters without altering PageView or record width. Users see `timeline_workspace_day_arrows.dart` when using Timeline tab (first bottom tab).
+- **What this is:** `timeline_workspace_day_arrows.dart` on Timeline tab (first bottom tab) — Desktop Timeline day arrows overlay, positioned in navigation-safe workspace gutters without altering PageView or record width.
+- **Why needed:** Users see `timeline_workspace_day_arrows.dart` when using Timeline tab (first bottom tab).
+- **Contents:** Primary symbols: `TimelineWorkspaceDayArrows`, `_TimelineWorkspaceDayArrowsState`.
+- **Key code names:** `TimelineWorkspaceDayArrows`, `_TimelineWorkspaceDayArrowsState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/timeline/timeline_view.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Timeline UI
+- **Responsibilities:** Desktop Timeline day arrows overlay, positioned in navigation-safe workspace gutters without altering PageView or record width
+- **When to open:** Timeline tab: day list, record cards, stats toggle, date swipe.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** Timeline tab (shell index 0); APP_STRUCTURE role: Desktop Timeline day arrows overlay, positioned in navigation-safe workspace gutters without altering PageView or record
+
+RU:
+
+- **Зачем файл человеку:** `timeline_workspace_day_arrows.dart` на вкладка Timeline (первая снизу) — Поддерживает поведение `timeline_workspace_day_arrows` в этой feature-зоне.. Пользователь видит UI из `timeline_workspace_day_arrows.dart` на вкладка Timeline (первая снизу).
+- **Что это:** `timeline_workspace_day_arrows.dart` на вкладка Timeline (первая снизу) — Поддерживает поведение `timeline_workspace_day_arrows` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `timeline_workspace_day_arrows.dart` на вкладка Timeline (первая снизу).
+- **Содержимое:** Dart-модуль `timeline_workspace_day_arrows.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/timeline/timeline_view.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI таймлайна
+- **Обязанности:** Поддерживает поведение `timeline_workspace_day_arrows` в этой feature-зоне.
 - **Когда открывать:** Вкладка Timeline: записи, день, stats.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Timeline (shell index 0)
@@ -40375,6 +40413,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `timeline_record_edit_save`.
 - **Когда открывать:** Падение CI или правка кода рядом с `timeline_record_edit_save`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/timeline_workspace_day_arrows_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `timeline_workspace_day_arrows_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `timeline_workspace_day_arrows_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/timeline_workspace_day_arrows_test.dart` / CI when enabled. (2) Namesake production subject: `lib/features/timeline/timeline_workspace_day_arrows.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `timeline_workspace_day_arrows_test` scenario.
+- **When to open:** CI failure or changing code near `timeline_workspace_day_arrows`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `timeline_workspace_day_arrows`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `timeline_workspace_day_arrows` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `timeline_workspace_day_arrows` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `timeline_workspace_day_arrows`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/timeline_workspace_day_arrows_test.dart`. (2) Парный production-файл: `lib/features/timeline/timeline_workspace_day_arrows.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `timeline_workspace_day_arrows`.
+- **Когда открывать:** Падение CI или правка кода рядом с `timeline_workspace_day_arrows`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
