@@ -130,6 +130,19 @@ function __xiaomiStatus(app, connection) {
     var configured = !!userId && __xiaomiHasToken(userId);
     var phase = String(connection.get("status") || "disconnected");
 
+    // The QR worker runs independently of this HTTP request. Surface a real
+    // worker failure immediately instead of leaving the user in "connecting"
+    // until the state expiry, then silently clearing the cause.
+    if (!configured && phase === "connecting") {
+        var loginState = __xiaomiReadJson(__xiaomiStatePath(userId));
+        if (loginState && String(loginState.status || "") === "error") {
+            phase = "error";
+            connection.set("status", phase);
+            connection.set("last_error", "xiaomi_authorization_login_failed");
+            try { app.save(connection); } catch (_) {}
+        }
+    }
+
     if (!configured && phase === "connecting") {
         var oauthExpires = __xiaomiDate(connection.get("oauth_state_expires_at"));
         if (!oauthExpires || oauthExpires.getTime() <= Date.now()) {
@@ -171,7 +184,7 @@ function __xiaomiStatus(app, connection) {
         provider: __xiaomiProvider,
         enabled: configured && !!connection.get("enabled"),
         daily_sync_minutes: Number(connection.get("daily_sync_minutes") || __xiaomiDefaultMinutes),
-        status: configured ? phase : (phase === "connecting" ? "connecting" : "disconnected"),
+        status: configured ? phase : ((phase === "connecting" || phase === "error") ? phase : "disconnected"),
         last_sync_at: connection.get("last_sync_at") || null,
         last_session_count: Number(connection.get("last_session_count") || 0),
         last_imported_count: Number(connection.get("last_imported_count") || 0),
@@ -452,18 +465,31 @@ function connect(e) {
         connection.set("last_error", "");
         e.app.save(connection);
         __xiaomiDisableGoogleProviders(e.app, userId);
-        try { __xiaomiRunSafe(e.app, connection); } catch (_) {}
+        // A pre-existing valid token is already connected. Never run the
+        // potentially 90-second import inside the sign-in HTTP request.
         return e.json(200, __xiaomiStatus(e.app, connection));
     }
 
+
     var previous = __xiaomiReadJson(__xiaomiStatePath(userId));
     var previousStatus = previous ? String(previous.status || "") : "";
-    var previousUrl = previous ? String(previous.login_url || "") : "";
     var oauthState = String(connection.get("oauth_state") || "");
     var expires = __xiaomiDate(connection.get("oauth_state_expires_at"));
-    var reusable = previousStatus === "awaiting_scan" && previousUrl && oauthState && expires && expires.getTime() > Date.now() + 60000;
+    // A live login must survive repeat taps and slow Xiaomi QR generation.
+    // Only a worker-reported failure or an expired state starts a new attempt.
+    var reusable = String(connection.get("status") || "") === "connecting" &&
+        !!oauthState && !!expires &&
+        expires.getTime() > Date.now() + 60000 && previousStatus !== "error";
 
     if (!reusable) {
+        // Fail visibly when a recovered server has PocketBase hooks but not
+        // the separate Xiaomi Python environment. Do not spawn a doomed job.
+        if (!__xiaomiExists(__xiaomiPython) || !__xiaomiExists(__xiaomiBridgePath())) {
+            connection.set("status", "error");
+            connection.set("last_error", "xiaomi_authorization_runtime_unavailable");
+            e.app.save(connection);
+            return e.json(503, { error: "xiaomi_authorization_runtime_unavailable" });
+        }
         __xiaomiRemove(__xiaomiStatePath(userId));
         oauthState = connection.id + "." + $security.randomStringWithAlphabet(40, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
         connection.set("oauth_state", oauthState);
@@ -478,23 +504,18 @@ function connect(e) {
             "'" + __xiaomiBridgePath() + "' login --token-path '" + __xiaomiTokenPath(userId) +
             "' --state-path '" + __xiaomiStatePath(userId) +
             "' --max-wait 300 >/dev/null 2>&1 &";
-        $os.cmd("sh", "-c", command).run();
-
-        var waitScript = "for i in $(seq 1 80); do " +
-            "if [ -s '" + __xiaomiStatePath(userId) + "' ]; then " +
-            "grep -q '\"status\":\"awaiting_scan\"' '" + __xiaomiStatePath(userId) + "' && cat '" + __xiaomiStatePath(userId) + "' && exit 0; fi; " +
-            "sleep 0.1; done; exit 1";
-        try { $os.cmd("sh", "-c", waitScript).output(); } catch (_) {}
+        try {
+            $os.cmd("sh", "-c", command).run();
+        } catch (_) {
+            connection.set("status", "error");
+            connection.set("last_error", "xiaomi_authorization_start_failed");
+            e.app.save(connection);
+            return e.json(503, { error: "xiaomi_authorization_start_failed" });
+        }
     }
 
-    var stateDoc = __xiaomiReadJson(__xiaomiStatePath(userId));
-    if (!stateDoc || String(stateDoc.status || "") !== "awaiting_scan") {
-        connection.set("status", "error");
-        connection.set("last_error", "Xiaomi authorization could not be started");
-        e.app.save(connection);
-        return e.json(502, { error: "xiaomi_authorization_start_failed" });
-    }
-
+    // Return immediately. The authorization page refreshes until the QR
+    // callback writes its state; generating that QR must never block POST.
     return e.json(200, {
         authorization_url: __xiaomiPublicBaseUrl() + "/api/sleep-sync/xiaomi/authorize?state=" + encodeURIComponent(oauthState)
     });
@@ -523,7 +544,7 @@ function authorize(e) {
         connection.set("last_error", "");
         e.app.save(connection);
         __xiaomiDisableGoogleProviders(e.app, userId);
-        try { __xiaomiRunSafe(e.app, connection); } catch (_) {}
+        // The periodic server scheduler performs the import separately.
         var returnUrl = __xiaomiHtmlEscape(__xiaomiReturnUrl());
         return e.html(200,
             "<!doctype html><meta charset='utf-8'><meta http-equiv='refresh' content='1;url=" + returnUrl + "'>" +
@@ -545,6 +566,9 @@ function authorize(e) {
         "<meta name='viewport' content='width=device-width,initial-scale=1'><title>Connect Xiaomi to Life OS</title>" +
         "<style>body{font:16px system-ui;max-width:560px;margin:40px auto;padding:0 20px;color:#171717}img{display:block;max-width:280px;width:100%;margin:24px auto;border-radius:16px}a{display:inline-block;padding:12px 18px;border-radius:12px;background:#111;color:#fff;text-decoration:none}p{line-height:1.5;color:#555}</style>" +
         "<h1>Connect Xiaomi to Life OS</h1><p>Complete Xiaomi Account login. This is required only once.</p>";
+    if (phase === "starting" || phase === "refreshing") {
+        content += "<p>Preparing your Xiaomi sign-in. This page checks automatically.</p>";
+    }
     if (login) content += "<p><a target='_blank' rel='noopener' href='" + login + "'>Open Xiaomi login</a></p>";
     if (qr) content += "<img src='" + qr + "' alt='Xiaomi login QR'>";
     content += "<p>This page will return to Life OS automatically after authorization.</p>";

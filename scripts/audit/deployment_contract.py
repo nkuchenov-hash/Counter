@@ -148,6 +148,36 @@ def main() -> int:
         if token not in xiaomi_runtime:
             violations.append(f"XIAOMI_SLEEP_RUNTIME_CONTRACT_MISSING {token}")
 
+    # Xiaomi sign-in runs in a separate process. Regressions that wait for QR
+    # generation inside POST /connect or forget to provision its venv prevent
+    # every Android/Web user from connecting after a server recovery.
+    connect_handler = xiaomi_runtime.split("function connect(e) {", 1)[-1].split("function authorize(e) {", 1)[0]
+    authorize_handler = xiaomi_runtime.split("function authorize(e) {", 1)[-1].split("function settings(e) {", 1)[0]
+    for token in (
+        "authorization_url:",
+        "__xiaomiExists(__xiaomiPython)",
+        "__xiaomiExists(__xiaomiBridgePath())",
+        'previousStatus !== "error"',
+        "xiaomi_authorization_runtime_unavailable",
+    ):
+        if token not in connect_handler:
+            violations.append(f"XIAOMI_AUTH_NONBLOCKING_MISSING {token}")
+    for forbidden in ("waitScript", "seq 1 80", "__xiaomiRunSafe", ".output()"):
+        if forbidden in connect_handler:
+            violations.append(f"XIAOMI_AUTH_CONNECT_BLOCKING_FORBIDDEN {forbidden}")
+    if "__xiaomiRunSafe" in authorize_handler:
+        violations.append("XIAOMI_AUTH_CALLBACK_BLOCKING_IMPORT_FORBIDDEN")
+    for token in ('phase === "starting" || phase === "refreshing"', "http-equiv='refresh'"):
+        if token not in authorize_handler:
+            violations.append(f"XIAOMI_AUTH_PENDING_PAGE_MISSING {token}")
+    for token in (
+        "python3 -m venv /opt/lifeos-xiaomi-sleep",
+        "mi-fitness==0.2.0",
+        "from mi_fitness import MiHealthClient, XiaomiAuth",
+    ):
+        if token not in pb:
+            violations.append(f"XIAOMI_RECOVERED_HOST_DEPENDENCY_MISSING {token}")
+
     for token in (
         "Xiaomi Health cloud",
         "/app/v1/relatives/get_aggregated_data",
