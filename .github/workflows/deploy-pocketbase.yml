@@ -199,7 +199,17 @@ jobs:
           if ! $SUDO test -x "$xiaomi_python" ||
              ! $SUDO "$xiaomi_python" -c 'from mi_fitness import MiHealthClient, XiaomiAuth' >/dev/null 2>&1; then
             python3 -c 'import sys; assert sys.version_info >= (3, 11), "Xiaomi bridge requires Python >=3.11"'
-            $SUDO python3 -m venv /opt/lifeos-xiaomi-sleep
+            if ! $SUDO python3 -m venv /opt/lifeos-xiaomi-sleep; then
+              # LIFEOS2 recovery image lacks python3.12-venv/ensurepip.
+              # Install only the matching venv package, then retry. Abort
+              # before touching production hooks if provisioning still fails.
+              command -v apt-get >/dev/null 2>&1 ||
+                { echo "python3-venv unavailable and apt-get missing; production unchanged." >&2; exit 1; }
+              py_version="$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+              $SUDO apt-get update -qq
+              $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "python${py_version}-venv"
+              $SUDO python3 -m venv /opt/lifeos-xiaomi-sleep
+            fi
             $SUDO "$xiaomi_python" -m pip install --disable-pip-version-check --no-input 'mi-fitness==0.2.0'
           fi
           $SUDO "$xiaomi_python" -c 'from mi_fitness import MiHealthClient, XiaomiAuth'
