@@ -1,3 +1,9 @@
+## 2026-11-11 — Timeline desktop workspace date arrows
+
+- Add the same desktop left/right day arrows as Planning to the Timeline day body. Each sits in its own spare workspace gutter outside record cards and outside the fixed left navigation.
+- Arrows invoke the pre-existing Timeline PageView with a 200ms ease-out step. No extra date streams, new timeline pages, rerender loop or altered records, cards, scroll geometry, quick entry, header, mobile gestures or optimistic data.
+- Add desktop sidebar, full record-frame width, day navigation and phone visibility regression tests.
+
 ## 2026-11-11 — Keep Planning arrows outside the permanent left navigation
 
 - Fix desktop left day arrow placed in the sidebar: root-overlay placement now measures the usable gutter from the permanent navigation right edge (272 logical px) to the Planning canvas, not from browser x=0.
