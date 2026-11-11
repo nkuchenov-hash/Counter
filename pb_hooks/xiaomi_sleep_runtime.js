@@ -539,7 +539,10 @@ function authorize(e) {
     } catch (_) {}
     if (!connection) return e.html(400, "<h1>Invalid or expired Xiaomi authorization</h1>");
     var expires = __xiaomiDate(connection.get("oauth_state_expires_at"));
-    if (!expires || expires.getTime() < Date.now()) return e.html(400, "<h1>Invalid or expired Xiaomi authorization</h1>");
+    if (!expires || expires.getTime() < Date.now()) {
+        return e.html(410, "<!doctype html><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>" +
+            "<title>Xiaomi sign-in expired</title><h1>Sign-in session expired</h1><p>Return to LIFE OS settings and select Connect Xiaomi to start a new session.</p>");
+    }
 
     var userId = String(connection.get("user_id") || "");
     if (__xiaomiHasToken(userId)) {
@@ -564,18 +567,26 @@ function authorize(e) {
             "<p>Return to Life OS and turn sleep synchronization on again.</p>"
         );
     }
-    var qr = __xiaomiHtmlEscape(doc.qr_image_url || "");
-    var login = __xiaomiHtmlEscape(doc.login_url || "");
+    // Xiaomi QR links can expire long before our 10-minute LIFE OS state.
+    // Never offer a stale link or QR, even when the Python worker is still
+    // waiting on Xiaomi's long polling endpoint. The worker rotates QRs.
+    var freshUntil = __xiaomiDate(doc.fresh_until);
+    var freshQr = phase === "awaiting_scan" && !!freshUntil &&
+        freshUntil.getTime() > Date.now() + 5000;
+    var qr = freshQr ? __xiaomiHtmlEscape(doc.qr_image_url || "") : "";
+    var login = freshQr ? __xiaomiHtmlEscape(doc.login_url || "") : "";
     var content = "<!doctype html><meta charset='utf-8'><meta http-equiv='refresh' content='3'>" +
-        "<meta name='viewport' content='width=device-width,initial-scale=1'><title>Connect Xiaomi to Life OS</title>" +
+        "<meta http-equiv='Cache-Control' content='no-store'><meta name='viewport' content='width=device-width,initial-scale=1'>" +
+        "<title>Connect Xiaomi to Life OS</title>" +
         "<style>body{font:16px system-ui;max-width:560px;margin:40px auto;padding:0 20px;color:#171717}img{display:block;max-width:280px;width:100%;margin:24px auto;border-radius:16px}a{display:inline-block;padding:12px 18px;border-radius:12px;background:#111;color:#fff;text-decoration:none}p{line-height:1.5;color:#555}</style>" +
-        "<h1>Connect Xiaomi to Life OS</h1><p>Complete Xiaomi Account login. This is required only once.</p>";
-    if (phase === "starting" || phase === "refreshing") {
-        content += "<p>Preparing your Xiaomi sign-in. This page checks automatically.</p>";
+        "<h1>Connect Xiaomi to Life OS</h1><p>Sign in to the Xiaomi account used by Mi Fitness.</p>";
+    if (!freshQr) {
+        content += "<p>Preparing a fresh Xiaomi sign-in link. This page refreshes automatically; an expired QR is never reused.</p>";
     }
-    if (login) content += "<p><a target='_blank' rel='noopener' href='" + login + "'>Open Xiaomi login</a></p>";
-    if (qr) content += "<img src='" + qr + "' alt='Xiaomi login QR'>";
-    content += "<p>This page will return to Life OS automatically after authorization.</p>";
+    if (login) content += "<p><a target='_blank' rel='noopener noreferrer' href='" + login + "'>Open fresh Xiaomi login</a></p>";
+    if (qr) content += "<img src='" + qr + "' alt='Fresh Xiaomi login QR'>";
+    content += "<p>If Xiaomi reports an expired QR code, return to this page and open the newly generated link.</p>" +
+        "<p>This page returns to Life OS automatically after successful authorization.</p>";
     return e.html(200, content);
 }
 
