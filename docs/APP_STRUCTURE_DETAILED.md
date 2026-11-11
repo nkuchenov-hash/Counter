@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1011 — each appears **exactly once** below.
+**Tracked files:** 1012 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,7 +26,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 200 |
+| `production UI` | 201 |
 | `test` | 148 |
 | `Brain/data` | 117 |
 | `platform build` | 84 |
@@ -23051,6 +23051,44 @@ RU:
 - **Когда открывать:** Когда ломается поведение, связанное с `life_os_menu_page.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/menu/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/profile/menu/life_os_settings_tabs_page.dart`
+
+EN:
+
+- **Human purpose:** Settings are divided into accessible subject tabs. Desktop tabs wrap without sideways scrolling; phone users select a section from a list.
+- **What this is:** Native Flutter settings workspace, reused for the shell's Profile and Settings destinations.
+- **Why needed:** Keeps everyday controls editable in place and avoids multiple unrelated settings catalogs.
+- **Contents:** `LifeOsSettingsTabsPage`, nine color-family tabs and the direct controls for plan hours, placement, Notes preferences, gaps and theme.
+- **Key code names:** `LifeOsSettingsTabsPage`, `_LifeOsSettingsTabsPageState`, `_SettingsTab`.
+- **Repository role:** production UI
+- **Evidence of use:** Imported by `lib/app/shell/app_shell.dart` and built by `lib/app/shell/shared/shell_chrome.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Settings tab destinations in the shell would fail to compile.
+- **Confidence:** HIGH
+- **Owner / layer:** Profile UI
+- **Responsibilities:** Present feature-owned settings via canonical `AppSettingsPageBody`, `AppSettingsSectionCard`, `AppTextField`, and approved `kNordic*` color families; route complex editors without duplicating stored preferences.
+- **When to open:** When changing Settings information architecture or a quick preference control.
+- **Can it be deleted?** No, shell destinations rely on it.
+- **Connected to:** `lib/features/lists/notes_library_preferences.dart`, `lib/features/planning/planning_day_start_prefs.dart`, `lib/data/records/unfilled_time_gap_service.dart`.
+
+RU:
+
+- **Зачем файл человеку:** Все настройки доступны в тематических вкладках без дополнительного каталога переходов.
+- **Что это:** Общий экран настроек Flutter для разделов «Профиль» и «Настройки».
+- **Зачем:** Частые параметры доступны сразу; длинные редакторы открываются отдельно.
+- **Содержимое:** Девять вкладок, настройки видимого времени, размещения планов, заметок, напоминаний о пробелах и темы.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Экран создаётся в `lib/app/shell/shared/shell_chrome.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Не соберётся оболочка настроек приложения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Интерфейс профиля
+- **Обязанности:** Использовать существующие компоненты и цвета дизайн-системы; читать и сохранять параметры через действующие сервисы разделов.
+- **Когда открывать:** При изменении вкладок настроек и быстрых переключателей.
+- **Можно удалить?** Нет, на экран ссылается оболочка приложения.
+- **Связано с:** `lib/features/profile/menu/`, `lib/features/lists/`, `docs/APP_STRUCTURE.md`.
 
 
 ### `lib/features/profile/menu/life_os_notes_settings_page.dart`
