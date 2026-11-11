@@ -5,6 +5,7 @@ import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/life_color_compat.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/data/database_service.dart';
@@ -197,13 +198,10 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       _form(tr('Мои данные', 'My details'), Column(
         crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          TextField(
+          AppTextField(
             controller: _name,
             textCapitalization: TextCapitalization.words,
-            decoration: InputDecoration(
-              labelText: tr('Отображаемое имя', 'Display name'),
-              border: const OutlineInputBorder(),
-            ),
+            labelText: tr('Отображаемое имя', 'Display name'),
             onSubmitted: (_) => unawaited(_saveName()),
           ),
           const SizedBox(height: 12),
