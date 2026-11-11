@@ -13,7 +13,6 @@ import 'package:counter/features/lists/notes_library_preferences.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/profile/menu/life_os_menu_page.dart';
 import 'package:counter/features/profile/profile_view.dart';
-import 'package:counter/features/settings/notifications/unfilled_time_notifications_section.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/services/notification_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -59,14 +58,12 @@ const _tabs = <_SettingsTab>[
 
 class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   late String _tab;
-  final _search = TextEditingController();
   final _name = TextEditingController();
   ({int start, int end})? _bounds;
   bool _afterLast = false;
   bool _loadingPlans = true;
   bool _savingPlan = false;
   bool _savingProfile = false;
-  late Future<PlanAlarmPermissionStatus> _permission;
 
   bool get _ru => currentLocale.value.toLowerCase().startsWith('ru');
   String tr(String ru, String en) => _ru ? ru : en;
@@ -77,8 +74,6 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     _tab = _tabs.any((e) => e.id == widget.initialTab)
         ? widget.initialTab : 'profile';
     _name.text = DatabaseService.instance.settings.displayName ?? '';
-    _search.addListener(_redraw);
-    _permission = NotificationService.instance.permissionStatus();
     unawaited(_load());
   }
 
@@ -100,12 +95,8 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     }
   }
 
-  void _redraw() { if (mounted) setState(() {}); }
-
   @override
   void dispose() {
-    _search.removeListener(_redraw);
-    _search.dispose();
     _name.dispose();
     super.dispose();
   }
@@ -114,7 +105,6 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
 
   void _choose(String next) {
     FocusManager.instance.primaryFocus?.unfocus();
-    _search.clear();
     setState(() => _tab = next);
   }
 
@@ -289,6 +279,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
               ]),
               const SizedBox(height: 18),
               DropdownButtonFormField<bool>(
+                key: ValueKey('placement-$_afterLast'),
                 initialValue: _afterLast,
                 isExpanded: true,
                 decoration: InputDecoration(
@@ -500,11 +491,8 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
           title: tr('Доступ к уведомлениям', 'Notification permission'),
           leading: _symbol(AppMenuIconRole.notifications, selected.family),
           value: kIsWeb ? tr('Браузер', 'Browser') : null,
-          onTap: () async {
+          onTap: kIsWeb ? null : () async {
             await NotificationService.instance.requestPermissions();
-            if (mounted) setState(() {
-              _permission = NotificationService.instance.permissionStatus();
-            });
           },
         ),
       ]),
