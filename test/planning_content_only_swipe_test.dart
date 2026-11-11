@@ -215,13 +215,15 @@ void main() {
         )),
       ])),
     ));
+    // The overlay portal attaches its root entry after the first frame.
+    await tester.pump();
     final left = find.byKey(const ValueKey('planning-side-previous-day'));
     final right = find.byKey(const ValueKey('planning-side-next-day'));
     final page = find.byType(PageView);
     expect(left, findsOneWidget);
     expect(right, findsOneWidget);
-    expect(tester.getTopLeft(left).dx, lessThan(10));
-    expect(tester.getTopRight(right).dx, greaterThan(1090));
+    expect(tester.getCenter(left).dx, closeTo(28, 5));
+    expect(tester.getCenter(right).dx, closeTo(1072, 5));
     expect(tester.getTopLeft(left).dy, greaterThan(120));
     expect(tester.getTopLeft(right).dy, greaterThan(120));
     expect(tester.getSize(page).width, 1100);
@@ -229,6 +231,104 @@ void main() {
     await tester.tap(right);
     await tester.pumpAndSettle();
     expect(changes, <int>[1]);
+  });
+
+  testWidgets('desktop arrows sit in outer gutters, not beside cards', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1536, 985));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final changes = <int>[];
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: SizedBox(
+            width: 1140,
+            height: 750,
+            child: PlanningDaySwipeRegion(
+              dayKey: '2026-11-10',
+              onDayChange: changes.add,
+              adjacentDayBuilder: (_, day) => Center(child: Text('Day ${day.day}')),
+              child: const SizedBox.expand(
+                key: ValueKey('full-size-day-canvas'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    // The overlay portal attaches its root entry after the first frame.
+    await tester.pump();
+    final left = find.byKey(const ValueKey('planning-side-previous-day'));
+    final right = find.byKey(const ValueKey('planning-side-next-day'));
+    final canvas = find.byKey(const ValueKey('full-size-day-canvas'));
+    expect(left, findsOneWidget);
+    expect(right, findsOneWidget);
+    expect(tester.getSize(find.byType(PageView)).width, 1140);
+    // Canvas begins at 198, ends at 1338. Controls must be roughly
+    // centered in the 198px outer gutters, not intrude on plan cards.
+    expect(tester.getCenter(left).dx, lessThan(130));
+    expect(tester.getCenter(right).dx, greaterThan(1400));
+    expect(tester.getCenter(left).dx, lessThan(tester.getTopLeft(canvas).dx - 48));
+    expect(tester.getCenter(right).dx, greaterThan(tester.getTopRight(canvas).dx + 48));
+    await tester.tap(right);
+    await tester.pumpAndSettle();
+    expect(changes, <int>[1]);
+  });
+
+  testWidgets('hidden Planning tab does not prepaint neighbors at startup', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(950, 720));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var active = false;
+    late StateSetter rebuild;
+    final builtDays = <int>[];
+    await tester.pumpWidget(MaterialApp(
+      home: StatefulBuilder(builder: (_, setState) {
+        rebuild = setState;
+        return Scaffold(body: PlanningDaySwipeRegion(
+          enabled: active,
+          visible: active,
+          dayKey: '2026-11-10',
+          onDayChange: (_) {},
+          adjacentDayBuilder: (_, day) {
+            builtDays.add(day.day);
+            return Text('Cached day ${day.day}');
+          },
+          child: const Center(child: Text('Visible day')),
+        ));
+      }),
+    ));
+    await tester.pump();
+    expect(builtDays, isEmpty);
+    expect(find.byKey(const ValueKey('planning-side-previous-day')), findsNothing);
+    rebuild(() => active = true);
+    await tester.pump();
+    expect(builtDays, contains(9));
+    expect(builtDays, contains(11));
+    expect(find.text('Visible day'), findsOneWidget);
+  });
+
+  testWidgets('neighbor cards are prepared before horizontal drag', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(950, 720));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final builtDays = <int>[];
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: PlanningDaySwipeRegion(
+        dayKey: '2026-11-10',
+        onDayChange: (_) {},
+        adjacentDayBuilder: (_, day) {
+          builtDays.add(day.day);
+          return Center(child: Text('Full cached plan day ${day.day}'));
+        },
+        child: const Center(child: Text('Interactive day 10')),
+      )),
+    ));
+    await tester.pump();
+    expect(builtDays, contains(9));
+    expect(builtDays, contains(11));
+    expect(find.text('Interactive day 10'), findsOneWidget);
   });
 
   testWidgets('native arrow step promotes the new day during motion', (
@@ -494,6 +594,19 @@ void main() {
     expect(preview, isNot(contains('top: grid.hourLineY(i) - 10')));
   });
 
+  test('read-only adjacent cards retain full play and tracked-progress visuals', () {
+    final preview = File(
+      'lib/features/planning/widgets/planning_frozen_day_list.dart',
+    ).readAsStringSync();
+    // The parent IgnorePointer owns input blocking; preview cards still
+    // render all controls and the same tracked-progress calculation as live.
+    expect('onPlay: () {},'.allMatches(preview).length, 3);
+    expect(preview, contains('aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay)'));
+    expect(preview, contains('pocketRelationIdOrNull(task.pocketRecordId)'));
+    expect(preview, contains('pocketRelationIdOrNull(t.pocketRecordId)'));
+    expect(preview, contains("!layout.task.planRowIdForBackend.startsWith('optimistic-')"));
+  });
+
   test('Time swipe preview uses canonical projection, layout and cards', () {
     final source = File(
       'lib/features/planning/widgets/planning_frozen_day_list.dart',
@@ -546,12 +659,14 @@ void main() {
         )),
       ])),
     ));
+    // The overlay portal attaches its root entry after the first frame.
+    await tester.pump();
     final left = find.byKey(const ValueKey('planning-side-previous-day'));
     final right = find.byKey(const ValueKey('planning-side-next-day'));
     expect(left, findsOneWidget);
     expect(right, findsOneWidget);
-    expect(tester.getTopLeft(left).dx, lessThan(10));
-    expect(tester.getTopRight(right).dx, greaterThan(1090));
+    expect(tester.getCenter(left).dx, closeTo(28, 5));
+    expect(tester.getCenter(right).dx, closeTo(1072, 5));
     expect(tester.getSize(find.byKey(dayBodyKey)).width, 1100);
     expect(tester.takeException(), isNull);
     await tester.tap(left);
@@ -576,12 +691,14 @@ void main() {
         child: const SizedBox.expand(),
       )),
     ));
+    // The overlay portal attaches its root entry after the first frame.
+    await tester.pump();
     final left = find.byKey(const ValueKey('planning-side-previous-day'));
     final right = find.byKey(const ValueKey('planning-side-next-day'));
     expect(left, findsOneWidget);
     expect(right, findsOneWidget);
-    expect(tester.getTopLeft(left).dx, lessThan(10));
-    expect(tester.getTopRight(right).dx, greaterThan(1090));
+    expect(tester.getCenter(left).dx, closeTo(28, 5));
+    expect(tester.getCenter(right).dx, closeTo(1072, 5));
     await tester.tap(right);
     await tester.pumpAndSettle();
     expect(changes, 0);

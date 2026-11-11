@@ -17,11 +17,14 @@ class PlanningDaySwipeRegion extends StatefulWidget {
     this.adjacentDayBuilder,
     this.dayKey,
     this.enabled = true,
+    this.visible = true,
   });
 
   final Widget child;
   final String? dayKey;
   final bool enabled;
+  /// Planning tab visibility, independent of drag/resize date locking.
+  final bool visible;
   final ValueChanged<int> onDayChange;
   final Widget Function(BuildContext context, DateTime day)? adjacentDayBuilder;
 
@@ -38,6 +41,12 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
   int _committedPage = _initialPage;
   bool _dayCommitQueued = false;
   int? _pendingDayIndex;
+  // Never prepaint hidden Planning tabs on initial app startup.
+  bool _hasMountedActiveDay = false;
+  // Date controls live in the root overlay so they remain tappable outside
+  // the constrained Planning canvas, without expanding its hit region.
+  final LayerLink _sideArrowsLink = LayerLink();
+  final OverlayPortalController _sideArrowsOverlay = OverlayPortalController()..show();
 
   DateTime _parseDay(String? key) {
     final parsed = key == null ? null : DateTime.tryParse(key);
@@ -59,13 +68,20 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
   @override
   void initState() {
     super.initState();
+    _hasMountedActiveDay = widget.enabled && widget.visible;
     _anchorDay = _parseDay(widget.dayKey);
     _controller = PageController(initialPage: _initialPage);
+    // The root Overlay can be mounted after this region's first frame.
+    // Re-issue show once it is attached so the controls never stay hidden.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _sideArrowsOverlay.show();
+    });
   }
 
   @override
   void didUpdateWidget(covariant PlanningDaySwipeRegion oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.enabled && widget.visible) _hasMountedActiveDay = true;
     if (oldWidget.dayKey == widget.dayKey) return;
     final target = _indexForDay(_parseDay(widget.dayKey));
     if (target == _committedPage) return;
@@ -163,19 +179,87 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
   Widget build(BuildContext context) {
     final selectedIndex = _indexForDay(_parseDay(widget.dayKey));
     return LayoutBuilder(builder: (context, size) {
-      // The arrows are stationary at the outer edges of the day body.
-      // Overlay them rather than shrinking cards or moving them into chrome.
-      final showSideArrows = size.maxWidth >= 900;
-      final arrowTop = (size.maxHeight - 48).clamp(0.0, double.infinity) / 2;
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          ScrollConfiguration(
+      // On desktop, controls belong in the empty *outer gutters*, not at
+      // card edges. A sidebar can reduce the pane below 900px; the relevant
+      // minimum is the actual 600px Planning pane, not its former breakpoint.
+      return OverlayPortal(
+        overlayLocation: OverlayChildLocation.rootOverlay,
+        controller: _sideArrowsOverlay,
+        overlayChildBuilder: (overlayContext) {
+          return Positioned.fill(
+            child: LayoutBuilder(builder: (overlayContext, overlaySize) {
+              // Check the real root overlay width. Test and embedded surfaces
+              // may have a MediaQuery width different from their render view.
+              final viewportWidth = overlaySize.maxWidth;
+              if (!widget.visible || viewportWidth < 900 || size.maxWidth < 600) {
+                return const SizedBox.shrink();
+              }
+          // The target's global X position is computed once per layout.
+          // CompositedTransformFollower then tracks it in the compositor,
+          // with no per-scroll rebuild and no extra active Planning pages.
+          final render = context.findRenderObject();
+          final leftGutter = render is RenderBox && render.hasSize
+              ? render.localToGlobal(Offset.zero).dx.clamp(0.0, viewportWidth)
+              : 0.0;
+          final rightGutter =
+              (viewportWidth - leftGutter - size.maxWidth)
+                  .clamp(0.0, viewportWidth);
+          // Center each arrow in available whitespace. On constrained panes
+          // with no gutter, keep the 48px hit target inside its viewport.
+          final leftOffset =
+              leftGutter >= 72 ? -leftGutter / 2 : 28.0;
+          final rightOffset =
+              rightGutter >= 72 ? rightGutter / 2 : -28.0;
+          return Stack(
+              children: [
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  child: CompositedTransformFollower(
+                    link: _sideArrowsLink,
+                    showWhenUnlinked: false,
+                    targetAnchor: Alignment.centerLeft,
+                    followerAnchor: Alignment.center,
+                    offset: Offset(leftOffset, 0),
+                    child: KeyedSubtree(
+                      key: const ValueKey('planning-side-previous-day'),
+                      child: _sideDayButton(overlayContext, -1),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  child: CompositedTransformFollower(
+                    link: _sideArrowsLink,
+                    showWhenUnlinked: false,
+                    targetAnchor: Alignment.centerRight,
+                    followerAnchor: Alignment.center,
+                    offset: Offset(rightOffset, 0),
+                    child: KeyedSubtree(
+                      key: const ValueKey('planning-side-next-day'),
+                      child: _sideDayButton(overlayContext, 1),
+                    ),
+                  ),
+                ),
+              ],
+          );
+            }),
+          );
+        },
+        child: CompositedTransformTarget(
+          link: _sideArrowsLink,
+          child: ScrollConfiguration(
             behavior: const MouseDragScrollBehavior(),
             child: NotificationListener<ScrollNotification>(
               onNotification: _onPagerNotification,
               child: PageView.builder(
                 controller: _controller,
+                // Native viewport cache prepares both complete neighboring
+                // pages while idle; the finger then moves already-rendered
+                // PlanCards rather than constructing a whole Time View mid-drag.
+                // No second live Planning stream or remote fetch is created.
+                allowImplicitScrolling: _hasMountedActiveDay,
                 onPageChanged: _queueLiveDayCommit,
                 scrollDirection: Axis.horizontal,
                 physics: widget.enabled
@@ -205,21 +289,7 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
               ),
             ),
           ),
-          if (showSideArrows) ...[
-            Positioned(
-              key: const ValueKey('planning-side-previous-day'),
-              left: 4,
-              top: arrowTop,
-              child: _sideDayButton(context, -1),
-            ),
-            Positioned(
-              key: const ValueKey('planning-side-next-day'),
-              right: 4,
-              top: arrowTop,
-              child: _sideDayButton(context, 1),
-            ),
-          ],
-        ],
+        ),
       );
     });
   }

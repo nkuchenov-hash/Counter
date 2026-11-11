@@ -8,6 +8,7 @@ import 'package:counter/features/planning/plan_time_view_layout.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/widgets/planning_empty_states.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 
 /// Read-only neighboring day with the same cards and Time View geometry as the
 /// live page. No active stream, edit handlers, shared ScrollController or IO.
@@ -35,6 +36,8 @@ class PlanningFrozenDayList extends StatelessWidget {
       );
     }
     if (tasks.isEmpty) return PlanningFrozenListEmptyState(scheme: scheme);
+    final actualByPlanId =
+        DatabaseService.instance.aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
     return ColoredBox(
       color: scheme.surface,
       child: ListView.builder(
@@ -48,16 +51,19 @@ class PlanningFrozenDayList extends StatelessWidget {
             child: PlanCard(
               key: ValueKey('planning-preview-${task.planRowIdForBackend}'),
               task: task,
-              planTrackedSeconds: 0,
+              planTrackedSeconds: actualByPlanId[
+                  DatabaseService.pocketRelationIdOrNull(task.pocketRecordId)
+                ] ?? 0,
               planEstimatedSeconds: planningWallEstimateSeconds(task),
               displayIsDone: task.isDone,
               selectMode: false,
               isSelected: false,
               highlightAsRunning: false,
-              toggleDoneEnabled: false,
+              toggleDoneEnabled:
+                  !task.planRowIdForBackend.startsWith('optimistic-'),
               onToggleDone: () {},
               onBodyTap: () {},
-              onPlay: null,
+              onPlay: () {},
               onOpenMenu: (_) {},
             ),
           );
@@ -70,7 +76,7 @@ class PlanningFrozenDayList extends StatelessWidget {
 /// Time-mode preview is built with the **same** projection, piecewise Y scale,
 /// overlap lanes, card densities and PlanTimeTaskCard as the live Time View.
 /// It cannot drift into the former tall, empty grey-rectangle imitation.
-class PlanningFrozenTimeCanvas extends StatelessWidget {
+class PlanningFrozenTimeCanvas extends StatefulWidget {
   const PlanningFrozenTimeCanvas({
     super.key,
     required this.tasks,
@@ -83,7 +89,32 @@ class PlanningFrozenTimeCanvas extends StatelessWidget {
   final DateTime wallDay;
 
   @override
+  State<PlanningFrozenTimeCanvas> createState() =>
+      _PlanningFrozenTimeCanvasState();
+}
+
+/// The adjacent page is complete, but its unchanged wall-time geometry must
+/// not be reprojected and sorted again whenever the native pager rebuilds.
+/// Only immutable geometry is reused; cards and progress are always built from
+/// current local data, so no stale optimistic card state is cached.
+class _PlanningFrozenTimeCanvasState
+    extends State<PlanningFrozenTimeCanvas> {
+  List<PlanningTask>? _cachedSourceRows;
+  DateTime? _cachedWallDay;
+  int? _cachedStart;
+  int? _cachedEnd;
+  String? _cachedTimeZoneKey;
+  ({
+    TimeViewYScale grid,
+    List<PlanTimeViewBlockLayout> layouts,
+    List<PlanningTask> untimed,
+  })? _cachedGeometry;
+
+  @override
   Widget build(BuildContext context) {
+    final tasks = widget.tasks;
+    final scheme = widget.scheme;
+    final wallDay = widget.wallDay;
     final db = DatabaseService.instance;
     final range = PlanningSheetTimelinePrefs.cachedVisibleDayRange;
     final start = range?.start ?? PlanningSheetTimelinePrefs.defaultStartExtended;
@@ -91,10 +122,8 @@ class PlanningFrozenTimeCanvas extends StatelessWidget {
     final hours = PlanningSheetTimelinePrefs.visibleExtendedHoursOrdered(start, end);
     if (hours.isEmpty) return const SizedBox.expand();
 
-    final projections = <TimeModeProjectedPlan>[];
-    final untimed = <PlanningTask>[];
-    final seen = <String>{};
-    // The live canvas includes plans crossing the selected-day boundaries.
+    // Fetch all three relevant cached wall days only when the extended
+    // timeline actually needs them. This is local Brain state, never network.
     final all = <PlanningTask>[
       ...tasks,
       if (PlanningSheetTimelinePrefs.needsPreviousDayTasks(start))
@@ -104,48 +133,78 @@ class PlanningFrozenTimeCanvas extends StatelessWidget {
         ...db.planningDayTasksSnapshot(
           DateTime(wallDay.year, wallDay.month, wallDay.day + 1)),
     ];
-    final dayKey = '${wallDay.year.toString().padLeft(4, '0')}-'
-        '${wallDay.month.toString().padLeft(2, '0')}-'
-        '${wallDay.day.toString().padLeft(2, '0')}';
-    for (final task in all) {
-      if (!seen.add(task.planRowIdForBackend)) continue;
-      final projected = db.projectPlanForTimeMode(task);
-      if (projected == null) {
-        if (task.dateKey.startsWith(dayKey)) untimed.add(task);
-      } else if (PlanningSheetTimelinePrefs.projectedPlanOverlapsVisibleWindow(
-        wallStart: projected.profileWallStart,
-        wallEnd: projected.profileWallEnd,
-        durationMinutes: projected.durationMinutes,
-        selectedDay: wallDay,
-        startExtended: start,
-        endExtended: end,
-      )) {
-        projections.add(projected);
+    final timeZoneKey = '${db.settings.preferredTimeZone}|'
+        '${db.settings.timezoneOffsetHours}|'
+        '${db.profileTimezoneProjectionRevision}';
+    var geometry = _cachedGeometry;
+    if (geometry == null ||
+        _cachedWallDay != wallDay ||
+        _cachedStart != start ||
+        _cachedEnd != end ||
+        _cachedTimeZoneKey != timeZoneKey ||
+        !listEquals(_cachedSourceRows, all)) {
+      final projections = <TimeModeProjectedPlan>[];
+      final untimed = <PlanningTask>[];
+      final seen = <String>{};
+      final dayKey = '${wallDay.year.toString().padLeft(4, '0')}-'
+          '${wallDay.month.toString().padLeft(2, '0')}-'
+          '${wallDay.day.toString().padLeft(2, '0')}';
+      for (final task in all) {
+        if (!seen.add(task.planRowIdForBackend)) continue;
+        final projected = db.projectPlanForTimeMode(task);
+        if (projected == null) {
+          if (task.dateKey.startsWith(dayKey)) untimed.add(task);
+        } else if (PlanningSheetTimelinePrefs.projectedPlanOverlapsVisibleWindow(
+          wallStart: projected.profileWallStart,
+          wallEnd: projected.profileWallEnd,
+          durationMinutes: projected.durationMinutes,
+          selectedDay: wallDay,
+          startExtended: start,
+          endExtended: end,
+        )) {
+          projections.add(projected);
+        }
       }
+      projections.sort((a, b) =>
+          a.profileWallStart.compareTo(b.profileWallStart));
+
+      double startMin(TimeModeProjectedPlan p) =>
+          PlanningSheetTimelinePrefs.minutesFromWindowStart(
+              p.profileWallStart, wallDay, start);
+      double endMin(TimeModeProjectedPlan p) =>
+          p.profileWallEnd == null
+              ? startMin(p) + p.durationMinutes
+              : PlanningSheetTimelinePrefs.minutesFromWindowStart(
+                  p.profileWallEnd!, wallDay, start);
+      final result = PlanTimeViewLayoutCalculator.compute(
+        projections: projections,
+        visibleHours: hours,
+        rangeStart: start,
+        baseHourHeightPx: PlanTimeViewLayoutCalculator.baseHourHeightPx(),
+        startMinOf: startMin,
+        endMinOf: endMin,
+      );
+      geometry = (
+        grid: result.grid,
+        layouts: List<PlanTimeViewBlockLayout>.unmodifiable(result.layouts),
+        untimed: List<PlanningTask>.unmodifiable(untimed),
+      );
+      // PlanningTask fields are immutable: changing even one row requires
+      // a replacement object. A local optimistic edit therefore invalidates
+      // this identity-based cache immediately and never waits for PocketBase.
+      _cachedSourceRows = List<PlanningTask>.unmodifiable(all);
+      _cachedWallDay = wallDay;
+      _cachedStart = start;
+      _cachedEnd = end;
+      _cachedTimeZoneKey = timeZoneKey;
+      _cachedGeometry = geometry;
     }
-    projections.sort((a, b) =>
-        a.profileWallStart.compareTo(b.profileWallStart));
-    if (projections.isEmpty && untimed.isEmpty) {
+    final stableGeometry = geometry!;
+    if (stableGeometry.layouts.isEmpty && stableGeometry.untimed.isEmpty) {
       return PlanningFrozenListEmptyState(scheme: scheme);
     }
-
-    double startMin(TimeModeProjectedPlan p) =>
-        PlanningSheetTimelinePrefs.minutesFromWindowStart(
-            p.profileWallStart, wallDay, start);
-    double endMin(TimeModeProjectedPlan p) =>
-        p.profileWallEnd == null
-            ? startMin(p) + p.durationMinutes
-            : PlanningSheetTimelinePrefs.minutesFromWindowStart(
-                p.profileWallEnd!, wallDay, start);
-    final result = PlanTimeViewLayoutCalculator.compute(
-      projections: projections,
-      visibleHours: hours,
-      rangeStart: start,
-      baseHourHeightPx: PlanTimeViewLayoutCalculator.baseHourHeightPx(),
-      startMinOf: startMin,
-      endMinOf: endMin,
-    );
-    final grid = result.grid;
+    final untimed = stableGeometry.untimed;
+    final grid = stableGeometry.grid;
     final canvasHeight = grid.totalHeightPx;
     final compact = MediaQuery.sizeOf(context).width < 600;
     final railWidth = compact ? 28.0 : 88.0;
@@ -170,15 +229,19 @@ class PlanningFrozenTimeCanvas extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 8),
               child: PlanCard(
                 task: t,
-                planTrackedSeconds: 0,
+                planTrackedSeconds: actualByPlanId[
+                    DatabaseService.pocketRelationIdOrNull(t.pocketRecordId)
+                  ] ?? 0,
                 planEstimatedSeconds: planningWallEstimateSeconds(t),
                 displayIsDone: t.isDone,
                 selectMode: false,
                 isSelected: false,
                 highlightAsRunning: false,
-                toggleDoneEnabled: false,
+                toggleDoneEnabled:
+                    !t.planRowIdForBackend.startsWith('optimistic-'),
                 onBodyTap: () {},
                 onToggleDone: () {},
+                onPlay: () {},
                 onOpenMenu: (_) {},
               ),
             )),
@@ -244,7 +307,7 @@ class PlanningFrozenTimeCanvas extends StatelessWidget {
                                   height: 1, thickness: 1,
                                   color: scheme.outlineVariant.withValues(alpha: 0.30)),
                               ),
-                            for (final layout in result.layouts)
+                            for (final layout in stableGeometry.layouts)
                               Positioned(
                                 key: ValueKey(
                                   'planning-frozen-time-${layout.task.planRowIdForBackend}'),
@@ -274,8 +337,10 @@ class PlanningFrozenTimeCanvas extends StatelessWidget {
                                     selectMode: false,
                                     isSelected: false,
                                     highlightAsRunning: false,
-                                    toggleDoneEnabled: false,
+                                    toggleDoneEnabled:
+                    !layout.task.planRowIdForBackend.startsWith('optimistic-'),
                                     onToggleDone: () {},
+                                    onPlay: () {},
                                     onBodyTap: () {},
                                     onOpenMenu: (_) {},
                                     timelineBlock: true,

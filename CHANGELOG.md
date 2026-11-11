@@ -1,3 +1,15 @@
+## 2026-11-10 — Planning swipe full-card rendering performance [CI pending]
+
+- Use Flutter's native adjacent-page viewport cache to prepare the complete (not simplified) Time View pages before pointer movement. Preserve a single interactive Planning day, server stream, and vertical scroll controller; neighboring previews remain read-only and locally sourced.
+- Memoize only adjacent-day immutable projection and duration geometry when task objects, extended visible hours and profile timezone revision are unchanged. Recompute instantly when an optimistic plan object changes, and always read fresh record progress during rendering.
+- Regression verifies neighboring days exist before horizontal dragging and day activation still occurs at page midpoint. No card fields, height, width, tags, overlays or progress display have been removed.
+
+## 2026-11-10 — Move Planning date arrows into the outer screen gutters [verification pending]
+
+- Moved previous/next day arrows out of the constrained day canvas and into a linked root overlay. On wide desktop screens they sit in the empty left/right margins between the day canvas and viewport edges, as shown by the Nov 10 screenshot, without narrowing or covering plan cards.
+- Retain the same native day pager, early optimistic activation, vertical scroll, and disabled state during date lock. Keep arrows at the pane edges only where no outer gutter exists.
+- Added a 1536px viewport / 1140px canvas widget regression confirming outer-gutter placement, unchanged canvas width, and functional arrow taps.
+
 ## 2026-11-10 — Restore side date arrows and optimistic Planning pager
 
 - Returned previous/next arrows to the **left/right edges of Planning's day body**, not the top selector; stationary overlay leaves day/card width intact. Buttons remain visible but disabled during date locks; mobile continues native horizontal swipe.
