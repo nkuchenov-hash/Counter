@@ -50,6 +50,7 @@ import 'package:counter/features/planning/time_view/planning_time_view_coordinat
 import 'package:counter/features/settings/voice/desktop_voice_attempt_dialog.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/features/profile/menu/life_os_menu_page.dart';
+import 'package:counter/features/profile/menu/life_os_settings_tabs_page.dart';
 import 'package:counter/features/profile/menu/life_os_planning_settings_page.dart';
 import 'package:counter/features/profile/menu/life_os_notes_settings_page.dart';
 import 'package:counter/features/profile/menu/life_os_sync_status_page.dart';
