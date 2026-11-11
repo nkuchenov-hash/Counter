@@ -5,6 +5,7 @@ import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/life_color_compat.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
+import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/data/auth_bridge.dart';
@@ -209,9 +210,9 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 12),
-          Align(alignment: Alignment.centerLeft, child: FilledButton(
+          Align(alignment: Alignment.centerLeft, child: AppButton.primary(
             onPressed: _savingProfile ? null : () => unawaited(_saveName()),
-            child: Text(tr('Сохранить имя', 'Save name')),
+            label: tr('Сохранить имя', 'Save name'),
           )),
         ],
       )),
@@ -228,10 +229,10 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
           LifeOsMenuAction.about),
       ]),
       const SizedBox(height: 14),
-      OutlinedButton.icon(
+      AppButton.outlined(
         onPressed: () => _open(LifeOsMenuAction.accountSession),
-        icon: const Icon(Icons.logout_rounded),
-        label: Text(tr('Выйти из аккаунта', 'Sign out')),
+        icon: Icons.logout_rounded,
+        label: tr('Выйти из аккаунта', 'Sign out'),
       ),
     ]);
   }
