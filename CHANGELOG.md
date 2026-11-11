@@ -1,3 +1,8 @@
+## 2026-11-11 — Keep Planning arrows outside the permanent left navigation
+
+- Fix desktop left day arrow placed in the sidebar: root-overlay placement now measures the usable gutter from the permanent navigation right edge (272 logical px) to the Planning canvas, not from browser x=0.
+- Preserve right-side gutter positioning, existing arrow sizes, full card width/content, fast day paging, and optimistic live interaction. Add regression for a 1641px desktop screenshot-sized viewport with a 272px sidebar and 905px Planning canvas.
+
 ## 2026-11-10 — Planning swipe full-card rendering performance [CI pending]
 
 - Use Flutter's native adjacent-page viewport cache to prepare the complete (not simplified) Time View pages before pointer movement. Preserve a single interactive Planning day, server stream, and vertical scroll controller; neighboring previews remain read-only and locally sourced.

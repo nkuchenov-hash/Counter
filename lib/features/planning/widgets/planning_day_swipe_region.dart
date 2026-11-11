@@ -18,6 +18,7 @@ class PlanningDaySwipeRegion extends StatefulWidget {
     this.dayKey,
     this.enabled = true,
     this.visible = true,
+    this.workspaceLeftEdgePx = 0,
   });
 
   final Widget child;
@@ -25,6 +26,9 @@ class PlanningDaySwipeRegion extends StatefulWidget {
   final bool enabled;
   /// Planning tab visibility, independent of drag/resize date locking.
   final bool visible;
+  /// Root-overlay X coordinate where the Planning workspace begins,
+  /// excluding the permanent navigation sidebar on desktop.
+  final double workspaceLeftEdgePx;
   final ValueChanged<int> onDayChange;
   final Widget Function(BuildContext context, DateTime day)? adjacentDayBuilder;
 
@@ -206,8 +210,17 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
                   .clamp(0.0, viewportWidth);
           // Center each arrow in available whitespace. On constrained panes
           // with no gutter, keep the 48px hit target inside its viewport.
+          // The global viewport includes the permanent left navigation.
+          // Only the space between the navigation edge and Plans belongs
+          // to the left arrow. Centering in the entire window gutter placed
+          // it directly inside the sidebar on desktop.
+          final workspaceLeftEdge = widget.workspaceLeftEdgePx.clamp(
+            0.0,
+            leftGutter,
+          );
+          final leftWorkspaceGutter = leftGutter - workspaceLeftEdge;
           final leftOffset =
-              leftGutter >= 72 ? -leftGutter / 2 : 28.0;
+              leftWorkspaceGutter >= 72 ? -leftWorkspaceGutter / 2 : 28.0;
           final rightOffset =
               rightGutter >= 72 ? rightGutter / 2 : -28.0;
           return Stack(
