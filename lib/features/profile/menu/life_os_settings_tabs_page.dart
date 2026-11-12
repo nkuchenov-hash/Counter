@@ -863,7 +863,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   }
 }
 
-  
+
 /// Phone-only scroll motion and two clipped frosted edges. Kept in this
 /// screen to avoid expanding the global settings layout.
 class _MobileSettingsMotion extends StatelessWidget {
