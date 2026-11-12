@@ -8,6 +8,7 @@ import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/mobile_settings_motion.dart';
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -822,9 +823,8 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
     final content = Theme(
       data: settingsNeutralTheme(context),
-      child: Builder(builder: (context) => AppSettingsPageBody(
-        expressiveMobileScroll: !desktop,
-        children: desktop
+      child: Builder(builder: (context) => MobileSettingsMotion(
+        child: AppSettingsPageBody(children: desktop
             ? [
                 Text(tr('Настройки', 'Settings'),
                   style: Theme.of(context).textTheme.headlineLarge),
@@ -841,6 +841,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
                 _tabContent(),
               ]
             : [_mobileSettings()],
+        ),
       )),
     );
     final activeTab = widget.activeTab;
