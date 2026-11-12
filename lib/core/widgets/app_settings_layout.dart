@@ -1,5 +1,3 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/core/app_colors.dart';
@@ -159,24 +157,15 @@ class _Keycap extends StatelessWidget {
 
 /// Neutral settings page shell: soft background + centered max width.
 class AppSettingsPageBody extends StatelessWidget {
-  const AppSettingsPageBody({
-    super.key,
-    required this.children,
-    this.expressiveMobileScroll = false,
-  });
+  const AppSettingsPageBody({super.key, required this.children});
   final List<Widget> children;
-  /// Opt-in: physical overscroll and clipped frosted viewport edges on phones.
-  final bool expressiveMobileScroll;
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
-    final useMotion = expressiveMobileScroll && !desktop &&
-        !MediaQuery.disableAnimationsOf(context);
-    final list = ListView(
-        physics: useMotion
-            ? const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics())
-            : null,
+    return ColoredBox(
+      color: scheme.surfaceContainerLowest,
+      child: ListView(
         padding: EdgeInsets.only(
           top: desktop ? 16 : 20,
           bottom: 24 + MediaQuery.viewPaddingOf(context).bottom,
@@ -201,37 +190,6 @@ class AppSettingsPageBody extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      );
-    if (!expressiveMobileScroll || desktop) {
-      return ColoredBox(color: scheme.surfaceContainerLowest, child: list);
-    }
-    return ColoredBox(
-      color: scheme.surfaceContainerLowest,
-      child: Stack(
-        children: [
-          list,
-          // Blur is clipped to two narrow strips: no full-screen saveLayer
-          // and no interception of scrolling, taps or system gestures.
-          for (final isTop in [true, false])
-            Positioned(
-              top: isTop ? 0 : null,
-              bottom: isTop ? null : 0,
-              left: 0,
-              right: 0,
-              height: isTop ? 12 : 20,
-              child: IgnorePointer(
-                child: ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 3.5, sigmaY: 3.5),
-                    child: ColoredBox(
-                      color: scheme.surfaceContainerLowest.withValues(alpha: 0.28),
-                      child: const SizedBox.expand(),
-                    ),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
