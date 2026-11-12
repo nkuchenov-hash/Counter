@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `7e46986d` on 2026-11-12.**
+**Generated from input HEAD `274af8f6` on 2026-11-11.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1013 — each appears **exactly once** below.
+**Tracked files:** 1012 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -30,7 +30,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `test` | 148 |
 | `Brain/data` | 117 |
 | `platform build` | 84 |
-| `shared foundation` | 72 |
+| `shared foundation` | 71 |
 | `developer tool` | 66 |
 | `governing documentation` | 45 |
 | `platform resource` | 44 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 548 |
+| `PROVEN_REQUIRED` | 547 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 273 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 925 |
+| `HIGH` | 924 |
 | `MEDIUM` | 88 |
 
 ---
@@ -13798,44 +13798,6 @@ RU:
 - **Владелец / слой:** общий design system
 - **Обязанности:** Реализует в UI: Card foundation for Component Lab.
 - **Когда открывать:** Когда ломается поведение, связанное с `life_card.dart`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
-
-
-### `lib/core/widgets/mobile_settings_motion.dart`
-
-EN:
-
-- **Human purpose:** Shared design-system widget — Mobile-only elastic settings scroll and clipped edge blur. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What this is:** Shared design-system widget — Mobile-only elastic settings scroll and clipped edge blur.
-- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **Contents:** Canonical Flutter widget (`MobileSettingsMotion`, `_MobileSettingsBounceBehavior`).
-- **Key code names:** `MobileSettingsMotion`, `_MobileSettingsBounceBehavior`
-- **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
-- **Owner / layer:** shared design system
-- **Responsibilities:** Mobile-only elastic settings scroll and clipped edge blur; leaves shared layout behavior unchanged
-- **When to open:** When behavior tied to `mobile_settings_motion.dart` breaks or you need to change its documented role.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Mobile-only elastic settings scroll and clipped edge blur
-
-RU:
-
-- **Зачем файл человеку:** Общий виджет design system — Mobile-only elastic settings scroll and clipped edge blur. Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Что это:** Общий виджет design system — Mobile-only elastic settings scroll and clipped edge blur.
-- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (logic in `mobile_settings_motion`).
-- **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
-- **Владелец / слой:** общий design system
-- **Обязанности:** Реализует в UI: Mobile-only elastic settings scroll and clipped edge blur; leaves shared layout behavior unchanged.
-- **Когда открывать:** Когда ломается поведение, связанное с `mobile_settings_motion.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
 
