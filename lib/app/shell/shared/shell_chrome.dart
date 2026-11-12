@@ -26,10 +26,14 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
     LifeOsSettingsTabsPage(
       onAction: onLifeOsMenuAction,
       initialTab: 'profile',
+      activeTab: shellPageIndexListenable,
+      shellTabIndex: 5,
     ),
     const PathsPage(),
     LifeOsSettingsTabsPage(
       onAction: onLifeOsMenuAction,
+      activeTab: shellPageIndexListenable,
+      shellTabIndex: 7,
     ),
     PeopleSettingsPage(
       key: ValueKey(peopleDestination),
