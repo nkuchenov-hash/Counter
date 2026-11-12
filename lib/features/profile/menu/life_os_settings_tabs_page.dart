@@ -56,11 +56,15 @@ const _tabs = <_SettingsTab>[
   _SettingsTab('notifications', 'Уведомления', 'Notifications', AppMenuIconRole.notifications, kNordicEntertainment),
   _SettingsTab('viktor', 'Виктор', 'Viktor', AppMenuIconRole.viktor, kNordicMovement),
   _SettingsTab('health', 'Здоровье', 'Health', AppMenuIconRole.health, kNordicHealth),
+  _SettingsTab('data', 'Подключения и данные', 'Connections & data', AppMenuIconRole.connections, kNordicTransport),
   _SettingsTab('appearance', 'Интерфейс', 'Appearance', AppMenuIconRole.appearance, kCategoryBlack),
 ];
 
 class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   late String _tab;
+  // Phone Settings starts as a category list. A profile has its own screen.
+  // Desktop retains the existing tabs and preference editors.
+  bool _mobileDetailOpen = false;
   final _name = TextEditingController();
   ({int start, int end})? _bounds;
   bool _afterLast = false;
@@ -108,7 +112,15 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
 
   void _choose(String next) {
     FocusManager.instance.primaryFocus?.unfocus();
-    setState(() => _tab = next);
+    setState(() {
+      _tab = next;
+      _mobileDetailOpen = true;
+    });
+  }
+
+  void _backToMobileSettings() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _mobileDetailOpen = false);
   }
 
   _SettingsTab get selected => _tabs.firstWhere((e) => e.id == _tab);
@@ -547,6 +559,222 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     ],
   );
 
+  Widget _data() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _section(tr('Подключения', 'Connections'), [
+        _link(tr('Календари', 'Calendars'), AppMenuIconRole.calendar,
+          LifeOsMenuAction.calendars),
+        _link(tr('Источники контактов', 'Contact sources'),
+          AppMenuIconRole.people, LifeOsMenuAction.peopleSources),
+      ]),
+      _section(tr('Данные приложения', 'Application data'), [
+        _link(tr('Синхронизация и офлайн-очередь', 'Sync and offline queue'),
+          AppMenuIconRole.sync, LifeOsMenuAction.syncStatus),
+      ]),
+    ],
+  );
+
+  // Sections reuse the exact canonical category families, never a
+  // new palette of arbitrary bright settings colors.
+  Widget _mobileMenuRow(_SettingsTab tab) => AppSettingsNavigationRow(
+    title: _ru ? tab.ru : tab.en,
+    leading: _symbol(tab.icon, tab.family),
+    onTap: () => _choose(tab.id),
+  );
+
+  Widget _mobileMenuGroup(String ru, String en, List<String> ids) =>
+    Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(5, 22, 0, 9),
+        child: Text(tr(ru, en), style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600, letterSpacing: 0.6)),
+      ),
+      AppSettingsNavigationGroup(
+        children: [for (final id in ids)
+          _mobileMenuRow(_tabs.firstWhere((tab) => tab.id == id))],
+      ),
+    ]);
+
+  Widget _mobileProfileCard() => StreamBuilder<UserSettings>(
+    stream: DatabaseService.instance.userSettingsStream,
+    initialData: DatabaseService.instance.settings,
+    builder: (context, snapshot) {
+      final scheme = Theme.of(context).colorScheme;
+      final name = (snapshot.data?.displayName ?? '').trim();
+      final email = AuthBridge.currentAuthEmail?.trim() ?? '';
+      return Material(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => _choose('profile'),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+            child: Row(children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: kCategoryNeutral[100],
+                child: Text(name.isEmpty ? '•' : name.characters.first.toUpperCase(),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: kCategoryNeutral[800], fontWeight: FontWeight.w600)),
+              ),
+              const SizedBox(width: 14),
+              Expanded(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name.isEmpty ? tr('Мой профиль', 'My profile') : name,
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600)),
+                  if (email.isNotEmpty)
+                    Text(email, maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant)),
+                ],
+              )),
+              Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+            ]),
+          ),
+        ),
+      );
+    },
+  );
+
+  Widget _mobileHome() => Column(
+    key: const ValueKey('mobile-settings-home'),
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Text(tr('Настройки', 'Settings'), style: Theme.of(context).textTheme.headlineLarge
+        ?.copyWith(fontSize: 30, fontWeight: FontWeight.w500)),
+      const SizedBox(height: 18),
+      _mobileProfileCard(),
+      _mobileMenuGroup('ОРГАНИЗАЦИЯ', 'ORGANIZATION',
+        ['planning', 'notes', 'categories', 'people']),
+      _mobileMenuGroup('ЛИЧНОЕ', 'PERSONAL',
+        ['notifications', 'viktor', 'health']),
+      _mobileMenuGroup('ПРИЛОЖЕНИЕ', 'APPLICATION',
+        ['data', 'appearance']),
+    ],
+  );
+
+  Widget _mobileProfile() => StreamBuilder<UserSettings>(
+    stream: DatabaseService.instance.userSettingsStream,
+    initialData: DatabaseService.instance.settings,
+    builder: (context, snapshot) {
+      final scheme = Theme.of(context).colorScheme;
+      final name = (snapshot.data?.displayName ?? '').trim();
+      final email = AuthBridge.currentAuthEmail?.trim() ?? '';
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        const SizedBox(height: 10),
+        Center(child: CircleAvatar(
+          radius: 48,
+          backgroundColor: kCategoryNeutral[100],
+          child: Text(name.isEmpty ? '•' : name.characters.first.toUpperCase(),
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              color: kCategoryNeutral[800], fontWeight: FontWeight.w500)),
+        )),
+        const SizedBox(height: 14),
+        Text(name.isEmpty ? tr('Мой профиль', 'My profile') : name,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w600)),
+        if (email.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(email, textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant)),
+        ],
+        const SizedBox(height: 24),
+        Row(children: [
+          Expanded(child: _mobileProfileAction(
+            tr('Изменить', 'Edit'), Icons.edit_rounded,
+            kNordicWork, LifeOsMenuAction.account)),
+          const SizedBox(width: 9),
+          Expanded(child: _mobileProfileAction(
+            tr('Защита', 'Security'), Icons.shield_outlined,
+            kNordicHealth, LifeOsMenuAction.accountSecurity)),
+          const SizedBox(width: 9),
+          Expanded(child: _mobileProfileAction(
+            tr('Сеансы', 'Sessions'), Icons.devices_rounded,
+            kNordicErrands, LifeOsMenuAction.accountSession)),
+        ]),
+        const SizedBox(height: 24),
+        _section(tr('Профиль и данные', 'Profile & data'), [
+          _link(tr('Мои данные', 'My details'), AppMenuIconRole.account,
+            LifeOsMenuAction.account),
+          _link(tr('Синхронизация', 'Synchronization'), AppMenuIconRole.sync,
+            LifeOsMenuAction.syncStatus),
+        ]),
+      ]);
+    },
+  );
+
+  Widget _mobileProfileAction(String label, IconData icon,
+      MaterialColor family, LifeOsMenuAction action) => Material(
+    color: Theme.of(context).colorScheme.surfaceContainerHigh,
+    borderRadius: BorderRadius.circular(17),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: () => _open(action),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 5),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, color: family[600], size: 23),
+          const SizedBox(height: 6),
+          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              fontSize: 13, fontWeight: FontWeight.w600)),
+        ]),
+      ),
+    ),
+  );
+
+  Widget _mobileDetails() => Column(
+    key: ValueKey('mobile-settings-$_tab'),
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          onPressed: _backToMobileSettings,
+          icon: const Icon(Icons.arrow_back_rounded),
+          label: Text(tr('Настройки', 'Settings')),
+        ),
+      ),
+      const SizedBox(height: 12),
+      if (_tab == 'profile')
+        _mobileProfile()
+      else ...[
+        Row(children: [
+          _symbol(selected.icon, selected.family),
+          const SizedBox(width: 12),
+          Expanded(child: Text(_ru ? selected.ru : selected.en,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w600))),
+        ]),
+        const SizedBox(height: 12),
+        _tabContent(),
+      ],
+    ],
+  );
+
+  Widget _mobileSettings() => AnimatedSwitcher(
+    duration: const Duration(milliseconds: 250),
+    switchInCurve: Curves.easeOutCubic,
+    switchOutCurve: Curves.easeInCubic,
+    transitionBuilder: (child, animation) => FadeTransition(
+      opacity: animation,
+      child: SlideTransition(
+        position: Tween<Offset>(begin: const Offset(0.07, 0),
+          end: Offset.zero).animate(animation),
+        child: child,
+      ),
+    ),
+    child: _mobileDetailOpen ? _mobileDetails() : _mobileHome(),
+  );
+
   Widget _tabContent() => switch (_tab) {
     'profile' => _profile(),
     'planning' => _planning(),
@@ -556,27 +784,13 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     'notifications' => _notifications(),
     'viktor' => _viktor(),
     'health' => _health(),
+    'data' => _data(),
     'appearance' => _appearance(),
     _ => _profile(),
   };
 
   Widget _tabNavigation(bool desktop) {
-    if (!desktop) {
-      return DropdownButtonFormField<String>(
-        key: ValueKey('settings-tab-$_tab'),
-        initialValue: _tab,
-        isExpanded: true,
-        decoration: InputDecoration(
-          labelText: tr('Раздел настроек', 'Settings section'),
-          border: const OutlineInputBorder(),
-        ),
-        items: [
-          for (final tab in _tabs)
-            DropdownMenuItem(value: tab.id, child: Text(_ru ? tab.ru : tab.en)),
-        ],
-        onChanged: (v) { if (v != null) _choose(v); },
-      );
-    }
+    if (!desktop) return const SizedBox.shrink();
     return Wrap(
       spacing: 8, runSpacing: 8,
       children: [
@@ -600,21 +814,26 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
     return Theme(
       data: settingsNeutralTheme(context),
-      child: Builder(builder: (context) => AppSettingsPageBody(children: [
-        Text(tr('Настройки', 'Settings'),
-          style: Theme.of(context).textTheme.headlineLarge),
-        const SizedBox(height: 16),
-        _tabNavigation(desktop),
-        const SizedBox(height: 22),
-        Row(children: [
-          _symbol(selected.icon, selected.family),
-          const SizedBox(width: 12),
-          Expanded(child: Text(_ru ? selected.ru : selected.en,
-            style: Theme.of(context).textTheme.titleLarge)),
-        ]),
-        const SizedBox(height: 8),
-        _tabContent(),
-      ])),
+      child: Builder(builder: (context) => AppSettingsPageBody(
+        expressiveMobileScroll: !desktop,
+        children: desktop
+            ? [
+                Text(tr('Настройки', 'Settings'),
+                  style: Theme.of(context).textTheme.headlineLarge),
+                const SizedBox(height: 16),
+                _tabNavigation(desktop),
+                const SizedBox(height: 22),
+                Row(children: [
+                  _symbol(selected.icon, selected.family),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(_ru ? selected.ru : selected.en,
+                    style: Theme.of(context).textTheme.titleLarge)),
+                ]),
+                const SizedBox(height: 8),
+                _tabContent(),
+              ]
+            : [_mobileSettings()],
+      )),
     );
   }
 }
