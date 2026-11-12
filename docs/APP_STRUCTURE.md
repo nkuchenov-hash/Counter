@@ -302,7 +302,6 @@ Desktop window/tray infrastructure only. Voice/STT production modules live under
 | `app_button.dart` | `AppButton` |
 | `app_text_field.dart` | Canonical app text-field input component |
 | `app_settings_layout.dart` | `AppSettingsPageBody`, `AppSettingsSectionCard`, settings row helpers |
-| `mobile_settings_motion.dart` | Mobile-only elastic settings scroll and clipped edge blur; leaves shared layout behavior unchanged |
 | `app_icon_button.dart` | `AppIconButton` |
 | `app_timezone_icon.dart` | Canonical solid timezone icon family |
 | `app_loading.dart` | `AppLoading` |
