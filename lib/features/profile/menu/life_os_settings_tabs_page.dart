@@ -18,7 +18,7 @@ import 'package:counter/features/profile/menu/life_os_menu_page.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/services/notification_service.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, ValueListenable;
 import 'package:flutter/material.dart';
 
 /// Settings are organized around the action the person wants to perform.
@@ -29,10 +29,14 @@ class LifeOsSettingsTabsPage extends StatefulWidget {
     super.key,
     required this.onAction,
     this.initialTab = 'profile',
+    this.activeTab,
+    this.shellTabIndex = 7,
   });
 
   final ValueChanged<LifeOsMenuAction> onAction;
   final String initialTab;
+  final ValueListenable<int>? activeTab;
+  final int shellTabIndex;
 
   @override
   State<LifeOsSettingsTabsPage> createState() => _LifeOsSettingsTabsPageState();
@@ -125,16 +129,20 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
 
   _SettingsTab get selected => _tabs.firstWhere((e) => e.id == _tab);
 
-  Widget _symbol(AppMenuIconRole icon, MaterialColor family) => SizedBox(
-    height: 42, width: 42,
-    child: DecoratedBox(
-      decoration: BoxDecoration(
-        color: family[100],
-        borderRadius: BorderRadius.circular(12),
+  Widget _symbol(AppMenuIconRole icon, MaterialColor family) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return SizedBox(
+      height: 42, width: 42,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: dark ? family[900]!.withValues(alpha: 0.55) : family[100],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(AppMenuIcons.icon(icon), size: 22,
+          color: dark ? family[200] : family[700]),
       ),
-      child: Icon(AppMenuIcons.icon(icon), size: 22, color: family[700]),
-    ),
-  );
+    );
+  }
 
   Widget _link(String title, AppMenuIconRole icon, LifeOsMenuAction action,
       {String? subtitle}) =>
@@ -616,7 +624,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: kCategoryNeutral[100],
-                child: Text(name.isEmpty ? '•' : name.characters.first.toUpperCase(),
+                child: Text(name.isEmpty ? '•' : name.substring(0, 1).toUpperCase(),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: kCategoryNeutral[800], fontWeight: FontWeight.w600)),
               ),
@@ -671,7 +679,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
         Center(child: CircleAvatar(
           radius: 48,
           backgroundColor: kCategoryNeutral[100],
-          child: Text(name.isEmpty ? '•' : name.characters.first.toUpperCase(),
+          child: Text(name.isEmpty ? '•' : name.substring(0, 1).toUpperCase(),
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
               color: kCategoryNeutral[800], fontWeight: FontWeight.w500)),
         )),
@@ -812,7 +820,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   @override
   Widget build(BuildContext context) {
     final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
-    return Theme(
+    final content = Theme(
       data: settingsNeutralTheme(context),
       child: Builder(builder: (context) => AppSettingsPageBody(
         expressiveMobileScroll: !desktop,
@@ -834,6 +842,22 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
               ]
             : [_mobileSettings()],
       )),
+    );
+    final activeTab = widget.activeTab;
+    if (activeTab == null || desktop) return content;
+    return ValueListenableBuilder<int>(
+      valueListenable: activeTab,
+      builder: (context, currentTab, _) {
+        final shouldReturnToIndex =
+            currentTab == widget.shellTabIndex && _mobileDetailOpen;
+        return PopScope(
+          canPop: !shouldReturnToIndex,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop && shouldReturnToIndex) _backToMobileSettings();
+          },
+          child: content,
+        );
+      },
     );
   }
 }
