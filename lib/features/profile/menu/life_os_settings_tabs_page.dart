@@ -742,7 +742,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     final scheme = Theme.of(context).colorScheme;
     final dark = scheme.brightness == Brightness.dark;
     final topInset = MediaQuery.viewPaddingOf(context).top;
-    return SizedBox(height: topInset + 102, child: Stack(children: [
+    return SizedBox(height: topInset + 80, child: Stack(children: [
       Positioned.fill(child: IgnorePointer(child: ShaderMask(
         blendMode: BlendMode.dstIn,
         shaderCallback: (bounds) => const LinearGradient(
@@ -864,7 +864,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
               child: KeyedSubtree(
                 key: ValueKey(_mobileDetailOpen ? 'detail-$_tab' : 'settings-home'),
                 child: AppSettingsPageBody(children: [
-                  SizedBox(height: 88 + MediaQuery.viewPaddingOf(context).top),
+                  SizedBox(height: 68 + MediaQuery.viewPaddingOf(context).top),
                   _mobileSettings(),
                   // Scroll the final item above the floating glass navigation.
                   const SizedBox(height: 116),
