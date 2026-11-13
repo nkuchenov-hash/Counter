@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
@@ -72,27 +74,52 @@ class ShellCompactBottomNav extends StatelessWidget {
       ),
     ];
 
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.0,
-      child: Material(
-        color: bg,
-        child: SizedBox(
-          height: kShellBottomNavHeight,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final item in items)
-                Expanded(
-                  child: _ShellBottomNavItem(
-                    icon: item.icon,
-                    selectedIcon: item.selectedIcon,
-                    label: item.label,
-                    selected: selectedIndex == item.index,
-                    indicatorColor: indicator,
-                    onTap: () => onDestinationSelected(item.index),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: DecoratedBox(
+            // A transparent leading edge fades scrolling content into the
+            // floating glass bar. No opaque Material can cover the blur.
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                stops: const [0, 0.35, 1],
+                colors: [
+                  bg.withValues(alpha: 0.08),
+                  bg.withValues(alpha: dark ? 0.78 : 0.66),
+                  bg.withValues(alpha: dark ? 0.94 : 0.88),
+                ],
+              ),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 18),
+                child: SizedBox(
+                  height: kShellBottomNavHeight,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final item in items)
+                        Expanded(
+                          child: _ShellBottomNavItem(
+                            icon: item.icon,
+                            selectedIcon: item.selectedIcon,
+                            label: item.label,
+                            selected: selectedIndex == item.index,
+                            indicatorColor: indicator,
+                            onTap: () => onDestinationSelected(item.index),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-            ],
+              ),
+            ),
           ),
         ),
       ),
@@ -137,8 +164,19 @@ class _ShellBottomNavItem extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 decoration: selected
                     ? BoxDecoration(
-                        color: indicatorColor,
-                        borderRadius: BorderRadius.circular(16),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            scheme.surfaceContainerHighest.withValues(alpha: 0.82),
+                            indicatorColor.withValues(alpha: 0.56),
+                          ],
+                        ),
+                        border: Border.all(
+                          color: scheme.onSurface.withValues(alpha: 0.09),
+                          width: 0.8,
+                        ),
+                        borderRadius: BorderRadius.circular(19),
                       )
                     : null,
                 child: Icon(

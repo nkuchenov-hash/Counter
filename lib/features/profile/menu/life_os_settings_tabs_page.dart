@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
-import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/life_color_compat.dart';
 import 'package:counter/core/shell_adaptive.dart';
@@ -744,28 +743,28 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     key: ValueKey('mobile-settings-$_tab'),
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Align(
-        alignment: Alignment.centerLeft,
-        child: TextButton.icon(
-          onPressed: _backToMobileSettings,
-          icon: const Icon(Icons.arrow_back_rounded),
-          label: Text(tr('Настройки', 'Settings')),
-        ),
+      Row(
+        children: [
+          _GlassySettingsBackButton(
+            onPressed: _backToMobileSettings,
+            tooltip: tr('Назад к настройкам', 'Back to settings'),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              _ru ? selected.ru : selected.en,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
-      const SizedBox(height: 12),
-      if (_tab == 'profile')
-        _mobileProfile()
-      else ...[
-        Row(children: [
-          _symbol(selected.icon, selected.family),
-          const SizedBox(width: 12),
-          Expanded(child: Text(_ru ? selected.ru : selected.en,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w600))),
-        ]),
-        const SizedBox(height: 12),
-        _tabContent(),
-      ],
+      const SizedBox(height: 26),
+      if (_tab == 'profile') _mobileProfile() else _tabContent(),
     ],
   );
 
@@ -889,16 +888,24 @@ class _MobileSettingsMotion extends StatelessWidget {
             bottom: top ? null : 0,
             left: 0,
             right: 0,
-            height: top ? 12 : 20,
+            height: top ? 30 : 52,
             child: IgnorePointer(
               child: ClipRect(
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 3.5, sigmaY: 3.5),
-                  child: ColoredBox(
-                    color: (theme.brightness == Brightness.dark
-                            ? AppColors.darkAppBackground
-                            : AppColors.appBackground)
-                        .withValues(alpha: 0.28),
+                  filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: top ? Alignment.topCenter : Alignment.bottomCenter,
+                        end: top ? Alignment.bottomCenter : Alignment.topCenter,
+                        colors: [
+                          theme.colorScheme.surfaceContainerLowest
+                              .withValues(alpha: 0.94),
+                          theme.colorScheme.surfaceContainerLowest
+                              .withValues(alpha: 0),
+                        ],
+                      ),
+                    ),
                     child: const SizedBox.expand(),
                   ),
                 ),
@@ -916,4 +923,66 @@ class _MobileSettingsBounceBehavior extends MaterialScrollBehavior {
   @override
   ScrollPhysics getScrollPhysics(BuildContext context) =>
       const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
+}
+
+
+/// Tecno-inspired circular frosted Back control with a real backdrop blur.
+class _GlassySettingsBackButton extends StatelessWidget {
+  const _GlassySettingsBackButton({
+    required this.onPressed,
+    required this.tooltip,
+  });
+
+  final VoidCallback onPressed;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Tooltip(
+      message: tooltip,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: scheme.shadow.withValues(alpha: 0.09),
+              blurRadius: 19,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: SizedBox(
+          height: 56,
+          width: 56,
+          child: ClipOval(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: scheme.surfaceContainerHigh.withValues(alpha: 0.64),
+                  border: Border.all(
+                    color: scheme.onSurface.withValues(alpha: 0.08),
+                    width: 0.8,
+                  ),
+                ),
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: InkWell(
+                    onTap: onPressed,
+                    customBorder: const CircleBorder(),
+                    child: Center(
+                      child: Icon(Icons.arrow_back_rounded,
+                        size: 27, color: scheme.onSurface),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

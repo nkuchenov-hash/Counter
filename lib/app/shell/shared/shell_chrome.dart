@@ -99,7 +99,17 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                   child: AnnotatedRegion<SystemUiOverlayStyle>(
                     value: SystemUiOverlayStyle(
                       statusBarColor: AppNeutralTones.transparent,
-                      statusBarIconBrightness: Brightness.light,
+                      statusBarIconBrightness: desktopShell ||
+                              (shellPageIndex > 3 &&
+                                  scheme.brightness == Brightness.light)
+                          ? Brightness.dark : Brightness.light,
+                      statusBarBrightness: desktopShell ||
+                              (shellPageIndex > 3 &&
+                                  scheme.brightness == Brightness.light)
+                          ? Brightness.light : Brightness.dark,
+                      systemNavigationBarIconBrightness:
+                          scheme.brightness == Brightness.light
+                              ? Brightness.dark : Brightness.light,
                       systemNavigationBarColor: scheme.surface,
                     ),
                     child: Listener(
@@ -112,6 +122,9 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                         child: Scaffold(
                           backgroundColor: scheme.surface,
                           resizeToAvoidBottomInset: true,
+                          // Let Settings content scroll underneath the frosted bottom bar.
+                          extendBody: !desktopShell &&
+                              (shellPageIndex == 5 || shellPageIndex == 7),
                           // Keep identical app chrome across every desktop destination.
                           appBar: desktopShell || (!desktopShell && shellPageIndex <= 3)
                               ? AppBar(
@@ -232,6 +245,13 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                                   ),
                                 ],
                               );
+                              // Settings has no AppBar: respect camera/status-bar
+                              // insets instead of painting text under system icons.
+                              final settingsScreen = shellPageIndex == 5 ||
+                                  shellPageIndex == 7;
+                              final compactContent = settingsScreen
+                                  ? SafeArea(top: true, bottom: false, child: mainColumn)
+                                  : mainColumn;
                               return switch (formFactor) {
                                 ShellFormFactor.desktop => DesktopShellFrame(
                                   selectedIndex: desktopSideNavSelectedIndex(
@@ -241,10 +261,10 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                                   child: mainColumn,
                                 ),
                                 ShellFormFactor.tablet => TabletShellFrame(
-                                  child: mainColumn,
+                                  child: compactContent,
                                 ),
                                 ShellFormFactor.phone => PhoneShellFrame(
-                                  child: mainColumn,
+                                  child: compactContent,
                                 ),
                               };
                             },
