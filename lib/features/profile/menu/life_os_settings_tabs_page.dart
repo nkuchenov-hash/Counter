@@ -159,7 +159,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(4, 19, 0, 10),
+        padding: const EdgeInsets.fromLTRB(4, 14, 0, 5),
         child: Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(
           fontWeight: FontWeight.w600,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -596,7 +596,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   Widget _mobileMenuGroup(String ru, String en, List<String> ids) =>
     Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(5, 22, 0, 9),
+        padding: const EdgeInsets.fromLTRB(5, 14, 0, 4),
         child: Text(tr(ru, en), style: Theme.of(context).textTheme.bodySmall?.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w600, letterSpacing: 0.6)),
@@ -742,7 +742,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     final scheme = Theme.of(context).colorScheme;
     final dark = scheme.brightness == Brightness.dark;
     final topInset = MediaQuery.viewPaddingOf(context).top;
-    return SizedBox(height: topInset + 114, child: Stack(children: [
+    return SizedBox(height: topInset + 102, child: Stack(children: [
       Positioned.fill(child: IgnorePointer(child: ShaderMask(
         blendMode: BlendMode.dstIn,
         shaderCallback: (bounds) => const LinearGradient(
@@ -864,7 +864,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
               child: KeyedSubtree(
                 key: ValueKey(_mobileDetailOpen ? 'detail-$_tab' : 'settings-home'),
                 child: AppSettingsPageBody(children: [
-                  SizedBox(height: 100 + MediaQuery.viewPaddingOf(context).top),
+                  SizedBox(height: 88 + MediaQuery.viewPaddingOf(context).top),
                   _mobileSettings(),
                   // Scroll the final item above the floating glass navigation.
                   const SizedBox(height: 116),
