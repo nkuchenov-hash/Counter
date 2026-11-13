@@ -61,11 +61,20 @@ void main() {
     expect(chrome, contains('systemNavigationBarIconBrightness:'));
     expect(nav, contains('BackdropFilter('));
     expect(nav, contains('ImageFilter.blur(sigmaX: 16, sigmaY: 16)'));
-    expect(nav, contains('child: SafeArea('));
+    expect(nav, contains('child: ShaderMask('));
+    expect(nav, contains('blendMode: BlendMode.dstIn'));
+    expect(nav, contains('SafeArea('));
     expect(settings, contains('class _GlassySettingsBackButton'));
     expect(settings, contains('ImageFilter.blur(sigmaX: 14, sigmaY: 14)'));
     // Pinned header is a Stack sibling of the scrolling viewport.
     expect(settings, contains('header: _mobilePinnedHeader()'));
+    expect(settings, contains('Widget _mobilePinnedHeader()'));
+    expect(settings, contains('return DecoratedBox('));
+    expect(settings, contains('final fadeStart = (74 / h)'));
+    expect(settings, contains('final fadeEnd = (116 / h)'));
+    expect(settings, contains('final fadeBottom = (1 - 128 / h)'));
+    expect(settings, contains("key: ValueKey(_mobileDetailOpen ? 'detail-"));
+    expect(settings, isNot(contains('for (final top in [true, false])')));
     expect(settings, contains('class _MobileSettingsMotion'));
     expect(settings, contains('Positioned.fill(child: ScrollConfiguration('));
     expect(settings, contains('Positioned(top: 0, left: 0, right: 0, child: header)'));
