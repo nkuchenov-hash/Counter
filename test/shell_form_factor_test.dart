@@ -45,6 +45,27 @@ void main() {
     });
   });
 
+  test('phone settings glass chrome respects insets and real backdrop', () {
+    final chrome = File('lib/app/shell/shared/shell_chrome.dart')
+        .readAsStringSync();
+    final nav = File('lib/app/shell/phone/shell_bottom_navigation.dart')
+        .readAsStringSync();
+    final settings = File('lib/features/profile/menu/life_os_settings_tabs_page.dart')
+        .readAsStringSync();
+    final layout = File('lib/core/widgets/app_settings_layout.dart')
+        .readAsStringSync();
+    expect(chrome, contains('SafeArea(top: true, bottom: false'));
+    expect(chrome, contains('extendBody: !desktopShell'));
+    expect(chrome, contains('statusBarIconBrightness: desktopShell || shellPageIndex > 3'));
+    expect(nav, contains('BackdropFilter('));
+    expect(nav, contains('ImageFilter.blur(sigmaX: 16, sigmaY: 16)'));
+    expect(nav, contains('child: SafeArea('));
+    expect(settings, contains('class _GlassySettingsBackButton'));
+    expect(settings, contains('ImageFilter.blur(sigmaX: 14, sigmaY: 14)'));
+    expect(settings, contains('height: top ? 30 : 52'));
+    expect(layout, contains('MediaQuery.paddingOf(context).bottom'));
+  });
+
   group('single settings navigation', () {
     test('Settings use one native tab workspace across both shell entries', () {
       final chrome = File('lib/app/shell/shared/shell_chrome.dart')
