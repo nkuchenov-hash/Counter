@@ -1,3 +1,11 @@
+## Viktor — adjacent Timeline record duration changes (2026-11-14)
+
+- A command such as "Сократи запись Обед до 30 минут и продли следующую Этника сайт" always refers to existing Timeline **records**, not plans. Viktor must obtain real record IDs and UTC boundaries with `read_day_records` before proposing the exact two-record edit.
+- `resize_adjacent_records` shortens the completed first record from its actual start to the requested duration, shifts the immediately next record's start to that new boundary, and preserves the next record's end (or running state), title, category and all unrelated rows. The user sees original and new wall-clock boundaries and explicitly approves.
+- The server requires the authenticated owner, unaltered original titles/statuses/timestamps/revisions, real chronological adjacency and no overlap with any other owned primary Record. Both changes commit in one PocketBase transaction; any validation or save failure commits neither. The app re-reads saved records before announcing success; a network timeout is reported as uncertain, never automatically retried.
+- No provider status such as "Сейчас проверю" may complete a user-requested Record mutation without actions. At most one bounded repair attempt is allowed, and a failed proposal ends with a clear no-write result. Never substitute creating new Records or editing Plans.
+- P0 performance law remains: no preload, polling, startup work or global UI change; all reads occur only on explicit Viktor commands.
+
 ## Calendar visual minimalism (2026-11-10)
 
 - Month-view days must share one uniform, unfilled canvas. Do **not** shade weekends or adjacent-month cells gray; distinguish neighboring months only with date-label contrast. Use subtle design-system outline tokens for cell separation, with no blanket tinted backgrounds.

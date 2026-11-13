@@ -3,6 +3,42 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
 
+  test('Viktor may not finish a Record edit with a promise', () {
+    const request = 'Сократи запись Обед до 30 минут, а следующую '
+        'Этника сайт продли на освобождённое время';
+    expect(ViktorReadAnswer.isUnfinishedWriteReply(
+      input: request,
+      message: 'Сейчас проверю планы, чтобы найти обе записи.',
+    ), true);
+    expect(ViktorReadAnswer.requiresRecordResizeReadContinuation(
+      input: request,
+      actionNames: ['read_day_records'],
+      hasMutations: false,
+    ), true);
+    expect(ViktorReadAnswer.requiresRecordResizeReadContinuation(
+      input: request,
+      actionNames: ['resize_adjacent_records'],
+      hasMutations: true,
+    ), false);
+    expect(ViktorReadAnswer.isUnfinishedWriteReply(
+      input: 'Почему ты сократил запись обед и продлил следующую?',
+      message: 'Сейчас проверю',
+    ), false, reason: 'A question is not consent to edit');
+    expect(ViktorReadAnswer.isUnfinishedWriteReply(
+      input: 'Сократи запись обед до 30 минут',
+      message: 'Сейчас проверю',
+    ), false, reason: 'One-record instruction must not change a second');
+
+    expect(ViktorReadAnswer.isUnfinishedWriteReply(
+      input: request,
+      message: 'Первая запись сокращена, обе сохранены и проверены.',
+    ), false);
+    expect(ViktorReadAnswer.isUnfinishedWriteReply(
+      input: 'Покажи планы на сегодня',
+      message: 'Сейчас проверю планы.',
+    ), false);
+  });
+
   test('Perm user keeps own default and location mention is not a zone override', () {
     expect(ViktorReadAnswer.explicitScheduleTimezone('По пермскому времени'),
         'Asia/Yekaterinburg');

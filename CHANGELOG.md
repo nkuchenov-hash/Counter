@@ -1,3 +1,9 @@
+## [2026-11-14] — Viktor adjacent Timeline record resizing [candidate; verification pending]
+
+* Added model-approved `resize_adjacent_records` tool, exact server-owned Record IDs in `read_day_records`, strict typed proposal contract, preview/approval and two-boundary atomic PocketBase route `/api/viktor/records/resize-adjacent`. First record shortens, second starts at released time without changing its end; client verifies server results.
+* Added unfinished-write-reply repair for commands such as "Сейчас проверю..." and a bounded same-turn read-to-write continuation.
+* Added Node transaction tests (ownership, stale revisions, overlap, failed second save rollback and double replay), Dart contract tests, and PR-only Flutter web/Android verification. No changes to existing user records or PocketBase schema.
+
 ## 2026-11-11 — Timeline desktop workspace date arrows
 
 - Add the same desktop left/right day arrows as Planning to the Timeline day body; the canonical APP_STRUCTURE_DETAILED has been regenerated for the two new tracked files. Each sits in its own spare workspace gutter outside record cards and outside the fixed left navigation.

@@ -40,6 +40,42 @@ class ViktorReadAnswer {
     ).hasMatch(value);
   }
 
+  /// A read-only question cannot authorize mutating two Record boundaries.
+  /// Require an explicit imperative naming an adjacent/second activity.
+  static bool isAdjacentRecordResizeIntent(String input) {
+    final text = input.trim().toLowerCase();
+    final imperative = RegExp(
+      r'^(?:(?:пожалуйста|please)[, ]+)?'
+      r'(?:сократи|уменьши|укороти|продли|удлини|'
+      r'shorten|extend|resize|adjust)(?: |$|[,!.])',
+      caseSensitive: false,
+    ).hasMatch(text);
+    final record = RegExp(r'запис|обед|timeline|record',
+        caseSensitive: false).hasMatch(text);
+    final two = RegExp(
+      r'следующ|за +ней|вторую|другую|next|following|'
+      r' а .{0,140}(?:продли|удлини|extend)',
+      caseSensitive: false,
+    ).hasMatch(text);
+    return imperative && record && two;
+  }
+
+  /// Some providers forget continue:true after the necessary Record read.
+  static bool requiresRecordResizeReadContinuation({
+    required String input,
+    required List<String> actionNames,
+    required bool hasMutations,
+  }) => isAdjacentRecordResizeIntent(input) && !hasMutations &&
+      actionNames.length == 1 &&
+      actionNames.single == 'read_day_records';
+
+  /// A promise to check is not a completed database mutation.
+  static bool isUnfinishedWriteReply({
+    required String input,
+    required String message,
+  }) => isAdjacentRecordResizeIntent(input) &&
+      isUnfinishedScheduleReply(message);
+
   /// The server may lose an earlier draft after a series of nonanswers.
   /// Recover only an actual ASSISTANT itinerary with multiple timed rows.
   /// User-provided text must never be taken as an assistant draft.

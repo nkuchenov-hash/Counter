@@ -1,0 +1,48 @@
+name: Viktor Record Resize Verify
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'lib/data/ai/viktor*.dart'
+      - 'lib/features/viktor/**'
+      - 'pb_hooks/viktor*.js'
+      - 'test/viktor_*'
+      - '.github/workflows/viktor-record-resize-verify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate atomic PocketBase transaction
+        run: |
+          node --check pb_hooks/viktor.record_resize.pb.js
+          node --check pb_hooks/viktor.propose.pb.js
+          node test/viktor_atomic_record_hook_test.cjs
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+      - name: Initialize environment
+        run: cp lib/core/env/env.dart.example lib/core/env/env.dart
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Analyze Dart
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Verify Viktor regressions
+        run: >
+          flutter test
+          test/viktor_action_contract_test.dart
+          test/viktor_record_tools_test.dart
+          test/viktor_read_answer_test.dart
+      - name: Build web
+        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run
+      - name: Build Android arm64
+        run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons

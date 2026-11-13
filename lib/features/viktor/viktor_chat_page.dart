@@ -226,7 +226,15 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       );
       var repairedEmptyRead = false;
       var repairedRepeatedRead = false;
+      bool needsRecordResizeRead(ViktorResponse value) =>
+          ViktorReadAnswer.requiresRecordResizeReadContinuation(
+            input: input,
+            actionNames: value.actions?.actions.map((a) => a.name).toList()
+                ?? const <String>[],
+            hasMutations: value.actions?.hasMutations ?? false,
+          );
       for (var step = 0; !revisionOfDraft && (response.needsMoreContext ||
+          needsRecordResizeRead(response) ||
           ViktorReadAnswer.requiresDocumentRead(input: input,
             actions: response.actions?.actions.map((a) => a.name).toList().cast<String>()
                 ?? const <String>[])); step++) {
@@ -273,7 +281,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           needsMoreContext: response.needsMoreContext,
           hasActions: response.actions != null,
           hasMutations: response.actions?.hasMutations ?? false,
-        )) break;
+        ) && !needsRecordResizeRead(response)) break;
         final proposed = response.actions!;
         final signature = jsonEncode(
             proposed.actions.map((a) => a.toJson()).toList());
@@ -330,7 +338,31 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         throw StateError('Виктор запросил дополнительные данные, '
             'но не указал операцию чтения. Планы не изменены.');
       }
-      if (actions == null) {
+      if (actions == null && ViktorReadAnswer.isUnfinishedWriteReply(
+          input: input, message: response.message)) {
+        final repaired = await _repairUnfinishedRecordWrite(
+          input: input, intentDay: intentDay, plans: plans,
+          requestId: requestId, conversation: dialogContext,
+          observations: toolObservations, executor: executor,
+        );
+        if (!mounted) return;
+        if (repaired == null) {
+          _push('Виктор не смог подготовить проверяемое изменение. '
+              'Ничего не изменено.');
+          return;
+        }
+        response = repaired;
+      }
+      // A Record edit must never be reinterpreted as a Plan mutation.
+      if (ViktorReadAnswer.isAdjacentRecordResizeIntent(input) &&
+          response.actions?.hasMutations == true &&
+          !response.actions!.actions.every(
+              (action) => action.name == 'resize_adjacent_records')) {
+        throw StateError('Виктор предложил изменение не тех данных. '
+            'Записи не изменены.');
+      }
+      final resolvedActions = response.actions;
+      if (resolvedActions == null) {
         if (response.message.trim().isNotEmpty) {
           _push(response.message.trim());
         }
@@ -339,13 +371,13 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         }
         return;
       }
-      if (ViktorProposedDayDraft.needsReadOnlyDraft(actions)) {
-        final draft = await ViktorProposedDayDraft.describe(actions,
+      if (ViktorProposedDayDraft.needsReadOnlyDraft(resolvedActions)) {
+        final draft = await ViktorProposedDayDraft.describe(resolvedActions,
           loadDay: db.getPlanningTasksForWallDate);
         if (mounted) _push(draft);
         return;
       }
-      var finalActions = actions;
+      var finalActions = resolvedActions;
       var recoveredProposal = false;
       late String preview;
       try {
