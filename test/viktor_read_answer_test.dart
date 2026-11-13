@@ -21,6 +21,15 @@ void main() {
       hasMutations: true,
     ), false);
     expect(ViktorReadAnswer.isUnfinishedWriteReply(
+      input: 'Почему ты сократил запись обед и продлил следующую?',
+      message: 'Сейчас проверю',
+    ), false, reason: 'A question is not consent to edit');
+    expect(ViktorReadAnswer.isUnfinishedWriteReply(
+      input: 'Сократи запись обед до 30 минут',
+      message: 'Сейчас проверю',
+    ), false, reason: 'One-record instruction must not change a second');
+
+    expect(ViktorReadAnswer.isUnfinishedWriteReply(
       input: request,
       message: 'Первая запись сокращена, обе сохранены и проверены.',
     ), false);

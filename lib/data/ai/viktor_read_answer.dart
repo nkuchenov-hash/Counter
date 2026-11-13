@@ -40,40 +40,41 @@ class ViktorReadAnswer {
     ).hasMatch(value);
   }
 
-  /// Some providers forget continue:true even after proposing the necessary
-  /// read for a Record resize. Continue the same turn without losing intent.
+  /// A read-only question cannot authorize mutating two Record boundaries.
+  /// Require an explicit imperative naming an adjacent/second activity.
+  static bool isAdjacentRecordResizeIntent(String input) {
+    final text = input.trim().toLowerCase();
+    final imperative = RegExp(
+      r'^(?:(?:пожалуйста|please)[, ]+)?'
+      r'(?:сократи|уменьши|укороти|продли|удлини|'
+      r'shorten|extend|resize|adjust)(?: |$|[,!.])',
+      caseSensitive: false,
+    ).hasMatch(text);
+    final record = RegExp(r'запис|обед|timeline|record',
+        caseSensitive: false).hasMatch(text);
+    final two = RegExp(
+      r'следующ|за +ней|вторую|другую|next|following|'
+      r' а .{0,140}(?:продли|удлини|extend)',
+      caseSensitive: false,
+    ).hasMatch(text);
+    return imperative && record && two;
+  }
+
+  /// Some providers forget continue:true after the necessary Record read.
   static bool requiresRecordResizeReadContinuation({
     required String input,
     required List<String> actionNames,
     required bool hasMutations,
-  }) {
-    if (hasMutations) return false;
-    final intent = RegExp(r'сократ|уменьш|продли|укорот|'
-        r'shorten|extend|resize', caseSensitive: false).hasMatch(input);
-    final record = RegExp(r'запис|обед|timeline|record',
-        caseSensitive: false).hasMatch(input);
-    return intent && record && actionNames.length == 1 &&
-        actionNames.single == 'read_day_records';
-  }
+  }) => isAdjacentRecordResizeIntent(input) && !hasMutations &&
+      actionNames.length == 1 &&
+      actionNames.single == 'read_day_records';
 
-  /// A write request must not end with a provider promise and zero tools.
-  /// This is a narrow safety net; it does not authorize any database write.
+  /// A promise to check is not a completed database mutation.
   static bool isUnfinishedWriteReply({
     required String input,
     required String message,
-  }) {
-    final intendsEdit = RegExp(
-      r'сократ|уменьш|продли|удлин|измени|передвин|скоррект|'
-      r'укорот|resize|shorten|extend|adjust',
-      caseSensitive: false,
-    ).hasMatch(input);
-    final targetsRecord = RegExp(
-      r'запис|обед|timeline|record',
-      caseSensitive: false,
-    ).hasMatch(input);
-    if (!intendsEdit || !targetsRecord) return false;
-    return isUnfinishedScheduleReply(message);
-  }
+  }) => isAdjacentRecordResizeIntent(input) &&
+      isUnfinishedScheduleReply(message);
 
   /// The server may lose an earlier draft after a series of nonanswers.
   /// Recover only an actual ASSISTANT itinerary with multiple timed rows.
