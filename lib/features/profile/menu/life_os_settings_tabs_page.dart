@@ -159,7 +159,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(4, 19, 0, 10),
+        padding: const EdgeInsets.fromLTRB(4, 14, 0, 5),
         child: Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(
           fontWeight: FontWeight.w600,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -596,7 +596,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   Widget _mobileMenuGroup(String ru, String en, List<String> ids) =>
     Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(5, 22, 0, 9),
+        padding: const EdgeInsets.fromLTRB(5, 14, 0, 4),
         child: Text(tr(ru, en), style: Theme.of(context).textTheme.bodySmall?.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w600, letterSpacing: 0.6)),
@@ -742,7 +742,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     final scheme = Theme.of(context).colorScheme;
     final dark = scheme.brightness == Brightness.dark;
     final topInset = MediaQuery.viewPaddingOf(context).top;
-    return SizedBox(height: topInset + 114, child: Stack(children: [
+    return SizedBox(height: topInset + 80, child: Stack(children: [
       Positioned.fill(child: IgnorePointer(child: ShaderMask(
         blendMode: BlendMode.dstIn,
         shaderCallback: (bounds) => const LinearGradient(
@@ -751,12 +751,12 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
           colors: [AppNeutralTones.white, AppNeutralTones.white, AppNeutralTones.transparent],
         ).createShader(bounds),
         child: ClipRect(child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: DecoratedBox(
             decoration: BoxDecoration(gradient: LinearGradient(
               begin: Alignment.topCenter, end: Alignment.bottomCenter,
               colors: dark
-                  ? [AppNeutralTones.white.withValues(alpha: 0.055), AppNeutralTones.white.withValues(alpha: 0.0)]
+                  ? [AppNeutralTones.white.withValues(alpha: 0.09), AppNeutralTones.white.withValues(alpha: 0.0)]
                   : [scheme.surfaceContainerHigh.withValues(alpha: 0.38), scheme.surfaceContainerHigh.withValues(alpha: 0.0)],
             )),
             child: const SizedBox.expand(),
@@ -764,7 +764,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
         )),
       ))),
       Padding(
-        padding: EdgeInsets.fromLTRB(16, topInset + 12, 16, 38),
+        padding: EdgeInsets.fromLTRB(16, topInset + 12, 16, 12),
         child: Row(children: [
           if (_mobileDetailOpen) ...[
             _GlassySettingsBackButton(
@@ -864,7 +864,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
               child: KeyedSubtree(
                 key: ValueKey(_mobileDetailOpen ? 'detail-$_tab' : 'settings-home'),
                 child: AppSettingsPageBody(children: [
-                  SizedBox(height: 100 + MediaQuery.viewPaddingOf(context).top),
+                  SizedBox(height: 68 + MediaQuery.viewPaddingOf(context).top),
                   _mobileSettings(),
                   // Scroll the final item above the floating glass navigation.
                   const SizedBox(height: 116),
@@ -891,43 +891,24 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   }
 }
 
-/// Fixed header with feathered scrolling content, not opaque blur strips.
+/// Continuous scroll surface behind the pinned top glass and bottom nav.
 class _MobileSettingsMotion extends StatelessWidget {
   const _MobileSettingsMotion({required this.child, required this.header});
   final Widget child;
   final Widget header;
 
   @override
-  Widget build(BuildContext context) {
-    final topInset = MediaQuery.viewPaddingOf(context).top;
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-    return Stack(children: [
+  Widget build(BuildContext context) => Stack(children: [
     Positioned.fill(child: ScrollConfiguration(
       behavior: MediaQuery.disableAnimationsOf(context)
           ? ScrollConfiguration.of(context)
           : const _MobileSettingsBounceBehavior(),
-      child: ShaderMask(
-        blendMode: BlendMode.dstIn,
-        shaderCallback: (bounds) {
-          final h = bounds.height;
-          final fadeStart = ((topInset + 74) / h).clamp(0.0, 0.40).toDouble();
-          final fadeEnd = ((topInset + 116) / h).clamp(fadeStart + 0.01, 0.50).toDouble();
-          final fadeBottom = (1 - (158 + bottomInset) / h).clamp(fadeEnd + 0.01, 0.88).toDouble();
-          final fadeClear = (1 - (112 + bottomInset) / h).clamp(fadeBottom + 0.01, 0.98).toDouble();
-          return LinearGradient(
-            begin: Alignment.topCenter, end: Alignment.bottomCenter,
-            stops: [0, fadeStart, fadeEnd, fadeBottom, fadeClear, 1],
-            colors: const [AppNeutralTones.transparent, AppNeutralTones.transparent,
-              AppNeutralTones.white, AppNeutralTones.white,
-              AppNeutralTones.transparent, AppNeutralTones.transparent],
-          ).createShader(bounds);
-        },
-        child: child,
-      ),
+      // Do not fade the page itself: fading rows makes the dark canvas look
+      // like an opaque black curtain above the bottom glass navigation.
+      child: child,
     )),
     Positioned(top: 0, left: 0, right: 0, child: header),
   ]);
-  }
 }
 
 class _MobileSettingsBounceBehavior extends MaterialScrollBehavior {

@@ -70,23 +70,29 @@ void main() {
     expect(nav, contains('AppNeutralTones.white.withValues(alpha: 0.23)'));
     expect(nav, contains('SafeArea('));
     expect(settings, contains('class _GlassySettingsBackButton'));
-    expect(settings, contains('ImageFilter.blur(sigmaX: 14, sigmaY: 14)'));
+    expect(settings, contains('ImageFilter.blur(sigmaX: 20, sigmaY: 20)'));
     // Pinned header is a Stack sibling of the scrolling viewport.
     expect(settings, contains('header: _mobilePinnedHeader()'));
     expect(settings, contains('Widget _mobilePinnedHeader()'));
     expect(settings, contains('return SizedBox('));
     expect(settings, contains('color: dark'));
-    expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.055)'));
+    expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.09)'));
     expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.29)'));
     expect(settings, contains('ImageFilter.blur(sigmaX: 18, sigmaY: 18)'));
-    expect(settings, contains('height: topInset + 114'));
-    expect(settings, contains('topInset + 12'));
-    expect(settings, contains('100 + MediaQuery.viewPaddingOf(context).top'));
+    expect(settings, contains('height: topInset + 80'));
+    expect(settings, contains('EdgeInsets.fromLTRB(16, topInset + 12, 16, 12)'));
+    expect(settings, isNot(contains('EdgeInsets.fromLTRB(16, topInset + 12, 16, 38)')));
+    expect(settings, contains('68 + MediaQuery.viewPaddingOf(context).top'));
+    expect(settings, contains('EdgeInsets.fromLTRB(5, 14, 0, 4)'));
+    expect(settings, contains('EdgeInsets.fromLTRB(4, 14, 0, 5)'));
+    expect(settings, isNot(contains('EdgeInsets.fromLTRB(5, 22, 0, 9)')));
     expect(settings, isNot(contains('scheme.surfaceContainerLowest.withValues(alpha: 0.98)')));
-    expect(settings, contains('final fadeStart = ((topInset + 74) / h)'));
-    expect(settings, contains('final fadeEnd = ((topInset + 116) / h)'));
-    expect(settings, contains('final fadeBottom = (1 - (158 + bottomInset) / h)'));
-    expect(settings, contains('final fadeClear = (1 - (112 + bottomInset) / h)'));
+    // The page remains fully opaque; glass belongs to the navigation layers.
+    expect(settings, isNot(contains('final fadeStart =')));
+    expect(settings, isNot(contains('final fadeBottom =')));
+    expect(settings, isNot(contains('final fadeClear =')));
+    expect(settings, contains('child: child,'));
+    expect(nav, contains('Positioned.fill(child: IgnorePointer(child: ShaderMask('));
     expect(settings, contains("key: ValueKey(_mobileDetailOpen ? 'detail-"));
     expect(settings, isNot(contains('for (final top in [true, false])')));
     expect(settings, contains('class _MobileSettingsMotion'));
