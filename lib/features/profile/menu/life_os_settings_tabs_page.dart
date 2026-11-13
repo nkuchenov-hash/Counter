@@ -909,6 +909,7 @@ class _MobileSettingsMotion extends StatelessWidget {
     )),
     Positioned(top: 0, left: 0, right: 0, child: header),
   ]);
+}
 
 class _MobileSettingsBounceBehavior extends MaterialScrollBehavior {
   const _MobileSettingsBounceBehavior();
