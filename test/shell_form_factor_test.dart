@@ -63,13 +63,21 @@ void main() {
     expect(nav, contains('ImageFilter.blur(sigmaX: 16, sigmaY: 16)'));
     expect(nav, contains('child: ShaderMask('));
     expect(nav, contains('blendMode: BlendMode.dstIn'));
+    expect(nav, contains('AppNeutralTones.white.withValues(alpha: 0.12)'));
+    expect(nav, contains('AppNeutralTones.white.withValues(alpha: 0.23)'));
     expect(nav, contains('SafeArea('));
     expect(settings, contains('class _GlassySettingsBackButton'));
     expect(settings, contains('ImageFilter.blur(sigmaX: 14, sigmaY: 14)'));
     // Pinned header is a Stack sibling of the scrolling viewport.
     expect(settings, contains('header: _mobilePinnedHeader()'));
     expect(settings, contains('Widget _mobilePinnedHeader()'));
-    expect(settings, contains('return DecoratedBox('));
+    expect(settings, contains('return SizedBox('));
+    expect(settings, contains('color: dark'));
+    expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.12)'));
+    expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.29)'));
+    expect(settings, contains('ImageFilter.blur(sigmaX: 18, sigmaY: 18)'));
+    expect(settings, contains('height: 114'));
+    expect(settings, isNot(contains('scheme.surfaceContainerLowest.withValues(alpha: 0.98)')));
     expect(settings, contains('final fadeStart = (74 / h)'));
     expect(settings, contains('final fadeEnd = (116 / h)'));
     expect(settings, contains('final fadeBottom = (1 - 128 / h)'));
