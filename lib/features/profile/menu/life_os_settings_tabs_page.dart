@@ -896,15 +896,21 @@ class _MobileSettingsMotion extends StatelessWidget {
           : const _MobileSettingsBounceBehavior(),
       child: ShaderMask(
         blendMode: BlendMode.dstIn,
-        shaderCallback: (bounds) => const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          stops: [0, 0.10, 0.19, 0.82, 1],
-          colors: [
-            Colors.transparent, Colors.transparent,
-            Colors.white, Colors.white, Colors.transparent,
-          ],
-        ).createShader(bounds),
+        shaderCallback: (bounds) {
+          final h = bounds.height;
+          final fadeStart = (74 / h).clamp(0.0, 0.20).toDouble();
+          final fadeEnd = (116 / h).clamp(fadeStart + 0.01, 0.35).toDouble();
+          final fadeBottom = (1 - 128 / h)
+              .clamp(fadeEnd + 0.01, 0.90).toDouble();
+          return LinearGradient(
+            begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            stops: [0, fadeStart, fadeEnd, fadeBottom, 1],
+            colors: const [
+              Colors.transparent, Colors.transparent,
+              Colors.white, Colors.white, Colors.transparent,
+            ],
+          ).createShader(bounds);
+        },
         child: child,
       ),
     )),
