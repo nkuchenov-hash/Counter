@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
+import 'package:counter/core/app_colors.dart';
+
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/life_color_compat.dart';
 import 'package:counter/core/shell_adaptive.dart';
@@ -654,9 +656,6 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     key: const ValueKey('mobile-settings-home'),
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Text(tr('Настройки', 'Settings'), style: Theme.of(context).textTheme.headlineLarge
-        ?.copyWith(fontSize: 30, fontWeight: FontWeight.w500)),
-      const SizedBox(height: 18),
       _mobileProfileCard(),
       _mobileMenuGroup('ОРГАНИЗАЦИЯ', 'ORGANIZATION',
         ['planning', 'notes', 'categories', 'people']),
@@ -739,33 +738,46 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     ),
   );
 
+  // The header lives outside the scrolling list: no scroll offset can move it.
+  Widget _mobilePinnedHeader() {
+    final scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(gradient: LinearGradient(
+        begin: Alignment.topCenter, end: Alignment.bottomCenter,
+        stops: const [0, 0.64, 1],
+        colors: [
+          scheme.surfaceContainerLowest.withValues(alpha: 0.98),
+          scheme.surfaceContainerLowest.withValues(alpha: 0.88),
+          scheme.surfaceContainerLowest.withValues(alpha: 0),
+        ],
+      )),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 38),
+        child: Row(children: [
+          if (_mobileDetailOpen) ...[
+            _GlassySettingsBackButton(
+              onPressed: _backToMobileSettings,
+              tooltip: tr('Назад к настройкам', 'Back to settings'),
+            ),
+            const SizedBox(width: 16),
+          ],
+          Expanded(child: Text(
+            _mobileDetailOpen ? (_ru ? selected.ru : selected.en)
+                : tr('Настройки', 'Settings'),
+            maxLines: 2, overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontSize: _mobileDetailOpen ? 22 : 30,
+              fontWeight: FontWeight.w600),
+          )),
+        ]),
+      ),
+    );
+  }
+
   Widget _mobileDetails() => Column(
     key: ValueKey('mobile-settings-$_tab'),
     crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Row(
-        children: [
-          _GlassySettingsBackButton(
-            onPressed: _backToMobileSettings,
-            tooltip: tr('Назад к настройкам', 'Back to settings'),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              _ru ? selected.ru : selected.en,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 26),
-      if (_tab == 'profile') _mobileProfile() else _tabContent(),
-    ],
+    children: [if (_tab == 'profile') _mobileProfile() else _tabContent()],
   );
 
   Widget _mobileSettings() => AnimatedSwitcher(
@@ -822,26 +834,34 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
     final content = Theme(
       data: settingsNeutralTheme(context),
-      child: Builder(builder: (context) => _MobileSettingsMotion(
-        child: AppSettingsPageBody(children: desktop
-            ? [
-                Text(tr('Настройки', 'Settings'),
-                  style: Theme.of(context).textTheme.headlineLarge),
-                const SizedBox(height: 16),
-                _tabNavigation(desktop),
-                const SizedBox(height: 22),
-                Row(children: [
-                  _symbol(selected.icon, selected.family),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(_ru ? selected.ru : selected.en,
-                    style: Theme.of(context).textTheme.titleLarge)),
+      child: Builder(builder: (context) => desktop
+          ? AppSettingsPageBody(children: [
+              Text(tr('Настройки', 'Settings'),
+                style: Theme.of(context).textTheme.headlineLarge),
+              const SizedBox(height: 16),
+              _tabNavigation(desktop),
+              const SizedBox(height: 22),
+              Row(children: [
+                _symbol(selected.icon, selected.family),
+                const SizedBox(width: 12),
+                Expanded(child: Text(_ru ? selected.ru : selected.en,
+                  style: Theme.of(context).textTheme.titleLarge)),
+              ]),
+              const SizedBox(height: 8),
+              _tabContent(),
+            ])
+          : _MobileSettingsMotion(
+              header: _mobilePinnedHeader(),
+              child: KeyedSubtree(
+                key: ValueKey(_mobileDetailOpen ? 'detail-$_tab' : 'settings-home'),
+                child: AppSettingsPageBody(children: [
+                  const SizedBox(height: 100),
+                  _mobileSettings(),
+                  // Scroll the final item above the floating glass navigation.
+                  const SizedBox(height: 116),
                 ]),
-                const SizedBox(height: 8),
-                _tabContent(),
-              ]
-            : [_mobileSettings()],
-        ),
-      )),
+              ),
+            )),
     );
     final activeTab = widget.activeTab;
     if (activeTab == null || desktop) return content;
@@ -863,58 +883,41 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
 }
 
 
-/// Phone-only scroll motion and two clipped frosted edges. Kept in this
-/// screen to avoid expanding the global settings layout.
+/// Fixed header over a single scrolling viewport. A shader fades the content
+/// continuously, avoiding the hard horizontal boundaries of blur strips.
 class _MobileSettingsMotion extends StatelessWidget {
-  const _MobileSettingsMotion({required this.child});
-
+  const _MobileSettingsMotion({required this.child, required this.header});
   final Widget child;
+  final Widget header;
 
   @override
-  Widget build(BuildContext context) {
-    if (shellUsesSideNavigation(MediaQuery.sizeOf(context).width)) {
-      return child;
-    }
-    final theme = Theme.of(context);
-    return ScrollConfiguration(
+  Widget build(BuildContext context) => Stack(children: [
+    Positioned.fill(child: ScrollConfiguration(
       behavior: MediaQuery.disableAnimationsOf(context)
           ? ScrollConfiguration.of(context)
           : const _MobileSettingsBounceBehavior(),
-      child: Stack(children: [
-        child,
-        for (final top in [true, false])
-          Positioned(
-            top: top ? 0 : null,
-            bottom: top ? null : 0,
-            left: 0,
-            right: 0,
-            height: top ? 30 : 52,
-            child: IgnorePointer(
-              child: ClipRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: top ? Alignment.topCenter : Alignment.bottomCenter,
-                        end: top ? Alignment.bottomCenter : Alignment.topCenter,
-                        colors: [
-                          theme.colorScheme.surfaceContainerLowest
-                              .withValues(alpha: 0.94),
-                          theme.colorScheme.surfaceContainerLowest
-                              .withValues(alpha: 0),
-                        ],
-                      ),
-                    ),
-                    child: const SizedBox.expand(),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ]),
-    );
-  }
+      child: ShaderMask(
+        blendMode: BlendMode.dstIn,
+        shaderCallback: (bounds) {
+          final h = bounds.height;
+          final fadeStart = (74 / h).clamp(0.0, 0.20).toDouble();
+          final fadeEnd = (116 / h).clamp(fadeStart + 0.01, 0.35).toDouble();
+          final fadeBottom = (1 - 128 / h)
+              .clamp(fadeEnd + 0.01, 0.90).toDouble();
+          return LinearGradient(
+            begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            stops: [0, fadeStart, fadeEnd, fadeBottom, 1],
+            colors: const [
+              AppNeutralTones.transparent, AppNeutralTones.transparent,
+              AppNeutralTones.white, AppNeutralTones.white, AppNeutralTones.transparent,
+            ],
+          ).createShader(bounds);
+        },
+        child: child,
+      ),
+    )),
+    Positioned(top: 0, left: 0, right: 0, child: header),
+  ]);
 }
 
 class _MobileSettingsBounceBehavior extends MaterialScrollBehavior {
