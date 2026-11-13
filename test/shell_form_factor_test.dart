@@ -56,7 +56,9 @@ void main() {
         .readAsStringSync();
     expect(chrome, contains('SafeArea(top: true, bottom: false'));
     expect(chrome, contains('extendBody: !desktopShell'));
-    expect(chrome, contains('statusBarIconBrightness: desktopShell || shellPageIndex > 3'));
+    expect(chrome, contains('statusBarIconBrightness: desktopShell ||'));
+    expect(chrome, contains('scheme.brightness == Brightness.light'));
+    expect(chrome, contains('systemNavigationBarIconBrightness:'));
     expect(nav, contains('BackdropFilter('));
     expect(nav, contains('ImageFilter.blur(sigmaX: 16, sigmaY: 16)'));
     expect(nav, contains('child: SafeArea('));
