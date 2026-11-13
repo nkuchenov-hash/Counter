@@ -350,6 +350,21 @@ class ViktorAction {
       case 'read_day_records':
         _onlyKeys(args, const {'wall_day'});
         _day(args, 'wall_day');
+      case 'resize_adjacent_records':
+        _onlyKeys(args, const {
+          'wall_day', 'first_record_id', 'second_record_id',
+          'first_duration_minutes',
+        });
+        _day(args, 'wall_day');
+        final first = _id(args, 'first_record_id');
+        final second = _id(args, 'second_record_id');
+        if (first == second) {
+          throw const FormatException('Distinct record IDs are required');
+        }
+        final duration = args['first_duration_minutes'];
+        if (duration is! int || duration < 1 || duration > 720) {
+          throw const FormatException('Duration must be 1–720 minutes');
+        }
       case 'create_completed_records':
         _onlyKeys(args, const {'wall_day', 'records'});
         _day(args, 'wall_day');

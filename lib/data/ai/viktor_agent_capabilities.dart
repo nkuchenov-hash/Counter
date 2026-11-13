@@ -39,6 +39,10 @@ abstract final class ViktorAgentCapabilities {
     ViktorToolCapability('read_day_records', 'records',
         'Read real owned Timeline entries and UTC times for a day',
         ViktorToolRisk.read),
+    ViktorToolCapability('resize_adjacent_records', 'records',
+        'Shorten a completed Timeline record and extend the immediately '
+        'following record backward in one atomic, approved transaction',
+        ViktorToolRisk.consequential),
     ViktorToolCapability('create_completed_records', 'records',
         'Create 1–12 completed Timeline records with explicit UTC intervals '
         'after verified preview and approval',

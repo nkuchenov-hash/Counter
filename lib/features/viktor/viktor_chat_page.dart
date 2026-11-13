@@ -331,6 +331,33 @@ class _ViktorChatPageState extends State<ViktorChatPage>
             'но не указал операцию чтения. Планы не изменены.');
       }
       if (actions == null) {
+        if (ViktorReadAnswer.isUnfinishedWriteReply(
+            input: input, message: response.message)) {
+          // A promise to check is not an executable action. One bounded
+          // repair turn; never display an unfinished response as success.
+          final repaired = await _gateway.propose(
+            input: input, wallDay: intentDay, plans: plans,
+            settings: _settings, selectedPlanIds: widget.selectedPlanIds,
+            requestId: requestId, conversationHistory: dialogContext,
+            toolObservations: toolObservations,
+            proposalFeedback: 'The previous answer only promised to check, '
+                'but proposed no action. For existing adjacent Timeline '
+                'records first propose read_day_records with continue:true, '
+                'then resize_adjacent_records with continue:false. '
+                'Do not claim any work has been completed.',
+            allowRepair: false,
+          );
+          if (repaired.actions != null) {
+            response = repaired;
+          } else {
+            _push('Виктор не смог сформировать проверяемое действие '
+                'для этого запроса. Записи не изменены.');
+            return;
+          }
+        }
+      }
+      final resolvedActions = response.actions;
+      if (resolvedActions == null) {
         if (response.message.trim().isNotEmpty) {
           _push(response.message.trim());
         }
@@ -339,13 +366,13 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         }
         return;
       }
-      if (ViktorProposedDayDraft.needsReadOnlyDraft(actions)) {
+      if (ViktorProposedDayDraft.needsReadOnlyDraft(resolvedActions)) {
         final draft = await ViktorProposedDayDraft.describe(actions,
           loadDay: db.getPlanningTasksForWallDate);
         if (mounted) _push(draft);
         return;
       }
-      var finalActions = actions;
+      var finalActions = resolvedActions;
       var recoveredProposal = false;
       late String preview;
       try {

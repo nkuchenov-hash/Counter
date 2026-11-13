@@ -40,6 +40,25 @@ class ViktorReadAnswer {
     ).hasMatch(value);
   }
 
+  /// A write request must not end with a provider promise and zero tools.
+  /// This is a narrow safety net; it does not authorize any database write.
+  static bool isUnfinishedWriteReply({
+    required String input,
+    required String message,
+  }) {
+    final intendsEdit = RegExp(
+      r'сократ|уменьш|продли|удлин|измени|передвин|скоррект|'
+      r'укорот|resize|shorten|extend|adjust',
+      caseSensitive: false,
+    ).hasMatch(input);
+    final targetsRecord = RegExp(
+      r'запис|обед|timeline|record',
+      caseSensitive: false,
+    ).hasMatch(input);
+    if (!intendsEdit || !targetsRecord) return false;
+    return isUnfinishedScheduleReply(message);
+  }
+
   /// The server may lose an earlier draft after a series of nonanswers.
   /// Recover only an actual ASSISTANT itinerary with multiple timed rows.
   /// User-provided text must never be taken as an assistant draft.

@@ -237,6 +237,11 @@ class ViktorExecutor {
       throw StateError('Приоритетная вставка с пересчётом расписания '
           'выполняется одной защищённой операцией.');
     }
+    if (batch.actions.any((a) => a.name == 'resize_adjacent_records') &&
+        batch.actions.length != 1) {
+      throw StateError('Изменение двух записей выполняется отдельно '
+          'одной защищённой транзакцией.');
+    }
     if (batch.actions.any((a) => a.name == 'create_completed_records') &&
         batch.actions.length != 1) {
       throw StateError('Создание завершённых записей должно быть одной '
@@ -289,6 +294,12 @@ class ViktorExecutor {
         }
       }
       return observations.join('\n\n');
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'resize_adjacent_records') {
+      final preview = await _recordTools.prepareAdjacent(
+          batch.actions.single.arguments);
+      return _recordTools.describeAdjacent(preview);
     }
     if (batch.actions.length == 1 &&
         batch.actions.single.name == 'create_completed_records') {
@@ -519,6 +530,16 @@ class ViktorExecutor {
          approvedInsertionSignature != _insertionSignature)) {
       throw StateError('Данные изменились после подтверждения. '
           'Проверьте новый вариант.');
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'resize_adjacent_records') {
+      final preview = await _recordTools.prepareAdjacent(
+          batch.actions.single.arguments);
+      if (_recordTools.describeAdjacent(preview) != approvedPreview) {
+        throw StateError('Записи изменились после подтверждения.');
+      }
+      return _recordTools.commitAdjacent(preview,
+          requestId: batch.requestId);
     }
     if (batch.actions.length == 1 &&
         batch.actions.single.name == 'create_completed_records') {
