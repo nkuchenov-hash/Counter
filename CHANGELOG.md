@@ -1,3 +1,10 @@
+## 2026-11-13 — Viktor existing Timeline record correction [PR candidate]
+
+- A plain-language request such as “Сократи сегодняшнюю запись обед до 30 минут, а вместо этого продли следующую за ней Этника сайт до текущего момента” now has a dedicated existing-Record operation, not a technical refusal or a Plans-only rewrite.
+- Read both owned records, verify they are adjacent, calculate the new boundary, detect collisions, and show one joint confirmation. The requested “now” is captured at submission, not silently advanced while the review is open.
+- New server route `/api/viktor/records/adjust-adjacent` validates both exact rows and revisions, title, ownership, unchanged statuses and overlaps in one PocketBase transaction; either both time edits save or neither. No sequential REST PATCH fallback; independent server readback verifies the result.
+- Exposed a typed `adjust_adjacent_records` capability for other AI-generated wordings. Added Russian-intent, typed-contract, ownership, conflict and rollback regressions. Deployment is separate from merge.
+
 ## 2026-11-11 — Timeline desktop workspace date arrows
 
 - Add the same desktop left/right day arrows as Planning to the Timeline day body; the canonical APP_STRUCTURE_DETAILED has been regenerated for the two new tracked files. Each sits in its own spare workspace gutter outside record cards and outside the fixed left navigation.

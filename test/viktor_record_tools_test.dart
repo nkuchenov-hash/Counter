@@ -1,6 +1,7 @@
 import 'package:counter/data/ai/viktor_action_contract.dart';
 import 'package:counter/data/ai/viktor_agent_capabilities.dart';
 import 'package:counter/data/ai/viktor_record_tools.dart';
+import 'package:counter/data/ai/viktor_adjacent_record_edit.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Map<String, dynamic> command(String name, Map<String, Object?> args) =>
@@ -76,6 +77,49 @@ void main() {
         'end_utc': '2026-10-28T06:15:00Z',
       }),
     })]), throwsFormatException);
+  });
+
+  test('Adjacent record request is understood without AI provider', () {
+    final intent = ViktorAdjacentRecordIntent.parse(
+      'Сократи сегодняшнюю запись обед до 30 минут, а вместо этого '
+      'продли следующую за ней Этника сайт до текущего момента');
+    expect(intent, isNotNull);
+    expect(intent!.firstTitle, 'обед');
+    expect(intent.secondTitle, 'Этника сайт');
+    expect(intent.minutes, 30);
+    expect(ViktorAdjacentRecordIntent.parse(
+      'Сократи вчерашнюю запись обед до 30 минут'), isNull);
+    expect(ViktorAdjacentRecordIntent.parse(
+      'Сократи сегодняшнюю запись обед до 900 минут, '
+      'а потом продли следующую Этника сайт до текущего момента'), isNull);
+  });
+
+  test('Editing adjacent records is consequential and typed', () {
+    final batch = propose([command('adjust_adjacent_records', {
+      'wall_day': '2026-11-13',
+      'first_title': 'Обед',
+      'second_title': 'Этника сайт',
+      'first_duration_minutes': 30,
+      'second_end_now': true,
+    })]);
+    expect(batch.hasMutations, true);
+    expect(batch.requiresPreview, true);
+    expect(batch.isSingleReversibleWrite, false);
+    for (final invalid in [
+      {'first_duration_minutes': 0},
+      {'first_duration_minutes': 900},
+      {'second_end_now': false},
+      {'record_id': 'made-up-id'},
+    ]) {
+      expect(() => propose([command('adjust_adjacent_records', {
+        'wall_day': '2026-11-13',
+        'first_title': 'Обед',
+        'second_title': 'Этника сайт',
+        'first_duration_minutes': 30,
+        'second_end_now': true,
+        ...invalid,
+      })]), throwsFormatException);
+    }
   });
 
   test('One ordinary composed read can accompany other read actions', () {

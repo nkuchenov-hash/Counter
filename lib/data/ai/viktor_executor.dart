@@ -3,6 +3,7 @@ import 'package:counter/data/models.dart';
 import 'viktor_action_contract.dart';
 import 'viktor_historical_records.dart';
 import 'viktor_record_tools.dart';
+import 'viktor_adjacent_record_edit.dart';
 import 'viktor_schedule_planner.dart';
 import 'viktor_domain_tools.dart';
 import 'viktor_date_scope.dart';
@@ -27,6 +28,10 @@ class ViktorExecutor {
   late final ViktorDomainTools _domain = ViktorDomainTools(db);
   late final ViktorHistoricalRecords _history = ViktorHistoricalRecords(db);
   late final ViktorRecordTools _recordTools = ViktorRecordTools(db);
+  late final ViktorAdjacentRecordEdit _adjacentEdit =
+      ViktorAdjacentRecordEdit(db);
+  ViktorAdjacentRecordPreview? _adjacentPreview;
+  String? _adjacentSignature;
 
   Future<ViktorRecordCreatePreview> _recordCreatePreview(
       ViktorAction action) async {
@@ -215,6 +220,10 @@ class ViktorExecutor {
     // Multi-row schedule recalculation and record timers still require an
     // isolated operation: their writes are not atomic with other domains.
     final mutations = batch.actions.where((a) => a.isMutation).toList();
+    if (batch.actions.any((a) => a.name == 'adjust_adjacent_records') &&
+        batch.actions.length != 1) {
+      throw StateError('Правка двух записей требует отдельного подтверждения.');
+    }
     if (batch.actions.any((a) => a.name == 'bulk_replan') &&
         batch.actions.any((a) => a.name != 'bulk_replan' &&
             a.name != 'list_day_plans')) {
@@ -289,6 +298,22 @@ class ViktorExecutor {
         }
       }
       return observations.join('\n\n');
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'adjust_adjacent_records') {
+      final a = batch.actions.single.arguments;
+      final signature = a.toString();
+      if (_adjacentPreview == null || _adjacentSignature != signature) {
+        _adjacentPreview = await _adjacentEdit.prepare(
+          day: a['wall_day'] as String,
+          firstTitle: a['first_title'] as String,
+          secondTitle: a['second_title'] as String,
+          firstMinutes: a['first_duration_minutes'] as int,
+          targetNow: DatabaseService.getPlanetaryNow().toUtc(),
+        );
+        _adjacentSignature = signature;
+      }
+      return _adjacentEdit.describe(_adjacentPreview!);
     }
     if (batch.actions.length == 1 &&
         batch.actions.single.name == 'create_completed_records') {
@@ -519,6 +544,15 @@ class ViktorExecutor {
          approvedInsertionSignature != _insertionSignature)) {
       throw StateError('Данные изменились после подтверждения. '
           'Проверьте новый вариант.');
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'adjust_adjacent_records') {
+      final preview = _adjacentPreview;
+      if (preview == null ||
+          _adjacentEdit.describe(preview) != approvedPreview) {
+        throw StateError('Изменение записей требует нового предпросмотра.');
+      }
+      return _adjacentEdit.apply(preview, batch.requestId);
     }
     if (batch.actions.length == 1 &&
         batch.actions.single.name == 'create_completed_records') {

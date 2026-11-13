@@ -5,8 +5,9 @@ part of 'viktor_chat_page.dart';
 extension _ViktorComposerUi on _ViktorChatPageState {
   bool _canSubmitWithoutAiSettings(String text) =>
       text.trim().isNotEmpty &&
+      (ViktorAdjacentRecordIntent.parse(text.trim()) != null ||
       ViktorDateScope.independentDateOnlyPlan(
-        text.trim(), DatabaseService.instance.getProjectedToday()) != null;
+        text.trim(), DatabaseService.instance.getProjectedToday()) != null);
 
   // Hardware Enter sends; Shift+Enter remains a native newline.
   void _sendFromKeyboard() {

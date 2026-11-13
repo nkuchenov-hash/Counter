@@ -74,7 +74,7 @@ jobs:
         run: flutter pub get
 
       - name: Run live-sync and voice regression tests
-        run: flutter test test/live_sync_contract_test.dart test/viktor_tag_duration_reflow_test.dart test/voice_command_parser_test.dart test/planning_snapshot_cache_test.dart test/plan_time_timezone_projection_test.dart
+        run: flutter test test/live_sync_contract_test.dart test/viktor_tag_duration_reflow_test.dart test/viktor_record_tools_test.dart test/voice_command_parser_test.dart test/planning_snapshot_cache_test.dart test/plan_time_timezone_projection_test.dart
 
       - name: Time View overlap-lane regression
         run: flutter test test/plan_time_view_layout_test.dart --plain-name "Time View overlap lanes preserve every card"

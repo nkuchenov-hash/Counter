@@ -7,6 +7,7 @@ import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/ai/viktor_action_contract.dart';
 import 'package:counter/data/ai/viktor_executor.dart';
 import 'package:counter/data/ai/viktor_historical_records.dart';
+import 'package:counter/data/ai/viktor_adjacent_record_edit.dart';
 import 'package:counter/data/ai/viktor_gateway.dart';
 import 'package:counter/data/ai/viktor_schedule_planner.dart';
 import 'package:counter/data/ai/viktor_tag_duration_reflow.dart';
@@ -89,8 +90,12 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     final profileToday = db.getProjectedToday();
     final independentPlan =
         ViktorDateScope.independentDateOnlyPlan(input, profileToday);
+    final adjacentRecordIntent = ViktorAdjacentRecordIntent.parse(input);
+    // Freeze the user's "until now" boundary at message submission.
+    final commandNowUtc = DatabaseService.getPlanetaryNow().toUtc();
     // Standalone dated plans are deterministic and do not need AI settings.
-    if (independentPlan == null && !_settingsReady) return;
+    if (independentPlan == null && adjacentRecordIntent == null &&
+        !_settingsReady) return;
     // A fresh self-contained dated plan must never inherit an unrelated
     // unfinished itinerary, even when remote chat history is still syncing.
     final hadPreviousRequest = _messages.skip(1).any((turn) => turn.isUser);
@@ -104,7 +109,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       _durationConflictIncludesYesterday = false;
     }
     final dialogContext = ViktorDialogueTurn.modelContext(_messages.skip(1));
-    if (independentPlan == null &&
+    if (independentPlan == null && adjacentRecordIntent == null &&
         _settings.mode == 'byok' && !_settings.modelConnected) {
       await _openSettings();
       if (!mounted || !_settings.modelConnected) return;
@@ -131,6 +136,41 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       final executor = ViktorExecutor(db);
       if (independentPlan != null) {
         await _createIndependentDateOnlyPlan(independentPlan, executor, requestId);
+        return;
+      }
+      if (adjacentRecordIntent != null) {
+        final edit = ViktorAdjacentRecordEdit(db);
+        late final ViktorAdjacentRecordPreview preview;
+        try {
+          preview = await edit.prepare(
+            day: ViktorDateScope.key(profileToday),
+            firstTitle: adjacentRecordIntent.firstTitle,
+            secondTitle: adjacentRecordIntent.secondTitle,
+            firstMinutes: adjacentRecordIntent.minutes,
+            targetNow: commandNowUtc,
+          );
+        } on StateError catch (reason) {
+          if (mounted) {
+            _push('${_friendlyError(reason)} '
+                'Ничего не изменено. Могу проверить другие названия '
+                'или другой порядок сегодняшних записей.');
+          }
+          return;
+        }
+        if (!mounted) return;
+        final approved = await _confirmPreview(edit.describe(preview));
+        if (!mounted) return;
+        if (!approved) {
+          _push('Изменения отменены. Обе записи остались без изменений.');
+          return;
+        }
+        writeStarted = true;
+        try {
+          final result = await edit.apply(preview, requestId);
+          if (mounted) _push(result);
+        } on StateError catch (reason) {
+          if (mounted) _push(_friendlyError(reason));
+        }
         return;
       }
       final resumePartialDuration =
