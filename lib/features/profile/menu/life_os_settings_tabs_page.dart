@@ -764,7 +764,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
         )),
       ))),
       Padding(
-        padding: EdgeInsets.fromLTRB(16, topInset + 12, 16, 38),
+        padding: EdgeInsets.fromLTRB(16, topInset + 12, 16, 12),
         child: Row(children: [
           if (_mobileDetailOpen) ...[
             _GlassySettingsBackButton(
