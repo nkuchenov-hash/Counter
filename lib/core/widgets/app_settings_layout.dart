@@ -168,7 +168,7 @@ class AppSettingsPageBody extends StatelessWidget {
       child: ListView(
         padding: EdgeInsets.only(
           top: desktop ? 16 : 20,
-          bottom: 24 + MediaQuery.viewPaddingOf(context).bottom,
+          bottom: 24 + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
           Align(
