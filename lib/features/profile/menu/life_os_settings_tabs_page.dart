@@ -894,7 +894,6 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   }
 }
 
-
 /// Fixed header over a single scrolling viewport. A shader fades the content
 /// continuously, avoiding the hard horizontal boundaries of blur strips.
 class _MobileSettingsMotion extends StatelessWidget {
@@ -939,7 +938,6 @@ class _MobileSettingsBounceBehavior extends MaterialScrollBehavior {
   ScrollPhysics getScrollPhysics(BuildContext context) =>
       const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
 }
-
 
 /// Tecno-inspired circular frosted Back control with a real backdrop blur.
 /// Frosted Back control: a bright rim and top glint stay visible on dark glass.
