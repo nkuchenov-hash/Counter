@@ -64,7 +64,15 @@ void main() {
     expect(nav, contains('child: SafeArea('));
     expect(settings, contains('class _GlassySettingsBackButton'));
     expect(settings, contains('ImageFilter.blur(sigmaX: 14, sigmaY: 14)'));
-    expect(settings, contains('height: top ? 30 : 52'));
+    // Pinned header is a Stack sibling of the scrolling viewport.
+    expect(settings, contains('header: _mobilePinnedHeader()'));
+    expect(settings, contains('class _MobileSettingsMotion'));
+    expect(settings, contains('Positioned.fill(child: ScrollConfiguration('));
+    expect(settings, contains('Positioned(top: 0, left: 0, right: 0, child: header)'));
+    expect(settings, contains('ShaderMask('));
+    expect(settings, contains('blendMode: BlendMode.dstIn'));
+    expect(settings, contains('const SizedBox(height: 116)'));
+    expect(settings, isNot(contains('height: top ? 30 : 52')));
     expect(layout, contains('MediaQuery.paddingOf(context).bottom'));
   });
 
