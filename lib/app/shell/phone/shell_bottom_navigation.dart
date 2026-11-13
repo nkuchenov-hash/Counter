@@ -93,8 +93,10 @@ class ShellCompactBottomNav extends StatelessWidget {
               decoration: BoxDecoration(gradient: LinearGradient(
                 begin: Alignment.topCenter, end: Alignment.bottomCenter,
                 colors: [
-                  bg.withValues(alpha: 0),
-                  bg.withValues(alpha: dark ? 0.92 : 0.88),
+                  AppNeutralTones.transparent,
+                  dark
+                      ? AppNeutralTones.white.withValues(alpha: 0.12)
+                      : bg.withValues(alpha: 0.76),
                 ],
               )),
               child: const SizedBox.expand(),
@@ -128,6 +130,12 @@ class ShellCompactBottomNav extends StatelessWidget {
     );
   }
 }
+
+// A neutral reflective surface, never a dark opaque selected indicator.
+Color darkGlassHighlight(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+        ? AppNeutralTones.white.withValues(alpha: 0.23)
+        : AppNeutralTones.white.withValues(alpha: 0.83);
 
 class _ShellBottomNavItem extends StatelessWidget {
   const _ShellBottomNavItem({
@@ -170,13 +178,15 @@ class _ShellBottomNavItem extends StatelessWidget {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            scheme.surfaceContainerHighest.withValues(alpha: 0.82),
-                            indicatorColor.withValues(alpha: 0.56),
+                            darkGlassHighlight(context),
+                            indicatorColor.withValues(alpha: 0.35),
                           ],
                         ),
                         border: Border.all(
-                          color: scheme.onSurface.withValues(alpha: 0.09),
-                          width: 0.8,
+                          color: AppNeutralTones.white.withValues(alpha:
+                            Theme.of(context).brightness == Brightness.dark
+                                ? 0.31 : 0.82),
+                          width: 1.0,
                         ),
                         borderRadius: BorderRadius.circular(19),
                       )
