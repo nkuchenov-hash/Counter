@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `2ed7e8cc` on 2026-11-12.**
+**Generated from input HEAD `61ca7c3b` on 2026-11-13.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -12345,7 +12345,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Barrel `export` lines: `life_color_compat.dart`.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/tag_manager_page.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/category_icon_system.dart`, `lib/data/database_service.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/tag_manager_page.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12362,7 +12362,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `category_color_palette.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/tag_manager_page.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`, `lib/features/settings/categories/category_editor_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/category_icon_system.dart`, `lib/data/database_service.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/tag_manager_page.dart`, `lib/features/settings/categories/category_appearance_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
