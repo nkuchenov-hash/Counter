@@ -85,7 +85,7 @@ class ShellCompactBottomNav extends StatelessWidget {
           shaderCallback: (bounds) => const LinearGradient(
             begin: Alignment.topCenter, end: Alignment.bottomCenter,
             stops: [0, 0.38, 1],
-            colors: [Colors.transparent, Colors.white, Colors.white],
+            colors: [AppNeutralTones.transparent, AppNeutralTones.white, AppNeutralTones.white],
           ).createShader(bounds),
           child: ClipRect(child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
