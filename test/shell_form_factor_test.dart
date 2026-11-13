@@ -79,9 +79,9 @@ void main() {
     expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.09)'));
     expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.29)'));
     expect(settings, contains('ImageFilter.blur(sigmaX: 18, sigmaY: 18)'));
-    expect(settings, contains('height: topInset + 102'));
+    expect(settings, contains('height: topInset + 80'));
     expect(settings, contains('topInset + 12'));
-    expect(settings, contains('88 + MediaQuery.viewPaddingOf(context).top'));
+    expect(settings, contains('68 + MediaQuery.viewPaddingOf(context).top'));
     expect(settings, contains('EdgeInsets.fromLTRB(5, 14, 0, 4)'));
     expect(settings, contains('EdgeInsets.fromLTRB(4, 14, 0, 5)'));
     expect(settings, isNot(contains('EdgeInsets.fromLTRB(5, 22, 0, 9)')));
