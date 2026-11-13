@@ -54,7 +54,10 @@ void main() {
         .readAsStringSync();
     final layout = File('lib/core/widgets/app_settings_layout.dart')
         .readAsStringSync();
-    expect(chrome, contains('SafeArea(top: true, bottom: false'));
+    expect(chrome, isNot(contains('SafeArea(top: true, bottom: false, child: mainColumn)')));
+    expect(chrome, contains('systemStatusBarContrastEnforced: false'));
+    expect(File('lib/main.dart').readAsStringSync(),
+        contains('SystemUiMode.edgeToEdge'));
     expect(chrome, contains('extendBody: !desktopShell'));
     expect(chrome, contains('statusBarIconBrightness: desktopShell ||'));
     expect(chrome, contains('scheme.brightness == Brightness.light'));
@@ -73,14 +76,17 @@ void main() {
     expect(settings, contains('Widget _mobilePinnedHeader()'));
     expect(settings, contains('return SizedBox('));
     expect(settings, contains('color: dark'));
-    expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.12)'));
+    expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.055)'));
     expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.29)'));
     expect(settings, contains('ImageFilter.blur(sigmaX: 18, sigmaY: 18)'));
-    expect(settings, contains('height: 114'));
+    expect(settings, contains('height: topInset + 114'));
+    expect(settings, contains('topInset + 12'));
+    expect(settings, contains('100 + MediaQuery.viewPaddingOf(context).top'));
     expect(settings, isNot(contains('scheme.surfaceContainerLowest.withValues(alpha: 0.98)')));
-    expect(settings, contains('final fadeStart = (74 / h)'));
-    expect(settings, contains('final fadeEnd = (116 / h)'));
-    expect(settings, contains('final fadeBottom = (1 - 128 / h)'));
+    expect(settings, contains('final fadeStart = ((topInset + 74) / h)'));
+    expect(settings, contains('final fadeEnd = ((topInset + 116) / h)'));
+    expect(settings, contains('final fadeBottom = (1 - (158 + bottomInset) / h)'));
+    expect(settings, contains('final fadeClear = (1 - (112 + bottomInset) / h)'));
     expect(settings, contains("key: ValueKey(_mobileDetailOpen ? 'detail-"));
     expect(settings, isNot(contains('for (final top in [true, false])')));
     expect(settings, contains('class _MobileSettingsMotion'));
