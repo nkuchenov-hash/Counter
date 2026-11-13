@@ -559,8 +559,9 @@ void main() {
     final chat = File('lib/features/viktor/viktor_chat_page.dart')
         .readAsStringSync();
     final send = chat.substring(chat.indexOf('Future<void> _send() async {'));
-    expect(send.indexOf('independentPlan == null && !_settingsReady'),
+    expect(send.indexOf('independentPlan == null && adjacentRecordIntent == null'),
         greaterThan(send.indexOf('independentDateOnlyPlan(input, profileToday)')));
+    expect(chat, contains('ViktorAdjacentRecordIntent.parse(input)'));
     final composer = File('lib/features/viktor/viktor_composer.dart')
         .readAsStringSync();
     expect(composer, contains('bool _canSubmitWithoutAiSettings('));
