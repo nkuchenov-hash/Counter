@@ -99,6 +99,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                   child: AnnotatedRegion<SystemUiOverlayStyle>(
                     value: SystemUiOverlayStyle(
                       statusBarColor: AppNeutralTones.transparent,
+                      systemStatusBarContrastEnforced: false,
                       statusBarIconBrightness: desktopShell ||
                               (shellPageIndex > 3 &&
                                   scheme.brightness == Brightness.light)
@@ -245,13 +246,10 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                                   ),
                                 ],
                               );
-                              // Settings has no AppBar: respect camera/status-bar
-                              // insets instead of painting text under system icons.
-                              final settingsScreen = shellPageIndex == 5 ||
-                                  shellPageIndex == 7;
-                              final compactContent = settingsScreen
-                                  ? SafeArea(top: true, bottom: false, child: mainColumn)
-                                  : mainColumn;
+                              // The Settings header owns its status-bar inset.
+                              // A shell SafeArea here created a detached, opaque
+                              // strip above the frosted pinned header.
+                              final compactContent = mainColumn;
                               return switch (formFactor) {
                                 ShellFormFactor.desktop => DesktopShellFrame(
                                   selectedIndex: desktopSideNavSelectedIndex(
