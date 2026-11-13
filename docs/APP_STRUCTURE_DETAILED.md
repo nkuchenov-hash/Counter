@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `40cdb188` on 2026-11-13.**
+**Generated from input HEAD `ad9cb21a` on 2026-11-13.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1012 — each appears **exactly once** below.
+**Tracked files:** 1015 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -28,15 +28,15 @@ python scripts/manual/generate_app_structure_detailed.py
 | :--- | ---: |
 | `production UI` | 201 |
 | `test` | 148 |
-| `Brain/data` | 117 |
+| `Brain/data` | 118 |
 | `platform build` | 84 |
 | `shared foundation` | 71 |
 | `developer tool` | 66 |
 | `governing documentation` | 45 |
 | `platform resource` | 44 |
 | `Desktop Voice runtime` | 36 |
-| `test fixture` | 30 |
-| `PocketBase backend` | 24 |
+| `test fixture` | 31 |
+| `PocketBase backend` | 25 |
 | `PocketBase migration` | 21 |
 | `shared Voice system` | 20 |
 | `historical engineering record` | 18 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 547 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 273 |
+| `PROVEN_REQUIRED` | 549 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 274 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 924 |
+| `HIGH` | 927 |
 | `MEDIUM` | 88 |
 
 ---
@@ -14447,6 +14447,44 @@ RU:
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
 
+### `lib/data/ai/viktor_adjacent_record_edit.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — Natural-language intent routing, owner-scoped two-record Timeline preview, and authenticated atomic commit with server readback. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Natural-language intent routing, owner-scoped two-record Timeline preview, and authenticated atomic commit with server readback.
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (`ViktorAdjacentRecordIntent`, `ViktorAdjacentRecordSnapshot`, `ViktorAdjacentRecordPreview`, `ViktorAdjacentRecordEdit`).
+- **Key code names:** `ViktorAdjacentRecordIntent`, `ViktorAdjacentRecordSnapshot`, `ViktorAdjacentRecordPreview`, `ViktorAdjacentRecordEdit`
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/features/viktor/viktor_chat_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** Natural-language intent routing, owner-scoped two-record Timeline preview, and authenticated atomic commit with server readback; no sequential PATCH fallback
+- **When to open:** When behavior tied to `viktor_adjacent_record_edit.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Natural-language intent routing, owner-scoped two-record Timeline preview, and authenticated atomic commit with server r
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — viktor_adjacent_record_edit. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — viktor_adjacent_record_edit.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `viktor_adjacent_record_edit`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`, `lib/features/viktor/viktor_chat_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `viktor_adjacent_record_edit`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_adjacent_record_edit.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
 ### `lib/data/ai/viktor_agent_capabilities.dart`
 
 EN:
@@ -14571,7 +14609,7 @@ EN:
 - **Contents:** Dart helpers and types (`ViktorDateScope`, `ViktorBulkDateScope`).
 - **Key code names:** `ViktorDateScope`, `ViktorBulkDateScope`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_historical_records.dart`, `lib/data/ai/viktor_plan_timezone.dart`, `lib/data/ai/viktor_record_tools.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_adjacent_record_edit.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_historical_records.dart`, `lib/data/ai/viktor_plan_timezone.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14588,7 +14626,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `viktor_date_scope`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_historical_records.dart`, `lib/data/ai/viktor_plan_timezone.dart`, `lib/data/ai/viktor_record_tools.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_adjacent_record_edit.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_historical_records.dart`, `lib/data/ai/viktor_plan_timezone.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -14761,7 +14799,7 @@ EN:
 - **Contents:** Dart helpers and types (`ViktorHistoricalRecordIntent`, `ViktorHistoricalSlot`, `ViktorHistoricalPreview`, `ViktorHistoricalRecords`).
 - **Key code names:** `ViktorHistoricalRecordIntent`, `ViktorHistoricalSlot`, `ViktorHistoricalPreview`, `ViktorHistoricalRecords`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_record_tools.dart`, `lib/features/viktor/viktor_chat_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_adjacent_record_edit.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_record_tools.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -14778,7 +14816,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `viktor_historical_records`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_record_tools.dart`, `lib/features/viktor/viktor_chat_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_adjacent_record_edit.dart`, `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_record_tools.dart`, `lib/features/viktor/viktor_chat_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -15859,7 +15897,7 @@ EN:
 - **Contents:** Shared streams, caches, and `part` declarations for records, plans, categories, profile.
 - **Key code names:** `_BuildNode`, `_OptimisticEndPatch`, `LegacyIdResolutionException`, `AuthenticatedUserIdRequiredException`, `AiBackendException`, `_DatabaseServiceLifecycleObserver`, `_HighlanderRollbackToken`, `DatabaseService`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/ai/viktor_atomic_bulk_gateway.dart`, `lib/data/ai/viktor_conversation_store.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/ai/viktor_adjacent_record_edit.dart`, `lib/data/ai/viktor_atomic_bulk_gateway.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -15876,7 +15914,7 @@ RU:
 - **Зачем:** Один singleton держит правила PocketBase для всех вкладок.
 - **Содержимое:** Потоки, кэш, объявления `part` для records/plans/categories/profile.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/ai/viktor_atomic_bulk_gateway.dart`, `lib/data/ai/viktor_conversation_store.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/data/ai/viktor_adjacent_record_edit.dart`, `lib/data/ai/viktor_atomic_bulk_gateway.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -16846,7 +16884,7 @@ EN:
 - **Contents:** Dart helpers and types (`PbAppApiRoutes`, `PbCollections`, `PbOauthProviderNames`).
 - **Key code names:** `PbAppApiRoutes`, `PbCollections`, `PbOauthProviderNames`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_atomic_bulk_gateway.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_record_note_tools.dart`, `lib/data/ai/viktor_voice_gateway.dart`, `lib/data/auth_bridge.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_adjacent_record_edit.dart`, `lib/data/ai/viktor_atomic_bulk_gateway.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_record_note_tools.dart`, `lib/data/ai/viktor_voice_gateway.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -16863,7 +16901,7 @@ RU:
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
 - **Содержимое:** Dart-хелперы и типы (logic in `pb_config`).
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_atomic_bulk_gateway.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_record_note_tools.dart`, `lib/data/ai/viktor_voice_gateway.dart`, `lib/data/auth_bridge.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_adjacent_record_edit.dart`, `lib/data/ai/viktor_atomic_bulk_gateway.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_record_note_tools.dart`, `lib/data/ai/viktor_voice_gateway.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -31964,6 +32002,43 @@ RU:
 - **Связано с:** PocketBase Admin, Flutter auth/records client.
 
 
+### `pb_hooks/viktor.records_adjust_adjacent.pb.js`
+
+EN:
+
+- **Human purpose:** PocketBase server hook `viktor.records_adjust_adjacent` — runs on VPS when specific API events fire. Some rules (password reset email, overlapping records) must be enforced server-side.
+- **What this is:** PocketBase server hook `viktor.records_adjust_adjacent` — runs on VPS when specific API events fire.
+- **Why needed:** Some rules (password reset email, overlapping records) must be enforced server-side.
+- **Contents:** JavaScript hook handler copied to PocketBase `pb_hooks/` on server.
+- **Repository role:** PocketBase backend
+- **Evidence of use:** Server-side PocketBase hook; deployed with the PB instance (see `docs/POCKETBASE_MANIFEST.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken server-side validation/automation for PB collections.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase backend
+- **Responsibilities:** Server-side logic for `viktor.records_adjust_adjacent` (see `docs/POCKETBASE_MANIFEST.md`).
+- **When to open:** Server behavior differs from app expectations for auth/records.
+- **Can it be deleted?** No — production PocketBase deployment.
+- **Connected to:** PocketBase Admin, Flutter auth/records client.
+
+RU:
+
+- **Зачем файл человеку:** PocketBase hook `viktor.records_adjust_adjacent` — серверная логика при API-событиях на VPS. Часть правил (reset пароля, overlap записей) должна выполняться на сервере, не в APK.
+- **Что это:** PocketBase hook `viktor.records_adjust_adjacent` — серверная логика при API-событиях на VPS.
+- **Зачем:** Часть правил (reset пароля, overlap записей) должна выполняться на сервере, не в APK.
+- **Содержимое:** JavaScript handler `viktor.records_adjust_adjacent.pb.js` — копируется в PocketBase `pb_hooks/` на VPS.
+- **Роль в репозитории:** PocketBase backend
+- **Доказательства использования:** Серверный hook PocketBase; деплоится вместе с PB (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается серверная логика PocketBase.
+- **Уверенность:** HIGH
+- **Владелец / слой:** PocketBase backend
+- **Обязанности:** Серверная логика для `viktor.records_adjust_adjacent` (см. `docs/POCKETBASE_MANIFEST.md`).
+- **Когда открывать:** Поведение auth/records на сервере не совпадает с ожиданиями приложения.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** PocketBase Admin, Flutter auth/records client.
+
+
 ### `pb_hooks/viktor.schedule_commit.pb.js`
 
 EN:
@@ -40567,6 +40642,43 @@ RU:
 - **Когда открывать:** Падение CI или правка кода рядом с `viktor_action_contract`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/viktor_adjacent_records_hook_test.cjs`
+
+EN:
+
+- **Human purpose:** Automated test `viktor_adjacent_records_hook_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `viktor_adjacent_records_hook_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: test groups).
+- **Repository role:** test fixture
+- **Evidence of use:** Read/referenced by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `viktor_adjacent_records_hook_test` scenario.
+- **When to open:** CI failure or changing code near `viktor_adjacent_records_hook`.
+- **Can it be deleted?** Broken fixture-backed test or missing diagnostic sample.
+- **Connected to:** `test/` suite; production subject near `viktor_adjacent_records_hook`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `viktor_adjacent_records_hook_test` — проверяет поведение без ручных нажатий. Ловит регрессии при правках связанного production-кода.
+- **Что это:** Автотест `viktor_adjacent_records_hook_test` — проверяет поведение без ручных нажатий.
+- **Зачем:** Ловит регрессии при правках связанного production-кода.
+- **Содержимое:** Тест-кейсы (символы: test groups).
+- **Роль в репозитории:** test fixture
+- **Доказательства использования:** Читается/упоминается: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Проверяет ожидаемое поведение сценария `viktor_adjacent_records_hook_test`.
+- **Когда открывать:** Падение CI или правка кода около `viktor_adjacent_records_hook`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Набор `test/`; production-субъект около `viktor_adjacent_records_hook`.
 
 
 ### `test/viktor_atomic_schedule_hook_test.cjs`
