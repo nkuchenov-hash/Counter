@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `6b73dee8` on 2026-11-13.**
+**Generated from input HEAD `fc55cf4a` on 2026-11-13.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -15021,8 +15021,8 @@ EN:
 - **Human purpose:** Brain helper for data/sync — Owner-scoped Timeline reads, completed-record creation and previewed consecutive-record duration changes, with UTC/concurrency/conflict validation. Shared PocketBase/auth/parse logic used by multiple tabs.
 - **What this is:** Brain helper for data/sync — Owner-scoped Timeline reads, completed-record creation and previewed consecutive-record duration changes, with UTC/concurrency/conflict validation.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **Contents:** Dart helpers and types (`ViktorRecordTools`, `ViktorRecordCreateSlot`, `ViktorRecordCreatePreview`, `ViktorAdjacentResizePreview`).
-- **Key code names:** `ViktorRecordTools`, `ViktorRecordCreateSlot`, `ViktorRecordCreatePreview`, `ViktorAdjacentResizePreview`
+- **Contents:** Dart helpers and types (`ViktorRecordTools`, `ViktorRecordCreateSlot`, `ViktorRecordCreatePreview`).
+- **Key code names:** `ViktorRecordTools`, `ViktorRecordCreateSlot`, `ViktorRecordCreatePreview`
 - **Repository role:** Brain/data
 - **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_atomic_record_gateway.dart`, `lib/data/ai/viktor_executor.dart`.
 - **Necessity status:** PROVEN_REQUIRED
