@@ -133,9 +133,9 @@ class ShellCompactBottomNav extends StatelessWidget {
 
 // A neutral reflective surface, never a dark opaque selected indicator.
 Color darkGlassHighlight(BuildContext context) =>
-    AppNeutralTones.white.withValues(
-      alpha: Theme.of(context).brightness == Brightness.dark ? 0.23 : 0.83,
-    );
+    Theme.of(context).brightness == Brightness.dark
+        ? AppNeutralTones.white.withValues(alpha: 0.23)
+        : AppNeutralTones.white.withValues(alpha: 0.83);
 
 class _ShellBottomNavItem extends StatelessWidget {
   const _ShellBottomNavItem({
