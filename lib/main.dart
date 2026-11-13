@@ -36,6 +36,7 @@ import 'package:counter/core/url_strategy_stub.dart'
     as url_strategy;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -188,6 +189,11 @@ Future<void> _mainAsync() async {
     }
   } else {
     appWearHost = false;
+  }
+  // Keep Android's status/navigation windows transparent so Flutter can paint
+  // one continuous edge-to-edge surface behind the system indicators.
+  if (!kIsWeb && Platform.isAndroid && !appWearHost) {
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
   // Browser: render Flutter before touching browser storage or network.
   // Desktop/Android keep their original local DB client preinitialization to
