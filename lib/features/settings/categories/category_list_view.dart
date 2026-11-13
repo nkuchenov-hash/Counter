@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/tag_contrast.dart' show tagSolidAccentOnSurface;
@@ -597,7 +598,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                    Container(
                     width: 36, height: 36,
                     decoration: BoxDecoration(
-                      color: tint.withValues(alpha: 0.12),
+                      color: categoryIconPlateColor(tint),
                       borderRadius: BorderRadius.circular(9),
                     ),
                     alignment: Alignment.center,
