@@ -77,6 +77,7 @@ The Life OS design system makes Figma the visual source of truth and Flutter can
 ## Palette clarity and offline category color edits
 
 - Category hue families form **one horizontal row**, never multiple wrapped rows. The three selectable intensities (400/500/600) must be visible beneath a fine divider, with subtle separators between tones.
+- **Approved category icon v7:** Keep the saved shade-600 / 500 / 400 accents unchanged. Small category icon plates use actual alpha over their surrounding surface: yellow 21% / 17% / 13% (root / child / nested), other official colors 18% / 15% / 12%. Do not preblend beige or convert transparent tiles to solid yellow. Use bright optical yellow icon ink from `kCategoryYellowGlyphTones`; all category outline icons use the same proportional stroke reinforcement in `CategorySvgIcon`, irrespective of hue and screen. Filled icon styles remain unmodified; selected rows remain neutral.
 - The neutral grey family is **achromatic** at every tone: red, green and blue channel values must match.
 - Color, icon and name changes are immediate Brain-owned optimistic edits; the UI never waits for PocketBase. The same owner-scoped category edit journal survives offline/restart and is drained by the existing SyncManager on reconnect.
 - Routine remote failures do not roll back a local color or produce an interruptive error. Failure to save on the *device itself* is different: retain recovery and warn clearly. Never allow an old server response to overwrite a newer locally chosen color.
