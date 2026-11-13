@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:counter/core/category_color_palette.dart';
+import 'package:counter/core/life_color_compat.dart' show kCategoryYellowGlyphTones;
 import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/core/category_icon_catalog_generated.g.dart';
 import 'package:counter/core/fluent_full_catalog_generated.g.dart';
@@ -311,5 +313,69 @@ void main() {
     // Unsupported old choices are not discarded from local storage.
     expect(CategoryIconSelection.fromJson({'key': 'unmapped_icon'})?.key,
         'unmapped_icon');
+  });
+
+  test('v7 category icon plates keep the official yellow hierarchy', () {
+    final tones = kCategorySelectableTones;
+    final expectedAlpha = <double>[0.13, 0.17, 0.21];
+    for (var i = 0; i < tones.length; i++) {
+      final accent = kNordicFood[tones[i]]!;
+      expect(categoryIconPlateColor(accent).a,
+          closeTo(expectedAlpha[i], 0.001));
+      expect(categoryIconGlyphColor(accent), kCategoryYellowGlyphTones[i]);
+      expect(accent.toARGB32(), kNordicFood[tones[i]]!.toARGB32(),
+          reason: 'Only rendering changes; persist original category colors');
+    }
+    expect(categoryIconPlateColor(kNordicWork[400]!).a,
+        closeTo(0.12, 0.001));
+    expect(categoryIconPlateColor(kNordicWork[500]!).a,
+        closeTo(0.15, 0.001));
+    expect(categoryIconPlateColor(kNordicWork[600]!).a,
+        closeTo(0.18, 0.001));
+    final custom = const Color(0xFFABC123);
+    expect(categoryIconGlyphColor(custom), custom,
+        reason: 'Custom colors cannot be silently replaced');
+    expect(categoryIconPlateColor(custom).a, closeTo(0.15, 0.001));
+  });
+
+  testWidgets('category outlines share one visual stroke across all hues',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Row(children: <Widget>[
+          CategorySvgIcon(
+            selection: const CategoryIconSelection('folder'),
+            size: 22,
+            color: kNordicFood[500],
+          ),
+          CategorySvgIcon(
+            selection: const CategoryIconSelection('heart'),
+            size: 22,
+            color: kNordicWork[500],
+          ),
+          CategorySvgIcon(
+            selection: const CategoryIconSelection('clock'),
+            size: 22,
+            color: kNordicPeople[500],
+          ),
+          CategorySvgIcon(
+            selection: const CategoryIconSelection('folder', filled: true),
+            size: 22,
+            color: kNordicFood[500],
+          ),
+        ]),
+      ),
+    ));
+    final outlines = tester.widgetList<Text>(
+      find.byKey(const ValueKey('category-outline-optical-stroke')),
+    ).toList();
+    expect(outlines, hasLength(3),
+        reason: 'Filled styles must not receive artificial outlines');
+    for (final outline in outlines) {
+      final paint = outline.style!.foreground!;
+      expect(paint.style, PaintingStyle.stroke);
+      expect(paint.strokeWidth, closeTo(22 * 0.03, 0.001));
+      expect(paint.strokeJoin, StrokeJoin.round);
+    }
   });
 }

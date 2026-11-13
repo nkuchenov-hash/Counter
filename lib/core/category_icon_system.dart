@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/category_icon_catalog_generated.g.dart';
 import 'package:counter/core/fluent_full_catalog_generated.g.dart';
 import 'package:counter/data/models.dart';
@@ -541,14 +542,53 @@ class CategorySvgIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tint = color ?? Theme.of(context).colorScheme.onSurface;
+    final tint = categoryIconGlyphColor(
+      color ?? Theme.of(context).colorScheme.onSurface,
+    );
     // A removed/unknown old key renders neutrally until the user reselects.
     final canonical = CategoryIconStore.canonicalKey(selection.key);
     final artwork = kMatchedCategoryIcons[canonical] ??
         kFullFluentCategoryIcons[canonical] ??
         kMatchedCategoryIcons['folder']!;
-    return Icon(selection.filled ? artwork.fluentFilled : artwork.fluentOutline,
-        size: size, color: tint, semanticLabel: semanticLabel);
+    final glyph = selection.filled
+        ? artwork.fluentFilled
+        : artwork.fluentOutline;
+    final icon = Icon(glyph, size: size, color: tint,
+        semanticLabel: semanticLabel);
+    if (selection.filled) return icon;
+
+    // Fluent icons are font glyphs, not SVGs with an adjustable strokeWidth.
+    // Reinforce every outline by the SAME proportional amount, regardless
+    // of palette hue or screen, matching the approved v7 optical weight.
+    // The original Icon paints on top and keeps its shape/semantics intact.
+    return SizedBox.square(
+      dimension: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          ExcludeSemantics(
+            child: Text(
+              String.fromCharCode(glyph.codePoint),
+              key: const ValueKey('category-outline-optical-stroke'),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                inherit: false,
+                fontFamily: glyph.fontFamily,
+                package: glyph.fontPackage,
+                fontSize: size,
+                height: 1,
+                foreground: Paint()
+                  ..color = tint
+                  ..style = PaintingStyle.stroke
+                  ..strokeWidth = size * 0.03
+                  ..strokeJoin = StrokeJoin.round,
+              ),
+            ),
+          ),
+          icon,
+        ],
+      ),
+    );
   }
 }
 

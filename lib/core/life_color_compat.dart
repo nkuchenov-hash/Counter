@@ -24,6 +24,15 @@ const MaterialColor kNordicFood = MaterialColor(0xFFFFD000, <int, Color>{
   900: Color(0xFF745C00),
 });
 
+// Approved v7 category icon ink. These are optical adjustments of the
+// vivid yellow family, NOT replacements for its saved 400/500/600 colors.
+// List order matches the category picker: nested / child / root.
+const List<Color> kCategoryYellowGlyphTones = <Color>[
+  Color(0xFFF6C900),
+  Color(0xFFF3C000),
+  Color(0xFFDDB300),
+];
+
 const MaterialColor kNordicMovement = MaterialColor(0xFF48A130, <int, Color>{
   50: Color(0xFFF4F9F1),
   100: Color(0xFFE6F2E0),

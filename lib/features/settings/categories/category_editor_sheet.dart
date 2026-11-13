@@ -476,7 +476,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: _currentAccent.withValues(alpha: 0.12),
+                    color: categoryIconPlateColor(_currentAccent),
                     borderRadius: BorderRadius.circular(11),
                   ),
                   child: Center(child: CategorySvgIcon(
