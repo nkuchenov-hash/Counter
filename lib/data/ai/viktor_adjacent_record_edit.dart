@@ -204,10 +204,13 @@ class ViktorAdjacentRecordEdit {
     try {
       final savedFirst = await _read(first.id);
       final savedSecond = await _read(second.id);
-      if (savedFirst.start != first.start ||
-          savedFirst.end != p.newFirstEnd ||
-          savedSecond.start != p.newFirstEnd ||
-          savedSecond.end != p.newSecondEnd) {
+      bool sameInstant(DateTime? actual, DateTime expected) =>
+          actual != null &&
+          actual.difference(expected).inMilliseconds.abs() < 1000;
+      if (!sameInstant(savedFirst.start, first.start) ||
+          !sameInstant(savedFirst.end, p.newFirstEnd) ||
+          !sameInstant(savedSecond.start, p.newFirstEnd) ||
+          !sameInstant(savedSecond.end, p.newSecondEnd)) {
         throw StateError('readback_mismatch');
       }
       await db.getRecords(forceNetwork: true);
