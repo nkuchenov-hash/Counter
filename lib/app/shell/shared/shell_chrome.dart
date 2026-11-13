@@ -99,10 +99,17 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                   child: AnnotatedRegion<SystemUiOverlayStyle>(
                     value: SystemUiOverlayStyle(
                       statusBarColor: AppNeutralTones.transparent,
-                      statusBarIconBrightness: desktopShell || shellPageIndex > 3
+                      statusBarIconBrightness: desktopShell ||
+                              (shellPageIndex > 3 &&
+                                  scheme.brightness == Brightness.light)
                           ? Brightness.dark : Brightness.light,
-                      statusBarBrightness: desktopShell || shellPageIndex > 3
+                      statusBarBrightness: desktopShell ||
+                              (shellPageIndex > 3 &&
+                                  scheme.brightness == Brightness.light)
                           ? Brightness.light : Brightness.dark,
+                      systemNavigationBarIconBrightness:
+                          scheme.brightness == Brightness.light
+                              ? Brightness.dark : Brightness.light,
                       systemNavigationBarColor: scheme.surface,
                     ),
                     child: Listener(
