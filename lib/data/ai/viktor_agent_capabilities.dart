@@ -36,6 +36,12 @@ abstract final class ViktorAgentCapabilities {
     ViktorToolCapability('bulk_replan', 'planning',
         'Reschedule plan sets with server ownership and collision checks',
         ViktorToolRisk.consequential),
+    ViktorToolCapability('adjust_adjacent_records', 'records',
+        'After reading today’s Timeline, shorten one existing record '
+        'to a specified duration, move the next record to follow it, and '
+        'extend that next record to the current moment; preview and '
+        'atomically commit both updates after approval',
+        ViktorToolRisk.consequential),
     ViktorToolCapability('read_day_records', 'records',
         'Read real owned Timeline entries and UTC times for a day',
         ViktorToolRisk.read),
