@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
+import 'package:counter/core/app_colors.dart';
+
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/life_color_compat.dart';
 import 'package:counter/core/shell_adaptive.dart';
@@ -906,8 +908,8 @@ class _MobileSettingsMotion extends StatelessWidget {
             begin: Alignment.topCenter, end: Alignment.bottomCenter,
             stops: [0, fadeStart, fadeEnd, fadeBottom, 1],
             colors: const [
-              Colors.transparent, Colors.transparent,
-              Colors.white, Colors.white, Colors.transparent,
+              AppNeutralTones.transparent, AppNeutralTones.transparent,
+              AppNeutralTones.white, AppNeutralTones.white, AppNeutralTones.transparent,
             ],
           ).createShader(bounds);
         },
