@@ -742,71 +742,48 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   Widget _mobilePinnedHeader() {
     final scheme = Theme.of(context).colorScheme;
     final dark = scheme.brightness == Brightness.dark;
-    // Two independent layers: only the background is blurred and feathered.
-    // The header controls are never faded, tinted or scrolled.
-    return SizedBox(
-      height: 114,
-      child: Stack(children: [
-        Positioned.fill(child: IgnorePointer(
-          child: ShaderMask(
-            blendMode: BlendMode.dstIn,
-            shaderCallback: (bounds) => const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              stops: [0, 0.50, 1],
-              colors: [
-                AppNeutralTones.white,
-                AppNeutralTones.white,
-                AppNeutralTones.transparent,
-              ],
-            ).createShader(bounds),
-            child: ClipRect(child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-              // Dark mode must not place an opaque black sheet over the page.
-              // A translucent white sheen gives glass a readable reflection.
-              child: DecoratedBox(
-                decoration: BoxDecoration(gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: dark
-                      ? [
-                          AppNeutralTones.white.withValues(alpha: 0.12),
-                          AppNeutralTones.white.withValues(alpha: 0.04),
-                        ]
-                      : [
-                          scheme.surfaceContainerHigh.withValues(alpha: 0.72),
-                          scheme.surfaceContainerHigh.withValues(alpha: 0.16),
-                        ],
-                )),
-                child: const SizedBox.expand(),
-              ),
+    return SizedBox(height: 114, child: Stack(children: [
+      Positioned.fill(child: IgnorePointer(child: ShaderMask(
+        blendMode: BlendMode.dstIn,
+        shaderCallback: (bounds) => const LinearGradient(
+          begin: Alignment.topCenter, end: Alignment.bottomCenter,
+          stops: [0, 0.50, 1],
+          colors: [AppNeutralTones.white, AppNeutralTones.white,
+            AppNeutralTones.transparent],
+        ).createShader(bounds),
+        child: ClipRect(child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: DecoratedBox(
+            decoration: BoxDecoration(gradient: LinearGradient(
+              begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              colors: dark
+                  ? [AppNeutralTones.white.withValues(alpha: 0.12),
+                     AppNeutralTones.white.withValues(alpha: 0.04)]
+                  : [scheme.surfaceContainerHigh.withValues(alpha: 0.72),
+                     scheme.surfaceContainerHigh.withValues(alpha: 0.16)],
             )),
+            child: const SizedBox.expand(),
           ),
         )),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 38),
-          child: Row(children: [
-            if (_mobileDetailOpen) ...[
-              _GlassySettingsBackButton(
-                onPressed: _backToMobileSettings,
-                tooltip: tr('Назад к настройкам', 'Back to settings'),
-              ),
-              const SizedBox(width: 16),
-            ],
-            Expanded(child: Text(
-              _mobileDetailOpen ? (_ru ? selected.ru : selected.en)
-                  : tr('Настройки', 'Settings'),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontSize: _mobileDetailOpen ? 22 : 30,
-                fontWeight: FontWeight.w600,
-              ),
-            )),
-          ]),
-        ),
-      ]),
-    );
+      ))),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 38),
+        child: Row(children: [
+          if (_mobileDetailOpen) ...[
+            _GlassySettingsBackButton(
+              onPressed: _backToMobileSettings,
+              tooltip: tr('Назад к настройкам', 'Back to settings')),
+            const SizedBox(width: 16),
+          ],
+          Expanded(child: Text(_mobileDetailOpen
+              ? (_ru ? selected.ru : selected.en) : tr('Настройки', 'Settings'),
+            maxLines: 2, overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontSize: _mobileDetailOpen ? 22 : 30,
+              fontWeight: FontWeight.w600))),
+        ]),
+      ),
+    ]));
   }
 
   Widget _mobileDetails() => Column(
@@ -965,12 +942,11 @@ class _MobileSettingsBounceBehavior extends MaterialScrollBehavior {
 
 
 /// Tecno-inspired circular frosted Back control with a real backdrop blur.
+/// Frosted Back control: a bright rim and top glint stay visible on dark glass.
 class _GlassySettingsBackButton extends StatelessWidget {
   const _GlassySettingsBackButton({
-    required this.onPressed,
-    required this.tooltip,
+    required this.onPressed, required this.tooltip,
   });
-
   final VoidCallback onPressed;
   final String tooltip;
 
@@ -978,82 +954,47 @@ class _GlassySettingsBackButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final dark = scheme.brightness == Brightness.dark;
-    return Tooltip(
-      message: tooltip,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: dark
-                  ? AppNeutralTones.white.withValues(alpha: 0.07)
-                  : scheme.shadow.withValues(alpha: 0.13),
-              blurRadius: 22,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: SizedBox(
-          height: 56,
-          width: 56,
-          child: ClipOval(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: dark
-                        ? [
-                            AppNeutralTones.white.withValues(alpha: 0.29),
-                            AppNeutralTones.white.withValues(alpha: 0.12),
-                          ]
-                        : [
-                            AppNeutralTones.white.withValues(alpha: 0.91),
-                            AppNeutralTones.white.withValues(alpha: 0.44),
-                          ],
-                  ),
-                  border: Border.all(
-                    color: AppNeutralTones.white.withValues(
-                      alpha: dark ? 0.43 : 0.93),
-                    width: 1.2,
-                  ),
-                ),
-                child: Stack(children: [
-                  // Concentrated top-edge reflection distinguishes the
-                  // frosted circle even on an empty dark canvas.
-                  Align(
-                    alignment: Alignment.topCenter,
-                    child: Container(
-                      width: 31,
-                      height: 2.0,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(2),
-                        color: AppNeutralTones.white.withValues(
-                          alpha: dark ? 0.46 : 0.80),
-                      ),
-                    ),
-                  ),
-                  Material(
-                    type: MaterialType.transparency,
-                    child: InkWell(
-                      onTap: onPressed,
-                      customBorder: const CircleBorder(),
-                      child: Center(child: Icon(
-                        Icons.arrow_back_rounded,
-                        size: 27,
-                        color: scheme.onSurface,
-                      )),
-                    ),
-                  ),
-                ]),
+    return Tooltip(message: tooltip, child: DecoratedBox(
+      decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: [
+        BoxShadow(
+          color: dark ? AppNeutralTones.white.withValues(alpha: 0.07)
+              : scheme.shadow.withValues(alpha: 0.13),
+          blurRadius: 22, offset: const Offset(0, 5)),
+      ]),
+      child: SizedBox(height: 56, width: 56, child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft, end: Alignment.bottomRight,
+                colors: dark
+                  ? [AppNeutralTones.white.withValues(alpha: 0.29),
+                     AppNeutralTones.white.withValues(alpha: 0.12)]
+                  : [AppNeutralTones.white.withValues(alpha: 0.91),
+                     AppNeutralTones.white.withValues(alpha: 0.44)],
               ),
+              border: Border.all(
+                color: AppNeutralTones.white.withValues(
+                  alpha: dark ? 0.43 : 0.93), width: 1.2),
             ),
+            child: Stack(children: [
+              Align(alignment: Alignment.topCenter, child: Container(
+                width: 31, height: 2,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(2),
+                  color: AppNeutralTones.white.withValues(
+                    alpha: dark ? 0.46 : 0.80)),
+              )),
+              Material(type: MaterialType.transparency, child: InkWell(
+                onTap: onPressed, customBorder: const CircleBorder(),
+                child: Center(child: Icon(Icons.arrow_back_rounded,
+                  size: 27, color: scheme.onSurface)),
+              )),
+            ]),
           ),
         ),
-      ),
-    );
+      )),
+    ));
   }
 }
