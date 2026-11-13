@@ -140,13 +140,23 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       }
       if (adjacentRecordIntent != null) {
         final edit = ViktorAdjacentRecordEdit(db);
-        final preview = await edit.prepare(
-          day: ViktorDateScope.key(profileToday),
-          firstTitle: adjacentRecordIntent.firstTitle,
-          secondTitle: adjacentRecordIntent.secondTitle,
-          firstMinutes: adjacentRecordIntent.minutes,
-          targetNow: commandNowUtc,
-        );
+        late final ViktorAdjacentRecordPreview preview;
+        try {
+          preview = await edit.prepare(
+            day: ViktorDateScope.key(profileToday),
+            firstTitle: adjacentRecordIntent.firstTitle,
+            secondTitle: adjacentRecordIntent.secondTitle,
+            firstMinutes: adjacentRecordIntent.minutes,
+            targetNow: commandNowUtc,
+          );
+        } on StateError catch (reason) {
+          if (mounted) {
+            _push('${_friendlyError(reason)} '
+                'Ничего не изменено. Могу проверить другие названия '
+                'или другой порядок сегодняшних записей.');
+          }
+          return;
+        }
         if (!mounted) return;
         final approved = await _confirmPreview(edit.describe(preview));
         if (!mounted) return;
@@ -155,8 +165,12 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           return;
         }
         writeStarted = true;
-        final result = await edit.apply(preview, requestId);
-        if (mounted) _push(result);
+        try {
+          final result = await edit.apply(preview, requestId);
+          if (mounted) _push(result);
+        } on StateError catch (reason) {
+          if (mounted) _push(_friendlyError(reason));
+        }
         return;
       }
       final resumePartialDuration =
