@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:counter/core/category_color_palette.dart';
+import 'package:counter/core/life_color_compat.dart' show kCategoryYellowGlyphTones;
 import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/core/category_icon_catalog_generated.g.dart';
 import 'package:counter/core/fluent_full_catalog_generated.g.dart';
