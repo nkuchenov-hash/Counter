@@ -77,52 +77,54 @@ class ShellCompactBottomNav extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.0,
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: DecoratedBox(
-            // A transparent leading edge fades scrolling content into the
-            // floating glass bar. No opaque Material can cover the blur.
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: const [0, 0.35, 1],
+      child: Stack(children: [
+        // Feather the BLUR layer itself, not just its background color.
+        // The icons remain crisp on a separate interactive layer.
+        Positioned.fill(child: IgnorePointer(child: ShaderMask(
+          blendMode: BlendMode.dstIn,
+          shaderCallback: (bounds) => const LinearGradient(
+            begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            stops: [0, 0.38, 1],
+            colors: [Colors.transparent, Colors.white, Colors.white],
+          ).createShader(bounds),
+          child: ClipRect(child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: DecoratedBox(
+              decoration: BoxDecoration(gradient: LinearGradient(
+                begin: Alignment.topCenter, end: Alignment.bottomCenter,
                 colors: [
-                  bg.withValues(alpha: 0.08),
-                  bg.withValues(alpha: dark ? 0.78 : 0.66),
-                  bg.withValues(alpha: dark ? 0.94 : 0.88),
+                  bg.withValues(alpha: 0),
+                  bg.withValues(alpha: dark ? 0.92 : 0.88),
                 ],
-              ),
+              )),
+              child: const SizedBox.expand(),
             ),
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 18),
-                child: SizedBox(
-                  height: kShellBottomNavHeight,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final item in items)
-                        Expanded(
-                          child: _ShellBottomNavItem(
-                            icon: item.icon,
-                            selectedIcon: item.selectedIcon,
-                            label: item.label,
-                            selected: selectedIndex == item.index,
-                            indicatorColor: indicator,
-                            onTap: () => onDestinationSelected(item.index),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+          )),
+        ))),
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 18),
+            child: SizedBox(
+              height: kShellBottomNavHeight,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final item in items)
+                    Expanded(child: _ShellBottomNavItem(
+                      icon: item.icon,
+                      selectedIcon: item.selectedIcon,
+                      label: item.label,
+                      selected: selectedIndex == item.index,
+                      indicatorColor: indicator,
+                      onTap: () => onDestinationSelected(item.index),
+                    )),
+                ],
               ),
             ),
           ),
         ),
-      ),
+      ]),
     );
   }
 }
