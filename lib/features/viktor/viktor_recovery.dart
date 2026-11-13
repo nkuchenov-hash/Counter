@@ -82,6 +82,69 @@ extension _ViktorRecoveryDialogue on _ViktorChatPageState {
     }
   }
 
+  /// One bounded read-to-write repair when a provider only says it will
+  /// check Records. This method never writes; only a fresh validated proposal
+  /// may later reach the normal consent-gated executor.
+  Future<ViktorResponse?> _repairUnfinishedRecordWrite({
+    required String input,
+    required DateTime intentDay,
+    required List<PlanningTask> plans,
+    required String requestId,
+    required List<Map<String, String>> conversation,
+    required List<String> observations,
+    required ViktorExecutor executor,
+  }) async {
+    final first = await _gateway.propose(
+      input: input, wallDay: intentDay, plans: plans,
+      settings: _settings, selectedPlanIds: widget.selectedPlanIds,
+      requestId: requestId, conversationHistory: conversation,
+      toolObservations: observations,
+      proposalFeedback: 'The previous reply promised to check but returned '
+          'no action. For two adjacent Timeline records use read_day_records '
+          'and then resize_adjacent_records with exact observed IDs. '
+          'Never edit Plans or create new Records for this request.',
+      allowRepair: false,
+    );
+    if (!mounted || first.actions == null) return null;
+    if (first.actions!.hasMutations) {
+      if (first.needsMoreContext ||
+          first.actions!.actions.length != 1 ||
+          first.actions!.actions.single.name != 'resize_adjacent_records') {
+        return null;
+      }
+      return first;
+    }
+    final reads = first.actions!;
+    if (reads.actions.length != 1 ||
+        reads.actions.single.name != 'read_day_records') {
+      return null;
+    }
+    final observed = await executor.describe(reads, intentDay);
+    if (!mounted) return null;
+    final next = await _gateway.propose(
+      input: input, wallDay: intentDay, plans: plans,
+      settings: _settings, selectedPlanIds: widget.selectedPlanIds,
+      requestId: requestId, conversationHistory: conversation,
+      toolObservations: [
+        ...observations,
+        jsonEncode({
+          'tools': reads.actions.map((a) => a.toJson()).toList(),
+          'result': observed,
+        }),
+      ],
+      proposalFeedback: 'Read complete. Final result must be one '
+          'resize_adjacent_records action with actual record IDs and '
+          'continue:false; never return another status-only message.',
+      allowRepair: false,
+    );
+    if (!mounted || next.needsMoreContext ||
+        next.actions?.actions.length != 1 ||
+        next.actions?.actions.single.name != 'resize_adjacent_records') {
+      return null;
+    }
+    return next;
+  }
+
   Future<void> _offerRecovery({
     required String input,
     required Object failure,

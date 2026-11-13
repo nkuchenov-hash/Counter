@@ -338,64 +338,28 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         throw StateError('Виктор запросил дополнительные данные, '
             'но не указал операцию чтения. Планы не изменены.');
       }
-      if (actions == null) {
-        if (ViktorReadAnswer.isUnfinishedWriteReply(
-            input: input, message: response.message)) {
-          // A promise to check is not an executable action. One bounded
-          // repair turn; never display an unfinished response as success.
-          final repaired = await _gateway.propose(
-            input: input, wallDay: intentDay, plans: plans,
-            settings: _settings, selectedPlanIds: widget.selectedPlanIds,
-            requestId: requestId, conversationHistory: dialogContext,
-            toolObservations: toolObservations,
-            proposalFeedback: 'The previous answer only promised to check, '
-                'but proposed no action. For existing adjacent Timeline '
-                'records first propose read_day_records with continue:true, '
-                'then resize_adjacent_records with continue:false. '
-                'Do not claim any work has been completed.',
-            allowRepair: false,
-          );
-          if (repaired.actions != null) {
-            response = repaired;
-            if (response.needsMoreContext && !response.actions!.hasMutations) {
-              // Complete the recovered read in the same user turn.
-              final readBatch = response.actions!;
-              final observed = await executor.describe(readBatch, intentDay);
-              final observedTools = [
-                ...toolObservations,
-                jsonEncode({
-                  'tools': readBatch.actions
-                      .map((a) => a.toJson()).toList(),
-                  'result': observed,
-                }),
-              ];
-              response = await _gateway.propose(
-                input: input, wallDay: intentDay, plans: plans,
-                settings: _settings,
-                selectedPlanIds: widget.selectedPlanIds,
-                requestId: requestId,
-                conversationHistory: dialogContext,
-                toolObservations: observedTools,
-                proposalFeedback: 'The completed read returned real '
-                    'record_id values. Now return a FINAL '
-                    'resize_adjacent_records mutation using only these IDs; '
-                    'continue:false. Do not send another status message.',
-                allowRepair: false,
-              );
-              if (response.needsMoreContext ||
-                  response.actions == null ||
-                  !response.actions!.hasMutations) {
-                _push('Виктор получил записи, но не смог подготовить '
-                    'проверяемое изменение. Ничего не изменено.');
-                return;
-              }
-            }
-          } else {
-            _push('Виктор не смог сформировать проверяемое действие '
-                'для этого запроса. Записи не изменены.');
-            return;
-          }
+      if (actions == null && ViktorReadAnswer.isUnfinishedWriteReply(
+          input: input, message: response.message)) {
+        final repaired = await _repairUnfinishedRecordWrite(
+          input: input, intentDay: intentDay, plans: plans,
+          requestId: requestId, conversation: dialogContext,
+          observations: toolObservations, executor: executor,
+        );
+        if (!mounted) return;
+        if (repaired == null) {
+          _push('Виктор не смог подготовить проверяемое изменение. '
+              'Ничего не изменено.');
+          return;
         }
+        response = repaired;
+      }
+      // A Record edit must never be reinterpreted as a Plan mutation.
+      if (ViktorReadAnswer.isAdjacentRecordResizeIntent(input) &&
+          response.actions?.hasMutations == true &&
+          !response.actions!.actions.every(
+              (action) => action.name == 'resize_adjacent_records')) {
+        throw StateError('Виктор предложил изменение не тех данных. '
+            'Записи не изменены.');
       }
       final resolvedActions = response.actions;
       if (resolvedActions == null) {
