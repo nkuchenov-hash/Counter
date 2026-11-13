@@ -86,7 +86,10 @@ routerAdd("POST", "/api/viktor/records/adjust-adjacent", function(e) {
       }
       validate(a, first);
       validate(b, second);
-      if (a.getString("parent_id") || b.getString("parent_id")) {
+      const parentA = a.getString("parent_id");
+      const parentB = b.getString("parent_id");
+      if ((parentA && parentA !== "0") ||
+          (parentB && parentB !== "0")) {
         throw new Error("subrecord_requires_manual_edit");
       }
       // Discover competing activities near the newly extended time span.
