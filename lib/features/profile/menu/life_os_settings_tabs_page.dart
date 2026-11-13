@@ -738,20 +738,17 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     ),
   );
 
-  // The header lives outside the scrolling list: no scroll offset can move it.
   Widget _mobilePinnedHeader() {
     final scheme = Theme.of(context).colorScheme;
     final dark = scheme.brightness == Brightness.dark;
     final topInset = MediaQuery.viewPaddingOf(context).top;
-    // Include the system status bar in the SAME feathered header surface.
     return SizedBox(height: topInset + 114, child: Stack(children: [
       Positioned.fill(child: IgnorePointer(child: ShaderMask(
         blendMode: BlendMode.dstIn,
         shaderCallback: (bounds) => const LinearGradient(
           begin: Alignment.topCenter, end: Alignment.bottomCenter,
           stops: [0, 0.45, 1],
-          colors: [AppNeutralTones.white, AppNeutralTones.white,
-            AppNeutralTones.transparent],
+          colors: [AppNeutralTones.white, AppNeutralTones.white, AppNeutralTones.transparent],
         ).createShader(bounds),
         child: ClipRect(child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
@@ -759,10 +756,8 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
             decoration: BoxDecoration(gradient: LinearGradient(
               begin: Alignment.topCenter, end: Alignment.bottomCenter,
               colors: dark
-                  ? [AppNeutralTones.white.withValues(alpha: 0.055),
-                     AppNeutralTones.white.withValues(alpha: 0.0)]
-                  : [scheme.surfaceContainerHigh.withValues(alpha: 0.38),
-                     scheme.surfaceContainerHigh.withValues(alpha: 0.0)],
+                  ? [AppNeutralTones.white.withValues(alpha: 0.055), AppNeutralTones.white.withValues(alpha: 0.0)]
+                  : [scheme.surfaceContainerHigh.withValues(alpha: 0.38), scheme.surfaceContainerHigh.withValues(alpha: 0.0)],
             )),
             child: const SizedBox.expand(),
           ),
@@ -896,8 +891,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   }
 }
 
-/// Fixed header over a single scrolling viewport. A shader fades the content
-/// continuously, avoiding the hard horizontal boundaries of blur strips.
+/// Fixed header with feathered scrolling content, not opaque blur strips.
 class _MobileSettingsMotion extends StatelessWidget {
   const _MobileSettingsMotion({required this.child, required this.header});
   final Widget child;
@@ -916,23 +910,16 @@ class _MobileSettingsMotion extends StatelessWidget {
         blendMode: BlendMode.dstIn,
         shaderCallback: (bounds) {
           final h = bounds.height;
-          final fadeStart = ((topInset + 74) / h)
-              .clamp(0.0, 0.40).toDouble();
-          final fadeEnd = ((topInset + 116) / h)
-              .clamp(fadeStart + 0.01, 0.50).toDouble();
-          // Hide list labels BEFORE the bottom glass nav begins, not beneath it.
-          final fadeBottom = (1 - (158 + bottomInset) / h)
-              .clamp(fadeEnd + 0.01, 0.88).toDouble();
-          final fadeClear = (1 - (112 + bottomInset) / h)
-              .clamp(fadeBottom + 0.01, 0.98).toDouble();
+          final fadeStart = ((topInset + 74) / h).clamp(0.0, 0.40).toDouble();
+          final fadeEnd = ((topInset + 116) / h).clamp(fadeStart + 0.01, 0.50).toDouble();
+          final fadeBottom = (1 - (158 + bottomInset) / h).clamp(fadeEnd + 0.01, 0.88).toDouble();
+          final fadeClear = (1 - (112 + bottomInset) / h).clamp(fadeBottom + 0.01, 0.98).toDouble();
           return LinearGradient(
             begin: Alignment.topCenter, end: Alignment.bottomCenter,
             stops: [0, fadeStart, fadeEnd, fadeBottom, fadeClear, 1],
-            colors: const [
-              AppNeutralTones.transparent, AppNeutralTones.transparent,
+            colors: const [AppNeutralTones.transparent, AppNeutralTones.transparent,
               AppNeutralTones.white, AppNeutralTones.white,
-              AppNeutralTones.transparent, AppNeutralTones.transparent,
-            ],
+              AppNeutralTones.transparent, AppNeutralTones.transparent],
           ).createShader(bounds);
         },
         child: child,
