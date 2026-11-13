@@ -226,7 +226,15 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       );
       var repairedEmptyRead = false;
       var repairedRepeatedRead = false;
+      bool needsRecordResizeRead(ViktorResponse value) =>
+          ViktorReadAnswer.requiresRecordResizeReadContinuation(
+            input: input,
+            actionNames: value.actions?.actions.map((a) => a.name).toList()
+                ?? const <String>[],
+            hasMutations: value.actions?.hasMutations ?? false,
+          );
       for (var step = 0; !revisionOfDraft && (response.needsMoreContext ||
+          needsRecordResizeRead(response) ||
           ViktorReadAnswer.requiresDocumentRead(input: input,
             actions: response.actions?.actions.map((a) => a.name).toList().cast<String>()
                 ?? const <String>[])); step++) {
@@ -273,7 +281,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           needsMoreContext: response.needsMoreContext,
           hasActions: response.actions != null,
           hasMutations: response.actions?.hasMutations ?? false,
-        )) break;
+        ) && !needsRecordResizeRead(response)) break;
         final proposed = response.actions!;
         final signature = jsonEncode(
             proposed.actions.map((a) => a.toJson()).toList());

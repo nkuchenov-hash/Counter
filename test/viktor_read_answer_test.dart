@@ -10,6 +10,16 @@ void main() {
       input: request,
       message: 'Сейчас проверю планы, чтобы найти обе записи.',
     ), true);
+    expect(ViktorReadAnswer.requiresRecordResizeReadContinuation(
+      input: request,
+      actionNames: ['read_day_records'],
+      hasMutations: false,
+    ), true);
+    expect(ViktorReadAnswer.requiresRecordResizeReadContinuation(
+      input: request,
+      actionNames: ['resize_adjacent_records'],
+      hasMutations: true,
+    ), false);
     expect(ViktorReadAnswer.isUnfinishedWriteReply(
       input: request,
       message: 'Первая запись сокращена, обе сохранены и проверены.',

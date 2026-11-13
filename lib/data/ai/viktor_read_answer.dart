@@ -40,6 +40,22 @@ class ViktorReadAnswer {
     ).hasMatch(value);
   }
 
+  /// Some providers forget continue:true even after proposing the necessary
+  /// read for a Record resize. Continue the same turn without losing intent.
+  static bool requiresRecordResizeReadContinuation({
+    required String input,
+    required List<String> actionNames,
+    required bool hasMutations,
+  }) {
+    if (hasMutations) return false;
+    final intent = RegExp(r'сократ|уменьш|продли|укорот|'
+        r'shorten|extend|resize', caseSensitive: false).hasMatch(input);
+    final record = RegExp(r'запис|обед|timeline|record',
+        caseSensitive: false).hasMatch(input);
+    return intent && record && actionNames.length == 1 &&
+        actionNames.single == 'read_day_records';
+  }
+
   /// A write request must not end with a provider promise and zero tools.
   /// This is a narrow safety net; it does not authorize any database write.
   static bool isUnfinishedWriteReply({

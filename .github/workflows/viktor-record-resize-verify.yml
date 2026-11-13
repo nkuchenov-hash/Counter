@@ -31,9 +31,7 @@ jobs:
           flutter-version: '3.41.6'
           channel: stable
       - name: Initialize environment
-        run: |
-          mkdir -p lib/core/env
-          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\';' '}' > lib/core/env/env.dart
+        run: cp lib/core/env/env.dart.example lib/core/env/env.dart
       - name: Install dependencies
         run: flutter pub get
       - name: Analyze Dart
