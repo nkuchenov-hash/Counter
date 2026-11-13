@@ -93,6 +93,38 @@ void main() {
         })), throwsFormatException);
     });
 
+    test('adjacent Timeline resize needs strict IDs and approval', () {
+      final result = ViktorActionBatch.fromJson(batch([
+        action('resize_adjacent_records', {
+          'wall_day': '2026-11-13',
+          'first_record_id': planA,
+          'second_record_id': planB,
+          'first_duration_minutes': 30,
+        }),
+      ]));
+      expect(result.hasMutations, true);
+      expect(result.requiresPreview, true);
+      expect(result.isSingleReversibleWrite, false);
+      for (final invalid in [
+        {'first_record_id': planA, 'second_record_id': planA,
+         'first_duration_minutes': 30},
+        {'first_record_id': 'virt-record', 'second_record_id': planB,
+         'first_duration_minutes': 30},
+        {'first_record_id': planA, 'second_record_id': planB,
+         'first_duration_minutes': 0},
+        {'first_record_id': planA, 'second_record_id': planB,
+         'first_duration_minutes': 30.5},
+        {'first_record_id': planA, 'second_record_id': planB,
+         'first_duration_minutes': 30, 'skip_conflicts': true},
+      ]) {
+        expect(() => ViktorAction.fromJson(action(
+          'resize_adjacent_records', {
+            'wall_day': '2026-11-13', ...invalid,
+          },
+        )), throwsFormatException);
+      }
+    });
+
     test('accepts read-only day request', () {
       final result = ViktorActionBatch.fromJson(batch([
         action('list_day_plans', {'wall_day': '2026-10-17'}),

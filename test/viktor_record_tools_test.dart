@@ -78,6 +78,21 @@ void main() {
     })]), throwsFormatException);
   });
 
+  test('Adjacent record resize is a consequential, separate capability', () {
+    final action = propose([command('resize_adjacent_records', {
+      'wall_day': '2026-11-13',
+      'first_record_id': 'aaaaabbbbbccccc',
+      'second_record_id': 'dddddeeeeefffff',
+      'first_duration_minutes': 30,
+    })]);
+    expect(action.requiresPreview, true);
+    expect(action.hasMutations, true);
+    expect(ViktorAgentCapabilities.byName['resize_adjacent_records']!
+        .requiresApproval, true);
+    expect(ViktorAgentCapabilities.names.contains(
+        'resize_adjacent_records'), true);
+  });
+
   test('One ordinary composed read can accompany other read actions', () {
     expect(propose([
       command('read_day_records', {'wall_day': '2026-10-28'}),

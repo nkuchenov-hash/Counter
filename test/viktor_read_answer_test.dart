@@ -3,6 +3,23 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
 
+  test('Viktor may not finish a Record edit with a promise', () {
+    const request = 'Сократи запись Обед до 30 минут, а следующую '
+        'Этника сайт продли на освобождённое время';
+    expect(ViktorReadAnswer.isUnfinishedWriteReply(
+      input: request,
+      message: 'Сейчас проверю планы, чтобы найти обе записи.',
+    ), true);
+    expect(ViktorReadAnswer.isUnfinishedWriteReply(
+      input: request,
+      message: 'Первая запись сокращена, обе сохранены и проверены.',
+    ), false);
+    expect(ViktorReadAnswer.isUnfinishedWriteReply(
+      input: 'Покажи планы на сегодня',
+      message: 'Сейчас проверю планы.',
+    ), false);
+  });
+
   test('Perm user keeps own default and location mention is not a zone override', () {
     expect(ViktorReadAnswer.explicitScheduleTimezone('По пермскому времени'),
         'Asia/Yekaterinburg');
