@@ -347,6 +347,19 @@ class ViktorAction {
             !const {'stay', 'bottom', 'hide', 'archive'}.contains(value)) {
           throw const FormatException('Invalid list completion behavior');
         }
+      case 'adjust_adjacent_records':
+        _onlyKeys(args, const {
+          'wall_day', 'first_title', 'second_title',
+          'first_duration_minutes', 'second_end_now',
+        });
+        _day(args, 'wall_day');
+        _text(args, 'first_title', maxLength: 160);
+        _text(args, 'second_title', maxLength: 160);
+        final minutes = args['first_duration_minutes'];
+        if (minutes is! int || minutes < 1 || minutes > 720 ||
+            args['second_end_now'] != true) {
+          throw const FormatException('Invalid adjacent record edit');
+        }
       case 'read_day_records':
         _onlyKeys(args, const {'wall_day'});
         _day(args, 'wall_day');
