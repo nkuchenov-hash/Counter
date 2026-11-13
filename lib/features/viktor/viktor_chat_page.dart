@@ -349,6 +349,39 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           );
           if (repaired.actions != null) {
             response = repaired;
+            if (response.needsMoreContext && !response.actions!.hasMutations) {
+              // Complete the recovered read in the same user turn.
+              final readBatch = response.actions!;
+              final observed = await executor.describe(readBatch, intentDay);
+              final observedTools = [
+                ...toolObservations,
+                jsonEncode({
+                  'tools': readBatch.actions
+                      .map((a) => a.toJson()).toList(),
+                  'result': observed,
+                }),
+              ];
+              response = await _gateway.propose(
+                input: input, wallDay: intentDay, plans: plans,
+                settings: _settings,
+                selectedPlanIds: widget.selectedPlanIds,
+                requestId: requestId,
+                conversationHistory: dialogContext,
+                toolObservations: observedTools,
+                proposalFeedback: 'The completed read returned real '
+                    'record_id values. Now return a FINAL '
+                    'resize_adjacent_records mutation using only these IDs; '
+                    'continue:false. Do not send another status message.',
+                allowRepair: false,
+              );
+              if (response.needsMoreContext ||
+                  response.actions == null ||
+                  !response.actions!.hasMutations) {
+                _push('Виктор получил записи, но не смог подготовить '
+                    'проверяемое изменение. Ничего не изменено.');
+                return;
+              }
+            }
           } else {
             _push('Виктор не смог сформировать проверяемое действие '
                 'для этого запроса. Записи не изменены.');
@@ -367,7 +400,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         return;
       }
       if (ViktorProposedDayDraft.needsReadOnlyDraft(resolvedActions)) {
-        final draft = await ViktorProposedDayDraft.describe(actions,
+        final draft = await ViktorProposedDayDraft.describe(resolvedActions,
           loadDay: db.getPlanningTasksForWallDate);
         if (mounted) _push(draft);
         return;
