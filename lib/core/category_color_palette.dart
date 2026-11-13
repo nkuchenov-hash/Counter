@@ -64,6 +64,46 @@ int categoryToneForDepth(int depth) {
 int categoryColorAtDepth(MaterialColor family, int depth) =>
     family[categoryToneForDepth(depth)]!.toARGB32();
 
+// The approved HTML v7 uses real translucent category plates. Opacity
+// depends on the SAVED palette tone, never the row's selected state. This
+// preserves the 600/500/400 hierarchy and custom user-selected colors.
+int? _categorySelectedToneIndex(Color accent, MaterialColor family) {
+  final value = canonicalLifeColorValue(accent.toARGB32());
+  for (var i = 0; i < kCategorySelectableTones.length; i++) {
+    if (family[kCategorySelectableTones[i]]!.toARGB32() == value) return i;
+  }
+  return null;
+}
+
+Color categoryIconPlateColor(Color accent) {
+  final color = Color(canonicalLifeColorValue(accent.toARGB32()));
+  final yellowTone = _categorySelectedToneIndex(color, kNordicFood);
+  if (yellowTone != null) {
+    // 400 / 500 / 600: 13% / 17% / 21% against the REAL row background.
+    return color.withValues(
+      alpha: const <double>[0.13, 0.17, 0.21][yellowTone],
+    );
+  }
+  for (final family in kCategoryPickerMaterialColors) {
+    final tone = _categorySelectedToneIndex(color, family);
+    if (tone != null) {
+      return color.withValues(
+        alpha: const <double>[0.12, 0.15, 0.18][tone],
+      );
+    }
+  }
+  // Custom colors are never snapped to another official shade.
+  return color.withValues(alpha: 0.15);
+}
+
+/// Vivid yellow outline glyphs need a small optical adjustment on light
+/// translucent plates; other hues and any custom colors stay untouched.
+Color categoryIconGlyphColor(Color accent) {
+  if ((accent.toARGB32() >>> 24) != 0xFF) return accent;
+  final yellowTone = _categorySelectedToneIndex(accent, kNordicFood);
+  return yellowTone == null ? accent : kCategoryYellowGlyphTones[yellowTone];
+}
+
 List<int> categoryMaterialShadeValues(MaterialColor c) =>
     _categoryTones.map((tone) => c[tone]!.toARGB32()).toList(growable: false);
 
