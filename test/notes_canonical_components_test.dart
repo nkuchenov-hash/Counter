@@ -39,6 +39,97 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('native Android Notes uses readable capsule controls and scrolls tools', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    var invoked = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.android),
+        home: Scaffold(
+          body: Center(
+            child: NotesEditorToolbar(
+              actions: [
+                for (final tool in NotesToolbarTool.values)
+                  NotesToolbarAction(
+                    tool: tool,
+                    icon: _iconFor(tool),
+                    tooltip: tool.name,
+                    onPressed: () => invoked++,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    final toolbar = find.byKey(const ValueKey('notes-floating-glass-toolbar'));
+    expect(tester.getSize(toolbar),
+        const Size(NotesFigmaTokens.toolbarWidth, NotesFigmaTokens.nativeToolbarHeight));
+    expect(find.byKey(const ValueKey('notes-native-toolbar-scroll')), findsOneWidget);
+    expect(tester.getSize(find.byKey(const ValueKey('notes-toolbar-heading'))),
+        const Size(NotesFigmaTokens.nativeToolbarButtonSize, NotesFigmaTokens.nativeToolbarButtonSize));
+    final blur = tester.widget<BackdropFilter>(
+      find.descendant(of: toolbar, matching: find.byType(BackdropFilter)),
+    );
+    expect(blur.enabled, isFalse);
+    await tester.tap(find.byKey(const ValueKey('notes-toolbar-heading')));
+    expect(invoked, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Android Notes paragraph gaps exceed within-list gaps', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final paragraph = TextEditingController(text: 'Paragraph');
+    final item = TextEditingController(text: 'List item');
+    addTearDown(paragraph.dispose);
+    addTearDown(item.dispose);
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData(platform: TargetPlatform.android),
+      home: Scaffold(body: Column(children: [
+        NotesTextBlock(controller: paragraph),
+        NotesListBlock(controller: item, listStyle: NotesListStyle.bulleted),
+      ])),
+    ));
+    final paragraphHeight = tester.getSize(find.byType(NotesTextBlock)).height;
+    final listHeight = tester.getSize(find.byType(NotesListBlock)).height;
+    expect(paragraphHeight, greaterThan(listHeight + 8));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Android standalone Notes header has working capsule and Done action', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final title = TextEditingController(text: 'Reference note');
+    addTearDown(title.dispose);
+    var done = 0;
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData(platform: TargetPlatform.android),
+      home: NotesEditorScreen(
+        titleController: title,
+        onTitleChanged: (_) {},
+        onDone: () => done++,
+        pinned: false,
+        onTogglePinned: () {},
+        onDelete: () {},
+        onUndo: () {},
+        content: const SizedBox.expand(),
+        toolbar: const SizedBox(width: 200, height: 48),
+      ),
+    ));
+    expect(find.byKey(const ValueKey('notes-header-action-capsule')), findsOneWidget);
+    await tester.tap(find.byTooltip('Done'));
+    expect(done, 1);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('embedded Notes sheet is rounded with breathing room for ghost actions', (tester) async {
     final title = TextEditingController(text: 'Test note');
     addTearDown(title.dispose);
@@ -462,7 +553,7 @@ void main() {
       final checklistOrigin = tester.getTopLeft(
         find.byKey(const ValueKey('checklist-text-field')),
       );
-      expect(listOrigin.dx, closeTo(50, 0.1));
+      expect(listOrigin.dx, closeTo(56, 0.1));
       expect((listOrigin.dx - checklistOrigin.dx).abs(), lessThan(0.1));
       expect(
         tester
@@ -474,7 +565,7 @@ void main() {
         tester.getSize(find.byType(NotesEditorToolbar)),
         const Size(
           NotesFigmaTokens.toolbarWidth,
-          NotesFigmaTokens.toolbarHeight,
+          NotesFigmaTokens.nativeToolbarHeight,
         ),
       );
       await tester.tap(find.byKey(const ValueKey('notes-toolbar-table')));
@@ -528,7 +619,7 @@ void main() {
         tester.getSize(productionToolbar),
         const Size(
           NotesFigmaTokens.toolbarWidth,
-          NotesFigmaTokens.toolbarHeight,
+          NotesFigmaTokens.nativeToolbarHeight,
         ),
       );
       expect(
