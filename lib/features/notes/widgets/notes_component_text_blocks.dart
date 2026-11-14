@@ -270,9 +270,9 @@ class _NotesLeadingTextRow extends StatelessWidget {
     final verticalPadding = notesTextBlockPadding(context, list: true);
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        kNotesContentInset,
+        notesContentHorizontalInset(context),
         verticalPadding,
-        kNotesContentInset,
+        notesContentHorizontalInset(context),
         verticalPadding,
       ),
       child: Row(
