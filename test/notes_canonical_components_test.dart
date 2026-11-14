@@ -17,6 +17,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('embedded Android Notes feather avoids live GPU backdrop blur', (tester) async {
+    // A 390px child inside a desktop-sized MediaQuery is NOT a phone.
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData(platform: TargetPlatform.android),
@@ -204,7 +209,7 @@ void main() {
     );
     expect(
       tester.widgetList<Material>(backMaterial).any(
-        (material) => material.color == Colors.transparent &&
+        (material) => material.color?.a == 0 &&
             material.shape is CircleBorder,
       ),
       isTrue,
