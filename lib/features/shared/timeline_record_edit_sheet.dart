@@ -301,7 +301,11 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       if (!mounted || _notesScopeFocusNode.hasFocus || !_notesEditorFocused) {
         return;
       }
-      setState(() => _notesEditorFocused = false);
+      final keyboardGone = MediaQuery.viewInsetsOf(context).bottom == 0;
+      setState(() {
+        _notesEditorFocused = false;
+        if (keyboardGone) _notesImeSessionActive = false;
+      });
     });
   }
 
