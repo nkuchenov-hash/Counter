@@ -27,6 +27,7 @@ class NotesEditorBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final native = NotesFigmaTokens.nativeNotesLayout(context);
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -39,8 +40,8 @@ class NotesEditorBody extends StatelessWidget {
           right: 0,
           bottom: 0,
           child: NotesBottomGlassFade(
-            height: embedded ? 78 : 86,
-            toolbarBottomInset: embedded ? 14 : 8,
+            height: native ? 90 : embedded ? 78 : 86,
+            toolbarBottomInset: native ? 14 : embedded ? 14 : 8,
             // Keep the same feather gradient, but skip the GPU blur on
             // embedded Android where every typed line repaints behind it.
             enableBackdropBlur: !(embedded &&
@@ -49,7 +50,9 @@ class NotesEditorBody extends StatelessWidget {
               child: Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
-                  padding: EdgeInsets.only(bottom: embedded ? 14 : 8),
+                  padding: EdgeInsets.only(
+                    bottom: native ? 14 : embedded ? 14 : 8,
+                  ),
                   child: toolbar,
                 ),
               ),
@@ -395,8 +398,15 @@ class _NotesNavigationHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final native = NotesFigmaTokens.nativeNotesLayout(context);
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: EdgeInsets.fromLTRB(8, embedded ? 22 : 12, 16, 10),
+      padding: EdgeInsets.fromLTRB(
+        native ? 18 : 8,
+        embedded ? 22 : native ? 16 : 12,
+        native ? 18 : 16,
+        native ? 14 : 10,
+      ),
       child: Row(
         children: [
           _NotesBackHeaderAction(onPressed: onDone),
@@ -433,19 +443,50 @@ class _NotesNavigationHeader extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (onUndo != null) ...[
-                  _NotesHeaderAction(
-                    icon: Icons.undo_rounded,
-                    tooltip: 'Undo',
-                    onPressed: onUndo!,
+                DecoratedBox(
+                  key: const ValueKey('notes-header-action-capsule'),
+                  decoration: BoxDecoration(
+                    color: native
+                        ? scheme.surfaceContainerHigh.withValues(alpha: 0.96)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(999),
+                    border: native
+                        ? Border.all(color: scheme.outlineVariant)
+                        : null,
                   ),
-                  const SizedBox(width: 8),
-                ],
-                _NotesHeaderMoreMenu(
-                  pinned: pinned,
-                  onTogglePinned: onTogglePinned,
-                  onDelete: onDelete,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (onUndo != null) ...[
+                        _NotesHeaderAction(
+                          icon: Icons.undo_rounded,
+                          tooltip: 'Undo',
+                          onPressed: onUndo!,
+                        ),
+                        if (!native) const SizedBox(width: 8),
+                      ],
+                      _NotesHeaderMoreMenu(
+                        pinned: pinned,
+                        onTogglePinned: onTogglePinned,
+                        onDelete: onDelete,
+                      ),
+                    ],
+                  ),
                 ),
+                if (native) ...[
+                  const SizedBox(width: 10),
+                  Material(
+                    color: scheme.surfaceContainerHigh,
+                    shape: CircleBorder(
+                      side: BorderSide(color: scheme.outlineVariant),
+                    ),
+                    child: _NotesHeaderAction(
+                      icon: Icons.check_rounded,
+                      tooltip: 'Done',
+                      onPressed: onDone,
+                    ),
+                  ),
+                ],
               ],
             ),
         ],
@@ -461,21 +502,27 @@ class _NotesBackHeaderAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final native = NotesFigmaTokens.nativeNotesLayout(context);
+    final scheme = Theme.of(context).colorScheme;
     return Tooltip(
       message: 'Back',
       child: Material(
-        color: Colors.transparent,
-        shape: const CircleBorder(),
+        color: native ? scheme.surfaceContainerHigh : Colors.transparent,
+        shape: CircleBorder(
+          side: native
+              ? BorderSide(color: scheme.outlineVariant)
+              : BorderSide.none,
+        ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onPressed,
           customBorder: const CircleBorder(),
           hoverColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07),
           child: SizedBox.square(
-            dimension: 48,
+            dimension: native ? 52 : 48,
             child: Icon(
               Icons.arrow_back_rounded,
-              size: 26,
+              size: native ? 28 : 26,
               color: NotesFigmaTokens.iconSecondary(context),
             ),
           ),
@@ -579,10 +626,10 @@ class _NotesHeaderMoreMenu extends StatelessWidget {
         shape: const CircleBorder(),
         clipBehavior: Clip.antiAlias,
         child: SizedBox.square(
-          dimension: 40,
+          dimension: NotesFigmaTokens.nativeNotesLayout(context) ? 48 : 40,
           child: Icon(
             Icons.more_horiz_rounded,
-            size: 19,
+            size: NotesFigmaTokens.nativeNotesLayout(context) ? 26 : 19,
             color: NotesFigmaTokens.iconSecondary(context),
           ),
         ),
@@ -660,8 +707,12 @@ class _NotesHeaderAction extends StatelessWidget {
           customBorder: const CircleBorder(),
           hoverColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07),
           child: SizedBox.square(
-            dimension: 40,
-            child: Icon(icon, size: 17, color: foreground),
+            dimension: NotesFigmaTokens.nativeNotesLayout(context) ? 48 : 40,
+            child: Icon(
+              icon,
+              size: NotesFigmaTokens.nativeNotesLayout(context) ? 26 : 17,
+              color: foreground,
+            ),
           ),
         ),
       ),
@@ -723,8 +774,14 @@ class _NotesTitleBlockState extends State<_NotesTitleBlock> {
         key: ValueKey('notes-editor-title-collapsed-for-keyboard'),
       );
     }
+    final native = NotesFigmaTokens.nativeNotesLayout(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+      padding: EdgeInsets.fromLTRB(
+        native ? 26 : 20,
+        native ? 18 : 4,
+        native ? 26 : 20,
+        native ? 14 : 8,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
