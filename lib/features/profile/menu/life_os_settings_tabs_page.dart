@@ -901,9 +901,7 @@ class _MobileSettingsMotion extends StatelessWidget {
   Widget build(BuildContext context) {
     final topInset = MediaQuery.viewPaddingOf(context).top;
     return Stack(children: [
-      // The fade reveals the SAME settings surface, not the darker shell.
-      Positioned.fill(child: ColoredBox(
-        color: Theme.of(context).colorScheme.surfaceContainerLowest)),
+      Positioned.fill(child: ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerLowest)),
       Positioned.fill(child: ScrollConfiguration(
         behavior: MediaQuery.disableAnimationsOf(context)
             ? ScrollConfiguration.of(context)
@@ -912,14 +910,9 @@ class _MobileSettingsMotion extends StatelessWidget {
           blendMode: BlendMode.dstIn,
           shaderCallback: (bounds) {
             final h = bounds.height;
-            // Fade rows before they reach the title; the first row starts
-            // below this range at the initial scroll position.
             final topStart = ((topInset + 50) / h).clamp(0.0, 0.25).toDouble();
-            final topEnd = ((topInset + 86) / h)
-                .clamp(topStart + 0.01, 0.35).toDouble();
-            // Keep the original, long bottom feather (128 dp).
-            final fadeBottom = (1 - 128 / h)
-                .clamp(topEnd + 0.01, 0.90).toDouble();
+            final topEnd = ((topInset + 86) / h).clamp(topStart + 0.01, 0.35).toDouble();
+            final fadeBottom = (1 - 128 / h).clamp(topEnd + 0.01, 0.90).toDouble();
             return LinearGradient(
               begin: Alignment.topCenter, end: Alignment.bottomCenter,
               stops: [0, topStart, topEnd, fadeBottom, 1],
