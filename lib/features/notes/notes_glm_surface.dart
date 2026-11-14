@@ -314,6 +314,7 @@ class NotesBottomGlassFade extends StatelessWidget {
     this.horizontalPadding = 0,
     this.verticalPadding = 0,
     this.toolbarBottomInset = 8,
+    this.enableBackdropBlur = true,
   });
 
   final Widget child;
@@ -321,6 +322,7 @@ class NotesBottomGlassFade extends StatelessWidget {
   final double horizontalPadding;
   final double verticalPadding;
   final double toolbarBottomInset;
+  final bool enableBackdropBlur;
 
   @override
   Widget build(BuildContext context) {
@@ -355,9 +357,8 @@ class NotesBottomGlassFade extends StatelessWidget {
                     ],
                     stops: [0, 0.22, 0.73, 1],
                   ).createShader(bounds),
-                  child: BackdropFilter(
-                    filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                    child: DecoratedBox(
+                  child: Builder(builder: (context) {
+                    final paperGradient = DecoratedBox(
                       key: const ValueKey('notes-bottom-paper-gradient'),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -373,8 +374,16 @@ class NotesBottomGlassFade extends StatelessWidget {
                         ),
                       ),
                       child: const SizedBox.expand(),
-                    ),
-                  ),
+                    );
+                    // Re-blurring a moving paragraph beneath the Android IME
+                    // dock on every keystroke is expensive on phone GPUs.
+                    return enableBackdropBlur
+                        ? BackdropFilter(
+                            filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                            child: paperGradient,
+                          )
+                        : paperGradient;
+                  }),
                 ),
               ),
             ),
