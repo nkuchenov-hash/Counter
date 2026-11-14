@@ -1,4 +1,5 @@
 import 'package:counter/features/shared/shared_widgets.dart';
+import 'package:counter/features/shared/edit_sheet/record_edit_save_policy.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -102,6 +103,65 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       expect(scheduledRuns, 0);
       gate.dispose();
+    });
+  });
+
+  group('Embedded record Notes autosave time safety', () {
+    DateTime sameUtc(DateTime value) => value.toUtc();
+
+    final start = DateTime.utc(2026, 11, 14, 10, 26);
+    final end = DateTime.utc(2026, 11, 14, 10, 27);
+
+    test('unchanged running record does not reassert running status', () {
+      final patch = buildRecordAutosaveTimePatch(
+        recordIsRunning: true,
+        draftStartDisplay: start,
+        draftEndDisplay: null,
+        originalStartTimeUtc: start,
+        displayToUtc: sameUtc,
+      );
+      expect(patch.startUtc, isNull);
+      expect(patch.endUtc, isNull);
+    });
+
+    test('unchanged stopped interval is not patched during notes edit', () {
+      final patch = buildRecordAutosaveTimePatch(
+        recordIsRunning: false,
+        draftStartDisplay: start,
+        draftEndDisplay: end,
+        originalStartTimeUtc: start,
+        originalEndTimeUtc: end,
+        displayToUtc: sameUtc,
+      );
+      expect(patch.startUtc, isNull);
+      expect(patch.endUtc, isNull);
+    });
+
+    test('edited stopped interval writes both endpoints', () {
+      final changedEnd = end.add(const Duration(minutes: 10));
+      final patch = buildRecordAutosaveTimePatch(
+        recordIsRunning: false,
+        draftStartDisplay: start,
+        draftEndDisplay: changedEnd,
+        originalStartTimeUtc: start,
+        originalEndTimeUtc: end,
+        displayToUtc: sameUtc,
+      );
+      expect(patch.startUtc, start);
+      expect(patch.endUtc, changedEnd);
+    });
+
+    test('invalid stopped interval is never autosaved', () {
+      final patch = buildRecordAutosaveTimePatch(
+        recordIsRunning: false,
+        draftStartDisplay: end,
+        draftEndDisplay: start,
+        originalStartTimeUtc: start,
+        originalEndTimeUtc: end,
+        displayToUtc: sameUtc,
+      );
+      expect(patch.startUtc, isNull);
+      expect(patch.endUtc, isNull);
     });
   });
 }
