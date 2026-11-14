@@ -1,3 +1,9 @@
+## [2026-11-14] — Android embedded Record Notes typing stability [PR verification pending]
+
+- Preserve compact Record edit-sheet layout through transient Gboard IME/selection focus changes; restore metadata only when Notes focus and keyboard are both gone. Avoid keyboard-height/layout oscillation during typing.
+- Let Android EditableText handle native caret visibility in embedded Notes: disable competing custom list-scroll animation. Skip full Notes canvas redraw for transient selection changes during IME composition.
+- Added regression checks for keyboard session handoff, unrelated editor focus, and IME-specific scroll/render guard. This targets typing lag/jumping, not note persistence; Android device smoke remains required.
+
 ## [2026-11-14] — Durable embedded record notes autosave [verification pending]
 
 - Record edit sheet now commits the latest structured Notes document, checklist, and plain text to the optimistic Timeline cache on its debounce and before close; the network writes continue in the background.
