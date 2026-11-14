@@ -262,7 +262,12 @@ jobs:
           "$apksigner" verify --verbose LIFE-OS-Android-arm64.apk >/dev/null
           echo "Verified single canonical package: $actual."
 
+      # PR builds deliberately use the Android debug key because release
+      # secrets are unavailable to pull_request jobs. Do not distribute these
+      # builds as installable updates: Android rejects the certificate mismatch.
+      # Only main builds which passed permanent-signing verification may publish.
       - name: Upload APK artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: counter-android-arm64-release
