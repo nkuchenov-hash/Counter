@@ -821,9 +821,12 @@ class _NotesTitleBlockState extends State<_NotesTitleBlock> {
                 fontSize: native
                   ? NotesFigmaTokens.nativeTitleSize
                   : NotesFigmaTokens.titleSize,
-                height:
-                    NotesFigmaTokens.titleLineHeight /
-                    NotesFigmaTokens.titleSize,
+                height: (native
+                        ? NotesFigmaTokens.nativeTitleLineHeight
+                        : NotesFigmaTokens.titleLineHeight) /
+                    (native
+                        ? NotesFigmaTokens.nativeTitleSize
+                        : NotesFigmaTokens.titleSize),
                 fontWeight: FontWeight.w700,
                 color: NotesFigmaTokens.textSecondary(
                   context,
