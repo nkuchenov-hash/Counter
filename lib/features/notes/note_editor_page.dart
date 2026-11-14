@@ -1784,7 +1784,10 @@ activeType == NoteBlockType.bulletedList
         onPointerDown: _handleEditorPointerDown,
         onPointerUp: _scheduleSecondarySelectionGuardRelease,
         onPointerCancel: _scheduleSecondarySelectionGuardRelease,
-        child: _blockSelectionMode
+        // Nested Android text fields already handle their own selection.
+        // The outer SelectionArea/Actions traverses the full document on IME
+        // edits and competes with the keyboard in Record/Plan sheets.
+        child: _blockSelectionMode || widget.inlineBodyOnly
   ? _buildReorderableBlockList()
   : Focus(
       canRequestFocus: false,
