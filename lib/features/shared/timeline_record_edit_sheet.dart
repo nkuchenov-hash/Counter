@@ -831,9 +831,11 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     // Focus can briefly disappear while Android/Gboard still owns the IME.
     // Keeping the same geometry avoids a full sheet shrink/expand loop during
     // typing, cursor movement, voice typing, and text selection.
-    final notesEditing = _notesEditorFocused ||
-        (_notesImeSessionActive &&
-            MediaQuery.viewInsetsOf(context).bottom > 0);
+    final notesEditing = recordNotesShouldUseCompactChrome(
+      notesFocused: _notesEditorFocused,
+      notesImeSessionActive: _notesImeSessionActive,
+      keyboardInset: MediaQuery.viewInsetsOf(context).bottom,
+    );
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     // ACTIVE_STATUS_LAW: running ⇔ end_time null (UI mirrors Brain).
     final isRunning = widget.record.endTime == null;
