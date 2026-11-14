@@ -67,7 +67,9 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   final FocusNode _notesScopeFocusNode =
       FocusNode(debugLabel: 'record-notes-scope', skipTraversal: true);
   Timer? _notesFocusExitTimer;
-  final EditSheetAutosaveGate _recordAutosaveGate = EditSheetAutosaveGate();
+  final EditSheetAutosaveGate _recordAutosaveGate = EditSheetAutosaveGate(
+    debounce: const Duration(milliseconds: 1500),
+  );
 
   /// True when Save/autosave can PATCH an existing/optimistic row (not past-date create).
   /// Prefer [record.id]; fall back to business `record_id` when fromMap dropped a UUID id.
