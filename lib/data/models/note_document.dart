@@ -187,8 +187,11 @@ class NoteBlock {
   final bool collapsed;
 
   bool get hasText => type.isTextual;
-  String get effectiveText =>
-      runs.isEmpty ? text : runs.map((run) => run.text).join();
+  String get effectiveText {
+    if (runs.isEmpty) return text;
+    if (runs.length == 1) return runs.first.text;
+    return runs.map((run) => run.text).join();
+  }
 
   List<NoteTextRun> get effectiveRuns {
     if (runs.isNotEmpty) return runs;
