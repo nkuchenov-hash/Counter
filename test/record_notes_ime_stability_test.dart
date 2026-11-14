@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_editor_document_controller.dart';
+import 'package:counter/features/notes/note_editor_page.dart';
+import 'package:counter/features/notes/widgets/note_editor_block_widgets.dart';
 import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:counter/features/shared/edit_sheet/record_edit_save_policy.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
@@ -109,6 +111,59 @@ void main() {
     expect(tester.getSize(find.byType(NotesTextBlock)).height,
         greaterThan(NotesFigmaTokens.bodyLineHeight * 3));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('real embedded Notes field survives 4 lines without losing EditableText', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    const blockId = 'android-record-ime-field';
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.android),
+        home: Scaffold(
+          body: SizedBox(
+            height: 650,
+            child: NoteEditorPage(
+              task: PlanningTask(
+                id: 0,
+                planRowId: 'record-typing-regression',
+                title: 'Record',
+                categoryId: CategoryRule.uncategorizedSyntheticId,
+                dateKey: '2026-11-14',
+              ),
+              parityPreview: true,
+              inlineBodyOnly: true,
+              initialDocument: const NoteDocument(blocks: [
+                NoteBlock(id: blockId, type: NoteBlockType.paragraph, text: 'Начало'),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.byType(NotesEditorBlockItem).first);
+    await tester.pump();
+
+    final field = find.byKey(const ValueKey('notes-block-field-$blockId'));
+    expect(field, findsOneWidget);
+    final editable = find.descendant(of: field, matching: find.byType(EditableText));
+    final originalEditable = tester.state<EditableTextState>(editable);
+    for (final text in [
+      'Первая строка',
+      'Первая строка\nВторая',
+      'Первая строка\nВторая\nТретья',
+      'Первая строка\nВторая\nТретья\nЧетвёртая',
+    ]) {
+      await tester.enterText(field, text);
+      await tester.pump();
+      expect(field, findsOneWidget);
+      expect(tester.state<EditableTextState>(editable), same(originalEditable));
+      expect(tester.widget<TextField>(field).controller!.text, text);
+      expect(tester.takeException(), isNull);
+    }
   });
 
   test('Android IME typing keeps composing range without duplicate events', () {
