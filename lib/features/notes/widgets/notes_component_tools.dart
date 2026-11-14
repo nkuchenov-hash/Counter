@@ -453,7 +453,7 @@ class NotesEditorToolbar extends StatelessWidget {
                     ],
                   );
                   final padded = Padding(
-                    padding: const EdgeInsets.symmetric(
+                    padding: EdgeInsets.symmetric(
                       horizontal: native
                           ? 10
                           : NotesFigmaTokens.toolbarHorizontalPadding,
