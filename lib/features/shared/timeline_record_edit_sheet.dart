@@ -62,6 +62,11 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   bool _plansLoading = false;
   bool _plansLoaded = false;
   bool _notesEditorFocused = false;
+  // Android may temporarily move focus out of the field while the software
+  // keyboard or selection overlay is still visible. Preserve the compact
+  // editing geometry for the entire IME session rather than repeatedly
+  // rebuilding record metadata and moving the cursor under the keyboard.
+  bool _notesImeSessionActive = false;
   // Android may briefly move focus through the IME/selection overlay.
   // Keep the compact notes layout until the editor genuinely loses focus.
   final FocusNode _notesScopeFocusNode =
@@ -283,6 +288,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     if (!mounted) return;
     _notesFocusExitTimer?.cancel();
     if (focused) {
+      _notesImeSessionActive = true;
       if (!_notesEditorFocused) {
         setState(() => _notesEditorFocused = true);
       }
@@ -297,6 +303,17 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       }
       setState(() => _notesEditorFocused = false);
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // MediaQuery changes again when the IME finally closes. Only then is it
+    // safe to unlatch an interrupted Android Notes editing session.
+    if (MediaQuery.viewInsetsOf(context).bottom == 0 &&
+        !_notesEditorFocused) {
+      _notesImeSessionActive = false;
+    }
   }
 
   /// Same wall-calendar day as [DatabaseService._profileWallFromUtc] / planning fetch —
@@ -807,7 +824,12 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   Widget build(BuildContext context) {
     // Do not switch the editor geometry on each Android IME inset frame.
     // The focus state is held across transient keyboard/selection changes.
-    final notesEditing = _notesEditorFocused;
+    // Focus can briefly disappear while Android/Gboard still owns the IME.
+    // Keeping the same geometry avoids a full sheet shrink/expand loop during
+    // typing, cursor movement, voice typing, and text selection.
+    final notesEditing = _notesEditorFocused ||
+        (_notesImeSessionActive &&
+            MediaQuery.viewInsetsOf(context).bottom > 0);
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     // ACTIVE_STATUS_LAW: running ⇔ end_time null (UI mirrors Brain).
     final isRunning = widget.record.endTime == null;
