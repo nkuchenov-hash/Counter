@@ -747,17 +747,17 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
         blendMode: BlendMode.dstIn,
         shaderCallback: (bounds) => const LinearGradient(
           begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          stops: [0, 0.45, 1],
+          stops: [0, 0.62, 1],
           colors: [AppNeutralTones.white, AppNeutralTones.white, AppNeutralTones.transparent],
         ).createShader(bounds),
         child: ClipRect(child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: DecoratedBox(
             decoration: BoxDecoration(gradient: LinearGradient(
               begin: Alignment.topCenter, end: Alignment.bottomCenter,
               colors: dark
-                  ? [AppNeutralTones.white.withValues(alpha: 0.09), AppNeutralTones.white.withValues(alpha: 0.0)]
-                  : [scheme.surfaceContainerHigh.withValues(alpha: 0.38), scheme.surfaceContainerHigh.withValues(alpha: 0.0)],
+                  ? [AppNeutralTones.white.withValues(alpha: 0.12), AppNeutralTones.white.withValues(alpha: 0.0)]
+                  : [scheme.surfaceContainerHigh.withValues(alpha: 0.76), scheme.surfaceContainerHigh.withValues(alpha: 0.0)],
             )),
             child: const SizedBox.expand(),
           ),
@@ -898,17 +898,37 @@ class _MobileSettingsMotion extends StatelessWidget {
   final Widget header;
 
   @override
-  Widget build(BuildContext context) => Stack(children: [
-    Positioned.fill(child: ScrollConfiguration(
-      behavior: MediaQuery.disableAnimationsOf(context)
-          ? ScrollConfiguration.of(context)
-          : const _MobileSettingsBounceBehavior(),
-      // Do not fade the page itself: fading rows makes the dark canvas look
-      // like an opaque black curtain above the bottom glass navigation.
-      child: child,
-    )),
-    Positioned(top: 0, left: 0, right: 0, child: header),
-  ]);
+  Widget build(BuildContext context) {
+    final topInset = MediaQuery.viewPaddingOf(context).top;
+    return Stack(children: [
+      Positioned.fill(child: ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerLowest)),
+      Positioned.fill(child: ScrollConfiguration(
+        behavior: MediaQuery.disableAnimationsOf(context)
+            ? ScrollConfiguration.of(context)
+            : const _MobileSettingsBounceBehavior(),
+        child: ShaderMask(
+          blendMode: BlendMode.dstIn,
+          shaderCallback: (bounds) {
+            final h = bounds.height;
+            final topStart = ((topInset + 50) / h).clamp(0.0, 0.25).toDouble();
+            final topEnd = ((topInset + 86) / h).clamp(topStart + 0.01, 0.35).toDouble();
+            final fadeBottom = (1 - 128 / h).clamp(topEnd + 0.01, 0.90).toDouble();
+            return LinearGradient(
+              begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              stops: [0, topStart, topEnd, fadeBottom, 1],
+              colors: const [
+                AppNeutralTones.transparent, AppNeutralTones.transparent,
+                AppNeutralTones.white, AppNeutralTones.white,
+                AppNeutralTones.transparent,
+              ],
+            ).createShader(bounds);
+          },
+          child: child,
+        ),
+      )),
+      Positioned(top: 0, left: 0, right: 0, child: header),
+    ]);
+  }
 }
 
 class _MobileSettingsBounceBehavior extends MaterialScrollBehavior {
