@@ -64,6 +64,15 @@ void main() {
     expect(record, contains('_handleNotesEditorFocusChanged'));
     expect(record, contains('_notesScopeFocusNode.hasFocus'));
     expect(record, contains('final notesEditing = _notesEditorFocused;'));
+    // Nested TextFields preserve native Android selection/IME; the expensive
+    // document-wide SelectionArea is only needed by standalone Notes.
+    expect(editor, contains('child: _blockSelectionMode || widget.inlineBodyOnly'));
+    expect(editor, contains('child: SelectionArea('));
+    expect(record, contains('debounce: const Duration(milliseconds: 1500)'));
+    final planning = File(
+      'lib/features/shared/planning_task_edit_sheet.dart',
+    ).readAsStringSync();
+    expect(planning, contains('debounce: const Duration(milliseconds: 1500)'));
     expect(host, contains('return Padding('));
     expect(host, isNot(contains('return AnimatedPadding(')));
   });
