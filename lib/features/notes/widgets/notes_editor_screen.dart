@@ -448,7 +448,7 @@ class _NotesNavigationHeader extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: native
                         ? scheme.surfaceContainerHigh.withValues(alpha: 0.96)
-                        : Colors.transparent,
+                        : scheme.surface.withValues(alpha: 0),
                     borderRadius: BorderRadius.circular(999),
                     border: native
                         ? Border.all(color: scheme.outlineVariant)
@@ -507,7 +507,9 @@ class _NotesBackHeaderAction extends StatelessWidget {
     return Tooltip(
       message: 'Back',
       child: Material(
-        color: native ? scheme.surfaceContainerHigh : Colors.transparent,
+        color: native
+            ? scheme.surfaceContainerHigh
+            : scheme.surface.withValues(alpha: 0),
         shape: CircleBorder(
           side: native
               ? BorderSide(color: scheme.outlineVariant)
