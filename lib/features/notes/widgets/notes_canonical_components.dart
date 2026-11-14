@@ -94,7 +94,9 @@ class NotesTextEditingController extends TextEditingController {
     required bool withComposing,
   }) {
     final baseStyle = style ?? const TextStyle();
-    if (_runs.isEmpty || _runs.map((run) => run.text).join() != text) {
+    if (_runs.isEmpty || (_runs.length == 1
+        ? _runs.first.text != text
+        : _runs.map((run) => run.text).join() != text)) {
       return TextSpan(style: baseStyle, text: text);
     }
     return TextSpan(

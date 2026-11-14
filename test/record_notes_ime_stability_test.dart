@@ -31,6 +31,15 @@ void main() {
     expect(notifications, 1);
     expect(controller.text, 'Привет!');
     expect(controller.value.composing, composing);
+    final editedRuns = applyNoteTextEditToRuns(
+      oldText: 'Привет',
+      oldRuns: const [NoteTextRun(
+        text: 'Привет', marks: NoteInlineMarks(bold: true))],
+      newText: controller.text,
+    );
+    expect(editedRuns, hasLength(1));
+    expect(editedRuns.single.text, 'Привет!');
+    expect(editedRuns.single.marks.bold, isTrue);
 
     // Explicit formatting changes still repaint once.
     controller.setRuns(
@@ -64,6 +73,16 @@ void main() {
     expect(record, contains('_handleNotesEditorFocusChanged'));
     expect(record, contains('_notesScopeFocusNode.hasFocus'));
     expect(record, contains('final notesEditing = _notesEditorFocused;'));
+    // Nested TextFields preserve native Android selection/IME; the expensive
+    // document-wide SelectionArea is only needed by standalone Notes.
+    expect(editor, contains('child: _blockSelectionMode || (widget.inlineBodyOnly &&'));
+    expect(editor, contains('Theme.of(context).platform == TargetPlatform.android'));
+    expect(editor, contains('child: SelectionArea('));
+    expect(record, contains('debounce: const Duration(milliseconds: 1500)'));
+    final planning = File(
+      'lib/features/shared/planning_task_edit_sheet.dart',
+    ).readAsStringSync();
+    expect(planning, contains('debounce: const Duration(milliseconds: 1500)'));
     expect(host, contains('return Padding('));
     expect(host, isNot(contains('return AnimatedPadding(')));
   });

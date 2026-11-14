@@ -93,6 +93,34 @@ void main() {
       expect(editedRuns.last.marks.link, 'https://example.com');
     });
 
+    test('single-run IME edits keep formatting without per-character diff', () {
+      const marks = NoteInlineMarks(bold: true, link: 'https://example.com');
+      var oldText = 'Набор заметки';
+      var runs = <NoteTextRun>[const NoteTextRun(
+        text: 'Набор заметки', marks: marks,
+      )];
+      for (final next in <String>[
+        'Набор заметки!',
+        'Набор заметки!!',
+        'Набор заМетки!!',
+        'Набор заметки!!',
+        'Набор заметки!',
+        'Набор заметки',
+      ]) {
+        runs = applyNoteTextEditToRuns(
+          oldText: oldText, oldRuns: runs, newText: next);
+        expect(runs, hasLength(1));
+        expect(runs.single.text, next);
+        expect(runs.single.marks.bold, isTrue);
+        expect(runs.single.marks.link, 'https://example.com');
+        oldText = next;
+      }
+      final block = NoteBlock(
+        id: 'mobile-ime', type: NoteBlockType.paragraph,
+        text: oldText, runs: runs);
+      expect(block.effectiveText, 'Набор заметки');
+    });
+
     test('persists table, callout, link, and Life OS references', () {
       final document = NoteDocument(
         blocks: [
