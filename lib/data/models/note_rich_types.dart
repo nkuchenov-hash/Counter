@@ -283,6 +283,18 @@ List<NoteTextRun> applyNoteTextEditToRuns({
   if (oldText == newText) return List<NoteTextRun>.unmodifiable(oldRuns);
   if (newText.isEmpty) return const <NoteTextRun>[];
 
+  // Most typing happens inside one consistently formatted run. In this case
+  // every insertion, deletion and IME composition keeps the same marks, so
+  // avoid scanning both full strings and slicing/merging the document per key.
+  if (oldRuns.length == 1 && oldRuns.first.text == oldText) {
+    return <NoteTextRun>[
+      NoteTextRun(text: newText, marks: oldRuns.first.marks),
+    ];
+  }
+  if (oldRuns.isEmpty && oldText.isEmpty) {
+    return <NoteTextRun>[NoteTextRun(text: newText)];
+  }
+
   final normalizedRuns =
       oldRuns.isNotEmpty && oldRuns.map((run) => run.text).join() == oldText
       ? oldRuns
