@@ -196,9 +196,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
   void _scheduleSave([String? _]) {
     _dirty = true;
-    // Embedded Record/Plan editors own their save lifecycle. Publish the
-    // canonical NoteDocument immediately so an immediate outer Save cannot
-    // miss the user's latest keystroke; the host still debounces network I/O.
+    // Embedded hosts receive the latest draft immediately; network sync is debounced.
     if (widget.onDocumentChanged != null) {
       _syncToBrain();
       return;
@@ -1784,9 +1782,7 @@ activeType == NoteBlockType.bulletedList
         onPointerDown: _handleEditorPointerDown,
         onPointerUp: _scheduleSecondarySelectionGuardRelease,
         onPointerCancel: _scheduleSecondarySelectionGuardRelease,
-        // Nested Android text fields already handle their own selection.
-        // The outer SelectionArea/Actions traverses the full document on IME
-        // edits and competes with the keyboard in Record/Plan sheets.
+        // Embedded Android fields use native selection, not global SelectionArea.
         child: _blockSelectionMode || widget.inlineBodyOnly
   ? _buildReorderableBlockList()
   : Focus(
