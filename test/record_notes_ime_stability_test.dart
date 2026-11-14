@@ -31,6 +31,15 @@ void main() {
     expect(notifications, 1);
     expect(controller.text, 'Привет!');
     expect(controller.value.composing, composing);
+    final editedRuns = applyNoteTextEditToRuns(
+      oldText: 'Привет',
+      oldRuns: const [NoteTextRun(
+        text: 'Привет', marks: NoteInlineMarks(bold: true))],
+      newText: controller.text,
+    );
+    expect(editedRuns, hasLength(1));
+    expect(editedRuns.single.text, 'Привет!');
+    expect(editedRuns.single.marks.bold, isTrue);
 
     // Explicit formatting changes still repaint once.
     controller.setRuns(
