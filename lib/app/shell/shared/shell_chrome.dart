@@ -282,6 +282,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                               }
                               return PhoneShellBottomNavigation(
                                 viewportWidth: constraints.maxWidth,
+                                seamlessGlass: settingsGlass,
                                 selectedIndex: navBarSelectedIndex,
                                 onDestinationSelected: onShellTabSelected,
                               );
