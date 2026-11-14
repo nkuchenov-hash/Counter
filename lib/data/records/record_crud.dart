@@ -1,11 +1,5 @@
 part of '../database_service.dart';
 
-// Serialize PATCH writes per record. Network writes dispatched by rapid Notes
-// autosaves must reach PocketBase in the same order as local revisions.
-// This queue is network-only: record UI updates remain fully optimistic.
-final Map<String, Future<void>> _recordPatchNetworkTails =
-    <String, Future<void>>{};
-
 extension RecordCrudExtension on DatabaseService {
   Future<Map<String, dynamic>> _buildRecordPatchUpdates({
     String? title,
@@ -89,36 +83,6 @@ extension RecordCrudExtension on DatabaseService {
       }
     }
     return updates;
-  }
-
-  Future<bool> _patchRecordUpdateNetworkPhase({
-    required String originalInput,
-    required String resolvedPbId,
-    required String businessId,
-    required Map<String, dynamic> updates,
-    Map<String, dynamic>? rollbackRow,
-    int rollbackIndex = -1,
-  }) async {
-    final previous = _recordPatchNetworkTails[resolvedPbId];
-    final released = Completer<void>();
-    final tail = released.future;
-    _recordPatchNetworkTails[resolvedPbId] = tail;
-    try {
-      if (previous != null) await previous;
-      return await _patchRecordUpdateNetworkPhaseInOrder(
-        originalInput: originalInput,
-        resolvedPbId: resolvedPbId,
-        businessId: businessId,
-        updates: updates,
-        rollbackRow: rollbackRow,
-        rollbackIndex: rollbackIndex,
-      );
-    } finally {
-      if (identical(_recordPatchNetworkTails[resolvedPbId], tail)) {
-        _recordPatchNetworkTails.remove(resolvedPbId);
-      }
-      released.complete();
-    }
   }
 
   Future<bool> _patchRecordUpdateNetworkPhaseInOrder({
