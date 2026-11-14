@@ -223,7 +223,7 @@ class NotesEditorBlockItem extends StatelessWidget {
       case NoteBlockType.heading:
         return Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: kNotesContentInset,
+            horizontal: notesContentHorizontalInset(context),
             vertical: notesTextBlockPadding(context),
           ),
           child: selectableText(),
@@ -250,9 +250,9 @@ class NotesEditorBlockItem extends StatelessWidget {
               );
         return Padding(
           padding: EdgeInsets.fromLTRB(
-            kNotesContentInset,
+            notesContentHorizontalInset(context),
             notesTextBlockPadding(context, list: true),
-            kNotesContentInset,
+            notesContentHorizontalInset(context),
             notesTextBlockPadding(context, list: true),
           ),
           child: Row(
@@ -279,9 +279,9 @@ class NotesEditorBlockItem extends StatelessWidget {
             : style;
         return Padding(
           padding: EdgeInsets.fromLTRB(
-            kNotesContentInset,
+            notesContentHorizontalInset(context),
             notesTextBlockPadding(context, list: true),
-            kNotesContentInset,
+            notesContentHorizontalInset(context),
             notesTextBlockPadding(context, list: true),
           ),
           child: Row(
@@ -332,7 +332,7 @@ class NotesEditorBlockItem extends StatelessWidget {
         final scheme = Theme.of(context).colorScheme;
         return Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: kNotesContentInset,
+            horizontal: notesContentHorizontalInset(context),
             vertical: notesTextBlockPadding(context),
           ),
           child: DecoratedBox(
@@ -498,7 +498,7 @@ class NotesEditorBlockItem extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: kNotesContentInset,
+        horizontal: notesContentHorizontalInset(context),
         vertical: kNotesBlockVerticalPadding,
       ),
       child: Column(
