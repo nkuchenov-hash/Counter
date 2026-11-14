@@ -56,6 +56,8 @@ abstract final class NotesFigmaTokens {
 
   // Android handset Notes reference: readable controls and a stable dock.
   // Desktop/web keep their existing Figma dimensions.
+  static const double nativeTitleSize = 28;
+  static const double nativeTitleLineHeight = 36;
   static const double nativeToolbarHeight = 58;
   static const double nativeToolbarRadius = 29;
   static const double nativeToolbarButtonSize = 48;
