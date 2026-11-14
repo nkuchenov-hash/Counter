@@ -130,12 +130,14 @@ class _NotesActiveIndicatorFrame extends StatelessWidget {
   const _NotesActiveIndicatorFrame({
     required this.state,
     required this.child,
-    this.topInset = 12,
+    this.topInset = 14,
+    this.indicatorHeight = NotesFigmaTokens.bodySize,
   });
 
   final NotesBlockState state;
   final Widget child;
   final double topInset;
+  final double indicatorHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -147,7 +149,7 @@ class _NotesActiveIndicatorFrame extends StatelessWidget {
             key: const ValueKey('notes-active-indicator'),
             left: 8,
             top: topInset,
-            bottom: 12,
+            height: indicatorHeight,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: NotesFigmaTokens.borderSubtle(context),
