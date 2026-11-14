@@ -54,6 +54,20 @@ abstract final class NotesFigmaTokens {
   static const double toolbarButtonRadius = 8;
   static const double toolbarIconSize = 20;
 
+  // Android handset Notes reference: readable controls and a stable dock.
+  // Desktop/web keep their existing Figma dimensions.
+  static const double nativeToolbarHeight = 58;
+  static const double nativeToolbarRadius = 29;
+  static const double nativeToolbarButtonSize = 48;
+  static const double nativeToolbarIconSize = 26;
+  static const double nativeParagraphVerticalPadding = 14;
+  static const double nativeListVerticalPadding = 6;
+  static const double nativeSectionGap = 14;
+
+  static bool nativeNotesLayout(BuildContext context) =>
+      Theme.of(context).platform == TargetPlatform.android &&
+      MediaQuery.sizeOf(context).width < 600;
+
   static const double floatingMenuRadius = 16;
   static const double glassBlur = 4;
   static const double floatingMenuBlur = 24;
