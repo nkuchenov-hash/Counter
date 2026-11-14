@@ -72,6 +72,14 @@ void main() {
     expect(editor, isNot(contains('Future<void>.delayed(const Duration(milliseconds: 180)')));
     expect(record, contains('_handleNotesEditorFocusChanged'));
     expect(record, contains('_notesScopeFocusNode.hasFocus'));
+    // Gboard focus interruptions must not expand/collapse Record chrome while
+    // the Notes keyboard is present; keep the native EditableText in charge.
+    expect(record, contains('recordNotesShouldUseCompactChrome('));
+    expect(record, contains('_notesImeSessionActive'));
+    expect(editor, contains('Theme.of(context).platform == TargetPlatform.android'));
+    expect(editor, contains('composing.isValid &&'));
+    expect(editor, contains('!composing.isCollapsed'));
+    expect(editor, contains('_ensureBlockVisible(block.id);'));
     expect(record, contains('final notesEditing = _notesEditorFocused;'));
     // Nested TextFields preserve native Android selection/IME; the expensive
     // document-wide SelectionArea is only needed by standalone Notes.
