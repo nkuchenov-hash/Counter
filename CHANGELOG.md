@@ -1,3 +1,10 @@
+## [2026-11-14] — Durable embedded record notes autosave [verification pending]
+
+- Record edit sheet now commits the latest structured Notes document, checklist, and plain text to the optimistic Timeline cache on its debounce and before close; the network writes continue in the background.
+- Network PATCH updates for the same record are serialized to preserve successive note revisions instead of racing on PocketBase.
+- Notes-only autosaves skip unchanged start/end times, preventing a metadata edit from reasserting `status=running` after a timer has stopped. Intentional stopped-interval edits still send both endpoints.
+- Added targeted tests for unchanged running/stopped intervals, changed intervals, and invalid draft times. No schema or design-system changes; Android and web verification required before release.
+
 ## [2026-11-14] — Viktor adjacent Timeline record resizing [candidate; verification pending]
 
 * Added model-approved `resize_adjacent_records` tool, exact server-owned Record IDs in `read_day_records`, strict typed proposal contract, preview/approval and two-boundary atomic PocketBase route `/api/viktor/records/resize-adjacent`. First record shortens, second starts at released time without changing its end; client verifies server results.
