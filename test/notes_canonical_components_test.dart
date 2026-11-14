@@ -80,6 +80,43 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('mobile Notes dock prioritizes working camera, pen and checklist', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    var checked = 0;
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData(platform: TargetPlatform.android),
+      home: Scaffold(
+        body: Center(
+          child: NotesEditorToolbarHost(
+            activeBlock: const NoteBlock(id: 'test', type: NoteBlockType.paragraph),
+            onHeading: () {},
+            onBody: () {},
+            onQuote: () {},
+            onList: () {},
+            onChecklist: () => checked++,
+            onTable: () {},
+            onDrawing: () {},
+            onImage: () {},
+            onAudio: () {},
+          ),
+        ),
+      ),
+    ));
+    final text = find.byKey(const ValueKey('notes-toolbar-text'));
+    final camera = find.byKey(const ValueKey('notes-toolbar-image'));
+    final pen = find.byKey(const ValueKey('notes-toolbar-drawing'));
+    final check = find.byKey(const ValueKey('notes-toolbar-checklist'));
+    expect(tester.getTopLeft(text).dx, lessThan(tester.getTopLeft(camera).dx));
+    expect(tester.getTopLeft(camera).dx, lessThan(tester.getTopLeft(pen).dx));
+    expect(tester.getTopLeft(pen).dx, lessThan(tester.getTopLeft(check).dx));
+    await tester.tap(check);
+    expect(checked, 1);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Android Notes paragraph gaps exceed within-list gaps', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
