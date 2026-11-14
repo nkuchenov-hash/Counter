@@ -89,6 +89,8 @@ RecordAutosaveTimePatch buildRecordAutosaveTimePatch({
   required bool recordIsRunning,
   required DateTime? draftStartDisplay,
   required DateTime? draftEndDisplay,
+  DateTime? originalStartTimeUtc,
+  DateTime? originalEndTimeUtc,
   required DateTime Function(DateTime display) displayToUtc,
 }) {
   if (draftStartDisplay == null) {
@@ -96,6 +98,12 @@ RecordAutosaveTimePatch buildRecordAutosaveTimePatch({
   }
   final startUtc = displayToUtc(draftStartDisplay).toUtc();
   if (recordIsRunning) {
+    // Notes/title edits must not reassert status=running by PATCHing an
+    // unchanged start_time after another device or action stopped the timer.
+    if (originalStartTimeUtc != null &&
+        originalStartTimeUtc.toUtc().isAtSameMomentAs(startUtc)) {
+      return const RecordAutosaveTimePatch();
+    }
     return RecordAutosaveTimePatch(startUtc: startUtc);
   }
   if (draftEndDisplay == null) {
@@ -103,6 +111,14 @@ RecordAutosaveTimePatch buildRecordAutosaveTimePatch({
   }
   final endUtc = displayToUtc(draftEndDisplay).toUtc();
   if (!endUtc.isAfter(startUtc)) {
+    return const RecordAutosaveTimePatch();
+  }
+  // Do not PATCH the unchanged interval during note autosave. When either
+  // endpoint changes, send both so a stopped record stays stopped.
+  if (originalStartTimeUtc != null &&
+      originalEndTimeUtc != null &&
+      originalStartTimeUtc.toUtc().isAtSameMomentAs(startUtc) &&
+      originalEndTimeUtc.toUtc().isAtSameMomentAs(endUtc)) {
     return const RecordAutosaveTimePatch();
   }
   return RecordAutosaveTimePatch(startUtc: startUtc, endUtc: endUtc);

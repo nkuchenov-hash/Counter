@@ -129,5 +129,36 @@ void main() {
       final parsed = NoteDocument.tryParse(notesDeltaJson: doc.encode());
       expect(parsed.meta.pinned, isTrue);
     });
+    test('stale legacy checklist status does not duplicate a Notes block', () {
+      final persisted = NoteDocument(
+        blocks: [
+          NoteBlock(
+            id: 'checked-1',
+            type: NoteBlockType.checklist,
+            text: 'Checklist item',
+            checked: true,
+          ),
+        ],
+      );
+      final parsed = NoteDocument.tryParse(
+        notesDeltaJson: persisted.encode(),
+        checklist: [
+          {'text': 'Checklist item', 'done': false},
+        ],
+      );
+      expect(parsed.blocks.length, 1);
+      expect(parsed.blocks.single.checked, isTrue);
+    });
+
+    test('legacy record checklist respects isDone storage key', () {
+      final parsed = NoteDocument.tryParse(
+        checklist: [
+          {'text': 'Archived item', 'isDone': true},
+        ],
+      );
+      expect(parsed.blocks.length, 1);
+      expect(parsed.blocks.single.checked, isTrue);
+    });
+
   });
 }

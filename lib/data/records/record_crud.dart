@@ -85,7 +85,7 @@ extension RecordCrudExtension on DatabaseService {
     return updates;
   }
 
-  Future<bool> _patchRecordUpdateNetworkPhase({
+  Future<bool> _patchRecordUpdateNetworkPhaseInOrder({
     required String originalInput,
     required String resolvedPbId,
     required String businessId,
