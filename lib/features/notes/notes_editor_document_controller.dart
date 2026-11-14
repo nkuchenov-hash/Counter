@@ -81,15 +81,19 @@ class NotesEditorDocumentController {
   NotesEditorMutation applyTextInput(
     String id,
     String newText,
-    TextSelection selection,
-  ) {
+    TextSelection selection, {
+    bool preserveLineBreaks = false,
+  }) {
     final block = blockById(id);
     if (block == null || !isEditableText(block.type)) {
       return const NotesEditorMutation();
     }
     activeBlockId = id;
     activeSelection = selection;
-    if (newText.contains('\n')) {
+    // Android's IME must finish applying each multiline edit to the same
+    // EditableText. Splitting blocks inside onChanged detaches the field
+    // while Gboard still holds an active composing/caret transaction.
+    if (!preserveLineBreaks && newText.contains('\n')) {
       return _replaceWithSplitLines(block, newText, selection);
     }
     if (newText == block.effectiveText) {
