@@ -541,8 +541,9 @@ class NoteDocument {
         .toList();
     if (legacy.isEmpty) return document;
 
-    String keyFor(NoteBlock block) =>
-        '${block.checked ? 1 : 0}|${block.effectiveText.trim()}';
+    // The structured document owns the checked state. A stale legacy
+    // projection must not reintroduce the same item with its old state.
+    String keyFor(NoteBlock block) => block.effectiveText.trim();
 
     final existing = document.blocks
         .where((block) => block.type == NoteBlockType.checklist)
@@ -561,7 +562,7 @@ class NoteDocument {
     if (checklist != null) {
       for (final item in checklist) {
         final text = item['text']?.toString().trim() ?? '';
-        final checked = _jsonBool(item['done'], false);
+        final checked = _jsonBool(item['done'] ?? item['isDone'], false);
         if (text.isEmpty && !checked) continue;
         blocks.add(
           NoteBlock(
