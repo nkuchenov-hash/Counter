@@ -70,13 +70,16 @@ void main() {
     expect(nav, contains('AppNeutralTones.white.withValues(alpha: 0.23)'));
     expect(nav, contains('SafeArea('));
     expect(settings, contains('class _GlassySettingsBackButton'));
-    expect(settings, contains('ImageFilter.blur(sigmaX: 20, sigmaY: 20)'));
+    expect(settings, contains('ImageFilter.blur(sigmaX: 16, sigmaY: 16)'));
+    expect(settings, contains('stops: [0, 0.62, 1]'));
+    expect(settings, contains('sigmaX: 16, sigmaY: 16'));
     // Pinned header is a Stack sibling of the scrolling viewport.
     expect(settings, contains('header: _mobilePinnedHeader()'));
     expect(settings, contains('Widget _mobilePinnedHeader()'));
     expect(settings, contains('return SizedBox('));
     expect(settings, contains('color: dark'));
-    expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.09)'));
+    expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.12)'));
+    expect(settings, contains('scheme.surfaceContainerHigh.withValues(alpha: 0.76)'));
     expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.29)'));
     expect(settings, contains('ImageFilter.blur(sigmaX: 18, sigmaY: 18)'));
     expect(settings, contains('height: topInset + 80'));
@@ -87,9 +90,12 @@ void main() {
     expect(settings, contains('EdgeInsets.fromLTRB(4, 14, 0, 5)'));
     expect(settings, isNot(contains('EdgeInsets.fromLTRB(5, 22, 0, 9)')));
     expect(settings, isNot(contains('scheme.surfaceContainerLowest.withValues(alpha: 0.98)')));
-    // The page remains fully opaque; glass belongs to the navigation layers.
-    expect(settings, isNot(contains('final fadeStart =')));
-    expect(settings, isNot(contains('final fadeBottom =')));
+    // Both feathered edges reveal the exact Settings surface, not the shell.
+    expect(settings, contains('final topStart = ((topInset + 50) / h)'));
+    expect(settings, contains('final topEnd = ((topInset + 86) / h)'));
+    expect(settings, contains('final fadeBottom = (1 - 128 / h)'));
+    expect(settings, contains('stops: [0, topStart, topEnd, fadeBottom, 1]'));
+    expect(settings, contains('Theme.of(context).colorScheme.surfaceContainerLowest'));
     expect(settings, isNot(contains('final fadeClear =')));
     expect(settings, contains('child: child,'));
     expect(nav, contains('Positioned.fill(child: IgnorePointer(child: ShaderMask('));
