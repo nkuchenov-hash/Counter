@@ -466,7 +466,6 @@ return cleaned;
         .join('\n');
     return _normalizeClipboardStructure(normalizedLines);
   }
-
   bool _structuredClipboardMatchesSystemText(String plain) {
     final candidate = _NotesStructuredClipboard.plainText;
     final blocks = _NotesStructuredClipboard.blocks;
@@ -512,7 +511,6 @@ lines.add(value);
     }
     return lines.join('\n');
   }
-
   bool _copyCurrentStructuredSelection() {
     if (_blockSelectionMode) return false;
     final blocks = _NotesStructuredClipboard.blocks;
@@ -548,7 +546,6 @@ item,
       buttonItems: items,
     );
   }
-
   bool _deleteCurrentStructuredSelection() {
     if (_editingBlockId != null || _blockSelectionMode) return false;
     final slices = _NotesStructuredClipboard.blocks;
@@ -593,7 +590,6 @@ item,
     });
     return true;
   }
-
   KeyEventResult _onSelectionAreaKeyEvent(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     if (event.logicalKey != LogicalKeyboardKey.delete &&
@@ -643,7 +639,6 @@ item,
     }
     _applyMutation(mutation);
   }
-
   KeyEventResult _onBlockKeyEvent(NoteBlock block, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     final controller = _textControllerFor(block);
@@ -693,7 +688,6 @@ item,
     }
     return KeyEventResult.ignored;
   }
-
   /// SelectionArea exposes plain text only. Flutter concatenates selected child
   /// contents without inventing a delimiter, so locate that exact substring in
   /// contiguous Notes text blocks and retain the matching block slices.
@@ -715,7 +709,6 @@ item,
     _NotesStructuredClipboard.plainText =
         _structuredClipboardExportText(frozen);
   }
-
   List<NoteBlock> _inferStructuredSelectionBlocks(String plain) {
     if (plain.isEmpty) return const <NoteBlock>[];
     final textBlocks = <NoteBlock>[
@@ -787,7 +780,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
               );
             }
           }
-
           // A single selected text fragment should behave like normal clipboard
           // text. Structure matters once selection crosses a block boundary.
           if (slices.length >= 2) {
