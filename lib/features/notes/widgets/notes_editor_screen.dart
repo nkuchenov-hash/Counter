@@ -801,9 +801,16 @@ class _NotesTitleBlockState extends State<_NotesTitleBlock> {
             ),
             onChanged: widget.onChanged,
             style: TextStyle(
-              fontSize: NotesFigmaTokens.titleSize,
+              fontSize: native
+                  ? NotesFigmaTokens.nativeTitleSize
+                  : NotesFigmaTokens.titleSize,
               height:
-                  NotesFigmaTokens.titleLineHeight / NotesFigmaTokens.titleSize,
+                  (native
+                      ? NotesFigmaTokens.nativeTitleLineHeight
+                      : NotesFigmaTokens.titleLineHeight) /
+                  (native
+                      ? NotesFigmaTokens.nativeTitleSize
+                      : NotesFigmaTokens.titleSize),
               fontWeight: FontWeight.w700,
               letterSpacing: -0.5,
               color: NotesFigmaTokens.textPrimary(context),
@@ -811,7 +818,9 @@ class _NotesTitleBlockState extends State<_NotesTitleBlock> {
             decoration: InputDecoration(
               hintText: widget.hintText,
               hintStyle: TextStyle(
-                fontSize: NotesFigmaTokens.titleSize,
+                fontSize: native
+                  ? NotesFigmaTokens.nativeTitleSize
+                  : NotesFigmaTokens.titleSize,
                 height:
                     NotesFigmaTokens.titleLineHeight /
                     NotesFigmaTokens.titleSize,
