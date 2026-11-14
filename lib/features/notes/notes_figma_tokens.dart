@@ -66,9 +66,11 @@ abstract final class NotesFigmaTokens {
   static const double nativeListVerticalPadding = 6;
   static const double nativeSectionGap = 14;
 
+  // Only subscribe to width; Gboard animates the viewport *height* and
+  // must not rebuild every paragraph just to recompute fixed layout tokens.
   static bool nativeNotesLayout(BuildContext context) =>
       Theme.of(context).platform == TargetPlatform.android &&
-      MediaQuery.sizeOf(context).width < 600;
+      MediaQuery.widthOf(context) < 600;
 
   static const double floatingMenuRadius = 16;
   static const double glassBlur = 4;
