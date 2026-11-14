@@ -100,6 +100,8 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     recordIsRunning: widget.record.endTime == null,
     draftStartDisplay: _startDisplay,
     draftEndDisplay: _endDisplay,
+    originalStartTimeUtc: widget.record.startTime,
+    originalEndTimeUtc: widget.record.endTime,
     displayToUtc: displayToUtc,
   );
 
@@ -170,6 +172,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     DateTime? startUtc,
     DateTime? endUtc,
     int? categoryId,
+    String? notesDeltaSnapshot,
   }) async {
     if (!_isPersistedRecord) return;
     await DatabaseService.instance.updateRecord(
@@ -179,7 +182,8 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       endTime: endUtc,
       categoryId: categoryId ?? _categoryId,
       note: noteText,
-      notesDeltaJson: _recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode(),
+      notesDeltaJson: notesDeltaSnapshot ??
+          (_recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode()),
       checklist: checklistPayload,
       syncSourcePlan: planPatch.sync,
       clearSourcePlan: planPatch.clear,
@@ -188,39 +192,51 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     );
   }
 
-  void _onRecordFieldChanged({bool immediate = false}) {
+  // Commit the latest embedded Notes document to the local Brain before
+  // starting background sync. Closing the sheet must not discard the draft.
+  void _commitRecordAutosave() {
     if (!_isPersistedRecord) return;
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
+    final noteText = _recordNoteDocument.toPlainText().trim();
+    final notesDeltaSnapshot =
+        _recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode();
+    final checklistPayload = _checklistForApi();
+    final planPatch = _sourcePlanPatchArgs();
+    final timePatch = _autosaveTimePatch();
 
-    // Keep keystrokes sheet-local. The Brain/Timeline is updated once when the
-    // debounce fires (or immediately for discrete controls), not on every char.
+    _applyRecordLocalEdit(
+      title: title,
+      noteText: noteText,
+      checklistPayload: checklistPayload,
+      planPatch: planPatch,
+      startUtc: timePatch.startUtc,
+      endUtc: timePatch.endUtc,
+    );
+    unawaited(
+      _syncRecordToNetwork(
+        title: title,
+        noteText: noteText,
+        notesDeltaSnapshot: notesDeltaSnapshot,
+        checklistPayload: checklistPayload,
+        planPatch: planPatch,
+        startUtc: timePatch.startUtc,
+        endUtc: timePatch.endUtc,
+      ),
+    );
+  }
+
+  void _onRecordFieldChanged({bool immediate = false}) {
+    if (!_isPersistedRecord) return;
+    if (_titleController.text.trim().isEmpty) return;
+
+    // Avoid Timeline rebuilding on every keystroke. Publish once per debounce,
+    // and commit synchronously before leaving the sheet.
     _recordAutosaveGate.markDirty();
-    void syncLatest() {
-      final tTitle = _titleController.text.trim();
-      if (tTitle.isEmpty) return;
-      final tNote = _recordNoteDocument.toPlainText().trim();
-      final tChecklist = _checklistForApi();
-      final tPlanPatch = _sourcePlanPatchArgs();
-      final tTimePatch = _autosaveTimePatch();
-      final tStartUtc = tTimePatch.startUtc;
-      final tEndUtc = tTimePatch.endUtc;
-      unawaited(
-        _syncRecordToNetwork(
-          title: tTitle,
-          noteText: tNote,
-          checklistPayload: tChecklist,
-          planPatch: tPlanPatch,
-          startUtc: tStartUtc,
-          endUtc: tEndUtc,
-        ),
-      );
-    }
-
     if (immediate) {
-      _recordAutosaveGate.flush(syncLatest);
+      _recordAutosaveGate.flush(_commitRecordAutosave);
     } else {
-      _recordAutosaveGate.schedule(syncLatest);
+      _recordAutosaveGate.schedule(_commitRecordAutosave);
     }
   }
 
@@ -516,26 +532,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   @override
   void dispose() {
     if (_isPersistedRecord) {
-      _recordAutosaveGate.flush(() {
-        final title = _titleController.text.trim();
-        if (title.isEmpty) return;
-        final noteText = _recordNoteDocument.toPlainText().trim();
-        final checklistPayload = _checklistForApi();
-        final planPatch = _sourcePlanPatchArgs();
-        final timePatch = _autosaveTimePatch();
-        final startUtc = timePatch.startUtc;
-        final endUtc = timePatch.endUtc;
-        unawaited(
-          _syncRecordToNetwork(
-            title: title,
-            noteText: noteText,
-            checklistPayload: checklistPayload,
-            planPatch: planPatch,
-            startUtc: startUtc,
-            endUtc: endUtc,
-          ),
-        );
-      }, force: _recordAutosaveGate.isDirty);
+      _recordAutosaveGate.flush(_commitRecordAutosave);
     }
     _recordAutosaveGate.dispose();
     _notesFocusExitTimer?.cancel();
