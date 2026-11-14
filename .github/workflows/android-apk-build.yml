@@ -83,6 +83,13 @@ jobs:
           flutter-version: '3.41.6'
           channel: stable
 
+      # Cached Gradle distributions, dependencies and compiled build state.
+      # Read the shared main-branch cache from PRs; only main writes it.
+      - name: Restore Gradle build cache
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+
       - name: Create env.dart
         run: |
           mkdir -p lib/core/env
