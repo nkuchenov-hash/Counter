@@ -17,11 +17,13 @@ class ShellCompactBottomNav extends StatelessWidget {
     required this.selectedIndex,
     required this.onDestinationSelected,
     required this.viewportWidth,
+    this.seamlessGlass = false,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final double viewportWidth;
+  final bool seamlessGlass;
 
   static const double _iconSize = 24;
   static const double _labelFontSize = 11;
@@ -96,7 +98,9 @@ class ShellCompactBottomNav extends StatelessWidget {
                   AppNeutralTones.transparent,
                   dark
                       ? AppNeutralTones.white.withValues(alpha: 0.12)
-                      : bg.withValues(alpha: 0.76),
+                      : seamlessGlass
+                          ? scheme.surfaceContainerLowest.withValues(alpha: 0.30)
+                          : bg.withValues(alpha: 0.76),
                 ],
               )),
               child: const SizedBox.expand(),
