@@ -157,14 +157,16 @@ class _Keycap extends StatelessWidget {
 
 /// Neutral settings page shell: soft background + centered max width.
 class AppSettingsPageBody extends StatelessWidget {
-  const AppSettingsPageBody({super.key, required this.children});
+  const AppSettingsPageBody({super.key, required this.children,
+    this.transparentBackground = false});
   final List<Widget> children;
+  final bool transparentBackground;
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
     return ColoredBox(
-      color: scheme.surfaceContainerLowest,
+      color: transparentBackground ? AppNeutralTones.transparent : scheme.surfaceContainerLowest,
       child: ListView(
         padding: EdgeInsets.only(
           top: desktop ? 16 : 20,

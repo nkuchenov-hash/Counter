@@ -58,7 +58,12 @@ void main() {
     expect(chrome, contains('systemStatusBarContrastEnforced: false'));
     expect(File('lib/main.dart').readAsStringSync(),
         contains('SystemUiMode.edgeToEdge'));
-    expect(chrome, contains('extendBody: !desktopShell'));
+    expect(chrome, contains('extendBody: settingsGlass'));
+    expect(chrome, contains('backgroundColor: settingsGlass'));
+    expect(chrome, contains('systemNavigationBarColor: settingsGlass'));
+    expect(chrome, contains('seamlessGlass: settingsGlass'));
+    expect(nav, contains('seamlessGlass'));
+    expect(nav, contains('scheme.surfaceContainerLowest.withValues(alpha: 0.30)'));
     expect(chrome, contains('statusBarIconBrightness: desktopShell ||'));
     expect(chrome, contains('scheme.brightness == Brightness.light'));
     expect(chrome, contains('systemNavigationBarIconBrightness:'));
@@ -78,8 +83,9 @@ void main() {
     expect(settings, contains('Widget _mobilePinnedHeader()'));
     expect(settings, contains('return SizedBox('));
     expect(settings, contains('color: dark'));
-    expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.12)'));
-    expect(settings, contains('scheme.surfaceContainerHigh.withValues(alpha: 0.76)'));
+    expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.09)'));
+    expect(settings, contains('scheme.surface.withValues(alpha: 0.30)'));
+    expect(settings, isNot(contains('scheme.surfaceContainerHigh.withValues(alpha: 0.76)')));
     expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.29)'));
     expect(settings, contains('ImageFilter.blur(sigmaX: 18, sigmaY: 18)'));
     expect(settings, contains('height: topInset + 80'));
@@ -90,14 +96,16 @@ void main() {
     expect(settings, contains('EdgeInsets.fromLTRB(4, 14, 0, 5)'));
     expect(settings, isNot(contains('EdgeInsets.fromLTRB(5, 22, 0, 9)')));
     expect(settings, isNot(contains('scheme.surfaceContainerLowest.withValues(alpha: 0.98)')));
-    // Both feathered edges reveal the exact Settings surface, not the shell.
-    expect(settings, contains('final topStart = ((topInset + 50) / h)'));
-    expect(settings, contains('final topEnd = ((topInset + 86) / h)'));
-    expect(settings, contains('final fadeBottom = (1 - 128 / h)'));
-    expect(settings, contains('stops: [0, topStart, topEnd, fadeBottom, 1]'));
+    // Keep real scrolling content behind both blur surfaces; fading the
+    // whole ListView produces opaque-looking slabs instead of frosted glass.
+    final motion = settings.split('class _MobileSettingsMotion').last
+        .split('class _MobileSettingsBounceBehavior').first;
+    expect(motion, isNot(contains('ShaderMask(')));
+    expect(motion, contains('child: child,'));
+    expect(settings, contains('AppSettingsPageBody(transparentBackground: true'));
+    expect(layout, contains('this.transparentBackground = false'));
+    expect(layout, contains('transparentBackground ? AppNeutralTones.transparent'));
     expect(settings, contains('Theme.of(context).colorScheme.surfaceContainerLowest'));
-    expect(settings, isNot(contains('final fadeClear =')));
-    expect(settings, contains('child: child,'));
     expect(nav, contains('Positioned.fill(child: IgnorePointer(child: ShaderMask('));
     expect(settings, contains("key: ValueKey(_mobileDetailOpen ? 'detail-"));
     expect(settings, isNot(contains('for (final top in [true, false])')));
@@ -109,6 +117,14 @@ void main() {
     expect(settings, contains('const SizedBox(height: 116)'));
     expect(settings, isNot(contains('height: top ? 30 : 52')));
     expect(layout, contains('MediaQuery.paddingOf(context).bottom'));
+  });
+
+  testWidgets('mobile settings list leaves the actual glass backdrop visible', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body:
+      AppSettingsPageBody(transparentBackground: true, children: [Text('Settings')]))));
+    final surface = tester.widget<ColoredBox>(find.descendant(
+      of: find.byType(AppSettingsPageBody), matching: find.byType(ColoredBox)).first);
+    expect(surface.color, Colors.transparent);
   });
 
   group('single settings navigation', () {

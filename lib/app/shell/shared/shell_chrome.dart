@@ -84,6 +84,8 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
             final desktopShell =
                 shellFormFactorForWidth(MediaQuery.sizeOf(context).width) ==
                 ShellFormFactor.desktop;
+            final settingsGlass = !desktopShell &&
+                (shellPageIndex == 5 || shellPageIndex == 7);
             final builtTabs = kShellDeferHiddenTabsUntilFirstFrame
                 ? 1
                 : pages.length;
@@ -111,7 +113,8 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                       systemNavigationBarIconBrightness:
                           scheme.brightness == Brightness.light
                               ? Brightness.dark : Brightness.light,
-                      systemNavigationBarColor: scheme.surface,
+                      systemNavigationBarColor: settingsGlass
+                            ? scheme.surfaceContainerLowest : scheme.surface,
                     ),
                     child: Listener(
                       behavior: HitTestBehavior.translucent,
@@ -121,11 +124,11 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                       child: ShellLayoutScope(
                         controller: shellLayout,
                         child: Scaffold(
-                          backgroundColor: scheme.surface,
+                          backgroundColor: settingsGlass
+                              ? scheme.surfaceContainerLowest : scheme.surface,
                           resizeToAvoidBottomInset: true,
                           // Let Settings content scroll underneath the frosted bottom bar.
-                          extendBody: !desktopShell &&
-                              (shellPageIndex == 5 || shellPageIndex == 7),
+                          extendBody: settingsGlass,
                           // Keep identical app chrome across every desktop destination.
                           appBar: desktopShell || (!desktopShell && shellPageIndex <= 3)
                               ? AppBar(
@@ -279,6 +282,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                               }
                               return PhoneShellBottomNavigation(
                                 viewportWidth: constraints.maxWidth,
+                                seamlessGlass: settingsGlass,
                                 selectedIndex: navBarSelectedIndex,
                                 onDestinationSelected: onShellTabSelected,
                               );
