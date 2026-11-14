@@ -69,9 +69,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   String? _rruleCustomRaw;
   late final TextEditingController _rruleCustomController;
   late final PlanningTask _baselineTask;
-  final EditSheetAutosaveGate _planAutosaveGate = EditSheetAutosaveGate(
-    debounce: const Duration(milliseconds: 1500),
-  );
+  final _planAutosaveGate = EditSheetAutosaveGate(debounce: const Duration(milliseconds: 1500));
   final RecurrenceEditScopeGate _recurrenceScopeGate = RecurrenceEditScopeGate();
   Timer? _titleAssistDebounce;
 
