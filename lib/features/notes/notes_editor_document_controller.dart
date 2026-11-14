@@ -81,15 +81,19 @@ class NotesEditorDocumentController {
   NotesEditorMutation applyTextInput(
     String id,
     String newText,
-    TextSelection selection,
-  ) {
+    TextSelection selection, {
+    bool preserveLineBreaks = false,
+  }) {
     final block = blockById(id);
     if (block == null || !isEditableText(block.type)) {
       return const NotesEditorMutation();
     }
     activeBlockId = id;
     activeSelection = selection;
-    if (newText.contains('\n')) {
+    // Android's IME must finish applying each multiline edit to the same
+    // EditableText. Splitting blocks inside onChanged detaches the field
+    // while Gboard still holds an active composing/caret transaction.
+    if (!preserveLineBreaks && newText.contains('\n')) {
       return _replaceWithSplitLines(block, newText, selection);
     }
     if (newText == block.effectiveText) {
@@ -296,13 +300,11 @@ class NotesEditorDocumentController {
       }
       offset += part.length + 1;
     }
-
     final index = _indexOf(block.id);
     final nextBlocks = List<NoteBlock>.from(blocks)
       ..removeAt(index)
       ..insertAll(index, replacement);
     _commitDocument(_document.copyWith(blocks: nextBlocks));
-
     final focus = _focusForSplit(parts, selection.extentOffset);
     final focusBlock = replacement[focus.$1];
     activeBlockId = focusBlock.id;
@@ -315,7 +317,6 @@ class NotesEditorDocumentController {
     if (index < 0) return const NotesEditorMutation();
     final block = blocks[index];
     if (!isEditableText(block.type)) return const NotesEditorMutation();
-
     if (block.type != NoteBlockType.paragraph) {
       final converted = block.copyWith(
         type: NoteBlockType.paragraph,
@@ -327,7 +328,6 @@ class NotesEditorDocumentController {
       activeSelection = const TextSelection.collapsed(offset: 0);
       return _focusMutation(converted.id, activeSelection!);
     }
-
     var previousIndex = index - 1;
     while (previousIndex >= 0 && !isEditableText(blocks[previousIndex].type)) {
       previousIndex--;

@@ -84,9 +84,14 @@ class NotesTextBlock extends StatelessWidget {
         ),
       ),
     );
+    final markerHeight = textStyle.fontSize ?? NotesFigmaTokens.bodySize;
+    final lineHeight = markerHeight * (textStyle.height ?? 1);
     return _NotesActiveIndicatorFrame(
       state: state,
-      topInset: style == NotesTextBlockStyle.h1 ? 18 : 12,
+      // Align the marker to the first actual text line, not the entire block.
+      topInset: kNotesBlockVerticalPadding +
+          (lineHeight - markerHeight) / 2,
+      indicatorHeight: markerHeight,
       child: semanticLabel == null
           ? textField
           : Semantics(label: semanticLabel, textField: true, child: textField),

@@ -1,3 +1,10 @@
+## [2026-11-14] — Embedded Android Record Notes multiline input and marker [CI pending]
+
+- Fix Android Gboard record-note typing jank: keep Enter/newline edits in the same mounted EditableText instead of splitting the document into new NoteBlocks in an active IME transaction; keep standalone editor block splitting unchanged.
+- Prevent selection-only caret transitions from rebuilding the entire embedded Notes canvas during Gboard typing.
+- Anchor the active block indicator to the first text line and clamp its height to the actual font size, including multi-line paragraphs, lists, and headings.
+- Add regression tests for editing through lines 3 and 4 with stable block identity and no forced rebuild/focus handoff, plus a real widget check of indicator height. Device validation pending.
+
 ## [2026-11-14] — Android embedded Record Notes typing stability [PR verification pending]
 
 - Preserve compact Record edit-sheet layout through transient Gboard IME/selection focus changes; restore metadata only when Notes focus and keyboard are both gone. Avoid keyboard-height/layout oscillation during typing.

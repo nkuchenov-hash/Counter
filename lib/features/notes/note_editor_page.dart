@@ -252,15 +252,14 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         _lastSelections[block.id] = next;
         _editor.updateSelection(block.id, next);
         if (!mounted || _editor.activeBlockId != block.id) return;
-        // Gboard can transiently change selection while composing a word.
-        // Rebuilding the entire Notes canvas at that point fights the IME.
-        final composing = controller.value.composing;
+        // Gboard switches between collapsed, composing, and selection
+        // ranges while typing. The TextField owns those updates; rebuilding
+        // the whole Notes editor for a caret change is unnecessary and can
+        // interrupt native multiline input in the embedded Android sheet.
         final androidEmbeddedIme = widget.inlineBodyOnly &&
             Theme.of(context).platform == TargetPlatform.android;
-        if (previous?.isCollapsed != next.isCollapsed &&
-            !(androidEmbeddedIme &&
-                composing.isValid &&
-                !composing.isCollapsed)) {
+        if (!androidEmbeddedIme &&
+            previous?.isCollapsed != next.isCollapsed) {
           setState(() {});
         }
       });
@@ -419,6 +418,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       block.id,
       value,
       controller.selection,
+      preserveLineBreaks: widget.inlineBodyOnly &&
+          Theme.of(context).platform == TargetPlatform.android,
     );
     if (mutation.changed && !mutation.requiresRebuild) {
       final updated = _editor.blockById(block.id);
@@ -465,7 +466,6 @@ return cleaned;
         .join('\n');
     return _normalizeClipboardStructure(normalizedLines);
   }
-
   bool _structuredClipboardMatchesSystemText(String plain) {
     final candidate = _NotesStructuredClipboard.plainText;
     final blocks = _NotesStructuredClipboard.blocks;
@@ -511,7 +511,6 @@ lines.add(value);
     }
     return lines.join('\n');
   }
-
   bool _copyCurrentStructuredSelection() {
     if (_blockSelectionMode) return false;
     final blocks = _NotesStructuredClipboard.blocks;
@@ -547,7 +546,6 @@ item,
       buttonItems: items,
     );
   }
-
   bool _deleteCurrentStructuredSelection() {
     if (_editingBlockId != null || _blockSelectionMode) return false;
     final slices = _NotesStructuredClipboard.blocks;
@@ -592,7 +590,6 @@ item,
     });
     return true;
   }
-
   KeyEventResult _onSelectionAreaKeyEvent(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     if (event.logicalKey != LogicalKeyboardKey.delete &&
@@ -642,7 +639,6 @@ item,
     }
     _applyMutation(mutation);
   }
-
   KeyEventResult _onBlockKeyEvent(NoteBlock block, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     final controller = _textControllerFor(block);
@@ -669,6 +665,13 @@ item,
       return KeyEventResult.handled;
     }
     if (event.logicalKey == LogicalKeyboardKey.enter) {
+      // Let the Android TextField insert a newline into the active block.
+      // Replacing blocks in this key event destroys the IME's current
+      // editing connection before it finishes its transaction.
+      if (widget.inlineBodyOnly &&
+          Theme.of(context).platform == TargetPlatform.android) {
+        return KeyEventResult.ignored;
+      }
       final mutation = _editor.handleEnter(block.id, selection);
       if (!mutation.changed) return KeyEventResult.ignored;
       _applyMutation(mutation);
@@ -685,7 +688,6 @@ item,
     }
     return KeyEventResult.ignored;
   }
-
   /// SelectionArea exposes plain text only. Flutter concatenates selected child
   /// contents without inventing a delimiter, so locate that exact substring in
   /// contiguous Notes text blocks and retain the matching block slices.
@@ -707,7 +709,6 @@ item,
     _NotesStructuredClipboard.plainText =
         _structuredClipboardExportText(frozen);
   }
-
   List<NoteBlock> _inferStructuredSelectionBlocks(String plain) {
     if (plain.isEmpty) return const <NoteBlock>[];
     final textBlocks = <NoteBlock>[
@@ -779,7 +780,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
               );
             }
           }
-
           // A single selected text fragment should behave like normal clipboard
           // text. Structure matters once selection crosses a block boundary.
           if (slices.length >= 2) {

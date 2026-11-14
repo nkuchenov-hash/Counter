@@ -41,6 +41,10 @@ class NotesEditorBody extends StatelessWidget {
           child: NotesBottomGlassFade(
             height: embedded ? 78 : 86,
             toolbarBottomInset: embedded ? 14 : 8,
+            // Keep the same feather gradient, but skip the GPU blur on
+            // embedded Android where every typed line repaints behind it.
+            enableBackdropBlur: !(embedded &&
+                Theme.of(context).platform == TargetPlatform.android),
             child: RepaintBoundary(
               child: Align(
                 alignment: Alignment.bottomCenter,

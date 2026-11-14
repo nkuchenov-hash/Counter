@@ -16,6 +16,29 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('embedded Android Notes feather avoids live GPU backdrop blur', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.android),
+        home: const Scaffold(
+          body: SizedBox(
+            width: 390,
+            height: 320,
+            child: NotesEditorBody(
+              embedded: true,
+              content: ColoredBox(color: Colors.white, child: SizedBox.expand()),
+              toolbar: SizedBox(width: 220, height: 48),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(find.byType(BackdropFilter), findsNothing);
+    expect(find.byKey(const ValueKey('notes-feathered-bottom-fade')), findsOneWidget);
+    expect(find.byKey(const ValueKey('notes-bottom-paper-gradient')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('embedded Notes sheet is rounded with breathing room for ghost actions', (tester) async {
     final title = TextEditingController(text: 'Test note');
     addTearDown(title.dispose);
