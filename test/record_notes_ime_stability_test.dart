@@ -66,12 +66,11 @@ void main() {
     );
     final lines = <String>[
       'Первая строка',
-      'Первая строка\\nВторая строка',
-      'Первая строка\\nВторая строка\\nТретья строка',
-      'Первая строка\\nВторая строка\\nТретья строка\\nЧетвёртая',
+      'Первая строка\nВторая строка',
+      'Первая строка\nВторая строка\nТретья строка',
+      'Первая строка\nВторая строка\nТретья строка\nЧетвёртая',
     ];
-    for (final source in lines) {
-      final text = source.replaceAll(r'\\n', '\\n');
+    for (final text in lines) {
       final mutation = editor.applyTextInput(
         id,
         text,
@@ -89,7 +88,7 @@ void main() {
   });
 
   testWidgets('active marker never stretches to the third text line', (tester) async {
-    final controller = TextEditingController(text: 'One\\nTwo\\nThree');
+    final controller = TextEditingController(text: 'One\nTwo\nThree');
     addTearDown(controller.dispose);
     await tester.pumpWidget(
       MaterialApp(
