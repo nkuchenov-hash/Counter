@@ -80,7 +80,7 @@ void main() {
     expect(editor, contains('composing.isValid &&'));
     expect(editor, contains('!composing.isCollapsed'));
     expect(editor, contains('_ensureBlockVisible(block.id);'));
-    expect(record, contains('final notesEditing = _notesEditorFocused;'));
+    expect(record, contains('final notesEditing = recordNotesShouldUseCompactChrome('));
     // Nested TextFields preserve native Android selection/IME; the expensive
     // document-wide SelectionArea is only needed by standalone Notes.
     expect(editor, contains('child: _blockSelectionMode || (widget.inlineBodyOnly &&'));
