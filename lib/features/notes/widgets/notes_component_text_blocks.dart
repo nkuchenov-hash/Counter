@@ -45,7 +45,7 @@ class NotesTextBlock extends StatelessWidget {
     final verticalPadding = notesTextBlockPadding(context);
     final textField = Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: kNotesContentInset,
+        horizontal: notesContentHorizontalInset(context),
         vertical: verticalPadding,
       ),
       child: TextField(
