@@ -355,7 +355,8 @@ class NotesEditorToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewportWidth = MediaQuery.sizeOf(context).width;
+    // The Android IME animates height; toolbar geometry only needs width.
+    final viewportWidth = MediaQuery.widthOf(context);
     final width = math.min(
       NotesFigmaTokens.toolbarWidth,
       math.max(0.0, viewportWidth - 40),
