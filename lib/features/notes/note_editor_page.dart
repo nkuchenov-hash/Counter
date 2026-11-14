@@ -1501,7 +1501,8 @@ _editor.insertAfter(
   }
 
   Widget _buildBlock(BuildContext context, int index) {
-    final block = _editor.visibleBlocks[index];
+    final blocks = _editor.visibleBlocks;
+    final block = blocks[index];
     final editable = NotesEditorDocumentController.isEditableText(block.type);
     final focusNode = editable ? _focusNodeFor(block) : null;
     final active = !_blockSelectionMode && _editor.activeBlockId == block.id;
@@ -1509,6 +1510,7 @@ _editor.insertAfter(
       block: block,
       index: index,
       numberedOrdinal: _numberedOrdinal(index),
+      previousBlockType: index > 0 ? blocks[index - 1].type : null,
       active: active,
       editing: editable && !_blockSelectionMode && _editingBlockId == block.id,
       textController: editable ? _textControllerFor(block) : null,
@@ -1634,7 +1636,6 @@ child: _NotesBlockMoreButton(
       ],
     );
   }
-
   void _undoLastEdit() {
     final mutation = _editor.undo();
     if (!mutation.changed) return;
@@ -1645,7 +1646,6 @@ child: _NotesBlockMoreButton(
     _editingBlockId = null;
     _applyMutation(mutation);
   }
-
   void _togglePinned() {
     final brain = DatabaseService.instance;
     brain.toggleNotePin(_task.planRowIdForBackend);
