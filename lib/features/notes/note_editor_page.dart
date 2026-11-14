@@ -253,7 +253,17 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         _lastSelections[block.id] = next;
         _editor.updateSelection(block.id, next);
         if (!mounted || _editor.activeBlockId != block.id) return;
-        if (previous?.isCollapsed != next.isCollapsed) setState(() {});
+        // Gboard can transiently change selection while composing a word.
+        // Rebuilding the entire Notes canvas at that point fights the IME.
+        final composing = controller.value.composing;
+        final androidEmbeddedIme = widget.inlineBodyOnly &&
+            Theme.of(context).platform == TargetPlatform.android;
+        if (previous?.isCollapsed != next.isCollapsed &&
+            !(androidEmbeddedIme &&
+                composing.isValid &&
+                !composing.isCollapsed)) {
+          setState(() {});
+        }
       });
       return controller;
     });
@@ -282,7 +292,13 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         if (_editingBlockId != block.id || activeChanged) {
           setState(() => _editingBlockId = block.id);
         }
-        _ensureBlockVisible(block.id);
+        // Android EditableText already brings the caret above the keyboard.
+        // A second scroll animation on the containing ReorderableListView
+        // competes with it and causes the record sheet to jump on focus.
+        if (!(widget.inlineBodyOnly &&
+            Theme.of(context).platform == TargetPlatform.android)) {
+          _ensureBlockVisible(block.id);
+        }
       });
       return node;
     });
