@@ -497,7 +497,7 @@ class NotesEditorBlockItem extends StatelessWidget {
         : null;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
+      padding: EdgeInsets.symmetric(
         horizontal: notesContentHorizontalInset(context),
         vertical: kNotesBlockVerticalPadding,
       ),
