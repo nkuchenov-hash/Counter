@@ -1,3 +1,10 @@
+## [2026-11-14] — Android Notes native reference layout (CI/device verification pending)
+
+- Android handset Notes editor now follows the supplied reference screenshots: 26dp text inset, 28sp title, relaxed paragraph spacing, tighter list rows, and defined gaps between paragraph/list types. The same canonical blocks render in standalone Notes and embedded Record Notes.
+- Native touch toolbar uses a 58dp rounded capsule, 48dp touch targets, 26dp icons, horizontal scrolling for additional tools, and an opaque surface instead of an expensive live blur. The keyboard and edit body still have one scroll owner; no extra focus/scroll animation was introduced.
+- Standalone Android editor header now groups its functional Undo/More controls in a capsule, with separate rounded Back and Done actions. Existing actions remain wired; no decorative or non-working buttons.
+- Added mobile widget coverage for reference geometry, tool sizing/scrolling, menu controls, and preserved dark/desktop styles. Physical Android device smoke required before claiming fully native smoothness.
+
 ## [2026-11-14] — Embedded Android Record Notes multiline input and marker [CI pending]
 
 - Fix Android Gboard record-note typing jank: keep Enter/newline edits in the same mounted EditableText instead of splitting the document into new NoteBlocks in an active IME transaction; keep standalone editor block splitting unchanged.

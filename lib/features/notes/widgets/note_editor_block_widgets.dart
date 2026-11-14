@@ -35,12 +35,18 @@ class _NotesBlockHoldDragStartListener extends ReorderableDragStartListener {
 /// Only the block that currently owns keyboard focus is an EditableText. Other
 /// text blocks render as normal RichText inside the page SelectionArea, so a
 /// desktop mouse drag can select continuously across paragraphs/list items.
+bool _isCompactNotesList(NoteBlockType type) =>
+    type == NoteBlockType.bulletedList ||
+    type == NoteBlockType.numberedList ||
+    type == NoteBlockType.checklist;
+
 class NotesEditorBlockItem extends StatelessWidget {
   NotesEditorBlockItem({
     Key? key,
     required this.block,
     required this.index,
     required this.numberedOrdinal,
+    this.previousBlockType,
     required this.active,
     required this.editing,
     required this.onTap,
@@ -61,6 +67,7 @@ class NotesEditorBlockItem extends StatelessWidget {
   final NoteBlock block;
   final int index;
   final int numberedOrdinal;
+  final NoteBlockType? previousBlockType;
   final bool active;
   final bool editing;
   final VoidCallback onTap;
@@ -122,6 +129,21 @@ class NotesEditorBlockItem extends StatelessWidget {
       );
     }
 
+    // Add section spacing inside the existing keyed block; never replace
+    // the Android EditableText just because its layout or focus changes.
+    final previous = previousBlockType;
+    if (previous != null && NotesFigmaTokens.nativeNotesLayout(context)) {
+      final wasList = _isCompactNotesList(previous);
+      final isList = _isCompactNotesList(block.type);
+      if (wasList != isList || (isList && previous != block.type)) {
+        interactive = Padding(
+          padding: const EdgeInsets.only(
+            top: NotesFigmaTokens.nativeSectionGap,
+          ),
+          child: interactive,
+        );
+      }
+    }
     return interactive;
   }
 
@@ -200,9 +222,9 @@ class NotesEditorBlockItem extends StatelessWidget {
       case NoteBlockType.paragraph:
       case NoteBlockType.heading:
         return Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: kNotesContentInset,
-            vertical: kNotesBlockVerticalPadding,
+          padding: EdgeInsets.symmetric(
+            horizontal: notesContentHorizontalInset(context),
+            vertical: notesTextBlockPadding(context),
           ),
           child: selectableText(),
         );
@@ -227,11 +249,11 @@ class NotesEditorBlockItem extends StatelessWidget {
                 ),
               );
         return Padding(
-          padding: const EdgeInsets.fromLTRB(
-            kNotesContentInset,
-            10,
-            kNotesContentInset,
-            10,
+          padding: EdgeInsets.fromLTRB(
+            notesContentHorizontalInset(context),
+            notesTextBlockPadding(context, list: true),
+            notesContentHorizontalInset(context),
+            notesTextBlockPadding(context, list: true),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,11 +278,11 @@ class NotesEditorBlockItem extends StatelessWidget {
               )
             : style;
         return Padding(
-          padding: const EdgeInsets.fromLTRB(
-            kNotesContentInset,
-            10,
-            kNotesContentInset,
-            10,
+          padding: EdgeInsets.fromLTRB(
+            notesContentHorizontalInset(context),
+            notesTextBlockPadding(context, list: true),
+            notesContentHorizontalInset(context),
+            notesTextBlockPadding(context, list: true),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,9 +331,9 @@ class NotesEditorBlockItem extends StatelessWidget {
       case NoteBlockType.quote:
         final scheme = Theme.of(context).colorScheme;
         return Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: kNotesContentInset,
-            vertical: kNotesBlockVerticalPadding,
+          padding: EdgeInsets.symmetric(
+            horizontal: notesContentHorizontalInset(context),
+            vertical: notesTextBlockPadding(context),
           ),
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -475,8 +497,8 @@ class NotesEditorBlockItem extends StatelessWidget {
         : null;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: kNotesContentInset,
+      padding: EdgeInsets.symmetric(
+        horizontal: notesContentHorizontalInset(context),
         vertical: kNotesBlockVerticalPadding,
       ),
       child: Column(

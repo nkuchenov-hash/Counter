@@ -1,6 +1,7 @@
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:flutter/material.dart';
 
@@ -101,8 +102,8 @@ class _NotesEditorToolbarHostState extends State<NotesEditorToolbarHost> {
   Widget build(BuildContext context) {
     final type = widget.activeBlock?.type;
     final convertible = type != null && _isConvertibleText(type);
-    final toolbar = NotesEditorToolbar(
-      actions: [
+    final native = NotesFigmaTokens.nativeNotesLayout(context);
+    final actions = <NotesToolbarAction>[
         NotesToolbarAction(
           tool: NotesToolbarTool.heading,
           icon: Icons.title_rounded,
@@ -168,6 +169,15 @@ class _NotesEditorToolbarHostState extends State<NotesEditorToolbarHost> {
             ),
           ],
         ),
+        if (native)
+          NotesToolbarAction(
+            tool: NotesToolbarTool.checklist,
+            icon: Icons.check_circle_outline_rounded,
+            tooltip: 'Checklist',
+            selected: type == NoteBlockType.checklist,
+            enabled: convertible,
+            onPressed: widget.onChecklist,
+          ),
         NotesToolbarAction(
           tool: NotesToolbarTool.table,
           icon: Icons.table_chart_rounded,
@@ -205,8 +215,25 @@ class _NotesEditorToolbarHostState extends State<NotesEditorToolbarHost> {
           enabled: widget.onAudio != null,
           onPressed: widget.onAudio ?? _noop,
         ),
-      ],
-    );
+    ];
+    // Camera, pen, checklist, and tables are immediately reachable like the
+    // reference editor. Desktop retains the existing established tool order.
+    if (native) {
+      const order = <NotesToolbarTool>[
+        NotesToolbarTool.text,
+        NotesToolbarTool.image,
+        NotesToolbarTool.drawing,
+        NotesToolbarTool.checklist,
+        NotesToolbarTool.table,
+        NotesToolbarTool.list,
+        NotesToolbarTool.heading,
+        NotesToolbarTool.quote,
+        NotesToolbarTool.audio,
+      ];
+      actions.sort((a, b) =>
+          order.indexOf(a.tool).compareTo(order.indexOf(b.tool)));
+    }
+    final toolbar = NotesEditorToolbar(actions: actions);
     final showOptions = widget.onMore;
     if (showOptions == null || widget.activeBlock == null) return toolbar;
     return GestureDetector(

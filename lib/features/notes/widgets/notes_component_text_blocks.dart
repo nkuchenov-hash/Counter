@@ -42,10 +42,11 @@ class NotesTextBlock extends StatelessWidget {
     if (controller is NotesTextEditingController) {
       (controller as NotesTextEditingController).linkColor = scheme.primary;
     }
+    final verticalPadding = notesTextBlockPadding(context);
     final textField = Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: kNotesContentInset,
-        vertical: kNotesBlockVerticalPadding,
+      padding: EdgeInsets.symmetric(
+        horizontal: notesContentHorizontalInset(context),
+        vertical: verticalPadding,
       ),
       child: TextField(
         key: textFieldKey,
@@ -89,8 +90,7 @@ class NotesTextBlock extends StatelessWidget {
     return _NotesActiveIndicatorFrame(
       state: state,
       // Align the marker to the first actual text line, not the entire block.
-      topInset: kNotesBlockVerticalPadding +
-          (lineHeight - markerHeight) / 2,
+      topInset: verticalPadding + (lineHeight - markerHeight) / 2,
       indicatorHeight: markerHeight,
       child: semanticLabel == null
           ? textField
@@ -267,12 +267,13 @@ class _NotesLeadingTextRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final baseStyle = _notesTextStyle(context, NotesTextBlockStyle.body);
+    final verticalPadding = notesTextBlockPadding(context, list: true);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        kNotesContentInset,
-        10,
-        kNotesContentInset,
-        10,
+      padding: EdgeInsets.fromLTRB(
+        notesContentHorizontalInset(context),
+        verticalPadding,
+        notesContentHorizontalInset(context),
+        verticalPadding,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

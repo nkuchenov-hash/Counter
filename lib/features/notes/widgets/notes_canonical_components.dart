@@ -45,6 +45,18 @@ const double kNotesContentInset = NotesFigmaTokens.editorContentInset;
 const double kNotesBlockVerticalPadding = 12;
 const double kNotesLeadingSize = 20;
 const double kNotesLeadingGap = 10;
+double notesContentHorizontalInset(BuildContext context) =>
+    NotesFigmaTokens.nativeNotesLayout(context) ? 26 : kNotesContentInset;
+
+double notesTextBlockPadding(BuildContext context, {bool list = false}) {
+  if (!NotesFigmaTokens.nativeNotesLayout(context)) {
+    return list ? 10 : kNotesBlockVerticalPadding;
+  }
+  return list
+      ? NotesFigmaTokens.nativeListVerticalPadding
+      : NotesFigmaTokens.nativeParagraphVerticalPadding;
+}
+
 const double kNotesToolbarButtonSize = NotesFigmaTokens.toolbarButtonSize;
 const double kNotesMenuRadius = NotesFigmaTokens.floatingMenuRadius;
 

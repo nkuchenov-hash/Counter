@@ -54,6 +54,10 @@ class NotesToolbarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final native = NotesFigmaTokens.nativeNotesLayout(context);
+    final buttonSize = native
+        ? NotesFigmaTokens.nativeToolbarButtonSize
+        : NotesFigmaTokens.toolbarButtonSize;
     final foreground = selected
         ? NotesFigmaTokens.selectedIcon(context)
         : enabled
@@ -82,10 +86,12 @@ class NotesToolbarButton extends StatelessWidget {
               NotesFigmaTokens.toolbarButtonRadius,
             ),
             child: SizedBox.square(
-              dimension: NotesFigmaTokens.toolbarButtonSize,
+              dimension: buttonSize,
               child: Icon(
                 icon,
-                size: NotesFigmaTokens.toolbarIconSize,
+                size: native
+                    ? NotesFigmaTokens.nativeToolbarIconSize
+                    : NotesFigmaTokens.toolbarIconSize,
                 color: foreground,
               ),
             ),
@@ -132,11 +138,13 @@ class _NotesToolbarMenuButtonState extends State<_NotesToolbarMenuButton> {
     final buttonTopLeft = overlayRenderObject.globalToLocal(
       buttonRenderObject.localToGlobal(Offset.zero),
     );
-    final menuHeight =
-        widget.action.menuItems.length * kNotesToolbarButtonSize;
+    final menuButtonSize = NotesFigmaTokens.nativeNotesLayout(context)
+        ? NotesFigmaTokens.nativeToolbarButtonSize
+        : kNotesToolbarButtonSize;
+    final menuHeight = widget.action.menuItems.length * menuButtonSize;
     final maxLeft = math.max(
       0.0,
-      overlayRenderObject.size.width - kNotesToolbarButtonSize,
+      overlayRenderObject.size.width - menuButtonSize,
     );
     final left = buttonTopLeft.dx.clamp(0.0, maxLeft).toDouble();
     final top = math.max(
@@ -148,7 +156,7 @@ class _NotesToolbarMenuButtonState extends State<_NotesToolbarMenuButton> {
       builder: (_) => Positioned(
         left: left,
         top: top,
-        width: kNotesToolbarButtonSize,
+        width: menuButtonSize,
         height: menuHeight,
         child: TapRegion(
           groupId: _tapRegionGroup,
@@ -264,8 +272,11 @@ class _NotesCompactToolbarMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final menuButtonSize = NotesFigmaTokens.nativeNotesLayout(context)
+        ? NotesFigmaTokens.nativeToolbarButtonSize
+        : kNotesToolbarButtonSize;
     return SizedBox(
-      width: kNotesToolbarButtonSize,
+      width: menuButtonSize,
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(
@@ -309,7 +320,7 @@ class _NotesCompactToolbarMenu extends StatelessWidget {
                             ),
                             onTap: () => onSelected(item),
                             child: SizedBox.square(
-                              dimension: kNotesToolbarButtonSize,
+                              dimension: menuButtonSize,
                               child: Icon(
                                 item.icon,
                                 size: NotesFigmaTokens.toolbarIconSize,
@@ -344,19 +355,27 @@ class NotesEditorToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewportWidth = MediaQuery.sizeOf(context).width;
+    // The Android IME animates height; toolbar geometry only needs width.
+    final viewportWidth = MediaQuery.widthOf(context);
     final width = math.min(
       NotesFigmaTokens.toolbarWidth,
       math.max(0.0, viewportWidth - 40),
     );
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final radius = BorderRadius.circular(NotesFigmaTokens.toolbarRadius);
+    final native = NotesFigmaTokens.nativeNotesLayout(context);
+    final radius = BorderRadius.circular(
+      native
+          ? NotesFigmaTokens.nativeToolbarRadius
+          : NotesFigmaTokens.toolbarRadius,
+    );
 
     return SizedBox(
       key: const ValueKey('notes-floating-glass-toolbar'),
       width: width,
-      height: NotesFigmaTokens.toolbarHeight,
+      height: native
+          ? NotesFigmaTokens.nativeToolbarHeight
+          : NotesFigmaTokens.toolbarHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: radius,
@@ -371,6 +390,9 @@ class NotesEditorToolbar extends StatelessWidget {
         child: ClipRRect(
           borderRadius: radius,
           child: BackdropFilter(
+            // A stationary, opaque Android dock avoids expensive background
+            // sampling whenever the IME paints or the document scrolls.
+            enabled: !native,
             filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: DecoratedBox(
               key: const ValueKey('notes-floating-glass-pill'),
@@ -382,15 +404,20 @@ class NotesEditorToolbar extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: dark
+                  colors: native
                       ? [
-                          scheme.surface.withValues(alpha: 0.52),
-                          scheme.surface.withValues(alpha: 0.35),
+                          scheme.surfaceContainerHigh.withValues(alpha: 0.96),
+                          scheme.surfaceContainerHigh.withValues(alpha: 0.94),
                         ]
-                      : [
-                          scheme.surfaceContainerHighest.withValues(alpha: 0.48),
-                          scheme.surface.withValues(alpha: 0.32),
-                        ],
+                      : dark
+                          ? [
+                              scheme.surface.withValues(alpha: 0.52),
+                              scheme.surface.withValues(alpha: 0.35),
+                            ]
+                          : [
+                              scheme.surfaceContainerHighest.withValues(alpha: 0.48),
+                              scheme.surface.withValues(alpha: 0.32),
+                            ],
                 ),
                 borderRadius: radius,
                 border: Border.all(
@@ -402,7 +429,7 @@ class NotesEditorToolbar extends StatelessWidget {
               ),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final compact = constraints.maxWidth < 320;
+                  final compact = native || constraints.maxWidth < 320;
                   final row = Row(
                     mainAxisSize: compact
                         ? MainAxisSize.min
@@ -426,15 +453,21 @@ class NotesEditorToolbar extends StatelessWidget {
                     ],
                   );
                   final padded = Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: NotesFigmaTokens.toolbarHorizontalPadding,
-                      vertical: NotesFigmaTokens.toolbarVerticalPadding,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: native
+                          ? 10
+                          : NotesFigmaTokens.toolbarHorizontalPadding,
+                      vertical: native
+                          ? 5
+                          : NotesFigmaTokens.toolbarVerticalPadding,
                     ),
                     child: row,
                   );
                   return compact
                       ? SingleChildScrollView(
+                          key: const ValueKey('notes-native-toolbar-scroll'),
                           scrollDirection: Axis.horizontal,
+                          physics: native ? const BouncingScrollPhysics() : null,
                           child: padded,
                         )
                       : padded;
