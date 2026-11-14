@@ -1783,7 +1783,8 @@ activeType == NoteBlockType.bulletedList
         onPointerUp: _scheduleSecondarySelectionGuardRelease,
         onPointerCancel: _scheduleSecondarySelectionGuardRelease,
         // Embedded Android fields use native selection, not global SelectionArea.
-        child: _blockSelectionMode || widget.inlineBodyOnly
+        child: _blockSelectionMode || (widget.inlineBodyOnly &&
+            Theme.of(context).platform == TargetPlatform.android)
   ? _buildReorderableBlockList()
   : Focus(
       canRequestFocus: false,
