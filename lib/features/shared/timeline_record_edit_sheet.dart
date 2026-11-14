@@ -34,13 +34,11 @@ class TimelineRecordSheetContent extends StatefulWidget {
     required this.onDelete,
     required this.onStop,
   });
-
   final TimelineRecord record;
   final ScrollController scrollController;
   final void Function(dynamic updated) onSaved;
   final VoidCallback onDelete;
   final VoidCallback onStop;
-
   @override
   State<TimelineRecordSheetContent> createState() =>
       TimelineRecordSheetContentState();
@@ -50,39 +48,39 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     with SingleTickerProviderStateMixin {
   late TextEditingController _titleController;
   late NoteDocument _recordNoteDocument;
-
   int? _categoryId;
   DateTime? _startDisplay;
   DateTime? _endDisplay;
   late TabController _tabController;
-
   /// PocketBase **plans** row id; empty = no link.
   late String _sourcePlanPbId;
   List<PlanningTask> _plansForLink = [];
   bool _plansLoading = false;
   bool _plansLoaded = false;
   bool _notesEditorFocused = false;
+  // Android may temporarily move focus out of the field while the software
+  // keyboard or selection overlay is still visible. Preserve the compact
+  // editing geometry for the entire IME session rather than repeatedly
+  // rebuilding record metadata and moving the cursor under the keyboard.
+  bool _notesImeSessionActive = false;
   // Android may briefly move focus through the IME/selection overlay.
   // Keep the compact notes layout until the editor genuinely loses focus.
   final FocusNode _notesScopeFocusNode =
       FocusNode(debugLabel: 'record-notes-scope', skipTraversal: true);
   Timer? _notesFocusExitTimer;
   final _recordAutosaveGate = EditSheetAutosaveGate(debounce: const Duration(milliseconds: 1500));
-
   /// True when Save/autosave can PATCH an existing/optimistic row (not past-date create).
   /// Prefer [record.id]; fall back to business `record_id` when fromMap dropped a UUID id.
   bool get _isPersistedRecord => recordEditHasUpdatableRecordKey(
     systemOrOptimisticId: widget.record.id,
     businessRecordId: widget.record.recordId,
   );
-
   /// Prefer REST system / optimistic id; UUID `record_id` keeps updates working when id was filtered.
   String get _recordUpdateKey {
     final id = widget.record.id.trim();
     if (id.isNotEmpty) return id;
     return (widget.record.recordId ?? '').trim();
   }
-
   List<Map<String, dynamic>> _checklistForApi() {
     return _recordNoteDocument.blocks
         .where((block) => block.type == NoteBlockType.checklist)
@@ -95,7 +93,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
         .where((item) => (item['text'] as String).trim().isNotEmpty)
         .toList();
   }
-
   RecordAutosaveTimePatch _autosaveTimePatch() => buildRecordAutosaveTimePatch(
     recordIsRunning: widget.record.endTime == null,
     draftStartDisplay: _startDisplay,
@@ -104,14 +101,12 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     originalEndTimeUtc: widget.record.endTime,
     displayToUtc: displayToUtc,
   );
-
   void _applyFuzzyCategoryFromRecordTitle(String title) {
     final fuzzy = DatabaseService.instance.findCategoryByFuzzyMatch(title);
     if (fuzzy != null && fuzzy.id != _categoryId && mounted) {
       setState(() => _categoryId = fuzzy.id);
     }
   }
-
   TimelineRecord _buildOptimisticRecord({
     required String title,
     required String noteText,
@@ -133,7 +128,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
           : widget.record.sourcePlanId,
     );
   }
-
   RecordOptimisticApplyResult _applyRecordLocalEdit({
     required String title,
     required String noteText,
@@ -163,7 +157,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       sourcePlanPocketRecordId: planPatch.id,
     );
   }
-
   Future<void> _syncRecordToNetwork({
     required String title,
     required String noteText,
@@ -191,7 +184,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       bypassConflictCheck: true,
     );
   }
-
   // Commit the latest embedded Notes document to the local Brain before
   // starting background sync. Closing the sheet must not discard the draft.
   void _commitRecordAutosave() {
@@ -204,7 +196,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     final checklistPayload = _checklistForApi();
     final planPatch = _sourcePlanPatchArgs();
     final timePatch = _autosaveTimePatch();
-
     _applyRecordLocalEdit(
       title: title,
       noteText: noteText,
@@ -225,11 +216,9 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       ),
     );
   }
-
   void _onRecordFieldChanged({bool immediate = false}) {
     if (!_isPersistedRecord) return;
     if (_titleController.text.trim().isEmpty) return;
-
     // Avoid Timeline rebuilding on every keystroke. Publish once per debounce,
     // and commit synchronously before leaving the sheet.
     _recordAutosaveGate.markDirty();
@@ -239,7 +228,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       _recordAutosaveGate.schedule(_commitRecordAutosave);
     }
   }
-
   @override
   void initState() {
     super.initState();
@@ -283,20 +271,35 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     if (!mounted) return;
     _notesFocusExitTimer?.cancel();
     if (focused) {
+      _notesImeSessionActive = true;
       if (!_notesEditorFocused) {
         setState(() => _notesEditorFocused = true);
       }
       return;
     }
-
     // Switching between Notes blocks, the Android IME, and the text-selection
     // toolbar must not alternately expand/collapse the entire record sheet.
     _notesFocusExitTimer = Timer(const Duration(milliseconds: 300), () {
       if (!mounted || _notesScopeFocusNode.hasFocus || !_notesEditorFocused) {
         return;
       }
-      setState(() => _notesEditorFocused = false);
+      final keyboardGone = MediaQuery.viewInsetsOf(context).bottom == 0;
+      setState(() {
+        _notesEditorFocused = false;
+        if (keyboardGone) _notesImeSessionActive = false;
+      });
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // MediaQuery changes again when the IME finally closes. Only then is it
+    // safe to unlatch an interrupted Android Notes editing session.
+    if (MediaQuery.viewInsetsOf(context).bottom == 0 &&
+        !_notesEditorFocused) {
+      _notesImeSessionActive = false;
+    }
   }
 
   /// Same wall-calendar day as [DatabaseService._profileWallFromUtc] / planning fetch —
@@ -569,7 +572,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     final noteText = _recordNoteDocument.toPlainText().trim();
     final checklistPayload = _checklistForApi();
     final planPatch = _sourcePlanPatchArgs();
-
     final validation = validateRecordEditSave(
       title: title,
       hasUpdatableRecordKey: _isPersistedRecord,
@@ -583,9 +585,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       AppSnack.warning(t(currentLocale.value, validation.errorKey!));
       return;
     }
-
     final mode = validation.mode!;
-
     // CREATE path (past-date "New Record" entry): no existing row key.
     if (mode == RecordEditSaveMode.createCompletedInterval) {
       final startUtc = validation.startUtc!;
@@ -628,7 +628,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       }
       return;
     }
-
     // Fire-time category snapshot (picker/create), same ownership rule as Plans.
     final int? saveCategoryId = _categoryId == null
         ? null
@@ -642,7 +641,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
               (p) => p.id,
             ),
           );
-
     // Running active record: metadata/category Save — end_time stays null.
     if (mode == RecordEditSaveMode.runningMetadata) {
       final startUtc = _startDisplay != null
@@ -655,7 +653,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       );
       assert(draft.endUtcIsNull);
       assert(draft.statusRemainsRunning);
-
       final originalCat = widget.record.categoryId;
       final requestedCat = draft.categoryId;
       final categoryOk =
@@ -693,7 +690,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
         AppSnack.failed();
         return;
       }
-
       final optimistic = _buildOptimisticRecord(
         title: draft.title,
         noteText: noteText,
@@ -719,7 +715,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       widget.onSaved(optimistic);
       return;
     }
-
     // Stopped/completed interval Save.
     final startUtc = validation.startUtc!;
     final endUtc = validation.endUtc!;
@@ -807,7 +802,14 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   Widget build(BuildContext context) {
     // Do not switch the editor geometry on each Android IME inset frame.
     // The focus state is held across transient keyboard/selection changes.
-    final notesEditing = _notesEditorFocused;
+    // Focus can briefly disappear while Android/Gboard still owns the IME.
+    // Keeping the same geometry avoids a full sheet shrink/expand loop during
+    // typing, cursor movement, voice typing, and text selection.
+    final notesEditing = recordNotesShouldUseCompactChrome(
+      notesFocused: _notesEditorFocused,
+      notesImeSessionActive: _notesImeSessionActive,
+      keyboardInset: MediaQuery.viewInsetsOf(context).bottom,
+    );
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     // ACTIVE_STATUS_LAW: running ⇔ end_time null (UI mirrors Brain).
     final isRunning = widget.record.endTime == null;
@@ -819,7 +821,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
         : (pairs.isNotEmpty
               ? pairs.first.id
               : CategoryRule.uncategorizedSyntheticId);
-
     return Material(
       clipBehavior: Clip.none,
       color: Theme.of(context).colorScheme.surface,
@@ -1055,7 +1056,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
               ],
             ),
           ),
-
         ],
       ),
     );

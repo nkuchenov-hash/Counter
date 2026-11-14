@@ -2,6 +2,17 @@ import 'package:flutter/foundation.dart';
 
 import 'package:counter/data/models.dart';
 
+/// Keep the Record sheet stable when Gboard briefly moves focus to its
+/// composing/selection overlay. Once Notes owned the IME, hiding the keyboard
+/// (rather than a transient focus event) releases the compact editor layout.
+@visibleForTesting
+bool recordNotesShouldUseCompactChrome({
+  required bool notesFocused,
+  required bool notesImeSessionActive,
+  required double keyboardInset,
+}) =>
+    notesFocused || (notesImeSessionActive && keyboardInset > 0);
+
 /// How [TimelineRecord] edit Save validates and patches times.
 enum RecordEditSaveMode {
   /// Past-date create: require start+end, write completed interval.

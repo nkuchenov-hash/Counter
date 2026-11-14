@@ -133,7 +133,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       _notesEditorSessionRegistered = true;
     }
     _syncEditorsWithDocument();
-
     // Standalone Notes open directly into the first editable content line.
     // Embedded Notes inside Record/Plan editors stay passive until tapped.
     if (!widget.inlineBodyOnly) {
@@ -253,7 +252,17 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         _lastSelections[block.id] = next;
         _editor.updateSelection(block.id, next);
         if (!mounted || _editor.activeBlockId != block.id) return;
-        if (previous?.isCollapsed != next.isCollapsed) setState(() {});
+        // Gboard can transiently change selection while composing a word.
+        // Rebuilding the entire Notes canvas at that point fights the IME.
+        final composing = controller.value.composing;
+        final androidEmbeddedIme = widget.inlineBodyOnly &&
+            Theme.of(context).platform == TargetPlatform.android;
+        if (previous?.isCollapsed != next.isCollapsed &&
+            !(androidEmbeddedIme &&
+                composing.isValid &&
+                !composing.isCollapsed)) {
+          setState(() {});
+        }
       });
       return controller;
     });
@@ -282,7 +291,13 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         if (_editingBlockId != block.id || activeChanged) {
           setState(() => _editingBlockId = block.id);
         }
-        _ensureBlockVisible(block.id);
+        // Android EditableText already brings the caret above the keyboard.
+        // A second scroll animation on the containing ReorderableListView
+        // competes with it and causes the record sheet to jump on focus.
+        if (!(widget.inlineBodyOnly &&
+            Theme.of(context).platform == TargetPlatform.android)) {
+          _ensureBlockVisible(block.id);
+        }
       });
       return node;
     });
@@ -386,7 +401,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       }
       return;
     }
-
     final node = _focusNodeFor(block);
     // Transfer focus first, then repaint selection state. Keeping the focus
     // hand-off synchronous prevents Android from closing/reopening the IME
@@ -456,13 +470,10 @@ return cleaned;
     final candidate = _NotesStructuredClipboard.plainText;
     final blocks = _NotesStructuredClipboard.blocks;
     if (candidate == null || blocks.isEmpty) return false;
-
     final normalizedPlain = _normalizeClipboardStructure(plain);
     if (_normalizeClipboardStructure(candidate) == normalizedPlain) return true;
-
     final blockPlain = blocks.map((block) => block.effectiveText).join('\n');
     if (_normalizeClipboardStructure(blockPlain) == normalizedPlain) return true;
-
     final meaning = _normalizeClipboardMeaning(plain);
     return _normalizeClipboardMeaning(candidate) == meaning ||
         _normalizeClipboardMeaning(blockPlain) == meaning;
@@ -541,11 +552,9 @@ item,
     if (_editingBlockId != null || _blockSelectionMode) return false;
     final slices = _NotesStructuredClipboard.blocks;
     if (slices.length < 2) return false;
-
     final firstSource = _editor.blockById(slices.first.id);
     final lastSource = _editor.blockById(slices.last.id);
     if (firstSource == null || lastSource == null) return false;
-
     final firstNeedle = slices.first.effectiveText;
     final lastNeedle = slices.last.effectiveText;
     var firstStart = firstSource.effectiveText.length - firstNeedle.length;
@@ -554,14 +563,12 @@ item,
       firstStart = firstSource.effectiveText.indexOf(firstNeedle);
     }
     if (firstStart < 0) return false;
-
     var lastEnd = lastNeedle.length;
     if (!lastSource.effectiveText.startsWith(lastNeedle)) {
       final lastStart = lastSource.effectiveText.indexOf(lastNeedle);
       if (lastStart < 0) return false;
       lastEnd = lastStart + lastNeedle.length;
     }
-
     final prefix = firstSource.effectiveText.substring(0, firstStart);
     final suffix = lastSource.effectiveText.substring(lastEnd);
     _editor.applyTextInput(
@@ -572,7 +579,6 @@ item,
     for (final slice in slices.skip(1).toList().reversed) {
       _editor.deleteBlock(slice.id);
     }
-
     _NotesStructuredClipboard.plainText = null;
     _NotesStructuredClipboard.blocks = const <NoteBlock>[];
     _scheduleSave();
@@ -611,10 +617,8 @@ item,
     if (!mounted) return;
     final plain = data?.text ?? '';
     if (plain.isEmpty) return;
-
     final hasMatchingStructure =
         _structuredClipboardMatchesSystemText(plain);
-
     final mutation = hasMatchingStructure
         ? _editor.pasteBlocks(
   block.id,
@@ -623,7 +627,6 @@ item,
 )
         : _editor.pastePlainText(block.id, selection, plain);
     if (!mutation.changed) return;
-
     if (!mutation.requiresRebuild) {
       final updated = _editor.blockById(block.id);
       if (updated != null) {
@@ -714,7 +717,6 @@ item,
           block,
     ];
     if (textBlocks.isEmpty) return const <NoteBlock>[];
-
     final normalizedSelection = _normalizeClipboardStructure(plain);
     List<NoteBlock>? wholeBlockBest;
     for (var start = 0; start < textBlocks.length; start++) {
@@ -733,7 +735,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
       }
     }
     if (wholeBlockBest != null) return wholeBlockBest;
-
     List<NoteBlock>? best;
     var bestWindow = 1 << 30;
     for (var startIndex = 0; startIndex < textBlocks.length; startIndex++) {
@@ -747,7 +748,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
         buffer.write(textBlocks[endIndex].effectiveText);
         offsets.add(buffer.length);
         if (buffer.length < plain.length) continue;
-
         final joined = buffer.toString();
         var searchFrom = 0;
         while (searchFrom <= joined.length - plain.length) {

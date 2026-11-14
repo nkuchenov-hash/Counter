@@ -1,12 +1,59 @@
 import 'dart:io';
 
 import 'package:counter/data/models.dart';
+import 'package:counter/features/shared/edit_sheet/record_edit_save_policy.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  group('Embedded Record Notes Android IME geometry', () {
+    test('preserves compact sheet while Gboard still owns the keyboard', () {
+      expect(
+        recordNotesShouldUseCompactChrome(
+          notesFocused: false,
+          notesImeSessionActive: true,
+          keyboardInset: 370,
+        ),
+        isTrue,
+      );
+    });
+
+    test('restores record fields after focus and keyboard are both gone', () {
+      expect(
+        recordNotesShouldUseCompactChrome(
+          notesFocused: false,
+          notesImeSessionActive: true,
+          keyboardInset: 0,
+        ),
+        isFalse,
+      );
+    });
+
+    test('does not hide record fields for an unrelated keyboard', () {
+      expect(
+        recordNotesShouldUseCompactChrome(
+          notesFocused: false,
+          notesImeSessionActive: false,
+          keyboardInset: 370,
+        ),
+        isFalse,
+      );
+    });
+
+    test('editing without a visible keyboard also keeps compact mode', () {
+      expect(
+        recordNotesShouldUseCompactChrome(
+          notesFocused: true,
+          notesImeSessionActive: false,
+          keyboardInset: 0,
+        ),
+        isTrue,
+      );
+    });
+  });
 
   test('Android IME typing keeps composing range without duplicate events', () {
     final controller = NotesTextEditingController(text: 'Привет');
@@ -72,7 +119,15 @@ void main() {
     expect(editor, isNot(contains('Future<void>.delayed(const Duration(milliseconds: 180)')));
     expect(record, contains('_handleNotesEditorFocusChanged'));
     expect(record, contains('_notesScopeFocusNode.hasFocus'));
-    expect(record, contains('final notesEditing = _notesEditorFocused;'));
+    // Gboard focus interruptions must not expand/collapse Record chrome while
+    // the Notes keyboard is present; keep the native EditableText in charge.
+    expect(record, contains('recordNotesShouldUseCompactChrome('));
+    expect(record, contains('_notesImeSessionActive'));
+    expect(editor, contains('Theme.of(context).platform == TargetPlatform.android'));
+    expect(editor, contains('composing.isValid &&'));
+    expect(editor, contains('!composing.isCollapsed'));
+    expect(editor, contains('_ensureBlockVisible(block.id);'));
+    expect(record, contains('final notesEditing = recordNotesShouldUseCompactChrome('));
     // Nested TextFields preserve native Android selection/IME; the expensive
     // document-wide SelectionArea is only needed by standalone Notes.
     expect(editor, contains('child: _blockSelectionMode || (widget.inlineBodyOnly &&'));
