@@ -270,7 +270,7 @@ void main() {
   });
 
   test('Android note line split clamps stale Gboard caret after Enter', () {
-    final controller = NotesTextEditingController(text: 'Заголовок\\n');
+    final controller = NotesTextEditingController(text: 'Заголовок\n');
     addTearDown(controller.dispose);
     controller.selection = TextSelection.collapsed(offset: controller.text.length);
     controller.syncDocument(
@@ -295,7 +295,7 @@ void main() {
           NoteBlock(id: 'first-item', type: style, text: 'Первый'),
         ]),
       );
-      final firstInput = 'Первый\\n';
+      final firstInput = 'Первый\n';
       editor.applyTextInput(
         'first-item',
         firstInput,
@@ -344,7 +344,7 @@ void main() {
       );
       editor.applyTextInput(
         'empty',
-        '\\n',
+        '\n',
         const TextSelection.collapsed(offset: 1),
         preserveLineBreaks: true,
       );
@@ -400,7 +400,7 @@ void main() {
     expect(first, findsOneWidget);
     await tester.tap(first);
     await tester.pump();
-    await tester.enterText(first, 'Первый\\n');
+    await tester.enterText(first, 'Первый\n');
     await tester.pump();
     await tester.pump();
     final items = tester.widgetList<NotesEditorBlockItem>(
