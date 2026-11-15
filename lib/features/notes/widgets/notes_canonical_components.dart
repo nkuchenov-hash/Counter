@@ -88,10 +88,18 @@ class NotesTextEditingController extends TextEditingController {
     TextSelection? selection,
   }) {
     _runs = List<NoteTextRun>.unmodifiable(runs);
-    final nextSelection = selection ??
-        TextSelection.collapsed(
-          offset: value.selection.extentOffset.clamp(0, text.length).toInt(),
-        );
+    // Structural Enter shortens the original block while the IME still has
+    // the old caret position. Clamp both endpoints before updating EditableText
+    // so neither Android nor Flutter receives an out-of-bounds selection.
+    final currentSelection = selection ?? value.selection;
+    final nextSelection = currentSelection.isValid
+        ? TextSelection(
+            baseOffset: currentSelection.baseOffset.clamp(0, text.length).toInt(),
+            extentOffset: currentSelection.extentOffset.clamp(0, text.length).toInt(),
+            affinity: currentSelection.affinity,
+            isDirectional: currentSelection.isDirectional,
+          )
+        : TextSelection.collapsed(offset: text.length);
     value = TextEditingValue(
       text: text,
       selection: nextSelection,
