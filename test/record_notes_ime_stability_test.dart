@@ -269,6 +269,155 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  test('Android note line split clamps stale Gboard caret after Enter', () {
+    final controller = NotesTextEditingController(text: 'Заголовок\\n');
+    addTearDown(controller.dispose);
+    controller.selection = TextSelection.collapsed(offset: controller.text.length);
+    controller.syncDocument(
+      text: 'Заголовок',
+      runs: const <NoteTextRun>[],
+      selection: controller.selection,
+    );
+    expect(controller.text, 'Заголовок');
+    expect(controller.selection.isValid, isTrue);
+    expect(controller.selection.extentOffset, controller.text.length);
+    expect(controller.value.composing, TextRange.empty);
+  });
+
+  test('Enter continues bullet, number and checklist as independent items', () {
+    for (final style in [
+      NoteBlockType.bulletedList,
+      NoteBlockType.numberedList,
+      NoteBlockType.checklist,
+    ]) {
+      final editor = NotesEditorDocumentController(
+        NoteDocument(blocks: [
+          NoteBlock(id: 'first-item', type: style, text: 'Первый'),
+        ]),
+      );
+      final firstInput = 'Первый\\n';
+      editor.applyTextInput(
+        'first-item',
+        firstInput,
+        TextSelection.collapsed(offset: firstInput.length),
+        preserveLineBreaks: true,
+      );
+      final split = editor.splitEmbeddedLineBreak(
+        'first-item',
+        TextSelection.collapsed(offset: firstInput.length),
+      );
+      expect(split.changed, isTrue, reason: style.name);
+      expect(editor.visibleBlocks, hasLength(2), reason: style.name);
+      expect(editor.visibleBlocks.first.id, 'first-item');
+      expect(editor.visibleBlocks.first.type, style);
+      expect(editor.visibleBlocks.first.effectiveText, 'Первый');
+      final second = editor.visibleBlocks.last;
+      expect(second.type, style, reason: style.name);
+      expect(second.id, isNot('first-item'));
+      expect(split.focusBlockId, second.id);
+
+      editor.applyTextInput(
+        second.id,
+        'Второй',
+        const TextSelection.collapsed(offset: 6),
+        preserveLineBreaks: true,
+      );
+      expect(editor.visibleBlocks.last.effectiveText, 'Второй');
+      // Changing only the second item cannot change the first item.
+      editor.convertBlock(second.id, NotesBlockConversion.body);
+      expect(editor.visibleBlocks.first.type, style);
+      expect(editor.visibleBlocks.last.type, NoteBlockType.paragraph);
+    }
+  });
+
+  test('Enter on an empty list item ends list and produces Body', () {
+    for (final style in [
+      NoteBlockType.bulletedList,
+      NoteBlockType.numberedList,
+      NoteBlockType.checklist,
+    ]) {
+      final editor = NotesEditorDocumentController(
+        NoteDocument(blocks: [
+          NoteBlock(id: 'first', type: style, text: 'Первый'),
+          NoteBlock(id: 'empty', type: style),
+        ]),
+      );
+      editor.applyTextInput(
+        'empty',
+        '\\n',
+        const TextSelection.collapsed(offset: 1),
+        preserveLineBreaks: true,
+      );
+      final mutation = editor.splitEmbeddedLineBreak(
+        'empty',
+        const TextSelection.collapsed(offset: 1),
+      );
+      expect(mutation.changed, isTrue, reason: style.name);
+      expect(editor.visibleBlocks, hasLength(2));
+      expect(editor.visibleBlocks.first.type, style);
+      expect(editor.visibleBlocks.last.id, 'empty');
+      expect(editor.visibleBlocks.last.type, NoteBlockType.paragraph);
+      expect(editor.visibleBlocks.last.effectiveText, isEmpty);
+      expect(mutation.focusBlockId, 'empty');
+    }
+  });
+
+  testWidgets('embedded Android list Enter creates focused next list item',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    const listId = 'android-list-enter';
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData(platform: TargetPlatform.android),
+      home: Scaffold(
+        body: SizedBox(
+          height: 650,
+          child: NoteEditorPage(
+            task: PlanningTask(
+              id: 0,
+              planRowId: 'record-list-enter-regression',
+              title: 'Record',
+              categoryId: CategoryRule.uncategorizedSyntheticId,
+              dateKey: '2026-11-15',
+            ),
+            parityPreview: true,
+            inlineBodyOnly: true,
+            initialDocument: const NoteDocument(blocks: [
+              NoteBlock(
+                id: listId,
+                type: NoteBlockType.bulletedList,
+                text: 'Первый',
+              ),
+            ]),
+          ),
+        ),
+      ),
+    ));
+    await tester.pump();
+    final first = find.byKey(const ValueKey('notes-block-field-$listId'));
+    expect(first, findsOneWidget);
+    await tester.tap(first);
+    await tester.pump();
+    await tester.enterText(first, 'Первый\\n');
+    await tester.pump();
+    await tester.pump();
+    final items = tester.widgetList<NotesEditorBlockItem>(
+      find.byType(NotesEditorBlockItem),
+    ).toList();
+    expect(items, hasLength(2));
+    expect(items.first.block.type, NoteBlockType.bulletedList);
+    expect(items.last.block.type, NoteBlockType.bulletedList);
+    expect(items.last.block.id, isNot(listId));
+    final nextField = find.byKey(
+      ValueKey('notes-block-field-${items.last.block.id}'),
+    );
+    expect(nextField, findsOneWidget);
+    expect(tester.widget<TextField>(nextField).focusNode!.hasFocus, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
   test('Android IME typing keeps composing range without duplicate events', () {
     final controller = NotesTextEditingController(text: 'Привет');
     addTearDown(controller.dispose);
