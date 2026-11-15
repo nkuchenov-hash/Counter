@@ -1,3 +1,9 @@
+## [2026-11-15] — Android Record Notes typing performance (device verification pending)
+
+- Keep the existing Notes editor and its current mobile styling. Embedded Record Notes now batches 180 ms document notifications instead of synchronously forwarding the full document to the Record host for every Gboard keystroke; standalone Notes keep their existing 650 ms save gate.
+- Preserve native Android caret/IME ownership, stable multiline editing, one scroll owner, and forced flush of pending draft on editor disposal. The Record host retains its existing 1500 ms optimistic/network save debounce; no schema or background polling changes.
+- Add rapid-typing coalescing and last-edit-on-close regression coverage. Physical-device smoothness and frame times have not been measured; do not claim zero jank until device-tested.
+
 ## [2026-11-14] — Android Notes native reference layout (CI/device verification pending)
 
 - Android handset Notes editor now follows the supplied reference screenshots: 26dp text inset, 28sp title, relaxed paragraph spacing, tighter list rows, and defined gaps between paragraph/list types. The same canonical blocks render in standalone Notes and embedded Record Notes.
