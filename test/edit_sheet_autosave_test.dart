@@ -61,6 +61,55 @@ void main() {
       gate.dispose();
     });
 
+    test('embedded Notes rapid typing coalesces 50 keypresses', () async {
+      final gate = EditSheetAutosaveGate(
+        debounce: const Duration(milliseconds: 25),
+      );
+      var publishes = 0;
+      var publishedText = '';
+      var latestText = '';
+      for (var i = 0; i < 50; i++) {
+        latestText += 'а';
+        gate.schedule(() {
+          publishes++;
+          publishedText = latestText;
+        });
+      }
+      expect(publishes, 0);
+      expect(gate.isDirty, isTrue);
+      await Future<void>.delayed(const Duration(milliseconds: 45));
+      expect(publishes, 1);
+      expect(publishedText, latestText);
+      gate.dispose();
+    });
+
+    test('embedded Notes close flushes the final edit exactly once', () async {
+      final gate = EditSheetAutosaveGate(
+        debounce: const Duration(milliseconds: 50),
+      );
+      var publishes = 0;
+      var text = 'line one';
+      var publishedText = '';
+      gate.schedule(() {
+        publishes++;
+        publishedText = text;
+      });
+      text += '\nline two';
+      gate.schedule(() {
+        publishes++;
+        publishedText = text;
+      });
+      gate.flush(() {
+        publishes++;
+        publishedText = text;
+      }, force: true);
+      expect(publishes, 1);
+      expect(publishedText, text);
+      await Future<void>.delayed(const Duration(milliseconds: 65));
+      expect(publishes, 1);
+      gate.dispose();
+    });
+
     test('a new edit stays dirty after an earlier dispatch', () async {
       final gate = EditSheetAutosaveGate(
         debounce: const Duration(milliseconds: 35),
