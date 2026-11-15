@@ -248,7 +248,7 @@ void main() {
     // synchronously for every Android keypress. Last edit is flushed on exit.
     expect(editor, contains('_gate.schedule(_syncToBrain);'));
     expect(editor, contains('const Duration(milliseconds: 180)'));
-    expect(editor, isNot(contains('if (widget.onDocumentChanged != null) {\\n      _syncToBrain();')));
+    expect(editor, isNot(contains('      _syncToBrain();')));
     expect(editor, contains('_gate.flush(_syncToBrain, force: true);'));
     expect(record, contains('debounce: const Duration(milliseconds: 1500)'));
     final planning = File(
