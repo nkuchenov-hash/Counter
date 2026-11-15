@@ -814,7 +814,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
         offset.clamp(position.minScrollExtent, position.maxScrollExtent),
       );
     }
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       restore();
       WidgetsBinding.instance.addPostFrameCallback((_) => restore());
@@ -1553,7 +1552,6 @@ block.type == NoteBlockType.image ||
 ? () => _openAudioTranscript(block.id)
 : null,
     );
-
     final drawingPreview = _desktopDrawingPreview(context, block);
     if (drawingPreview != null) {
       item = Column(
