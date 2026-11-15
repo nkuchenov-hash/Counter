@@ -1514,6 +1514,9 @@ _editor.insertAfter(
       previousBlockType: index > 0 ? blocks[index - 1].type : null,
       active: active,
       editing: editable && !_blockSelectionMode && _editingBlockId == block.id,
+      directEditOnTap: editable && widget.inlineBodyOnly &&
+          Theme.of(context).platform == TargetPlatform.android &&
+          !_blockSelectionMode,
       textController: editable ? _textControllerFor(block) : null,
       focusNode: focusNode,
       captionController:
