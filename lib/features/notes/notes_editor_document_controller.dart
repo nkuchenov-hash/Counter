@@ -112,6 +112,36 @@ class NotesEditorDocumentController {
     return const NotesEditorMutation(changed: true);
   }
 
+  /// Finish an Enter inserted by the Android software keyboard in an
+  /// embedded heading/quote/list field. Unlike splitting synchronously inside
+  /// onChanged, callers invoke this after the current IME frame has completed.
+  /// A heading keeps its own block style; the following line is a Body block.
+  NotesEditorMutation splitEmbeddedLineBreak(
+    String id,
+    TextSelection selection,
+  ) {
+    final block = blockById(id);
+    if (block == null ||
+        !isEditableText(block.type) ||
+        block.type == NoteBlockType.paragraph ||
+        !block.effectiveText.contains('\n')) {
+      return const NotesEditorMutation();
+    }
+    if (_isListLike(block.type) && block.effectiveText == '\n') {
+      final converted = block.copyWith(
+        type: NoteBlockType.paragraph,
+        text: '',
+        runs: const <NoteTextRun>[],
+        checked: false,
+      );
+      _replaceBlock(converted);
+      activeBlockId = converted.id;
+      activeSelection = const TextSelection.collapsed(offset: 0);
+      return _focusMutation(converted.id, activeSelection!);
+    }
+    return _replaceWithSplitLines(block, block.effectiveText, selection);
+  }
+
   NotesEditorMutation handleEnter(String id, TextSelection selection) {
     final block = blockById(id);
     if (block == null || !isEditableText(block.type) || !selection.isValid) {
