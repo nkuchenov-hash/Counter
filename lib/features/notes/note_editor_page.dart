@@ -125,7 +125,11 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         widget.initialDocument ?? DatabaseService.instance.parseNoteDocument(_task);
     _editor = NotesEditorDocumentController(_sourceDocument);
     _titleController = TextEditingController(text: _task.title);
-    _gate = EditSheetAutosaveGate();
+    _gate = EditSheetAutosaveGate(
+      debounce: widget.onDocumentChanged == null
+          ? const Duration(milliseconds: 650)
+          : const Duration(milliseconds: 180),
+    );
     _audioPlayback = NotesAudioPlaybackController()
       ..addListener(_onAudioPlaybackChanged);
     if (!widget.parityPreview) {
@@ -195,11 +199,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
   void _scheduleSave([String? _]) {
     _dirty = true;
-    // Embedded hosts receive the latest draft immediately; network sync is debounced.
-    if (widget.onDocumentChanged != null) {
-      _syncToBrain();
-      return;
-    }
+    // Coalesce rapid Gboard edits before notifying the record host. Avoid
+    // invoking its save gate for every keystroke on the UI isolate.
+    // dispose() still flushes the final draft on sheet close.
     _gate.schedule(_syncToBrain);
   }
 
@@ -812,7 +814,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
         offset.clamp(position.minScrollExtent, position.maxScrollExtent),
       );
     }
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       restore();
       WidgetsBinding.instance.addPostFrameCallback((_) => restore());
@@ -1551,7 +1552,6 @@ block.type == NoteBlockType.image ||
 ? () => _openAudioTranscript(block.id)
 : null,
     );
-
     final drawingPreview = _desktopDrawingPreview(context, block);
     if (drawingPreview != null) {
       item = Column(
