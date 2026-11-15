@@ -1,3 +1,10 @@
+## [2026-11-15] — Android Notes Enter semantics, first-tap focus, compact phone nav [verification pending]
+
+- Android embedded Record Notes: pressing Enter in a heading creates an independent Body paragraph after the active IME frame. Editing the following paragraph's style no longer changes the previous H1. Lists and quotes also get separate structural blocks on Enter; plain paragraph multiline typing remains mounted for stable Gboard composition.
+- Render embedded Android editable blocks as TextFields from the outset instead of replacing non-editing RichText after the first tap. Skip competing drag-recognizer attachment while typing; retain unchanged desktop and standalone selection/reordering behavior.
+- Phone shell: remove the screen-wide blurred/gradient lower navigation backplate, shrink the 80dp row to 66dp, retain five working destination buttons and selected indicator; no additional full-width blur render pass.
+- Regression tests check independent heading/body formatting, real embedded Android tap/Enter behavior, and unblurred phone navigation. Device touch/IME/frame-time verification remains necessary before claiming zero glitches.
+
 ## [2026-11-15] — Android Record Notes typing performance (device verification pending)
 
 - Keep the existing Notes editor and its current mobile styling. Embedded Record Notes now batches 180 ms document notifications instead of synchronously forwarding the full document to the Record host for every Gboard keystroke; standalone Notes keep their existing 650 ms save gate.

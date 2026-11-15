@@ -1,4 +1,5 @@
 import 'package:counter/core/app_control_tokens.dart';
+import 'package:counter/app/shell/phone/shell_bottom_navigation.dart';
 import 'dart:io';
 
 import 'package:counter/core/app_colors.dart';
@@ -45,7 +46,7 @@ void main() {
     });
   });
 
-  test('phone settings glass chrome respects insets and real backdrop', () {
+  test('phone settings glass header remains while nav has no oversized backdrop', () {
     final chrome = File('lib/app/shell/shared/shell_chrome.dart')
         .readAsStringSync();
     final nav = File('lib/app/shell/phone/shell_bottom_navigation.dart')
@@ -63,15 +64,15 @@ void main() {
     expect(chrome, contains('systemNavigationBarColor: settingsGlass'));
     expect(chrome, contains('seamlessGlass: settingsGlass'));
     expect(nav, contains('seamlessGlass'));
-    expect(nav, contains('scheme.surfaceContainerLowest.withValues(alpha: 0.30)'));
+    expect(nav, isNot(contains('scheme.surfaceContainerLowest.withValues(alpha: 0.30)')));
     expect(chrome, contains('statusBarIconBrightness: desktopShell ||'));
     expect(chrome, contains('scheme.brightness == Brightness.light'));
     expect(chrome, contains('systemNavigationBarIconBrightness:'));
-    expect(nav, contains('BackdropFilter('));
-    expect(nav, contains('ImageFilter.blur(sigmaX: 16, sigmaY: 16)'));
-    expect(nav, contains('child: ShaderMask('));
-    expect(nav, contains('blendMode: BlendMode.dstIn'));
-    expect(nav, contains('AppNeutralTones.white.withValues(alpha: 0.12)'));
+    expect(nav, isNot(contains('BackdropFilter(')));
+    expect(nav, isNot(contains('ImageFilter.blur(sigmaX: 16, sigmaY: 16)')));
+    expect(nav, isNot(contains('child: ShaderMask(')));
+    expect(nav, isNot(contains('blendMode: BlendMode.dstIn')));
+    expect(nav, isNot(contains('AppNeutralTones.white.withValues(alpha: 0.12)')));
     expect(nav, contains('AppNeutralTones.white.withValues(alpha: 0.23)'));
     expect(nav, contains('SafeArea('));
     expect(settings, contains('class _GlassySettingsBackButton'));
@@ -106,7 +107,7 @@ void main() {
     expect(layout, contains('this.transparentBackground = false'));
     expect(layout, contains('transparentBackground ? AppNeutralTones.transparent'));
     expect(settings, contains('Theme.of(context).colorScheme.surfaceContainerLowest'));
-    expect(nav, contains('Positioned.fill(child: IgnorePointer(child: ShaderMask('));
+    expect(nav, isNot(contains('Positioned.fill(child: IgnorePointer(child: ShaderMask(')));
     expect(settings, contains("key: ValueKey(_mobileDetailOpen ? 'detail-"));
     expect(settings, isNot(contains('for (final top in [true, false])')));
     expect(settings, contains('class _MobileSettingsMotion'));
@@ -125,6 +126,31 @@ void main() {
     final surface = tester.widget<ColoredBox>(find.descendant(
       of: find.byType(AppSettingsPageBody), matching: find.byType(ColoredBox)).first);
     expect(surface.color, Colors.transparent);
+  });
+
+  testWidgets('phone navigation uses only five compact actions without a backdrop',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    var selected = -1;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        bottomNavigationBar: ShellCompactBottomNav(
+          viewportWidth: 390,
+          selectedIndex: 0,
+          onDestinationSelected: (index) => selected = index,
+        ),
+      ),
+    ));
+    expect(find.byType(BackdropFilter), findsNothing);
+    expect(find.byType(ShaderMask), findsNothing);
+    expect(find.byType(InkWell), findsNWidgets(5));
+    expect(kShellBottomNavHeight, lessThan(80));
+    await tester.tap(find.byType(InkWell).at(3));
+    expect(selected, 3);
+    expect(tester.takeException(), isNull);
   });
 
   group('single settings navigation', () {

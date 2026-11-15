@@ -1,5 +1,3 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
@@ -9,7 +7,7 @@ import 'package:flutter/material.dart';
 /// Material [NavigationBar] wraps/clips 5 labels on ~390px phone widths (iOS web
 /// is worse with text scaling). This compact bar matches APK phone metrics:
 /// equal columns, single-line labels, no platform branches.
-const double kShellBottomNavHeight = 80;
+const double kShellBottomNavHeight = 66;
 
 class ShellCompactBottomNav extends StatelessWidget {
   const ShellCompactBottomNav({
@@ -40,7 +38,6 @@ class ShellCompactBottomNav extends StatelessWidget {
     final loc = currentLocale.value;
     final scheme = Theme.of(context).colorScheme;
     final navTheme = Theme.of(context).navigationBarTheme;
-    final bg = navTheme.backgroundColor ?? scheme.surfaceContainerHighest;
     final indicator = navTheme.indicatorColor ?? scheme.primaryContainer;
 
     final items = <({IconData icon, IconData selectedIcon, String label, int index})>[
@@ -76,61 +73,36 @@ class ShellCompactBottomNav extends StatelessWidget {
       ),
     ];
 
-    final dark = Theme.of(context).brightness == Brightness.dark;
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.0,
-      child: Stack(children: [
-        // Feather the BLUR layer itself, not just its background color.
-        // The icons remain crisp on a separate interactive layer.
-        Positioned.fill(child: IgnorePointer(child: ShaderMask(
-          blendMode: BlendMode.dstIn,
-          shaderCallback: (bounds) => const LinearGradient(
-            begin: Alignment.topCenter, end: Alignment.bottomCenter,
-            stops: [0, 0.38, 1],
-            colors: [AppNeutralTones.transparent, AppNeutralTones.white, AppNeutralTones.white],
-          ).createShader(bounds),
-          child: ClipRect(child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: DecoratedBox(
-              decoration: BoxDecoration(gradient: LinearGradient(
-                begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                colors: [
-                  AppNeutralTones.transparent,
-                  dark
-                      ? AppNeutralTones.white.withValues(alpha: 0.12)
-                      : seamlessGlass
-                          ? scheme.surfaceContainerLowest.withValues(alpha: 0.30)
-                          : bg.withValues(alpha: 0.76),
-                ],
-              )),
-              child: const SizedBox.expand(),
-            ),
-          )),
-        ))),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.only(top: 18),
-            child: SizedBox(
-              height: kShellBottomNavHeight,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final item in items)
-                    Expanded(child: _ShellBottomNavItem(
+      // No full-width frosted rectangle/gradient behind the entire navbar.
+      // Only the selected destination receives an independent light capsule;
+      // empty areas remain transparent and do not consume GPU blur passes.
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: SizedBox(
+            height: kShellBottomNavHeight,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final item in items)
+                  Expanded(
+                    child: _ShellBottomNavItem(
                       icon: item.icon,
                       selectedIcon: item.selectedIcon,
                       label: item.label,
                       selected: selectedIndex == item.index,
                       indicatorColor: indicator,
                       onTap: () => onDestinationSelected(item.index),
-                    )),
-                ],
-              ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
-      ]),
+      ),
     );
   }
 }

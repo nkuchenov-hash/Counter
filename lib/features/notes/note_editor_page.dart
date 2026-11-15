@@ -105,6 +105,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   final Map<String, TextEditingController> _captionControllers = {};
   final Map<String, FocusNode> _focusNodes = {};
   final Map<String, TextSelection> _lastSelections = {};
+  final Set<String> _pendingImeBlockSplits = <String>{};
   late final NotesAudioPlaybackController _audioPlayback;
   final Set<String> _transcribingAudioIds = <String>{};
   String? _editingBlockId;
@@ -268,14 +269,12 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       return controller;
     });
   }
-
   TextEditingController _captionControllerFor(NoteBlock block) {
     return _captionControllers.putIfAbsent(
       block.id,
       () => TextEditingController(text: block.caption ?? ''),
     );
   }
-
   FocusNode? _focusNodeFor(NoteBlock block) {
     if (block.type == NoteBlockType.quote) return null;
     return _focusNodes.putIfAbsent(block.id, () {
@@ -303,7 +302,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       return node;
     });
   }
-
   void _syncEditorsWithDocument() {
     final visibleIds = <String>{};
     final textIds = <String>{};
@@ -353,7 +351,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       _editingBlockId = null;
     }
   }
-
   void _disposeRemoved<T extends ChangeNotifier>(
     Map<String, T> values,
     Set<String> retainedIds,
@@ -365,7 +362,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       values.remove(id)?.dispose();
     }
   }
-
   void _applyMutation(NotesEditorMutation mutation) {
     if (!mutation.changed) return;
     _scheduleSave();
@@ -380,7 +376,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       });
     }
   }
-
   void _requestFocus(String blockId, TextSelection selection) {
     if (_blockSelectionMode) return;
     final block = _editor.blockById(blockId);
@@ -413,15 +408,23 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       setState(() => _editingBlockId = blockId);
     }
   }
-
   void _onBlockTextChanged(NoteBlock block, String value) {
     final controller = _textControllerFor(block);
+    final original = _editor.blockById(block.id);
+    // Both standalone and embedded Android Notes must finish the IME edit
+    // before changing block identity/focus; do not treat the two views
+    // differently while Gboard is composing.
+    final androidIme = Theme.of(context).platform == TargetPlatform.android;
+    final needsStructuralEnter = androidIme &&
+        original != null &&
+        original.type != NoteBlockType.paragraph &&
+        '\n'.allMatches(value).length >
+            '\n'.allMatches(original.effectiveText).length;
     final mutation = _editor.applyTextInput(
       block.id,
       value,
       controller.selection,
-      preserveLineBreaks: widget.inlineBodyOnly &&
-          Theme.of(context).platform == TargetPlatform.android,
+      preserveLineBreaks: androidIme,
     );
     if (mutation.changed && !mutation.requiresRebuild) {
       final updated = _editor.blockById(block.id);
@@ -432,8 +435,24 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       }
     }
     _applyMutation(mutation);
+    if (needsStructuralEnter && _pendingImeBlockSplits.add(block.id)) {
+      // Finish Gboard's transaction first; never unmount the active TextField
+      // synchronously from its onChanged callback.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _pendingImeBlockSplits.remove(block.id);
+        if (!mounted) return;
+        final live = _editor.blockById(block.id);
+        if (live == null || !live.effectiveText.contains('\n')) return;
+        final selection = _textControllers[block.id]?.selection;
+        _applyMutation(_editor.splitEmbeddedLineBreak(
+          block.id,
+          selection ?? TextSelection.collapsed(
+            offset: live.effectiveText.length,
+          ),
+        ));
+      });
+    }
   }
-
   String _normalizeClipboardStructure(String value) {
     final buffer = StringBuffer();
     var pendingSpace = false;
@@ -451,7 +470,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     }
     return buffer.toString().trim();
   }
-
   String _normalizeClipboardMeaning(String value) {
     final normalizedLines = value
         .replaceAll('\r\n', '\n')
@@ -480,7 +498,6 @@ return cleaned;
     return _normalizeClipboardMeaning(candidate) == meaning ||
         _normalizeClipboardMeaning(blockPlain) == meaning;
   }
-
   String _structuredClipboardExportText(List<NoteBlock> blocks) {
     final lines = <String>[];
     var numberedOrdinal = 0;
@@ -523,7 +540,6 @@ lines.add(value);
     unawaited(Clipboard.setData(ClipboardData(text: export)));
     return true;
   }
-
   Widget _buildSelectionContextMenu(
     BuildContext context,
     SelectableRegionState selectableRegionState,
@@ -602,7 +618,6 @@ item,
         ? KeyEventResult.handled
         : KeyEventResult.ignored;
   }
-
   Future<void> _pasteClipboardIntoBlock(
     NoteBlock block,
     TextSelection selection,
@@ -670,8 +685,7 @@ item,
       // Let the Android TextField insert a newline into the active block.
       // Replacing blocks in this key event destroys the IME's current
       // editing connection before it finishes its transaction.
-      if (widget.inlineBodyOnly &&
-          Theme.of(context).platform == TargetPlatform.android) {
+      if (Theme.of(context).platform == TargetPlatform.android) {
         return KeyEventResult.ignored;
       }
       final mutation = _editor.handleEnter(block.id, selection);
@@ -799,12 +813,10 @@ wholeBlockBest = List<NoteBlock>.from(window);
     }
     return best ?? const <NoteBlock>[];
   }
-
   double? _captureBlockScrollOffset() {
     if (!_blockScrollController.hasClients) return null;
     return _blockScrollController.offset;
   }
-
   void _restoreBlockScrollOffset(double? offset) {
     if (offset == null) return;
     void restore() {
@@ -819,7 +831,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
       WidgetsBinding.instance.addPostFrameCallback((_) => restore());
     });
   }
-
   void _toggleBlockSelection(String blockId) {
     if (_editor.blockById(blockId) == null) return;
     final scrollOffset = _captureBlockScrollOffset();
@@ -840,7 +851,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
     });
     _restoreBlockScrollOffset(scrollOffset);
   }
-
   void _exitBlockSelectionMode() {
     if (!_blockSelectionMode && _selectedBlockIds.isEmpty) return;
     final scrollOffset = _captureBlockScrollOffset();
@@ -856,7 +866,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
     });
     _restoreBlockScrollOffset(scrollOffset);
   }
-
   void _handleBlockTap(String blockId) {
     if (_blockSelectionMode) {
       _toggleBlockSelection(blockId);
@@ -864,7 +873,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
     }
     _selectBlock(blockId);
   }
-
   void _deleteBlockFromMenu(String blockId) {
     if (_selectedBlockIds.contains(blockId)) {
       setState(() {
@@ -874,7 +882,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
     }
     _applyMutation(_editor.deleteBlock(blockId));
   }
-
   void _showBlockActionMenu(Offset anchorCenter, NoteBlock block) {
     final overlay = Overlay.maybeOf(context);
     if (overlay == null) return;
@@ -897,7 +904,6 @@ _deleteBlockFromMenu(block.id);
     );
     overlay.insert(entry);
   }
-
   void _selectBlock(String blockId) {
     final block = _editor.blockById(blockId);
     if (block == null) return;
@@ -915,7 +921,6 @@ _deleteBlockFromMenu(block.id);
       setState(() {});
     }
   }
-
   void _convertActive(NotesBlockConversion conversion) {
     if (_selectedBlockIds.isNotEmpty) {
       _applyMutation(_editor.convertBlocks(_selectedBlockIds, conversion));
@@ -924,7 +929,6 @@ _deleteBlockFromMenu(block.id);
     final id = _editor.activeBlockId;
     if (id != null) _applyMutation(_editor.convertBlock(id, conversion));
   }
-
   void _insertAfter(
     String? anchorId,
     NoteBlockType type, {
@@ -935,7 +939,6 @@ _deleteBlockFromMenu(block.id);
       _editor.insertAfter(anchorId, type, level: level, table: table),
     );
   }
-
   NotesTextBlockStyle? _activeHeadingStyle() {
     final block = _editor.activeBlock;
     if (block?.type == NoteBlockType.paragraph) {
@@ -946,7 +949,6 @@ _deleteBlockFromMenu(block.id);
     if (block.level == 3) return NotesTextBlockStyle.h3;
     return NotesTextBlockStyle.h2;
   }
-
   Set<NotesInlineFormat> _selectionFormats() {
     final block = _editor.activeBlock;
     if (block == null ||
@@ -957,7 +959,6 @@ _deleteBlockFromMenu(block.id);
     if (selection == null) return const <NotesInlineFormat>{};
     return _editor.formatsForSelection(block.id, selection);
   }
-
   Future<void> _showHeadingMenu() {
     return showNotesHeadingStylesMenu(
       context: context,
@@ -973,7 +974,6 @@ _deleteBlockFromMenu(block.id);
       },
     );
   }
-
   Future<void> _showFormattingMenu() {
     final block = _editor.activeBlock;
     if (block == null ||
@@ -993,7 +993,6 @@ _deleteBlockFromMenu(block.id);
       },
     );
   }
-
   Future<void> _editLink(String blockId, TextSelection selection) async {
     final result = await showNotesLinkDialog(
       context: context,
@@ -1007,7 +1006,6 @@ _deleteBlockFromMenu(block.id);
       link: result.url,
     );
   }
-
   void _applyInlineFormat(
     String blockId,
     TextSelection selection,
@@ -1028,7 +1026,6 @@ _deleteBlockFromMenu(block.id);
     _scheduleSave();
     setState(() {});
   }
-
   void _focusOrInsertParagraphAfter(String blockId) {
     final visible = _editor.visibleBlocks;
     final index = visible.indexWhere((block) => block.id == blockId);
@@ -1514,6 +1511,9 @@ _editor.insertAfter(
       previousBlockType: index > 0 ? blocks[index - 1].type : null,
       active: active,
       editing: editable && !_blockSelectionMode && _editingBlockId == block.id,
+      directEditOnTap: editable && widget.inlineBodyOnly &&
+          Theme.of(context).platform == TargetPlatform.android &&
+          !_blockSelectionMode,
       textController: editable ? _textControllerFor(block) : null,
       focusNode: focusNode,
       captionController:

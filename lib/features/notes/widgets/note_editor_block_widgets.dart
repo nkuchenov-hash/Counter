@@ -49,6 +49,7 @@ class NotesEditorBlockItem extends StatelessWidget {
     this.previousBlockType,
     required this.active,
     required this.editing,
+    this.directEditOnTap = false,
     required this.onTap,
     required this.onKeyEvent,
     this.textController,
@@ -70,6 +71,10 @@ class NotesEditorBlockItem extends StatelessWidget {
   final NoteBlockType? previousBlockType;
   final bool active;
   final bool editing;
+  /// Android embedded Notes must not replace read-only RichText with a
+  /// TextField on the first tap. Keep the same field mounted and let the
+  /// native IME take focus on that first interaction.
+  final bool directEditOnTap;
   final VoidCallback onTap;
   final KeyEventResult Function(KeyEvent event) onKeyEvent;
   final TextEditingController? textController;
@@ -90,7 +95,7 @@ class NotesEditorBlockItem extends StatelessWidget {
         ? NotesBlockState.active
         : NotesBlockState.defaultState;
     final editable = _isEditableText(block.type);
-    final selectable = editable && !editing;
+    final selectable = editable && !editing && !directEditOnTap;
     final child = selectable
         ? _buildSelectableTextBlock(context)
         : _buildCanonicalBlock(context, state);
@@ -122,7 +127,8 @@ class NotesEditorBlockItem extends StatelessWidget {
       );
     }
 
-    if (_isVisibleProductionBlock(block.type)) {
+    if (_isVisibleProductionBlock(block.type) &&
+        !(directEditOnTap && editable)) {
       interactive = _NotesBlockHoldDragStartListener(
         index: index,
         child: interactive,

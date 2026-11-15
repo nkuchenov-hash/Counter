@@ -112,6 +112,36 @@ class NotesEditorDocumentController {
     return const NotesEditorMutation(changed: true);
   }
 
+  /// Finish an Enter inserted by the Android software keyboard in an
+  /// embedded heading/quote/list field. Unlike splitting synchronously inside
+  /// onChanged, callers invoke this after the current IME frame has completed.
+  /// A heading keeps its own block style; the following line is a Body block.
+  NotesEditorMutation splitEmbeddedLineBreak(
+    String id,
+    TextSelection selection,
+  ) {
+    final block = blockById(id);
+    if (block == null ||
+        !isEditableText(block.type) ||
+        block.type == NoteBlockType.paragraph ||
+        !block.effectiveText.contains('\n')) {
+      return const NotesEditorMutation();
+    }
+    if (_isListLike(block.type) && block.effectiveText == '\n') {
+      final converted = block.copyWith(
+        type: NoteBlockType.paragraph,
+        text: '',
+        runs: const <NoteTextRun>[],
+        checked: false,
+      );
+      _replaceBlock(converted);
+      activeBlockId = converted.id;
+      activeSelection = const TextSelection.collapsed(offset: 0);
+      return _focusMutation(converted.id, activeSelection!);
+    }
+    return _replaceWithSplitLines(block, block.effectiveText, selection);
+  }
+
   NotesEditorMutation handleEnter(String id, TextSelection selection) {
     final block = blockById(id);
     if (block == null || !isEditableText(block.type) || !selection.isValid) {
@@ -220,7 +250,6 @@ class NotesEditorDocumentController {
       for (final source in insertable) _cloneNoteBlockWithNewId(source),
     ];
     replacement.addAll(pasted);
-
     NoteBlock? suffixBlock;
     if (suffixText.isNotEmpty) {
       final slicedTarget = target.copyWith(text: suffixText, runs: suffixRuns);
@@ -229,14 +258,12 @@ class NotesEditorDocumentController {
           : _cloneNoteBlockWithNewId(slicedTarget);
       replacement.add(suffixBlock);
     }
-
     final index = _indexOf(target.id);
     if (index < 0) return const NotesEditorMutation();
     final nextBlocks = List<NoteBlock>.from(blocks)
       ..removeAt(index)
       ..insertAll(index, replacement);
     _commitDocument(_document.copyWith(blocks: nextBlocks));
-
     if (suffixBlock != null) {
       activeBlockId = suffixBlock.id;
       activeSelection = const TextSelection.collapsed(offset: 0);
@@ -252,7 +279,6 @@ class NotesEditorDocumentController {
     }
     return _focusMutation(activeBlockId!, activeSelection);
   }
-
   NotesEditorMutation _replaceWithSplitLines(
     NoteBlock block,
     String newText,
@@ -271,7 +297,6 @@ class NotesEditorDocumentController {
       activeSelection = const TextSelection.collapsed(offset: 0);
       return _focusMutation(converted.id, activeSelection!);
     }
-
     final updatedRuns = applyNoteTextEditToRuns(
       oldText: oldText,
       oldRuns: block.effectiveRuns,
@@ -311,7 +336,6 @@ class NotesEditorDocumentController {
     activeSelection = TextSelection.collapsed(offset: focus.$2);
     return _focusMutation(focusBlock.id, activeSelection!);
   }
-
   NotesEditorMutation handleBackspaceAtStart(String id) {
     final index = _indexOf(id);
     if (index < 0) return const NotesEditorMutation();
@@ -333,7 +357,6 @@ class NotesEditorDocumentController {
       previousIndex--;
     }
     if (previousIndex < 0) return const NotesEditorMutation();
-
     final previous = blocks[previousIndex];
     final previousLength = previous.effectiveText.length;
     final nextBlocks = List<NoteBlock>.from(blocks)
@@ -347,7 +370,6 @@ class NotesEditorDocumentController {
     activeSelection = TextSelection.collapsed(offset: previousLength);
     return _focusMutation(previous.id, activeSelection!);
   }
-
   NotesEditorMutation convertBlock(String id, NotesBlockConversion conversion) {
     final block = blockById(id);
     if (block == null || !isEditableText(block.type)) {
@@ -379,7 +401,6 @@ class NotesEditorDocumentController {
     activeBlockId = id;
     return _focusMutation(id, activeSelection);
   }
-
   NotesEditorMutation insertAfter(
     String? anchorId,
     NoteBlockType type, {
@@ -419,7 +440,6 @@ class NotesEditorDocumentController {
       selection: activeSelection,
     );
   }
-
   NotesEditorMutation updateMedia(
     String id, {
     String? imageData,
@@ -438,7 +458,6 @@ class NotesEditorDocumentController {
     activeBlockId = id;
     return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
-
   NotesEditorMutation updateAudio(String id, NoteAudioData audio) {
     final block = blockById(id);
     if (block == null || block.type != NoteBlockType.audio) {
@@ -448,7 +467,6 @@ class NotesEditorDocumentController {
     activeBlockId = id;
     return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
-
   NotesEditorMutation deleteBlock(String id) {
     final index = _indexOf(id);
     if (index < 0 || !isSupportedProductionBlock(blocks[index].type)) {
@@ -486,7 +504,6 @@ class NotesEditorDocumentController {
       selection: selection,
     );
   }
-
   NotesEditorMutation toggleChecklist(String id, bool checked) {
     final block = blockById(id);
     if (block == null || block.type != NoteBlockType.checklist) {
@@ -497,7 +514,6 @@ class NotesEditorDocumentController {
     activeBlockId = id;
     return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
-
   NotesEditorMutation updateTable(String id, NoteTableData table) {
     final block = blockById(id);
     if (block == null || block.type != NoteBlockType.table) {
@@ -507,7 +523,6 @@ class NotesEditorDocumentController {
     activeBlockId = id;
     return const NotesEditorMutation(changed: true);
   }
-
   NotesEditorMutation editTable(
     String id,
     NotesTableEditCommand command, {
@@ -575,7 +590,6 @@ class NotesEditorDocumentController {
     activeBlockId = id;
     return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
-
   NotesEditorMutation updateCaption(String id, String caption) {
     final block = blockById(id);
     if (block == null ||
@@ -592,7 +606,6 @@ class NotesEditorDocumentController {
     activeBlockId = id;
     return const NotesEditorMutation(changed: true);
   }
-
   NotesEditorMutation convertBlocks(
     Set<String> ids,
     NotesBlockConversion conversion,
@@ -612,7 +625,6 @@ class NotesEditorDocumentController {
     activeSelection = null;
     return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
-
   NotesEditorMutation reorderVisibleGroup(
     Set<String> ids,
     int oldIndex,
@@ -656,7 +668,6 @@ class NotesEditorDocumentController {
     activeSelection = null;
     return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
-
   NotesEditorMutation reorderVisible(int oldIndex, int newIndex) {
     final visible = List<NoteBlock>.from(visibleBlocks);
     if (oldIndex < 0 || oldIndex >= visible.length) {
@@ -681,7 +692,6 @@ class NotesEditorDocumentController {
     activeBlockId = moving.id;
     return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
-
   Set<NotesInlineFormat> formatsForSelection(
     String id,
     TextSelection selection,
@@ -721,7 +731,6 @@ class NotesEditorDocumentController {
     if (first == null) return null;
     return marks.every((item) => item.link == first) ? first : null;
   }
-
   NotesEditorMutation applyInlineFormat(
     String id,
     TextSelection selection,
@@ -757,7 +766,6 @@ class NotesEditorDocumentController {
     activeSelection = selection;
     return const NotesEditorMutation(changed: true);
   }
-
   NotesEditorMutation _focusMutation(String blockId, TextSelection? selection) {
     return NotesEditorMutation(
       changed: true,
@@ -766,7 +774,6 @@ class NotesEditorDocumentController {
       selection: selection,
     );
   }
-
   bool get canUndo => _undoStack.isNotEmpty;
 
   NotesEditorMutation undo() {
@@ -799,20 +806,17 @@ class NotesEditorDocumentController {
     activeSelection = null;
     return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
-
   void _commitDocument(NoteDocument next) {
     _undoStack.add(_document);
     if (_undoStack.length > 100) _undoStack.removeAt(0);
     _document = next;
   }
-
   void _replaceBlock(NoteBlock replacement) {
     final index = _indexOf(replacement.id);
     if (index < 0) return;
     final nextBlocks = List<NoteBlock>.from(blocks)..[index] = replacement;
     _commitDocument(_document.copyWith(blocks: nextBlocks));
   }
-
   int _indexOf(String id) => blocks.indexWhere((block) => block.id == id);
 
   int _indexAfterLastVisibleBlock() {
@@ -821,7 +825,6 @@ class NotesEditorDocumentController {
     }
     return 0;
   }
-
   static bool isSupportedProductionBlock(NoteBlockType type) {
     return isEditableText(type) ||
         type == NoteBlockType.divider ||
@@ -830,7 +833,6 @@ class NotesEditorDocumentController {
         type == NoteBlockType.drawing ||
         type == NoteBlockType.audio;
   }
-
   static bool isEditableText(NoteBlockType type) {
     return type == NoteBlockType.paragraph ||
         type == NoteBlockType.heading ||
@@ -839,13 +841,11 @@ class NotesEditorDocumentController {
         type == NoteBlockType.checklist ||
         type == NoteBlockType.quote;
   }
-
   static bool _isListLike(NoteBlockType type) {
     return type == NoteBlockType.bulletedList ||
         type == NoteBlockType.numberedList ||
         type == NoteBlockType.checklist;
   }
-
   static NoteBlockType _typeAfterEnter(NoteBlockType type) {
     if (type == NoteBlockType.heading || type == NoteBlockType.quote) {
       return NoteBlockType.paragraph;
