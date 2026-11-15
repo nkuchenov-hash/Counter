@@ -107,7 +107,7 @@ void main() {
     expect(layout, contains('this.transparentBackground = false'));
     expect(layout, contains('transparentBackground ? AppNeutralTones.transparent'));
     expect(settings, contains('Theme.of(context).colorScheme.surfaceContainerLowest'));
-    expect(nav, isNot(contains('Positioned.fill(child: IgnorePointer(child: ShaderMask('))));
+    expect(nav, isNot(contains('Positioned.fill(child: IgnorePointer(child: ShaderMask(')));
     expect(settings, contains("key: ValueKey(_mobileDetailOpen ? 'detail-"));
     expect(settings, isNot(contains('for (final top in [true, false])')));
     expect(settings, contains('class _MobileSettingsMotion'));
