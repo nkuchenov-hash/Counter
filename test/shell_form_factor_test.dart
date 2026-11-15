@@ -71,7 +71,7 @@ void main() {
     expect(nav, isNot(contains('BackdropFilter(')));
     expect(nav, isNot(contains('ImageFilter.blur(sigmaX: 16, sigmaY: 16)')));
     expect(nav, isNot(contains('child: ShaderMask(')));
-    expect(nav, contains('blendMode: BlendMode.dstIn'));
+    expect(nav, isNot(contains('blendMode: BlendMode.dstIn')));
     expect(nav, isNot(contains('AppNeutralTones.white.withValues(alpha: 0.12)')));
     expect(nav, contains('AppNeutralTones.white.withValues(alpha: 0.23)'));
     expect(nav, contains('SafeArea('));
