@@ -244,6 +244,12 @@ void main() {
     expect(editor, contains('child: _blockSelectionMode || (widget.inlineBodyOnly &&'));
     expect(editor, contains('Theme.of(context).platform == TargetPlatform.android'));
     expect(editor, contains('child: SelectionArea('));
+    // Record document notifications are debounced rather than dispatched
+    // synchronously for every Android keypress. Last edit is flushed on exit.
+    expect(editor, contains('_gate.schedule(_syncToBrain);'));
+    expect(editor, contains('const Duration(milliseconds: 180)'));
+    expect(editor, isNot(contains('if (widget.onDocumentChanged != null) {\\n      _syncToBrain();')));
+    expect(editor, contains('_gate.flush(_syncToBrain, force: true);'));
     expect(record, contains('debounce: const Duration(milliseconds: 1500)'));
     final planning = File(
       'lib/features/shared/planning_task_edit_sheet.dart',
