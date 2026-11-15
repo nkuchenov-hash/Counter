@@ -269,14 +269,12 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       return controller;
     });
   }
-
   TextEditingController _captionControllerFor(NoteBlock block) {
     return _captionControllers.putIfAbsent(
       block.id,
       () => TextEditingController(text: block.caption ?? ''),
     );
   }
-
   FocusNode? _focusNodeFor(NoteBlock block) {
     if (block.type == NoteBlockType.quote) return null;
     return _focusNodes.putIfAbsent(block.id, () {
@@ -304,7 +302,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       return node;
     });
   }
-
   void _syncEditorsWithDocument() {
     final visibleIds = <String>{};
     final textIds = <String>{};
@@ -354,7 +351,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       _editingBlockId = null;
     }
   }
-
   void _disposeRemoved<T extends ChangeNotifier>(
     Map<String, T> values,
     Set<String> retainedIds,
@@ -366,7 +362,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       values.remove(id)?.dispose();
     }
   }
-
   void _applyMutation(NotesEditorMutation mutation) {
     if (!mutation.changed) return;
     _scheduleSave();
@@ -381,7 +376,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       });
     }
   }
-
   void _requestFocus(String blockId, TextSelection selection) {
     if (_blockSelectionMode) return;
     final block = _editor.blockById(blockId);
@@ -414,7 +408,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       setState(() => _editingBlockId = blockId);
     }
   }
-
   void _onBlockTextChanged(NoteBlock block, String value) {
     final controller = _textControllerFor(block);
     final original = _editor.blockById(block.id);
@@ -459,7 +452,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       });
     }
   }
-
   String _normalizeClipboardStructure(String value) {
     final buffer = StringBuffer();
     var pendingSpace = false;
@@ -477,7 +469,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     }
     return buffer.toString().trim();
   }
-
   String _normalizeClipboardMeaning(String value) {
     final normalizedLines = value
         .replaceAll('\r\n', '\n')
@@ -506,7 +497,6 @@ return cleaned;
     return _normalizeClipboardMeaning(candidate) == meaning ||
         _normalizeClipboardMeaning(blockPlain) == meaning;
   }
-
   String _structuredClipboardExportText(List<NoteBlock> blocks) {
     final lines = <String>[];
     var numberedOrdinal = 0;
@@ -549,7 +539,6 @@ lines.add(value);
     unawaited(Clipboard.setData(ClipboardData(text: export)));
     return true;
   }
-
   Widget _buildSelectionContextMenu(
     BuildContext context,
     SelectableRegionState selectableRegionState,
@@ -628,7 +617,6 @@ item,
         ? KeyEventResult.handled
         : KeyEventResult.ignored;
   }
-
   Future<void> _pasteClipboardIntoBlock(
     NoteBlock block,
     TextSelection selection,
@@ -825,12 +813,10 @@ wholeBlockBest = List<NoteBlock>.from(window);
     }
     return best ?? const <NoteBlock>[];
   }
-
   double? _captureBlockScrollOffset() {
     if (!_blockScrollController.hasClients) return null;
     return _blockScrollController.offset;
   }
-
   void _restoreBlockScrollOffset(double? offset) {
     if (offset == null) return;
     void restore() {
@@ -845,7 +831,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
       WidgetsBinding.instance.addPostFrameCallback((_) => restore());
     });
   }
-
   void _toggleBlockSelection(String blockId) {
     if (_editor.blockById(blockId) == null) return;
     final scrollOffset = _captureBlockScrollOffset();
@@ -866,7 +851,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
     });
     _restoreBlockScrollOffset(scrollOffset);
   }
-
   void _exitBlockSelectionMode() {
     if (!_blockSelectionMode && _selectedBlockIds.isEmpty) return;
     final scrollOffset = _captureBlockScrollOffset();
@@ -882,7 +866,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
     });
     _restoreBlockScrollOffset(scrollOffset);
   }
-
   void _handleBlockTap(String blockId) {
     if (_blockSelectionMode) {
       _toggleBlockSelection(blockId);
@@ -890,7 +873,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
     }
     _selectBlock(blockId);
   }
-
   void _deleteBlockFromMenu(String blockId) {
     if (_selectedBlockIds.contains(blockId)) {
       setState(() {
@@ -900,7 +882,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
     }
     _applyMutation(_editor.deleteBlock(blockId));
   }
-
   void _showBlockActionMenu(Offset anchorCenter, NoteBlock block) {
     final overlay = Overlay.maybeOf(context);
     if (overlay == null) return;
@@ -923,7 +904,6 @@ _deleteBlockFromMenu(block.id);
     );
     overlay.insert(entry);
   }
-
   void _selectBlock(String blockId) {
     final block = _editor.blockById(blockId);
     if (block == null) return;
@@ -941,7 +921,6 @@ _deleteBlockFromMenu(block.id);
       setState(() {});
     }
   }
-
   void _convertActive(NotesBlockConversion conversion) {
     if (_selectedBlockIds.isNotEmpty) {
       _applyMutation(_editor.convertBlocks(_selectedBlockIds, conversion));
@@ -950,7 +929,6 @@ _deleteBlockFromMenu(block.id);
     final id = _editor.activeBlockId;
     if (id != null) _applyMutation(_editor.convertBlock(id, conversion));
   }
-
   void _insertAfter(
     String? anchorId,
     NoteBlockType type, {
@@ -961,7 +939,6 @@ _deleteBlockFromMenu(block.id);
       _editor.insertAfter(anchorId, type, level: level, table: table),
     );
   }
-
   NotesTextBlockStyle? _activeHeadingStyle() {
     final block = _editor.activeBlock;
     if (block?.type == NoteBlockType.paragraph) {
@@ -972,7 +949,6 @@ _deleteBlockFromMenu(block.id);
     if (block.level == 3) return NotesTextBlockStyle.h3;
     return NotesTextBlockStyle.h2;
   }
-
   Set<NotesInlineFormat> _selectionFormats() {
     final block = _editor.activeBlock;
     if (block == null ||
@@ -983,7 +959,6 @@ _deleteBlockFromMenu(block.id);
     if (selection == null) return const <NotesInlineFormat>{};
     return _editor.formatsForSelection(block.id, selection);
   }
-
   Future<void> _showHeadingMenu() {
     return showNotesHeadingStylesMenu(
       context: context,
@@ -999,7 +974,6 @@ _deleteBlockFromMenu(block.id);
       },
     );
   }
-
   Future<void> _showFormattingMenu() {
     final block = _editor.activeBlock;
     if (block == null ||
@@ -1019,7 +993,6 @@ _deleteBlockFromMenu(block.id);
       },
     );
   }
-
   Future<void> _editLink(String blockId, TextSelection selection) async {
     final result = await showNotesLinkDialog(
       context: context,
@@ -1033,7 +1006,6 @@ _deleteBlockFromMenu(block.id);
       link: result.url,
     );
   }
-
   void _applyInlineFormat(
     String blockId,
     TextSelection selection,
@@ -1054,7 +1026,6 @@ _deleteBlockFromMenu(block.id);
     _scheduleSave();
     setState(() {});
   }
-
   void _focusOrInsertParagraphAfter(String blockId) {
     final visible = _editor.visibleBlocks;
     final index = visible.indexWhere((block) => block.id == blockId);
