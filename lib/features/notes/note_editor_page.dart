@@ -411,9 +411,11 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   void _onBlockTextChanged(NoteBlock block, String value) {
     final controller = _textControllerFor(block);
     final original = _editor.blockById(block.id);
-    final androidEmbedded = widget.inlineBodyOnly &&
-        Theme.of(context).platform == TargetPlatform.android;
-    final needsStructuralEnter = androidEmbedded &&
+    // Both standalone and embedded Android Notes must finish the IME edit
+    // before changing block identity/focus; do not treat the two views
+    // differently while Gboard is composing.
+    final androidIme = Theme.of(context).platform == TargetPlatform.android;
+    final needsStructuralEnter = androidIme &&
         original != null &&
         original.type != NoteBlockType.paragraph &&
         '\n'.allMatches(value).length >
@@ -422,8 +424,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       block.id,
       value,
       controller.selection,
-      preserveLineBreaks: widget.inlineBodyOnly &&
-          Theme.of(context).platform == TargetPlatform.android,
+      preserveLineBreaks: androidIme,
     );
     if (mutation.changed && !mutation.requiresRebuild) {
       final updated = _editor.blockById(block.id);
@@ -684,8 +685,7 @@ item,
       // Let the Android TextField insert a newline into the active block.
       // Replacing blocks in this key event destroys the IME's current
       // editing connection before it finishes its transaction.
-      if (widget.inlineBodyOnly &&
-          Theme.of(context).platform == TargetPlatform.android) {
+      if (Theme.of(context).platform == TargetPlatform.android) {
         return KeyEventResult.ignored;
       }
       final mutation = _editor.handleEnter(block.id, selection);
