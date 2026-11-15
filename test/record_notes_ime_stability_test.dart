@@ -487,7 +487,8 @@ void main() {
     expect(record, contains('recordNotesShouldUseCompactChrome('));
     expect(record, contains('_notesImeSessionActive'));
     expect(editor, contains('Theme.of(context).platform == TargetPlatform.android'));
-    expect(editor, contains('preserveLineBreaks: widget.inlineBodyOnly &&'));
+    expect(editor, contains('preserveLineBreaks: androidIme,'));
+    expect(editor, contains('final androidIme = Theme.of(context).platform == TargetPlatform.android;'));
     expect(editor, contains('return KeyEventResult.ignored;'));
     expect(editor, contains('_ensureBlockVisible(block.id);'));
     expect(record, contains('final notesEditing = recordNotesShouldUseCompactChrome('));
