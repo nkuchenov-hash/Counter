@@ -166,6 +166,109 @@ void main() {
     }
   });
 
+  test('heading Enter creates independent Body, preserving H1 formatting', () {
+    const headingId = 'heading-before-enter';
+    final editor = NotesEditorDocumentController(
+      const NoteDocument(blocks: [
+        NoteBlock(
+          id: headingId,
+          type: NoteBlockType.heading,
+          level: 1,
+          text: 'Заголовок',
+        ),
+      ]),
+    );
+    final text = 'Заголовок\n';
+    editor.applyTextInput(
+      headingId,
+      text,
+      TextSelection.collapsed(offset: text.length),
+      preserveLineBreaks: true,
+    );
+    final split = editor.splitEmbeddedLineBreak(
+      headingId,
+      TextSelection.collapsed(offset: text.length),
+    );
+    expect(split.changed, isTrue);
+    expect(split.focusBlockId, isNot(headingId));
+    expect(editor.visibleBlocks, hasLength(2));
+    expect(editor.visibleBlocks.first.id, headingId);
+    expect(editor.visibleBlocks.first.type, NoteBlockType.heading);
+    expect(editor.visibleBlocks.first.level, 1);
+    expect(editor.visibleBlocks.first.effectiveText, 'Заголовок');
+    final body = editor.visibleBlocks.last;
+    expect(body.type, NoteBlockType.paragraph);
+    expect(body.effectiveText, isEmpty);
+
+    // Styling the new line must never change its preceding heading.
+    editor.convertBlock(body.id, NotesBlockConversion.h2);
+    expect(editor.visibleBlocks.first.type, NoteBlockType.heading);
+    expect(editor.visibleBlocks.first.level, 1);
+    editor.convertBlock(body.id, NotesBlockConversion.body);
+    expect(editor.visibleBlocks.first.level, 1);
+    expect(editor.visibleBlocks.last.type, NoteBlockType.paragraph);
+  });
+
+  testWidgets('embedded Android heading Enter focuses separate Body after one tap',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    const headingId = 'record-heading-single-tap';
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData(platform: TargetPlatform.android),
+      home: Scaffold(
+        body: SizedBox(
+          height: 650,
+          child: NoteEditorPage(
+            task: PlanningTask(
+              id: 0,
+              planRowId: 'heading-single-tap-test',
+              title: 'Record',
+              categoryId: CategoryRule.uncategorizedSyntheticId,
+              dateKey: '2026-11-15',
+            ),
+            parityPreview: true,
+            inlineBodyOnly: true,
+            initialDocument: const NoteDocument(blocks: [
+              NoteBlock(
+                id: headingId,
+                type: NoteBlockType.heading,
+                level: 1,
+                text: 'Заголовок',
+              ),
+            ]),
+          ),
+        ),
+      ),
+    ));
+    await tester.pump();
+    final headingField =
+        find.byKey(const ValueKey('notes-block-field-$headingId'));
+    // Before the first tap the block must ALREADY be a native TextField.
+    expect(headingField, findsOneWidget);
+    await tester.tap(headingField);
+    await tester.pump();
+    expect(tester.widget<TextField>(headingField).focusNode!.hasFocus, isTrue);
+    await tester.enterText(headingField, 'Заголовок\n');
+    await tester.pump();
+    await tester.pump();
+    final blocks = tester.widgetList<NotesEditorBlockItem>(
+      find.byType(NotesEditorBlockItem),
+    ).toList();
+    expect(blocks, hasLength(2));
+    expect(blocks.first.block.type, NoteBlockType.heading);
+    expect(blocks.first.block.effectiveText, 'Заголовок');
+    expect(blocks.last.block.type, NoteBlockType.paragraph);
+    expect(blocks.last.block.id, isNot(headingId));
+    final newBodyField =
+        find.byKey(ValueKey('notes-block-field-${blocks.last.block.id}'));
+    expect(newBodyField, findsOneWidget);
+    expect(tester.widget<TextField>(newBodyField).focusNode!.hasFocus, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
   test('Android IME typing keeps composing range without duplicate events', () {
     final controller = NotesTextEditingController(text: 'Привет');
     addTearDown(controller.dispose);
