@@ -105,6 +105,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   final Map<String, TextEditingController> _captionControllers = {};
   final Map<String, FocusNode> _focusNodes = {};
   final Map<String, TextSelection> _lastSelections = {};
+  final Set<String> _pendingImeBlockSplits = <String>{};
   late final NotesAudioPlaybackController _audioPlayback;
   final Set<String> _transcribingAudioIds = <String>{};
   String? _editingBlockId;
@@ -416,6 +417,14 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
   void _onBlockTextChanged(NoteBlock block, String value) {
     final controller = _textControllerFor(block);
+    final original = _editor.blockById(block.id);
+    final androidEmbedded = widget.inlineBodyOnly &&
+        Theme.of(context).platform == TargetPlatform.android;
+    final needsStructuralEnter = androidEmbedded &&
+        original != null &&
+        original.type != NoteBlockType.paragraph &&
+        '\n'.allMatches(value).length >
+            '\n'.allMatches(original.effectiveText).length;
     final mutation = _editor.applyTextInput(
       block.id,
       value,
@@ -432,6 +441,23 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       }
     }
     _applyMutation(mutation);
+    if (needsStructuralEnter && _pendingImeBlockSplits.add(block.id)) {
+      // Finish Gboard's transaction first; never unmount the active TextField
+      // synchronously from its onChanged callback.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _pendingImeBlockSplits.remove(block.id);
+        if (!mounted) return;
+        final live = _editor.blockById(block.id);
+        if (live == null || !live.effectiveText.contains('\n')) return;
+        final selection = _textControllers[block.id]?.selection;
+        _applyMutation(_editor.splitEmbeddedLineBreak(
+          block.id,
+          selection ?? TextSelection.collapsed(
+            offset: live.effectiveText.length,
+          ),
+        ));
+      });
+    }
   }
 
   String _normalizeClipboardStructure(String value) {
