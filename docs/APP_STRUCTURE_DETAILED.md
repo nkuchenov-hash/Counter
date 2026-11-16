@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `58b054fe` on 2026-11-16.**
+**Generated from input HEAD `ecc385f0` on 2026-11-16.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1016 — each appears **exactly once** below.
+**Tracked files:** 1017 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,7 +26,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 201 |
+| `production UI` | 202 |
 | `test` | 148 |
 | `Brain/data` | 118 |
 | `platform build` | 84 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 550 |
+| `PROVEN_REQUIRED` | 551 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 274 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 928 |
+| `HIGH` | 929 |
 | `MEDIUM` | 88 |
 
 ---
@@ -13395,7 +13395,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`, `AppSettingsSwitchRow`, `AppSettingsInfoRow`).
 - **Key code names:** `AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`, `AppSettingsSwitchRow`, `AppSettingsInfoRow`, `AppSettingsActionRow`, `AppSettingsCardGrid`, `AppSettingsGridCard`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/settings/default_plan_times_settings_block.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13412,7 +13412,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_settings_layout`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/settings/default_plan_times_settings_block.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21773,7 +21773,7 @@ EN:
 - **Contents:** Primary symbols: `DefaultPlanCategoryOption`, `DefaultPlanCategorySearchDelegate`.
 - **Key code names:** `DefaultPlanCategoryOption`, `DefaultPlanCategorySearchDelegate`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/settings/default_plan_times_settings_block.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21790,12 +21790,50 @@ RU:
 - **Зачем:** Пользователь видит UI из `default_plan_category_search.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `default_plan_category_search.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/settings/default_plan_times_settings_block.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** UI планов
 - **Обязанности:** Поддерживает поведение `default_plan_category_search` в этой feature-зоне.
+- **Когда открывать:** Вкладка Plans: день, карточки, play.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Вкладка Plans (shell index 1)
+
+
+### `lib/features/planning/settings/default_plan_times_settings_block.dart`
+
+EN:
+
+- **Human purpose:** `default_plan_times_settings_block.dart` on Plans tab (second bottom tab) — Canonical inline category start-time and timezone editor used in Settings and Time View. Users see `default_plan_times_settings_block.dart` when using Plans tab (second bottom tab).
+- **What this is:** `default_plan_times_settings_block.dart` on Plans tab (second bottom tab) — Canonical inline category start-time and timezone editor used in Settings and Time View.
+- **Why needed:** Users see `default_plan_times_settings_block.dart` when using Plans tab (second bottom tab).
+- **Contents:** Primary symbols: `DefaultPlanTimesSettingsBlock`, `_DefaultPlanTimesSettingsBlockState`.
+- **Key code names:** `DefaultPlanTimesSettingsBlock`, `_DefaultPlanTimesSettingsBlockState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Planning UI
+- **Responsibilities:** Canonical inline category start-time and timezone editor used in Settings and Time View
+- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Canonical inline category start-time and timezone editor used in Settings and Time View
+
+RU:
+
+- **Зачем файл человеку:** `default_plan_times_settings_block.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `default_plan_times_settings_block` в этой feature-зоне.. Пользователь видит UI из `default_plan_times_settings_block.dart` на вкладка Plans (вторая снизу).
+- **Что это:** `default_plan_times_settings_block.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `default_plan_times_settings_block` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `default_plan_times_settings_block.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Dart-модуль `default_plan_times_settings_block.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI планов
+- **Обязанности:** Поддерживает поведение `default_plan_times_settings_block` в этой feature-зоне.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -21810,7 +21848,7 @@ EN:
 - **Why needed:** Users see `default_plan_timezone_search.dart` when using Plans tab (second bottom tab).
 - **Contents:** Dart module `default_plan_timezone_search.dart` — open file for classes and helpers.
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_search_delegate.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/settings/default_plan_times_settings_block.dart`, `lib/features/planning/time_view/time_view_search_delegate.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21827,7 +21865,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `default_plan_timezone_search.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `default_plan_timezone_search.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_search_delegate.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/settings/default_plan_times_settings_block.dart`, `lib/features/planning/time_view/time_view_search_delegate.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22453,8 +22491,8 @@ EN:
 - **Human purpose:** `time_view_settings_sheet.dart` on Plans tab (second bottom tab) — Time View settings + default plan times. Users see `time_view_settings_sheet.dart` when using Plans tab (second bottom tab).
 - **What this is:** `time_view_settings_sheet.dart` on Plans tab (second bottom tab) — Time View settings + default plan times.
 - **Why needed:** Users see `time_view_settings_sheet.dart` when using Plans tab (second bottom tab).
-- **Contents:** Primary symbols: `PlanningTimeViewTimeViewSettingsSheet`.
-- **Key code names:** `PlanningTimeViewTimeViewSettingsSheet`
+- **Contents:** Primary symbols: `PlanningTimeViewTimeViewSettingsSheet`, `PlanAutoPlacementSettingsBlock`, `_PlanAutoPlacementSettingsBlockState`.
+- **Key code names:** `PlanningTimeViewTimeViewSettingsSheet`, `PlanAutoPlacementSettingsBlock`, `_PlanAutoPlacementSettingsBlockState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -22471,7 +22509,7 @@ RU:
 - **Зачем файл человеку:** `time_view_settings_sheet.dart` на вкладка Plans (вторая снизу) — Пользователь открывает sheet/dialog из entry `time_view_settings_sheet`.. Пользователь видит UI из `time_view_settings_sheet.dart` на вкладка Plans (вторая снизу).
 - **Что это:** `time_view_settings_sheet.dart` на вкладка Plans (вторая снизу) — Пользователь открывает sheet/dialog из entry `time_view_settings_sheet`..
 - **Зачем:** Пользователь видит UI из `time_view_settings_sheet.dart` на вкладка Plans (вторая снизу).
-- **Содержимое:** Основные символы: `PlanningTimeViewTimeViewSettingsSheet`.
+- **Содержимое:** Основные символы: `PlanningTimeViewTimeViewSettingsSheet`, `PlanAutoPlacementSettingsBlock`, `_PlanAutoPlacementSettingsBlockState`.
 - **Роль в репозитории:** production UI
 - **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
@@ -24351,7 +24389,7 @@ EN:
 - **Contents:** Primary symbols: `TimezoneOption`.
 - **Key code names:** `TimezoneOption`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/settings/default_plan_timezone_search.dart`, `lib/features/planning/time_view/time_view_search_delegate.dart`, `lib/features/profile/profile_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/settings/default_plan_times_settings_block.dart`, `lib/features/planning/settings/default_plan_timezone_search.dart`, `lib/features/planning/time_view/time_view_search_delegate.dart`, `lib/features/profile/profile_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -24368,7 +24406,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `timezone_settings.dart` на settings.
 - **Содержимое:** Dart-модуль `timezone_settings.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/settings/default_plan_timezone_search.dart`, `lib/features/planning/time_view/time_view_search_delegate.dart`, `lib/features/profile/profile_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/settings/default_plan_times_settings_block.dart`, `lib/features/planning/settings/default_plan_timezone_search.dart`, `lib/features/planning/time_view/time_view_search_delegate.dart`, `lib/features/profile/profile_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
