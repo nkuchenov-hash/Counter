@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
@@ -73,36 +75,78 @@ class ShellCompactBottomNav extends StatelessWidget {
       ),
     ];
 
-    return MediaQuery.withClampedTextScaling(
-      maxScaleFactor: 1.0,
-      // No full-width frosted rectangle/gradient behind the entire navbar.
-      // Only the selected destination receives an independent light capsule;
-      // empty areas remain transparent and do not consume GPU blur passes.
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          child: SizedBox(
-            height: kShellBottomNavHeight,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final item in items)
-                  Expanded(
-                    child: _ShellBottomNavItem(
-                      icon: item.icon,
-                      selectedIcon: item.selectedIcon,
-                      label: item.label,
-                      selected: selectedIndex == item.index,
-                      indicatorColor: indicator,
-                      onTap: () => onDestinationSelected(item.index),
-                    ),
+    final navigation = SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: SizedBox(
+          height: kShellBottomNavHeight,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final item in items)
+                Expanded(
+                  child: _ShellBottomNavItem(
+                    icon: item.icon,
+                    selectedIcon: item.selectedIcon,
+                    label: item.label,
+                    selected: selectedIndex == item.index,
+                    indicatorColor: indicator,
+                    onTap: () => onDestinationSelected(item.index),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),
+    );
+    // Ordinary tabs have no full-width backplate. Settings alone adds a
+    // downward feathered glass overlay where content scrolls under the dock.
+    final content = !seamlessGlass ? navigation : Stack(
+      children: [
+        Positioned.fill(
+          child: IgnorePointer(
+            child: ShaderMask(
+              blendMode: BlendMode.dstIn,
+              shaderCallback: (bounds) => const LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                stops: [0, 0.48, 1],
+                colors: [
+                  AppNeutralTones.white,
+                  AppNeutralTones.white,
+                  AppNeutralTones.transparent,
+                ],
+              ).createShader(bounds),
+              child: ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        stops: const [0, 0.4, 1],
+                        colors: [
+                          scheme.surfaceContainerLowest.withValues(alpha: 0.76),
+                          scheme.surfaceContainerLowest.withValues(alpha: 0.28),
+                          AppNeutralTones.transparent,
+                        ],
+                      ),
+                    ),
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        navigation,
+      ],
+    );
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.0,
+      child: content,
     );
   }
 }

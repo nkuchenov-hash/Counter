@@ -111,7 +111,6 @@ class NotesEditorDocumentController {
     );
     return const NotesEditorMutation(changed: true);
   }
-
   /// Finish an Enter inserted by the Android software keyboard in an
   /// embedded heading/quote/list field. Unlike splitting synchronously inside
   /// onChanged, callers invoke this after the current IME frame has completed.
@@ -141,7 +140,6 @@ class NotesEditorDocumentController {
     }
     return _replaceWithSplitLines(block, block.effectiveText, selection);
   }
-
   NotesEditorMutation handleEnter(String id, TextSelection selection) {
     final block = blockById(id);
     if (block == null || !isEditableText(block.type) || !selection.isValid) {
@@ -155,7 +153,6 @@ class NotesEditorDocumentController {
       TextSelection.collapsed(offset: start + 1),
     );
   }
-
   NoteBlock? structuralSliceForSelection(
   String id,
   TextSelection selection,
@@ -173,7 +170,6 @@ class NotesEditorDocumentController {
     runs: _sliceRuns(block.effectiveRuns, start, end),
   );
 }
-
 /// Paste a system clipboard string. Normal text keeps the existing editor
   /// semantics; recognizable Markdown/native checkbox lines become real Notes
   /// blocks instead of being flattened into one paragraph.
@@ -190,12 +186,10 @@ class NotesEditorDocumentController {
         .replaceAll('\r\n', '\n')
         .replaceAll('\r', '\n');
     if (normalized.isEmpty) return const NotesEditorMutation();
-
     final structured = _parseStructuredClipboardText(normalized);
     if (structured != null && structured.isNotEmpty) {
       return pasteBlocks(id, selection, structured);
     }
-
     final safe = selection.isValid
         ? selection
         : TextSelection.collapsed(offset: block.effectiveText.length);
@@ -208,7 +202,6 @@ class NotesEditorDocumentController {
       TextSelection.collapsed(offset: start + normalized.length),
     );
   }
-
   /// Inserts structured text blocks at the current caret/selection. Block type,
   /// checklist state, heading level and inline runs are preserved for internal
   /// Notes clipboard payloads. New ids are always generated for pasted blocks.
@@ -226,7 +219,6 @@ class NotesEditorDocumentController {
         if (isEditableText(source.type)) source,
     ];
     if (insertable.isEmpty) return const NotesEditorMutation();
-
     final safe = selection.isValid
         ? selection
         : TextSelection.collapsed(offset: target.effectiveText.length);
@@ -240,12 +232,10 @@ class NotesEditorDocumentController {
       end,
       target.effectiveText.length,
     );
-
     final replacement = <NoteBlock>[];
     if (prefixText.isNotEmpty) {
       replacement.add(target.copyWith(text: prefixText, runs: prefixRuns));
     }
-
     final pasted = <NoteBlock>[
       for (final source in insertable) _cloneNoteBlockWithNewId(source),
     ];
@@ -369,6 +359,24 @@ class NotesEditorDocumentController {
     activeBlockId = previous.id;
     activeSelection = TextSelection.collapsed(offset: previousLength);
     return _focusMutation(previous.id, activeSelection!);
+  }
+  /// Gboard keeps multiline Body stable until the toolbar styles one line.
+  NotesEditorMutation convertCurrentLine(String id, TextSelection selection,
+      NotesBlockConversion conversion) {
+    final block = blockById(id);
+    if (block == null || !isEditableText(block.type)) {
+      return const NotesEditorMutation();
+    }
+    if (block.type != NoteBlockType.paragraph ||
+        !block.effectiveText.contains('\n')) return convertBlock(id, conversion);
+    final safe = selection.isValid ? selection
+        : TextSelection.collapsed(offset: block.effectiveText.length);
+    final split = _replaceWithSplitLines(block, block.effectiveText, safe);
+    final target = split.focusBlockId;
+    if (target == null) return split;
+    final styled = convertBlock(target, conversion);
+    return NotesEditorMutation(changed: true, requiresRebuild: true,
+        focusBlockId: target, selection: styled.selection ?? split.selection);
   }
   NotesEditorMutation convertBlock(String id, NotesBlockConversion conversion) {
     final block = blockById(id);
@@ -653,7 +661,6 @@ class NotesEditorDocumentController {
     }
     insertAt = insertAt.clamp(0, remaining.length).toInt();
     remaining.insertAll(insertAt, moving);
-
     var cursor = 0;
     final nextBlocks = <NoteBlock>[];
     for (final block in blocks) {
@@ -721,7 +728,6 @@ class NotesEditorDocumentController {
     }
     return selected;
   }
-
   String? linkForSelection(String id, TextSelection selection) {
     final block = blockById(id);
     if (block == null || !isEditableText(block.type)) return null;
@@ -775,7 +781,6 @@ class NotesEditorDocumentController {
     );
   }
   bool get canUndo => _undoStack.isNotEmpty;
-
   NotesEditorMutation undo() {
     if (_undoStack.isEmpty) return const NotesEditorMutation();
     _document = _undoStack.removeLast();
@@ -818,7 +823,6 @@ class NotesEditorDocumentController {
     _commitDocument(_document.copyWith(blocks: nextBlocks));
   }
   int _indexOf(String id) => blocks.indexWhere((block) => block.id == id);
-
   int _indexAfterLastVisibleBlock() {
     for (var index = blocks.length - 1; index >= 0; index--) {
       if (isSupportedProductionBlock(blocks[index].type)) return index + 1;
@@ -853,7 +857,6 @@ class NotesEditorDocumentController {
     return type;
   }
 }
-
 (int, int) _focusForSplit(List<String> parts, int rawOffset) {
   final fullLength = parts.fold<int>(
     parts.isEmpty ? 0 : parts.length - 1,
@@ -868,7 +871,6 @@ class NotesEditorDocumentController {
   }
   return (parts.length - 1, parts.last.length);
 }
-
 List<NoteTextRun> _sliceRuns(List<NoteTextRun> runs, int start, int end) {
   if (start >= end) return const <NoteTextRun>[];
   final result = <NoteTextRun>[];
@@ -890,7 +892,6 @@ List<NoteTextRun> _sliceRuns(List<NoteTextRun> runs, int start, int end) {
   }
   return _mergeRuns(result);
 }
-
 List<NoteTextRun> _transformRuns(
   List<NoteTextRun> source,
   int start,
@@ -931,7 +932,6 @@ List<NoteTextRun> _transformRuns(
   }
   return _mergeRuns(result);
 }
-
 List<NoteInlineMarks> _marksForSelection(
   NoteBlock block,
   TextSelection selection,

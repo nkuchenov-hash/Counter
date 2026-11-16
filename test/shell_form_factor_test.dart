@@ -59,7 +59,7 @@ void main() {
     expect(chrome, contains('systemStatusBarContrastEnforced: false'));
     expect(File('lib/main.dart').readAsStringSync(),
         contains('SystemUiMode.edgeToEdge'));
-    expect(chrome, contains('extendBody: settingsGlass'));
+    expect(chrome, contains('extendBody: !desktopShell'));
     expect(chrome, contains('backgroundColor: settingsGlass'));
     expect(chrome, contains('systemNavigationBarColor: settingsGlass'));
     expect(chrome, contains('seamlessGlass: settingsGlass'));
@@ -68,24 +68,25 @@ void main() {
     expect(chrome, contains('statusBarIconBrightness: desktopShell ||'));
     expect(chrome, contains('scheme.brightness == Brightness.light'));
     expect(chrome, contains('systemNavigationBarIconBrightness:'));
-    expect(nav, isNot(contains('BackdropFilter(')));
-    expect(nav, isNot(contains('ImageFilter.blur(sigmaX: 16, sigmaY: 16)')));
-    expect(nav, isNot(contains('child: ShaderMask(')));
-    expect(nav, isNot(contains('blendMode: BlendMode.dstIn')));
+    expect(nav, contains('final content = !seamlessGlass ? navigation : Stack('));
+    expect(nav, contains('BackdropFilter('));
+    expect(nav, contains('ImageFilter.blur(sigmaX: 12, sigmaY: 12)'));
+    expect(nav, contains('ShaderMask('));
+    expect(nav, contains('blendMode: BlendMode.dstIn'));
     expect(nav, isNot(contains('AppNeutralTones.white.withValues(alpha: 0.12)')));
     expect(nav, contains('AppNeutralTones.white.withValues(alpha: 0.23)'));
     expect(nav, contains('SafeArea('));
     expect(settings, contains('class _GlassySettingsBackButton'));
     expect(settings, contains('ImageFilter.blur(sigmaX: 16, sigmaY: 16)'));
-    expect(settings, contains('stops: [0, 0.62, 1]'));
+    expect(settings, contains('stops: [0, 0.55, 1]'));
     expect(settings, contains('sigmaX: 16, sigmaY: 16'));
     // Pinned header is a Stack sibling of the scrolling viewport.
     expect(settings, contains('header: _mobilePinnedHeader()'));
     expect(settings, contains('Widget _mobilePinnedHeader()'));
     expect(settings, contains('return SizedBox('));
     expect(settings, contains('color: dark'));
-    expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.09)'));
-    expect(settings, contains('scheme.surface.withValues(alpha: 0.30)'));
+    expect(settings, contains('scheme.surfaceContainerLowest.withValues(alpha: 0.88)'));
+    expect(settings, contains('scheme.surfaceContainerLowest.withValues(alpha: 0.93)'));
     expect(settings, isNot(contains('scheme.surfaceContainerHigh.withValues(alpha: 0.76)')));
     expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.29)'));
     expect(settings, contains('ImageFilter.blur(sigmaX: 18, sigmaY: 18)'));
@@ -107,7 +108,8 @@ void main() {
     expect(layout, contains('this.transparentBackground = false'));
     expect(layout, contains('transparentBackground ? AppNeutralTones.transparent'));
     expect(settings, contains('Theme.of(context).colorScheme.surfaceContainerLowest'));
-    expect(nav, isNot(contains('Positioned.fill(child: IgnorePointer(child: ShaderMask(')));
+    expect(nav, contains('AppNeutralTones.transparent,'));
+    expect(nav, contains('stops: [0, 0.48, 1]'));
     expect(settings, contains("key: ValueKey(_mobileDetailOpen ? 'detail-"));
     expect(settings, isNot(contains('for (final top in [true, false])')));
     expect(settings, contains('class _MobileSettingsMotion'));
@@ -150,6 +152,30 @@ void main() {
     expect(kShellBottomNavHeight, lessThan(80));
     await tester.tap(find.byType(InkWell).at(3));
     expect(selected, 3);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('only Settings has bottom glass fade, normal tabs stay clear',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    Widget navFor(bool glass) => MaterialApp(home: Scaffold(
+      extendBody: true,
+      bottomNavigationBar: ShellCompactBottomNav(
+        viewportWidth: 390,
+        selectedIndex: 0, seamlessGlass: glass,
+        onDestinationSelected: (_) {},
+      ),
+    ));
+    await tester.pumpWidget(navFor(false));
+    expect(find.byType(BackdropFilter), findsNothing);
+    expect(find.byType(InkWell), findsNWidgets(5));
+    await tester.pumpWidget(navFor(true));
+    expect(find.byType(BackdropFilter), findsOneWidget);
+    expect(find.byType(ShaderMask), findsOneWidget);
+    expect(find.byType(InkWell), findsNWidgets(5));
     expect(tester.takeException(), isNull);
   });
 

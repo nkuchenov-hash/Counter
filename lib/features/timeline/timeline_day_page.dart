@@ -52,7 +52,13 @@ class TimelineDayCardList extends StatefulWidget {
 class TimelineDayCardListState extends State<TimelineDayCardList>
     with AutomaticKeepAliveClientMixin {
   @override
-  bool get wantKeepAlive => true;
+  bool get wantKeepAlive => widget.isActive;
+
+  @override
+  void didUpdateWidget(covariant TimelineDayCardList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isActive != widget.isActive) updateKeepAlive();
+  }
 
   List<Map<String, dynamic>> _recordMaps() {
     final db = DatabaseService.instance;

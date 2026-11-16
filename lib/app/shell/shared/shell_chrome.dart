@@ -128,7 +128,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                               ? scheme.surfaceContainerLowest : scheme.surface,
                           resizeToAvoidBottomInset: true,
                           // Let Settings content scroll underneath the frosted bottom bar.
-                          extendBody: settingsGlass,
+                          extendBody: !desktopShell,
                           // Keep identical app chrome across every desktop destination.
                           appBar: desktopShell || (!desktopShell && shellPageIndex <= 3)
                               ? AppBar(
