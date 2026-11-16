@@ -23,6 +23,7 @@ class AppGlassEdgeFade extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final topHeader = edge == AppGlassEdge.top;
     final start = edge == AppGlassEdge.top
         ? Alignment.topCenter
         : Alignment.bottomCenter;
@@ -35,7 +36,9 @@ class AppGlassEdgeFade extends StatelessWidget {
         shaderCallback: (bounds) => LinearGradient(
           begin: start,
           end: end,
-          stops: const [0, 0.58, 1],
+          // Keep content invisible behind the pinned title; begin feathering
+          // only below the title, not halfway through its baseline.
+          stops: topHeader ? const [0, 0.75, 1] : const [0, 0.58, 1],
           colors: const [AppNeutralTones.white, AppNeutralTones.white, AppNeutralTones.transparent],
         ).createShader(bounds),
         child: ClipRect(
@@ -46,10 +49,10 @@ class AppGlassEdgeFade extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: start,
                   end: end,
-                  stops: const [0, 0.46, 1],
+                  stops: topHeader ? const [0, 0.70, 1] : const [0, 0.46, 1],
                   colors: [
-                    surfaceColor.withValues(alpha: 0.96),
-                    surfaceColor.withValues(alpha: 0.78),
+                    surfaceColor.withValues(alpha: topHeader ? 0.995 : 0.96),
+                    surfaceColor.withValues(alpha: topHeader ? 0.94 : 0.78),
                     AppNeutralTones.transparent,
                   ],
                 ),

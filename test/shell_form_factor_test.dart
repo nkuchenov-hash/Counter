@@ -75,6 +75,8 @@ void main() {
     expect(fade, contains('ClipRRect('));
     expect(fade, contains('BackdropFilter('));
     expect(fade, contains('ImageFilter.blur(sigmaX: 18, sigmaY: 18)'));
+    expect(fade, contains('topHeader ? const [0, 0.75, 1]'));
+    expect(fade, contains('topHeader ? const [0, 0.70, 1]'));
     // No settings-specific or tab-specific second navigation appearance.
     expect(nav, isNot(contains('seamlessGlass ?')));
     expect(nav, isNot(contains('!seamlessGlass ?')));
