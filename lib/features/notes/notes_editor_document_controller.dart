@@ -50,6 +50,11 @@ class NotesEditorDocumentController {
 
   NoteDocument _document;
   final List<NoteDocument> _undoStack = <NoteDocument>[];
+  // Coalesce uninterrupted Gboard edits into one Undo transaction. Structural
+  // changes still create their own independent snapshots.
+  static const Duration _typingUndoWindow = Duration(milliseconds: 850);
+  String? _lastTypingBlockId;
+  DateTime? _lastTypingAt;
   String? activeBlockId;
   TextSelection? activeSelection;
 
@@ -110,6 +115,7 @@ class NotesEditorDocumentController {
           newText: newText,
         ),
       ),
+      typingBlockId: id,
     );
     return const NotesEditorMutation(changed: true);
   }
@@ -771,6 +777,8 @@ class NotesEditorDocumentController {
   bool get canUndo => _undoStack.isNotEmpty;
   NotesEditorMutation undo() {
     if (_undoStack.isEmpty) return const NotesEditorMutation();
+    _lastTypingBlockId = null;
+    _lastTypingAt = null;
     _document = _undoStack.removeLast();
     final visible = visibleBlocks;
     if (visible.isEmpty) {
@@ -799,16 +807,30 @@ class NotesEditorDocumentController {
     activeSelection = null;
     return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
-  void _commitDocument(NoteDocument next) {
-    _undoStack.add(_document);
-    if (_undoStack.length > 100) _undoStack.removeAt(0);
+  void _commitDocument(NoteDocument next, {String? typingBlockId}) {
+    final now = DateTime.now();
+    final previous = _lastTypingAt;
+    final sameTypingRun = typingBlockId != null &&
+        typingBlockId == _lastTypingBlockId &&
+        previous != null &&
+        !now.isBefore(previous) &&
+        now.difference(previous) < _typingUndoWindow;
+    if (!sameTypingRun) {
+      _undoStack.add(_document);
+      if (_undoStack.length > 100) _undoStack.removeAt(0);
+    }
+    _lastTypingBlockId = typingBlockId;
+    _lastTypingAt = typingBlockId == null ? null : now;
     _document = next;
   }
-  void _replaceBlock(NoteBlock replacement) {
+  void _replaceBlock(NoteBlock replacement, {String? typingBlockId}) {
     final index = _indexOf(replacement.id);
     if (index < 0) return;
     final nextBlocks = List<NoteBlock>.from(blocks)..[index] = replacement;
-    _commitDocument(_document.copyWith(blocks: nextBlocks));
+    _commitDocument(
+      _document.copyWith(blocks: nextBlocks),
+      typingBlockId: typingBlockId,
+    );
   }
   int _indexOf(String id) => blocks.indexWhere((block) => block.id == id);
   int _indexAfterLastVisibleBlock() {
