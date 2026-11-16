@@ -1683,7 +1683,7 @@ AppButton.destructive(
         !_blockSelectionMode) {
       return ListView.builder(
         key: const ValueKey('notes-editor-content'),
-        scrollController: _blockScrollController,
+        controller: _blockScrollController,
         padding: const EdgeInsets.only(bottom: 100),
         itemCount: _editor.visibleBlocks.length,
         itemBuilder: _buildBlock,
