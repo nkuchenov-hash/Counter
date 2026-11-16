@@ -6,6 +6,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/time_view_fixed_time_policy.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/settings/plan_record_link_settings.dart';
+import 'package:counter/features/planning/settings/default_plan_times_settings_block.dart';
 import 'package:counter/features/planning/settings/planning_timeline_bounds_sheet.dart';
 import 'package:counter/features/planning/time_view/time_view_fixed_time_settings.dart';
 import 'package:counter/features/planning/time_view/time_view_settings_sheet.dart';
@@ -35,6 +36,7 @@ class _LifeOsPlanningSettingsPageState
   bool _loadFailed = false;
   bool _afterLast = false;
   bool _savingPlacement = false;
+  bool _openDefaultTimes = false;
 
   @override
   void initState() {
@@ -183,12 +185,23 @@ class _LifeOsPlanningSettingsPageState
       child: Builder(builder: (context) => Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
         appBar: AppBar(
-          title: Text(ru ? 'Настройки' : 'Settings'),
+          title: Text(_openDefaultTimes
+              ? t(loc, 'plan_default_times_title')
+              : (ru ? 'Настройки' : 'Settings')),
+          leading: _openDefaultTimes
+              ? IconButton(
+                  tooltip: ru ? 'Назад к планированию' : 'Back to Planning',
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  onPressed: () => setState(() => _openDefaultTimes = false),
+                )
+              : null,
           backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
           surfaceTintColor: Colors.transparent,
           scrolledUnderElevation: 0,
         ),
-        body: (range == null || ids == null)
+        body: _openDefaultTimes
+            ? const AppSettingsPageBody(children: [DefaultPlanTimesSettingsBlock()])
+            : (range == null || ids == null)
             ? Center(
                 child: _loadFailed
                     ? TextButton(
@@ -228,7 +241,7 @@ class _LifeOsPlanningSettingsPageState
                       _menuRow(
                         t(loc, 'plan_default_times_title'),
                         AppMenuIconRole.defaultTime,
-                        widget.onOpenDefaultPlanTimes,
+                        () => setState(() => _openDefaultTimes = true),
                         subtitle: t(loc, 'plan_default_times_subtitle'),
                       ),
                       AppSettingsControlRow(
