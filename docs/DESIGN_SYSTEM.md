@@ -5,6 +5,14 @@
 - Shell chrome reserves the entire physical navigation action zone (`extendBody: false`) so screen buttons never occupy the same hit-test rectangle as nav buttons. A 46px visual feather can extend above that zone without moving the actions.
 - Code changes may not waive these invariants through ad-hoc UI choices. Both Architecture Guard and Android release invoke `scripts/audit/canonical_navigation_law.py`, and widget geometry tests verify action separation.
 
+## Canonical screen-level actions (2026-11-17)
+
+- Phone and desktop screens compose `AppButton` and `AppIconButton` from `lib/core/widgets/`; they must not recreate equivalent feature-local Material/InkWell button shells.
+- `AppIconButtonShape.circular` is the canonical circular icon-action variant. Standard rounded controls remain the default; size `s/m/l`, `variant`, `selected`, and `loading` are parameters of the same component.
+- Calendar floating Today/Add actions, Lists view/checkbox/settings icons, mobile Notes library folder/new/view controls, and Planning bulk-edit controls use those canonical buttons. No parallel `_CalendarFloatingTextButton`, `_CalendarFloatingAddButton`, `_HeaderSegBtn`, or `_MobileRoundAction` may be reintroduced.
+- App-owned action controls occupy the layout space above the canonical `ShellCompactBottomNav` hit region. The noninteractive `AppGlassEdgeFade` may extend visually into the scroll area but cannot intercept taps or substitute for reserved navigation space.
+- `test/shell_form_factor_test.dart` is a release gate for these canonical-action contracts. Runtime screenshots on real Android and iOS remain necessary to validate blur appearance, typography and GPU performance.
+
 ## Text optical centering in canonical input (2026-11-09)
 
 - A geometrically centered 21 px editor is insufficient on Web: rendered typed Onest glyph ink was approximately four physical pixels low at browser DPR 1.5 in the production Timeline screenshot. `AppControlTokens.singleLineOpticalOffsetY` moves only the editable text and caret on Flutter Web; the separately rendered hint is already centered and stays put, as does native text.
