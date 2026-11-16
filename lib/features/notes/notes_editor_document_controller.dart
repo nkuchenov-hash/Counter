@@ -90,35 +90,11 @@ class NotesEditorDocumentController {
     String newText,
     TextSelection selection, {
     bool preserveLineBreaks = false,
-  }) {
-    final block = blockById(id);
-    if (block == null || !isEditableText(block.type)) {
-      return const NotesEditorMutation();
-    }
-    activeBlockId = id;
-    activeSelection = selection;
-    // Android's IME must finish applying each multiline edit to the same
-    // EditableText. Splitting blocks inside onChanged detaches the field
-    // while Gboard still holds an active composing/caret transaction.
-    if (!preserveLineBreaks && newText.contains('\n')) {
-      return _replaceWithSplitLines(block, newText, selection);
-    }
-    if (newText == block.effectiveText) {
-      return const NotesEditorMutation();
-    }
-    _replaceBlock(
-      block.copyWith(
-        text: newText,
-        runs: applyNoteTextEditToRuns(
-          oldText: block.effectiveText,
-          oldRuns: block.effectiveRuns,
-          newText: newText,
-        ),
-      ),
-      typingBlockId: id,
-    );
-    return const NotesEditorMutation(changed: true);
-  }
+  }) => _applyNotesTextInput(
+    this, id, newText, selection,
+    preserveLineBreaks: preserveLineBreaks,
+  );
+
   /// Finish an Enter inserted by the Android software keyboard in an
   /// embedded heading/quote/list field. Unlike splitting synchronously inside
   /// onChanged, callers invoke this after the current IME frame has completed.

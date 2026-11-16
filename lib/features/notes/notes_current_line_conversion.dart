@@ -1,4 +1,44 @@
 part of 'notes_editor_document_controller.dart';
+ 
+/// Gboard keeps one EditableText mounted during multiline input; splitting
+/// inside the IME callback would detach it while the composing range is live.
+/// This helper shares a part with line conversions so the document owner
+/// stays below the file-growth guard.
+NotesEditorMutation _applyNotesTextInput(
+  NotesEditorDocumentController editor,
+  String id,
+  String newText,
+  TextSelection selection, {
+  bool preserveLineBreaks = false,
+}) {
+  final block = editor.blockById(id);
+  if (block == null ||
+      !NotesEditorDocumentController.isEditableText(block.type)) {
+    return const NotesEditorMutation();
+  }
+  editor.activeBlockId = id;
+  editor.activeSelection = selection;
+  if (!preserveLineBreaks && newText.contains('\n')) {
+    return editor._replaceWithSplitLines(block, newText, selection);
+  }
+  if (newText == block.effectiveText) {
+    return const NotesEditorMutation();
+  }
+  editor._replaceBlock(
+    block.copyWith(
+      text: newText,
+      runs: applyNoteTextEditToRuns(
+        oldText: block.effectiveText,
+        oldRuns: block.effectiveRuns,
+        newText: newText,
+      ),
+    ),
+    typingBlockId: id,
+  );
+  return const NotesEditorMutation(changed: true);
+}
+
+
 
 /// A single style change isolates only the caret line and retains previous
 /// multiline Body content (and its EditableText identity).
