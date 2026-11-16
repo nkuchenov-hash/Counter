@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `5057e30d` on 2026-11-14.**
+**Generated from input HEAD `58b054fe` on 2026-11-16.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -20522,7 +20522,7 @@ EN:
 - **Contents:** Primary symbols: `NotesFigmaTokens`.
 - **Key code names:** `NotesFigmaTokens`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/notes_glm_surface.dart`, `lib/features/notes/widgets/note_editor_block_widgets.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`, `lib/features/notes/widgets/notes_editor_screen.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/notes_glm_surface.dart`, `lib/features/notes/widgets/note_editor_block_widgets.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`, `lib/features/notes/widgets/notes_editor_screen.dart`, `lib/features/notes/widgets/notes_editor_tools.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20539,7 +20539,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `notes_figma_tokens.dart` на Notes library/editor (Lists + full-screen editor).
 - **Содержимое:** Dart-модуль `notes_figma_tokens.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/notes_glm_surface.dart`, `lib/features/notes/widgets/note_editor_block_widgets.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`, `lib/features/notes/widgets/notes_editor_screen.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/notes_glm_surface.dart`, `lib/features/notes/widgets/note_editor_block_widgets.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`, `lib/features/notes/widgets/notes_editor_screen.dart`, `lib/features/notes/widgets/notes_editor_tools.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
