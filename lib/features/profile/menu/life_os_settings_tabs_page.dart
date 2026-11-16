@@ -90,8 +90,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     super.initState();
     _tab = _tabs.any((e) => e.id == widget.initialTab)
         ? widget.initialTab : 'profile';
-    _planningDefaultTimesOpen = widget.initialDefaultPlanTimes;
-    if (_planningDefaultTimesOpen) _mobileDetailOpen = true;
+    _planningDefaultTimesOpen = _mobileDetailOpen = widget.initialDefaultPlanTimes;
     _name.text = DatabaseService.instance.settings.displayName ?? '';
     unawaited(_load());
   }
@@ -126,18 +125,13 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       _tab = next;
-      _mobileDetailOpen = true;
-      _planningDefaultTimesOpen = false;
+      _mobileDetailOpen = true; _planningDefaultTimesOpen = false;
     });
   }
 
   void _backToMobileSettings() {
     FocusManager.instance.primaryFocus?.unfocus();
-    if (_planningDefaultTimesOpen) {
-      setState(() => _planningDefaultTimesOpen = false);
-      return;
-    }
-    setState(() => _mobileDetailOpen = false);
+    setState(() { _mobileDetailOpen = _planningDefaultTimesOpen; _planningDefaultTimesOpen = false; });
   }
 
   _SettingsTab get selected => _tabs.firstWhere((e) => e.id == _tab);
@@ -290,17 +284,12 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     ));
 
   Widget _planning() {
-    if (_planningDefaultTimesOpen) {
-      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        AppSettingsNavigationRow(
-          title: tr('Назад к планированию', 'Back to Planning'),
-          leading: const Icon(Icons.arrow_back_rounded),
-          onTap: () => setState(() => _planningDefaultTimesOpen = false),
-        ),
-        const SizedBox(height: 16),
-        const DefaultPlanTimesSettingsBlock(),
-      ]);
-    }
+    if (_planningDefaultTimesOpen) return Column(children: [
+      AppSettingsNavigationRow(title: tr('Назад к планированию', 'Back to Planning'),
+        leading: const Icon(Icons.arrow_back_rounded),
+        onTap: () => setState(() => _planningDefaultTimesOpen = false)),
+      const SizedBox(height: 16), const DefaultPlanTimesSettingsBlock(),
+    ]);
     final bounds = _bounds;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       _form(tr('Расписание', 'Schedule'),
@@ -342,11 +331,9 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
             ]),
       ),
       _section(tr('Дополнительные правила', 'Additional rules'), [
-        AppSettingsNavigationRow(
-          title: tr('Время новых планов', 'Default plan times'),
+        AppSettingsNavigationRow(title: tr('Время новых планов', 'Default plan times'),
           leading: _symbol(AppMenuIconRole.defaultTime, selected.family),
-          onTap: () => setState(() => _planningDefaultTimesOpen = true),
-        ),
+          onTap: () => setState(() => _planningDefaultTimesOpen = true)),
         _link(tr('Фиксированное время и связь записей', 'Fixed time and record links'),
           AppMenuIconRole.link, LifeOsMenuAction.planningSettings),
         _link(tr('Подключённые календари', 'Connected calendars'),
@@ -807,10 +794,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
             const SizedBox(width: 16),
           ],
           Expanded(child: Text(_mobileDetailOpen
-              ? (_planningDefaultTimesOpen
-                   ? tr('Время новых планов', 'Default plan times')
-                   : (_ru ? selected.ru : selected.en))
-               : tr('Настройки', 'Settings'),
+              ? (_planningDefaultTimesOpen ? tr('Время новых планов', 'Default plan times') : (_ru ? selected.ru : selected.en)) : tr('Настройки', 'Settings'),
             maxLines: 2, overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontSize: _mobileDetailOpen ? 22 : 30,
