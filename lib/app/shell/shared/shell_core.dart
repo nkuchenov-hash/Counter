@@ -92,7 +92,10 @@ mixin ShellCoreLogic on ShellDashboardBase {
   }
 
   void setShellPageIndex(int index) {
+    if (shellPageIndex == index) return;
     shellPageIndex = index;
+    timelineTabActiveListenable.value = index == 0;
+    planningTabActiveListenable.value = index == 1;
     shellPageIndexListenable.value = index;
   }
 

@@ -13,14 +13,14 @@ mixin ShellLifecycle
       listenable: Listenable.merge([
         selectedDateListenable,
         timelineTasksRevision,
-        shellPageIndexListenable,
+        timelineTabActiveListenable,
       ]),
       builder: (context, _) => buildTimelineSwipeTab(),
     );
     planningTabHost = ListenableBuilder(
       listenable: Listenable.merge([
         selectedDateListenable,
-        shellPageIndexListenable,
+        planningTabActiveListenable,
       ]),
       builder: (context, _) => buildPlanningSwipeTab(),
     );
@@ -109,6 +109,8 @@ mixin ShellLifecycle
     selectedDateListenable.dispose();
     timelineTasksRevision.dispose();
     shellPageIndexListenable.dispose();
+    timelineTabActiveListenable.dispose();
+    planningTabActiveListenable.dispose();
     if (DesktopVoiceHotkey.isSupportedPlatform) {
       DesktopVoiceAcceptanceBridge.runCommand = null;
       DesktopVoiceAcceptanceBridge.simulateHotkeyToggle = null;

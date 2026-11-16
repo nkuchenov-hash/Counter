@@ -46,8 +46,9 @@ require("surfaceContainerLowest" not in nav and
         "AppGlassEdgeFade(" not in nav and
         "seamlessGlass ?" not in nav and "!seamlessGlass ?" not in nav,
         "TAB_SPECIFIC_NAV_VISUAL_VARIANTS_FORBIDDEN")
-require("late final List<Widget> _stableShellPages" in shell and
-        "..._stableShellPages" in shell,
+require("List<Widget> get _stableShellPages" in shell and
+        "..._stableShellPages" in shell and
+        "_stableLocale == locale" in shell,
         "SWITCHING_MUST_REUSE_STABLE_PRIMARY_SCREENS")
 # No second root-nav widget may be silently added to a shell fragment.
 for file in (root / "lib/app/shell").rglob("*.dart"):

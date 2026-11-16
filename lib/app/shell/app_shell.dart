@@ -117,6 +117,10 @@ mixin ShellDashboardBase on State<LifeOSDashboard> {
   late final ValueNotifier<DateTime> selectedDateListenable;
   final ValueNotifier<int> timelineTasksRevision = ValueNotifier(0);
   final ValueNotifier<int> shellPageIndexListenable = ValueNotifier(0);
+  // Notify the two heavy date-view tabs only when their own active state
+  // changes. Settings/Lists/Calendar switches should never wake both.
+  final ValueNotifier<bool> timelineTabActiveListenable = ValueNotifier(true);
+  final ValueNotifier<bool> planningTabActiveListenable = ValueNotifier(false);
   late final Widget timelineTabHost;
   late final Widget planningTabHost;
   late final Widget calendarTabHost;

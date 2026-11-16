@@ -60,8 +60,10 @@ void main() {
     expect('ShellCompactBottomNav('.allMatches(wrapper), hasLength(1));
     expect('class ShellCompactBottomNav'.allMatches(nav), hasLength(1));
     expect(shell, contains('extendBody: !desktopShell'));
-    expect(shell, contains('late final List<Widget> _stableShellPages'));
+    expect(shell, contains('List<Widget> get _stableShellPages'));
     expect(shell, contains('..._stableShellPages'));
+    expect(shell, contains('_stableLocale == locale'));
+    expect(shell, contains('final pages = buildShellPages();'));
     expect(nav, contains('AppFrostedNavigationPanel('));
     expect(nav, isNot(contains('top: -46')));
     expect(nav, isNot(contains('Positioned(')));
@@ -185,6 +187,20 @@ void main() {
     expect(find.byType(ShaderMask), findsNothing);
     expect(find.byType(InkWell), findsNWidgets(5));
     expect(tester.takeException(), isNull);
+  });
+
+  test('tab switches only notify Timeline/Planning when active state changes', () {
+    final lifecycle = File('lib/app/shell/shared/shell_lifecycle.dart')
+        .readAsStringSync();
+    final core = File('lib/app/shell/shared/shell_core.dart')
+        .readAsStringSync();
+    expect(lifecycle, contains('timelineTabActiveListenable,'));
+    expect(lifecycle, contains('planningTabActiveListenable,'));
+    expect(lifecycle, contains('timelineTabActiveListenable.dispose()'));
+    expect(lifecycle, contains('planningTabActiveListenable.dispose()'));
+    expect(core, contains('if (shellPageIndex == index) return;'));
+    expect(core, contains('timelineTabActiveListenable.value = index == 0'));
+    expect(core, contains('planningTabActiveListenable.value = index == 1'));
   });
 
   test('footer and floating actions respect the shared navigation safe area', () {

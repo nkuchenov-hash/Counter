@@ -1,9 +1,17 @@
 part of '../app_shell.dart';
 
 mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
-  // Primary shell pages are created once, not rebuilt for every tab tap.
-  // The reactive data/selection listeners inside them remain live.
-  late final List<Widget> _stableShellPages = <Widget>[
+  // Keep heavy tab widget instances stable across ordinary navigation, but
+  // refresh their widget configs when language changes (without losing State).
+  String? _stableLocale;
+  List<Widget>? _stablePageCache;
+  List<Widget> get _stableShellPages {
+    final locale = currentLocale.value;
+    if (_stablePageCache != null && _stableLocale == locale) {
+      return _stablePageCache!;
+    }
+    _stableLocale = locale;
+    return _stablePageCache = <Widget>[
     timelineTabHost,
     planningTabHost,
     calendarTabHost,
@@ -37,7 +45,8 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
       activeTab: shellPageIndexListenable,
       shellTabIndex: 7,
     ),
-  ];
+    ];
+  }
 
   List<Widget> buildShellPages() => <Widget>[
     ..._stableShellPages,
@@ -69,11 +78,10 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
 
   Widget buildShellDashboard(BuildContext context) {
     rebuildMetricsTick('AppShell');
-    final pages = buildShellPages();
-
     return AnimatedBuilder(
       animation: currentLocale,
       builder: (context, _) {
+        final pages = buildShellPages();
         return ValueListenableBuilder<bool>(
           valueListenable: desktopVoiceShellSuppressed,
           builder: (context, shellSuppressed, _) {
