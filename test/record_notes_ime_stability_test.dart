@@ -194,6 +194,11 @@ void main() {
   test('Android heading and body vertical gap stays compact', () {
     expect(NotesFigmaTokens.nativeParagraphVerticalPadding, lessThan(8));
     expect(NotesFigmaTokens.nativeSectionGap, lessThan(10));
+    expect(
+      NotesFigmaTokens.bodyLineHeight +
+          NotesFigmaTokens.nativeParagraphVerticalPadding * 2,
+      lessThanOrEqualTo(40),
+    );
   });
 
   test('heading Enter creates independent Body, preserving H1 formatting', () {
