@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `f9c09750` on 2026-11-16.**
+**Generated from input HEAD `072d85eb` on 2026-11-16.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1017 — each appears **exactly once** below.
+**Tracked files:** 1022 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,11 +26,11 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 202 |
+| `production UI` | 205 |
 | `test` | 148 |
 | `Brain/data` | 118 |
 | `platform build` | 84 |
-| `shared foundation` | 71 |
+| `shared foundation` | 72 |
 | `developer tool` | 66 |
 | `governing documentation` | 45 |
 | `platform resource` | 44 |
@@ -44,9 +44,9 @@ python scripts/manual/generate_app_structure_detailed.py
 | `localization` | 13 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
+| `audit tool` | 7 |
 | `shared time` | 7 |
 | `asset` | 6 |
-| `audit tool` | 6 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
 | `mobile/web Voice adapters` | 2 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 551 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 274 |
+| `PROVEN_REQUIRED` | 555 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 275 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 929 |
+| `HIGH` | 934 |
 | `MEDIUM` | 88 |
 
 ---
@@ -13271,6 +13271,44 @@ RU:
 - **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
 
 
+### `lib/core/widgets/app_glass_edge_fade.dart`
+
+EN:
+
+- **Human purpose:** Shared design-system widget — Canonical noninteractive frosted edge shared by top Settings header and all mobile bottom nav destinations. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — Canonical noninteractive frosted edge shared by top Settings header and all mobile bottom nav destinations.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **Contents:** Canonical Flutter widget (`AppGlassEdge`, `AppGlassEdgeFade`).
+- **Key code names:** `AppGlassEdge`, `AppGlassEdgeFade`
+- **Repository role:** shared foundation
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared design system
+- **Responsibilities:** Canonical noninteractive frosted edge shared by top Settings header and all mobile bottom nav destinations
+- **When to open:** When behavior tied to `app_glass_edge_fade.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Canonical noninteractive frosted edge shared by top Settings header and all mobile bottom nav destinations
+
+RU:
+
+- **Зачем файл человеку:** Общий виджет design system — Canonical noninteractive frosted edge shared by top Settings header and all mobile bottom nav destinations. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — Canonical noninteractive frosted edge shared by top Settings header and all mobile bottom nav destinations.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Содержимое:** Канонический Flutter-виджет (logic in `app_glass_edge_fade`).
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общий design system
+- **Обязанности:** Реализует в UI: Canonical noninteractive frosted edge shared by top Settings header and all mobile bottom nav destinations.
+- **Когда открывать:** Когда ломается поведение, связанное с `app_glass_edge_fade.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/core/widgets/app_icon_button.dart`
 
 EN:
@@ -20398,6 +20436,43 @@ RU:
 - **Связано с:** `lib/features/notes/`, `docs/APP_STRUCTURE.md`
 
 
+### `lib/features/notes/note_editor_format_actions.dart`
+
+EN:
+
+- **Human purpose:** `note_editor_format_actions.dart` on notes area — Editor formatting/heading focus helpers. Users see `note_editor_format_actions.dart` when using notes area.
+- **What this is:** `note_editor_format_actions.dart` on notes area — Editor formatting/heading focus helpers.
+- **Why needed:** Users see `note_editor_format_actions.dart` when using notes area.
+- **Contents:** Dart module `note_editor_format_actions.dart` — open file for classes and helpers.
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/features/notes/note_editor_page.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/features/notes/note_editor_page.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** Notes UI
+- **Responsibilities:** Editor formatting/heading focus helpers
+- **When to open:** When behavior tied to `note_editor_format_actions.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Brain/library compile failure in `lib/features/notes/note_editor_page.dart` and broken related UI/data ops.
+- **Connected to:** APP_STRUCTURE role: Editor formatting/heading focus helpers
+
+RU:
+
+- **Зачем файл человеку:** `note_editor_format_actions.dart` на Notes library/editor (Lists + full-screen editor) — Поддерживает поведение `note_editor_format_actions` в этой feature-зоне.. Пользователь видит UI из `note_editor_format_actions.dart` на Notes library/editor (Lists + full-screen editor).
+- **Что это:** `note_editor_format_actions.dart` на Notes library/editor (Lists + full-screen editor) — Поддерживает поведение `note_editor_format_actions` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `note_editor_format_actions.dart` на Notes library/editor (Lists + full-screen editor).
+- **Содержимое:** Dart-модуль `note_editor_format_actions.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/features/notes/note_editor_page.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/features/notes/note_editor_page.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI заметок
+- **Обязанности:** Поддерживает поведение `note_editor_format_actions` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `note_editor_format_actions.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/notes/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/features/notes/note_editor_page.dart`
 
 EN:
@@ -20470,6 +20545,43 @@ RU:
 - **Владелец / слой:** UI заметок
 - **Обязанности:** Поддерживает поведение `notes_audio_controller` в этой feature-зоне.
 - **Когда открывать:** Когда ломается поведение, связанное с `notes_audio_controller.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/notes/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/features/notes/notes_current_line_conversion.dart`
+
+EN:
+
+- **Human purpose:** `notes_current_line_conversion.dart` on notes area — Atomic caret-line structural conversion for Android notes without splitting prior Body paragraphs. Users see `notes_current_line_conversion.dart` when using notes area.
+- **What this is:** `notes_current_line_conversion.dart` on notes area — Atomic caret-line structural conversion for Android notes without splitting prior Body paragraphs.
+- **Why needed:** Users see `notes_current_line_conversion.dart` when using notes area.
+- **Contents:** Dart module `notes_current_line_conversion.dart` — open file for classes and helpers.
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/features/notes/notes_editor_document_controller.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/features/notes/notes_editor_document_controller.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** Notes UI
+- **Responsibilities:** Atomic caret-line structural conversion for Android notes without splitting prior Body paragraphs
+- **When to open:** When behavior tied to `notes_current_line_conversion.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Brain/library compile failure in `lib/features/notes/notes_editor_document_controller.dart` and broken related UI/data ops.
+- **Connected to:** APP_STRUCTURE role: Atomic caret-line structural conversion for Android notes without splitting prior Body paragraphs
+
+RU:
+
+- **Зачем файл человеку:** `notes_current_line_conversion.dart` на Notes library/editor (Lists + full-screen editor) — Поддерживает поведение `notes_current_line_conversion` в этой feature-зоне.. Пользователь видит UI из `notes_current_line_conversion.dart` на Notes library/editor (Lists + full-screen editor).
+- **Что это:** `notes_current_line_conversion.dart` на Notes library/editor (Lists + full-screen editor) — Поддерживает поведение `notes_current_line_conversion` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `notes_current_line_conversion.dart` на Notes library/editor (Lists + full-screen editor).
+- **Содержимое:** Dart-модуль `notes_current_line_conversion.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/features/notes/notes_editor_document_controller.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/features/notes/notes_editor_document_controller.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI заметок
+- **Обязанности:** Поддерживает поведение `notes_current_line_conversion` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `notes_current_line_conversion.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/notes/`, `docs/APP_STRUCTURE.md`
 
@@ -24863,6 +24975,43 @@ RU:
 - **Уверенность:** HIGH
 - **Владелец / слой:** общие edit sheets
 - **Обязанности:** Возвращает ok/error со start/end UTC; используется в `timeline_record_edit_sheet.dart`.
+- **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Edit sheets и voice UI на всех вкладках
+
+
+### `lib/features/shared/edit_sheet/record_title_assist.dart`
+
+EN:
+
+- **Human purpose:** `record_title_assist.dart` on edit sheets and voice UI on every tab — Debounced record title category matcher. Users see `record_title_assist.dart` when using edit sheets and voice UI on every tab.
+- **What this is:** `record_title_assist.dart` on edit sheets and voice UI on every tab — Debounced record title category matcher.
+- **Why needed:** Users see `record_title_assist.dart` when using edit sheets and voice UI on every tab.
+- **Contents:** Dart module `record_title_assist.dart` — open file for classes and helpers.
+- **Repository role:** production UI
+- **Evidence of use:** Included by `lib/features/shared/timeline_record_edit_sheet.dart` through a `part` directive (not imported directly).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Brain/library compile failure in `lib/features/shared/timeline_record_edit_sheet.dart` and broken related UI/data ops.
+- **Confidence:** HIGH
+- **Owner / layer:** shared edit sheets
+- **Responsibilities:** Debounced record title category matcher
+- **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
+- **Can it be deleted?** Brain/library compile failure in `lib/features/shared/timeline_record_edit_sheet.dart` and broken related UI/data ops.
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Debounced record title category matcher
+
+RU:
+
+- **Зачем файл человеку:** `record_title_assist.dart` на edit sheets и voice UI на всех вкладках — Поддерживает поведение `record_title_assist` в этой feature-зоне.. Пользователь видит UI из `record_title_assist.dart` на edit sheets и voice UI на всех вкладках.
+- **Что это:** `record_title_assist.dart` на edit sheets и voice UI на всех вкладках — Поддерживает поведение `record_title_assist` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `record_title_assist.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Dart-модуль `record_title_assist.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Подключён из `lib/features/shared/timeline_record_edit_sheet.dart` через `part` (не импортируется напрямую).
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается компиляция `lib/features/shared/timeline_record_edit_sheet.dart` и связанные экраны/данные.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общие edit sheets
+- **Обязанности:** Поддерживает поведение `record_title_assist` в этой feature-зоне.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -33333,6 +33482,43 @@ RU:
 - **Когда открывать:** Owner или CI запускает `architecture_guard.ps1` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `docs/APP_STRUCTURE.md`, CI optional.
+
+
+### `scripts/audit/canonical_navigation_law.py`
+
+EN:
+
+- **Human purpose:** Developer script `canonical_navigation_law.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `canonical_navigation_law.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `canonical_navigation_law.py`.
+- **Repository role:** audit tool
+- **Evidence of use:** Invoked or documented by: `.github/workflows/android-apk-build.yml`, `.github/workflows/architecture-guard.yml`, `docs/APP_STRUCTURE.md`, `docs/DESIGN_SYSTEM.md`, `docs/UX_CONTRACT.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
+- **Confidence:** HIGH
+- **Owner / layer:** audit tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `canonical_navigation_law.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Dev/CI скрипт `canonical_navigation_law.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `canonical_navigation_law.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `canonical_navigation_law.py`.
+- **Роль в репозитории:** audit tool
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/android-apk-build.yml`, `.github/workflows/architecture-guard.yml`, `docs/APP_STRUCTURE.md`, `docs/DESIGN_SYSTEM.md`, `docs/UX_CONTRACT.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
+- **Уверенность:** HIGH
+- **Владелец / слой:** аудит
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `canonical_navigation_law.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
 
 ### `scripts/audit/deployment_contract.py`
