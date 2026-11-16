@@ -601,6 +601,8 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - Preserve existing task positions, task duration, category, tags and original `initial_date_key`. Persist the actual destination wall date with the new start/end, and set `is_postponed` when moved later.
 - Explicit user clock-time input is not automatically moved to a different day. If no fitting auto-placement slot exists in the 14-day search horizon, display a specific error rather than creating a hidden plan.
 - An automatic move shows the destination date/time. No PocketBase reads or heavy full-history scans on the tap hot path.
+- If auto-placement chooses a different day, immediately explain the target date/time, and after the create is accepted reveal that day if the user has not started a newer draft. Do not leave an apparently vanished plan on the source day.
+- Editing category default plan times remains inside **Settings → Planning → Default plan times** with a working back path. The same category settings data/API powers both the canonical Settings view and the Time View shortcut; no duplicated preference storage or legacy F2C UI.
 
 ## Viktor write confirmation and automatic recovery
 

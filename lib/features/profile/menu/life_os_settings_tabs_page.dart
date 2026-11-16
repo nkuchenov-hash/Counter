@@ -16,6 +16,7 @@ import 'package:counter/data/models.dart';
 import 'package:counter/data/records/unfilled_time_gap_service.dart';
 import 'package:counter/features/lists/notes_library_preferences.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
+import 'package:counter/features/planning/settings/default_plan_times_settings_block.dart';
 import 'package:counter/features/profile/menu/life_os_menu_page.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -31,12 +32,14 @@ class LifeOsSettingsTabsPage extends StatefulWidget {
     super.key,
     required this.onAction,
     this.initialTab = 'profile',
+    this.initialDefaultPlanTimes = false,
     this.activeTab,
     this.shellTabIndex = 7,
   });
 
   final ValueChanged<LifeOsMenuAction> onAction;
   final String initialTab;
+  final bool initialDefaultPlanTimes;
   final ValueListenable<int>? activeTab;
   final int shellTabIndex;
 
@@ -71,6 +74,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   // Phone Settings starts as a category list. A profile has its own screen.
   // Desktop retains the existing tabs and preference editors.
   bool _mobileDetailOpen = false;
+  bool _planningDefaultTimesOpen = false;
   final _name = TextEditingController();
   ({int start, int end})? _bounds;
   bool _afterLast = false;
@@ -86,6 +90,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     super.initState();
     _tab = _tabs.any((e) => e.id == widget.initialTab)
         ? widget.initialTab : 'profile';
+    _planningDefaultTimesOpen = _mobileDetailOpen = widget.initialDefaultPlanTimes;
     _name.text = DatabaseService.instance.settings.displayName ?? '';
     unawaited(_load());
   }
@@ -120,13 +125,13 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       _tab = next;
-      _mobileDetailOpen = true;
+      _mobileDetailOpen = true; _planningDefaultTimesOpen = false;
     });
   }
 
   void _backToMobileSettings() {
     FocusManager.instance.primaryFocus?.unfocus();
-    setState(() => _mobileDetailOpen = false);
+    setState(() { _mobileDetailOpen = _planningDefaultTimesOpen; _planningDefaultTimesOpen = false; });
   }
 
   _SettingsTab get selected => _tabs.firstWhere((e) => e.id == _tab);
@@ -279,6 +284,12 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     ));
 
   Widget _planning() {
+    if (_planningDefaultTimesOpen) return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      AppSettingsNavigationRow(title: tr('Назад к планированию', 'Back to Planning'),
+        leading: const Icon(Icons.arrow_back_rounded),
+        onTap: () => setState(() => _planningDefaultTimesOpen = false)),
+      const SizedBox(height: 16), const DefaultPlanTimesSettingsBlock(),
+    ]);
     final bounds = _bounds;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       _form(tr('Расписание', 'Schedule'),
@@ -320,8 +331,9 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
             ]),
       ),
       _section(tr('Дополнительные правила', 'Additional rules'), [
-        _link(tr('Время новых планов', 'Default plan times'),
-          AppMenuIconRole.defaultTime, LifeOsMenuAction.defaultPlanTimes),
+        AppSettingsNavigationRow(title: tr('Время новых планов', 'Default plan times'),
+          leading: _symbol(AppMenuIconRole.defaultTime, selected.family),
+          onTap: () => setState(() => _planningDefaultTimesOpen = true)),
         _link(tr('Фиксированное время и связь записей', 'Fixed time and record links'),
           AppMenuIconRole.link, LifeOsMenuAction.planningSettings),
         _link(tr('Подключённые календари', 'Connected calendars'),
@@ -782,7 +794,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
             const SizedBox(width: 16),
           ],
           Expanded(child: Text(_mobileDetailOpen
-              ? (_ru ? selected.ru : selected.en) : tr('Настройки', 'Settings'),
+              ? (_planningDefaultTimesOpen ? tr('Время новых планов', 'Default plan times') : (_ru ? selected.ru : selected.en)) : tr('Настройки', 'Settings'),
             maxLines: 2, overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontSize: _mobileDetailOpen ? 22 : 30,

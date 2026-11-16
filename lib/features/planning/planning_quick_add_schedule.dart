@@ -141,6 +141,14 @@ extension PlanningQuickAddScheduling on _PlanningPageState {
       _quickAddTags.clearCreationSelectedTags();
     });
     _planQuickAddInFlight = false;
+    // A rolled-over task is outside the selected day. Explain that
+    // immediately, rather than leaving a seemingly failed creation.
+    if (rolledOver) {
+      AppSnack.warning(
+        t(currentLocale.value, 'plan_auto_schedule_moved_to')
+            .replaceFirst('%s', _planRolloverLabel(plannedWalls.startWall)),
+      );
+    }
 
     // Never let synchronous Brain cache processing/PocketBase work delay the
     // first Flutter paint of the optimistic card (web and native alike).
@@ -163,10 +171,13 @@ extension PlanningQuickAddScheduling on _PlanningPageState {
           }
           if (!mounted) return;
           if (rolledOver) {
-            AppSnack.show(
-              t(currentLocale.value, 'plan_auto_schedule_moved_to')
-                  .replaceFirst('%s', _planRolloverLabel(plannedWalls.startWall)),
-            );
+            // Only navigate when the saved/queued plan is accepted and
+            // no newer quick-add draft has replaced this one.
+            if (_planQuickAddCreateGeneration == createGeneration &&
+                widget.selectedDateString == taskDateKey &&
+                _textController.text.trim().isEmpty) {
+              widget.onDateChanged?.call(plannedWalls.startWall);
+            }
           } else {
             _maybeShowPlanScheduleOverloadWarning(
               dayPlans: [...existingDay, localOptimistic],
