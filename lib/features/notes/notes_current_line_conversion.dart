@@ -1,5 +1,5 @@
 part of 'notes_editor_document_controller.dart';
- 
+
 /// Gboard keeps one EditableText mounted during multiline input; splitting
 /// inside the IME callback would detach it while the composing range is live.
 /// This helper shares a part with line conversions so the document owner
