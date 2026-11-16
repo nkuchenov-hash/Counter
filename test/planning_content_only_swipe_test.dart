@@ -51,7 +51,7 @@ void main() {
         .readAsStringSync();
     expect(cardList, contains('bool get wantKeepAlive => widget.isActive;'));
   });
-void main() {
+
   testWidgets('swipe changes day inside body but never on the fixed tag bar', (
     tester,
   ) async {
