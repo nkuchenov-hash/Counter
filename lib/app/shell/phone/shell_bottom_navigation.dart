@@ -38,8 +38,6 @@ class ShellCompactBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
     final scheme = Theme.of(context).colorScheme;
-    final navTheme = Theme.of(context).navigationBarTheme;
-    final indicator = navTheme.indicatorColor ?? scheme.primaryContainer;
 
     final items = <({IconData icon, IconData selectedIcon, String label, int index})>[
       (
@@ -74,62 +72,41 @@ class ShellCompactBottomNav extends StatelessWidget {
       ),
     ];
 
+    // A single floating capsule on all five tabs. Only the capsule itself
+    // blurs the scene behind it; the rest of the bottom area is transparent.
     final navigation = SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        child: SizedBox(
-          height: kShellBottomNavHeight,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final item in items)
-                Expanded(
-                  child: _ShellBottomNavItem(
-                    icon: item.icon,
-                    selectedIcon: item.selectedIcon,
-                    label: item.label,
-                    selected: selectedIndex == item.index,
-                    indicatorColor: indicator,
-                    onTap: () => onDestinationSelected(item.index),
+        padding: const EdgeInsets.fromLTRB(14, 5, 14, 9),
+        child: AppFrostedNavigationPanel(
+          surfaceColor: scheme.surface,
+          child: SizedBox(
+            height: kShellBottomNavHeight,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final item in items)
+                  Expanded(
+                    child: _ShellBottomNavItem(
+                      icon: item.icon,
+                      selectedIcon: item.selectedIcon,
+                      label: item.label,
+                      selected: selectedIndex == item.index,
+                      onTap: () => onDestinationSelected(item.index),
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
-    // ONE navigation component for ALL mobile tabs. Scaffold reserves the
-    // entire interactive bar. Only the IgnorePointer glass feather paints 46px
-    // above it, so screen buttons and navigation never share hit-test space.
-    final content = Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Positioned(
-          top: -46,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: AppGlassEdgeFade(
-            edge: AppGlassEdge.bottom,
-            surfaceColor: scheme.surfaceContainerLowest,
-          ),
-        ),
-        navigation,
-      ],
-    );
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.0,
-      child: content,
+      child: navigation,
     );
   }
 }
-
-// A neutral reflective surface, never a dark opaque selected indicator.
-Color darkGlassHighlight(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-        ? AppNeutralTones.white.withValues(alpha: 0.23)
-        : AppNeutralTones.white.withValues(alpha: 0.83);
 
 class _ShellBottomNavItem extends StatelessWidget {
   const _ShellBottomNavItem({
@@ -137,7 +114,6 @@ class _ShellBottomNavItem extends StatelessWidget {
     required this.selectedIcon,
     required this.label,
     required this.selected,
-    required this.indicatorColor,
     required this.onTap,
   });
 
@@ -145,7 +121,6 @@ class _ShellBottomNavItem extends StatelessWidget {
   final IconData selectedIcon;
   final String label;
   final bool selected;
-  final Color indicatorColor;
   final VoidCallback onTap;
 
   @override
@@ -168,19 +143,9 @@ class _ShellBottomNavItem extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 decoration: selected
                     ? BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            darkGlassHighlight(context),
-                            indicatorColor.withValues(alpha: 0.35),
-                          ],
-                        ),
-                        border: Border.all(
-                          color: AppNeutralTones.white.withValues(alpha:
-                            Theme.of(context).brightness == Brightness.dark
-                                ? 0.31 : 0.82),
-                          width: 1.0,
+                        color: scheme.onSurface.withValues(
+                          alpha: Theme.of(context).brightness == Brightness.dark
+                              ? 0.14 : 0.09,
                         ),
                         borderRadius: BorderRadius.circular(19),
                       )

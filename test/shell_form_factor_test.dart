@@ -1,5 +1,6 @@
 import 'package:counter/core/app_control_tokens.dart';
 import 'package:counter/app/shell/phone/shell_bottom_navigation.dart';
+import 'package:counter/core/widgets/app_glass_edge_fade.dart';
 import 'dart:io';
 
 import 'package:counter/core/app_colors.dart';
@@ -58,17 +59,20 @@ void main() {
     expect('PhoneShellBottomNavigation('.allMatches(shell), hasLength(1));
     expect('ShellCompactBottomNav('.allMatches(wrapper), hasLength(1));
     expect('class ShellCompactBottomNav'.allMatches(nav), hasLength(1));
-    expect(shell, contains('extendBody: false'));
-    expect(nav, contains('clipBehavior: Clip.none'));
-    expect(nav, contains('top: -46'));
-    expect(nav, contains('AppGlassEdgeFade('));
-    expect(nav, contains('AppGlassEdge.bottom'));
+    expect(shell, contains('extendBody: !desktopShell'));
+    expect(shell, contains('late final List<Widget> _stableShellPages'));
+    expect(shell, contains('..._stableShellPages'));
+    expect(nav, contains('AppFrostedNavigationPanel('));
+    expect(nav, isNot(contains('top: -46')));
+    expect(nav, isNot(contains('Positioned(')));
+    expect(nav, isNot(contains('AppGlassEdgeFade(')));
     expect(settings, contains('AppGlassEdgeFade('));
     expect(settings, contains('AppGlassEdge.top'));
     expect('class AppGlassEdgeFade'.allMatches(fade), hasLength(1));
-    expect(fade, contains('IgnorePointer('));
+    expect('class AppFrostedNavigationPanel'.allMatches(fade), hasLength(1));
+    expect(fade, contains('ClipRRect('));
     expect(fade, contains('BackdropFilter('));
-    expect(fade, contains('ImageFilter.blur('));
+    expect(fade, contains('ImageFilter.blur(sigmaX: 18, sigmaY: 18)'));
     // No settings-specific or tab-specific second navigation appearance.
     expect(nav, isNot(contains('seamlessGlass ?')));
     expect(nav, isNot(contains('!seamlessGlass ?')));
@@ -84,7 +88,7 @@ void main() {
     expect(surface.color, Colors.transparent);
   });
 
-  testWidgets('phone navigation has five actions over universal feathered glass',
+  testWidgets('phone navigation uses clipped Telegram-style glass capsule',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;
@@ -101,7 +105,11 @@ void main() {
       ),
     ));
     expect(find.byType(BackdropFilter), findsOneWidget);
-    expect(find.byType(ShaderMask), findsOneWidget);
+    expect(find.byType(ShaderMask), findsNothing);
+    expect(find.byType(AppFrostedNavigationPanel), findsOneWidget);
+    final capsule = tester.getRect(find.byType(AppFrostedNavigationPanel));
+    expect(capsule.left, greaterThanOrEqualTo(12));
+    expect(capsule.right, lessThanOrEqualTo(378));
     expect(find.byType(InkWell), findsNWidgets(5));
     expect(kShellBottomNavHeight, lessThan(80));
     await tester.tap(find.byType(InkWell).at(3));
@@ -117,13 +125,16 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     for (final settings in [false, true]) {
       await tester.pumpWidget(MaterialApp(home: Scaffold(
-        extendBody: false,
-        body: Align(
-          alignment: Alignment.bottomCenter,
-          child: ElevatedButton(
-            key: const ValueKey('bottom-body-action'),
-            onPressed: () {},
-            child: const Text('Save'),
+        extendBody: true,
+        body: SafeArea(
+          top: false,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: ElevatedButton(
+              key: const ValueKey('bottom-body-action'),
+              onPressed: () {},
+              child: const Text('Save'),
+            ),
           ),
         ),
         bottomNavigationBar: ShellCompactBottomNav(
@@ -151,7 +162,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('all phone tabs retain the bottom glass fade',
+  testWidgets('every phone tab has capsule blur without a full-width veil',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;
@@ -167,13 +178,24 @@ void main() {
     ));
     await tester.pumpWidget(navFor(false));
     expect(find.byType(BackdropFilter), findsOneWidget);
-    expect(find.byType(ShaderMask), findsOneWidget);
+    expect(find.byType(ShaderMask), findsNothing);
     expect(find.byType(InkWell), findsNWidgets(5));
     await tester.pumpWidget(navFor(true));
     expect(find.byType(BackdropFilter), findsOneWidget);
-    expect(find.byType(ShaderMask), findsOneWidget);
+    expect(find.byType(ShaderMask), findsNothing);
     expect(find.byType(InkWell), findsNWidgets(5));
     expect(tester.takeException(), isNull);
+  });
+
+  test('footer and floating actions respect the shared navigation safe area', () {
+    final calendar = File('lib/features/calendar/calendar_view.dart')
+        .readAsStringSync();
+    final notes = File(
+      'lib/features/notes/widgets/notes_library_production_shell.dart',
+    ).readAsStringSync();
+    expect(calendar, contains('18 + MediaQuery.paddingOf(context).bottom'));
+    expect(notes, contains('return SafeArea('));
+    expect(notes, contains('top: false,'));
   });
 
   test('screen actions use canonical LIFE OS controls', () {

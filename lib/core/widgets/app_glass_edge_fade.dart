@@ -62,3 +62,42 @@ class AppGlassEdgeFade extends StatelessWidget {
     );
   }
 }
+
+
+/// Canonical floating navigation material: real backdrop blur strictly
+/// clipped to the rounded capsule, with no full-width colored backplate.
+/// Its ancestor Scaffold uses extendBody to paint scroll content below it.
+class AppFrostedNavigationPanel extends StatelessWidget {
+  const AppFrostedNavigationPanel({
+    super.key,
+    required this.surfaceColor,
+    required this.child,
+  });
+
+  final Color surfaceColor;
+  final Widget child;
+  static const double cornerRadius = 30;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(cornerRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            // Minimal neutral tint *inside* the dock, never behind it.
+            color: surfaceColor.withValues(alpha: dark ? 0.14 : 0.12),
+            borderRadius: BorderRadius.circular(cornerRadius),
+            border: Border.all(
+              color: scheme.onSurface.withValues(alpha: dark ? 0.13 : 0.09),
+            ),
+          ),
+          child: Material(type: MaterialType.transparency, child: child),
+        ),
+      ),
+    );
+  }
+}

@@ -29,23 +29,26 @@ require(shell.count("PhoneShellBottomNavigation(") == 1,
         "SHELL_NAV_SINGLE_CONSTRUCTOR")
 require(phone.count("ShellCompactBottomNav(") == 1,
         "PHONE_NAV_MUST_DELEGATE_TO_CANONICAL_COMPONENT")
-require("extendBody: false" in shell and
-        "extendBody: !desktopShell" not in shell,
-        "SHELL_NAV_ACTION_OVERLAP_FORBIDDEN")
-require("clipBehavior: Clip.none" in nav and
-        "top: -46" in nav and
-        "Positioned(" in nav,
-        "NAV_GLASS_FEATHER_MUST_EXTEND_ABOVE_RESERVED_ACTIONS")
-require("AppGlassEdgeFade(" in nav and
-        "AppGlassEdge.bottom" in nav and
-        "AppGlassEdgeFade(" in settings and
+require("extendBody: !desktopShell" in shell and
+        "extendBody: false" not in shell,
+        "FROSTED_DOCK_MUST_SAMPLE_SCROLLING_BODY_UNDERNEATH")
+require("AppFrostedNavigationPanel(" in nav and
+        "Positioned(" not in nav and "top: -46" not in nav,
+        "NAV_BACKDROP_MUST_BE_CLIPPED_TO_FLOATING_CAPSULE")
+require("AppGlassEdgeFade(" in settings and
         "AppGlassEdge.top" in settings,
-        "TOP_BOTTOM_MUST_USE_SAME_CANONICAL_GLASS")
+        "TOP_HEADER_MUST_USE_CANONICAL_EDGE_FADE")
 require(glass.count("class AppGlassEdgeFade") == 1 and
-        "IgnorePointer(" in glass and "BackdropFilter(" in glass,
-        "FROSTED_EDGE_MUST_BE_SINGLE_NONINTERACTIVE_COMPONENT")
-require("seamlessGlass ?" not in nav and "!seamlessGlass ?" not in nav,
+        glass.count("class AppFrostedNavigationPanel") == 1 and
+        "ClipRRect(" in glass and "BackdropFilter(" in glass,
+        "GLASS_COMPONENTS_MUST_BE_CENTRALIZED_AND_CLIPPED")
+require("surfaceContainerLowest" not in nav and
+        "AppGlassEdgeFade(" not in nav and
+        "seamlessGlass ?" not in nav and "!seamlessGlass ?" not in nav,
         "TAB_SPECIFIC_NAV_VISUAL_VARIANTS_FORBIDDEN")
+require("late final List<Widget> _stableShellPages" in shell and
+        "..._stableShellPages" in shell,
+        "SWITCHING_MUST_REUSE_STABLE_PRIMARY_SCREENS")
 # No second root-nav widget may be silently added to a shell fragment.
 for file in (root / "lib/app/shell").rglob("*.dart"):
     if file.name == "shell_bottom_navigation.dart":

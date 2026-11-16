@@ -211,9 +211,12 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
 
   void onShellTabSelected(int i) {
     if (i == 4) {
+      if (shellPageIndex == 7) return;
       openMoreMenu(secondaryOnly: false);
       return;
     }
+    // Do not rebuild the shell or resynchronize the date on an active-tab tap.
+    if (shellPageIndex == i) return;
     setState(() => setShellPageIndex(i));
     if (i == 0 || i == 1) {
       final target = DatabaseService.instance.getTimelineDeviceLocalToday();

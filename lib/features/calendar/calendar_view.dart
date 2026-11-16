@@ -581,7 +581,7 @@ class _CalendarViewState extends State<CalendarView>
                 Positioned(
                   left: 20,
                   right: 20,
-                  bottom: 18,
+                  bottom: 18 + MediaQuery.paddingOf(context).bottom,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

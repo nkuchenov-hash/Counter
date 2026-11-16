@@ -1,7 +1,9 @@
 part of '../app_shell.dart';
 
 mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
-  List<Widget> buildShellPages() => <Widget>[
+  // Primary shell pages are created once, not rebuilt for every tab tap.
+  // The reactive data/selection listeners inside them remain live.
+  late final List<Widget> _stableShellPages = <Widget>[
     timelineTabHost,
     planningTabHost,
     calendarTabHost,
@@ -35,6 +37,10 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
       activeTab: shellPageIndexListenable,
       shellTabIndex: 7,
     ),
+  ];
+
+  List<Widget> buildShellPages() => <Widget>[
+    ..._stableShellPages,
     PeopleSettingsPage(
       key: ValueKey(peopleDestination),
       initialSection: peopleDestination,
@@ -113,8 +119,9 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                       systemNavigationBarIconBrightness:
                           scheme.brightness == Brightness.light
                               ? Brightness.dark : Brightness.light,
-                      systemNavigationBarColor: settingsGlass
-                            ? scheme.surfaceContainerLowest : scheme.surface,
+                      systemNavigationBarColor: desktopShell
+                            ? scheme.surface : AppNeutralTones.transparent,
+                      systemNavigationBarContrastEnforced: false,
                     ),
                     child: Listener(
                       behavior: HitTestBehavior.translucent,
@@ -127,10 +134,9 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                           backgroundColor: settingsGlass
                               ? scheme.surfaceContainerLowest : scheme.surface,
                           resizeToAvoidBottomInset: true,
-                          // Interactive content never extends underneath the five
-                          // navigation actions. The non-interactive glass feather
-                          // extends UP into the body without stealing hit targets.
-                          extendBody: false,
+                          // Scrollable pixels are drawn behind the clipped
+                          // dock; floating actions and footers honor safe insets.
+                          extendBody: !desktopShell,
                           // Keep identical app chrome across every desktop destination.
                           appBar: desktopShell || (!desktopShell && shellPageIndex <= 3)
                               ? AppBar(
