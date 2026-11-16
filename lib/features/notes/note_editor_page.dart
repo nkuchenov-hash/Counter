@@ -928,11 +928,8 @@ _deleteBlockFromMenu(block.id);
     }
     final id = _editor.activeBlockId;
     if (id == null) return;
-    final block = _editor.blockById(id);
-    if (block == null) return;
-    final selection = _textControllers[id]?.selection ??
-        _editor.activeSelection ??
-        TextSelection.collapsed(offset: block.effectiveText.length);
+    final selection = _textControllers[id]?.selection ?? _editor.activeSelection ??
+        TextSelection.collapsed(offset: _editor.blockById(id)?.effectiveText.length ?? 0);
     _applyMutation(_editor.convertCurrentLine(id, selection, conversion));
   }
   void _insertAfter(
@@ -1045,7 +1042,6 @@ _deleteBlockFromMenu(block.id);
     }
     _applyMutation(_editor.insertAfter(blockId, NoteBlockType.paragraph));
   }
-
   void _applyInsertedNonTextWithTrailingParagraph(
     NotesEditorMutation mutation,
   ) {
@@ -1054,21 +1050,18 @@ _deleteBlockFromMenu(block.id);
     _applyMutation(mutation);
     if (insertedId != null) _focusOrInsertParagraphAfter(insertedId);
   }
-
   GlobalKey _blockItemKeyFor(String blockId) {
     return _blockItemKeys.putIfAbsent(
       blockId,
       () => GlobalKey(debugLabel: 'notes-editor-block-$blockId'),
     );
   }
-
   Rect? _blockGlobalRect(String blockId) {
     final blockContext = _blockItemKeys[blockId]?.currentContext;
     final render = blockContext?.findRenderObject();
     if (render is! RenderBox || !render.hasSize) return null;
     return render.localToGlobal(Offset.zero) & render.size;
   }
-
   void _ensureBlockVisible(String blockId) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -1090,7 +1083,6 @@ _deleteBlockFromMenu(block.id);
       );
     });
   }
-
   void _clearActiveBlock() {
     if (_blockSelectionMode) return;
     FocusManager.instance.primaryFocus?.unfocus();
@@ -1102,7 +1094,6 @@ _deleteBlockFromMenu(block.id);
     _editor.activeSelection = null;
     if (changed && mounted) setState(() => _editingBlockId = null);
   }
-
   void _beginSecondarySelectionGuard(PointerDownEvent event) {
     if ((event.buttons & kSecondaryMouseButton) == 0 ||
         _NotesStructuredClipboard.blocks.length < 2) {
@@ -1114,7 +1105,6 @@ _deleteBlockFromMenu(block.id);
       node.canRequestFocus = false;
     }
   }
-
   void _scheduleSecondarySelectionGuardRelease(PointerEvent event) {
     if (!_secondarySelectionGuardActive) return;
     _secondarySelectionGuardTimer?.cancel();
@@ -1126,12 +1116,10 @@ _deleteBlockFromMenu(block.id);
       }
     });
   }
-
   void _handleEditorPointerDown(PointerDownEvent event) {
     _beginSecondarySelectionGuard(event);
     _handleEditorBackgroundPointer(event);
   }
-
   void _handleEditorBackgroundPointer(PointerDownEvent event) {
     if (_blockSelectionMode) return;
     if ((event.buttons & kSecondaryMouseButton) != 0) return;
@@ -1153,7 +1141,6 @@ _deleteBlockFromMenu(block.id);
     }
     _clearActiveBlock();
   }
-
   Future<void> _showTablePicker({String? anchorId}) {
     return showNotesTablePicker(
       context: context,
@@ -1168,7 +1155,6 @@ _editor.insertAfter(
       },
     );
   }
-
   Future<void> _showInsertMenu(String anchorId) {
     return showNotesInsertMenu(
       context: context,
@@ -1187,7 +1173,6 @@ _editor.insertAfter(
       onAudio: widget.parityPreview ? null : _recordAudio,
     );
   }
-
   Future<void> _pickImage({String? replaceBlockId}) async {
     if (widget.parityPreview) return;
     try {
@@ -1224,7 +1209,6 @@ _editor.updateMedia(replaceBlockId, imageData: picked.dataUrl),
       );
     }
   }
-
   Future<void> _cropImage(String blockId) async {
     final dataUrl = _editor.blockById(blockId)?.imageData;
     if (dataUrl == null || dataUrl.isEmpty) return;
@@ -1235,7 +1219,6 @@ _editor.updateMedia(replaceBlockId, imageData: picked.dataUrl),
     if (!mounted || cropped == null) return;
     _applyMutation(_editor.updateMedia(blockId, imageData: cropped));
   }
-
   Future<void> _editImageCaption(String blockId) async {
     final block = _editor.blockById(blockId);
     if (block == null || block.type != NoteBlockType.image) return;
@@ -1246,7 +1229,6 @@ _editor.updateMedia(replaceBlockId, imageData: picked.dataUrl),
     if (!mounted || result == null) return;
     _applyMutation(_editor.updateCaption(blockId, result.caption ?? ''));
   }
-
   Future<void> _copyImage(String blockId) async {
     final dataUrl = _editor.blockById(blockId)?.imageData;
     if (dataUrl == null || dataUrl.isEmpty) return;
