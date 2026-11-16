@@ -701,6 +701,7 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `planning/settings/plan_record_link_settings.dart` | Record→plan suggestion prefs |
 | `planning/settings/planning_no_tags_settings.dart` | Synthetic “No Tags” chip prefs |
 | `planning/settings/default_plan_category_search.dart` | Default plan category search delegate |
+| `planning/settings/default_plan_times_settings_block.dart` | Canonical inline category start-time and timezone editor used in Settings and Time View |
 | `planning/settings/default_plan_timezone_search.dart` | Default plan TZ search delegate |
 | `planning/widgets/planning_menu_overlay.dart` | Semicircle plan card radial menu |
 | `planning/widgets/planning_day_card_list_keep_alive.dart` | List keep-alive wrapper |
