@@ -1,3 +1,10 @@
+## [2026-11-16] — Default plan-time rule navigation and rollover visibility [CI pending]
+
+- Default plan-time rules now use one canonical Settings editor with search, category inheritance, time/timezone editing, and the same PocketBase category schedule API; remove the visible F2C legacy marker and duplicated editor UI.
+- Keep the Planning Settings tab and its back navigation when opening the rule editor. Direct Menu entry no longer switches into the Planning timeline.
+- For quick-add plans shifted to a future day by the bounded category work window, display the target date/time immediately and navigate to that scheduled day only after the create is accepted and no newer draft has taken over.
+- No PocketBase schema or category field changes. CI Flutter analyze/build and live-account plan persistence still require verification.
+
 ## [2026-11-15] — Android Notes Enter semantics, first-tap focus, compact phone nav [verification pending]
 
 - Android embedded Record Notes: pressing Enter in a heading creates an independent Body paragraph after the active IME frame. Editing the following paragraph's style no longer changes the previous H1. Lists and quotes also get separate structural blocks on Enter; plain paragraph multiline typing remains mounted for stable Gboard composition.
