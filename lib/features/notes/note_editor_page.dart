@@ -23,6 +23,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
+part 'note_editor_format_actions.dart';
+
 /// In-process structural companion to the platform plain-text clipboard.
 ///
 /// SelectionArea itself only publishes plain text. We keep the matching Notes
@@ -925,29 +927,8 @@ _deleteBlockFromMenu(block.id);
       setState(() {});
     }
   }
-  void _convertActive(NotesBlockConversion conversion) {
-    if (_selectedBlockIds.isNotEmpty) {
-      _applyMutation(_editor.convertBlocks(_selectedBlockIds, conversion));
-      return;
-    }
-    final id = _editor.activeBlockId;
-    if (id == null) return;
-    final live = _textControllers[id]?.selection;
-    final remembered = _lastSelections[id];
-    final selection = live != null && live.isValid
-        ? live
-        : remembered != null && remembered.isValid
-            ? remembered
-            : _editor.activeSelection ??
-                TextSelection.collapsed(
-                  offset: _editor.blockById(id)?.effectiveText.length ?? 0,
-                );
-    // Finish the toolbar tap/IME transaction before the sole style mutation.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _editor.blockById(id) == null) return;
-      _applyMutation(_editor.convertCurrentLine(id, selection, conversion));
-    });
-  }
+  void _convertActive(NotesBlockConversion conversion) =>
+      _convertNotesBlockSelection(this, conversion);
   void _insertAfter(
     String? anchorId,
     NoteBlockType type, {
@@ -958,16 +939,8 @@ _deleteBlockFromMenu(block.id);
       _editor.insertAfter(anchorId, type, level: level, table: table),
     );
   }
-  NotesTextBlockStyle? _activeHeadingStyle() {
-    final block = _editor.activeBlock;
-    if (block?.type == NoteBlockType.paragraph) {
-      return NotesTextBlockStyle.body;
-    }
-    if (block?.type != NoteBlockType.heading) return null;
-    if (block!.level == 1) return NotesTextBlockStyle.h1;
-    if (block.level == 3) return NotesTextBlockStyle.h3;
-    return NotesTextBlockStyle.h2;
-  }
+  NotesTextBlockStyle? _activeHeadingStyle() =>
+      _notesHeadingStyleFor(this);
   Set<NotesInlineFormat> _selectionFormats() {
     final block = _editor.activeBlock;
     if (block == null ||

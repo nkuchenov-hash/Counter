@@ -1,6 +1,5 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:counter/core/app_colors.dart';
+import 'package:counter/core/widgets/app_glass_edge_fade.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -100,54 +99,24 @@ class ShellCompactBottomNav extends StatelessWidget {
         ),
       ),
     );
-    // Telegram-style pinned glass dock on every phone destination. The
-    // feather lives ABOVE the action row, so passing content loses contrast
-    // gradually instead of colliding with a hard horizontal backplate.
-    final base = seamlessGlass ? scheme.surfaceContainerLowest : scheme.surface;
-    final content = SizedBox(
-      height: kShellBottomNavHeight + 46 + MediaQuery.paddingOf(context).bottom,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: IgnorePointer(
-              child: ShaderMask(
-                blendMode: BlendMode.dstIn,
-                shaderCallback: (bounds) => const LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  stops: [0, 0.56, 1],
-                  colors: [
-                    AppNeutralTones.white,
-                    AppNeutralTones.white,
-                    AppNeutralTones.transparent,
-                  ],
-                ).createShader(bounds),
-                child: ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          stops: const [0, 0.48, 1],
-                          colors: [
-                            base.withValues(alpha: 0.96),
-                            base.withValues(alpha: 0.79),
-                            AppNeutralTones.transparent,
-                          ],
-                        ),
-                      ),
-                      child: const SizedBox.expand(),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+    // ONE navigation component for ALL mobile tabs. Scaffold reserves the
+    // entire interactive bar. Only the IgnorePointer glass feather paints 46px
+    // above it, so screen buttons and navigation never share hit-test space.
+    final content = Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          top: -46,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: AppGlassEdgeFade(
+            edge: AppGlassEdge.bottom,
+            surfaceColor: scheme.surfaceContainerLowest,
           ),
-          Positioned(left: 0, right: 0, bottom: 0, child: navigation),
-        ],
-      ),
+        ),
+        navigation,
+      ],
     );
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.0,

@@ -117,12 +117,15 @@ Product sections own section-specific code later; this phase only separates shel
 | `app/shell/shared/offline_sync_status_bar.dart` | Shell-owned O1 offline/sync status UI; renders Brain `OfflineSyncController` state and forwards tap-to-retry |
 | `app/shell/shared/shell_shared.dart` | Shell-local date helpers |
 | `app/shell/shared/shell_form_factor.dart` | Phone / tablet / desktop form-factor resolve from width |
+| `core/widgets/app_glass_edge_fade.dart` | Canonical noninteractive frosted edge shared by top Settings header and all mobile bottom nav destinations |
 | `features/profile/profile_hydration_status_bar.dart` | Profile-owned hydration error/retry status UI |
 | `app/shell/phone/shell_bottom_navigation.dart` | `ShellCompactBottomNav` — equal-column phone-safe bottom tab bar |
 | `app/shell/phone/phone_shell_frame.dart` | Phone content frame + bottom nav chrome |
 | `app/shell/tablet/tablet_shell_frame.dart` | Tablet frame (currently same compact chrome as phone) |
 | `app/shell/desktop/shell_side_navigation.dart` | Desktop/web side navigation rail |
 | `app/shell/desktop/desktop_shell_frame.dart` | Desktop wide frame (side nav + content) |
+
+**Canonical mobile navigation (P0):** `ShellCompactBottomNav` is the ONLY primary phone/tablet bottom menu. `AppGlassEdgeFade` is the ONE shared visual edge component for top and bottom. `Scaffold.extendBody` must be false for the interactive shell: no body action may overlap the five navigation buttons. The 46 px blur feather is noninteractive and paints only ABOVE the reserved dock. `scripts/audit/canonical_navigation_law.py` enforces these conditions in Architecture Guard and Android release CI. No feature-local, settings-specific or duplicate primary navigation implementations are allowed, even upon later design changes unless the canonical law itself is explicitly amended.
 
 Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`); `app/shell/wear/` is reserved for a later move when Wear chrome is extracted — no dead placeholders.
 
@@ -514,7 +517,7 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_quick_add_tags_controller.dart`**, **`planning_quick_add_schedule.dart`**, **`planning_bulk_edit_actions.dart`**, **`planning_viktor_navigation.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** | Plans tab: persistent day shell + day-content-only date swipes, fixed quick-add/tag controls, Time View modules, settings, bulk edit |
 | `paths/` | `paths_page.dart`, `widgets/path_stage_card.dart` | First-class Paths destination: project list/detail, compact goal header, Variant-2 structured stage/action cards, nested stage/action reorder, progress and completion controls |
 | `lists/` | `lists_view.dart`, `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_empty_state.dart`, `lists_card.dart`, `lists_export.dart`, `category_filter_tree_field.dart` | Lists/backlog coordinator + filter/bulk/empty modules + card + export + Lists-only “All categories” filter field |
-| `notes/` | `drawing_canvas_page.dart`, `notes_audio_controller.dart`, `notes_image_tools.dart`, `notes_editor_document_controller.dart`, `notes_glm_surface.dart`, `notes_visual_tokens.dart`, `notes_figma_tokens.dart`, `note_editor_page.dart`, **`widgets/`** (`notes_library_body.dart`, `notes_library_production_shell.dart`, `notes_category_plus_sheet.dart`, `notes_folder_pane.dart`, `note_card.dart`, `note_editor_block_widgets.dart`, `notes_editor_tools.dart`, `notes_special_block_widgets.dart`, `notes_canonical_components.dart`, `notes_component_text_blocks.dart`, `notes_component_structural_blocks.dart`, `notes_component_media_blocks.dart`, `notes_component_tools.dart`) | Notes library/editor/drawing feature UI; exact roles in §3.4 Notes below |
+| `notes/` | `drawing_canvas_page.dart`, `notes_audio_controller.dart`, `notes_image_tools.dart`, `notes_editor_document_controller.dart`, `notes_current_line_conversion.dart`, `note_editor_format_actions.dart`, `notes_glm_surface.dart`, `notes_visual_tokens.dart`, `notes_figma_tokens.dart`, `note_editor_page.dart`, **`widgets/`** (`notes_library_body.dart`, `notes_library_production_shell.dart`, `notes_category_plus_sheet.dart`, `notes_folder_pane.dart`, `note_card.dart`, `note_editor_block_widgets.dart`, `notes_editor_tools.dart`, `notes_special_block_widgets.dart`, `notes_canonical_components.dart`, `notes_component_text_blocks.dart`, `notes_component_structural_blocks.dart`, `notes_component_media_blocks.dart`, `notes_component_tools.dart`) | Notes library/editor/drawing feature UI; exact roles in §3.4 Notes below |
 | `calendar/` | `calendar_view.dart` (orchestrator), `calendar_chrome_header.dart`, `calendar_month_grid.dart`, `calendar_week_grid.dart`, `calendar_day_panel.dart`, `calendar_day_events.dart`, `calendar_helpers.dart`, `calendar_drag_and_reschedule.dart` (shared Time View insertion cascade/persistence), `calendar_week_timeview_drag.dart` (canonical Time View gesture adapter + overlay), `calendar_week_grouping.dart` (pure visual grouping/lane placement), `calendar_task_group_sheet.dart` (interactive category group details) | Calendar tab: click-to-create date/time, separate from global header date; category-based week grouping, month/week grids, focused-day panel |
 | `viktor/` | `viktor_chat_page.dart`, `viktor_composer.dart`, `viktor_dialogue_ui_state.dart`, `viktor_chat_layout.dart`, `viktor_threads_ui.dart`, `viktor_duration_review_dialog.dart`, `viktor_duration_conflict_dialog.dart`, `viktor_recovery.dart` | Full-screen AI chat with expandable text and mic composer; separated dialogue history, cloud settings, protected outbox UI state, and grouped bounded two-day duration review and model-assisted read-only recovery after rejected proposals |
 | `profile/` | `profile_view.dart` (including morning-start preference), **`settings/`** (account, notification, security sections), `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart` | Profile & tag settings |
@@ -522,7 +525,7 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `voice/` | `desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_correction_sheet.dart` | Desktop Flutter Voice overlay UI (GOLOS STT capsule / correction / panel) |
 | `dev/` | `component_lab_view.dart`, `component_lab_cards_demo.dart`, `component_lab_notes_demo.dart`, `component_lab_inputs_demo.dart` | Admin-only Component Lab including canonical Notes block/media/tool states |
 | `wear/` | `wear_timer_screen.dart`, `wear_main_wrapper.dart`, `wear_platform.dart`, `wear_runtime.dart` | Wear OS companion |
-| `shared/` | `shared_widgets.dart` (barrel), `activity_detail_sheet.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `empty_state_placeholder.dart`, **`edit_sheet/`** (autosave gate, time helpers/picker, checklist, repeat RRULE helpers, quill toolbar, parallel record panels, **`category_edit_draft.dart`**, **`planning_edit_result_actions.dart`**, **`timeline_edit_result_actions.dart`**) | Activity edit sheets, Omni-Picker entry, and plan/record category draft helpers |
+| `shared/` | `shared_widgets.dart` (barrel), `activity_detail_sheet.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `empty_state_placeholder.dart`, **`edit_sheet/`** (autosave gate, time helpers/picker, checklist, repeat RRULE helpers, quill toolbar, parallel record panels, **`category_edit_draft.dart`**, **`planning_edit_result_actions.dart`**, **`timeline_edit_result_actions.dart`**, **`record_title_assist.dart`**) | Activity edit sheets, Omni-Picker entry, and plan/record category draft helpers |
 
 **Key symbols:** `ActivityDetailSheet` router → `features/shared/activity_detail_sheet.dart`; `PlanningTaskEditSheet` / `TimelineRecordSheetContent` in dedicated files; `showAppDateTimePicker` / `EditSheetAutosaveGate` in `features/shared/edit_sheet/`; re-exported via `shared_widgets.dart`.
 
@@ -534,10 +537,12 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `notes/notes_audio_controller.dart` | Cross-platform in-memory PCM recorder, WAV codec, byte playback, recorder/transcript modal orchestration |
 | `notes/notes_image_tools.dart` | Shared file/gallery/camera picker, crop surface, caption dialog, rich-image clipboard, and save-to-device helpers |
 | `notes/notes_editor_document_controller.dart` | Stable-ID local document, selection, conversion, reorder, table/media mutation, and compatibility-preservation controller |
+| `notes/notes_current_line_conversion.dart` | Atomic caret-line structural conversion for Android notes without splitting prior Body paragraphs *(part)* |
 | `notes/notes_glm_surface.dart` | GLM background + centered library/editor column frames |
 | `notes/notes_visual_tokens.dart` | GLM Notes spacing/typography/glass token helpers |
 | `notes/notes_figma_tokens.dart` | Executable Figma Notes colors, typography, editor geometry, glass, and exact 350×48 toolbar tokens |
 | `notes/note_editor_page.dart` | Full-screen block editor (primary Notes editing experience) |
+| `notes/note_editor_format_actions.dart` | Editor formatting/heading focus helpers; stable Android keyboard ownership *(part)* |
 | `notes/widgets/note_editor_block_widgets.dart` | Editor block rows + add-block chrome; callbacks only; no Brain ownership |
 | `notes/widgets/notes_editor_tools.dart` | Contextual primary toolbar, Aa formatting panel, Insert panel, table/link dialogs |
 | `notes/widgets/notes_editor_screen.dart` | Shared responsive Figma production screen shell for mobile/web/desktop: header, title/meta, visible document viewport, desktop glass surface, pinned finite toolbar |
@@ -741,6 +746,7 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `shared/edit_sheet/quill_toolbar_config.dart` | Planning edit Quill toolbar config |
 | `shared/edit_sheet/parallel_record_panels.dart` | Backlog sub-items + parallel child panels |
 | `shared/edit_sheet/record_edit_save_policy.dart` | `validateRecordEditSave` / `RecordEditSaveMode` — Timeline record edit Save classify/validate policy |
+| `shared/edit_sheet/record_title_assist.dart` | Debounced record title category matcher; keeps Gboard input responsive *(part)* |
 | `shared/edit_sheet/category_edit_draft.dart` | Plan/record category draft resolve + plan PATCH category relation gate |
 | `shared/categories/picker/create_category_from_picker.dart` | `showCreateCategoryFromPickerDialog` — explicit-parent create flow from category picker |
 

@@ -26,6 +26,8 @@ import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_time_helpers.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_time_picker.dart';
 
+part 'edit_sheet/record_title_assist.dart';
+
 class TimelineRecordSheetContent extends StatefulWidget {
   const TimelineRecordSheetContent({
     required this.record,
@@ -302,7 +304,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       _notesImeSessionActive = false;
     }
   }
-
   /// Same wall-calendar day as [DatabaseService._profileWallFromUtc] / planning fetch —
   /// never [DateTime.toLocal] on raw UTC (that shifted links to the wrong day vs profile).
   DateTime _wallDayForRecord() {
@@ -531,7 +532,6 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     }
     return (sync: true, clear: false, id: sel);
   }
-
 
   @override
   void dispose() {
@@ -874,17 +874,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                               'hint_record_example',
                             ),
                             textCapitalization: TextCapitalization.sentences,
-                            onChanged: (raw) {
-                              // Avoid scanning a large category tree per key.
-                              _titleAssistDebounce?.cancel();
-                              _titleAssistDebounce = Timer(
-                                const Duration(milliseconds: 450), () {
-                                  if (!mounted || _titleController.text != raw) return;
-                                  _applyFuzzyCategoryFromRecordTitle(raw);
-                                },
-                              );
-                              _onRecordFieldChanged();
-                            },
+                            onChanged: (raw) => _handleRecordTitleInput(this, raw),
                           ),
                           if (!notesEditing) ...[
                             const SizedBox(height: 8),

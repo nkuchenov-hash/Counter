@@ -1,3 +1,10 @@
+## P0 mobile shell navigation — one owner and no overlap (2026-11-16)
+
+- `ShellCompactBottomNav` in `lib/app/shell/phone/shell_bottom_navigation.dart` is the **only** mobile primary navigation component on every tab, including Settings. A new menu widget, tab-specific imitation, duplicated frosted background, or parallel navigation implementation is prohibited.
+- `AppGlassEdgeFade` in `lib/core/widgets/app_glass_edge_fade.dart` owns both header and bottom blur/feather behavior; screens may choose top/bottom orientation, not copy its shaders. The glass is noninteractive.
+- Shell chrome reserves the entire physical navigation action zone (`extendBody: false`) so screen buttons never occupy the same hit-test rectangle as nav buttons. A 46px visual feather can extend above that zone without moving the actions.
+- Code changes may not waive these invariants through ad-hoc UI choices. Both Architecture Guard and Android release invoke `scripts/audit/canonical_navigation_law.py`, and widget geometry tests verify action separation.
+
 ## Text optical centering in canonical input (2026-11-09)
 
 - A geometrically centered 21 px editor is insufficient on Web: rendered typed Onest glyph ink was approximately four physical pixels low at browser DPR 1.5 in the production Timeline screenshot. `AppControlTokens.singleLineOpticalOffsetY` moves only the editable text and caret on Flutter Web; the separately rendered hint is already centered and stays put, as does native text.

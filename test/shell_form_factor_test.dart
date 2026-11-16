@@ -46,80 +46,34 @@ void main() {
     });
   });
 
-  test('phone settings header and universal Telegram-style glass dock', () {
-    final chrome = File('lib/app/shell/shared/shell_chrome.dart')
-        .readAsStringSync();
-    final nav = File('lib/app/shell/phone/shell_bottom_navigation.dart')
-        .readAsStringSync();
+  test('canonical mobile shell has one navigation owner and no hit-test overlap', () {
+    final shell = File('lib/app/shell/shared/shell_chrome.dart').readAsStringSync();
+    final wrapper = File('lib/app/shell/phone/phone_shell_frame.dart').readAsStringSync();
+    final nav = File('lib/app/shell/phone/shell_bottom_navigation.dart').readAsStringSync();
     final settings = File('lib/features/profile/menu/life_os_settings_tabs_page.dart')
         .readAsStringSync();
-    final layout = File('lib/core/widgets/app_settings_layout.dart')
+    final fade = File('lib/core/widgets/app_glass_edge_fade.dart')
         .readAsStringSync();
-    expect(chrome, isNot(contains('SafeArea(top: true, bottom: false, child: mainColumn)')));
-    expect(chrome, contains('systemStatusBarContrastEnforced: false'));
-    expect(File('lib/main.dart').readAsStringSync(),
-        contains('SystemUiMode.edgeToEdge'));
-    expect(chrome, contains('extendBody: !desktopShell'));
-    expect(chrome, contains('backgroundColor: settingsGlass'));
-    expect(chrome, contains('systemNavigationBarColor: settingsGlass'));
-    expect(chrome, contains('seamlessGlass: settingsGlass'));
-    expect(nav, contains('seamlessGlass'));
-    expect(nav, isNot(contains('scheme.surfaceContainerLowest.withValues(alpha: 0.30)')));
-    expect(chrome, contains('statusBarIconBrightness: desktopShell ||'));
-    expect(chrome, contains('scheme.brightness == Brightness.light'));
-    expect(chrome, contains('systemNavigationBarIconBrightness:'));
-    expect(nav, contains('final content = SizedBox('));
-    expect(nav, contains('BackdropFilter('));
-    expect(nav, contains('ImageFilter.blur(sigmaX: 14, sigmaY: 14)'));
-    expect(nav, contains('ShaderMask('));
-    expect(nav, contains('blendMode: BlendMode.dstIn'));
-    expect(nav, isNot(contains('AppNeutralTones.white.withValues(alpha: 0.12)')));
-    expect(nav, contains('AppNeutralTones.white.withValues(alpha: 0.23)'));
-    expect(nav, contains('SafeArea('));
-    expect(settings, contains('class _GlassySettingsBackButton'));
-    expect(settings, contains('ImageFilter.blur(sigmaX: 16, sigmaY: 16)'));
-    expect(settings, contains('stops: [0, 0.61, 1]'));
-    expect(settings, contains('sigmaX: 16, sigmaY: 16'));
-    // Pinned header is a Stack sibling of the scrolling viewport.
-    expect(settings, contains('header: _mobilePinnedHeader()'));
-    expect(settings, contains('Widget _mobilePinnedHeader()'));
-    expect(settings, contains('return SizedBox('));
-    expect(settings, contains('color: dark'));
-    expect(settings, contains('scheme.surfaceContainerLowest.withValues(alpha: 0.96)'));
-    expect(settings, contains('scheme.surfaceContainerLowest.withValues(alpha: 0.98)'));
-    expect(settings, isNot(contains('scheme.surfaceContainerHigh.withValues(alpha: 0.76)')));
-    expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.29)'));
-    expect(settings, contains('ImageFilter.blur(sigmaX: 18, sigmaY: 18)'));
-    expect(settings, contains('height: topInset + 114'));
-    expect(settings, contains('EdgeInsets.fromLTRB(16, topInset + 12, 16, 12)'));
-    expect(settings, isNot(contains('EdgeInsets.fromLTRB(16, topInset + 12, 16, 38)')));
-    expect(settings, contains('68 + MediaQuery.viewPaddingOf(context).top'));
-    expect(settings, contains('EdgeInsets.fromLTRB(5, 14, 0, 4)'));
-    expect(settings, contains('EdgeInsets.fromLTRB(4, 14, 0, 5)'));
-    expect(settings, isNot(contains('EdgeInsets.fromLTRB(5, 22, 0, 9)')));
-    expect(settings, contains('scheme.surfaceContainerLowest.withValues(alpha: 0.80)'));
-    // Keep real scrolling content behind both blur surfaces; fading the
-    // whole ListView produces opaque-looking slabs instead of frosted glass.
-    final motion = settings.split('class _MobileSettingsMotion').last
-        .split('class _MobileSettingsBounceBehavior').first;
-    expect(motion, isNot(contains('ShaderMask(')));
-    expect(motion, contains('child: child,'));
+    expect('bottomNavigationBar: LayoutBuilder('.allMatches(shell), hasLength(1));
+    expect('PhoneShellBottomNavigation('.allMatches(shell), hasLength(1));
+    expect('ShellCompactBottomNav('.allMatches(wrapper), hasLength(1));
+    expect('class ShellCompactBottomNav'.allMatches(nav), hasLength(1));
+    expect(shell, contains('extendBody: false'));
+    expect(nav, contains('clipBehavior: Clip.none'));
+    expect(nav, contains('top: -46'));
+    expect(nav, contains('AppGlassEdgeFade('));
+    expect(nav, contains('AppGlassEdge.bottom'));
+    expect(settings, contains('AppGlassEdgeFade('));
+    expect(settings, contains('AppGlassEdge.top'));
+    expect('class AppGlassEdgeFade'.allMatches(fade), hasLength(1));
+    expect(fade, contains('IgnorePointer('));
+    expect(fade, contains('BackdropFilter('));
+    expect(fade, contains('ImageFilter.blur('));
+    // No settings-specific or tab-specific second navigation appearance.
+    expect(nav, isNot(contains('seamlessGlass ?')));
+    expect(nav, isNot(contains('!seamlessGlass ?')));
     expect(settings, contains('AppSettingsPageBody(transparentBackground: true'));
-    expect(layout, contains('this.transparentBackground = false'));
-    expect(layout, contains('transparentBackground ? AppNeutralTones.transparent'));
-    expect(settings, contains('Theme.of(context).colorScheme.surfaceContainerLowest'));
-    expect(nav, contains('AppNeutralTones.transparent,'));
-    expect(nav, contains('stops: [0, 0.56, 1]'));
-    expect(settings, contains("key: ValueKey(_mobileDetailOpen ? 'detail-"));
-    expect(settings, isNot(contains('for (final top in [true, false])')));
-    expect(settings, contains('class _MobileSettingsMotion'));
-    expect(settings, contains('Positioned.fill(child: ScrollConfiguration('));
-    expect(settings, contains('Positioned(top: 0, left: 0, right: 0, child: header)'));
-    expect(settings, contains('ShaderMask('));
-    expect(settings, contains('blendMode: BlendMode.dstIn'));
-    expect(settings, contains('const SizedBox(height: 116)'));
-    expect(settings, isNot(contains('height: top ? 30 : 52')));
-    expect(layout, contains('MediaQuery.paddingOf(context).bottom'));
+    expect(shell, contains('systemStatusBarContrastEnforced: false'));
   });
 
   testWidgets('mobile settings list leaves the actual glass backdrop visible', (tester) async {
@@ -152,6 +106,43 @@ void main() {
     expect(kShellBottomNavHeight, lessThan(80));
     await tester.tap(find.byType(InkWell).at(3));
     expect(selected, 3);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('record action cannot overlap any of five nav destinations',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    for (final settings in [false, true]) {
+      await tester.pumpWidget(MaterialApp(home: Scaffold(
+        extendBody: false,
+        body: Align(
+          alignment: Alignment.bottomCenter,
+          child: ElevatedButton(
+            key: const ValueKey('bottom-body-action'),
+            onPressed: () {},
+            child: const Text('Save'),
+          ),
+        ),
+        bottomNavigationBar: ShellCompactBottomNav(
+          viewportWidth: 390,
+          selectedIndex: 0,
+          seamlessGlass: settings,
+          onDestinationSelected: (_) {},
+        ),
+      )));
+      await tester.pump();
+      final action = tester.getRect(
+        find.byKey(const ValueKey('bottom-body-action')));
+      for (final navItem in tester.widgetList<InkWell>(find.byType(InkWell))) {
+        final element = find.byWidget(navItem);
+        final navRect = tester.getRect(element);
+        expect(action.bottom <= navRect.top, isTrue,
+            reason: 'Body Save and bottom navigation overlap.');
+      }
+    }
     expect(tester.takeException(), isNull);
   });
 

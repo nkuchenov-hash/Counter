@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
 import 'package:counter/core/app_colors.dart';
+import 'package:counter/core/widgets/app_glass_edge_fade.dart';
 
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/life_color_compat.dart';
@@ -752,38 +753,16 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
 
   Widget _mobilePinnedHeader() {
     final scheme = Theme.of(context).colorScheme;
-    final dark = scheme.brightness == Brightness.dark;
     final topInset = MediaQuery.viewPaddingOf(context).top;
+    // The same canonical frosted edge as the bottom shell navigation.
     return SizedBox(height: topInset + 114, child: Stack(children: [
-      Positioned.fill(child: IgnorePointer(child: ShaderMask(
-        blendMode: BlendMode.dstIn,
-        shaderCallback: (bounds) => const LinearGradient(
-          begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          stops: [0, 0.61, 1],
-          colors: [AppNeutralTones.white, AppNeutralTones.white, AppNeutralTones.transparent],
-        ).createShader(bounds),
-        child: ClipRect(child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: DecoratedBox(
-            decoration: BoxDecoration(gradient: LinearGradient(
-              begin: Alignment.topCenter, end: Alignment.bottomCenter,
-              stops: const [0, 0.61, 1],
-               colors: dark
-                   ? [
-                       scheme.surfaceContainerLowest.withValues(alpha: 0.96),
-                       scheme.surfaceContainerLowest.withValues(alpha: 0.78),
-                       AppNeutralTones.transparent,
-                     ]
-                   : [
-                       scheme.surfaceContainerLowest.withValues(alpha: 0.98),
-                       scheme.surfaceContainerLowest.withValues(alpha: 0.80),
-                       AppNeutralTones.transparent,
-                     ],
-            )),
-            child: const SizedBox.expand(),
-          ),
-        )),
-      ))),
+      Positioned.fill(
+        child: AppGlassEdgeFade(
+          edge: AppGlassEdge.top,
+          surfaceColor: scheme.surfaceContainerLowest,
+          blurSigma: 16,
+        ),
+      ),
       Padding(
         padding: EdgeInsets.fromLTRB(16, topInset + 12, 16, 12),
         child: Row(children: [
@@ -888,7 +867,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
                   SizedBox(height: 68 + MediaQuery.viewPaddingOf(context).top),
                   _mobileSettings(),
                   // Scroll the final item above the floating glass navigation.
-                  const SizedBox(height: 116),
+                  const SizedBox(height: 20),
                 ]),
               ),
             )),

@@ -1,3 +1,10 @@
+## P0 canonical navigation and non-overlap law (2026-11-16)
+
+- Every mobile destination—including Settings, Timeline, Planning, Calendar, Lists and More—uses one shared `ShellCompactBottomNav`; creating or styling a second primary menu in a feature is forbidden, even if a requested design differs.
+- Top/bottom translucent fade and blur must use the single `AppGlassEdgeFade` implementation. The glass has no hit target; menus and page actions must remain tappable and visually distinct.
+- The root shell reserves the entire interactive bottom-navigation zone (`Scaffold.extendBody: false`). No page button, save bar or floating action may overlap the five navigation actions. Only a noninteractive 46px fade may paint above the dock into scrollable content.
+- The invariant is enforced by `scripts/audit/canonical_navigation_law.py` in Architecture Guard AND APK publishing, plus widget geometry tests in `test/shell_form_factor_test.dart`. A compilation success alone does not waive it.
+
 ## Viktor — adjacent Timeline record duration changes (2026-11-14)
 
 - A command such as "Сократи запись Обед до 30 минут и продли следующую Этника сайт" always refers to existing Timeline **records**, not plans. Viktor must obtain real record IDs and UTC boundaries with `read_day_records` before proposing the exact two-record edit.
