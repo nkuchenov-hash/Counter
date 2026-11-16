@@ -284,7 +284,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     ));
 
   Widget _planning() {
-    if (_planningDefaultTimesOpen) return Column(children: [
+    if (_planningDefaultTimesOpen) return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       AppSettingsNavigationRow(title: tr('Назад к планированию', 'Back to Planning'),
         leading: const Icon(Icons.arrow_back_rounded),
         onTap: () => setState(() => _planningDefaultTimesOpen = false)),
