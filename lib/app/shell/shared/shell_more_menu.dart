@@ -112,10 +112,13 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
         _navigateToWorkspace(1);
         break;
       case LifeOsMenuAction.defaultPlanTimes:
-        _navigateToWorkspace(1);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) PlanningSettingsNavigationRequests.requestDefaultTimes();
-        });
+        Navigator.of(context).push<void>(MaterialPageRoute<void>(
+          builder: (_) => LifeOsSettingsTabsPage(
+            onAction: onLifeOsMenuAction,
+            initialTab: 'planning',
+            initialDefaultPlanTimes: true,
+          ),
+        ));
         break;
       case LifeOsMenuAction.planningSettings:
         Navigator.of(context).push<void>(MaterialPageRoute<void>(
