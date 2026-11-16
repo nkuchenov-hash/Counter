@@ -370,6 +370,32 @@ class NotesEditorDocumentController {
     activeSelection = TextSelection.collapsed(offset: previousLength);
     return _focusMutation(previous.id, activeSelection!);
   }
+  /// Format only the line under the caret when Gboard preserved multiple
+  /// Body paragraphs within one stable EditableText during composition.
+  NotesEditorMutation convertCurrentLine(
+    String id, TextSelection selection, NotesBlockConversion conversion,
+  ) {
+    final block = blockById(id);
+    if (block == null || !isEditableText(block.type)) {
+      return const NotesEditorMutation();
+    }
+    if (block.type != NoteBlockType.paragraph ||
+        !block.effectiveText.contains('\n')) {
+      return convertBlock(id, conversion);
+    }
+    final safe = selection.isValid ? selection
+        : TextSelection.collapsed(offset: block.effectiveText.length);
+    // A toolbar action runs after the IME finishes, never inside onChanged.
+    final split = _replaceWithSplitLines(block, block.effectiveText, safe);
+    final target = split.focusBlockId;
+    if (target == null) return split;
+    final styled = convertBlock(target, conversion);
+    return NotesEditorMutation(
+      changed: true, requiresRebuild: true,
+      focusBlockId: target, selection: styled.selection ?? split.selection,
+    );
+  }
+
   NotesEditorMutation convertBlock(String id, NotesBlockConversion conversion) {
     final block = blockById(id);
     if (block == null || !isEditableText(block.type)) {

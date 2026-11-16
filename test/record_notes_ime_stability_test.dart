@@ -166,6 +166,36 @@ void main() {
     }
   });
 
+  test('Body Enter and blank line format only the caret paragraph', () {
+    const body = 'Первая\nВторая\n\nТретья';
+    final editor = NotesEditorDocumentController(const NoteDocument(blocks: [
+      NoteBlock(id: 'heading', type: NoteBlockType.heading, level: 1,
+          text: 'Название'),
+      NoteBlock(id: 'body', type: NoteBlockType.paragraph, text: body),
+    ]));
+    final result = editor.convertCurrentLine('body',
+      TextSelection.collapsed(offset: body.length),
+      NotesBlockConversion.bulletedList,
+    );
+    expect(result.changed, isTrue);
+    expect(editor.visibleBlocks, hasLength(5));
+    expect(editor.visibleBlocks[0].type, NoteBlockType.heading);
+    expect(editor.visibleBlocks[1].effectiveText, 'Первая');
+    expect(editor.visibleBlocks[1].type, NoteBlockType.paragraph);
+    expect(editor.visibleBlocks[2].effectiveText, 'Вторая');
+    expect(editor.visibleBlocks[2].type, NoteBlockType.paragraph);
+    expect(editor.visibleBlocks[3].effectiveText, isEmpty);
+    expect(editor.visibleBlocks[3].type, NoteBlockType.paragraph);
+    expect(editor.visibleBlocks[4].effectiveText, 'Третья');
+    expect(editor.visibleBlocks[4].type, NoteBlockType.bulletedList);
+    expect(result.focusBlockId, editor.visibleBlocks.last.id);
+  });
+
+  test('Android heading and body vertical gap stays compact', () {
+    expect(NotesFigmaTokens.nativeParagraphVerticalPadding, lessThan(8));
+    expect(NotesFigmaTokens.nativeSectionGap, lessThan(10));
+  });
+
   test('heading Enter creates independent Body, preserving H1 formatting', () {
     const headingId = 'heading-before-enter';
     final editor = NotesEditorDocumentController(

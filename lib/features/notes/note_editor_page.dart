@@ -129,7 +129,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     _gate = EditSheetAutosaveGate(
       debounce: widget.onDocumentChanged == null
           ? const Duration(milliseconds: 650)
-          : const Duration(milliseconds: 180),
+          : const Duration(milliseconds: 450),
     );
     _audioPlayback = NotesAudioPlaybackController()
       ..addListener(_onAudioPlaybackChanged);
@@ -927,7 +927,13 @@ _deleteBlockFromMenu(block.id);
       return;
     }
     final id = _editor.activeBlockId;
-    if (id != null) _applyMutation(_editor.convertBlock(id, conversion));
+    if (id == null) return;
+    final block = _editor.blockById(id);
+    if (block == null) return;
+    final selection = _textControllers[id]?.selection ??
+        _editor.activeSelection ??
+        TextSelection.collapsed(offset: block.effectiveText.length);
+    _applyMutation(_editor.convertCurrentLine(id, selection, conversion));
   }
   void _insertAfter(
     String? anchorId,
@@ -1689,6 +1695,18 @@ AppButton.destructive(
   }
 
   Widget _buildReorderableBlockList() {
+    // Embedded Android typing has no drag handles; avoid reorder overhead.
+    if (widget.inlineBodyOnly &&
+        Theme.of(context).platform == TargetPlatform.android &&
+        !_blockSelectionMode) {
+      return ListView.builder(
+        key: const ValueKey('notes-editor-content'),
+        scrollController: _blockScrollController,
+        padding: const EdgeInsets.only(bottom: 100),
+        itemCount: _editor.visibleBlocks.length,
+        itemBuilder: _buildBlock,
+      );
+    }
     return ReorderableListView.builder(
       key: const ValueKey('notes-editor-content'),
       scrollController: _blockScrollController,
