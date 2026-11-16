@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:counter/core/date_swipe_physics.dart';
 import 'package:counter/features/planning/plan_time_view_layout.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
 import 'package:counter/features/planning/planning_sort_mode.dart';
@@ -7,8 +8,49 @@ import 'package:counter/features/planning/widgets/planning_filter_controls.dart'
 import 'package:counter/features/planning/widgets/planning_day_swipe_region.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+void main() {
+  test('slow forward swipe never reverses after passing page midpoint', () {
+    double target({required double page, required int? origin,
+        double velocity = 0}) {
+      final physics = FeatherDateSwipePhysics(
+        gestureOriginPage: () => origin,
+      );
+      final metrics = FixedScrollMetrics(
+        minScrollExtent: 0, maxScrollExtent: 10000,
+        pixels: page * 1000, viewportDimension: 1000,
+        axisDirection: AxisDirection.right, devicePixelRatio: 1,
+      );
+      return physics.getTargetPixels(
+        metrics, const Tolerance(), velocity,
+      ) / 1000;
+    }
+    expect(target(page: 0.10, origin: 0), 0);
+    expect(target(page: 0.30, origin: 0), 1);
+    expect(target(page: 0.70, origin: 0), 1);
+    expect(target(page: 0.90, origin: 0), 1);
+    expect(target(page: 0.70, origin: 1), 0);
+    expect(target(page: 0.90, origin: 1), 1);
+    expect(target(page: 1.70, origin: 1), 2);
+    expect(target(page: 0.70, origin: null), 1);
+    expect(target(page: 0.70, origin: 0, velocity: -900), 0);
+    expect(target(page: 0.70, origin: 0, velocity: 900), 1);
+  });
+
+  test('Timeline neighbors retain real record trees during swipe', () {
+    final source = File('lib/features/timeline/timeline_view.dart')
+        .readAsStringSync();
+    expect(source, contains('allowImplicitScrolling: widget.shellTabActive && _prepaintNeighbors'));
+    expect(source, contains('ignoring: !widget.isActivePage,'));
+    expect(source, contains('isActive: widget.isActivePage,'));
+    expect(source, contains('n.metrics.axis != Axis.horizontal'));
+    expect(source, isNot(contains('color: Colors.transparent,\n                        child: SizedBox.expand()')));
+    final cardList = File('lib/features/timeline/timeline_day_page.dart')
+        .readAsStringSync();
+    expect(cardList, contains('bool get wantKeepAlive => widget.isActive;'));
+  });
 void main() {
   testWidgets('swipe changes day inside body but never on the fixed tag bar', (
     tester,

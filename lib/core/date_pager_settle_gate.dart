@@ -17,7 +17,10 @@ final class DatePagerSettleGate {
   bool get blocksExternalDateSync =>
       userDragInFlight || programmaticAnimInFlight;
 
-  void onUserDragStart() => userDragInFlight = true;
+  void onUserDragStart() {
+    userDragInFlight = true;
+    _commitTimer?.cancel();
+  }
 
   void onUserDragEnd() => userDragInFlight = false;
 

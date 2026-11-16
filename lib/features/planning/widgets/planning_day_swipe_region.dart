@@ -42,6 +42,7 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
   static const Duration _programmaticDuration = Duration(milliseconds: 200);
   late final DateTime _anchorDay;
   late final PageController _controller;
+  int? _gestureStartPage;
   int _committedPage = _initialPage;
   bool _dayCommitQueued = false;
   int? _pendingDayIndex;
@@ -144,7 +145,12 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
   bool _onPagerNotification(ScrollNotification notification) {
     if (notification.depth != 0 ||
         notification.metrics.axis != Axis.horizontal) return false;
+    if (notification is ScrollStartNotification &&
+        notification.dragDetails != null) {
+      _gestureStartPage = _controller.page?.round() ?? _committedPage;
+    }
     if (notification is ScrollEndNotification) {
+      _gestureStartPage = null;
       // Fallback for tiny velocity-driven gestures that settle to a new page
       // without delivering an intermediate onPageChanged frame.
       _queueLiveDayCommit(_controller.page?.round() ?? _committedPage);
@@ -276,7 +282,9 @@ class PlanningDaySwipeRegionState extends State<PlanningDaySwipeRegion> {
                 onPageChanged: _queueLiveDayCommit,
                 scrollDirection: Axis.horizontal,
                 physics: widget.enabled
-                    ? const FeatherDateSwipePhysics()
+                    ? FeatherDateSwipePhysics(
+                        gestureOriginPage: () => _gestureStartPage,
+                      )
                     : const NeverScrollableScrollPhysics(),
                 itemCount: _pageCount,
                 itemBuilder: (context, index) {
