@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/smart_input_parser.dart';
@@ -1184,18 +1185,16 @@ class _NotesLibraryHeader extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
+              AppIconButton(
                 tooltip: checkboxesOn
                     ? t(locale, 'notes_v3_checkbox_mode_off')
                     : t(locale, 'notes_v3_checkbox_mode_on'),
+                icon: checkboxesOn
+                    ? Icons.check_box_rounded
+                    : Icons.check_box_outline_blank_rounded,
+                selected: checkboxesOn,
+                size: AppIconButtonSize.s,
                 onPressed: () => onCheckboxModeChanged(!checkboxesOn),
-                icon: Icon(
-                  checkboxesOn
-                      ? Icons.check_box_rounded
-                      : Icons.check_box_outline_blank_rounded,
-                  size: 20,
-                  color: checkboxesOn ? scheme.primary : scheme.onSurfaceVariant,
-                ),
               ),
               Container(
                 decoration: BoxDecoration(
@@ -1205,27 +1204,28 @@ class _NotesLibraryHeader extends StatelessWidget {
                 padding: const EdgeInsets.all(2),
                 child: Row(
                   children: [
-                    _HeaderSegBtn(
+                    AppIconButton(
                       icon: Icons.grid_view_rounded,
                       selected: notesView == NotesLibraryView.grid,
-                      onTap: () => onViewChanged(NotesLibraryView.grid),
+                      onPressed: () => onViewChanged(NotesLibraryView.grid),
                       tooltip: t(locale, 'notes_v3_view_grid'),
+                      size: AppIconButtonSize.s,
                     ),
-                    _HeaderSegBtn(
+                    AppIconButton(
                       icon: Icons.view_list_rounded,
                       selected: notesView == NotesLibraryView.list,
-                      onTap: () => onViewChanged(NotesLibraryView.list),
+                      onPressed: () => onViewChanged(NotesLibraryView.list),
                       tooltip: t(locale, 'notes_v3_view_list'),
+                      size: AppIconButtonSize.s,
                     ),
                   ],
                 ),
               ),
 
-              IconButton(
+              AppIconButton(
                 tooltip: t(locale, 'notes_editor_more_tooltip'),
-                icon: const Icon(Icons.tune_rounded, size: 20),
-                visualDensity: VisualDensity.compact,
-                color: scheme.onSurfaceVariant,
+                icon: Icons.tune_rounded,
+                size: AppIconButtonSize.s,
                 onPressed: onOpenSettings,
               ),
             ],
@@ -1239,55 +1239,15 @@ class _NotesLibraryHeader extends StatelessWidget {
   textCapitalization: TextCapitalization.sentences,
   onChanged: onSearchChanged,
   suffixIcon: searchQuery.trim().isNotEmpty
-      ? IconButton(
+      ? AppIconButton(
           tooltip: t(locale, 'cancel'),
-          icon: const Icon(Icons.close_rounded, size: 18),
-          visualDensity: VisualDensity.compact,
-          splashRadius: 16,
+          icon: Icons.close_rounded,
+          size: AppIconButtonSize.s,
           onPressed: onClearSearch,
         )
       : null,
 ),
         ],
-      ),
-    );
-  }
-}
-
-class _HeaderSegBtn extends StatelessWidget {
-  const _HeaderSegBtn({
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-    required this.tooltip,
-  });
-
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-  final String tooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: selected ? scheme.primary : Colors.transparent,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            icon,
-            size: 16,
-            color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
-          ),
-        ),
       ),
     );
   }

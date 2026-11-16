@@ -1,4 +1,6 @@
 import 'package:counter/l10n/dictionary.dart';
+import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:flutter/material.dart';
 
 /// Bulk selection action bar (Planning tab bottom overlay).
@@ -39,18 +41,22 @@ class PlanningBulkBottomBar extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              TextButton(
+              AppButton.ghost(
+                label: t(loc, 'cancel'),
+                size: AppButtonSize.s,
                 onPressed: onClear,
-                child: Text(t(loc, 'cancel')),
               ),
-              IconButton(
+              AppIconButton(
                 tooltip: t(loc, 'plan_bulk_edit'),
-                icon: const Icon(Icons.edit_outlined),
+                icon: Icons.edit_outlined,
+                size: AppIconButtonSize.s,
                 onPressed: onBulkEdit,
               ),
-              IconButton(
+              AppIconButton(
                 tooltip: t(loc, 'delete'),
-                icon: Icon(Icons.delete_outline_rounded, color: scheme.error),
+                icon: Icons.delete_outline_rounded,
+                variant: AppIconButtonVariant.danger,
+                size: AppIconButtonSize.s,
                 onPressed: onBulkDelete,
               ),
             ],

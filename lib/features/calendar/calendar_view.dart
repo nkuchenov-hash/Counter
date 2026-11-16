@@ -4,6 +4,8 @@
 // ---------------------------------------------------------------------------
 import 'dart:async';
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/data/database_service.dart';
@@ -583,11 +585,17 @@ class _CalendarViewState extends State<CalendarView>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _CalendarFloatingTextButton(
+                      AppButton.secondary(
                         label: t(loc, 'calendar_today'),
+                        icon: Icons.today_rounded,
                         onPressed: _goToday,
                       ),
-                      _CalendarFloatingAddButton(
+                      AppIconButton(
+                        icon: Icons.add_rounded,
+                        tooltip: t(loc, 'calendar_add_plan'),
+                        variant: AppIconButtonVariant.filled,
+                        size: AppIconButtonSize.l,
+                        shape: AppIconButtonShape.circular,
                         onPressed: () => _openAddPlanForSelectedDay(''),
                       ),
                     ],
@@ -596,66 +604,6 @@ class _CalendarViewState extends State<CalendarView>
               ],
             )
           : body,
-    );
-  }
-}
-
-class _CalendarFloatingTextButton extends StatelessWidget {
-  const _CalendarFloatingTextButton({
-    required this.label,
-    required this.onPressed,
-  });
-
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surfaceContainerHighest.withValues(alpha: 0.96),
-      borderRadius: BorderRadius.circular(999),
-      elevation: 2,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(999),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: scheme.onSurface,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CalendarFloatingAddButton extends StatelessWidget {
-  const _CalendarFloatingAddButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surfaceContainerHighest.withValues(alpha: 0.98),
-      shape: const CircleBorder(),
-      elevation: 3,
-      child: InkWell(
-        onTap: onPressed,
-        customBorder: const CircleBorder(),
-        child: SizedBox(
-          width: 58,
-          height: 58,
-          child: Icon(Icons.add_rounded, size: 32, color: scheme.onSurface),
-        ),
-      ),
     );
   }
 }

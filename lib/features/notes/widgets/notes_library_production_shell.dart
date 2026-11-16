@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/features/profile/menu/life_os_notes_settings_page.dart';
 import 'package:counter/data/database_service.dart';
@@ -268,9 +269,14 @@ class _MobileNotesLibrary extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  _MobileRoundAction(
+                  AppIconButton(
                     icon: Icons.space_dashboard_outlined,
-                    onTap: () => unawaited(_openFolders(context))),
+                    tooltip: header.locale.toLowerCase().startsWith('ru')
+                        ? 'Папки' : 'Folders',
+                    size: AppIconButtonSize.l,
+                    variant: AppIconButtonVariant.filled,
+                    shape: AppIconButtonShape.circular,
+                    onPressed: () => unawaited(_openFolders(context))),
                   const Spacer(),
                   _MobileNotesModePill(locale: header.locale),
                   const Spacer(),
@@ -320,18 +326,23 @@ class _MobileNotesLibrary extends StatelessWidget {
                     onChanged: header.onSearchChanged,
                     glass: false,
                     suffixIcon: header.searchQuery.trim().isNotEmpty
-                        ? IconButton(onPressed: header.onClearSearch,
-                            icon: const Icon(Icons.close_rounded, size: 18))
+                        ? AppIconButton(
+                             icon: Icons.close_rounded,
+                             tooltip: t(header.locale, 'cancel'),
+                             size: AppIconButtonSize.s,
+                             onPressed: header.onClearSearch)
                         : null,
                   ),
                 ),
                 const SizedBox(width: 10),
-                _MobileRoundAction(
+                AppIconButton(
                   icon: Icons.edit_outlined,
-                  size: 54,
-                  enabled: !creatingNewNote,
+                  tooltip: t(header.locale, 'notes_v3_empty_create'),
+                  size: AppIconButtonSize.l,
+                  variant: AppIconButtonVariant.filled,
+                  shape: AppIconButtonShape.circular,
                   loading: creatingNewNote,
-                  onTap: onNewNote,
+                  onPressed: creatingNewNote ? null : onNewNote,
                 ),
               ],
             ),
@@ -371,81 +382,6 @@ class _MobileNotesModePill extends StatelessWidget {
           color: scheme.onSurface,
         ),
       ),
-    );
-  }
-}
-
-class _MobileRoundAction extends StatelessWidget {
-  const _MobileRoundAction({
-    required this.icon,
-    required this.onTap,
-    this.size = 54,
-    this.enabled = true,
-    this.loading = false,
-  });
-
-  final IconData icon;
-  final VoidCallback onTap;
-  final double size;
-  final bool enabled;
-  final bool loading;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      shape: const CircleBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        customBorder: const CircleBorder(),
-        child: _MobileRoundActionVisual(
-          icon: icon,
-          size: size,
-          loading: loading,
-        ),
-      ),
-    );
-  }
-}
-
-class _MobileRoundActionVisual extends StatelessWidget {
-  const _MobileRoundActionVisual({
-    required this.icon,
-    required this.size,
-    this.loading = false,
-  });
-
-  final IconData icon;
-  final double size;
-  final bool loading;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: scheme.surface.withValues(
-          alpha: Theme.of(context).brightness == Brightness.dark ? 0.30 : 0.18,
-        ),
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: scheme.onSurface.withValues(alpha: 0.08),
-        ),
-      ),
-      alignment: Alignment.center,
-      child: loading
-          ? SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.2,
-                color: scheme.onSurface,
-              ),
-            )
-          : Icon(icon, size: 26, color: scheme.onSurface),
     );
   }
 }
@@ -518,19 +454,15 @@ class _MobileNotesViewMenu extends StatelessWidget {
     );
   }
   @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    label: t(adapter.locale, 'notes_editor_more_tooltip'),
-    child: InkWell(
-      onTap: () => _show(context),
-      borderRadius: BorderRadius.circular(18),
-      child: _MobileRoundActionVisual(
-        icon: adapter.notesView == NotesLibraryView.grid
-            ? AppMenuIcons.icon(AppMenuIconRole.categories)
-            : AppMenuIcons.icon(AppMenuIconRole.list),
-        size: 54,
-      ),
-    ),
+  Widget build(BuildContext context) => AppIconButton(
+    icon: adapter.notesView == NotesLibraryView.grid
+        ? AppMenuIcons.icon(AppMenuIconRole.categories)
+        : AppMenuIcons.icon(AppMenuIconRole.list),
+    tooltip: t(adapter.locale, 'notes_editor_more_tooltip'),
+    size: AppIconButtonSize.l,
+    variant: AppIconButtonVariant.filled,
+    shape: AppIconButtonShape.circular,
+    onPressed: () => _show(context),
   );
 }
 class _MobileNotesFoldersSheet extends StatelessWidget {

@@ -15,6 +15,8 @@ enum AppIconButtonVariant {
   danger,
 }
 
+enum AppIconButtonShape { rounded, circular }
+
 enum AppIconButtonSize {
   /// Small inline icon action.
   s,
@@ -38,6 +40,7 @@ class AppIconButton extends StatelessWidget {
     required this.onPressed,
     this.variant = AppIconButtonVariant.standard,
     this.size = AppIconButtonSize.m,
+    this.shape = AppIconButtonShape.rounded,
     this.selected = false,
     this.loading = false,
   });
@@ -53,6 +56,7 @@ class AppIconButton extends StatelessWidget {
 
   final AppIconButtonVariant variant;
   final AppIconButtonSize size;
+  final AppIconButtonShape shape;
   final bool selected;
   final bool loading;
 
@@ -135,7 +139,9 @@ class AppIconButton extends StatelessWidget {
       padding: const WidgetStatePropertyAll(EdgeInsets.zero),
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       shape: WidgetStatePropertyAll(
-        RoundedRectangleBorder(borderRadius: radius),
+        shape == AppIconButtonShape.circular
+            ? const CircleBorder()
+            : RoundedRectangleBorder(borderRadius: radius),
       ),
     );
   }

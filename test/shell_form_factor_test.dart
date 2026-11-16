@@ -176,6 +176,26 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  test('screen actions use canonical LIFE OS controls', () {
+    final calendar = File('lib/features/calendar/calendar_view.dart').readAsStringSync();
+    final lists = File('lib/features/lists/lists_view.dart').readAsStringSync();
+    final notes = File('lib/features/notes/widgets/notes_library_production_shell.dart').readAsStringSync();
+    final bulk = File('lib/features/planning/widgets/planning_bulk_bar.dart').readAsStringSync();
+    final settings = File('lib/features/profile/menu/life_os_settings_tabs_page.dart').readAsStringSync();
+    expect(calendar, contains('AppButton.secondary('));
+    expect(calendar, contains('AppIconButton('));
+    expect(calendar, isNot(contains('class _CalendarFloatingTextButton')));
+    expect(calendar, isNot(contains('class _CalendarFloatingAddButton')));
+    expect(lists, isNot(contains('class _HeaderSegBtn')));
+    expect(lists, contains('AppIconButton('));
+    expect(notes, isNot(contains('class _MobileRoundAction')));
+    expect(notes, isNot(contains('class _MobileRoundActionVisual')));
+    expect(notes, contains('AppIconButtonShape.circular'));
+    expect(bulk, contains('AppButton.ghost('));
+    expect(bulk, contains('AppIconButtonVariant.danger'));
+    expect(settings, contains('108 + MediaQuery.viewPaddingOf(context).top'));
+  });
+
   group('single settings navigation', () {
     test('Settings use one native tab workspace across both shell entries', () {
       final chrome = File('lib/app/shell/shared/shell_chrome.dart')

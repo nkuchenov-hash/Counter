@@ -864,7 +864,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
               child: KeyedSubtree(
                 key: ValueKey(_mobileDetailOpen ? 'detail-$_tab' : 'settings-home'),
                 child: AppSettingsPageBody(transparentBackground: true, children: [
-                  SizedBox(height: 68 + MediaQuery.viewPaddingOf(context).top),
+                  SizedBox(height: 108 + MediaQuery.viewPaddingOf(context).top),
                   _mobileSettings(),
                   // Scroll the final item above the floating glass navigation.
                   const SizedBox(height: 20),
