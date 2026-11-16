@@ -122,7 +122,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Android Notes paragraph gaps exceed within-list gaps', (tester) async {
+  testWidgets('Android Notes paragraph and list blocks stay compact', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -140,7 +140,10 @@ void main() {
     ));
     final paragraphHeight = tester.getSize(find.byType(NotesTextBlock)).height;
     final listHeight = tester.getSize(find.byType(NotesListBlock)).height;
-    expect(paragraphHeight, greaterThan(listHeight + 8));
+    // A new Body line after Enter must not inherit oversized paragraph margins.
+    expect(paragraphHeight, lessThanOrEqualTo(listHeight + 8));
+    expect(paragraphHeight, greaterThanOrEqualTo(32));
+    expect(listHeight, greaterThanOrEqualTo(32));
     expect(tester.takeException(), isNull);
   });
 
