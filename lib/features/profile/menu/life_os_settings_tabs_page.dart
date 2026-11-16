@@ -747,7 +747,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
         blendMode: BlendMode.dstIn,
         shaderCallback: (bounds) => const LinearGradient(
           begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          stops: [0, 0.62, 1],
+          stops: [0, 0.55, 1],
           colors: [AppNeutralTones.white, AppNeutralTones.white, AppNeutralTones.transparent],
         ).createShader(bounds),
         child: ClipRect(child: BackdropFilter(
@@ -755,9 +755,18 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
           child: DecoratedBox(
             decoration: BoxDecoration(gradient: LinearGradient(
               begin: Alignment.topCenter, end: Alignment.bottomCenter,
-              colors: dark
-                  ? [AppNeutralTones.white.withValues(alpha: 0.09), AppNeutralTones.transparent]
-                  : [scheme.surface.withValues(alpha: 0.30), AppNeutralTones.transparent],
+              stops: const [0, 0.58, 1],
+               colors: dark
+                   ? [
+                       scheme.surfaceContainerLowest.withValues(alpha: 0.88),
+                       scheme.surfaceContainerLowest.withValues(alpha: 0.56),
+                       AppNeutralTones.transparent,
+                     ]
+                   : [
+                       scheme.surfaceContainerLowest.withValues(alpha: 0.93),
+                       scheme.surfaceContainerLowest.withValues(alpha: 0.62),
+                       AppNeutralTones.transparent,
+                     ],
             )),
             child: const SizedBox.expand(),
           ),
