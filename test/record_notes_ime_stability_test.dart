@@ -89,6 +89,49 @@ void main() {
     }
   });
 
+  test('rapid Android typing is one Undo snapshot, not one per keypress', () {
+    const id = 'android-typing-undo';
+    final editor = NotesEditorDocumentController(const NoteDocument(blocks: [
+      NoteBlock(id: id, type: NoteBlockType.paragraph, text: 'Seed'),
+    ]));
+    for (final text in ['Seed a', 'Seed ab', 'Seed abc', 'Seed abc\\n']) {
+      final normalized = text.replaceAll('\\n', '\n');
+      final change = editor.applyTextInput(
+        id, normalized,
+        TextSelection.collapsed(offset: normalized.length),
+        preserveLineBreaks: true,
+      );
+      expect(change.changed, isTrue);
+      expect(change.requiresRebuild, isFalse);
+    }
+    expect(editor.visibleBlocks.single.effectiveText, 'Seed abc\n');
+    expect(editor.undo().changed, isTrue);
+    expect(editor.visibleBlocks.single.effectiveText, 'Seed');
+    expect(editor.canUndo, isFalse);
+  });
+
+  test('list formatting is a separate Undo unit after coalesced typing', () {
+    const id = 'android-style-undo';
+    final editor = NotesEditorDocumentController(const NoteDocument(blocks: [
+      NoteBlock(id: id, type: NoteBlockType.paragraph, text: 'Start'),
+    ]));
+    for (final text in ['Start one', 'Start one\n', 'Start one\n\n']) {
+      editor.applyTextInput(
+        id, text, TextSelection.collapsed(offset: text.length),
+        preserveLineBreaks: true,
+      );
+    }
+    editor.convertCurrentLine(
+      id, const TextSelection.collapsed(offset: 11),
+      NotesBlockConversion.bulletedList,
+    );
+    expect(editor.visibleBlocks.last.type, NoteBlockType.bulletedList);
+    editor.undo();
+    expect(editor.visibleBlocks.single.effectiveText, 'Start one\n\n');
+    editor.undo();
+    expect(editor.visibleBlocks.single.effectiveText, 'Start');
+  });
+
   testWidgets('active marker never stretches to the third text line', (tester) async {
     final controller = TextEditingController(text: 'One\nTwo\nThree');
     addTearDown(controller.dispose);
