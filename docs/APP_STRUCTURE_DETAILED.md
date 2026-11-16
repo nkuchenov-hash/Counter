@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `072d85eb` on 2026-11-16.**
+**Generated from input HEAD `76e8c0e8` on 2026-11-16.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -13243,7 +13243,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppButtonVariant`, `AppButtonSize`, `AppButton`, `AppFormDialogField`).
 - **Key code names:** `AppButtonVariant`, `AppButtonSize`, `AppButton`, `AppFormDialogField`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/app_state_views.dart`, `lib/core/widgets/compact_nav_controls.dart`, `lib/core/widgets/confirm_dialog.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/dev/component_lab_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/app_state_views.dart`, `lib/core/widgets/compact_nav_controls.dart`, `lib/core/widgets/confirm_dialog.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/calendar/calendar_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13260,7 +13260,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_button`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/app_state_views.dart`, `lib/core/widgets/compact_nav_controls.dart`, `lib/core/widgets/confirm_dialog.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/dev/component_lab_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/app_state_views.dart`, `lib/core/widgets/compact_nav_controls.dart`, `lib/core/widgets/confirm_dialog.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/calendar/calendar_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -13316,10 +13316,10 @@ EN:
 - **Human purpose:** Shared design-system widget — `AppIconButton`. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **What this is:** Shared design-system widget — `AppIconButton`.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **Contents:** Canonical Flutter widget (`AppIconButtonVariant`, `AppIconButtonSize`, `AppIconButton`).
-- **Key code names:** `AppIconButtonVariant`, `AppIconButtonSize`, `AppIconButton`
+- **Contents:** Canonical Flutter widget (`AppIconButtonVariant`, `AppIconButtonShape`, `AppIconButtonSize`, `AppIconButton`).
+- **Key code names:** `AppIconButtonVariant`, `AppIconButtonShape`, `AppIconButtonSize`, `AppIconButton`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_chrome_header.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/notes/drawing_canvas_page.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_chrome_header.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/lists/lists_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13336,7 +13336,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_icon_button`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_chrome_header.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/notes/drawing_canvas_page.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_chrome_header.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/lists/lists_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21238,8 +21238,8 @@ EN:
 - **Human purpose:** `notes_library_production_shell.dart` on notes area — Production Notes shell, physical slanted overlapping folder-edge tabs with fixed All/+ and scrollable category middle on mobile/desktop. Users see `notes_library_production_shell.dart` when using notes area.
 - **What this is:** `notes_library_production_shell.dart` on notes area — Production Notes shell, physical slanted overlapping folder-edge tabs with fixed All/+ and scrollable category middle on mobile/desktop.
 - **Why needed:** Users see `notes_library_production_shell.dart` when using notes area.
-- **Contents:** Primary symbols: `NotesLibraryProductionShell`, `_MobileNotesLibrary`, `_MobileNotesModePill`.
-- **Key code names:** `NotesLibraryProductionShell`, `_MobileNotesLibrary`, `_MobileNotesModePill`
+- **Contents:** Primary symbols: `NotesLibraryProductionShell`, `_MobileNotesLibrary`.
+- **Key code names:** `NotesLibraryProductionShell`, `_MobileNotesLibrary`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
