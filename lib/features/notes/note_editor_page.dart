@@ -252,6 +252,10 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         final previous = _lastSelections[block.id];
         final next = controller.selection;
         if (previous == next) return;
+        // Toolbar/menu focus can temporarily invalidate Android's selection.
+        // Never replace the last valid caret with (-1, -1): formatting must
+        // still target the line the user was actually editing.
+        if (!next.isValid) return;
         _lastSelections[block.id] = next;
         _editor.updateSelection(block.id, next);
         if (!mounted || _editor.activeBlockId != block.id) return;
