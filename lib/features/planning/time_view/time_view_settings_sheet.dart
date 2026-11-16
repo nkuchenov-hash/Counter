@@ -7,7 +7,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/time_view_fixed_time_policy.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
-import 'package:counter/features/planning/settings/default_plan_category_search.dart';
+import 'package:counter/features/planning/settings/default_plan_times_settings_block.dart';
 import 'package:counter/features/planning/settings/planning_no_tags_settings.dart';
 import 'package:counter/features/planning/settings/planning_timeline_bounds_sheet.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
@@ -65,300 +65,25 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
   }
 
   void showDefaultPlanTimesSheet() {
-    int? selectedCategoryId;
+    // The Time View shortcut now reuses the canonical Settings editor.
+    // Settings-tab entries render this block inline instead of opening a sheet.
     showModalBottomSheet<void>(
       context: host.context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (sheetCtx) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final loc = currentLocale.value;
-            final db = DatabaseService.instance;
-            final pairs = db.allCategoryIdPathPairs
-                .where((p) => p.id != CategoryRule.uncategorizedSyntheticId)
-                .toList();
-            final configuredPairs = pairs.where((p) {
-              final rule = db.getCategoryRuleById(p.id);
-              return db.sanitizeDefaultPlanTime(rule?.defaultPlanTime) != null;
-            }).toList();
-            ({int id, String path})? selectedPair;
-            for (final p in pairs) {
-              if (p.id == selectedCategoryId) {
-                selectedPair = p;
-                break;
-              }
-            }
-            final selectedRule = selectedCategoryId == null
-                ? null
-                : db.getCategoryRuleById(selectedCategoryId!);
-            final selectedOwn = db.sanitizeDefaultPlanTime(
-              selectedRule?.defaultPlanTime,
-            );
-            final selectedEffective = selectedCategoryId == null
-                ? null
-                : db.effectiveDefaultPlanScheduleForCategory(
-                    selectedCategoryId!,
-                  );
-            String statusText({
-              required String? own,
-              required String? ownTz,
-              required ({
-                String? hhmm,
-                String? timezoneIana,
-                int? sourceCategoryId,
-              })?
-              effective,
-            }) {
-              if (own != null) {
-                return t(loc, 'plan_default_time_own').replaceFirst(
-                  '%s',
-                  db.formatDefaultPlanTimeWithTimezoneLabel(own, ownTz),
-                );
-              }
-              if (effective?.hhmm != null) {
-                return t(loc, 'plan_default_time_inherited').replaceFirst(
-                  '%s',
-                  db.formatDefaultPlanTimeWithTimezoneLabel(
-                    effective!.hhmm!,
-                    effective.timezoneIana,
-                  ),
-                );
-              }
-              return t(loc, 'plan_default_time_none');
-            }
-
-            Future<void> pickCategory() async {
-              final picked = await showSearch<DefaultPlanCategoryOption?>(
-                context: host.context,
-                delegate: DefaultPlanCategorySearchDelegate(
-                  loc: loc,
-                  options: [
-                    for (final p in pairs)
-                      DefaultPlanCategoryOption(id: p.id, path: p.path),
-                  ],
-                ),
-              );
-              if (picked == null || !context.mounted) return;
-              setModalState(() => selectedCategoryId = picked.id);
-            }
-
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      t(loc, 'plan_default_times_title'),
-                      style: Theme.of(host.context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      t(loc, 'plan_default_times_subtitle'),
-                      style: Theme.of(host.context).textTheme.bodySmall
-                          ?.copyWith(
-                            color: Theme.of(
-                              host.context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      t(
-                        loc,
-                        'plan_default_times_profile_tz_notice',
-                      ).replaceFirst('%s', db.profileTimezoneShortLabel()),
-                      style: Theme.of(host.context).textTheme.labelMedium
-                          ?.copyWith(
-                            color: Theme.of(
-                              host.context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      onPressed: pairs.isEmpty
-                          ? null
-                          : () => unawaited(pickCategory()),
-                      icon: const Icon(Icons.search_rounded),
-                      label: Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: Text(
-                          selectedPair?.path ??
-                              t(loc, 'plan_default_time_select_category'),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (selectedPair != null)
-                      Builder(
-                        builder: (context) {
-                          final pair = selectedPair!;
-                          return Card(
-                            margin: EdgeInsets.zero,
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Text(
-                                    pair.path,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.titleMedium,
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    statusText(
-                                      own: selectedOwn,
-                                      ownTz: selectedRule?.defaultPlanTimezone,
-                                      effective: selectedEffective,
-                                    ),
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: [
-                                      AppButton.secondary(
-                                        label: t(loc, 'plan_default_time_set'),
-                                        onPressed: () => unawaited(
-                                          setCategoryDefaultPlanTime(
-                                            pair.id,
-                                            setModalState,
-                                          ),
-                                        ),
-                                      ),
-                                      AppButton.ghost(
-                                        label: t(
-                                          loc,
-                                          'plan_default_time_clear',
-                                        ),
-                                        onPressed: selectedOwn == null
-                                            ? null
-                                            : () => unawaited(
-                                                clearCategoryDefaultPlanTime(
-                                                  pair.id,
-                                                  setModalState,
-                                                ),
-                                              ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    const SizedBox(height: 16),
-                    Text(
-                      t(loc, 'plan_default_time_configured_categories'),
-                      style: Theme.of(host.context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight:
-                            MediaQuery.sizeOf(host.context).height * 0.45,
-                      ),
-                      child: configuredPairs.isEmpty
-                          ? Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              child: Text(t(loc, 'plan_default_time_none')),
-                            )
-                          : ListView.separated(
-                              shrinkWrap: true,
-                              itemCount: configuredPairs.length,
-                              separatorBuilder: (_, _) =>
-                                  const Divider(height: 1),
-                              itemBuilder: (context, i) {
-                                final pair = configuredPairs[i];
-                                final rule = db.getCategoryRuleById(pair.id);
-                                final own = db.sanitizeDefaultPlanTime(
-                                  rule?.defaultPlanTime,
-                                );
-                                final subtitle = own != null
-                                    ? db.formatDefaultPlanTimeWithTimezoneLabel(
-                                        own,
-                                        rule?.defaultPlanTimezone,
-                                      )
-                                    : '';
-                                return ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(
-                                    pair.path,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  subtitle: Text(subtitle),
-                                  trailing: Wrap(
-                                    spacing: 4,
-                                    children: [
-                                      IconButton(
-                                        tooltip: t(
-                                          loc,
-                                          'plan_default_time_set',
-                                        ),
-                                        icon: const Icon(Icons.edit_rounded),
-                                        onPressed: () {
-                                          setModalState(
-                                            () => selectedCategoryId = pair.id,
-                                          );
-                                          unawaited(
-                                            setCategoryDefaultPlanTime(
-                                              pair.id,
-                                              setModalState,
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                      IconButton(
-                                        tooltip: t(
-                                          loc,
-                                          'plan_default_time_clear',
-                                        ),
-                                        icon: const Icon(Icons.clear_rounded),
-                                        onPressed: () => unawaited(
-                                          clearCategoryDefaultPlanTime(
-                                            pair.id,
-                                            setModalState,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  onTap: () => setModalState(
-                                    () => selectedCategoryId = pair.id,
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                    const SizedBox(height: 16),
-                    // TODO(F2C): remove sanity marker after web + APK verification.
-                    Text(
-                      'F2C selector UI',
-                      style: Theme.of(host.context).textTheme.labelSmall
-                          ?.copyWith(
-                            color: Theme.of(host.context).colorScheme.outline,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(host.context).height * 0.86,
+      ),
+      backgroundColor: Theme.of(host.context).colorScheme.surfaceContainerLowest,
+      builder: (sheetCtx) => Theme(
+        data: settingsNeutralTheme(sheetCtx),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+            child: const DefaultPlanTimesSettingsBlock(),
+          ),
+        ),
+      ),
     );
   }
 
