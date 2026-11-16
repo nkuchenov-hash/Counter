@@ -178,17 +178,63 @@ void main() {
       NotesBlockConversion.bulletedList,
     );
     expect(result.changed, isTrue);
-    expect(editor.visibleBlocks, hasLength(5));
+    expect(editor.visibleBlocks, hasLength(3));
     expect(editor.visibleBlocks[0].type, NoteBlockType.heading);
-    expect(editor.visibleBlocks[1].effectiveText, 'Первая');
+    expect(editor.visibleBlocks[1].id, 'body');
+    expect(editor.visibleBlocks[1].effectiveText, 'Первая\nВторая\n');
     expect(editor.visibleBlocks[1].type, NoteBlockType.paragraph);
-    expect(editor.visibleBlocks[2].effectiveText, 'Вторая');
-    expect(editor.visibleBlocks[2].type, NoteBlockType.paragraph);
-    expect(editor.visibleBlocks[3].effectiveText, isEmpty);
-    expect(editor.visibleBlocks[3].type, NoteBlockType.paragraph);
-    expect(editor.visibleBlocks[4].effectiveText, 'Третья');
-    expect(editor.visibleBlocks[4].type, NoteBlockType.bulletedList);
+    expect(editor.visibleBlocks[2].effectiveText, 'Третья');
+    expect(editor.visibleBlocks[2].type, NoteBlockType.bulletedList);
     expect(result.focusBlockId, editor.visibleBlocks.last.id);
+    // Earlier Body stays one mounted block rather than three padded rows.
+    expect(editor.visibleBlocks.where((b) => b.type == NoteBlockType.paragraph), hasLength(1));
+  });
+
+  test('two Enter presses then List keeps earlier Body and adds one item', () {
+    const text = 'One\nTwo\n\n';
+    final editor = NotesEditorDocumentController(const NoteDocument(blocks: [
+      NoteBlock(id: 'body', type: NoteBlockType.paragraph, text: text),
+    ]));
+    final mutation = editor.convertCurrentLine(
+      'body',
+      const TextSelection.collapsed(offset: text.length),
+      NotesBlockConversion.bulletedList,
+    );
+    expect(mutation.changed, isTrue);
+    expect(editor.visibleBlocks, hasLength(2));
+    expect(editor.visibleBlocks.first.id, 'body');
+    expect(editor.visibleBlocks.first.effectiveText, 'One\nTwo\n');
+    expect(editor.visibleBlocks.first.type, NoteBlockType.paragraph);
+    expect(editor.visibleBlocks.last.effectiveText, isEmpty);
+    expect(editor.visibleBlocks.last.type, NoteBlockType.bulletedList);
+    expect(mutation.focusBlockId, editor.visibleBlocks.last.id);
+    final repeat = editor.convertCurrentLine(
+      editor.visibleBlocks.last.id,
+      const TextSelection.collapsed(offset: 0),
+      NotesBlockConversion.bulletedList,
+    );
+    expect(repeat.changed, isFalse);
+    expect(editor.visibleBlocks, hasLength(2));
+  });
+
+  test('styling a middle line preserves both adjacent paragraphs', () {
+    const text = 'Top\nMiddle\nBottom';
+    final editor = NotesEditorDocumentController(const NoteDocument(blocks: [
+      NoteBlock(id: 'body', type: NoteBlockType.paragraph, text: text),
+    ]));
+    final change = editor.convertCurrentLine(
+      'body',
+      const TextSelection.collapsed(offset: 7),
+      NotesBlockConversion.numberedList,
+    );
+    expect(change.changed, isTrue);
+    expect(editor.visibleBlocks.map((b) => b.effectiveText).toList(),
+        ['Top', 'Middle', 'Bottom']);
+    expect(editor.visibleBlocks.map((b) => b.type).toList(), [
+      NoteBlockType.paragraph,
+      NoteBlockType.numberedList,
+      NoteBlockType.paragraph,
+    ]);
   });
 
   test('Android heading and body vertical gap stays compact', () {

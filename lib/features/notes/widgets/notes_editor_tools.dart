@@ -29,6 +29,8 @@ class NotesEditorToolbarHost extends StatefulWidget {
     required this.onBody,
     required this.onQuote,
     required this.onList,
+    this.onBulletedList,
+    this.onNumberedList,
     required this.onChecklist,
     required this.onTable,
     this.selectionFormats = const <NotesInlineFormat>{},
@@ -46,6 +48,8 @@ class NotesEditorToolbarHost extends StatefulWidget {
   final VoidCallback? onFormatting;
   final VoidCallback onQuote;
   final VoidCallback onList;
+  final VoidCallback? onBulletedList;
+  final VoidCallback? onNumberedList;
   final VoidCallback onChecklist;
   final VoidCallback onTable;
   final VoidCallback? onMore;
@@ -82,19 +86,23 @@ class _NotesEditorToolbarHostState extends State<NotesEditorToolbarHost> {
 
   void _selectBulletedList() {
     _finishNumberedConversion = false;
-    final type = widget.activeBlock?.type;
-    if (type == NoteBlockType.bulletedList) return;
-    widget.onList();
+    if (widget.activeBlock?.type == NoteBlockType.bulletedList) return;
+    (widget.onBulletedList ?? widget.onList)();
   }
 
   void _selectNumberedList() {
-    final type = widget.activeBlock?.type;
-    if (type == NoteBlockType.numberedList) return;
-    if (type == NoteBlockType.bulletedList) {
-      widget.onList();
+    if (widget.activeBlock?.type == NoteBlockType.numberedList) return;
+    // Direct numbered conversion avoids the old bullet-then-number double
+    // rebuild, which jumped the caret and inserted extra visual spacing.
+    final direct = widget.onNumberedList;
+    if (direct != null) {
+      _finishNumberedConversion = false;
+      direct();
       return;
     }
-    _finishNumberedConversion = true;
+    if (widget.activeBlock?.type != NoteBlockType.bulletedList) {
+      _finishNumberedConversion = true;
+    }
     widget.onList();
   }
 

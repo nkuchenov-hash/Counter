@@ -928,9 +928,21 @@ _deleteBlockFromMenu(block.id);
     }
     final id = _editor.activeBlockId;
     if (id == null) return;
-    final selection = _textControllers[id]?.selection ?? _editor.activeSelection ??
-        TextSelection.collapsed(offset: _editor.blockById(id)?.effectiveText.length ?? 0);
-    _applyMutation(_editor.convertCurrentLine(id, selection, conversion));
+    final live = _textControllers[id]?.selection;
+    final remembered = _lastSelections[id];
+    final selection = live != null && live.isValid
+        ? live
+        : remembered != null && remembered.isValid
+            ? remembered
+            : _editor.activeSelection ??
+                TextSelection.collapsed(
+                  offset: _editor.blockById(id)?.effectiveText.length ?? 0,
+                );
+    // Finish the toolbar tap/IME transaction before the sole style mutation.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _editor.blockById(id) == null) return;
+      _applyMutation(_editor.convertCurrentLine(id, selection, conversion));
+    });
   }
   void _insertAfter(
     String? anchorId,
@@ -1122,6 +1134,10 @@ _deleteBlockFromMenu(block.id);
   }
   void _handleEditorBackgroundPointer(PointerDownEvent event) {
     if (_blockSelectionMode) return;
+    // Android TextFields own focus and scroll; O(n) GlobalKey rect scans on
+    // every pointer-down cause unnecessary UI-isolate work while typing.
+    if (widget.inlineBodyOnly &&
+        Theme.of(context).platform == TargetPlatform.android) return;
     if ((event.buttons & kSecondaryMouseButton) != 0) return;
     NoteBlock? preceding;
     var nearestBottom = double.negativeInfinity;
@@ -1752,6 +1768,8 @@ activeType == NoteBlockType.bulletedList
     ? NotesBlockConversion.numberedList
     : NotesBlockConversion.bulletedList,
         ),
+        onBulletedList: () => _convertActive(NotesBlockConversion.bulletedList),
+        onNumberedList: () => _convertActive(NotesBlockConversion.numberedList),
         onChecklist: () => _convertActive(NotesBlockConversion.checklist),
         onTable: () => _showTablePicker(),
         onDrawing: widget.parityPreview

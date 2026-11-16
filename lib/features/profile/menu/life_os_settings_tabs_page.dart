@@ -754,12 +754,12 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     final scheme = Theme.of(context).colorScheme;
     final dark = scheme.brightness == Brightness.dark;
     final topInset = MediaQuery.viewPaddingOf(context).top;
-    return SizedBox(height: topInset + 80, child: Stack(children: [
+    return SizedBox(height: topInset + 114, child: Stack(children: [
       Positioned.fill(child: IgnorePointer(child: ShaderMask(
         blendMode: BlendMode.dstIn,
         shaderCallback: (bounds) => const LinearGradient(
           begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          stops: [0, 0.55, 1],
+          stops: [0, 0.61, 1],
           colors: [AppNeutralTones.white, AppNeutralTones.white, AppNeutralTones.transparent],
         ).createShader(bounds),
         child: ClipRect(child: BackdropFilter(
@@ -767,16 +767,16 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
           child: DecoratedBox(
             decoration: BoxDecoration(gradient: LinearGradient(
               begin: Alignment.topCenter, end: Alignment.bottomCenter,
-              stops: const [0, 0.58, 1],
+              stops: const [0, 0.61, 1],
                colors: dark
                    ? [
-                       scheme.surfaceContainerLowest.withValues(alpha: 0.88),
-                       scheme.surfaceContainerLowest.withValues(alpha: 0.56),
+                       scheme.surfaceContainerLowest.withValues(alpha: 0.96),
+                       scheme.surfaceContainerLowest.withValues(alpha: 0.78),
                        AppNeutralTones.transparent,
                      ]
                    : [
-                       scheme.surfaceContainerLowest.withValues(alpha: 0.93),
-                       scheme.surfaceContainerLowest.withValues(alpha: 0.62),
+                       scheme.surfaceContainerLowest.withValues(alpha: 0.98),
+                       scheme.surfaceContainerLowest.withValues(alpha: 0.80),
                        AppNeutralTones.transparent,
                      ],
             )),

@@ -100,49 +100,54 @@ class ShellCompactBottomNav extends StatelessWidget {
         ),
       ),
     );
-    // Ordinary tabs have no full-width backplate. Settings alone adds a
-    // downward feathered glass overlay where content scrolls under the dock.
-    final content = !seamlessGlass ? navigation : Stack(
-      children: [
-        Positioned.fill(
-          child: IgnorePointer(
-            child: ShaderMask(
-              blendMode: BlendMode.dstIn,
-              shaderCallback: (bounds) => const LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                stops: [0, 0.48, 1],
-                colors: [
-                  AppNeutralTones.white,
-                  AppNeutralTones.white,
-                  AppNeutralTones.transparent,
-                ],
-              ).createShader(bounds),
-              child: ClipRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        stops: const [0, 0.4, 1],
-                        colors: [
-                          scheme.surfaceContainerLowest.withValues(alpha: 0.76),
-                          scheme.surfaceContainerLowest.withValues(alpha: 0.28),
-                          AppNeutralTones.transparent,
-                        ],
+    // Telegram-style pinned glass dock on every phone destination. The
+    // feather lives ABOVE the action row, so passing content loses contrast
+    // gradually instead of colliding with a hard horizontal backplate.
+    final base = seamlessGlass ? scheme.surfaceContainerLowest : scheme.surface;
+    final content = SizedBox(
+      height: kShellBottomNavHeight + 46 + MediaQuery.paddingOf(context).bottom,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: ShaderMask(
+                blendMode: BlendMode.dstIn,
+                shaderCallback: (bounds) => const LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  stops: [0, 0.56, 1],
+                  colors: [
+                    AppNeutralTones.white,
+                    AppNeutralTones.white,
+                    AppNeutralTones.transparent,
+                  ],
+                ).createShader(bounds),
+                child: ClipRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          stops: const [0, 0.48, 1],
+                          colors: [
+                            base.withValues(alpha: 0.96),
+                            base.withValues(alpha: 0.79),
+                            AppNeutralTones.transparent,
+                          ],
+                        ),
                       ),
+                      child: const SizedBox.expand(),
                     ),
-                    child: const SizedBox.expand(),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-        navigation,
-      ],
+          Positioned(left: 0, right: 0, bottom: 0, child: navigation),
+        ],
+      ),
     );
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.0,

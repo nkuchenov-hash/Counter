@@ -68,6 +68,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   final FocusNode _notesScopeFocusNode =
       FocusNode(debugLabel: 'record-notes-scope', skipTraversal: true);
   Timer? _notesFocusExitTimer;
+  Timer? _titleAssistDebounce;
   final _recordAutosaveGate = EditSheetAutosaveGate(debounce: const Duration(milliseconds: 1500));
   /// True when Save/autosave can PATCH an existing/optimistic row (not past-date create).
   /// Prefer [record.id]; fall back to business `record_id` when fromMap dropped a UUID id.
@@ -539,6 +540,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     }
     _recordAutosaveGate.dispose();
     _notesFocusExitTimer?.cancel();
+    _titleAssistDebounce?.cancel();
     _notesScopeFocusNode.dispose();
     _tabController.dispose();
     _titleController.dispose();
@@ -873,7 +875,14 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                             ),
                             textCapitalization: TextCapitalization.sentences,
                             onChanged: (raw) {
-                              _applyFuzzyCategoryFromRecordTitle(raw);
+                              // Avoid scanning a large category tree per key.
+                              _titleAssistDebounce?.cancel();
+                              _titleAssistDebounce = Timer(
+                                const Duration(milliseconds: 450), () {
+                                  if (!mounted || _titleController.text != raw) return;
+                                  _applyFuzzyCategoryFromRecordTitle(raw);
+                                },
+                              );
                               _onRecordFieldChanged();
                             },
                           ),

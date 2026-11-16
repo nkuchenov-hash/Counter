@@ -46,7 +46,7 @@ void main() {
     });
   });
 
-  test('phone settings glass header remains while nav has no oversized backdrop', () {
+  test('phone settings header and universal Telegram-style glass dock', () {
     final chrome = File('lib/app/shell/shared/shell_chrome.dart')
         .readAsStringSync();
     final nav = File('lib/app/shell/phone/shell_bottom_navigation.dart')
@@ -68,9 +68,9 @@ void main() {
     expect(chrome, contains('statusBarIconBrightness: desktopShell ||'));
     expect(chrome, contains('scheme.brightness == Brightness.light'));
     expect(chrome, contains('systemNavigationBarIconBrightness:'));
-    expect(nav, contains('final content = !seamlessGlass ? navigation : Stack('));
+    expect(nav, contains('final content = SizedBox('));
     expect(nav, contains('BackdropFilter('));
-    expect(nav, contains('ImageFilter.blur(sigmaX: 12, sigmaY: 12)'));
+    expect(nav, contains('ImageFilter.blur(sigmaX: 14, sigmaY: 14)'));
     expect(nav, contains('ShaderMask('));
     expect(nav, contains('blendMode: BlendMode.dstIn'));
     expect(nav, isNot(contains('AppNeutralTones.white.withValues(alpha: 0.12)')));
@@ -78,26 +78,26 @@ void main() {
     expect(nav, contains('SafeArea('));
     expect(settings, contains('class _GlassySettingsBackButton'));
     expect(settings, contains('ImageFilter.blur(sigmaX: 16, sigmaY: 16)'));
-    expect(settings, contains('stops: [0, 0.55, 1]'));
+    expect(settings, contains('stops: [0, 0.61, 1]'));
     expect(settings, contains('sigmaX: 16, sigmaY: 16'));
     // Pinned header is a Stack sibling of the scrolling viewport.
     expect(settings, contains('header: _mobilePinnedHeader()'));
     expect(settings, contains('Widget _mobilePinnedHeader()'));
     expect(settings, contains('return SizedBox('));
     expect(settings, contains('color: dark'));
-    expect(settings, contains('scheme.surfaceContainerLowest.withValues(alpha: 0.88)'));
-    expect(settings, contains('scheme.surfaceContainerLowest.withValues(alpha: 0.93)'));
+    expect(settings, contains('scheme.surfaceContainerLowest.withValues(alpha: 0.96)'));
+    expect(settings, contains('scheme.surfaceContainerLowest.withValues(alpha: 0.98)'));
     expect(settings, isNot(contains('scheme.surfaceContainerHigh.withValues(alpha: 0.76)')));
     expect(settings, contains('AppNeutralTones.white.withValues(alpha: 0.29)'));
     expect(settings, contains('ImageFilter.blur(sigmaX: 18, sigmaY: 18)'));
-    expect(settings, contains('height: topInset + 80'));
+    expect(settings, contains('height: topInset + 114'));
     expect(settings, contains('EdgeInsets.fromLTRB(16, topInset + 12, 16, 12)'));
     expect(settings, isNot(contains('EdgeInsets.fromLTRB(16, topInset + 12, 16, 38)')));
     expect(settings, contains('68 + MediaQuery.viewPaddingOf(context).top'));
     expect(settings, contains('EdgeInsets.fromLTRB(5, 14, 0, 4)'));
     expect(settings, contains('EdgeInsets.fromLTRB(4, 14, 0, 5)'));
     expect(settings, isNot(contains('EdgeInsets.fromLTRB(5, 22, 0, 9)')));
-    expect(settings, isNot(contains('scheme.surfaceContainerLowest.withValues(alpha: 0.98)')));
+    expect(settings, contains('scheme.surfaceContainerLowest.withValues(alpha: 0.80)'));
     // Keep real scrolling content behind both blur surfaces; fading the
     // whole ListView produces opaque-looking slabs instead of frosted glass.
     final motion = settings.split('class _MobileSettingsMotion').last
@@ -109,7 +109,7 @@ void main() {
     expect(layout, contains('transparentBackground ? AppNeutralTones.transparent'));
     expect(settings, contains('Theme.of(context).colorScheme.surfaceContainerLowest'));
     expect(nav, contains('AppNeutralTones.transparent,'));
-    expect(nav, contains('stops: [0, 0.48, 1]'));
+    expect(nav, contains('stops: [0, 0.56, 1]'));
     expect(settings, contains("key: ValueKey(_mobileDetailOpen ? 'detail-"));
     expect(settings, isNot(contains('for (final top in [true, false])')));
     expect(settings, contains('class _MobileSettingsMotion'));
@@ -130,7 +130,7 @@ void main() {
     expect(surface.color, Colors.transparent);
   });
 
-  testWidgets('phone navigation uses only five compact actions without a backdrop',
+  testWidgets('phone navigation has five actions over universal feathered glass',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;
@@ -146,8 +146,8 @@ void main() {
         ),
       ),
     ));
-    expect(find.byType(BackdropFilter), findsNothing);
-    expect(find.byType(ShaderMask), findsNothing);
+    expect(find.byType(BackdropFilter), findsOneWidget);
+    expect(find.byType(ShaderMask), findsOneWidget);
     expect(find.byType(InkWell), findsNWidgets(5));
     expect(kShellBottomNavHeight, lessThan(80));
     await tester.tap(find.byType(InkWell).at(3));
@@ -155,7 +155,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('only Settings has bottom glass fade, normal tabs stay clear',
+  testWidgets('all phone tabs retain the bottom glass fade',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;
@@ -170,7 +170,8 @@ void main() {
       ),
     ));
     await tester.pumpWidget(navFor(false));
-    expect(find.byType(BackdropFilter), findsNothing);
+    expect(find.byType(BackdropFilter), findsOneWidget);
+    expect(find.byType(ShaderMask), findsOneWidget);
     expect(find.byType(InkWell), findsNWidgets(5));
     await tester.pumpWidget(navFor(true));
     expect(find.byType(BackdropFilter), findsOneWidget);

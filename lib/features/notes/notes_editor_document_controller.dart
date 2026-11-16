@@ -360,23 +360,89 @@ class NotesEditorDocumentController {
     activeSelection = TextSelection.collapsed(offset: previousLength);
     return _focusMutation(previous.id, activeSelection!);
   }
-  /// Gboard keeps multiline Body stable until the toolbar styles one line.
-  NotesEditorMutation convertCurrentLine(String id, TextSelection selection,
-      NotesBlockConversion conversion) {
+  /// Format only the caret paragraph, never the complete multiline Android
+  /// TextField. Preserve earlier lines in their original mounted text block.
+  NotesEditorMutation convertCurrentLine(
+    String id,
+    TextSelection selection,
+    NotesBlockConversion conversion,
+  ) {
     final block = blockById(id);
     if (block == null || !isEditableText(block.type)) {
       return const NotesEditorMutation();
     }
-    if (block.type != NoteBlockType.paragraph ||
-        !block.effectiveText.contains('\n')) return convertBlock(id, conversion);
-    final safe = selection.isValid ? selection
-        : TextSelection.collapsed(offset: block.effectiveText.length);
-    final split = _replaceWithSplitLines(block, block.effectiveText, safe);
-    final target = split.focusBlockId;
-    if (target == null) return split;
-    final styled = convertBlock(target, conversion);
-    return NotesEditorMutation(changed: true, requiresRebuild: true,
-        focusBlockId: target, selection: styled.selection ?? split.selection);
+    final text = block.effectiveText;
+    if (block.type != NoteBlockType.paragraph || !text.contains('\n')) {
+      return convertBlock(id, conversion);
+    }
+    final caret = (selection.isValid ? selection.extentOffset : text.length)
+        .clamp(0, text.length).toInt();
+    final lineStart = (caret == 0 ? -1 : text.lastIndexOf('\n', caret - 1)) + 1;
+    final breakAfter = text.indexOf('\n', caret);
+    final lineEnd = breakAfter < 0 ? text.length : breakAfter;
+    final lineText = text.substring(lineStart, lineEnd);
+    final target = switch (conversion) {
+      NotesBlockConversion.body => (NoteBlockType.paragraph, 2),
+      NotesBlockConversion.h1 => (NoteBlockType.heading, 1),
+      NotesBlockConversion.h2 => (NoteBlockType.heading, 2),
+      NotesBlockConversion.h3 => (NoteBlockType.heading, 3),
+      NotesBlockConversion.quote => (NoteBlockType.quote, 2),
+      NotesBlockConversion.bulletedList => (NoteBlockType.bulletedList, 2),
+      NotesBlockConversion.numberedList => (NoteBlockType.numberedList, 2),
+      NotesBlockConversion.checklist => (NoteBlockType.checklist, 2),
+    };
+    if (target.$1 == NoteBlockType.paragraph) {
+      return const NotesEditorMutation();
+    }
+    final styled = lineStart == 0
+        ? block.copyWith(
+            type: target.$1,
+            level: target.$2,
+            checked: false,
+            text: lineText,
+            runs: _sliceRuns(block.effectiveRuns, lineStart, lineEnd),
+          )
+        : NoteBlock(
+            id: generateNoteBlockId(),
+            type: target.$1,
+            level: target.$2,
+            text: lineText,
+            runs: _sliceRuns(block.effectiveRuns, lineStart, lineEnd),
+            indent: block.indent,
+            alignment: block.alignment,
+          );
+    // Only one delimiter is consumed by the newly styled line. Previously
+    // typed blank lines survive in the original TextField without creating
+    // separately padded Flutter widgets or extra blank list items.
+    final prefix = lineStart == 0 ? '' : text.substring(0, lineStart - 1);
+    final replacement = <NoteBlock>[
+      if (lineStart > 0)
+        block.copyWith(
+          text: prefix,
+          runs: _sliceRuns(block.effectiveRuns, 0, lineStart - 1),
+        ),
+      styled,
+      if (breakAfter >= 0)
+        NoteBlock(
+          id: generateNoteBlockId(),
+          type: NoteBlockType.paragraph,
+          text: text.substring(lineEnd + 1),
+          runs: _sliceRuns(block.effectiveRuns, lineEnd + 1, text.length),
+          indent: block.indent,
+          alignment: block.alignment,
+        ),
+    ];
+    final index = _indexOf(id);
+    if (index < 0) return const NotesEditorMutation();
+    final updated = List<NoteBlock>.from(blocks)
+      ..removeAt(index)
+      ..insertAll(index, replacement);
+    _commitDocument(_document.copyWith(blocks: updated));
+    activeBlockId = styled.id;
+    activeSelection = TextSelection.collapsed(
+      offset: (caret - lineStart).clamp(0, lineText.length).toInt(),
+    );
+    return _focusMutation(styled.id, activeSelection);
   }
   NotesEditorMutation convertBlock(String id, NotesBlockConversion conversion) {
     final block = blockById(id);
