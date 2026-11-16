@@ -1,5 +1,6 @@
 import 'dart:ui' show ImageFilter;
 
+import 'package:counter/core/app_colors.dart';
 import 'package:flutter/material.dart';
 
 /// Canonical frosted edge for both shell header and bottom navigation.
@@ -35,7 +36,7 @@ class AppGlassEdgeFade extends StatelessWidget {
           begin: start,
           end: end,
           stops: const [0, 0.58, 1],
-          colors: const [Colors.white, Colors.white, Colors.transparent],
+          colors: const [AppNeutralTones.white, AppNeutralTones.white, AppNeutralTones.transparent],
         ).createShader(bounds),
         child: ClipRect(
           child: BackdropFilter(
@@ -49,7 +50,7 @@ class AppGlassEdgeFade extends StatelessWidget {
                   colors: [
                     surfaceColor.withValues(alpha: 0.96),
                     surfaceColor.withValues(alpha: 0.78),
-                    Colors.transparent,
+                    AppNeutralTones.transparent,
                   ],
                 ),
               ),
