@@ -136,7 +136,12 @@ void main() {
       await tester.pump();
       final action = tester.getRect(
         find.byKey(const ValueKey('bottom-body-action')));
-      for (final navItem in tester.widgetList<InkWell>(find.byType(InkWell))) {
+      final navInkWells = find.descendant(
+        of: find.byType(ShellCompactBottomNav),
+        matching: find.byType(InkWell),
+      );
+      expect(navInkWells, findsNWidgets(5));
+      for (final navItem in tester.widgetList<InkWell>(navInkWells)) {
         final element = find.byWidget(navItem);
         final navRect = tester.getRect(element);
         expect(action.bottom <= navRect.top, isTrue,
