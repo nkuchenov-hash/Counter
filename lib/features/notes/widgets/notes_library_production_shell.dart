@@ -259,9 +259,7 @@ class _MobileNotesLibrary extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     // One screen gutter for tabs and cards; full-width folder paper.
-    return SafeArea(
-      top: false,
-      child: Column(
+    return SafeArea(top: false, child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
@@ -351,8 +349,7 @@ class _MobileNotesLibrary extends StatelessWidget {
           ),
         ),
       ],
-      ),
-    );
+    ));
   }
 }
 
