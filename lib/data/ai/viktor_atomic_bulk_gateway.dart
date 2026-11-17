@@ -84,6 +84,10 @@ class ViktorAtomicBulkGateway {
         'expected_is_done': original.isDone,
         'start_time': db.viktorProfileWallToUtc(move.start).toIso8601String(),
         'end_time': db.viktorProfileWallToUtc(move.end).toIso8601String(),
+        // Exact user-approved cross-day move may relocate a source card
+        // that inherited a category default clock. Compact/swap/cascade
+        // never receive this exception; target commitments remain protected.
+        if (move.kind == 'move') 'allow_fixed_time_transfer': true,
         if (move.kind == 'move') 'initial_date_key': anchor,
         if (move.kind == 'move')
           'is_postponed': db.planningShouldMarkPostponed(
