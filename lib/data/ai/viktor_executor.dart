@@ -10,6 +10,7 @@ import 'viktor_plan_category.dart';
 import 'viktor_existing_plan.dart';
 import 'viktor_plan_timezone.dart';
 import 'viktor_atomic_bulk_gateway.dart';
+import 'viktor_atomic_create_gateway.dart';
 import 'viktor_tag_duration_reflow.dart';
 import 'package:counter/data/time_view_fixed_time_policy.dart';
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
@@ -152,6 +153,870 @@ class ViktorExecutor {
           'отображение пока не подтверждено. Повторять команду не нужно.';
     }
     return 'План «$name» добавлен на $day.';
+  }
+
+  /// Preview every new plan against saved commitments and other proposals.
+  /// No write is made until the approved preview is rechecked and committed
+  /// in one server transaction. A duplicate existing task fails closed.
+  Future<({String description, List<Map<String, Object?>> rows})>
+      _preparePlanBatch(ViktorAction action) async {
+    final entries = (action.arguments['plans'] as List)
+        .map((raw) => Map<String, Object?>.from(raw as Map))
+        .toList(growable: false);
+    final rows = <Map<String, Object?>>[];
+    final intervals = <({DateTime start, DateTime end, String title})>[];
+    final byDay = <String, List<PlanningTask>>{};
+    final report = <String>['Создать ${entries.length} планов одним действием:'];
+    String clock(DateTime d) =>
+        '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+    for (final entry in entries) {
+      final title = entry['title'] as String;
+      final day = entry['wall_day'] as String;
+      final start = viktorPlanStartInProfileWall(
+        wallDay: day, startTime: entry['start_time'] as String,
+        timezone: entry['timezone'] as String?,
+        profileTimezone: db.settings.preferredTimeZone,
+        toProfileWall: db.applyUserOffset,
+      );
+      final end = start.add(Duration(
+          minutes: entry['duration_minutes'] as int));
+      if (ViktorDateScope.key(start) != day ||
+          ViktorDateScope.key(end) != day) {
+        throw StateError('«$title»: время выходит за пределы $day '
+            'по часовому поясу профиля.');
+      }
+      final scheduled = byDay.putIfAbsent(day, () => <PlanningTask>[]);
+      if (scheduled.isEmpty && !byDay.containsKey('$day:loaded')) {
+        final saved = await db.getPlanningTasksForWallDate(
+            ViktorDateScope.parseDay(day));
+        scheduled.addAll(saved);
+        byDay['$day:loaded'] = const <PlanningTask>[];
+      }
+      if (ViktorExistingPlan.find(
+          title: title, start: start, plans: scheduled) != null) {
+        throw StateError('«$title» уже существует на $day. '
+            'Исключите дубликат из группового создания.');
+      }
+      for (final old in scheduled) {
+        if (old.startTime != null && old.endDateTime != null &&
+            start.isBefore(old.endDateTime!) &&
+            end.isAfter(old.startTime!)) {
+          throw StateError('«$title» пересекается с сохранённым '
+              'планом «${old.title}».');
+        }
+      }
+      for (final earlier in intervals) {
+        if (start.isBefore(earlier.end) && end.isAfter(earlier.start)) {
+          throw StateError('«$title» пересекается с '
+              '«${earlier.title}» в предложении.');
+        }
+      }
+      CategoryRule category;
+      try {
+        category = resolveViktorPlanCategory(
+          title: title, identifyCategory: db.identifyCategory,
+          categoryById: db.getCategoryRuleById,
+          defaultCategoryId: db.defaultCategoryId,
+          rootCategories: db.rules,
+        );
+      } on StateError {
+        await db.refreshCategoryRulesFromServer();
+        category = resolveViktorPlanCategory(
+          title: title, identifyCategory: db.identifyCategory,
+          categoryById: db.getCategoryRuleById,
+          defaultCategoryId: db.defaultCategoryId,
+          rootCategories: db.rules,
+        );
+      }
+      final id = (category.backendRowId ?? '').trim();
+      if (!RegExp(r'^[a-zA-Z0-9]{15}
+    final operations = action.arguments['operations'] as List;
+    final dates = <String>{
+      for (final raw in operations) (raw as Map)['source_day'] as String,
+      for (final raw in operations)
+        if ((raw as Map)['kind'] == 'move') raw['target_day'] as String,
+    };
+    final allDays = <String, List<PlanningTask>>{};
+    for (final date in dates.toList()..sort()) {
+      allDays[date] = await db.getPlanningTasksForWallDate(
+          ViktorDateScope.parseDay(date));
+    }
+    DateTime wallTime(String date, String time, String zone) {
+      final parts = date.split('-').map(int.parse).toList();
+      final clock = time.split(':').map(int.parse).toList();
+      final requested = zone.trim();
+      if (requested.isEmpty || requested == 'profile' ||
+          profileTimezoneValuesMatch(requested, db.settings.preferredTimeZone)) {
+        return DateTime(parts[0], parts[1], parts[2], clock[0], clock[1]);
+      }
+      final catalog = catalogEntryForStoredTimezone(requested);
+      if (catalog == null) {
+        throw StateError('Неизвестный часовой пояс: $requested');
+      }
+      final zoned = tz.TZDateTime(tz.getLocation(catalog.ianaId),
+        parts[0], parts[1], parts[2], clock[0], clock[1]);
+      if (zoned.year != parts[0] || zoned.month != parts[1] ||
+          zoned.day != parts[2] || zoned.hour != clock[0] ||
+          zoned.minute != clock[1]) {
+        throw StateError('Указанное время отсутствует из-за перевода часов.');
+      }
+      return db.applyUserOffset(zoned.toUtc());
+    }
+    final firstSource = (operations.first as Map)['source_day'] as String;
+    return _bulk.calculate(
+      action: action, source: allDays[firstSource]!, target: const [],
+      sourceDay: firstSource, targetDay: null, allDays: allDays,
+      wallTime: wallTime, fixedTime: _fixed,
+      autoStart: (date) {
+        final d = ViktorDateScope.parseDay(date);
+        final base = DateTime(d.year, d.month, d.day, 9);
+        final now = db.applyUserOffset(DateTime.now().toUtc());
+        if (ViktorDateScope.key(now) != date || !now.isAfter(base)) {
+          return base;
+        }
+        // A move with no requested hour must not schedule its first task
+        // into the past. Round UP to the next minute in profile wall time.
+        return DateTime(d.year, d.month, d.day, now.hour,
+            now.minute).add(const Duration(minutes: 1));
+      },
+      categoryName: (plan) {
+        final path = db.getCategoryPath(plan.categoryId).trim();
+        return path.isNotEmpty ? path :
+            (db.getCategoryRuleById(plan.categoryId)?.name ?? '');
+      },
+    );
+  }
+
+
+  static String _key(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+
+  bool _fixed(PlanningTask p) =>
+      (db.getCategoryRuleById(p.categoryId)?.defaultPlanTime ?? '')
+          .trim().isNotEmpty;
+
+  void _checkScope(ViktorActionBatch batch, DateTime day) {
+    // Multiple application-domain tools can form one approved intent.
+    // Multi-row schedule recalculation and record timers still require an
+    // isolated operation: their writes are not atomic with other domains.
+    final mutations = batch.actions.where((a) => a.isMutation).toList();
+    if (batch.actions.any((a) => a.name == 'create_plans_batch') &&
+        batch.actions.length != 1) {
+      throw StateError('Групповое создание планов должно выполняться '
+          'отдельной атомарной операцией.');
+    }
+    if (batch.actions.any((a) => a.name == 'bulk_replan') &&
+        batch.actions.any((a) => a.name != 'bulk_replan' &&
+            a.name != 'list_day_plans')) {
+      throw StateError('Групповой перенос нельзя объединять с другими '
+          'изменениями. Планы не изменены.');
+    }
+    if (mutations.length > 1 &&
+        mutations.any((a) =>
+            !ViktorDomainTools.names.contains(a.name) &&
+            a.name != 'update_plan_duration' &&
+            a.name != 'move_plan_after')) {
+      throw StateError('Изменения расписания и запуск/остановка записи '
+          'должны быть отдельной защищённой операцией.');
+    }
+    if (mutations.length > 12) {
+      throw StateError('Не более 12 изменений за один шаг.');
+    }
+    if (batch.actions.any(_isPriorityInsertion) &&
+        batch.actions.length != 1) {
+      throw StateError('Приоритетная вставка с пересчётом расписания '
+          'выполняется одной защищённой операцией.');
+    }
+    if (batch.actions.any((a) => a.name == 'resize_adjacent_records') &&
+        batch.actions.length != 1) {
+      throw StateError('Изменение двух записей выполняется отдельно '
+          'одной защищённой транзакцией.');
+    }
+    if (batch.actions.any((a) => a.name == 'create_completed_records') &&
+        batch.actions.length != 1) {
+      throw StateError('Создание завершённых записей должно быть одной '
+          'защищённой операцией после просмотра данных.');
+    }
+    if (batch.actions.any((a) => a.name == 'read_day_records') &&
+        mutations.isNotEmpty) {
+      throw StateError('Сначала прочитайте существующие записи, затем '
+          'предложите подтверждаемое изменение.');
+    }
+    if (batch.actions.any((a) =>
+            a.name == 'create_completed_records_between') &&
+        batch.actions.length != 1) {
+      throw StateError('Добавление завершённых записей требует '
+          'отдельного подтверждения.');
+    }
+    for (final a in batch.actions) {
+      // Validated action dates may differ from the visible calendar date.
+      if (a.name == 'start_record' &&
+          a.arguments.containsKey('category_id')) {
+        throw StateError('Категорию записи требуется выбрать в приложении.');
+      }
+    }
+  }
+
+  ViktorSchedulePreview _schedule(
+    ViktorActionBatch batch, DateTime day, List<PlanningTask> plans) =>
+      _planner.calculate(
+        day: day, plans: plans, actions: batch.actions, fixedTime: _fixed);
+
+  Future<String> describe(ViktorActionBatch batch, DateTime day) async {
+    _checkScope(batch, day);
+    if (batch.actions.any((a) => a.name == 'read_day_records') &&
+        !batch.hasMutations) {
+      final observations = <String>[];
+      for (final action in batch.actions) {
+        if (action.name == 'read_day_records') {
+          observations.add(await _recordTools.listDay(
+              action.arguments['wall_day'] as String));
+        } else if (action.name == 'list_day_plans') {
+          final dayKey = action.arguments['wall_day'] as String;
+          final rows = await db.getPlanningTasksForWallDate(
+              ViktorDateScope.parseDay(dayKey));
+          observations.add('Планы за $dayKey: ' +
+              rows.map((p) => p.title).join('; '));
+        } else if (ViktorDomainTools.reads.contains(action.name)) {
+          observations.add(await _domain.preview(action));
+        } else {
+          throw StateError('Неизвестная операция чтения.');
+        }
+      }
+      return observations.join('\n\n');
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'resize_adjacent_records') {
+      final preview = await _recordTools.prepareAdjacent(
+          batch.actions.single.arguments);
+      return _recordTools.describeAdjacent(preview);
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'create_completed_records') {
+      final preview = await _recordCreatePreview(batch.actions.single);
+      return _recordTools.describe(preview);
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'create_completed_records_between') {
+      final proposal = await _historicalPreview(batch.actions.single);
+      return proposal.describe(db.applyUserOffset);
+    }
+    if (batch.actions.length == 1 &&
+        _isPriorityInsertion(batch.actions.single)) {
+      final action = batch.actions.single;
+      final existing = await _existingPlan(action);
+      if (existing != null) {
+        _insertionSignature = 'existing:${existing.recordIdForBackend}';
+        return ViktorExistingPlan.describe(existing);
+      }
+      final placement = await _planInsertion(action);
+      _insertionSignature = placement.signature;
+      String clock(DateTime t) =>
+          '${t.hour.toString().padLeft(2, '0')}:'
+          '${t.minute.toString().padLeft(2, '0')}';
+      return [
+        'Создать приоритетный план «${action.arguments['title']}» '
+            'на ${action.arguments['wall_day']}, '
+            '${clock(placement.start)}–${clock(placement.end)} '
+            '(${action.arguments['duration_minutes']} мин.).',
+        'Категория: ${_planCategoryLabel(action)}.',
+        if (placement.shifted.isEmpty) 'Пересечений нет.',
+        if (placement.shifted.isNotEmpty)
+          'Перенести следующие планы, сохранив длительность:',
+        for (final p in placement.shifted)
+          '«${p.title}» → ${clock(p.startTime!)}–${clock(p.endDateTime!)}',
+        'Подтвердите изменение расписания.',
+      ].join('\n');
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'create_plans_batch') {
+      return (await _preparePlanBatch(batch.actions.single)).description;
+    }
+    if (batch.actions.any((a) => a.name == 'bulk_replan')) {
+      final bulk = batch.actions.singleWhere(
+          (action) => action.name == 'bulk_replan');
+      final preview = await _planBulk(bulk);
+      _bulkSignature = preview.signature;
+      final readLines = <String>[];
+      for (final read in batch.actions.where(
+          (action) => action.name == 'list_day_plans')) {
+        final requestedDay = read.arguments['wall_day'] as String;
+        final readPlans = await db.getPlanningTasksForWallDate(
+            ViktorDateScope.parseDay(requestedDay));
+        final ordered = [...readPlans]..sort((a, b) =>
+            (a.startTime ?? DateTime(2099)).compareTo(
+                b.startTime ?? DateTime(2099)));
+        if (ordered.isEmpty) readLines.add('На $requestedDay планов нет.');
+        for (final plan in ordered) {
+          final t = plan.startTime;
+          final clock = t == null ? '—' :
+              '${t.hour.toString().padLeft(2, '0')}:'
+              '${t.minute.toString().padLeft(2, '0')}';
+          readLines.add('$requestedDay $clock  ${plan.title}');
+        }
+      }
+      return [
+        if (readLines.isNotEmpty) ...readLines,
+        if (readLines.isNotEmpty) '',
+        preview.describe(),
+      ].join('\n');
+    }
+    final scheduleDay = ViktorDateScope.scheduleDay(batch, day);
+    final plans = await db.getPlanningTasksForWallDate(scheduleDay);
+    final lines = <String>[];
+    for (final action in batch.actions) {
+      final a = action.arguments;
+      switch (action.name) {
+        case 'list_day_plans':
+          final requestedDay = a['wall_day'] as String;
+          final dayPlans = await db.getPlanningTasksForWallDate(
+              ViktorDateScope.parseDay(requestedDay));
+          final sorted = [...dayPlans]..sort((a, b) =>
+              (a.startTime ?? DateTime(2099)).compareTo(
+                  b.startTime ?? DateTime(2099)));
+          if (sorted.isEmpty) lines.add('На $requestedDay планов нет.');
+          for (final p in sorted) {
+            final t = p.startTime;
+            final clock = t == null ? '—' :
+                '${t.hour.toString().padLeft(2, '0')}:'
+                '${t.minute.toString().padLeft(2, '0')}';
+            lines.add('$requestedDay $clock  ${p.title}');
+          }
+        case 'create_plan':
+          final existing = await _existingPlan(action);
+          if (!a.containsKey('start_time')) {
+            if (existing != null) {
+              lines.add(ViktorExistingPlan.describe(existing));
+            } else {
+              lines.add('Добавить план «${a['title']}» на ${a['wall_day']} '
+                  'без назначенного часа. '
+                  'Категория: ${_planCategoryLabel(action)}.');
+            }
+            continue;
+          }
+          final start = _planStart(action);
+          final end = start.add(Duration(minutes: a['duration_minutes'] as int));
+          if (existing != null) {
+            lines.add(ViktorExistingPlan.describe(existing));
+            continue;
+          }
+          if (end.year != start.year || end.month != start.month ||
+              end.day != start.day) {
+            throw StateError('Новый план должен завершиться в один '
+                'календарный день часового пояса профиля.');
+          }
+          final destinationPlans = await db.getPlanningTasksForWallDate(start);
+          for (final old in destinationPlans) {
+            if (old.startTime != null && old.endDateTime != null &&
+                old.startTime!.isBefore(end) &&
+                old.endDateTime!.isAfter(start)) {
+              String clock(DateTime t) =>
+                  '${t.hour.toString().padLeft(2, '0')}:'
+                  '${t.minute.toString().padLeft(2, '0')}';
+              throw StateError('Интервал ${clock(start)}–${clock(end)} '
+                  'по времени профиля пересекается с «${old.title}» '
+                  '(${clock(old.startTime!)}–${clock(old.endDateTime!)}). '
+                  'Другой план не изменён.');
+            }
+          }
+          final zone = (a['timezone'] as String?)?.trim();
+          lines.add('Добавить «${a['title']}» на ${a['wall_day']} '
+              'в ${a['start_time']}'
+              '${zone == null || zone.isEmpty ? '' : ' ($zone)'} '
+              'на ${a['duration_minutes']} мин. '
+              'Категория: ${_planCategoryLabel(action)}.');
+        case 'update_plan_duration':
+          lines.add('Изменить длительность плана '
+              '${a['expected_duration_minutes']} → '
+              '${a['duration_minutes']} мин.');
+        case 'move_plan_after':
+          lines.add('Переставить план сразу после выбранного.');
+        case 'swap_plan_positions':
+          lines.add('Поменять местами две выбранные карточки.');
+        case 'start_record':
+          if (db.canonicalPrimaryRunningBusinessId != null) {
+            throw StateError('Уже есть активная запись. Остановите её сначала.');
+          }
+          lines.add('Начать запись «${a['title']}»');
+        case 'stop_record':
+          if (db.canonicalPrimaryRunningBusinessId != a['record_id']) {
+            throw StateError('Указанная запись больше не является активной.');
+          }
+          lines.add('Остановить текущую запись');
+        case 'list_categories':
+        case 'create_category':
+        case 'list_tags':
+        case 'create_tag':
+        case 'rename_tag':
+        case 'list_backlog_items':
+        case 'set_list_item_done':
+        case 'rename_list_item':
+        case 'list_notes':
+        case 'search_notes':
+        case 'search_record_notes':
+        case 'read_record_note':
+        case 'read_note':
+        case 'create_note':
+        case 'edit_note':
+        case 'edit_note_line':
+        case 'list_paths':
+        case 'create_path':
+        case 'get_settings':
+        case 'change_setting':
+          lines.add(await _domain.preview(action));
+      }
+    }
+    final preview = _schedule(batch, scheduleDay, plans);
+    if (preview.changed.isNotEmpty) {
+      lines.add('');
+      lines.add('Итоговое расписание:');
+      final sorted = [...preview.changed]..sort(
+          (a, b) => a.startTime!.compareTo(b.startTime!));
+      for (final p in sorted) {
+        String clock(DateTime t) =>
+            '${t.hour.toString().padLeft(2, '0')}:'
+            '${t.minute.toString().padLeft(2, '0')}';
+        lines.add('${clock(p.startTime!)}–${clock(p.endDateTime!)}  ${p.title}');
+      }
+    }
+    if (batch.actions.where((a) => a.isMutation).length > 1) {
+      lines.add('');
+      lines.add('Это несколько независимых операций. '
+        'Если сохранение оборвётся, часть изменений может быть '
+        'применена. Проверьте результат перед повторным запросом.');
+    }
+    return lines.join('\n');
+  }
+
+  /// One explicit, unambiguous date-only Plan needs no model or approval.
+  /// Unlike describe() + apply(), this performs only ONE duplicate read,
+  /// then resolves its category and writes. No extra schedule round trips.
+  Future<String> createSingleDateOnlyPlan(
+      ViktorActionBatch batch, DateTime day) async {
+    _checkScope(batch, day);
+    if (batch.actions.length != 1 ||
+        batch.actions.single.name != 'create_plan' ||
+        batch.actions.single.arguments.containsKey('start_time') ||
+        batch.actions.single.arguments.containsKey('duration_minutes')) {
+      throw StateError('Ожидается один план без указанного времени.');
+    }
+    final action = batch.actions.single;
+    final existing = await _existingPlan(action);
+    if (existing != null) return ViktorExistingPlan.describe(existing);
+    final created = await _createPlan(action, null);
+    if (!created.accepted && !created.pendingSync) {
+      throw StateError('Не удалось начать сохранение плана.');
+    }
+    return _creationReceipt(action, created);
+  }
+
+  Future<String> apply(ViktorActionBatch batch, DateTime day, {
+    required String approvedPreview,
+  }) async {
+    final approvedSignature = _bulkSignature;
+    final approvedInsertionSignature = _insertionSignature;
+    final fresh = await describe(batch, day);
+    if (fresh != approvedPreview ||
+        (batch.actions.any((a) => a.name == 'bulk_replan') &&
+         approvedSignature != _bulkSignature) ||
+        (batch.actions.length == 1 &&
+         _isPriorityInsertion(batch.actions.single) &&
+         approvedInsertionSignature != _insertionSignature)) {
+      throw StateError('Данные изменились после подтверждения. '
+          'Проверьте новый вариант.');
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'resize_adjacent_records') {
+      final preview = await _recordTools.prepareAdjacent(
+          batch.actions.single.arguments);
+      if (_recordTools.describeAdjacent(preview) != approvedPreview) {
+        throw StateError('Записи изменились после подтверждения.');
+      }
+      return _recordTools.commitAdjacent(preview,
+          requestId: batch.requestId);
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'create_completed_records') {
+      final proposal = await _recordCreatePreview(batch.actions.single);
+      if (_recordTools.describe(proposal) != approvedPreview) {
+        throw StateError('Записи изменились после подтверждения.');
+      }
+      return _recordTools.apply(proposal);
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'create_completed_records_between') {
+      final action = batch.actions.single;
+      final proposal = await _historicalPreview(action);
+      if (proposal.describe(db.applyUserOffset) != approvedPreview) {
+        throw StateError('Исходные записи изменились, сохранение отменено.');
+      }
+      return _history.save(proposal,
+          wallDay: action.arguments['wall_day'] as String);
+    }
+    if (batch.actions.length == 1 &&
+        _isPriorityInsertion(batch.actions.single)) {
+      final action = batch.actions.single;
+      final existing = await _existingPlan(action);
+      if (existing != null) return ViktorExistingPlan.describe(existing);
+      final placement = await _planInsertion(action);
+      if (placement.signature != _insertionSignature) {
+        throw StateError('Планы изменились до сохранения. '
+            'Запросите новый предварительный просмотр.');
+      }
+      final patches = <PlanningBulkPatch>[
+        for (final p in placement.shifted)
+          PlanningBulkPatch(
+            planRowId: p.recordIdForBackend,
+            planBusinessId: p.planRowId,
+            startTimeDisplay: p.startTime,
+            endDateTimeDisplay: p.endDateTime,
+          ),
+      ];
+      if (patches.isNotEmpty &&
+          !await db.bulkUpdatePlans(patches, suppressAppSnack: true)) {
+        throw StateError('Сдвиг планов сохранён не полностью. '
+            'Проверьте расписание перед повтором; встреча не создана.');
+      }
+      final created = await _createPlan(action, placement.start);
+      if (!created.accepted) {
+        if (patches.isNotEmpty) {
+          final changedIds = placement.shifted
+              .map((p) => p.recordIdForBackend).toSet();
+          final rollback = <PlanningBulkPatch>[
+            for (final old in placement.before)
+              if (changedIds.contains(old.recordIdForBackend))
+                PlanningBulkPatch(
+                  planRowId: old.recordIdForBackend,
+                  planBusinessId: old.planRowId,
+                  startTimeDisplay: old.startTime,
+                  endDateTimeDisplay: old.endDateTime,
+                ),
+          ];
+          final restored = await db.bulkUpdatePlans(
+              rollback, suppressAppSnack: true);
+          if (!restored) {
+            throw StateError('Создание встречи не удалось, а откат '
+                'перенесённых планов неполный. Проверьте расписание.');
+          }
+        }
+        throw StateError('Встреча не сохранилась. '
+            'Ранее перенесённые планы восстановлены.');
+      }
+      return '${_creationReceipt(action, created)} '
+          'Сдвинуто планов: ${placement.shifted.length}.';
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'create_plans_batch') {
+      final prepared = await _preparePlanBatch(batch.actions.single);
+      if (prepared.description != approvedPreview) {
+        throw StateError('Расписание изменилось после подтверждения.');
+      }
+      return ViktorAtomicCreateGateway(db).commit(
+          rows: prepared.rows, requestId: batch.requestId);
+    }
+    if (batch.actions.any((a) => a.name == 'bulk_replan')) {
+      final bulk = batch.actions.singleWhere(
+          (action) => action.name == 'bulk_replan');
+      final result = await _planBulk(bulk);
+      if (result.signature != _bulkSignature) {
+        throw StateError('Планы изменились после подтверждения.');
+      }
+      // One atomic server transaction and independent post-commit read.
+      // NEVER fall back to a sequence of per-plan PATCH calls.
+      return ViktorAtomicBulkGateway(db).commit(
+        approved: result,
+        requestId: batch.requestId,
+      );
+    }
+    final scheduleDay = ViktorDateScope.scheduleDay(batch, day);
+    final plans = await db.getPlanningTasksForWallDate(scheduleDay);
+    final preview = _schedule(batch, scheduleDay, plans);
+    final patches = <PlanningBulkPatch>[
+      for (final p in preview.changed)
+        PlanningBulkPatch(
+          planRowId: p.recordIdForBackend,
+          planBusinessId: p.planRowId,
+          startTimeDisplay: p.startTime,
+          endDateTimeDisplay: p.endDateTime,
+        ),
+    ];
+    if (patches.isNotEmpty) {
+      // The existing multi-row Brain write is not fully atomic. Never claim
+      // full success if one patch fails.
+      final ok = await db.bulkUpdatePlans(patches, suppressAppSnack: true);
+      if (!ok) {
+        throw StateError('Сохранение не завершено. Часть изменений могла '
+            'примениться — проверьте расписание.');
+      }
+    }
+    var done = patches.isNotEmpty ? 1 : 0;
+    final receipts = <String>[];
+    for (final action in batch.actions) {
+      final a = action.arguments;
+      switch (action.name) {
+        case 'list_day_plans':
+        case 'update_plan_duration':
+        case 'move_plan_after':
+        case 'swap_plan_positions':
+        case 'bulk_replan':
+          break;
+        case 'create_plan':
+          final existing = await _existingPlan(action);
+          if (existing != null) {
+            receipts.add(ViktorExistingPlan.describe(existing));
+            continue;
+          }
+          final created = await _createPlan(action,
+              a.containsKey('start_time') ? _planStart(action) : null);
+          if (!created.accepted && !created.pendingSync) {
+            throw StateError('План не создан: сохранение не началось.');
+          }
+          // A rejected initial POST can still have a safely queued write.
+          // Report it as in-progress, never as a completed plan.
+          receipts.add(_creationReceipt(action, created));
+          done++;
+        case 'start_record':
+          if (db.canonicalPrimaryRunningBusinessId != null) {
+            throw StateError('Уже запущена запись.');
+          }
+          final now = DatabaseService.getPlanetaryNow();
+          final localDay = db.getTimelineDeviceLocalToday();
+          final id = await db.writeRecord(
+            _key(localDay), a['title'] as String,
+            categoryId: db.defaultCategoryId,
+            explicitStartTime: now,
+          );
+          if (id == null) throw StateError('Не удалось начать запись.');
+          done++;
+        case 'stop_record':
+          final id = a['record_id'] as String;
+          if (db.canonicalPrimaryRunningBusinessId != id) {
+            throw StateError('Активная запись изменилась.');
+          }
+          final ok = await db.stopRecordByDocId(id);
+          if (!ok) throw StateError('Не удалось остановить запись.');
+          done++;
+        case 'list_categories':
+        case 'create_category':
+        case 'list_tags':
+        case 'create_tag':
+        case 'rename_tag':
+        case 'list_backlog_items':
+        case 'set_list_item_done':
+        case 'rename_list_item':
+        case 'list_notes':
+        case 'search_notes':
+        case 'search_record_notes':
+        case 'read_record_note':
+        case 'read_note':
+        case 'create_note':
+        case 'edit_note':
+        case 'edit_note_line':
+        case 'list_paths':
+        case 'create_path':
+        case 'get_settings':
+        case 'change_setting':
+          try {
+            receipts.add(await _domain.execute(action));
+            if (action.isMutation) done++;
+          } catch (error) {
+            throw StateError('Операция «${action.name}» не завершилась: '
+                '$error. Ранее выполненные действия могли сохраниться. '
+                'Проверьте результат перед повтором.');
+          }
+      }
+    }
+    return done == 0 ? receipts.join('\n') :
+        (receipts.isEmpty ?
+          'Изменения переданы в LIFE OS. Проверьте синхронизацию.' :
+          receipts.join('\n'));
+  }
+}
+
+
+/// A deterministic, consent-gated operation for restoring today's and
+/// tomorrow's plan durations from the user's saved plan-tag defaults.
+/// The model never invents IDs or writes to PocketBase in this path.
+class ViktorTagDurationRepair {
+  ViktorTagDurationRepair(this.db);
+  final DatabaseService db;
+
+  static bool matches(String input) {
+    final text = input.trim().toLowerCase().replaceAll('ё', 'е');
+    return RegExp(
+      r'^(исправь|обнови|пересчитай|синхронизируй|приведи|выстави)(?:\s|$|[,.!])',
+    ).hasMatch(text) &&
+        text.contains('длительност') &&
+        text.contains('план') &&
+        text.contains('тег') &&
+        text.contains('сегодня') &&
+        text.contains('завтра') &&
+        !text.contains('не меняй') &&
+        !text.contains('не исправляй');
+  }
+
+  /// This special command must honour the user's actual date scope.
+  /// "Yesterday" cannot silently disappear when the user says
+  /// "yesterday, today and tomorrow". Use civil calendar dates, not
+  /// 24-hour offsets across DST boundaries.
+  static bool includesYesterday(String input) {
+    final text = input.toLowerCase().replaceAll('ё', 'е');
+    if (RegExp(r'(?:не\s+трогай|не\s+меняй|кроме|без)\s+вчера')
+        .hasMatch(text)) return false;
+    return RegExp(r'(?:^|[^а-яa-z])(?:вчера|yesterday)(?:$|[^а-яa-z])')
+        .hasMatch(text);
+  }
+
+  static List<DateTime> targetDays(DateTime today,
+      {bool includeYesterday = false}) => [
+    if (includeYesterday)
+      DateTime(today.year, today.month, today.day - 1),
+    DateTime(today.year, today.month, today.day),
+    DateTime(today.year, today.month, today.day + 1),
+  ];
+
+  /// Unknown, duplicate, or conflicting tag defaults are never guessed.
+  static int? defaultMinutes(List<Tag> assigned, List<Tag> catalog) {
+    final minutes = <int>{};
+    if (assigned.isEmpty) return null;
+    for (final tag in assigned) {
+      final matches = catalog.where((item) {
+        final id = tag.pbRecordId?.trim() ?? '';
+        if (id.isNotEmpty) return item.pbRecordId == id;
+        if (tag.tagId > 0) return item.tagId == tag.tagId;
+        return item.name.trim().toLowerCase() ==
+            tag.name.trim().toLowerCase();
+      }).toList();
+      if (matches.length != 1) return null;
+      final fallback = matches.single.defaultPlanDurationMinutes;
+      if (fallback != null) minutes.add(fallback);
+    }
+    if (minutes.length != 1) return null;
+    final result = minutes.single;
+    return result >= 10 && result <= 1440 ? result : null;
+  }
+
+  Future<ViktorBulkPreview> prepare(DateTime today,
+      {bool keepFeasibleOnly = false,
+      bool includeYesterday = false}) async {
+    if (db.pocketBase.authStore.token.trim().isEmpty ||
+        db.pocketBase.authStore.record == null) {
+      throw StateError('Для изменения планов войдите в LIFE OS.');
+    }
+    final catalog = await db.fetchTagsForCurrentUser(
+        scope: TagCatalogScope.plan);
+    final fixedTagIds = await TimeViewFixedTagPrefs.load();
+    if (!catalog.any((tag) => tag.defaultPlanDurationMinutes != null)) {
+      throw StateError('Не найдены базовые длительности тегов. '
+          'Планы не изменены.');
+    }
+    final days = targetDays(today, includeYesterday: includeYesterday);
+    final snapshotPlans = <PlanningTask>[];
+    final moves = <ViktorBulkMove>[];
+    final excludedPlanTitles = <String>[];
+    for (final day in days) {
+      final plans = await db.getPlanningTasksForWallDate(day);
+      snapshotPlans.addAll(plans);
+      final targetDurations = <String, int>{};
+      bool fixed(PlanningTask p) =>
+          isPlanFixedInTimeView(p, fixedTagIds) ||
+          (db.getCategoryRuleById(p.categoryId)
+                  ?.defaultPlanTime ?? '').trim().isNotEmpty;
+      for (final plan in plans) {
+        if (plan.isDone || plan.startTime == null ||
+            plan.endDateTime == null || plan.pocketRecordId == null ||
+            (plan.rrule ?? '').isNotEmpty ||
+            (plan.recurrenceInstanceDateKey ?? '').isNotEmpty ||
+            plan.recordIdForBackend.startsWith('virt-') ||
+            plan.recordIdForBackend.startsWith('optimistic-') ||
+            fixed(plan)) continue;
+        final duration = defaultMinutes(plan.tags, catalog);
+        if (duration == null) continue;
+        final old = plan.endDateTime!
+            .difference(plan.startTime!).inMinutes;
+        if (old == duration || old < 10 || old > 1440) continue;
+        targetDurations[plan.pocketRecordId!] = duration;
+      }
+      if (targetDurations.isEmpty) continue;
+      if (keepFeasibleOnly) {
+        final subset = const ViktorTagDurationReflow().calculateFeasibleSubset(
+          day: day, plans: plans, targetDurationMinutes: targetDurations,
+          fixedTime: fixed,
+        );
+        moves.addAll(subset.moves);
+        excludedPlanTitles.addAll(subset.excludedPlans);
+      } else {
+        moves.addAll(const ViktorTagDurationReflow().calculate(
+          day: day, plans: plans, targetDurationMinutes: targetDurations,
+          fixedTime: fixed,
+        ));
+      }
+    }
+    if (moves.isEmpty) {
+      if (excludedPlanTitles.isNotEmpty) {
+        throw StateError('Даже частичный вариант не удалось составить '
+            'без сдвига закреплённых событий. Ничего не сохранено. '
+            'Можно перенести гибкие задачи на другую дату, '
+            'сократить их длительность или освободить более '
+            'раннее время.');
+      }
+      throw StateError('Нет планов с однозначной базовой длительностью, '
+          'требующих изменения. Планы не изменены.');
+    }
+    if (moves.length > 80) {
+      throw StateError('Более 80 затронутых планов. '
+          'Автоматическое изменение отменено.');
+    }
+    final tagSnapshot = [
+      for (final tag in catalog)
+        (tag.pbRecordId ?? '') + '|' +
+            tag.tagId.toString() + '|' +
+            (tag.defaultPlanDurationMinutes?.toString() ?? ''),
+    ]..sort();
+    final fixedTagSnapshot = fixedTagIds.toList()..sort();
+    final signature = ViktorBulkPlanner.snapshot(
+          snapshotPlans, const <PlanningTask>[]) +
+        '\n' + tagSnapshot.join('\n') +
+        '\nfixed-tags:' + fixedTagSnapshot.join('|');
+    return ViktorBulkPreview(moves, signature,
+        excludedPlanTitles: List.unmodifiable(excludedPlanTitles));
+  }
+
+  Future<String> apply(ViktorBulkPreview approved,
+      DateTime today, String requestId,
+      {bool keepFeasibleOnly = false,
+      bool includeYesterday = false}) async {
+    final fresh = await prepare(today,
+        keepFeasibleOnly: keepFeasibleOnly,
+        includeYesterday: includeYesterday);
+    if (approved.signature != fresh.signature ||
+        approved.describe() != fresh.describe()) {
+      throw StateError('Планы или длительности тегов изменились '
+          'после подтверждения. Повторите предпросмотр.');
+    }
+    // One server-side transaction; no partial per-card PATCH fallback.
+    return ViktorAtomicBulkGateway(db).commit(
+        approved: fresh, requestId: requestId);
+  }
+}
+).hasMatch(id)) {
+        throw StateError('«$title»: категория не синхронизирована. '
+            'Групповое сохранение отменено.');
+      }
+      intervals.add((start: start, end: end, title: title));
+      rows.add({
+        'title': title,
+        'category_id': id,
+        'start_time': db.viktorProfileWallToUtc(start).toIso8601String(),
+        'end_time': db.viktorProfileWallToUtc(end).toIso8601String(),
+        'initial_date_key': day,
+      });
+      report.add('$day ${clock(start)}–${clock(end)}  $title');
+    }
+    report.add('Все планы будут записаны атомарно после подтверждения.');
+    return (description: report.join('\\n'), rows: rows);
   }
 
   Future<ViktorBulkPreview> _planBulk(ViktorAction action) async {
