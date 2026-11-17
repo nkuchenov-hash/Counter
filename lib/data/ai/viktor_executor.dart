@@ -214,10 +214,13 @@ class ViktorExecutor {
         if (ViktorDateScope.key(now) != date || !now.isAfter(base)) {
           return base;
         }
-        // A move with no requested hour must not schedule its first task
-        // into the past. Round UP to the next minute in profile wall time.
-        return DateTime(d.year, d.month, d.day, now.hour,
-            now.minute).add(const Duration(minutes: 1));
+        // Leave a short approval window: start on the next 5-minute mark
+        // at least 5 minutes ahead. Freeze this clock for preview/apply;
+        // an expired preview must be explicitly regenerated.
+        final earliestMinute = now.hour * 60 + now.minute + 6;
+        final nextFiveMinute = ((earliestMinute + 4) ~/ 5) * 5;
+        return DateTime(d.year, d.month, d.day)
+            .add(Duration(minutes: nextFiveMinute));
       },
       categoryName: (plan) {
         final path = db.getCategoryPath(plan.categoryId).trim();
