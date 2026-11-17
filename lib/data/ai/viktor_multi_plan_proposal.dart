@@ -98,6 +98,6 @@ class ViktorMultiPlanProposal {
       lines.add('$day ${clock(start)}–${clock(end)}  $title');
     }
     lines.add('Все изменения будут применены только после подтверждения.');
-    return ViktorMultiPlanProposal(lines.join('\\n'), rows);
+    return ViktorMultiPlanProposal(lines.join('\n'), rows);
   }
 }
