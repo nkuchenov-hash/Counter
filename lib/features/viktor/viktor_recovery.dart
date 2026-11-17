@@ -145,6 +145,9 @@ extension _ViktorRecoveryDialogue on _ViktorChatPageState {
     return next;
   }
 
+  /// Failed actions are NOT decision trees. Never echo the model's
+  /// speculative alternatives or start an advice-only call for an explicit
+  /// command. A short factual failure keeps the user's intent intact.
   Future<void> _offerRecovery({
     required String input,
     required Object failure,
@@ -155,106 +158,20 @@ extension _ViktorRecoveryDialogue on _ViktorChatPageState {
     bool writeStarted = false,
   }) async {
     if (!mounted) return;
-    // After a write starts, its result may be uncertain. Never recommend
-    // replaying a potentially committed command, which could duplicate work.
     if (writeStarted) {
-      _push('Не удалось подтвердить результат изменения. '
-          'Проверьте текущее расписание перед повторной командой. '
-          'Я не буду повторять запись автоматически.');
+      _push('Результат сохранения не подтверждён. '
+          'Проверьте расписание; повторная запись не выполнялась.');
       return;
     }
     final reason = _friendlyError(failure);
-    // Scheduling errors must be actionable, not a generic menu of unverified
-    // alternatives. The retry/replan path has already had its bounded chance.
-    // Never ask the user to choose an arbitrary "partial" solution when the
-    // request and its target date were unambiguous.
-    final scheduleIntent = RegExp(
-      r'план|расписан|длительност|перенес|сдвин|встреч|schedule|duration',
-      caseSensitive: false,
-    ).hasMatch(input);
-    if (scheduleIntent) {
-      _push('Расписание не изменено. Причина: $reason');
-      return;
-    }
-    if (failure is FormatException ||
-        failure is! StateError && failure is! ViktorTagDurationOverflow) {
-      final providerReason = reason.toLowerCase();
-      final providerIssue = providerReason.contains('провайдер') ||
-          providerReason.contains('модел') ||
-          providerReason.contains('yandex') ||
-          providerReason.contains('viktor:') ||
-          providerReason.contains('provider_');
-      final scheduleRequest = RegExp(
-        r'план|расписан|длительност|перенес|сдвин|встреч|schedule|duration',
-        caseSensitive: false,
-      ).hasMatch(input);
-      if (scheduleRequest) {
-        _push(providerIssue
-            ? 'Выбранная модель не дала пригодного ответа, но '
-              'расписание не изменено. Можно проверить частичный '
-              'пересчёт длительностей, попробовать перенести гибкие '
-              'задачи на другую дату или пересмотреть отдельные '
-              'ограничения. Доступность этих вариантов ещё нужно '
-              'проверить по расписанию. Что проверяем первым?'
-            : 'Не удалось завершить проверку расписания. Ничего '
-              'не изменено. Могу проверить частичный вариант, '
-              'перенос гибких задач или другой временной интервал. '
-              'Какой путь выбрать?');
-      } else {
-        _push('Не удалось подтвердить действие, поэтому ничего '
-            'не изменено. Можем проверить исходные данные или '
-            'разбить запрос на более узкие действия. '
-            'Что проверить первым?');
-      }
-      return;
-    }
-    final groundedContext = failure is ViktorTagDurationOverflow
-        ? 'Расписание ${ViktorDateScope.key(failure.day)}: план '
-          '«${failure.plan.title}» на ${failure.minutes} минут '
-          'не помещается. Закреплённые и повторяющиеся планы нельзя '
-          'сдвигать. Проверяемый частичный вариант доступен по '
-          'запросу «покажи частичный вариант». Перенос на другую дату '
-          'ещё не проверен; ни один вариант не сохранён.'
-        : 'Application validation rejected the requested operation '
-          'before writing: $reason. Any new action must pass a fresh '
-          'Brain preview and user confirmation.';
-    try {
-      final result = await _gateway.propose(
-        input: input, wallDay: day, plans: plans,
-        settings: _settings, selectedPlanIds: widget.selectedPlanIds,
-        requestId: requestId, conversationHistory: conversation,
-        adviceOnly: true, recoveryContext: groundedContext,
-        allowRepair: false,
-      );
-      if (!mounted) return;
-      final explanation = result.message.trim();
-      if (explanation.isNotEmpty) {
-        _push(explanation);
-        return;
-      }
-    } catch (_) {
-      // Advice is optional; never allow a second provider error to overwrite
-      // the grounded original rejection or initiate any mutation.
-    }
-    if (!mounted) return;
-    final scheduleRequest = RegExp(
-      r'план|расписан|длительност|перенес|сдвин|встреч|schedule|duration',
-      caseSensitive: false,
-    ).hasMatch(input);
-    _push(failure is ViktorTagDurationOverflow
-        ? 'В расписании не помещается «${failure.plan.title}» '
-          '(${failure.minutes} мин.). Могу показать проверяемый '
-          'частичный пересчёт, при котором закреплённые встречи '
-          'не сдвигаются, либо сначала проверить перенос гибких '
-          'задач на другой день. Что выбрать?'
-        : scheduleRequest
-            ? 'Первая попытка не подошла. Могу проверить '
-              'другое размещение гибких задач, перенос на '
-              'соседний день или сохранение только допустимых '
-              'изменений. Что важнее сохранить без изменений?'
-            : 'Действие не прошло проверку. Можно сначала '
-              'изучить актуальные данные или уточнить, какую '
-              'часть запроса выполнить. Что проверим?');
+    final shortReason = reason.length > 145
+        ? '${reason.substring(0, 145)}…' : reason;
+    final schedule = ViktorReadAnswer.requiresScheduleAction(input) ||
+        RegExp(r'план|расписан|перенес|перенос|schedule',
+          caseSensitive: false).hasMatch(input);
+    _push(schedule
+        ? 'Расписание не изменено: $shortReason'
+        : 'Изменений нет: $shortReason');
   }
 
 }
