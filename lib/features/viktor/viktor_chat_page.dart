@@ -334,7 +334,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       if (completed == null) {
         await _offerRecovery(
           input: input, failure: StateError(
-            'Черновик требует уточнения часового пояса или расписания.'),
+            'ИИ не смог сформировать допустимое действие для сохранения.'),
           day: intentDay, plans: plans, requestId: requestId,
           conversation: dialogContext,
         );
@@ -371,12 +371,15 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       }
       final resolvedActions = response.actions;
       if (resolvedActions == null) {
-        if (response.message.trim().isNotEmpty) {
-          _push(response.message.trim());
+        if (ViktorReadAnswer.requiresScheduleAction(input)) {
+          await _offerRecovery(
+            input: input, failure: StateError('Не получено действие '
+              'для сохранения запроса.'), day: intentDay,
+            plans: plans, requestId: requestId, conversation: dialogContext);
+          return;
         }
-        if (latestReadAnswer != null) {
-          _push(latestReadAnswer);
-        }
+        if (response.message.trim().isNotEmpty) _push(response.message.trim());
+        if (latestReadAnswer != null) _push(latestReadAnswer);
         return;
       }
       // Only an all-timed, all-create proposal can be promoted to one
@@ -405,16 +408,9 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         );
         if (!mounted) return;
         if (recovered.actions == null || recovered.preview == null) {
-          final answer = recovered.answer?.trim() ?? '';
-          if (answer.isNotEmpty) {
-            _push(answer);
-          } else {
-            await _offerRecovery(
-              input: input, failure: failure, day: intentDay,
-              plans: plans, requestId: requestId,
-              conversation: dialogContext,
-            );
-          }
+          await _offerRecovery(
+            input: input, failure: failure, day: intentDay,
+            plans: plans, requestId: requestId, conversation: dialogContext);
           return;
         }
         preview = recovered.preview!;
