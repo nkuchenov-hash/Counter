@@ -168,7 +168,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **updated** | ISO8601 String | System | NO | PocketBase auto-updates this. |
 | **primary_language**| String | UI | **YES** | App interface language code (e.g., "ru", "en"). |
 | **theme_mode** | Select | UI | **YES** | App appearance: `light`, `dark`, or `system`. |
-| **preferred_timezone**| String | Time | **YES** | Canonical profile timezone (`UTC`, `London`, `Moscow`, `Dubai`, `New York`; legacy offset labels are normalized on read). |
+| **preferred_timezone**| String | Time | **YES** | Canonical profile timezone: five legacy quick-preset labels (`UTC`, `London`, `Moscow`, `Dubai`, `New York`) or a valid IANA ID selected from device-auto mode (e.g. `Europe/Berlin`, `Europe/Moscow`). Legacy offset labels are normalized on read. |
 | **timezone_offset** | Number | Time | **YES** | Numerical offset from UTC (e.g., -5). |
 | **biometric_enabled**| Bool | Security | **YES** | Toggle for FaceID/Fingerprint authentication. |
 | **is_admin** | Bool | Access | NO | Admin-only app flag. Default false. Read-only for the client UI. Used to reveal internal/admin tools such as Component Lab. Managed manually in PocketBase Admin UI; normal profile settings must not PATCH this field. |
@@ -184,7 +184,7 @@ description: Revisions and corrections for DATA_MAP.md.
 1. **The Role of `user_id` vs `id`:**
    * PocketBase handles auth and relations via `id`. `user_id` acts as your business logic/offline master key. Relations from other tables should point to the system `id`.
 2. **Timezone Handling:**
-   * **Preferred Timezone:** Used for display (showing the user which city/zone they selected).
+   * **Preferred Timezone:** User-selected profile wall-clock authority. Manual preset labels and valid device IANA IDs are supported; IANA projection must follow DST. Device-auto mode is a per-device opt-in stored locally and must never infer location from VPN/IP. The profile preference is still saved through the existing Brain API.
    * **Timezone Offset:** Used for calculations to ensure the time is stored correctly in UTC.
 3. **PATCH vs. Full Update:**
    * Use `PATCH /api/collections/profiles/records/{id}` for updating settings like `theme_mode`. Passwords and emails should use native PocketBase auth update endpoints.
