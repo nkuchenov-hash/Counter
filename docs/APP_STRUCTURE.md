@@ -347,7 +347,8 @@ UTC/wall-clock and timezone catalog code used by Brain plus more than one UI sur
 | `app_clock.dart` | Injectable wall clock + timezone label |
 | `profile_timezone_actions.dart` | Injectable profile timezone read/write hooks (`ProfileTimezoneActions`) |
 | `profile_timezone_catalog.dart` | Canonical profile timezone catalog, IANA IDs, DST labels |
-| `wall_clock.dart` | UTC ↔ profile wall-clock conversion (no device TZ) |
+| `timezone_quick_preferences.dart` | Per-device auto timezone mode and profile-scoped quick favorites (SharedPreferences; no IP detection) |
+| `wall_clock.dart` | UTC ↔ profile wall-clock conversion; supports preset and arbitrary IANA profile zones, never reads the device directly |
 | `plan_time_labels.dart` | Plan wall-time label formatting (Brain + Planning + plan cards) |
 | `plan_time_visible_window.dart` | Extended Time View day window math (−3..27 h); Brain cascade + Planning |
 | `category_timezone_options.dart` | Per-category default plan-time IANA option list |
