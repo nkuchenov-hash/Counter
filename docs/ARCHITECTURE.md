@@ -112,9 +112,15 @@
 
 ---
 
+### Viktor atomic multi-plan and carry-forward boundary (2026-11-17)
+
+New timed plans in a single approved request use `ViktorMultiPlanProposal` (read-only scope and collision preview) and `ViktorAtomicCreateGateway` (single authenticated `POST /api/viktor/schedule/create`). The PocketBase hook owns a transaction over all creates, validates plan/category ownership, rejects overlaps, and recognizes an exact replay by deterministic per-item business UUID. It returns IDs for independent client read-back. **No fallback to independent `addPlanningTask` calls or partial success** after an ambiguous response. Only explicit user-approved multi-create is eligible. The model cannot pass raw rows directly to PocketBase.
+
+Existing-plan moves remain under `ViktorAtomicBulkGateway` and `POST /api/viktor/schedule/commit`, never the creation endpoint. An omitted target clock means first-fit placement by the Brain around existing commitments, after today's current profile-wall time. Explicit hours stay fixed. The source fingerprint is rechecked before saving; no outbox/optimistic start/stop, schema, time zone or unrelated app paths change.
+
 ### Viktor recovery boundary
 
-Viktor's model may propose a different application action after a **pre-write** validation failure, with at most two additional non-mutating read observations before finalizing a different proposal. A changed proposal is always previewed against fresh Brain state and explicitly approved before execution, even if the ordinary one-action policy would auto-apply it. If the attempt still fails, the `advice_only` provider path sends sanitized, scoped recovery context and **server-forces `actions: []`, `continue: false`**. Flutter also ignores returned actions in this mode. No write replay after a commit has started because the outcome may be uncertain. Existing PocketBase ownership, fixed-time, recurrence, timezone, offline-first, and optimistic UI laws remain intact.
+Viktor's model may propose a different application action after a **pre-write** validation failure, with at most two additional non-mutating read observations before finalizing a different proposal. A changed proposal is always previewed against fresh Brain state and explicitly approved before execution, even if the ordinary one-action policy would auto-apply it. If the attempt still fails for a **schedule command**, Flutter reports the concrete failure and no-write/uncertain-write state without asking repetitive arbitrary-option questions. The `advice_only` provider path remains available for non-schedule domains, server-forces `actions: []`, `continue: false`, and Flutter ignores returned actions. No write replay after a commit has started because the outcome may be uncertain. Existing PocketBase ownership, fixed-time, recurrence, timezone, offline-first, and optimistic UI laws remain intact.
 
 ## 4. API shape
 
