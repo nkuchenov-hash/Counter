@@ -406,6 +406,7 @@ class ViktorBulkPlanner {
     required bool Function(PlanningTask) fixedTime,
     Map<String, List<PlanningTask>>? allDays,
     String Function(PlanningTask)? categoryName,
+    DateTime Function(String day)? autoStart,
   }) {
     final ops = action.arguments['operations'] as List;
     final days = allDays ?? {
@@ -514,15 +515,49 @@ class ViktorBulkPlanner {
         }
         final hhmm = op['start_time'] as String?;
         final zone = (op['timezone'] as String?) ?? 'profile';
+        // When the user did not specify an hour, the Brain supplies the
+        // earliest admissible time (never earlier than "now" for today).
+        // Explicit times remain strict constraints, not suggestions.
+        final automatic = move && hhmm == null;
+        final target = DateTime.parse(date);
         var cursor = hhmm != null
-          ? wallTime(date, hhmm, zone) : chosen.first.startTime!;
+          ? wallTime(date, hhmm, zone)
+          : automatic
+              ? (autoStart?.call(date) ??
+                  DateTime(target.year, target.month, target.day, 9))
+              : (chosen.first.startTime ??
+                  (throw StateError('Для уплотнения «${chosen.first.title}» '
+                      'нужно указать длительность и время.')));
         final previousEnd = endByDay[date];
         if (previousEnd != null && cursor.isBefore(previousEnd)) {
           cursor = previousEnd;
         }
         for (final p in chosen) {
           guard(p);
-          final end = cursor.add(p.endDateTime!.difference(p.startTime!));
+          final duration = p.endDateTime!.difference(p.startTime!);
+          if (automatic) {
+            // First-fit over CURRENT destination commitments and previously
+            // placed moves. Preserve their original times and avoid every
+            // protected/Price Reporter block instead of failing at the first
+            // collision or shifting an unrelated plan.
+            final occupied = <({DateTime start, DateTime end})>[
+              for (final existing in days[date]!)
+                if (existing.startTime != null &&
+                    existing.endDateTime != null &&
+                    !used.contains(existing.pocketRecordId))
+                  (start: existing.startTime!, end: existing.endDateTime!),
+              for (final inserted in moves)
+                if (inserted.day == date)
+                  (start: inserted.start, end: inserted.end),
+            ]..sort((a, b) => a.start.compareTo(b.start));
+            for (final interval in occupied) {
+              if (cursor.isBefore(interval.end) &&
+                  cursor.add(duration).isAfter(interval.start)) {
+                cursor = interval.end;
+              }
+            }
+          }
+          final end = cursor.add(duration);
           if (key(cursor) != date || key(end) != date) {
             throw StateError('«${p.title}»: время выходит за границы ${date}.');
           }
