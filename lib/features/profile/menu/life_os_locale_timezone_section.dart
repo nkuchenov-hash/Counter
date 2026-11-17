@@ -106,7 +106,15 @@ class _LifeOsLocaleTimezoneControlsState
 
   Future<void> _setAutomaticTimezone(bool enabled) async {
     if (_savingTimezone || !_timezonePreferencesLoaded) return;
-    setState(() => _savingTimezone = true);
+    final previous = _timezonePreferences;
+    // Optimistic visual feedback before the platform channel / PocketBase.
+    setState(() {
+      _savingTimezone = true;
+      _timezonePreferences = TimezoneQuickPreferences(
+        automatic: enabled, favorites: previous.favorites,
+      );
+    });
+    var committed = false;
     try {
       if (enabled) {
         final zone = _deviceTimezone ??
@@ -125,14 +133,16 @@ class _LifeOsLocaleTimezoneControlsState
       }
       await TimezoneQuickPreferenceStore.setAutomatic(
           _timezoneProfileId, enabled);
-      if (!mounted) return;
-      setState(() => _timezonePreferences = TimezoneQuickPreferences(
-        automatic: enabled, favorites: _timezonePreferences.favorites,
-      ));
+      committed = true;
     } catch (_) {
       AppSnack.failed();
     } finally {
-      if (mounted) setState(() => _savingTimezone = false);
+      if (mounted) {
+        setState(() {
+          _savingTimezone = false;
+          if (!committed) _timezonePreferences = previous;
+        });
+      }
     }
   }
 
