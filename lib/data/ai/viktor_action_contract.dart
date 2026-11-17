@@ -471,6 +471,41 @@ class ViktorActionBatch {
   final String requestId;
   final List<ViktorAction> actions;
 
+  /// Promote a legacy provider's collection of create_plan actions into ONE
+  /// protected server transaction. A mixed Record/Plan batch, a shifted
+  /// insertion, or any untimed item is never silently promoted.
+  static ViktorActionBatch? atomicTimedCreates(ViktorActionBatch original) {
+    final creates = original.actions
+        .where((a) => a.name == 'create_plan').toList();
+    if (creates.length < 2 || creates.length > 12 ||
+        creates.length != original.actions.length ||
+        creates.any((a) =>
+            !a.arguments.containsKey('start_time') ||
+            !a.arguments.containsKey('duration_minutes') ||
+            a.arguments['conflict_policy'] == 'shift')) {
+      return null;
+    }
+    return ViktorActionBatch.fromJson({
+      'version': version,
+      'request_id': original.requestId,
+      'actions': [{
+        'name': 'create_plans_batch',
+        'arguments': {
+          'plans': [
+            for (final action in creates) {
+              'title': action.arguments['title'],
+              'wall_day': action.arguments['wall_day'],
+              'start_time': action.arguments['start_time'],
+              'duration_minutes': action.arguments['duration_minutes'],
+              if (action.arguments['timezone'] != null)
+                'timezone': action.arguments['timezone'],
+            },
+          ],
+        },
+      }],
+    });
+  }
+
   bool get hasMutations => actions.any((a) => a.isMutation);
 
   /// A single reversible change may be applied without an extra confirmation
