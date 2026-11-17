@@ -305,23 +305,15 @@ class _MobileNotesLibrary extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              NotesFolderPane(
-                categoryId: category.filterCategoryId,
-                edgeToEdge: true,
-                child: content,
-              ),
-              // The search field floats over the scrollable paper instead
-              // of cutting it off with a full-width opaque footer plate.
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-                  child: Row(
+          child: Stack(children: [
+            Positioned.fill(child: NotesFolderPane(
+              categoryId: category.filterCategoryId,
+              edgeToEdge: true, child: content)),
+            Positioned(
+              left: 0, right: 0, bottom: 0,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                child: Row(
               children: [
                 Expanded(
                   child: NotesGlmLibraryInput(
@@ -351,12 +343,11 @@ class _MobileNotesLibrary extends StatelessWidget {
                   loading: creatingNewNote,
                   onPressed: creatingNewNote ? null : onNewNote,
                 ),
-              ],
-                  ),
+                ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ]),
         ),
       ],
     ));
