@@ -89,6 +89,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   bool _savingLanguage = false;
   bool _savingTimezone = false;
   bool _timezonePreferencesLoaded = false;
+  bool _timezoneLoadStarted = false;
   String? _deviceTimezone;
   TimezoneQuickPreferences _timezonePreferences =
       const TimezoneQuickPreferences(automatic: false, favorites: []);
@@ -104,7 +105,11 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     _planningDefaultTimesOpen = _mobileDetailOpen = widget.initialDefaultPlanTimes;
     _name.text = DatabaseService.instance.settings.displayName ?? '';
     unawaited(_load());
-    unawaited(_loadTimezoneControls());
+    if (_tab == 'appearance') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _ensureTimezoneControlsLoaded();
+      });
+    }
   }
 
   Future<void> _load() async {
@@ -139,6 +144,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
       _tab = next;
       _mobileDetailOpen = true; _planningDefaultTimesOpen = false;
     });
+    if (next == 'appearance') _ensureTimezoneControlsLoaded();
   }
 
   void _backToMobileSettings() {
@@ -233,6 +239,12 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     if (mounted) setState(() {});
   }
 
+
+  void _ensureTimezoneControlsLoaded() {
+    if (_timezoneLoadStarted) return;
+    _timezoneLoadStarted = true;
+    unawaited(_loadTimezoneControls());
+  }
 
   String get _timezoneProfileId =>
       DatabaseService.instance.currentProfileId ?? '';
