@@ -72,8 +72,30 @@ void main() {
         ]},
       }],
     };
-    expect(() => ViktorActionBatch.fromJson(missingClock),
-        throwsFormatException);
+    expect(ViktorActionBatch.fromJson(missingClock)
+        .actions.single.arguments['plans'], hasLength(2));
+    final fill = ViktorActionBatch.fromJson({
+      'version': 1, 'request_id': 'viktor_batch_remainder',
+      'actions': [{'name': 'create_plans_batch', 'arguments': {'plans': [
+        {'title': 'Яйца', 'wall_day': '2026-11-17',
+         'duration_minutes': 30},
+        {'title': 'Рыба', 'wall_day': '2026-11-17',
+         'duration_minutes': 20},
+        {'title': 'Электрика', 'wall_day': '2026-11-17',
+         'fill_remaining': true},
+      ]}}],
+    });
+    expect((fill.actions.single.arguments['plans'] as List).last
+        ['fill_remaining'], isTrue);
+    final invalid = {
+      'version': 1, 'request_id': 'viktor_batch_missing_duration',
+      'actions': [{'name': 'create_plans_batch', 'arguments': {'plans': [
+        {'title': 'Яйца', 'wall_day': '2026-11-17'},
+        {'title': 'Рыба', 'wall_day': '2026-11-17',
+         'duration_minutes': 20},
+      ]}}],
+    };
+    expect(() => ViktorActionBatch.fromJson(invalid), throwsFormatException);
   });
 
 
