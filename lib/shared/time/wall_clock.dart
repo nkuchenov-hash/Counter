@@ -1,6 +1,7 @@
 /// PLANETARY_TIME (v5.0): Storage is UTC only.
 /// USER_PROFILE_SOVEREIGNTY: Display and day-boundary logic uses the user's profile offset only.
-/// BANNED: DateTime.toLocal(), system timezone, browser/device timezone.
+/// Device timezone may be explicitly selected into the profile by the opt-in
+/// automatic setting. Day bucketing never reads the device clock directly.
 library;
 
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
@@ -13,8 +14,16 @@ bool profileLabelUsesNewYorkWallClock(String preferredTzLabel) {
 
 String? profileLabelIanaId(String preferredTzLabel) {
   final entry = catalogEntryForStoredTimezone(preferredTzLabel);
-  if (entry == null || entry.fixed) return null;
-  return entry.ianaId;
+  if (entry != null) return entry.fixed ? null : entry.ianaId;
+  // The OS can report any valid IANA zone, not just the five quick presets.
+  // Never silently project an unrecognized but valid zone as UTC.
+  final id = preferredTzLabel.trim();
+  try {
+    tz.getLocation(id);
+    return id;
+  } catch (_) {
+    return null;
+  }
 }
 
 /// Wall-clock view of [utc]: either fixed [offsetHours] or the selected profile IANA zone.
