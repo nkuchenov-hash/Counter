@@ -36,7 +36,7 @@ class ViktorDateScope {
         r'not|except|unless').hasMatch(text)) return null;
     final today = DateTime(
         profileToday.year, profileToday.month, profileToday.day);
-    final yesterday = today.subtract(const Duration(days: 1));
+    final yesterday = DateTime(today.year, today.month, today.day - 1);
     return ViktorActionBatch.fromJson({
       'version': ViktorActionBatch.version,
       'request_id': requestId,
