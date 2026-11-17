@@ -41,6 +41,44 @@ PlanningTask _plan(String id, String title, int hour, int minute,
 }
 
 void main() {
+  test('Narrated user chores preserve their durations and only create Plans', () {
+    final input = 'Сегодня приём пищи был полчаса, после этого был '
+        'вайбкодинг на час, после дела по дому: приготовление яиц '
+        'полчаса, приготовление рыбы 20 минут, обустройство электрики '
+        'в спальне оставшееся время';
+    final batch = ViktorDateScope.narratedChoreBatch(
+      input: input, profileToday: DateTime(2026, 11, 17),
+      requestId: 'viktor_real_chore_intent');
+    expect(batch, isNotNull);
+    expect(batch!.actions.map((a) => a.name), ['create_plans_batch']);
+    final plans = batch.actions.single.arguments['plans'] as List;
+    expect(plans.length, 3);
+    expect(plans[0]['title'], 'приготовление яиц');
+    expect(plans[0]['duration_minutes'], 30);
+    expect(plans[1]['title'], 'приготовление рыбы');
+    expect(plans[1]['duration_minutes'], 20);
+    expect(plans[2]['title'], 'обустройство электрики в спальне');
+    expect(plans[2]['fill_remaining'], true);
+    expect(plans.every((p) => p['wall_day'] == '2026-11-17'), true);
+    expect(plans.every((p) => !p.containsKey('start_time')), true);
+    expect(plans.any((p) => p['title'].toString().contains('вайбкодинг')),
+        false, reason: 'Past activity cannot become a future Plan');
+  });
+
+  test('Conservative chores parser refuses unspecified/unsafe durations', () {
+    for (final sentence in [
+      'Сегодня приём пищи, после дела по дому: приготовить яйца, рыбу',
+      'Сегодня после дела по дому: яйца полчаса, рыба немного',
+      'Вчера после дела по дому: яйца полчаса, рыба 20 минут',
+      'Сегодня после дела по дому: яйца полчаса, рыба 20 минут, '
+          'ремонт оставшееся время, звонок 10 минут',
+    ]) {
+      expect(ViktorDateScope.narratedChoreBatch(
+          input: sentence, profileToday: DateTime(2026, 11, 17),
+          requestId: 'viktor_no_guesses'), isNull, reason: sentence);
+    }
+  });
+
   test('Explicit yesterday unfinished carry-forward bypasses model', () {
     final batch = ViktorDateScope.directYesterdayCarryForward(
       input: 'Перенеси вчерашние невыполненные планы на сегодня',
