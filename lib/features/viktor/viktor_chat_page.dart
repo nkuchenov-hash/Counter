@@ -92,9 +92,10 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
     final carryForward = ViktorDateScope.directYesterdayCarryForward(
         input: input, profileToday: profileToday, requestId: requestId);
-    // Native schedule commands do not need an LLM key or model connection.
+    final structuredChores = ViktorDateScope.narratedChoreBatch(
+        input: input, profileToday: profileToday, requestId: requestId);
     if (independentPlan == null && carryForward == null &&
-        !_settingsReady) return;
+        structuredChores == null && !_settingsReady) return;
     // A fresh self-contained dated plan must never inherit an unrelated
     // unfinished itinerary, even when remote chat history is still syncing.
     final hadPreviousRequest = _messages.skip(1).any((turn) => turn.isUser);
@@ -109,7 +110,8 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     }
     final dialogContext = ViktorDialogueTurn.modelContext(_messages.skip(1));
     if (independentPlan == null && carryForward == null &&
-        _settings.mode == 'byok' && !_settings.modelConnected) {
+        structuredChores == null && _settings.mode == 'byok' &&
+        !_settings.modelConnected) {
       await _openSettings();
       if (!mounted || !_settings.modelConnected) return;
     }
@@ -141,6 +143,9 @@ class _ViktorChatPageState extends State<ViktorChatPage>
             onWriteStarted: () => writeStarted = true);
         return;
       }
+      if (structuredChores != null && await _tryNarratedChoreFallback(
+          input: input, requestId: requestId, executor: executor,
+          onWriteStarted: () => writeStarted = true)) return;
       final resumePartialDuration =
           ViktorDurationConversation.wantsFeasibleSubset(
             input, pending: _durationConflictPending,
@@ -332,9 +337,6 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           input, response, plans, toolObservations, requestId, dialogContext,
           intentDay);
       if (completed == null) {
-        if (await _tryNarratedChoreFallback(input: input,
-            requestId: requestId, executor: executor,
-            onWriteStarted: () => writeStarted = true)) return;
         await _offerRecovery(
           input: input, failure: StateError(
             'ИИ не смог сформировать допустимое действие для сохранения.'),
