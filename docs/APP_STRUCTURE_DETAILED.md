@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `c9fcb45a` on 2026-11-17.**
+**Generated from input HEAD `e362d54e` on 2026-11-17.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -14602,8 +14602,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain helper for data/sync — viktor atomic create gateway. Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What this is:** Brain helper for data/sync — viktor atomic create gateway.
+- **Human purpose:** Brain helper for data/sync — Owner-scoped atomic multi-plan create gateway with retry-stable IDs and independent read-back. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Owner-scoped atomic multi-plan create gateway with retry-stable IDs and independent read-back.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
 - **Contents:** Dart helpers and types (`ViktorAtomicCreateGateway`).
 - **Key code names:** `ViktorAtomicCreateGateway`
@@ -14613,10 +14613,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** viktor atomic create gateway
+- **Responsibilities:** Owner-scoped atomic multi-plan create gateway with retry-stable IDs and independent read-back
 - **When to open:** When behavior tied to `viktor_atomic_create_gateway.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor atomic create gateway
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Owner-scoped atomic multi-plan create gateway with retry-stable IDs and independent read-back
 
 RU:
 
@@ -14944,8 +14944,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain helper for data/sync — viktor multi plan proposal. Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What this is:** Brain helper for data/sync — viktor multi plan proposal.
+- **Human purpose:** Brain helper for data/sync — Read-only protected batch-create preview against current scheduled commitments and duplicate titles. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Read-only protected batch-create preview against current scheduled commitments and duplicate titles.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
 - **Contents:** Dart helpers and types (`ViktorMultiPlanProposal`).
 - **Key code names:** `ViktorMultiPlanProposal`
@@ -14955,10 +14955,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** viktor multi plan proposal
+- **Responsibilities:** Read-only protected batch-create preview against current scheduled commitments and duplicate titles
 - **When to open:** When behavior tied to `viktor_multi_plan_proposal.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor multi plan proposal
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Read-only protected batch-create preview against current scheduled commitments and duplicate titles
 
 RU:
 
