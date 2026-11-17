@@ -285,7 +285,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                                       child: AppGlassEdgeFade(
                                         edge: AppGlassEdge.bottom,
                                         surfaceColor: scheme.surface,
-                                        blurSigma: 7,
+                                        blurSigma: 0,
                                       ),
                                     ),
                                   ),
