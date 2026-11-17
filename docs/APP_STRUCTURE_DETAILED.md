@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `f3d7604e` on 2026-11-17.**
+**Generated from input HEAD `88286541` on 2026-11-17.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1027 — each appears **exactly once** below.
+**Tracked files:** 1028 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,7 +26,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 205 |
+| `production UI` | 206 |
 | `test` | 149 |
 | `Brain/data` | 120 |
 | `platform build` | 84 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 558 |
+| `PROVEN_REQUIRED` | 559 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 277 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 939 |
+| `HIGH` | 940 |
 | `MEDIUM` | 88 |
 
 ---
@@ -23316,6 +23316,44 @@ RU:
 - **Связано с:** `lib/features/profile/calendar_integrations/`, `docs/APP_STRUCTURE.md`
 
 
+### `lib/features/profile/menu/life_os_locale_timezone_section.dart`
+
+EN:
+
+- **Human purpose:** `life_os_locale_timezone_section.dart` on More → Profile and settings — life os locale timezone section. Users see `life_os_locale_timezone_section.dart` when using More → Profile and settings.
+- **What this is:** `life_os_locale_timezone_section.dart` on More → Profile and settings — life os locale timezone section.
+- **Why needed:** Users see `life_os_locale_timezone_section.dart` when using More → Profile and settings.
+- **Contents:** Primary symbols: `LifeOsLocaleTimezoneControls`, `_LifeOsLocaleTimezoneControlsState`.
+- **Key code names:** `LifeOsLocaleTimezoneControls`, `_LifeOsLocaleTimezoneControlsState`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Profile UI
+- **Responsibilities:** Implements `LifeOsLocaleTimezoneControls` and related API in `life_os_locale_timezone_section.dart`.
+- **When to open:** When behavior tied to `life_os_locale_timezone_section.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: life os locale timezone section
+
+RU:
+
+- **Зачем файл человеку:** `life_os_locale_timezone_section.dart` на More → Profile и настройки — Поддерживает поведение `life_os_locale_timezone_section` в этой feature-зоне.. Пользователь видит UI из `life_os_locale_timezone_section.dart` на More → Profile и настройки.
+- **Что это:** `life_os_locale_timezone_section.dart` на More → Profile и настройки — Поддерживает поведение `life_os_locale_timezone_section` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `life_os_locale_timezone_section.dart` на More → Profile и настройки.
+- **Содержимое:** Dart-модуль `life_os_locale_timezone_section.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** UI профиля
+- **Обязанности:** Поддерживает поведение `life_os_locale_timezone_section` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `life_os_locale_timezone_section.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/profile/menu/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/features/profile/menu/life_os_menu_page.dart`
 
 EN:
@@ -26502,7 +26540,7 @@ EN:
 - **Why needed:** UI labels resolve through l10n maps instead of hard-coded strings in widgets.
 - **Contents:** Dart maps/keys in `app_locales.dart`.
 - **Repository role:** localization
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/data/models.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/profile_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/data/models.dart`, `lib/features/profile/menu/life_os_locale_timezone_section.dart`, `lib/features/profile/profile_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -26519,7 +26557,7 @@ RU:
 - **Зачем:** Подписи UI берутся из l10n maps, а не из hard-coded строк в виджетах.
 - **Содержимое:** Dart-карты ключей в `app_locales.dart`.
 - **Роль в репозитории:** localization
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/data/models.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/profile_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/data/models.dart`, `lib/features/profile/menu/life_os_locale_timezone_section.dart`, `lib/features/profile/profile_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -28005,7 +28043,7 @@ EN:
 - **Contents:** Time helper or injectable clock hook (`TimezoneQuickPreferences`, `TimezoneQuickPreferenceStore`).
 - **Key code names:** `TimezoneQuickPreferences`, `TimezoneQuickPreferenceStore`
 - **Repository role:** shared time
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/main.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/features/profile/menu/life_os_locale_timezone_section.dart`, `lib/main.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -28022,7 +28060,7 @@ RU:
 - **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
 - **Содержимое:** Time helper или injectable clock hook (`TimezoneQuickPreferences`, `TimezoneQuickPreferenceStore`).
 - **Роль в репозитории:** shared time
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/main.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/features/profile/menu/life_os_locale_timezone_section.dart`, `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
