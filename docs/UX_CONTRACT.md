@@ -1,3 +1,10 @@
+## Interface inline language and timezone settings (2026-11-18)
+
+- Settings → Interface edits language directly in a searchable dropdown populated from `supportedUiLanguageCodes()`; no radio group or redundant navigation to a language page. Selection goes through the existing optimistic profile `saveSettings` path.
+- Timezone supports **Automatic** (opt-in OS IANA identifier, independent of VPN/IP) or **Manual**. The current profile timezone stays the only authoritative wall-clock source; records/plans remain persisted as UTC instants.
+- Checked timezone chips determine exactly which manual zones appear in the header quick switcher. Auto is always offered separately in that switcher. Checked (favorite) and active timezone are separate states. These UX preferences are device-local, keyed by signed-in profile; changes to profile timezone continue through the existing Brain API.
+- Resolve/reconcile OS zone only on user action, after initial first frame, or on app resume; no polling, startup blocking, network-based location, or loss of optimistic record/plan updates. Manual mode must never be changed automatically.
+
 ## P0 canonical navigation and non-overlap law (2026-11-16)
 
 - Every mobile destination—including Settings, Timeline, Planning, Calendar, Lists and More—uses one shared `ShellCompactBottomNav`; creating or styling a second primary menu in a feature is forbidden, even if a requested design differs.

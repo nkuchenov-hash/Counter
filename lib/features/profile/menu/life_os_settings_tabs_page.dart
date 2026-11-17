@@ -19,6 +19,7 @@ import 'package:counter/features/lists/notes_library_preferences.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/settings/default_plan_times_settings_block.dart';
 import 'package:counter/features/profile/menu/life_os_menu_page.dart';
+import 'package:counter/features/profile/menu/life_os_locale_timezone_section.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/services/notification_service.dart';
@@ -221,6 +222,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     await db.saveSettings(db.settings.copyWith(themeMode: mode));
     if (mounted) setState(() {});
   }
+
 
   Widget _profile() {
     final theme = Theme.of(context);
@@ -570,12 +572,8 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
           },
         ),
       ),
-      _section(tr('Язык и время', 'Language & time'), [
-        _link(tr('Язык приложения', 'Application language'),
-          AppMenuIconRole.language, LifeOsMenuAction.languageAndTime),
-        _link(tr('Часовые пояса', 'Time zones'),
-          AppMenuIconRole.clock, LifeOsMenuAction.languageAndTime,
-          subtitle: tr('Параметры времени профиля', 'Profile time preferences')),
+      const LifeOsLocaleTimezoneControls(),
+      _section(tr('Категории', 'Categories'), [
         _link(tr('Набор иконок категорий', 'Category icon collection'),
           AppMenuIconRole.appearance, LifeOsMenuAction.appearance),
       ]),

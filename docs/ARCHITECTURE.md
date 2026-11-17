@@ -139,6 +139,7 @@ Viktor's model may propose a different application action after a **pre-write** 
 
 - **STORAGE:** UTC ISO8601 in DB.
 - **OFFSET:** `timezone_offset` + `preferred_timezone` from profile drive wall-clock grouping (see existing Brain helpers).
+- **Optional device-auto mode (2026-11-18):** `TimezoneQuickPreferenceStore` stores auto/manual mode and starred quick zones locally per account/device, not in PocketBase. Only when explicitly enabled, the OS IANA time zone (`flutter_timezone`) is reconciled into the canonical profile timezone after the first app frame and on app resume. IP/VPN geolocation is never used. No `DateTime.toLocal()` for persisted day keys; UTC storage and Brain projections are unchanged. Any valid IANA profile zone, including zones outside the five historical presets, must project with DST-aware `timezone` rules.
 - **BANNED:** `DateTime.now().toLocal()` for **persisted** grid keys; use profile offset patterns already in the codebase.
 
 ---

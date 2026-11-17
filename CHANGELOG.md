@@ -1,3 +1,10 @@
+## [2026-11-18] — Inline language, opt-in device timezone, quick favorites [verification pending]
+
+- Settings → Interface now contains a searchable list of every registered UI language, in-place (no language radio buttons and no navigation to a separate time/language page).
+- Added auto/manual timezone settings with optional OS IANA detection via existing `flutter_timezone`; no VPN/IP inference. Valid non-preset IANA zones now use DST-aware wall-clock projection.
+- Header quick timezone menu shows checked favorites and a separate Automatic option; preferences are device-local and keyed by profile. Auto reconciliation runs after first frame and on app resume, never in hot gesture/startup paths.
+- Added preference isolation and non-preset IANA DST tests. No PocketBase schema migration. CI/web/Android verification outstanding.
+
 ## [2026-11-17] — Viktor abbreviated remaining-time scheduling and action repair
 
 - Fixed the real 13:59 New York screenshot regression: the last chore "обустройство электрики в спальне оставшееся" must be recognized as a remaining-time Plan without requiring the extra word "время". The entire future chore list goes through one reviewed atomic batch, never a fifth independent `create_plan`.

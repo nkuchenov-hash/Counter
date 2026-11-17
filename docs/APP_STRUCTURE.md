@@ -347,7 +347,8 @@ UTC/wall-clock and timezone catalog code used by Brain plus more than one UI sur
 | `app_clock.dart` | Injectable wall clock + timezone label |
 | `profile_timezone_actions.dart` | Injectable profile timezone read/write hooks (`ProfileTimezoneActions`) |
 | `profile_timezone_catalog.dart` | Canonical profile timezone catalog, IANA IDs, DST labels |
-| `wall_clock.dart` | UTC ↔ profile wall-clock conversion (no device TZ) |
+| `timezone_quick_preferences.dart` | Per-device auto timezone mode and profile-scoped quick favorites (SharedPreferences; no IP detection) |
+| `wall_clock.dart` | UTC ↔ profile wall-clock conversion; supports preset and arbitrary IANA profile zones, never reads the device directly |
 | `plan_time_labels.dart` | Plan wall-time label formatting (Brain + Planning + plan cards) |
 | `plan_time_visible_window.dart` | Extended Time View day window math (−3..27 h); Brain cascade + Planning |
 | `category_timezone_options.dart` | Per-category default plan-time IANA option list |
@@ -836,6 +837,7 @@ One-off Pass 3/Pass 2 extraction scripts (`scripts/pass3_*`, `scripts/extract_*`
 
 - `lib/features/profile/menu/life_os_menu_page.dart` — app-wide searchable, grouped settings navigation for compact and wide shells; all destinations delegate to feature-owned screens.
 - `lib/features/profile/menu/life_os_settings_tabs_page.dart` — native tabbed Settings page for desktop and mobile; uses canonical AppSettings components, app color families, and feature-owned preference stores.
+- `lib/features/profile/menu/life_os_locale_timezone_section.dart` — inline searchable app language and auto/manual timezone controls; favorite timezones for the header picker, device-local preferences, profile Brain saves.
 
 - `lib/features/profile/menu/life_os_planning_settings_page.dart` — full Planning preference screen sharing Time View preference storage and existing controls.
 - `lib/features/profile/menu/life_os_sync_status_page.dart` — live PocketBase outbox status and retry screen.

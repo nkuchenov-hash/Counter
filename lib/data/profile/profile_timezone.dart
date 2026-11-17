@@ -29,12 +29,12 @@ String _normalizeTimezone(String timezone) {
 }
 
 int _fixedOffsetHoursFromLabel(String timezone) {
-  final tz = _normalizeTimezone(timezone);
-  final entry = catalogEntryForStoredTimezone(tz);
+  final normalized = _normalizeTimezone(timezone);
+  final entry = catalogEntryForStoredTimezone(normalized);
   if (entry != null) {
     return currentOffsetHoursForProfileTimezone(entry.profileValue);
   }
-  switch (tz) {
+  switch (normalized) {
     case 'UTC':
       return 0;
     case 'GMT+3':
@@ -44,7 +44,13 @@ int _fixedOffsetHoursFromLabel(String timezone) {
     case 'New York':
       return -5;
     default:
-      return 0;
+      // Automatic selection can save a device IANA ID outside the quick catalog.
+      try {
+        final zone = tz.getLocation(normalized);
+        return tz.TZDateTime.now(zone).timeZoneOffset.inHours;
+      } catch (_) {
+        return 0;
+      }
   }
 }
 
