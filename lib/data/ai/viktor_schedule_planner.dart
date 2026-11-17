@@ -420,7 +420,7 @@ class ViktorBulkPlanner {
     final used = <String>{};
     final moves = <ViktorBulkMove>[];
     final endByDay = <String, DateTime>{};
-    void guard(PlanningTask p) {
+    void guard(PlanningTask p, {required bool explicitlyMoving}) {
       if (p.pocketRecordId == null || !p.isSynced ||
           p.recordIdForBackend.startsWith('virt-') ||
           p.recordIdForBackend.startsWith('optimistic-') ||
@@ -428,7 +428,10 @@ class ViktorBulkPlanner {
           (p.recurrenceInstanceDateKey ?? '').isNotEmpty) {
         throw StateError('«${p.title}»: повторяющийся или несохранённый план.');
       }
-      if (fixedTime(p)) {
+      // Default category clock protects a plan from INCIDENTAL shifts.
+      // A user-approved explicit day transfer selects this plan itself;
+      // allow it while preserving unrelated fixed commitments on target.
+      if (fixedTime(p) && !explicitlyMoving) {
         throw StateError('«${p.title}»: закреплённое время нельзя сдвигать.');
       }
       if (p.startTime == null || p.endDateTime == null ||
@@ -533,7 +536,7 @@ class ViktorBulkPlanner {
           cursor = previousEnd;
         }
         for (final p in chosen) {
-          guard(p);
+          guard(p, explicitlyMoving: move);
           final duration = p.endDateTime!.difference(p.startTime!);
           if (automatic) {
             // First-fit over CURRENT destination commitments and previously
