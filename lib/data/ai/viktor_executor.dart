@@ -10,6 +10,8 @@ import 'viktor_plan_category.dart';
 import 'viktor_existing_plan.dart';
 import 'viktor_plan_timezone.dart';
 import 'viktor_atomic_bulk_gateway.dart';
+import 'viktor_atomic_create_gateway.dart';
+import 'viktor_multi_plan_proposal.dart';
 import 'viktor_tag_duration_reflow.dart';
 import 'package:counter/data/time_view_fixed_time_policy.dart';
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
@@ -227,6 +229,11 @@ class ViktorExecutor {
     // Multi-row schedule recalculation and record timers still require an
     // isolated operation: their writes are not atomic with other domains.
     final mutations = batch.actions.where((a) => a.isMutation).toList();
+    if (batch.actions.any((a) => a.name == 'create_plans_batch') &&
+        batch.actions.length != 1) {
+      throw StateError('Групповое создание планов требует '
+          'отдельной атомарной операции.');
+    }
     if (batch.actions.any((a) => a.name == 'bulk_replan') &&
         batch.actions.any((a) => a.name != 'bulk_replan' &&
             a.name != 'list_day_plans')) {
@@ -349,6 +356,11 @@ class ViktorExecutor {
           '«${p.title}» → ${clock(p.startTime!)}–${clock(p.endDateTime!)}',
         'Подтвердите изменение расписания.',
       ].join('\n');
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'create_plans_batch') {
+      return (await ViktorMultiPlanProposal.prepare(
+          db, batch.actions.single)).description;
     }
     if (batch.actions.any((a) => a.name == 'bulk_replan')) {
       final bulk = batch.actions.singleWhere(
@@ -622,6 +634,16 @@ class ViktorExecutor {
       }
       return '${_creationReceipt(action, created)} '
           'Сдвинуто планов: ${placement.shifted.length}.';
+    }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'create_plans_batch') {
+      final verified = await ViktorMultiPlanProposal.prepare(
+          db, batch.actions.single);
+      if (verified.description != approvedPreview) {
+        throw StateError('Расписание изменилось после подтверждения.');
+      }
+      return ViktorAtomicCreateGateway(db).commit(
+          rows: verified.rows, requestId: batch.requestId);
     }
     if (batch.actions.any((a) => a.name == 'bulk_replan')) {
       final bulk = batch.actions.singleWhere(
