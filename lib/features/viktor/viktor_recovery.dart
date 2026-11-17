@@ -164,6 +164,18 @@ extension _ViktorRecoveryDialogue on _ViktorChatPageState {
       return;
     }
     final reason = _friendlyError(failure);
+    // Scheduling errors must be actionable, not a generic menu of unverified
+    // alternatives. The retry/replan path has already had its bounded chance.
+    // Never ask the user to choose an arbitrary "partial" solution when the
+    // request and its target date were unambiguous.
+    final scheduleIntent = RegExp(
+      r'план|расписан|длительност|перенес|сдвин|встреч|schedule|duration',
+      caseSensitive: false,
+    ).hasMatch(input);
+    if (scheduleIntent) {
+      _push('Расписание не изменено. Причина: $reason');
+      return;
+    }
     if (failure is FormatException ||
         failure is! StateError && failure is! ViktorTagDurationOverflow) {
       final providerReason = reason.toLowerCase();
