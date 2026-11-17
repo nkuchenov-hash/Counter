@@ -451,9 +451,17 @@ void main() {
       }
     });
 
-    test('Bulk move rejects missing, ambiguous and invalid start times', () {
+    test('Bulk move auto-places without a clock, rejects invalid explicit clocks', () {
+      final automatic = ViktorAction.fromJson(action('bulk_replan', {
+        'operations': [{
+          'kind': 'move', 'status': 'incomplete',
+          'source_day': '2026-10-21', 'target_day': '2026-10-22',
+        }],
+      }));
+      expect((automatic.arguments['operations'] as List).single,
+          isNot(contains('start_time')));
       for (final bad in [
-        null, '', 'morning', 'nine', '9-ish', '24:00', '12:70',
+        '', 'morning', 'nine', '9-ish', '24:00', '12:70',
         '12:00:17', '12 утра', '09:00 NY then 10',
       ]) {
         expect(() => ViktorAction.fromJson(action('bulk_replan', {
