@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `b84af2f3` on 2026-11-17.**
+**Generated from input HEAD `78b71745` on 2026-11-17.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1025 — each appears **exactly once** below.
+**Tracked files:** 1027 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 205 |
-| `test` | 148 |
+| `test` | 149 |
 | `Brain/data` | 120 |
 | `platform build` | 84 |
 | `shared foundation` | 72 |
@@ -44,8 +44,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | `localization` | 13 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
+| `shared time` | 8 |
 | `audit tool` | 7 |
-| `shared time` | 7 |
 | `asset` | 6 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 557 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 276 |
+| `PROVEN_REQUIRED` | 558 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 277 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 937 |
+| `HIGH` | 939 |
 | `MEDIUM` | 88 |
 
 ---
@@ -14453,8 +14453,8 @@ EN:
 - **Human purpose:** Shared design-system widget — `HeaderTimezoneQuickSwitcher`, profile timezone quick picker. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **What this is:** Shared design-system widget — `HeaderTimezoneQuickSwitcher`, profile timezone quick picker.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **Contents:** Canonical Flutter widget (`HeaderTimezoneQuickSwitcher`, `TimezonePickerField`, `_TimezoneQuickPickerSheet`, `_TimezoneQuickPickerSheetState`, `TimezonePickerOptionRow`, `_TimezoneOptionText`).
-- **Key code names:** `HeaderTimezoneQuickSwitcher`, `TimezonePickerField`, `_TimezoneQuickPickerSheet`, `_TimezoneQuickPickerSheetState`, `TimezonePickerOptionRow`, `_TimezoneOptionText`
+- **Contents:** Canonical Flutter widget (`HeaderTimezoneQuickSwitcher`, `TimezonePickerField`, `_TimezoneQuickPickerSheet`, `_TimezoneQuickPickerSheetState`).
+- **Key code names:** `HeaderTimezoneQuickSwitcher`, `TimezonePickerField`, `_TimezoneQuickPickerSheet`, `_TimezoneQuickPickerSheetState`
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/global_app_header.dart`, `lib/features/profile/profile_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -26502,7 +26502,7 @@ EN:
 - **Why needed:** UI labels resolve through l10n maps instead of hard-coded strings in widgets.
 - **Contents:** Dart maps/keys in `app_locales.dart`.
 - **Repository role:** localization
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/data/models.dart`, `lib/features/profile/profile_view.dart`, `lib/main.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/database_service.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/data/models.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/profile_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -26519,7 +26519,7 @@ RU:
 - **Зачем:** Подписи UI берутся из l10n maps, а не из hard-coded строк в виджетах.
 - **Содержимое:** Dart-карты ключей в `app_locales.dart`.
 - **Роль в репозитории:** localization
-- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/data/models.dart`, `lib/features/profile/profile_view.dart`, `lib/main.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/database_service.dart`, `lib/data/health/health_sleep_sync_service.dart`, `lib/data/models.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/profile_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -27995,12 +27995,50 @@ RU:
 - **Связано с:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`
 
 
+### `lib/shared/time/timezone_quick_preferences.dart`
+
+EN:
+
+- **Human purpose:** Shared time ownership — Per-device auto timezone mode and profile-scoped quick favorites (SharedPreferences; no IP detection). UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **What this is:** Shared time ownership — Per-device auto timezone mode and profile-scoped quick favorites (SharedPreferences; no IP detection).
+- **Why needed:** UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **Contents:** Time helper or injectable clock hook (`TimezoneQuickPreferences`, `TimezoneQuickPreferenceStore`).
+- **Key code names:** `TimezoneQuickPreferences`, `TimezoneQuickPreferenceStore`
+- **Repository role:** shared time
+- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/main.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared time
+- **Responsibilities:** Per-device auto timezone mode and profile-scoped quick favorites (SharedPreferences; no IP detection)
+- **When to open:** When behavior tied to `timezone_quick_preferences.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Per-device auto timezone mode and profile-scoped quick favorites (SharedPreferences
+
+RU:
+
+- **Зачем файл человеку:** Общий time-слой — Per-device auto timezone mode and profile-scoped quick favorites (SharedPreferences; no IP detection). UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Что это:** Общий time-слой — Per-device auto timezone mode and profile-scoped quick favorites (SharedPreferences; no IP detection).
+- **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Содержимое:** Time helper или injectable clock hook (`TimezoneQuickPreferences`, `TimezoneQuickPreferenceStore`).
+- **Роль в репозитории:** shared time
+- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/timezone_quick_picker.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/main.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общий time-слой
+- **Обязанности:** Реализует в shared/time: Per-device auto timezone mode and profile-scoped quick favorites (SharedPreferences; no IP detection).
+- **Когда открывать:** Когда ломается поведение, связанное с `timezone_quick_preferences.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/shared/time/wall_clock.dart`
 
 EN:
 
-- **Human purpose:** Shared time ownership — UTC ↔ profile wall-clock conversion (no device TZ). UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
-- **What this is:** Shared time ownership — UTC ↔ profile wall-clock conversion (no device TZ).
+- **Human purpose:** Shared time ownership — UTC ↔ profile wall-clock conversion; supports preset and arbitrary IANA profile zones, never reads the device directly. UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **What this is:** Shared time ownership — UTC ↔ profile wall-clock conversion; supports preset and arbitrary IANA profile zones, never reads the device directly.
 - **Why needed:** UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
 - **Contents:** Time helper or injectable clock hook (logic in `wall_clock`).
 - **Repository role:** shared time
@@ -28009,15 +28047,15 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared time
-- **Responsibilities:** UTC ↔ profile wall-clock conversion (no device TZ)
+- **Responsibilities:** UTC ↔ profile wall-clock conversion; supports preset and arbitrary IANA profile zones, never reads the device directly
 - **When to open:** When behavior tied to `wall_clock.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: UTC ↔ profile wall-clock conversion (no device TZ)
+- **Connected to:** APP_STRUCTURE role: UTC ↔ profile wall-clock conversion
 
 RU:
 
-- **Зачем файл человеку:** Общий time-слой — UTC ↔ profile wall-clock conversion (no device TZ). UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
-- **Что это:** Общий time-слой — UTC ↔ profile wall-clock conversion (no device TZ).
+- **Зачем файл человеку:** Общий time-слой — UTC ↔ profile wall-clock conversion; supports preset and arbitrary IANA profile zones, never reads the device directly. UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Что это:** Общий time-слой — UTC ↔ profile wall-clock conversion; supports preset and arbitrary IANA profile zones, never reads the device directly.
 - **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
 - **Содержимое:** Time helper или injectable clock hook (logic in `wall_clock`).
 - **Роль в репозитории:** shared time
@@ -28026,7 +28064,7 @@ RU:
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** общий time-слой
-- **Обязанности:** Реализует в shared/time: UTC ↔ profile wall-clock conversion (no device TZ).
+- **Обязанности:** Реализует в shared/time: UTC ↔ profile wall-clock conversion; supports preset and arbitrary IANA profile zones, never reads the device directly.
 - **Когда открывать:** Когда ломается поведение, связанное с `wall_clock.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`
@@ -40939,6 +40977,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `timezone_quick_picker`.
 - **Когда открывать:** Падение CI или правка кода рядом с `timezone_quick_picker`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/timezone_quick_preferences_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `timezone_quick_preferences_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `timezone_quick_preferences_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/timezone_quick_preferences_test.dart` / CI when enabled. (2) Namesake production subject: `lib/shared/time/timezone_quick_preferences.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `timezone_quick_preferences_test` scenario.
+- **When to open:** CI failure or changing code near `timezone_quick_preferences`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `timezone_quick_preferences`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `timezone_quick_preferences` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `timezone_quick_preferences` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `timezone_quick_preferences`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/timezone_quick_preferences_test.dart`. (2) Парный production-файл: `lib/shared/time/timezone_quick_preferences.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `timezone_quick_preferences`.
+- **Когда открывать:** Падение CI или правка кода рядом с `timezone_quick_preferences`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
