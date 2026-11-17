@@ -41,6 +41,67 @@ PlanningTask _plan(String id, String title, int hour, int minute,
 }
 
 void main() {
+  test('Explicit yesterday unfinished carry-forward bypasses model', () {
+    final batch = ViktorDateScope.directYesterdayCarryForward(
+      input: 'Перенеси вчерашние невыполненные планы на сегодня',
+      profileToday: DateTime(2026, 11, 17),
+      requestId: 'viktor_direct_20261117',
+    );
+    expect(batch, isNotNull);
+    expect(batch!.actions.single.name, 'bulk_replan');
+    expect(batch.requiresPreview, isTrue);
+    final op = (batch.actions.single.arguments['operations'] as List).single
+        as Map;
+    expect(op['kind'], 'move');
+    expect(op['status'], 'incomplete');
+    expect(op['source_day'], '2026-11-16');
+    expect(op['target_day'], '2026-11-17');
+    expect(op.containsKey('start_time'), false);
+    final dec = ViktorDateScope.directYesterdayCarryForward(
+      input: 'Перенеси вчерашние незавершённые задачи на сегодня',
+      profileToday: DateTime(2027, 1, 1),
+      requestId: 'viktor_direct_20270101',
+    );
+    expect((dec!.actions.single.arguments['operations'] as List)
+        .single['source_day'], '2026-12-31');
+  });
+
+  test('Native transfer never guesses scope of a qualified request', () {
+    for (final input in [
+      'Перенеси вчерашние невыполненные планы на завтра',
+      'Перенеси вчерашние невыполненные планы на сегодня, кроме работы',
+      'Перенеси только вчерашние невыполненные задачи на сегодня',
+      'Почему вчерашние невыполненные планы не перенесены на сегодня?',
+    ]) {
+      expect(ViktorDateScope.directYesterdayCarryForward(
+        input: input, profileToday: DateTime(2026, 11, 17),
+        requestId: 'viktor_qualified_test',
+      ), isNull, reason: input);
+    }
+  });
+
+  test('An expressly selected source default-time plan can move day', () {
+    final action = _batch([{
+      'name': 'bulk_replan', 'arguments': {'operations': [{
+        'kind': 'move', 'status': 'incomplete',
+        'source_day': '2026-10-20', 'target_day': '2026-10-21',
+      }]},
+    }]).actions.single;
+    final selected = _plan('aaaaabbbbbccccc', 'Source default-time plan', 9, 0);
+    final occupied = _plan('dddddeeeeefffff', 'Protected target', 10, 30,
+        date: '2026-10-21');
+    final preview = const ViktorBulkPlanner().calculate(
+      action: action, source: [selected], target: [occupied],
+      sourceDay: '2026-10-20', targetDay: '2026-10-21',
+      fixedTime: (task) => task.pocketRecordId == selected.pocketRecordId ||
+          task.pocketRecordId == occupied.pocketRecordId,
+      wallTime: (_, _, _) => throw StateError('No explicit clock'),
+      autoStart: (_) => DateTime(2026, 10, 21, 10, 20),
+    );
+    expect(preview.moves.single.start, DateTime(2026, 10, 21, 11, 15));
+    expect(occupied.startTime, DateTime(2026, 10, 21, 10, 30));
+  });
+
   test('Intent bulk dates are independent of selected calendar day', () {
     final selectedCalendarDay = DateTime(2026, 9, 3);
     final action = _move().actions.single;
