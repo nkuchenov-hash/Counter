@@ -1,3 +1,10 @@
+## [2026-11-17] — Viktor abbreviated remaining-time scheduling and action repair
+
+- Fixed the real 13:59 New York screenshot regression: the last chore "обустройство электрики в спальне оставшееся" must be recognized as a remaining-time Plan without requiring the extra word "время". The entire future chore list goes through one reviewed atomic batch, never a fifth independent `create_plan`.
+- Supports "оставшееся", "оставшееся время", "на оставшееся время", "остаток дня" and related final-slot phrasing. Earlier completed Timeline activities are not silently re-created as future Plans; missing evidence for Timeline changes remains explicit.
+- Model contract and one bounded schema-repair response now instruct all providers to use `create_plans_batch` for multiple duration-only tasks without inventing start times. Internal `Action N: Tool create_plan` schema failures no longer leak into the user-facing message.
+- Regression tests cover the exact failed screenshot and representative remaining-time variants. No schema migrations.
+
 ## [2026-11-17] — Viktor direct commands, short responses, and auto-fit chores [release verification pending]
 
 - Exact "yesterday unfinished plans → today" voice/text request bypasses model commentary, runs the real Brain preview and commits with approval. Explicitly selected source default-time plans can transfer without moving unrelated target commitments; recurring/unsynced rows remain protected.
