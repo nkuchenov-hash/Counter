@@ -32,6 +32,10 @@ require(phone.count("ShellCompactBottomNav(") == 1,
 require("extendBody: !desktopShell" in shell and
         "extendBody: false" not in shell,
         "FROSTED_DOCK_MUST_SAMPLE_SCROLLING_BODY_UNDERNEATH")
+require("AppGlassEdgeFade(" in shell and
+        "AppGlassEdge.bottom" in shell and
+        "extendBody: !desktopShell" in shell,
+        "BOTTOM_FADE_MUST_BE_SHELL_OWNED_AND_NONINTERACTIVE")
 require("AppFrostedNavigationPanel(" in nav and
         "Positioned(" not in nav and "top: -46" not in nav,
         "NAV_BACKDROP_MUST_BE_CLIPPED_TO_FLOATING_CAPSULE")
