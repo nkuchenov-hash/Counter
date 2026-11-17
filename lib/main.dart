@@ -51,6 +51,7 @@ import 'package:counter/shared/categories/picker/category_picker_contracts.dart'
 import 'package:counter/shared/categories/presentation/plan_category_lookup.dart';
 import 'package:counter/shared/time/app_clock.dart';
 import 'package:counter/shared/time/profile_timezone_actions.dart';
+import 'package:counter/shared/time/timezone_quick_preferences.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 
 /// P0T stabilization: disable biometric gate until phone pass.
@@ -73,6 +74,29 @@ void _wireProfileTimezoneActions() {
   ProfileTimezoneActions.settingsStream = db.userSettingsStream;
   ProfileTimezoneActions.currentSettings = () => db.settings;
   ProfileTimezoneActions.saveTimezone = db.updateTimeZone;
+}
+
+bool _automaticTimezoneReconcileRunning = false;
+
+/// Reconcile only after the authenticated first frame or app resume.
+/// Never block startup, plan gestures, record start/stop, or the main thread.
+Future<void> _reconcileAutomaticTimezoneIfReady() async {
+  if (_automaticTimezoneReconcileRunning || appWearHost) return;
+  final db = DatabaseService.instance;
+  final id = db.currentProfileId;
+  if (!db.isInitialized || id == null || id.isEmpty) return;
+  _automaticTimezoneReconcileRunning = true;
+  try {
+    await TimezoneQuickPreferenceStore.reconcileAutomatic(
+      profileId: id,
+      currentTimezone: db.settings.preferredTimeZone,
+      saveTimezone: db.updateTimeZone,
+    );
+  } catch (_) {
+    // Manual profile selection remains intact when OS detection is unavailable.
+  } finally {
+    _automaticTimezoneReconcileRunning = false;
+  }
 }
 
 void _wirePlanCategoryLookup() {
@@ -283,6 +307,7 @@ class _DateTimeTrackerAppState extends State<DateTimeTrackerApp>
     final db = DatabaseService.instance;
     if (!db.isInitialized || (db.currentProfileId?.isNotEmpty != true)) return;
     unawaited(SleepForegroundReconcileService.instance.reconcile());
+    unawaited(_reconcileAutomaticTimezoneIfReady());
   }
 
   @override
@@ -494,6 +519,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
       StartupLog.armFirstFrameMarker();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         StartupLog.markFirstFrame();
+        unawaited(_reconcileAutomaticTimezoneIfReady());
       });
       return;
     }
