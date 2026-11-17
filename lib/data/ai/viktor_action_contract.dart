@@ -75,6 +75,36 @@ class ViktorAction {
             !const {'reject', 'shift'}.contains(args['conflict_policy'])) {
           throw const FormatException('Unknown plan conflict policy');
         }
+      case 'create_plans_batch':
+        _onlyKeys(args, const {'plans'});
+        final rawPlans = args['plans'];
+        if (rawPlans is! List || rawPlans.length < 2 || rawPlans.length > 12) {
+          throw const FormatException('A batch needs 2–12 timed plans');
+        }
+        final checked = <Map<String, Object?>>[];
+        final keys = <String>{};
+        for (final item in rawPlans) {
+          if (item is! Map) {
+            throw const FormatException('Invalid batch plan');
+          }
+          final row = Map<String, Object?>.from(item);
+          _onlyKeys(row, const {
+            'title', 'wall_day', 'start_time', 'duration_minutes', 'timezone',
+          });
+          final title = _title(row, 'title');
+          final date = _day(row, 'wall_day');
+          _clock(row, 'start_time');
+          _duration(row, 'duration_minutes');
+          if (row.containsKey('timezone')) {
+            _text(row, 'timezone', maxLength: 64);
+          }
+          final key = '$date|${title.trim().toLowerCase()}';
+          if (!keys.add(key)) {
+            throw const FormatException('Duplicate title in batch');
+          }
+          checked.add(row);
+        }
+        args['plans'] = checked;
       case 'update_plan_duration':
         _onlyKeys(args, const {
           'plan_id', 'expected_duration_minutes', 'duration_minutes',
