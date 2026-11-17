@@ -167,13 +167,31 @@ profileTimezoneOffsetInfo(
 }
 
 int currentOffsetHoursForProfileTimezone(String stored, {DateTime? atUtc}) {
-  final entry =
-      catalogEntryForStoredTimezone(stored) ?? kProfileTimezoneCatalog.first;
-  return profileTimezoneOffsetInfo(entry, atUtc: atUtc).offsetHours;
+  final entry = catalogEntryForStoredTimezone(stored);
+  if (entry != null) {
+    return profileTimezoneOffsetInfo(entry, atUtc: atUtc).offsetHours;
+  }
+  // Auto mode may provide a valid IANA identifier outside quick presets.
+  // Keep DST-aware offsets instead of silently substituting UTC.
+  try {
+    final anchor = (atUtc ?? DateTime.now().toUtc()).toUtc();
+    final zoned = tz.TZDateTime.from(anchor, tz.getLocation(stored.trim()));
+    return zoned.timeZoneOffset.inHours;
+  } catch (_) {
+    return 0;
+  }
 }
 
 String? ianaIdForProfileTimezoneLabel(String label) {
-  return catalogEntryForStoredTimezone(label)?.ianaId;
+  final entry = catalogEntryForStoredTimezone(label);
+  if (entry != null) return entry.ianaId;
+  final id = label.trim();
+  try {
+    tz.getLocation(id);
+    return id;
+  } catch (_) {
+    return null;
+  }
 }
 
 ProfileTimezoneCatalogEntry? catalogEntryForStoredTimezone(String stored) {
