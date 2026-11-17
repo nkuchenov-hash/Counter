@@ -44,7 +44,13 @@ int _fixedOffsetHoursFromLabel(String timezone) {
     case 'New York':
       return -5;
     default:
-      return 0;
+      // Automatic selection can save a device IANA ID outside the quick catalog.
+      try {
+        final zone = tz.getLocation(tz);
+        return tz.TZDateTime.now(zone).timeZoneOffset.inHours;
+      } catch (_) {
+        return 0;
+      }
   }
 }
 
