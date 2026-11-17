@@ -1,3 +1,11 @@
+## [2026-11-17] — Mobile translucent navigation and Android Notes IME stabilization [verification pending]
+
+- Shell now places one canonical noninteractive bottom fade behind the floating navigation on all compact destinations; no opaque full-width nav backplate.
+- Mobile Notes search floats over the scrollable card pane rather than reserving an opaque footer; mobile grid/list scroll end clearance keeps the final note accessible.
+- Android standalone and embedded Notes use direct editable text, native text selection and a lightweight scrolling list during editing. Avoid redundant caret/focus updates and rewriting active Gboard composition.
+- Non-paragraph Android Enter block splitting is debounced until composition has committed; while composition is active, preserve the input text rather than detaching the focused field. Localize Russian block placeholders.
+- No PocketBase schema changes. Static and Android IME/device tests remain required before claiming the regression is resolved.
+
 ## [2026-11-16] — Default plan-time rule navigation and rollover visibility [CI pending]
 
 - Default plan-time rules now use one canonical Settings editor with search, category inheritance, time/timezone editing, and the same PocketBase category schedule API; remove the visible F2C legacy marker and duplicated editor UI.
