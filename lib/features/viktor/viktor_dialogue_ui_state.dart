@@ -123,7 +123,9 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
   ) async {
     final draftRevision = ViktorReadAnswer.isDraftRevision(
         input: input, history: history);
-    final isSchedule = draftRevision || RegExp(
+    final requestedWrite = !draftRevision &&
+        ViktorReadAnswer.requiresScheduleAction(input);
+    final isSchedule = requestedWrite || draftRevision || RegExp(
           r'распланир|расписани|черновик|составь\s+план|itinerary|schedule',
           caseSensitive: false,
         ).hasMatch(input);
@@ -134,7 +136,9 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     final wrongTimezone = ViktorReadAnswer.mismatchedScheduleTimezone(
         message: response.message, input: input, history: history);
     if (!isSchedule || (!unsafeDraftWrite && !incompleteDraft &&
-        !wrongTimezone && (response.actions != null ||
+        !wrongTimezone &&
+        !(requestedWrite && response.actions == null) &&
+        (response.actions != null ||
          !ViktorReadAnswer.isUnfinishedScheduleReply(response.message)))) {
       return response;
     }
@@ -147,7 +151,17 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
       toolObservations: observations,
       requestId: requestId,
       conversationHistory: history,
-      proposalFeedback: wrongTimezone
+      proposalFeedback: requestedWrite && response.actions == null
+          ? 'The latest user message asks for actual LIFE OS changes, NOT '
+            'options or a hypothetical schedule. Do not give a workaround '
+            'list. Propose the correct available tool now. For existing '
+            'completed activity times FIRST request read_day_records '
+            '{wall_day} with continue:true; for explicit timed future '
+            'tasks use create_plans_batch. Do not invent times, IDs or '
+            'promise future manual work. Keep message under 120 characters. '
+            'If two data domains cannot be one atomic transaction, start '
+            'with the next safe, verifiable read rather than giving advice.'
+          : wrongTimezone
           ? 'WRONG TIMEZONE: this dialogue explicitly requests a different '
             'clock zone. Use schedule_timezone, not profile_timezone. '
             'Keep the intended LOCAL hours (do not convert from an invented '
@@ -175,6 +189,33 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
         (repaired.actions != null || repaired.needsMoreContext ||
          !ViktorReadAnswer.hasTimedItinerary(repaired.message))) {
       return null; // No reads, writes, or status-only replies for a draft.
+    }
+    if (requestedWrite && repaired.actions == null) return null;
+    if (requestedWrite && repaired.needsMoreContext &&
+        repaired.actions != null &&
+        !repaired.actions!.hasMutations) {
+      // One bounded real observation for compound record/plan requests.
+      // This must remain a read before any consent-gated write.
+      final executor = ViktorExecutor(DatabaseService.instance);
+      final observed = await executor.describe(repaired.actions!, intentDay);
+      final followup = await _gateway.propose(
+        input: input, wallDay: intentDay, plans: plans,
+        settings: _settings, selectedPlanIds: widget.selectedPlanIds,
+        requestId: requestId, conversationHistory: history,
+        toolObservations: [
+          ...observations,
+          jsonEncode({
+            'tools': repaired.actions!.actions.map((a) => a.toJson()).toList(),
+            'result': observed,
+          }),
+        ],
+        proposalFeedback: 'Read completed. Return one concrete validated '
+            'next action, not choices or a prose workaround. For multiple '
+            'timed plans use create_plans_batch. Limit message to 120 '
+            'characters. No invented timestamps or fake save.',
+        allowRepair: false,
+      );
+      return followup.actions == null ? null : followup;
     }
     return repaired.actions == null &&
             ViktorReadAnswer.isUnfinishedScheduleReply(repaired.message)
