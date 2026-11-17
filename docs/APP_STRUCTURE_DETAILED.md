@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `76e8c0e8` on 2026-11-16.**
+**Generated from input HEAD `40007055` on 2026-11-17.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -13278,10 +13278,10 @@ EN:
 - **Human purpose:** Shared design-system widget — Canonical noninteractive frosted edge shared by top Settings header and all mobile bottom nav destinations. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **What this is:** Shared design-system widget — Canonical noninteractive frosted edge shared by top Settings header and all mobile bottom nav destinations.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **Contents:** Canonical Flutter widget (`AppGlassEdge`, `AppGlassEdgeFade`).
-- **Key code names:** `AppGlassEdge`, `AppGlassEdgeFade`
+- **Contents:** Canonical Flutter widget (`AppGlassEdge`, `AppGlassEdgeFade`, `AppFrostedNavigationPanel`).
+- **Key code names:** `AppGlassEdge`, `AppGlassEdgeFade`, `AppFrostedNavigationPanel`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13298,7 +13298,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_glass_edge_fade`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21200,8 +21200,8 @@ EN:
 - **Human purpose:** `notes_library_body.dart` on notes area — NoteCard. Users see `notes_library_body.dart` when using notes area.
 - **What this is:** `notes_library_body.dart` on notes area — NoteCard.
 - **Why needed:** Users see `notes_library_body.dart` when using notes area.
-- **Contents:** Primary symbols: `NotesLibraryBody`, `_NotesLibraryBodyState`, `_NotesListHeader`.
-- **Key code names:** `NotesLibraryBody`, `_NotesLibraryBodyState`, `_NotesListHeader`
+- **Contents:** Primary symbols: `NotesLibraryBody`, `_NotesLibraryBodyState`.
+- **Key code names:** `NotesLibraryBody`, `_NotesLibraryBodyState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/lists_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED

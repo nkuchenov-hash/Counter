@@ -30,6 +30,21 @@ class AppGlassEdgeFade extends StatelessWidget {
     final end = edge == AppGlassEdge.top
         ? Alignment.bottomCenter
         : Alignment.topCenter;
+    final tint = DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: start,
+          end: end,
+          stops: topHeader ? const [0, 0.70, 1] : const [0, 0.46, 1],
+          colors: [
+            surfaceColor.withValues(alpha: topHeader ? 0.995 : 0.96),
+            surfaceColor.withValues(alpha: topHeader ? 0.94 : 0.78),
+            AppNeutralTones.transparent,
+          ],
+        ),
+      ),
+      child: const SizedBox.expand(),
+    );
     return IgnorePointer(
       child: ShaderMask(
         blendMode: BlendMode.dstIn,
@@ -42,24 +57,12 @@ class AppGlassEdgeFade extends StatelessWidget {
           colors: const [AppNeutralTones.white, AppNeutralTones.white, AppNeutralTones.transparent],
         ).createShader(bounds),
         child: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: start,
-                  end: end,
-                  stops: topHeader ? const [0, 0.70, 1] : const [0, 0.46, 1],
-                  colors: [
-                    surfaceColor.withValues(alpha: topHeader ? 0.995 : 0.96),
-                    surfaceColor.withValues(alpha: topHeader ? 0.94 : 0.78),
-                    AppNeutralTones.transparent,
-                  ],
+          child: blurSigma <= 0
+              ? tint
+              : BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+                  child: tint,
                 ),
-              ),
-              child: const SizedBox.expand(),
-            ),
-          ),
         ),
       ),
     );

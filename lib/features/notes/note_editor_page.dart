@@ -108,6 +108,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   final Map<String, FocusNode> _focusNodes = {};
   final Map<String, TextSelection> _lastSelections = {};
   final Set<String> _pendingImeBlockSplits = <String>{};
+  final Map<String, Timer> _imeSplitTimers = <String, Timer>{};
   late final NotesAudioPlaybackController _audioPlayback;
   final Set<String> _transcribingAudioIds = <String>{};
   String? _editingBlockId;
@@ -170,6 +171,10 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   @override
   void dispose() {
     _secondarySelectionGuardTimer?.cancel();
+    for (final timer in _imeSplitTimers.values) {
+      timer.cancel();
+    }
+    _imeSplitTimers.clear();
     if (_dirty && !widget.parityPreview) {
       _gate.flush(_syncToBrain, force: true);
     }
@@ -261,14 +266,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         _lastSelections[block.id] = next;
         _editor.updateSelection(block.id, next);
         if (!mounted || _editor.activeBlockId != block.id) return;
-        // Gboard switches between collapsed, composing, and selection
-        // ranges while typing. The TextField owns those updates; rebuilding
-        // the whole Notes editor for a caret change is unnecessary and can
-        // interrupt native multiline input in the embedded Android sheet.
-        final androidEmbeddedIme = widget.inlineBodyOnly &&
-            Theme.of(context).platform == TargetPlatform.android;
-        if (!androidEmbeddedIme &&
-            previous?.isCollapsed != next.isCollapsed) {
+        final androidIme = Theme.of(context).platform == TargetPlatform.android;
+        if (!androidIme && previous?.isCollapsed != next.isCollapsed) {
           setState(() {});
         }
       });
@@ -297,11 +296,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         if (_editingBlockId != block.id || activeChanged) {
           setState(() => _editingBlockId = block.id);
         }
-        // Android EditableText already brings the caret above the keyboard.
-        // A second scroll animation on the containing ReorderableListView
-        // competes with it and causes the record sheet to jump on focus.
-        if (!(widget.inlineBodyOnly &&
-            Theme.of(context).platform == TargetPlatform.android)) {
+        if (Theme.of(context).platform != TargetPlatform.android) {
           _ensureBlockVisible(block.id);
         }
       });
@@ -318,8 +313,13 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       if (NotesEditorDocumentController.isEditableText(block.type)) {
         textIds.add(block.id);
         final controller = _textControllerFor(block);
-        if (controller.text != block.effectiveText ||
-            !_sameRuns(controller.runs, block.effectiveRuns)) {
+        if ((controller.text != block.effectiveText ||
+            !_sameRuns(controller.runs, block.effectiveRuns)) &&
+            !((_focusNodes[block.id]?.hasFocus == true ||
+                _editingBlockId == block.id) &&
+                controller.value.composing.isValid &&
+                !controller.value.composing.isCollapsed)) {
+          // Do not overwrite Gboard's live composing value during a rebuild.
           controller.syncDocument(
             text: block.effectiveText,
             runs: block.effectiveRuns,
@@ -390,12 +390,15 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       return;
     }
     final controller = _textControllerFor(block);
-    controller.selection = TextSelection(
+    final targetSelection = TextSelection(
       baseOffset: selection.baseOffset.clamp(0, controller.text.length).toInt(),
       extentOffset: selection.extentOffset
           .clamp(0, controller.text.length)
           .toInt(),
     );
+    if (controller.selection != targetSelection) {
+      controller.selection = targetSelection;
+    }
     final changedActive = _editor.selectBlock(blockId, controller.selection);
     if (block.type == NoteBlockType.quote) {
       if (mounted && (_editingBlockId != blockId || changedActive)) {
@@ -404,12 +407,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       return;
     }
     final node = _focusNodeFor(block);
-    // Transfer focus first, then repaint selection state. Keeping the focus
-    // hand-off synchronous prevents Android from closing/reopening the IME
-    // while moving between adjacent Notes text blocks.
-    node?.requestFocus();
-    // The FocusNode listener performs the one local visibility adjustment.
-    // A second scroll request here used to race the Android IME.
+    if (node?.hasFocus != true) node?.requestFocus();
     if (mounted && (_editingBlockId != blockId || changedActive)) {
       setState(() => _editingBlockId = blockId);
     }
@@ -417,9 +415,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   void _onBlockTextChanged(NoteBlock block, String value) {
     final controller = _textControllerFor(block);
     final original = _editor.blockById(block.id);
-    // Both standalone and embedded Android Notes must finish the IME edit
-    // before changing block identity/focus; do not treat the two views
-    // differently while Gboard is composing.
     final androidIme = Theme.of(context).platform == TargetPlatform.android;
     final needsStructuralEnter = androidIme &&
         original != null &&
@@ -441,21 +436,25 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       }
     }
     _applyMutation(mutation);
-    if (needsStructuralEnter && _pendingImeBlockSplits.add(block.id)) {
-      // Finish Gboard's transaction first; never unmount the active TextField
-      // synchronously from its onChanged callback.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _pendingImeBlockSplits.remove(block.id);
+    if (needsStructuralEnter || _pendingImeBlockSplits.contains(block.id)) {
+      _pendingImeBlockSplits.add(block.id);
+      _imeSplitTimers.remove(block.id)?.cancel();
+      // Structural split is allowed only after Gboard composition commits.
+      _imeSplitTimers[block.id] = Timer(const Duration(milliseconds: 220), () {
+        _imeSplitTimers.remove(block.id);
         if (!mounted) return;
         final live = _editor.blockById(block.id);
-        if (live == null || !live.effectiveText.contains('\n')) return;
-        final selection = _textControllers[block.id]?.selection;
-        _applyMutation(_editor.splitEmbeddedLineBreak(
-          block.id,
-          selection ?? TextSelection.collapsed(
-            offset: live.effectiveText.length,
-          ),
-        ));
+        final field = _textControllers[block.id];
+        if (live == null || field == null || !live.effectiveText.contains('\n')) {
+          _pendingImeBlockSplits.remove(block.id);
+          return;
+        }
+        final composing = field.value.composing;
+        if (composing.isValid && !composing.isCollapsed) return;
+        _pendingImeBlockSplits.remove(block.id);
+        final caret = field.selection.isValid ? field.selection
+            : TextSelection.collapsed(offset: live.effectiveText.length);
+        _applyMutation(_editor.splitEmbeddedLineBreak(block.id, caret));
       });
     }
   }
@@ -1492,7 +1491,7 @@ _editor.insertAfter(
       previousBlockType: index > 0 ? blocks[index - 1].type : null,
       active: active,
       editing: editable && !_blockSelectionMode && _editingBlockId == block.id,
-      directEditOnTap: editable && widget.inlineBodyOnly &&
+      directEditOnTap: editable &&
           Theme.of(context).platform == TargetPlatform.android &&
           !_blockSelectionMode,
       textController: editable ? _textControllerFor(block) : null,
@@ -1670,9 +1669,8 @@ AppButton.destructive(
   }
 
   Widget _buildReorderableBlockList() {
-    // Embedded Android typing has no drag handles; avoid reorder overhead.
-    if (widget.inlineBodyOnly &&
-        Theme.of(context).platform == TargetPlatform.android &&
+    // Android text input must not compete with reorder recognizers.
+    if (Theme.of(context).platform == TargetPlatform.android &&
         !_blockSelectionMode) {
       return ListView.builder(
         key: const ValueKey('notes-editor-content'),
@@ -1777,9 +1775,9 @@ activeType == NoteBlockType.bulletedList
         onPointerDown: _handleEditorPointerDown,
         onPointerUp: _scheduleSecondarySelectionGuardRelease,
         onPointerCancel: _scheduleSecondarySelectionGuardRelease,
-        // Embedded Android fields use native selection, not global SelectionArea.
-        child: _blockSelectionMode || (widget.inlineBodyOnly &&
-            Theme.of(context).platform == TargetPlatform.android)
+        // All Android Notes use native selection during editing.
+        child: _blockSelectionMode ||
+            Theme.of(context).platform == TargetPlatform.android
   ? _buildReorderableBlockList()
   : Focus(
       canRequestFocus: false,

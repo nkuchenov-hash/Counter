@@ -268,7 +268,29 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                               // The Settings header owns its status-bar inset.
                               // A shell SafeArea here created a detached, opaque
                               // strip above the frosted pinned header.
-                              final compactContent = mainColumn;
+                              final compactContent = Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  mainColumn,
+                                  // One noninteractive bottom feather for every
+                                  // compact destination. Content remains visible
+                                  // underneath the floating capsule; no solid
+                                  // full-width navigation backplate.
+                                  Positioned(
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    height: 126,
+                                    child: RepaintBoundary(
+                                      child: AppGlassEdgeFade(
+                                        edge: AppGlassEdge.bottom,
+                                        surfaceColor: scheme.surface,
+                                        blurSigma: 0,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
                               return switch (formFactor) {
                                 ShellFormFactor.desktop => DesktopShellFrame(
                                   selectedIndex: desktopSideNavSelectedIndex(

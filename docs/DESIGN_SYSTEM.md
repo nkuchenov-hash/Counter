@@ -2,7 +2,7 @@
 
 - `ShellCompactBottomNav` in `lib/app/shell/phone/shell_bottom_navigation.dart` is the **only** mobile primary navigation component on every tab, including Settings. A new menu widget, tab-specific imitation, duplicated frosted background, or parallel navigation implementation is prohibited.
 - `AppGlassEdgeFade` in `lib/core/widgets/app_glass_edge_fade.dart` owns both header and bottom blur/feather behavior; screens may choose top/bottom orientation, not copy its shaders. The glass is noninteractive.
-- Shell chrome reserves the entire physical navigation action zone (`extendBody: false`) so screen buttons never occupy the same hit-test rectangle as nav buttons. A 46px visual feather can extend above that zone without moving the actions.
+- Shell chrome uses `extendBody: true` for one floating capsule above continuously scrollable content. The shell adds one noninteractive bottom `AppGlassEdgeFade` (no full-width solid navigation plate), while the nav owns its exclusive interactive hit targets; list end clearance keeps the last item reachable.
 - Code changes may not waive these invariants through ad-hoc UI choices. Both Architecture Guard and Android release invoke `scripts/audit/canonical_navigation_law.py`, and widget geometry tests verify action separation.
 
 ## Canonical screen-level actions (2026-11-17)

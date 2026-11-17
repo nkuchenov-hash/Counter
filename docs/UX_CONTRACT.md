@@ -2,7 +2,7 @@
 
 - Every mobile destination—including Settings, Timeline, Planning, Calendar, Lists and More—uses one shared `ShellCompactBottomNav`; creating or styling a second primary menu in a feature is forbidden, even if a requested design differs.
 - Top/bottom translucent fade and blur must use the single `AppGlassEdgeFade` implementation. The glass has no hit target; menus and page actions must remain tappable and visually distinct.
-- The root shell reserves the entire interactive bottom-navigation zone (`Scaffold.extendBody: false`). No page button, save bar or floating action may overlap the five navigation actions. Only a noninteractive 46px fade may paint above the dock into scrollable content.
+- The shell uses `Scaffold.extendBody: true` so scrollable content paints under the floating translucent capsule on all mobile tabs. One shell-owned, noninteractive `AppGlassEdgeFade(bottom)` feathers the content behind the dock; there must be no full-width opaque plate. Navigation button hit targets remain above the painted content. Scrollable screens provide enough end clearance so the last item can be fully reached above the dock.
 - The invariant is enforced by `scripts/audit/canonical_navigation_law.py` in Architecture Guard AND APK publishing, plus widget geometry tests in `test/shell_form_factor_test.dart`. A compilation success alone does not waive it.
 
 ## Viktor — adjacent Timeline record duration changes (2026-11-14)
