@@ -75,6 +75,36 @@ class ViktorAction {
             !const {'reject', 'shift'}.contains(args['conflict_policy'])) {
           throw const FormatException('Unknown plan conflict policy');
         }
+      case 'create_plans_batch':
+        _onlyKeys(args, const {'plans'});
+        final rawPlans = args['plans'];
+        if (rawPlans is! List || rawPlans.length < 2 || rawPlans.length > 12) {
+          throw const FormatException('A batch needs 2–12 timed plans');
+        }
+        final checked = <Map<String, Object?>>[];
+        final keys = <String>{};
+        for (final item in rawPlans) {
+          if (item is! Map) {
+            throw const FormatException('Invalid batch plan');
+          }
+          final row = Map<String, Object?>.from(item);
+          _onlyKeys(row, const {
+            'title', 'wall_day', 'start_time', 'duration_minutes', 'timezone',
+          });
+          final title = _title(row, 'title');
+          final date = _day(row, 'wall_day');
+          _clock(row, 'start_time');
+          _duration(row, 'duration_minutes');
+          if (row.containsKey('timezone')) {
+            _text(row, 'timezone', maxLength: 64);
+          }
+          final key = '$date|${title.trim().toLowerCase()}';
+          if (!keys.add(key)) {
+            throw const FormatException('Duplicate title in batch');
+          }
+          checked.add(row);
+        }
+        args['plans'] = checked;
       case 'update_plan_duration':
         _onlyKeys(args, const {
           'plan_id', 'expected_duration_minutes', 'duration_minutes',
@@ -155,7 +185,11 @@ class ViktorAction {
             if (source == target) {
               throw const FormatException('Move target must differ from source');
             }
-            _bulkClock(operation, 'start_time');
+            // An unspecified clock means auto-place the moved group into
+            // free slots of its destination day; do not force a guessed 09:00.
+            if (operation.containsKey('start_time')) {
+              _bulkClock(operation, 'start_time');
+            }
           } else if (operation.containsKey('target_day')) {
             throw const FormatException('Only moves specify target_day');
           } else if (kind == 'keep' &&
@@ -436,6 +470,41 @@ class ViktorActionBatch {
   static const version = 1;
   final String requestId;
   final List<ViktorAction> actions;
+
+  /// Promote a legacy provider's collection of create_plan actions into ONE
+  /// protected server transaction. A mixed Record/Plan batch, a shifted
+  /// insertion, or any untimed item is never silently promoted.
+  static ViktorActionBatch? atomicTimedCreates(ViktorActionBatch original) {
+    final creates = original.actions
+        .where((a) => a.name == 'create_plan').toList();
+    if (creates.length < 2 || creates.length > 12 ||
+        creates.length != original.actions.length ||
+        creates.any((a) =>
+            !a.arguments.containsKey('start_time') ||
+            !a.arguments.containsKey('duration_minutes') ||
+            a.arguments['conflict_policy'] == 'shift')) {
+      return null;
+    }
+    return ViktorActionBatch.fromJson({
+      'version': version,
+      'request_id': original.requestId,
+      'actions': [{
+        'name': 'create_plans_batch',
+        'arguments': {
+          'plans': [
+            for (final action in creates) {
+              'title': action.arguments['title'],
+              'wall_day': action.arguments['wall_day'],
+              'start_time': action.arguments['start_time'],
+              'duration_minutes': action.arguments['duration_minutes'],
+              if (action.arguments['timezone'] != null)
+                'timezone': action.arguments['timezone'],
+            },
+          ],
+        },
+      }],
+    });
+  }
 
   bool get hasMutations => actions.any((a) => a.isMutation);
 

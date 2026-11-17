@@ -1,3 +1,10 @@
+## [2026-11-17] — Viktor atomic multi-plan creation and unfinished-plan carry-forward [verification pending]
+
+- **Viktor:** Added consent-gated `create_plans_batch` (2–12 timed plans), with real-day collision checks and an owner-scoped PocketBase transaction under `/api/viktor/schedule/create`. Retry-stable per-item business UUIDs, server-level rollback and authenticated post-commit verification avoid independent partial saves.
+- **Viktor:** An unfinished-plan move with no specified clock now searches destination free intervals, beginning after the current profile-wall time for today, without moving existing commitments. Explicit clocks still fail on conflicts; fixed, recurring and invalid source rows remain protected.
+- **Viktor:** Replaced repetitive speculative schedule-recovery questions with the actual rejection reason. Corrected model instruction distinguishing an explicitly requested saved multi-plan batch from a hypothetical draft; legacy multiple timed create proposals safely fold into one transaction.
+- **Quality gate:** Added atomic-create, idempotency/ownership/rollback, missing-clock carry-forward and mixed-domain safety tests. Web/Android builds, production server deployment and real-account behavior require green CI and post-deployment verification. No PocketBase schema fields changed.
+
 ## [2026-11-17] — Mobile translucent navigation and Android Notes IME stabilization [verification pending]
 
 - Shell now places one canonical noninteractive bottom fade behind the floating navigation on all compact destinations; no opaque full-width nav backplate.

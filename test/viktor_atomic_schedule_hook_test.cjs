@@ -3,16 +3,19 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 let route;
+let createRoute;
 vm.runInNewContext(
   fs.readFileSync('pb_hooks/viktor.schedule_commit.pb.js', 'utf8'),
   {routerAdd(method, path, handler) {
     assert.equal(method, 'POST');
-    assert.equal(path, '/api/viktor/schedule/commit');
-    route = handler;
+    if (path === '/api/viktor/schedule/commit') route = handler;
+    else if (path === '/api/viktor/schedule/create') createRoute = handler;
+    else assert.fail('Unrecognized Viktor schedule route ' + path);
   }, Date, Set, Math, Number, Object, String, Array, RegExp},
   {timeout: 3000}
 );
 assert.equal(typeof route, 'function');
+assert.equal(typeof createRoute, 'function');
 const owner = 'aaaaabbbbbccccc';
 const other = 'rrrrrsssssttttt';
 const one = 'aaaaabbbbb11111';

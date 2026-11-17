@@ -371,13 +371,16 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         }
         return;
       }
-      if (ViktorProposedDayDraft.needsReadOnlyDraft(resolvedActions)) {
-        final draft = await ViktorProposedDayDraft.describe(resolvedActions,
+      // Only an all-timed, all-create proposal can be promoted to one
+      // protected atomic write. Mixed Timeline/Plan requests remain drafts.
+      final folded = ViktorActionBatch.atomicTimedCreates(resolvedActions);
+      var finalActions = folded ?? resolvedActions;
+      if (ViktorProposedDayDraft.needsReadOnlyDraft(finalActions)) {
+        final draft = await ViktorProposedDayDraft.describe(finalActions,
           loadDay: db.getPlanningTasksForWallDate);
         if (mounted) _push(draft);
         return;
       }
-      var finalActions = resolvedActions;
       var recoveredProposal = false;
       late String preview;
       try {

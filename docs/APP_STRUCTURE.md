@@ -152,6 +152,8 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 | `ai/viktor_record_tools.dart` | Owner-scoped Timeline reads, completed-record creation and previewed consecutive-record duration changes, with UTC/concurrency/conflict validation |
 | `ai/viktor_record_note_tools.dart` | Owner-scoped historical Record note retrieval by actual creation date and content, never raw database writes |
 | `ai/viktor_atomic_bulk_gateway.dart` | Brain-owned authenticated atomic bulk schedule gateway and post-save verification |
+| `ai/viktor_atomic_create_gateway.dart` | Owner-scoped atomic multi-plan create gateway with retry-stable IDs and independent read-back |
+| `ai/viktor_multi_plan_proposal.dart` | Read-only protected batch-create preview against current scheduled commitments and duplicate titles |
 | `ai/viktor_atomic_record_gateway.dart` | Brain-owned transactional two-record Timeline boundary update and independent server readback; no partial PATCH fallback |
 | `ai/viktor_conversation_store.dart` | Owner-scoped multiple conversations with per-turn UTC/profile-day/zone, encrypted offline outbox, original main compatibility and dated model context; no provider secrets |
 | `ai/viktor_thread_router.dart` | Conservative automatic new-topic routing; preserves short follow-ups and explicit old-task references |

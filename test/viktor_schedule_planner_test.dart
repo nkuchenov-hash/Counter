@@ -411,6 +411,23 @@ void main() {
     expect(result, contains('пока ничего не сохранено'));
   });
 
+  test('Mixed untimed Plan and live Record action fails closed without cast error', () async {
+    final mixed = proposal([
+      {'name': 'create_plan', 'arguments': {
+        'title': 'Обустроить электрику', 'wall_day': '2026-11-17',
+      }},
+      {'name': 'start_record', 'arguments': {
+        'title': 'Start later',
+      }},
+    ]);
+    expect(ViktorProposedDayDraft.needsReadOnlyDraft(mixed), isTrue);
+    final draft = await ViktorProposedDayDraft.describe(mixed,
+        loadDay: (_) async => []);
+    expect(draft, contains('Обустроить электрику'));
+    expect(draft, contains('время не указано'));
+    expect(draft, contains('ничего не сохранено'));
+  });
+
   test('one create_plan is not downgraded into a multi-event draft', () {
     final single = proposal([{'name': 'create_plan', 'arguments': {
       'title': 'Один план', 'wall_day': '2026-10-24',

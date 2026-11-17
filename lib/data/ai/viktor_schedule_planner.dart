@@ -406,6 +406,7 @@ class ViktorBulkPlanner {
     required bool Function(PlanningTask) fixedTime,
     Map<String, List<PlanningTask>>? allDays,
     String Function(PlanningTask)? categoryName,
+    DateTime Function(String day)? autoStart,
   }) {
     final ops = action.arguments['operations'] as List;
     final days = allDays ?? {
@@ -514,15 +515,49 @@ class ViktorBulkPlanner {
         }
         final hhmm = op['start_time'] as String?;
         final zone = (op['timezone'] as String?) ?? 'profile';
+        // When the user did not specify an hour, the Brain supplies the
+        // earliest admissible time (never earlier than "now" for today).
+        // Explicit times remain strict constraints, not suggestions.
+        final automatic = move && hhmm == null;
+        final target = DateTime.parse(date);
         var cursor = hhmm != null
-          ? wallTime(date, hhmm, zone) : chosen.first.startTime!;
+          ? wallTime(date, hhmm, zone)
+          : automatic
+              ? (autoStart?.call(date) ??
+                  DateTime(target.year, target.month, target.day, 9))
+              : (chosen.first.startTime ??
+                  (throw StateError('Для уплотнения «${chosen.first.title}» '
+                      'нужно указать длительность и время.')));
         final previousEnd = endByDay[date];
         if (previousEnd != null && cursor.isBefore(previousEnd)) {
           cursor = previousEnd;
         }
         for (final p in chosen) {
           guard(p);
-          final end = cursor.add(p.endDateTime!.difference(p.startTime!));
+          final duration = p.endDateTime!.difference(p.startTime!);
+          if (automatic) {
+            // First-fit over CURRENT destination commitments and previously
+            // placed moves. Preserve their original times and avoid every
+            // protected/Price Reporter block instead of failing at the first
+            // collision or shifting an unrelated plan.
+            final occupied = <({DateTime start, DateTime end})>[
+              for (final existing in days[date]!)
+                if (existing.startTime != null &&
+                    existing.endDateTime != null &&
+                    !used.contains(existing.pocketRecordId))
+                  (start: existing.startTime!, end: existing.endDateTime!),
+              for (final inserted in moves)
+                if (inserted.day == date)
+                  (start: inserted.start, end: inserted.end),
+            ]..sort((a, b) => a.start.compareTo(b.start));
+            for (final interval in occupied) {
+              if (cursor.isBefore(interval.end) &&
+                  cursor.add(duration).isAfter(interval.start)) {
+                cursor = interval.end;
+              }
+            }
+          }
+          final end = cursor.add(duration);
           if (key(cursor) != date || key(end) != date) {
             throw StateError('«${p.title}»: время выходит за границы ${date}.');
           }
@@ -598,6 +633,24 @@ class ViktorProposedDayDraft {
     for (final entry in dates.entries) {
       existing[entry.key] = await loadDay(entry.value);
     }
+    // A mixed Record/Plan proposal can contain an untimed date-only plan.
+    // Keep a truthful draft instead of throwing a runtime cast exception.
+    // Cross-domain atomic writes are not supported by the batch-create route.
+    if (items.any((action) =>
+        action.arguments['start_time'] is! String ||
+        action.arguments['duration_minutes'] is! int)) {
+      return [
+        'Черновик смешанного запроса (ничего не сохранено):',
+        for (final action in items)
+          '${action.arguments['wall_day']} — ${action.arguments['title']}' +
+          (action.arguments['start_time'] == null
+              ? ' (время не указано)'
+              : ' в ${action.arguments['start_time']}'),
+        'Планы без назначенного времени не размещены на шкале дня. '
+            'Смешанные операции с записями требуют отдельного '
+            'подтверждения и не могут быть сохранены одной транзакцией.',
+      ].join('\n');
+    }
     final draft = <({String date, DateTime start, DateTime end,
         String title, String? timezone})>[];
     for (final action in items) {
@@ -668,8 +721,8 @@ class ViktorProposedDayDraft {
     }
     lines.add('\nВремя и длительности предложены ИИ: '
         'проверьте порядок, дорогу и непонятные детали. '
-        'Автоматическое сохранение нескольких новых планов одним '
-        'действием пока недоступно; это только черновик.');
+        'Этот смешанный набор действий не является отдельным '
+        'атомарным пакетом планов; это только черновик.');
     return lines.join('\n');
   }
 }

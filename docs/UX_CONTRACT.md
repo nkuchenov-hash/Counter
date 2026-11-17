@@ -5,6 +5,14 @@
 - The shell uses `Scaffold.extendBody: true` so scrollable content paints under the floating translucent capsule on all mobile tabs. One shell-owned, noninteractive `AppGlassEdgeFade(bottom)` feathers the content behind the dock; there must be no full-width opaque plate. Navigation button hit targets remain above the painted content. Scrollable screens provide enough end clearance so the last item can be fully reached above the dock.
 - The invariant is enforced by `scripts/audit/canonical_navigation_law.py` in Architecture Guard AND APK publishing, plus widget geometry tests in `test/shell_form_factor_test.dart`. A compilation success alone does not waive it.
 
+## Viktor — atomic multi-plan create and yesterday carry-forward (2026-11-17)
+
+- An explicit request to create several timed plans in LIFE OS must use one `create_plans_batch` operation (2–12 items), not repeated independent `create_plan` writes and not a read-only itinerary disclaimer. The Brain checks existing plans, same-day duplicates, timezone and all proposal collisions before one consent dialog. The PocketBase endpoint atomically checks user ownership, category ownership, stored conflicts and retry-stable IDs; a successful HTTP acknowledgement requires independent read-back.
+- A hypothetical itinerary without a request to save remains a draft. Past completed Timeline activities are Records, never created as future Plans. Mixed Record/Plan operations must not silently execute partially; unsupported compound requests must explain which part cannot be committed together.
+- A request to move yesterday's unfinished plans to today with **no specified hour** is valid: `bulk_replan` defaults to a first-fit search of actual destination free slots, not before the current time when the destination is today. Existing scheduled plans (including fixed category blocks) remain untouched. Explicit user-specified start times remain strict, with no silent displacement.
+- Carry-forward retains each moved plan's original duration, relative order, completion status, original commitment date and postponed flag. Completed source plans remain unchanged. Recurring, unsynced, untimed-with-unknown-duration and pinned source tasks fail closed with the concrete reason. Do not fabricate a partial move or extend the day past midnight.
+- After a final failed schedule validation, Viktor must state the actual failure and whether anything was written. Never loop through generic "which option do you choose" menus. Keep optimistic UI, profile timezone, active streams and hot paths unaffected.
+
 ## Viktor — adjacent Timeline record duration changes (2026-11-14)
 
 - A command such as "Сократи запись Обед до 30 минут и продли следующую Этника сайт" always refers to existing Timeline **records**, not plans. Viktor must obtain real record IDs and UTC boundaries with `read_day_records` before proposing the exact two-record edit.
@@ -128,7 +136,7 @@
 - The model never gets raw PocketBase write access: Brain validates UTC time, profile day, overlaps, duplicates, ownership and changed state. All proposed completed records require a reviewed preview before any write.
 - One tool call may read owned Records alongside other read-only tools. Reads and writes are separate steps; never perform a multi-row mutation before approval.
 - If the user gave insufficient timestamps, the assistant must inspect existing Records first, then ask for missing constraints or show explicit estimated times. No fabricated time certainty or silent conversions of Records to Plans.
-- The older anchor-specific completed-record operation stays temporarily for backwards compatibility; migrate it to the generic path only after verified real-device acceptance tests. Multi-Plan creation and cross-domain atomic transactions are separate outstanding work.
+- The older anchor-specific completed-record operation stays temporarily for backwards compatibility; migrate it to the generic path only after verified real-device acceptance tests. Atomic timed Multi-Plan creation is implemented as a distinct capability; cross-domain Record/Plan atomic transactions remain separate work.
 
 
 ## Viktor completed Timeline records (2026-10-28)
@@ -243,7 +251,7 @@ This document defines how Life OS behaves when people interact with it. It is th
 
 ## Viktor bulk clock and read-only observation normalization (2026-10-22)
 
-- Speech/model clocks for `bulk_replan` may be canonically normalized only when unambiguous, e.g. `9:00` to `09:00`, `9 утра` to `09:00`, or `09:00 NY` into `09:00` + `America/New_York`. Missing, conflicting, nonsensical times are errors; never infer absent clocks.
+- Explicit speech/model clocks for `bulk_replan` are normalized only when unambiguous (`9:00`, `9 утра`, `09:00 NY`). An omitted clock for a **move** means consent-gated placement in available destination slots after now for today; malformed/contradictory explicit clocks still fail. Do not fabricate an hour.
 - A validated batch with exactly one `bulk_replan` plus `list_day_plans` reads restricted to the operation's source/target dates is semantically one bulk operation because the Brain reloads those dates itself. Do not drop unrelated reads or a second mutation. Multi-operation `bulk_replan.operations` inside ONE action remains supported and consent-gated.
 - Recompute and verify target-day collisions and protected category rules; show the full preview; require explicit confirmation before saving. A model's narrative never authorizes a write.
 - A dictated explicit cancellation at the end of a request overrides preceding move instructions; report no changes and do not call the model.

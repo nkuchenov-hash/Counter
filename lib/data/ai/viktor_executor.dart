@@ -10,6 +10,8 @@ import 'viktor_plan_category.dart';
 import 'viktor_existing_plan.dart';
 import 'viktor_plan_timezone.dart';
 import 'viktor_atomic_bulk_gateway.dart';
+import 'viktor_atomic_create_gateway.dart';
+import 'viktor_multi_plan_proposal.dart';
 import 'viktor_tag_duration_reflow.dart';
 import 'package:counter/data/time_view_fixed_time_policy.dart';
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
@@ -51,6 +53,18 @@ class ViktorExecutor {
   }
   String? _bulkSignature;
   String? _insertionSignature;
+  // A relative "after now" placement must not drift on every preview/apply
+  // refresh. Bind it to the request so approval compares the same timetable.
+  String? _bulkAnchorRequestId;
+  DateTime? _bulkAnchorProfileWall;
+
+  void _anchorBulkClock(String requestId) {
+    if (_bulkAnchorRequestId != requestId ||
+        _bulkAnchorProfileWall == null) {
+      _bulkAnchorRequestId = requestId;
+      _bulkAnchorProfileWall = db.applyUserOffset(DateTime.now().toUtc());
+    }
+  }
 
   bool _isPriorityInsertion(ViktorAction a) =>
       a.name == 'create_plan' && a.arguments['conflict_policy'] == 'shift';
@@ -192,6 +206,22 @@ class ViktorExecutor {
       action: action, source: allDays[firstSource]!, target: const [],
       sourceDay: firstSource, targetDay: null, allDays: allDays,
       wallTime: wallTime, fixedTime: _fixed,
+      autoStart: (date) {
+        final d = ViktorDateScope.parseDay(date);
+        final base = DateTime(d.year, d.month, d.day, 9);
+        final now = _bulkAnchorProfileWall ??
+            db.applyUserOffset(DateTime.now().toUtc());
+        if (ViktorDateScope.key(now) != date || !now.isAfter(base)) {
+          return base;
+        }
+        // Leave a short approval window: start on the next 5-minute mark
+        // at least 5 minutes ahead. Freeze this clock for preview/apply;
+        // an expired preview must be explicitly regenerated.
+        final earliestMinute = now.hour * 60 + now.minute + 6;
+        final nextFiveMinute = ((earliestMinute + 4) ~/ 5) * 5;
+        return DateTime(d.year, d.month, d.day)
+            .add(Duration(minutes: nextFiveMinute));
+      },
       categoryName: (plan) {
         final path = db.getCategoryPath(plan.categoryId).trim();
         return path.isNotEmpty ? path :
@@ -215,6 +245,11 @@ class ViktorExecutor {
     // Multi-row schedule recalculation and record timers still require an
     // isolated operation: their writes are not atomic with other domains.
     final mutations = batch.actions.where((a) => a.isMutation).toList();
+    if (batch.actions.any((a) => a.name == 'create_plans_batch') &&
+        batch.actions.length != 1) {
+      throw StateError('Групповое создание планов требует '
+          'отдельной атомарной операции.');
+    }
     if (batch.actions.any((a) => a.name == 'bulk_replan') &&
         batch.actions.any((a) => a.name != 'bulk_replan' &&
             a.name != 'list_day_plans')) {
@@ -338,9 +373,15 @@ class ViktorExecutor {
         'Подтвердите изменение расписания.',
       ].join('\n');
     }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'create_plans_batch') {
+      return (await ViktorMultiPlanProposal.prepare(
+          db, batch.actions.single)).description;
+    }
     if (batch.actions.any((a) => a.name == 'bulk_replan')) {
       final bulk = batch.actions.singleWhere(
           (action) => action.name == 'bulk_replan');
+      _anchorBulkClock(batch.requestId);
       final preview = await _planBulk(bulk);
       _bulkSignature = preview.signature;
       final readLines = <String>[];
@@ -611,12 +652,38 @@ class ViktorExecutor {
       return '${_creationReceipt(action, created)} '
           'Сдвинуто планов: ${placement.shifted.length}.';
     }
+    if (batch.actions.length == 1 &&
+        batch.actions.single.name == 'create_plans_batch') {
+      final verified = await ViktorMultiPlanProposal.prepare(
+          db, batch.actions.single);
+      if (verified.description != approvedPreview) {
+        throw StateError('Расписание изменилось после подтверждения.');
+      }
+      return ViktorAtomicCreateGateway(db).commit(
+          rows: verified.rows, requestId: batch.requestId);
+    }
     if (batch.actions.any((a) => a.name == 'bulk_replan')) {
       final bulk = batch.actions.singleWhere(
           (action) => action.name == 'bulk_replan');
       final result = await _planBulk(bulk);
       if (result.signature != _bulkSignature) {
         throw StateError('Планы изменились после подтверждения.');
+      }
+      // Auto-placement is a snapshot of "now" at preview time. If the user
+      // kept the approval open beyond the first slot, require a new preview
+      // instead of silently committing tasks that start in the past.
+      final nowProfile = db.applyUserOffset(DateTime.now().toUtc());
+      final nowDay = ViktorDateScope.key(nowProfile);
+      final ops = bulk.arguments['operations'] as List;
+      final usesAutomaticClock = ops.any((raw) {
+        final op = raw as Map;
+        return op['kind'] == 'move' && !op.containsKey('start_time');
+      });
+      if (usesAutomaticClock &&
+          result.moves.any((m) => m.day == nowDay &&
+              m.start.isBefore(nowProfile))) {
+        throw StateError('Проверка устарела: время первого перенесённого '
+            'плана уже прошло. Откройте новый предпросмотр.');
       }
       // One atomic server transaction and independent post-commit read.
       // NEVER fall back to a sequence of per-plan PATCH calls.

@@ -120,6 +120,65 @@ void main() {
     expect(preview.moves.last.end, DateTime(2026, 10, 21, 10, 30));
   });
 
+  test('Yesterday unfinished move auto-fits after now without moving existing plans', () {
+    final batch = _batch([{
+      'name': 'bulk_replan',
+      'arguments': {'operations': [{
+        'kind': 'move', 'status': 'incomplete',
+        'source_day': '2026-10-20',
+        'target_day': '2026-10-21',
+      }]}
+    }]);
+    final source = [
+      _plan('aaaaabbbbbccccc', 'Completed - leave yesterday', 8, 0, done: true),
+      _plan('dddddeeeeefffff', 'Unfinished one', 13, 0),
+      _plan('ggggghhhhhiiiii', 'Unfinished two', 17, 0),
+    ];
+    final target = [
+      _plan('jjjjjkkkkklllll', 'Existing plan', 10, 45,
+          date: '2026-10-21'),
+      _plan('mmmmnnnnnooooo', 'Price Reporter Planning', 11, 45,
+          date: '2026-10-21'),
+    ];
+    final preview = const ViktorBulkPlanner().calculate(
+      action: batch.actions.single, source: source, target: target,
+      sourceDay: '2026-10-20', targetDay: '2026-10-21',
+      fixedTime: (_) => false,
+      wallTime: (_, _, _) => throw StateError('No fabricated time allowed'),
+      autoStart: (date) {
+        expect(date, '2026-10-21');
+        return DateTime(2026, 10, 21, 10, 30);
+      },
+    );
+    expect(preview.moves.map((m) => m.plan.title),
+        ['Unfinished one', 'Unfinished two']);
+    expect(preview.moves[0].start, DateTime(2026, 10, 21, 12, 30));
+    expect(preview.moves[0].end, DateTime(2026, 10, 21, 13, 15));
+    expect(preview.moves[1].start, DateTime(2026, 10, 21, 13, 15));
+    expect(source.first.isDone, isTrue);
+    expect(target[1].startTime, DateTime(2026, 10, 21, 11, 45));
+  });
+
+  test('Auto-placement refuses overflow rather than changing the day', () {
+    final action = _batch([{
+      'name': 'bulk_replan',
+      'arguments': {'operations': [{
+        'kind': 'move', 'status': 'incomplete',
+        'source_day': '2026-10-20', 'target_day': '2026-10-21',
+      }]}
+    }]).actions.single;
+    expect(() => const ViktorBulkPlanner().calculate(
+      action: action,
+      source: [_plan('aaaaabbbbbccccc', 'Unfinished', 12, 0)],
+      target: [_plan('dddddeeeeefffff', 'Late commitment', 23, 0,
+          date: '2026-10-21')],
+      sourceDay: '2026-10-20', targetDay: '2026-10-21',
+      wallTime: (_, _, _) => throw StateError('No fabricated clock'),
+      fixedTime: (_) => false,
+      autoStart: (_) => DateTime(2026, 10, 21, 23, 20),
+    ), throwsStateError);
+  });
+
   test('Bulk rejects multiple source days instead of loading arbitrary rows', () {
     final batch = _batch([{
       'name': 'bulk_replan',

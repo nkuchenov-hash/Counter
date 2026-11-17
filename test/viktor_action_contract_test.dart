@@ -15,6 +15,68 @@ Map<String, dynamic> batch(List<Map<String, dynamic>> actions) => {
     };
 
 void main() {
+  test('Legacy independent timed creates fold into a single atomic action', () {
+    final legacy = ViktorActionBatch.fromJson({
+      'version': 1, 'request_id': 'viktor_fold_20261117',
+      'actions': [
+        {'name': 'create_plan', 'arguments': {
+          'title': 'Яйца', 'wall_day': '2026-11-17',
+          'start_time': '18:00', 'duration_minutes': 30,
+        }},
+        {'name': 'create_plan', 'arguments': {
+          'title': 'Рыба', 'wall_day': '2026-11-17',
+          'start_time': '18:30', 'duration_minutes': 20,
+        }},
+      ],
+    });
+    final folded = ViktorActionBatch.atomicTimedCreates(legacy);
+    expect(folded, isNotNull);
+    expect(folded!.actions.single.name, 'create_plans_batch');
+    expect(folded.requiresPreview, isTrue);
+    expect(folded.actions.single.arguments['plans'], hasLength(2));
+    final mixed = ViktorActionBatch.fromJson({
+      'version': 1, 'request_id': 'viktor_fold_mixed',
+      'actions': [
+        ...legacy.actions.map((action) => action.toJson()),
+        {'name': 'start_record', 'arguments': {'title': 'No mixed commit'}},
+      ],
+    });
+    expect(ViktorActionBatch.atomicTimedCreates(mixed), isNull);
+  });
+
+  test('Atomic multi-create validates two or more timed plans', () {
+    final approved = ViktorActionBatch.fromJson({
+      'version': 1, 'request_id': 'viktor_batch_20261117',
+      'actions': [{
+        'name': 'create_plans_batch',
+        'arguments': {'plans': [
+          {'title': 'Приготовление яиц', 'wall_day': '2026-11-17',
+           'start_time': '18:00', 'duration_minutes': 30},
+          {'title': 'Приготовление рыбы', 'wall_day': '2026-11-17',
+           'start_time': '18:30', 'duration_minutes': 20},
+        ]},
+      }],
+    });
+    expect(approved.requiresPreview, isTrue);
+    expect(approved.isSingleReversibleWrite, isFalse);
+    expect(approved.actions.single.arguments['plans'], hasLength(2));
+    final missingClock = {
+      'version': 1, 'request_id': 'viktor_batch_20261117',
+      'actions': [{
+        'name': 'create_plans_batch',
+        'arguments': {'plans': [
+          {'title': 'Задача A', 'wall_day': '2026-11-17',
+           'duration_minutes': 30},
+          {'title': 'Задача B', 'wall_day': '2026-11-17',
+           'start_time': '19:00', 'duration_minutes': 20},
+        ]},
+      }],
+    };
+    expect(() => ViktorActionBatch.fromJson(missingClock),
+        throwsFormatException);
+  });
+
+
   group('Viktor action proposals', () {
     test('accepts safe two-step plan edit but mandates preview', () {
       final proposal = ViktorActionBatch.fromJson(batch([
@@ -389,9 +451,17 @@ void main() {
       }
     });
 
-    test('Bulk move rejects missing, ambiguous and invalid start times', () {
+    test('Bulk move auto-places without a clock, rejects invalid explicit clocks', () {
+      final automatic = ViktorAction.fromJson(action('bulk_replan', {
+        'operations': [{
+          'kind': 'move', 'status': 'incomplete',
+          'source_day': '2026-10-21', 'target_day': '2026-10-22',
+        }],
+      }));
+      expect((automatic.arguments['operations'] as List).single,
+          isNot(contains('start_time')));
       for (final bad in [
-        null, '', 'morning', 'nine', '9-ish', '24:00', '12:70',
+        '', 'morning', 'nine', '9-ish', '24:00', '12:70',
         '12:00:17', '12 утра', '09:00 NY then 10',
       ]) {
         expect(() => ViktorAction.fromJson(action('bulk_replan', {

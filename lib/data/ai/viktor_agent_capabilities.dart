@@ -26,6 +26,9 @@ abstract final class ViktorAgentCapabilities {
     ViktorToolCapability('create_plan', 'planning',
         'Create a timed plan; optional shift policy cascades flexible plans '
         'after a priority block', ViktorToolRisk.reversible),
+    ViktorToolCapability('create_plans_batch', 'planning',
+        'Create 2–12 timed plans in one verified atomic PocketBase operation',
+        ViktorToolRisk.consequential),
     ViktorToolCapability('update_plan_duration', 'planning',
         'Change a plan duration with expected-value check',
         ViktorToolRisk.consequential),

@@ -156,3 +156,149 @@ routerAdd("POST", "/api/viktor/schedule/commit", function(e) {
       error:safe.has(reason) ? reason : "schedule_transaction_failed"});
   }
 });
+
+// Protected atomic multi-create. The model cannot call this endpoint directly;
+// only an authenticated LIFE OS executor sends owner-scoped, approved rows.
+routerAdd("POST", "/api/viktor/schedule/create", function(e) {
+  const auth = e.requestInfo().auth;
+  if (!auth || !auth.id) return e.json(401, {error:"sign_in_required"});
+  const owner = String(auth.id);
+  const body = e.requestInfo().body || {};
+  const creates = body.creates;
+  if (typeof body.request_id !== "string" ||
+      !/^viktor_[A-Za-z0-9_-]{8,90}$/.test(body.request_id) ||
+      !Array.isArray(creates) || creates.length < 2 || creates.length > 12) {
+    return e.json(400, {error:"invalid_batch"});
+  }
+  const seenIds = new Set();
+  const proposed = [];
+  const cleanFields = new Set([
+    "plan_id", "title", "category_id", "start_time", "end_time",
+    "initial_date_key"
+  ]);
+  try {
+    for (const raw of creates) {
+      if (!raw || typeof raw !== "object" || Array.isArray(raw) ||
+          Object.keys(raw).some(key => !cleanFields.has(key)) ||
+          typeof raw.plan_id !== "string" ||
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw.plan_id) ||
+          seenIds.has(raw.plan_id) ||
+          typeof raw.title !== "string" || !raw.title.trim() ||
+          raw.title.length > 160 ||
+          typeof raw.category_id !== "string" ||
+          !/^[a-zA-Z0-9]{15}$/.test(raw.category_id) ||
+          typeof raw.initial_date_key !== "string" ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(raw.initial_date_key) ||
+          typeof raw.start_time !== "string" ||
+          typeof raw.end_time !== "string" ||
+          !raw.start_time.endsWith("Z") || !raw.end_time.endsWith("Z")) {
+        throw new Error("invalid_fields");
+      }
+      seenIds.add(raw.plan_id);
+      const start = Date.parse(raw.start_time), end = Date.parse(raw.end_time);
+      if (!Number.isFinite(start) || !Number.isFinite(end) ||
+          start >= end || end - start > 24 * 3600000) {
+        throw new Error("invalid_interval");
+      }
+      proposed.push({raw, start, end});
+    }
+    for (let i = 0; i < proposed.length; i++) {
+      for (let j = i + 1; j < proposed.length; j++) {
+        if (proposed[i].start < proposed[j].end &&
+            proposed[i].end > proposed[j].start) {
+          throw new Error("batch_overlap");
+        }
+      }
+    }
+  } catch (err) {
+    const reason = String(err && err.message || err);
+    return e.json(400, {error:
+      reason === "batch_overlap" ? reason : "invalid_batch_fields"});
+  }
+  try {
+    let ids = [];
+    let replay = false;
+    e.app.runInTransaction(function(txApp) {
+      const existing = [];
+      for (const p of proposed) {
+        const matches = txApp.findRecordsByFilter("plans",
+          "user_id = {:owner} && plan_id = {:pid}", "", 2, 0,
+          {owner:owner, pid:p.raw.plan_id});
+        if (matches.length > 1) throw new Error("duplicate_business_id");
+        existing.push(matches.length === 1 ? matches[0] : null);
+        const category = txApp.findRecordById("categories", p.raw.category_id);
+        if (category.getString("user_id") !== owner ||
+            category.getBool("is_archived")) {
+          throw new Error("category_not_owned");
+        }
+      }
+      // Idempotent replay: accept only if ALL rows are exactly the original
+      // committed batch; never silently complete a partially persisted set.
+      if (existing.some(x => x !== null)) {
+        if (existing.some(x => x === null)) throw new Error("partial_replay");
+        for (let i = 0; i < existing.length; i++) {
+          const old = existing[i], req = proposed[i];
+          const oldStart = Date.parse(old.getString("start_time").replace(" ", "T"));
+          const oldEnd = Date.parse(old.getString("end_time").replace(" ", "T"));
+          if (old.getString("title") !== req.raw.title ||
+              old.getString("category_id") !== req.raw.category_id ||
+              old.getString("initial_date_key") !== req.raw.initial_date_key ||
+              old.getBool("is_done") ||
+              Math.abs(oldStart - req.start) >= 1000 ||
+              Math.abs(oldEnd - req.end) >= 1000) {
+            throw new Error("changed_replay");
+          }
+        }
+        ids = existing.map(x => x.id);
+        replay = true;
+        return;
+      }
+      const earliest = Math.min(...proposed.map(x => x.start));
+      const latest = Math.max(...proposed.map(x => x.end));
+      const overlaps = txApp.findRecordsByFilter("plans",
+        "user_id = {:owner} && start_time < {:latest} && end_time > {:earliest}",
+        "", 501, 0, {owner:owner, earliest:new Date(earliest).toISOString(),
+          latest:new Date(latest).toISOString()});
+      if (overlaps.length >= 501) throw new Error("too_many_plans");
+      for (const old of overlaps) {
+        const start = Date.parse(old.getString("start_time").replace(" ", "T"));
+        const end = Date.parse(old.getString("end_time").replace(" ", "T"));
+        if (!Number.isFinite(start) || !Number.isFinite(end)) {
+          throw new Error("invalid_existing_interval");
+        }
+        for (const p of proposed) {
+          if (start < p.end && end > p.start) throw new Error("existing_overlap");
+        }
+      }
+      const collection = txApp.findCollectionByNameOrId("plans");
+      // No write before all ownership, idempotency and collision checks pass.
+      for (let i = 0; i < proposed.length; i++) {
+        const p = proposed[i].raw;
+        const row = new Record(collection);
+        row.set("plan_id", p.plan_id);
+        row.set("user_id", owner);
+        row.set("category_id", p.category_id);
+        row.set("title", p.title);
+        row.set("is_done", false);
+        row.set("checklist", []);
+        row.set("order", i);
+        row.set("start_time", p.start_time);
+        row.set("end_time", p.end_time);
+        row.set("initial_date_key", p.initial_date_key);
+        row.set("is_postponed", false);
+        txApp.save(row);
+        ids.push(row.id);
+      }
+    });
+    return e.json(200, {ok:true, count:ids.length, ids:ids, replay:replay});
+  } catch (err) {
+    const reason = String(err && err.message || err);
+    const permitted = new Set([
+      "duplicate_business_id", "category_not_owned", "partial_replay",
+      "changed_replay", "too_many_plans", "invalid_existing_interval",
+      "existing_overlap"
+    ]);
+    return e.json(409, {ok:false,
+      error:permitted.has(reason) ? reason : "batch_transaction_failed"});
+  }
+});
