@@ -34,17 +34,18 @@ class HeaderTimezoneQuickSwitcher extends StatelessWidget {
     final quick = await TimezoneQuickPreferenceStore.load(
       profileId, currentTimezone: current);
     if (!context.mounted) return;
-    final deviceZone = await TimezoneQuickPreferenceStore.deviceTimezone();
-    if (!context.mounted) return;
+    // Show the menu without waiting for a platform-channel OS lookup.
     final selected = await showTimezoneQuickPicker(
       context: context,
       currentTimezone: current,
       favoriteIds: quick.favorites,
       automatic: quick.automatic,
-      deviceTimezone: deviceZone,
     );
     if (selected == null || !context.mounted) return;
     final isAuto = selected == kTimezoneAutomaticSelection;
+    final deviceZone = isAuto
+        ? await TimezoneQuickPreferenceStore.deviceTimezone() : null;
+    if (!context.mounted) return;
     final target = isAuto ? deviceZone : selected;
     if (target == null) {
       AppSnack.show(
@@ -237,7 +238,6 @@ Future<String?> showTimezoneQuickPicker({
       if (favoriteIds != null)
         PopupMenuItem<String>(
           value: kTimezoneAutomaticSelection,
-          enabled: deviceTimezone != null,
           child: Row(children: [
             Icon(Icons.phone_android_rounded,
               color: automatic ? Theme.of(context).colorScheme.primary : null),
@@ -340,7 +340,6 @@ class _TimezoneQuickPickerSheetState extends State<_TimezoneQuickPickerSheet> {
               children: [
                 if (widget.favoriteIds != null)
                   ListTile(
-                    enabled: widget.deviceTimezone != null,
                     leading: const Icon(Icons.phone_android_rounded),
                     title: Text(loc.startsWith('ru')
                         ? 'Автоматически' : 'Automatic'),
