@@ -8,6 +8,52 @@ import 'viktor_action_contract.dart';
 class ViktorDateScope {
   const ViktorDateScope._();
 
+  /// A clear bulk carry-forward request does not need an LLM.
+  /// Strictly scoped to "yesterday's unfinished plans to today"; filters,
+  /// exclusions, other dates or ambiguous follow-ups still go to the agent.
+  /// All affected plan IDs and commitments are resolved by the Brain.
+  static ViktorActionBatch? directYesterdayCarryForward({
+    required String input,
+    required DateTime profileToday,
+    required String requestId,
+  }) {
+    final text = input.trim().toLowerCase().replaceAll(
+        RegExp(r'[.,!?;:]+'), ' ').replaceAll(RegExp(r'\\s+'), ' ');
+    if (!RegExp(
+      r'^(?:пожалуйста\\s+)?(?:перенеси|перенести|перемести|переместить|'
+      r'перенесите|переместите)\\s+',
+      caseSensitive: false,
+    ).hasMatch(text)) return null;
+    if (!text.contains('вчера') ||
+        !RegExp(r'невыполн|незаверш|не выполн|unfinished|incomplete')
+            .hasMatch(text) ||
+        !RegExp(r'план|задач').hasMatch(text) ||
+        !text.contains('сегодня')) return null;
+    // Reject a mixed or qualified operation, never silently transfer "all"
+    // when the user excludes a named plan or specifies an alternate date.
+    if (RegExp(r'кроме|исключ|только|завтра|послезавтра|'
+        r'на\\s+\\d{1,2}\\s+[а-яё]|\\d{4}-\\d{2}-\\d{2}|'
+        r'not|except|unless').hasMatch(text)) return null;
+    final today = DateTime(
+        profileToday.year, profileToday.month, profileToday.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    return ViktorActionBatch.fromJson({
+      'version': ViktorActionBatch.version,
+      'request_id': requestId,
+      'actions': [{
+        'name': 'bulk_replan',
+        'arguments': {
+          'operations': [{
+            'kind': 'move',
+            'status': 'incomplete',
+            'source_day': key(yesterday),
+            'target_day': key(today),
+          }],
+        },
+      }],
+    });
+  }
+
   static String key(DateTime day) =>
       '${day.year.toString().padLeft(4, '0')}-'
       '${day.month.toString().padLeft(2, '0')}-'
