@@ -482,7 +482,7 @@ routerAdd("POST", "/api/viktor/propose", (e) => {
     "Revise PREVIOUS assistant draft only on follow-up; retain all stops.",
     "Adjacent Records: read_day_records then resize_adjacent_records by observed IDs; approve.",
     "Past work: read_day_records first; real UTC anchors; create_completed_records on approval. No invented times/Plans.",
-    "After midnight: next day. Prior 'today' belongs to its turn.",
+    "After midnight: next calendar date. Prior 'today' belongs to its turn.",
     "create_plan appointments; conflict_policy:shift for urgent insertions.",
     "bulk_replan filters actual plans; skip list_day_plans before bulk. Brain validates.",
     "continue:true ONLY for read-only tools; writes continue:false. No repeated reads.",
