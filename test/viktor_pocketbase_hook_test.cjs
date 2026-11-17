@@ -134,7 +134,8 @@ assert.equal(adviceResponse.value.actions.length, 0,
 assert.equal(adviceResponse.value.continue, false,
   'Recovery must not request more tools in a hidden loop');
 const recoverySent = JSON.parse(lastRequest.body);
-assert.match(recoverySent.messages[0].content, /Find two or three practical NEXT options/);
+assert.match(recoverySent.messages[0].content, /one short factual reason/);
+assert.doesNotMatch(recoverySent.messages[0].content, /two or three practical NEXT options/);
 assert.match(recoverySent.messages[0].content, /Never invent free slots/);
 const recoveryData = JSON.parse(recoverySent.messages.at(-1).content);
 assert.equal(recoveryData.recovery_only, true);
@@ -162,6 +163,7 @@ assert.match(compactYandexInstructions, /skip list_day_plans/,
   'Status-filtered bulk replans use Brain-owned fresh data directly');
 assert.match(compactYandexInstructions, /EXACTLY two top-level keys/);
 assert.match(compactYandexInstructions, /Hypothetical itinerary/);
+assert.match(compactYandexInstructions, /No workaround menus/);
 assert.match(compactYandexInstructions, /actions:\[\]/,
   'Yandex must draft multi-activity weekends without unsafe partial writes');
 assert.match(source, /Distinguish hypothetical timetable discussion/,
