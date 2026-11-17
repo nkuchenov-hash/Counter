@@ -15,6 +15,35 @@ Map<String, dynamic> batch(List<Map<String, dynamic>> actions) => {
     };
 
 void main() {
+  test('Legacy independent timed creates fold into a single atomic action', () {
+    final legacy = ViktorActionBatch.fromJson({
+      'version': 1, 'request_id': 'viktor_fold_20261117',
+      'actions': [
+        {'name': 'create_plan', 'arguments': {
+          'title': 'Яйца', 'wall_day': '2026-11-17',
+          'start_time': '18:00', 'duration_minutes': 30,
+        }},
+        {'name': 'create_plan', 'arguments': {
+          'title': 'Рыба', 'wall_day': '2026-11-17',
+          'start_time': '18:30', 'duration_minutes': 20,
+        }},
+      ],
+    });
+    final folded = ViktorActionBatch.atomicTimedCreates(legacy);
+    expect(folded, isNotNull);
+    expect(folded!.actions.single.name, 'create_plans_batch');
+    expect(folded.requiresPreview, isTrue);
+    expect(folded.actions.single.arguments['plans'], hasLength(2));
+    final mixed = ViktorActionBatch.fromJson({
+      'version': 1, 'request_id': 'viktor_fold_mixed',
+      'actions': [
+        ...legacy.actions.map((action) => action.toJson()),
+        {'name': 'start_record', 'arguments': {'title': 'No mixed commit'}},
+      ],
+    });
+    expect(ViktorActionBatch.atomicTimedCreates(mixed), isNull);
+  });
+
   test('Atomic multi-create validates two or more timed plans', () {
     final approved = ViktorActionBatch.fromJson({
       'version': 1, 'request_id': 'viktor_batch_20261117',
