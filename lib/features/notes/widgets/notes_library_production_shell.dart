@@ -304,8 +304,7 @@ class _MobileNotesLibrary extends StatelessWidget {
             ],
           ),
         ),
-        Expanded(
-          child: Stack(children: [
+        Expanded(child: Stack(children: [
             Positioned.fill(child: NotesFolderPane(
               categoryId: category.filterCategoryId,
               edgeToEdge: true, child: content)),
