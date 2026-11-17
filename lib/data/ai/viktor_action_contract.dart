@@ -79,24 +79,43 @@ class ViktorAction {
         _onlyKeys(args, const {'plans'});
         final rawPlans = args['plans'];
         if (rawPlans is! List || rawPlans.length < 2 || rawPlans.length > 12) {
-          throw const FormatException('A batch needs 2–12 timed plans');
+          throw const FormatException('A batch needs 2–12 plans');
         }
         final checked = <Map<String, Object?>>[];
         final keys = <String>{};
-        for (final item in rawPlans) {
+        for (var index = 0; index < rawPlans.length; index++) {
+          final item = rawPlans[index];
           if (item is! Map) {
             throw const FormatException('Invalid batch plan');
           }
           final row = Map<String, Object?>.from(item);
           _onlyKeys(row, const {
             'title', 'wall_day', 'start_time', 'duration_minutes', 'timezone',
+            'fill_remaining',
           });
           final title = _title(row, 'title');
           final date = _day(row, 'wall_day');
-          _clock(row, 'start_time');
-          _duration(row, 'duration_minutes');
+          final fills = row['fill_remaining'] == true;
+          if (row.containsKey('fill_remaining') && !fills) {
+            throw const FormatException('fill_remaining must be true');
+          }
+          if (fills && index != rawPlans.length - 1) {
+            throw const FormatException('Only final plan may fill remaining time');
+          }
+          if (row.containsKey('start_time')) _clock(row, 'start_time');
+          if (row.containsKey('duration_minutes')) {
+            _duration(row, 'duration_minutes');
+          } else if (!fills) {
+            throw const FormatException('Missing plan duration');
+          }
+          if (fills && row.containsKey('duration_minutes')) {
+            throw const FormatException('Remaining-time plan has no fixed duration');
+          }
           if (row.containsKey('timezone')) {
             _text(row, 'timezone', maxLength: 64);
+            if (!row.containsKey('start_time')) {
+              throw const FormatException('Auto placement uses profile timezone');
+            }
           }
           final key = '$date|${title.trim().toLowerCase()}';
           if (!keys.add(key)) {
