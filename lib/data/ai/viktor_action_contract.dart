@@ -155,7 +155,11 @@ class ViktorAction {
             if (source == target) {
               throw const FormatException('Move target must differ from source');
             }
-            _bulkClock(operation, 'start_time');
+            // An unspecified clock means auto-place the moved group into
+            // free slots of its destination day; do not force a guessed 09:00.
+            if (operation.containsKey('start_time')) {
+              _bulkClock(operation, 'start_time');
+            }
           } else if (operation.containsKey('target_day')) {
             throw const FormatException('Only moves specify target_day');
           } else if (kind == 'keep' &&
