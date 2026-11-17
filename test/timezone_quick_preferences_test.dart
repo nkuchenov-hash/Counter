@@ -31,6 +31,20 @@ void main() {
     expect(two.favorites, ['London']);
   });
 
+  test('manual mode never overwrites the profile from the OS', () async {
+    var writes = 0;
+    final ok = await TimezoneQuickPreferenceStore.reconcileAutomatic(
+      profileId: 'one',
+      currentTimezone: 'Moscow',
+      saveTimezone: (zone) async {
+        writes++;
+        return true;
+      },
+    );
+    expect(ok, true);
+    expect(writes, 0);
+  });
+
   test('system IANA zone outside quick presets follows DST', () {
     final winter = wall_clock.toWallClockForLabel(
       DateTime.utc(2026, 1, 15, 12), 0, 'Europe/Berlin');
