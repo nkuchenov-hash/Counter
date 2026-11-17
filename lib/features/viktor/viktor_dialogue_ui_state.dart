@@ -241,6 +241,14 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
       return 'Провайдер ИИ заблокировал ответ. '
           'Расписание не изменено, данные не сохранены.';
     }
+    // Never expose internal action ordinals/schema field names to the user.
+    // These are model-side proposal bugs, not user scheduling conflicts.
+    if (raw.contains('Timed plans require start_time') ||
+        raw.contains('Missing plan duration') ||
+        raw.contains('Action ') && raw.contains('Tool create_plan')) {
+      return 'ИИ сформировал некорректные параметры плана. '
+          'Запись не выполнялась.';
+    }
     if (raw.contains('Invalid bulk') || raw.contains('Unknown Viktor action') ||
         raw.contains('Invalid action') || raw.contains('proposal')) {
       return 'ИИ предложил некорректное действие. '

@@ -75,8 +75,13 @@ class ViktorDateScope {
     final day = key(profileToday);
     for (var index = 0; index < pieces.length; index++) {
       final piece = pieces[index].trim();
-      final remaining = RegExp(r'\s+оставшееся\s+время$',
-          caseSensitive: false).firstMatch(piece);
+      // "Оставшееся время" and elliptical "оставшееся" both mean
+      // the rest of the next truly free interval. No invented duration.
+      final remaining = RegExp(
+        r'\s+(?:на\s+)?(?:всё\s+)?(?:оставшееся(?:\s+время)?|'
+        r'остаток\s+дня|оставшуюся\s+часть\s+дня)$',
+        caseSensitive: false,
+      ).firstMatch(piece);
       if (remaining != null) {
         if (index != pieces.length - 1) return null;
         final title = piece.substring(0, remaining.start).trim();

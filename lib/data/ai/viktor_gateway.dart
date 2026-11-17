@@ -655,6 +655,15 @@ class ViktorGateway {
           if (proposalFeedback != null && proposalFeedback.isNotEmpty)
             proposalFeedback,
           'Invalid action structure: ${error.message}',
+          if (error.message.contains('Timed plans require'))
+            'Schema correction: create_plan requires BOTH start_time and '
+            'duration_minutes, or NEITHER. For several new chores with '
+            'given durations but no start clock, use exactly ONE '
+            'create_plans_batch action with plans:[{title,wall_day,'
+            'duration_minutes}, ...] and OMIT start_time. A final '
+            'remaining-time chore uses fill_remaining:true and NO '
+            'duration_minutes. Past completed records are not new plans. '
+            'Never invent timestamps or omit named chores.',
         ].join('\n'),
         conversationHistory: conversationHistory,
         allowRepair: false,
