@@ -18,10 +18,10 @@ class ViktorDateScope {
     required String requestId,
   }) {
     final text = input.trim().toLowerCase().replaceAll(
-        RegExp(r'[.,!?;:]+'), ' ').replaceAll(RegExp(r'\\s+'), ' ');
+        RegExp(r'[.,!?;:]+'), ' ').replaceAll(RegExp(r'\s+'), ' ');
     if (!RegExp(
-      r'^(?:пожалуйста\\s+)?(?:перенеси|перенести|перемести|переместить|'
-      r'перенесите|переместите)\\s+',
+      r'^(?:пожалуйста\s+)?(?:перенеси|перенести|перемести|переместить|'
+      r'перенесите|переместите)\s+',
       caseSensitive: false,
     ).hasMatch(text)) return null;
     if (!text.contains('вчера') ||
@@ -32,7 +32,7 @@ class ViktorDateScope {
     // Reject a mixed or qualified operation, never silently transfer "all"
     // when the user excludes a named plan or specifies an alternate date.
     if (RegExp(r'кроме|исключ|только|завтра|послезавтра|'
-        r'на\\s+\\d{1,2}\\s+[а-яё]|\\d{4}-\\d{2}-\\d{2}|'
+        r'на\s+\d{1,2}\s+[а-яё]|\d{4}-\d{2}-\d{2}|'
         r'not|except|unless').hasMatch(text)) return null;
     final today = DateTime(
         profileToday.year, profileToday.month, profileToday.day);
