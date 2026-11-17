@@ -371,13 +371,50 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         }
         return;
       }
-      if (ViktorProposedDayDraft.needsReadOnlyDraft(resolvedActions)) {
-        final draft = await ViktorProposedDayDraft.describe(resolvedActions,
-          loadDay: db.getPlanningTasksForWallDate);
-        if (mounted) _push(draft);
-        return;
-      }
+      // Legacy model providers sometimes return several create_plan tools
+      // instead of the protected batch tool. Promote ONLY an all-timed,
+      // all-create proposal to the same atomic operation, never to sequential
+      // POSTs and never when mixed with a Record timer mutation.
       var finalActions = resolvedActions;
+      if (ViktorProposedDayDraft.needsReadOnlyDraft(resolvedActions)) {
+        final all = resolvedActions.actions;
+        final creates = all.where((a) => a.name == 'create_plan').toList();
+        final atomicallyConvertible = creates.length >= 2 &&
+            creates.length == all.length &&
+            creates.every((a) =>
+                a.arguments.containsKey('start_time') &&
+                a.arguments.containsKey('duration_minutes') &&
+                a.arguments['conflict_policy'] != 'shift');
+        if (atomicallyConvertible) {
+          finalActions = ViktorActionBatch.fromJson({
+            'version': ViktorActionBatch.version,
+            'request_id': resolvedActions.requestId,
+            'actions': [
+              {
+                'name': 'create_plans_batch',
+                'arguments': {
+                  'plans': [
+                    for (final action in creates)
+                      {
+                        'title': action.arguments['title'],
+                        'wall_day': action.arguments['wall_day'],
+                        'start_time': action.arguments['start_time'],
+                        'duration_minutes': action.arguments['duration_minutes'],
+                        if (action.arguments['timezone'] != null)
+                          'timezone': action.arguments['timezone'],
+                      },
+                  ],
+                },
+              },
+            ],
+          });
+        } else {
+          final draft = await ViktorProposedDayDraft.describe(resolvedActions,
+            loadDay: db.getPlanningTasksForWallDate);
+          if (mounted) _push(draft);
+          return;
+        }
+      }
       var recoveredProposal = false;
       late String preview;
       try {
