@@ -23,6 +23,35 @@ extension _ViktorRecoveryDialogue on _ViktorChatPageState {
     if (mounted) _push(saved);
   }
 
+  /// Safe Plan-only fallback for a fully specified narrated chores list.
+  /// Earlier reported completed activities stay in Timeline and are never
+  /// fabricated as future Plans or claimed to be updated.
+  Future<bool> _tryNarratedChoreFallback({
+    required String input,
+    required String requestId,
+    required ViktorExecutor executor,
+    required void Function() onWriteStarted,
+  }) async {
+    final today = DatabaseService.instance.getProjectedToday();
+    final batch = ViktorDateScope.narratedChoreBatch(
+      input: input, profileToday: today, requestId: requestId);
+    if (batch == null) return false;
+    final preview = await executor.describe(batch, today);
+    if (!mounted) return true;
+    if (!await _confirm(batch, '$preview\n'
+        'Ранее выполненные записи Timeline НЕ изменяются.')) {
+      if (mounted) _push('Создание планов отменено.');
+      return true;
+    }
+    if (!mounted) return true;
+    onWriteStarted();
+    final receipt = await executor.apply(batch, today,
+        approvedPreview: preview);
+    if (mounted) _push('$receipt\n'
+        'Ранее выполненные записи Timeline не изменены.');
+    return true;
+  }
+
   /// Give the assistant one bounded opportunity to inspect additional real
   /// data and propose a different operation after a pre-write rejection.
   /// Reads cannot mutate. The caller re-previews and explicitly confirms any
