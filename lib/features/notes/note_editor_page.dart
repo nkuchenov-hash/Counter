@@ -266,10 +266,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         _lastSelections[block.id] = next;
         _editor.updateSelection(block.id, next);
         if (!mounted || _editor.activeBlockId != block.id) return;
-        // Gboard switches between collapsed, composing, and selection
-        // ranges while typing. The TextField owns those updates; rebuilding
-        // the whole Notes editor for a caret change is unnecessary and can
-        // interrupt native multiline input in the embedded Android sheet.
         final androidIme = Theme.of(context).platform == TargetPlatform.android;
         if (!androidIme && previous?.isCollapsed != next.isCollapsed) {
           setState(() {});
@@ -300,9 +296,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         if (_editingBlockId != block.id || activeChanged) {
           setState(() => _editingBlockId = block.id);
         }
-        // Android EditableText already brings the caret above the keyboard.
-        // A second scroll animation on the containing ReorderableListView
-        // competes with it and causes the record sheet to jump on focus.
         if (Theme.of(context).platform != TargetPlatform.android) {
           _ensureBlockVisible(block.id);
         }
@@ -414,12 +407,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       return;
     }
     final node = _focusNodeFor(block);
-    // Transfer focus first, then repaint selection state. Keeping the focus
-    // hand-off synchronous prevents Android from closing/reopening the IME
-    // while moving between adjacent Notes text blocks.
     if (node?.hasFocus != true) node?.requestFocus();
-    // The FocusNode listener performs the one local visibility adjustment.
-    // A second scroll request here used to race the Android IME.
     if (mounted && (_editingBlockId != blockId || changedActive)) {
       setState(() => _editingBlockId = blockId);
     }
@@ -427,9 +415,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   void _onBlockTextChanged(NoteBlock block, String value) {
     final controller = _textControllerFor(block);
     final original = _editor.blockById(block.id);
-    // Both standalone and embedded Android Notes must finish the IME edit
-    // before changing block identity/focus; do not treat the two views
-    // differently while Gboard is composing.
     final androidIme = Theme.of(context).platform == TargetPlatform.android;
     final needsStructuralEnter = androidIme &&
         original != null &&
@@ -453,32 +438,23 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     _applyMutation(mutation);
     if (needsStructuralEnter || _pendingImeBlockSplits.contains(block.id)) {
       _pendingImeBlockSplits.add(block.id);
-      // Wait for Gboard composition to commit before replacing the focused
-      // block. A post-frame callback is still inside the edit transaction.
       _imeSplitTimers.remove(block.id)?.cancel();
+      // Structural split is allowed only after Gboard composition commits.
       _imeSplitTimers[block.id] = Timer(const Duration(milliseconds: 220), () {
         _imeSplitTimers.remove(block.id);
         if (!mounted) return;
         final live = _editor.blockById(block.id);
         final field = _textControllers[block.id];
-        if (live == null || field == null ||
-            !live.effectiveText.contains('\n')) {
+        if (live == null || field == null || !live.effectiveText.contains('\n')) {
           _pendingImeBlockSplits.remove(block.id);
           return;
         }
         final composing = field.value.composing;
-        if (composing.isValid && !composing.isCollapsed) {
-          // Keep the literal newline and retry after a subsequent edit.
-          // Never detach EditableText while it is composing.
-          return;
-        }
+        if (composing.isValid && !composing.isCollapsed) return;
         _pendingImeBlockSplits.remove(block.id);
-        _applyMutation(_editor.splitEmbeddedLineBreak(
-          block.id,
-          field.selection.isValid
-              ? field.selection
-              : TextSelection.collapsed(offset: live.effectiveText.length),
-        ));
+        final caret = field.selection.isValid ? field.selection
+            : TextSelection.collapsed(offset: live.effectiveText.length);
+        _applyMutation(_editor.splitEmbeddedLineBreak(block.id, caret));
       });
     }
   }
