@@ -35,12 +35,24 @@ class AppGlassEdgeFade extends StatelessWidget {
         gradient: LinearGradient(
           begin: start,
           end: end,
-          stops: topHeader ? const [0, 0.70, 1] : const [0, 0.46, 1],
-          colors: [
-            surfaceColor.withValues(alpha: topHeader ? 0.995 : 0.96),
-            surfaceColor.withValues(alpha: topHeader ? 0.94 : 0.78),
-            AppNeutralTones.transparent,
-          ],
+          // A gentle, full-height falloff keeps the pinned header readable
+          // without the dark band and abrupt edge on scrolling Settings.
+          stops: topHeader
+              ? const [0, 0.18, 0.45, 0.72, 1]
+              : const [0, 0.46, 1],
+          colors: topHeader
+              ? [
+                  surfaceColor.withValues(alpha: 0.72),
+                  surfaceColor.withValues(alpha: 0.55),
+                  surfaceColor.withValues(alpha: 0.29),
+                  surfaceColor.withValues(alpha: 0.08),
+                  AppNeutralTones.transparent,
+                ]
+              : [
+                  surfaceColor.withValues(alpha: 0.96),
+                  surfaceColor.withValues(alpha: 0.78),
+                  AppNeutralTones.transparent,
+                ],
         ),
       ),
       child: const SizedBox.expand(),
@@ -51,10 +63,24 @@ class AppGlassEdgeFade extends StatelessWidget {
         shaderCallback: (bounds) => LinearGradient(
           begin: start,
           end: end,
-          // Keep content invisible behind the pinned title; begin feathering
-          // only below the title, not halfway through its baseline.
-          stops: topHeader ? const [0, 0.75, 1] : const [0, 0.58, 1],
-          colors: const [AppNeutralTones.white, AppNeutralTones.white, AppNeutralTones.transparent],
+          // Feather the header's tint and backdrop blur progressively,
+          // rather than holding full opacity until the final quarter.
+          stops: topHeader
+              ? const [0, 0.18, 0.45, 0.72, 1]
+              : const [0, 0.58, 1],
+          colors: topHeader
+              ? [
+                  AppNeutralTones.white,
+                  AppNeutralTones.white,
+                  AppNeutralTones.white.withValues(alpha: 0.72),
+                  AppNeutralTones.white.withValues(alpha: 0.27),
+                  AppNeutralTones.transparent,
+                ]
+              : const [
+                  AppNeutralTones.white,
+                  AppNeutralTones.white,
+                  AppNeutralTones.transparent,
+                ],
         ).createShader(bounds),
         child: ClipRect(
           child: blurSigma <= 0
