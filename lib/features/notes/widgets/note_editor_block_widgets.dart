@@ -156,12 +156,13 @@ class NotesEditorBlockItem extends StatelessWidget {
   Widget _buildSelectableTextBlock(BuildContext context) {
     final style = _selectableTextStyle(context, block);
     final text = block.effectiveText;
+    final ru = currentLocale.value.toLowerCase().startsWith('ru');
     final hint = switch (block.type) {
-      NoteBlockType.heading when block.level == 1 => 'Heading',
-      NoteBlockType.bulletedList || NoteBlockType.numberedList => 'List item',
-      NoteBlockType.checklist => 'Checklist item',
-      NoteBlockType.quote => 'Quote',
-      _ => 'Write something',
+      NoteBlockType.heading when block.level == 1 => ru ? 'Заголовок' : 'Heading',
+      NoteBlockType.bulletedList || NoteBlockType.numberedList => ru ? 'Пункт списка' : 'List item',
+      NoteBlockType.checklist => ru ? 'Пункт списка дел' : 'Checklist item',
+      NoteBlockType.quote => ru ? 'Цитата' : 'Quote',
+      _ => ru ? 'Начните писать' : 'Write something',
     };
 
     Widget selectableText({TextStyle? overrideStyle}) {
@@ -374,6 +375,7 @@ class NotesEditorBlockItem extends StatelessWidget {
   }
 
   Widget _buildCanonicalBlock(BuildContext context, NotesBlockState state) {
+    final ru = currentLocale.value.toLowerCase().startsWith('ru');
     switch (block.type) {
       case NoteBlockType.paragraph:
       case NoteBlockType.heading:
@@ -383,8 +385,8 @@ class NotesEditorBlockItem extends StatelessWidget {
           style: _textStyleFor(block),
           state: state,
           hintText: block.type == NoteBlockType.heading && block.level == 1
-              ? 'Heading'
-              : 'Write something',
+              ? (ru ? 'Заголовок' : 'Heading')
+              : (ru ? 'Начните писать' : 'Write something'),
           onChanged: onTextChanged,
           onTap: onTap,
           textFieldKey: ValueKey('notes-block-field-${block.id}'),
@@ -399,7 +401,7 @@ class NotesEditorBlockItem extends StatelessWidget {
               : NotesListStyle.bulleted,
           ordinal: numberedOrdinal,
           state: state,
-          hintText: 'List item',
+          hintText: ru ? 'Пункт списка' : 'List item',
           onChanged: onTextChanged,
           onTap: onTap,
           textFieldKey: ValueKey('notes-block-field-${block.id}'),
@@ -410,7 +412,7 @@ class NotesEditorBlockItem extends StatelessWidget {
           focusNode: focusNode,
           checked: block.checked,
           state: state,
-          hintText: 'Checklist item',
+          hintText: ru ? 'Пункт списка дел' : 'Checklist item',
           onCheckedChanged: onCheckedChanged!,
           onChanged: onTextChanged,
           onTap: onTap,
@@ -420,7 +422,7 @@ class NotesEditorBlockItem extends StatelessWidget {
         return NotesQuoteBlock(
           textController: textController!,
           state: state,
-          textHint: 'Quote',
+          textHint: ru ? 'Цитата' : 'Quote',
           onTextChanged: onTextChanged,
         );
       case NoteBlockType.divider:
