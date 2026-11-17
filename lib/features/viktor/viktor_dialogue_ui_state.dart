@@ -63,26 +63,6 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
     if (mounted) _push(receipt);
   }
 
-  /// An explicit "move yesterday's incomplete plans to today" is a native
-  /// action. Real source/target state is loaded by ViktorExecutor. There is
-  /// no LLM answer, and no alternate conversational-choice menu.
-  Future<void> _runDirectCarryForward(
-      ViktorActionBatch batch, ViktorExecutor executor,
-      {required void Function() onWriteStarted}) async {
-    final today = DatabaseService.instance.getProjectedToday();
-    final preview = await executor.describe(batch, today);
-    if (!mounted) return;
-    if (!await _confirm(batch, preview)) {
-      if (mounted) _push('Перенос отменён.');
-      return;
-    }
-    if (!mounted) return;
-    onWriteStarted();
-    final saved = await executor.apply(batch, today,
-        approvedPreview: preview);
-    if (mounted) _push(saved);
-  }
-
   /// A correction of an UNSAVED wall-clock draft needs no new model turn.
   bool _showCorrectedScheduleDraft(String input) {
     final draft = ViktorReadAnswer.correctMislabeledMoscowDraft(
