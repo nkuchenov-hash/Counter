@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `4f7138c5` on 2026-11-17.**
+**Generated from input HEAD `b84af2f3` on 2026-11-17.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -14719,8 +14719,8 @@ EN:
 - **Human purpose:** Brain helper for data/sync — Model-independent user-intent date resolver for read/schedule tools. Shared PocketBase/auth/parse logic used by multiple tabs.
 - **What this is:** Brain helper for data/sync — Model-independent user-intent date resolver for read/schedule tools.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **Contents:** Dart helpers and types (`ViktorDateScope`, `ViktorBulkDateScope`).
-- **Key code names:** `ViktorDateScope`, `ViktorBulkDateScope`
+- **Contents:** Dart helpers and types (`ViktorDateScope`).
+- **Key code names:** `ViktorDateScope`
 - **Repository role:** Brain/data
 - **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`, `lib/data/ai/viktor_gateway.dart`, `lib/data/ai/viktor_historical_records.dart`, `lib/data/ai/viktor_multi_plan_proposal.dart`, `lib/data/ai/viktor_plan_timezone.dart`.
 - **Necessity status:** PROVEN_REQUIRED

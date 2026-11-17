@@ -559,8 +559,10 @@ void main() {
     final chat = File('lib/features/viktor/viktor_chat_page.dart')
         .readAsStringSync();
     final send = chat.substring(chat.indexOf('Future<void> _send() async {'));
-    expect(send.indexOf('independentPlan == null && !_settingsReady'),
+    expect(send.indexOf('structuredChores == null && !_settingsReady'),
         greaterThan(send.indexOf('independentDateOnlyPlan(input, profileToday)')));
+    expect(send, contains('carryForward == null'));
+    expect(send, contains('ViktorDateScope.narratedChoreBatch('));
     final composer = File('lib/features/viktor/viktor_composer.dart')
         .readAsStringSync();
     expect(composer, contains('bool _canSubmitWithoutAiSettings('));

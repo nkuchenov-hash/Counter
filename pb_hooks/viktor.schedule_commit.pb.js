@@ -37,7 +37,8 @@ routerAdd("POST", "/api/viktor/schedule/commit", function(e) {
       const keys = Object.keys(raw);
       const allowed = new Set(["id", "expected_updated", "expected_start",
         "expected_end", "expected_title", "expected_is_done",
-        "start_time", "end_time", "initial_date_key", "is_postponed"]);
+        "start_time", "end_time", "initial_date_key", "is_postponed",
+        "allow_fixed_time_transfer"]);
       if (keys.some(k => !allowed.has(k))) throw new Error("invalid_patch_field");
       if (typeof raw.id !== "string" || !/^[a-zA-Z0-9]{15}$/.test(raw.id) ||
           seen.has(raw.id)) throw new Error("duplicate_or_invalid_id");
@@ -62,6 +63,15 @@ routerAdd("POST", "/api/viktor/schedule/commit", function(e) {
       if (raw.is_postponed != null &&
           typeof raw.is_postponed !== "boolean") {
         throw new Error("invalid_postponed_flag");
+      }
+      if (raw.allow_fixed_time_transfer != null &&
+          raw.allow_fixed_time_transfer !== true) {
+        throw new Error("invalid_transfer_permission");
+      }
+      if (raw.allow_fixed_time_transfer === true &&
+          (typeof raw.initial_date_key !== "string" ||
+           typeof raw.is_postponed !== "boolean")) {
+        throw new Error("missing_transfer_audit");
       }
       proposed.push({raw, start, end});
     }
@@ -88,14 +98,23 @@ routerAdd("POST", "/api/viktor/schedule/commit", function(e) {
             !sameMoment(p.getString("end_time"), item.raw.expected_end)) {
           throw new Error("stale_plan");
         }
-        // The planner rejects fixed-time categories; enforce the immediate
-        // category lock again on the server in case it changed meanwhile.
+        // Fixed-time categories remain protected from generic compaction
+        // and incidental reflow. Only a full user-selected cross-day move
+        // may expressly override the source default clock; no destination
+        // commitment is displaced, checked transactionally below.
         const categoryId = p.getString("category_id");
         if (categoryId) {
           const category = txApp.findRecordById("categories", categoryId);
-          if (category.getString("default_plan_time").trim()) {
+          if (category.getString("default_plan_time").trim() &&
+              item.raw.allow_fixed_time_transfer !== true) {
             throw new Error("fixed_time_category");
           }
+        }
+        if (item.raw.allow_fixed_time_transfer === true &&
+            (Math.abs(item.start - epoch(item.raw.expected_start)) < 1000 ||
+             item.raw.initial_date_key !== p.getString("initial_date_key") &&
+             p.getString("initial_date_key").trim())) {
+          throw new Error("invalid_explicit_transfer");
         }
         records.push({record:p, item});
       }
@@ -150,7 +169,8 @@ routerAdd("POST", "/api/viktor/schedule/commit", function(e) {
   } catch (error) {
     const reason = String(error && error.message || error);
     const safe = new Set(["plan_not_owned", "protected_plan", "stale_plan",
-      "fixed_time_category", "new_plan_overlap", "existing_plan_overlap",
+      "fixed_time_category", "invalid_explicit_transfer",
+      "new_plan_overlap", "existing_plan_overlap",
       "too_many_affected_plans", "invalid_existing_plan"]);
     return e.json(409, {ok:false,
       error:safe.has(reason) ? reason : "schedule_transaction_failed"});

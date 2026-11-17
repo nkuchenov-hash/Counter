@@ -89,8 +89,13 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     final profileToday = db.getProjectedToday();
     final independentPlan =
         ViktorDateScope.independentDateOnlyPlan(input, profileToday);
-    // Standalone dated plans are deterministic and do not need AI settings.
-    if (independentPlan == null && !_settingsReady) return;
+    final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
+    final carryForward = ViktorDateScope.directYesterdayCarryForward(
+        input: input, profileToday: profileToday, requestId: requestId);
+    final structuredChores = ViktorDateScope.narratedChoreBatch(
+        input: input, profileToday: profileToday, requestId: requestId);
+    if (independentPlan == null && carryForward == null &&
+        structuredChores == null && !_settingsReady) return;
     // A fresh self-contained dated plan must never inherit an unrelated
     // unfinished itinerary, even when remote chat history is still syncing.
     final hadPreviousRequest = _messages.skip(1).any((turn) => turn.isUser);
@@ -104,8 +109,9 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       _durationConflictIncludesYesterday = false;
     }
     final dialogContext = ViktorDialogueTurn.modelContext(_messages.skip(1));
-    if (independentPlan == null &&
-        _settings.mode == 'byok' && !_settings.modelConnected) {
+    if (independentPlan == null && carryForward == null &&
+        structuredChores == null && _settings.mode == 'byok' &&
+        !_settings.modelConnected) {
       await _openSettings();
       if (!mounted || !_settings.modelConnected) return;
     }
@@ -124,7 +130,6 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     }
     if (_showCorrectedScheduleDraft(input)) return;
     setState(() => _busy = true);
-    final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
     List<PlanningTask> plansForRecovery = const [];
     var writeStarted = false;
     try {
@@ -133,6 +138,14 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         await _createIndependentDateOnlyPlan(independentPlan, executor, requestId);
         return;
       }
+      if (carryForward != null) {
+        await _runDirectCarryForward(carryForward, executor,
+            onWriteStarted: () => writeStarted = true);
+        return;
+      }
+      if (structuredChores != null && await _tryNarratedChoreFallback(
+          input: input, requestId: requestId, executor: executor,
+          onWriteStarted: () => writeStarted = true)) return;
       final resumePartialDuration =
           ViktorDurationConversation.wantsFeasibleSubset(
             input, pending: _durationConflictPending,
@@ -326,7 +339,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       if (completed == null) {
         await _offerRecovery(
           input: input, failure: StateError(
-            'Черновик требует уточнения часового пояса или расписания.'),
+            'ИИ не смог сформировать допустимое действие для сохранения.'),
           day: intentDay, plans: plans, requestId: requestId,
           conversation: dialogContext,
         );
@@ -363,12 +376,15 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       }
       final resolvedActions = response.actions;
       if (resolvedActions == null) {
-        if (response.message.trim().isNotEmpty) {
-          _push(response.message.trim());
+        if (ViktorReadAnswer.requiresScheduleAction(input)) {
+          await _offerRecovery(
+            input: input, failure: StateError('Не получено действие '
+              'для сохранения запроса.'), day: intentDay,
+            plans: plans, requestId: requestId, conversation: dialogContext);
+          return;
         }
-        if (latestReadAnswer != null) {
-          _push(latestReadAnswer);
-        }
+        if (response.message.trim().isNotEmpty) _push(response.message.trim());
+        if (latestReadAnswer != null) _push(latestReadAnswer);
         return;
       }
       // Only an all-timed, all-create proposal can be promoted to one
@@ -397,16 +413,9 @@ class _ViktorChatPageState extends State<ViktorChatPage>
         );
         if (!mounted) return;
         if (recovered.actions == null || recovered.preview == null) {
-          final answer = recovered.answer?.trim() ?? '';
-          if (answer.isNotEmpty) {
-            _push(answer);
-          } else {
-            await _offerRecovery(
-              input: input, failure: failure, day: intentDay,
-              plans: plans, requestId: requestId,
-              conversation: dialogContext,
-            );
-          }
+          await _offerRecovery(
+            input: input, failure: failure, day: intentDay,
+            plans: plans, requestId: requestId, conversation: dialogContext);
           return;
         }
         preview = recovered.preview!;

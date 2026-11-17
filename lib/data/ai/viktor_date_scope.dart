@@ -8,6 +8,109 @@ import 'viktor_action_contract.dart';
 class ViktorDateScope {
   const ViktorDateScope._();
 
+  /// A clear bulk carry-forward request does not need an LLM.
+  /// Strictly scoped to "yesterday's unfinished plans to today"; filters,
+  /// exclusions, other dates or ambiguous follow-ups still go to the agent.
+  /// All affected plan IDs and commitments are resolved by the Brain.
+  static ViktorActionBatch? directYesterdayCarryForward({
+    required String input,
+    required DateTime profileToday,
+    required String requestId,
+  }) {
+    final text = input.trim().toLowerCase().replaceAll(
+        RegExp(r'[.,!?;:]+'), ' ').replaceAll(RegExp(r'\s+'), ' ');
+    if (!RegExp(
+      r'^(?:пожалуйста\s+)?(?:перенеси|перенести|перемести|переместить|'
+      r'перенесите|переместите)\s+',
+      caseSensitive: false,
+    ).hasMatch(text)) return null;
+    if (!text.contains('вчера') ||
+        !RegExp(r'невыполн|незаверш|не выполн|unfinished|incomplete')
+            .hasMatch(text) ||
+        !RegExp(r'план|задач').hasMatch(text) ||
+        !text.contains('сегодня')) return null;
+    // Reject a mixed or qualified operation, never silently transfer "all"
+    // when the user excludes a named plan or specifies an alternate date.
+    if (RegExp(r'кроме|исключ|только|завтра|послезавтра|'
+        r'на\s+\d{1,2}\s+[а-яё]|\d{4}-\d{2}-\d{2}|'
+        r'not|except|unless').hasMatch(text)) return null;
+    final today = DateTime(
+        profileToday.year, profileToday.month, profileToday.day);
+    final yesterday = DateTime(today.year, today.month, today.day - 1);
+    return ViktorActionBatch.fromJson({
+      'version': ViktorActionBatch.version,
+      'request_id': requestId,
+      'actions': [{
+        'name': 'bulk_replan',
+        'arguments': {
+          'operations': [{
+            'kind': 'move',
+            'status': 'incomplete',
+            'source_day': key(yesterday),
+            'target_day': key(today),
+          }],
+        },
+      }],
+    });
+  }
+
+  /// One explicit, duration-qualified list of future chores. Earlier
+  /// completed activities remain Timeline records and are not rewritten.
+  static ViktorActionBatch? narratedChoreBatch({
+    required String input,
+    required DateTime profileToday,
+    required String requestId,
+  }) {
+    if (!input.toLowerCase().contains('сегодня')) return null;
+    final marker = RegExp(
+      r'после\s+(?:(?:этих|этого)\s+)?дел[а-яё]*\s+по\s+дому\s*:',
+      caseSensitive: false,
+    ).firstMatch(input);
+    if (marker == null) return null;
+    final section = input.substring(marker.end).trim()
+        .replaceAll(RegExp(r'[.!?]+$'), '');
+    final pieces = section.split(RegExp(r'[,;]\s*'));
+    if (pieces.length < 2 || pieces.length > 12) return null;
+    final plans = <Map<String, Object?>>[];
+    final day = key(profileToday);
+    for (var index = 0; index < pieces.length; index++) {
+      final piece = pieces[index].trim();
+      final remaining = RegExp(r'\s+оставшееся\s+время$',
+          caseSensitive: false).firstMatch(piece);
+      if (remaining != null) {
+        if (index != pieces.length - 1) return null;
+        final title = piece.substring(0, remaining.start).trim();
+        if (title.length < 3 || title.length > 160) return null;
+        plans.add({'title': title, 'wall_day': day,
+          'fill_remaining': true});
+        continue;
+      }
+      final duration = RegExp(
+        r'\s+(полчаса|час|(\d{1,3})\s*(?:минут|минуты|минуту|мин|'
+        r'час|часа|часов))$',
+        caseSensitive: false,
+      ).firstMatch(piece);
+      if (duration == null) return null;
+      final title = piece.substring(0, duration.start).trim();
+      if (title.length < 3 || title.length > 160) return null;
+      final word = duration.group(1)!.toLowerCase();
+      final count = int.tryParse(duration.group(2) ?? '');
+      final minutes = word == 'полчаса' ? 30
+          : word == 'час' ? 60
+          : word.contains('час') ? (count ?? 0) * 60 : count ?? 0;
+      if (minutes < 10 || minutes > 1440) return null;
+      plans.add({'title': title, 'wall_day': day,
+        'duration_minutes': minutes});
+    }
+    return ViktorActionBatch.fromJson({
+      'version': ViktorActionBatch.version,
+      'request_id': requestId,
+      'actions': [{
+        'name': 'create_plans_batch', 'arguments': {'plans': plans},
+      }],
+    });
+  }
+
   static String key(DateTime day) =>
       '${day.year.toString().padLeft(4, '0')}-'
       '${day.month.toString().padLeft(2, '0')}-'

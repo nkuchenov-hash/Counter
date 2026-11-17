@@ -1,3 +1,10 @@
+## [2026-11-17] — Viktor direct commands, short responses, and auto-fit chores [release verification pending]
+
+- Exact "yesterday unfinished plans → today" voice/text request bypasses model commentary, runs the real Brain preview and commits with approval. Explicitly selected source default-time plans can transfer without moving unrelated target commitments; recurring/unsynced rows remain protected.
+- Provider output with only workaround suggestions no longer satisfies an actionable scheduling request. Run a bounded action repair and optional real read, then show a concise factual failure if no safe tool exists. No repetitive choice menus.
+- Atomic grouped Plan creation now accepts unspecified clock times, places sequenced chores after the current local time in available slots, and permits only the final item to consume the remaining contiguous available interval. Concrete slots are revalidated before saving, including request-stable time anchors.
+- Added regression tests for fresh chats, carry-forward intent routing, protected destination commitments and auto-placement contract. The mixed Timeline Record + Planning batch remains a separate non-atomic capability and is not represented as a successful combined save.
+
 ## [2026-11-17] — Viktor atomic multi-plan creation and unfinished-plan carry-forward [verification pending]
 
 - **Viktor:** Added consent-gated `create_plans_batch` (2–12 timed plans), with real-day collision checks and an owner-scoped PocketBase transaction under `/api/viktor/schedule/create`. Retry-stable per-item business UUIDs, server-level rollback and authenticated post-commit verification avoid independent partial saves.

@@ -55,6 +55,9 @@ const app = {
     const staged = copy(data);
     const tx = {
       findRecordById(collection, id) {
+        if (collection === 'categories') {
+          return mockRecord(id, {default_plan_time:'09:00'});
+        }
         assert.equal(collection, 'plans');
         if (!staged[id]) throw new Error('plan_missing');
         return mockRecord(id, staged[id]);
@@ -138,4 +141,20 @@ assert.equal(data[two].start_time,'2026-10-21T10:00:00.000Z');
 assert.equal(data[one].is_postponed,true);
 assert.equal(call(moves).status,409,
  'stale retry must not blindly apply the same command a second time');
+reset();
+data[one].category_id = 'ccccccccccccccc';
+data[one].initial_date_key = '2026-10-20';
+assert.equal(call([moves[0]]).status,409,
+  'fixed-time source still rejects ordinary reflow');
+const explicit = {...moves[0],allow_fixed_time_transfer:true};
+assert.equal(call([explicit]).status,200,
+  'a specifically approved cross-day move may relocate fixed-clock source');
+assert.equal(data[one].start_time,'2026-10-21T09:00:00.000Z');
+reset();
+data[one].category_id = 'ccccccccccccccc';
+data[one].initial_date_key = '2026-10-20';
+assert.equal(call([{...moves[0],allow_fixed_time_transfer:true,
+  initial_date_key:'2026-10-19'}]).status,409,
+  'the explicit transfer may not rewrite original audit date');
+assert.equal(data[one].start_time,t1);
 process.stdout.write('Viktor atomic multi-day schedule commit verified\n');

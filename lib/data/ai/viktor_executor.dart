@@ -57,6 +57,14 @@ class ViktorExecutor {
   // refresh. Bind it to the request so approval compares the same timetable.
   String? _bulkAnchorRequestId;
   DateTime? _bulkAnchorProfileWall;
+  String? _createAnchorRequestId;
+  DateTime? _createAnchorProfileWall;
+  void _anchorCreateClock(String id) {
+    if (_createAnchorRequestId != id) {
+      _createAnchorRequestId = id;
+      _createAnchorProfileWall = db.applyUserOffset(DateTime.now().toUtc());
+    }
+  }
 
   void _anchorBulkClock(String requestId) {
     if (_bulkAnchorRequestId != requestId ||
@@ -375,8 +383,10 @@ class ViktorExecutor {
     }
     if (batch.actions.length == 1 &&
         batch.actions.single.name == 'create_plans_batch') {
+      _anchorCreateClock(batch.requestId);
       return (await ViktorMultiPlanProposal.prepare(
-          db, batch.actions.single)).description;
+          db, batch.actions.single,
+          profileNow: _createAnchorProfileWall)).description;
     }
     if (batch.actions.any((a) => a.name == 'bulk_replan')) {
       final bulk = batch.actions.singleWhere(
@@ -655,7 +665,20 @@ class ViktorExecutor {
     if (batch.actions.length == 1 &&
         batch.actions.single.name == 'create_plans_batch') {
       final verified = await ViktorMultiPlanProposal.prepare(
-          db, batch.actions.single);
+          db, batch.actions.single,
+          profileNow: _createAnchorProfileWall);
+      final nowWall = db.applyUserOffset(DateTime.now().toUtc());
+      if (batch.actions.single.arguments['plans'] is List &&
+          (batch.actions.single.arguments['plans'] as List).any(
+              (raw) => !(raw as Map).containsKey('start_time')) &&
+          verified.rows.any((row) =>
+            ViktorDateScope.key(DateTime.parse(row['initial_date_key'] as String))
+                == ViktorDateScope.key(nowWall) &&
+            db.applyUserOffset(DateTime.parse(row['start_time'] as String))
+                .isBefore(nowWall))) {
+        throw StateError('Автоматически выбранное время уже прошло. '
+            'Проверьте новый вариант.');
+      }
       if (verified.description != approvedPreview) {
         throw StateError('Расписание изменилось после подтверждения.');
       }
