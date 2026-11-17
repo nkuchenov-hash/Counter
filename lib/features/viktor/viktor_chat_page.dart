@@ -332,6 +332,9 @@ class _ViktorChatPageState extends State<ViktorChatPage>
           input, response, plans, toolObservations, requestId, dialogContext,
           intentDay);
       if (completed == null) {
+        if (await _tryNarratedChoreFallback(input: input,
+            requestId: requestId, executor: executor,
+            onWriteStarted: () => writeStarted = true)) return;
         await _offerRecovery(
           input: input, failure: StateError(
             'ИИ не смог сформировать допустимое действие для сохранения.'),
