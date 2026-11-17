@@ -633,6 +633,24 @@ class ViktorProposedDayDraft {
     for (final entry in dates.entries) {
       existing[entry.key] = await loadDay(entry.value);
     }
+    // A mixed Record/Plan proposal can contain an untimed date-only plan.
+    // Keep a truthful draft instead of throwing a runtime cast exception.
+    // Cross-domain atomic writes are not supported by the batch-create route.
+    if (items.any((action) =>
+        action.arguments['start_time'] is! String ||
+        action.arguments['duration_minutes'] is! int)) {
+      return [
+        'Черновик смешанного запроса (ничего не сохранено):',
+        for (final action in items)
+          '${action.arguments['wall_day']} — ${action.arguments['title']}' +
+          (action.arguments['start_time'] == null
+              ? ' (время не указано)'
+              : ' в ${action.arguments['start_time']}'),
+        'Планы без назначенного времени не размещены на шкале дня. '
+            'Смешанные операции с записями требуют отдельного '
+            'подтверждения и не могут быть сохранены одной транзакцией.',
+      ].join('\\n');
+    }
     final draft = <({String date, DateTime start, DateTime end,
         String title, String? timezone})>[];
     for (final action in items) {
@@ -703,8 +721,8 @@ class ViktorProposedDayDraft {
     }
     lines.add('\nВремя и длительности предложены ИИ: '
         'проверьте порядок, дорогу и непонятные детали. '
-        'Автоматическое сохранение нескольких новых планов одним '
-        'действием пока недоступно; это только черновик.');
+        'Этот смешанный набор действий не является отдельным '
+        'атомарным пакетом планов; это только черновик.');
     return lines.join('\n');
   }
 }
