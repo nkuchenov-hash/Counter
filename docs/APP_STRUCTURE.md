@@ -837,6 +837,7 @@ One-off Pass 3/Pass 2 extraction scripts (`scripts/pass3_*`, `scripts/extract_*`
 
 - `lib/features/profile/menu/life_os_menu_page.dart` — app-wide searchable, grouped settings navigation for compact and wide shells; all destinations delegate to feature-owned screens.
 - `lib/features/profile/menu/life_os_settings_tabs_page.dart` — native tabbed Settings page for desktop and mobile; uses canonical AppSettings components, app color families, and feature-owned preference stores.
+- `lib/features/profile/menu/life_os_locale_timezone_section.dart` — inline searchable app language and auto/manual timezone controls; favorite timezones for the header picker, device-local preferences, profile Brain saves.
 
 - `lib/features/profile/menu/life_os_planning_settings_page.dart` — full Planning preference screen sharing Time View preference storage and existing controls.
 - `lib/features/profile/menu/life_os_sync_status_page.dart` — live PocketBase outbox status and retry screen.
