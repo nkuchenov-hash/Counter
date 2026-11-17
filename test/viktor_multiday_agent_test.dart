@@ -65,6 +65,53 @@ void main() {
         false, reason: 'Past activity cannot become a future Plan');
   });
 
+  test('Regression: Nov 17 screenshot with abbreviated "оставшееся" runs an atomic Plan batch', () {
+    const message = 'Сегодня приём пищи был полчаса, после этого был '
+        'вайбкодинг на час, после дела по дому: приготовление яиц '
+        'полчаса, приготовление рыбы 20 минут, обустройство электрики '
+        'в спальне оставшееся';
+    final parsed = ViktorDateScope.narratedChoreBatch(
+      input: message,
+      profileToday: DateTime(2026, 11, 17),
+      requestId: 'viktor_screenshot_20261117_1359',
+    );
+    expect(parsed, isNotNull, reason:
+        'The real user command must never reach broken create_plan Action 5.');
+    expect(parsed!.actions.length, 1);
+    expect(parsed.actions.single.name, 'create_plans_batch');
+    final entries = parsed.actions.single.arguments['plans'] as List;
+    expect(entries.length, 3);
+    expect(entries.map((e) => e['duration_minutes']).toList(),
+        [30, 20, null]);
+    expect(entries[2]['fill_remaining'], true);
+    expect(entries[2]['title'], 'обустройство электрики в спальне');
+    expect(entries.any((e) => e['title'].toString().contains('приём пищи')),
+        false, reason: 'Completed activities must not become future Plans.');
+  });
+
+  test('Natural-language remaining-time variants are final-only', () {
+    for (final remainder in [
+      'оставшееся', 'оставшееся время', 'на оставшееся время',
+      'всё оставшееся', 'остаток дня', 'оставшуюся часть дня',
+    ]) {
+      final batch = ViktorDateScope.narratedChoreBatch(
+        input: 'Сегодня после дела по дому: яйца полчаса, '
+            'электрика $remainder',
+        profileToday: DateTime(2026, 11, 17),
+        requestId: 'viktor_remaining_variants',
+      );
+      expect(batch, isNotNull, reason: remainder);
+      expect((batch!.actions.single.arguments['plans'] as List)
+          .last['fill_remaining'], true);
+    }
+    expect(ViktorDateScope.narratedChoreBatch(
+      input: 'Сегодня после дела по дому: электрика оставшееся, '
+          'яйца полчаса',
+      profileToday: DateTime(2026, 11, 17),
+      requestId: 'viktor_unsafe_remaining_order',
+    ), isNull);
+  });
+
   test('Conservative chores parser refuses unspecified/unsafe durations', () {
     for (final sentence in [
       'Сегодня приём пищи, после дела по дому: приготовить яйца, рыбу',
