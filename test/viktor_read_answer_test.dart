@@ -2,6 +2,20 @@ import 'package:counter/data/ai/viktor_read_answer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('Specific schedule commands and narrated day tasks require actions', () {
+    expect(ViktorReadAnswer.requiresScheduleAction(
+      'Перенеси вчерашние невыполненные планы на сегодня'), true);
+    expect(ViktorReadAnswer.requiresScheduleAction(
+      'Сегодня приём пищи был полчаса, после этого был вайбкодинг на час, '
+      'после дела по дому: приготовление яиц полчаса, приготовление рыбы '
+      '20 минут, обустройство электрики в спальне оставшееся время'), true);
+    expect(ViktorReadAnswer.requiresScheduleAction(
+      'Какие планы у меня на сегодня?'), false);
+    expect(ViktorReadAnswer.requiresScheduleAction(
+      'Напиши стих про готовку'), false);
+  });
+
+
 
   test('Viktor may not finish a Record edit with a promise', () {
     const request = 'Сократи запись Обед до 30 минут, а следующую '
