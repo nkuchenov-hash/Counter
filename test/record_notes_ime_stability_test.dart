@@ -290,7 +290,7 @@ void main() {
     expect(editor.visibleBlocks.last.type, NoteBlockType.paragraph);
   });
 
-  testWidgets('embedded Android heading Enter focuses separate Body after one tap',
+  testWidgets('embedded Android heading Enter focuses Body after IME settles',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;
@@ -334,6 +334,9 @@ void main() {
     expect(tester.widget<TextField>(headingField).focusNode!.hasFocus, isTrue);
     await tester.enterText(headingField, 'Заголовок\n');
     await tester.pump();
+    // The active Gboard field stays mounted until its transaction settles.
+    expect(find.byType(NotesEditorBlockItem), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 250));
     await tester.pump();
     final blocks = tester.widgetList<NotesEditorBlockItem>(
       find.byType(NotesEditorBlockItem),
@@ -443,7 +446,7 @@ void main() {
     }
   });
 
-  testWidgets('embedded Android list Enter creates focused next list item',
+  testWidgets('embedded Android list Enter focuses next item after IME settles',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;
@@ -483,6 +486,8 @@ void main() {
     await tester.pump();
     await tester.enterText(first, 'Первый\n');
     await tester.pump();
+    expect(find.byType(NotesEditorBlockItem), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 250));
     await tester.pump();
     final items = tester.widgetList<NotesEditorBlockItem>(
       find.byType(NotesEditorBlockItem),
@@ -573,11 +578,13 @@ void main() {
     expect(editor, contains('return KeyEventResult.ignored;'));
     expect(editor, contains('_ensureBlockVisible(block.id);'));
     expect(record, contains('final notesEditing = recordNotesShouldUseCompactChrome('));
-    // Nested TextFields preserve native Android selection/IME; the expensive
-    // document-wide SelectionArea is only needed by standalone Notes.
-    expect(editor, contains('child: _blockSelectionMode || (widget.inlineBodyOnly &&'));
+    // Native selection on every Android Notes editor avoids a competing
+    // document-wide SelectionArea while typing.
+    expect(editor, contains('child: _blockSelectionMode ||'));
     expect(editor, contains('Theme.of(context).platform == TargetPlatform.android'));
     expect(editor, contains('child: SelectionArea('));
+    expect(editor, contains('final androidIme = Theme.of(context).platform == TargetPlatform.android;'));
+    expect(editor, contains('if (composing.isValid && !composing.isCollapsed) return;'));
     // Record document notifications are debounced rather than dispatched
     // synchronously for every Android keypress. Last edit is flushed on exit.
     expect(editor, contains('_gate.schedule(_syncToBrain);'));
