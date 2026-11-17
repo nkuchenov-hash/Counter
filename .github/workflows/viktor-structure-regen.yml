@@ -38,7 +38,7 @@ jobs:
             # header on every PR synchronization creates a bot-commit loop
             # whose new checks require manual action. Preserve real structure
             # changes, but do not commit an otherwise identical map.
-            changes="$(git diff --unified=0 -- docs/APP_STRUCTURE_DETAILED.md | grep -E '^[+-][^+-]' | grep -Ev '^[+-]\\*\\*Generated at git SHA ' || true)"
+            changes="$(git diff --unified=0 -- docs/APP_STRUCTURE_DETAILED.md | grep -E '^[+-][^+-]' | grep -Ev '^[+-]\\*\\*Generated (at git SHA|from input HEAD) ' || true)"
             if [[ -z "$changes" ]]; then
               git restore -- docs/APP_STRUCTURE_DETAILED.md
             fi
