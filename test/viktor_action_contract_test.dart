@@ -15,6 +15,39 @@ Map<String, dynamic> batch(List<Map<String, dynamic>> actions) => {
     };
 
 void main() {
+  test('Atomic multi-create validates two or more timed plans', () {
+    final approved = ViktorActionBatch.fromJson({
+      'version': 1, 'request_id': 'viktor_batch_20261117',
+      'actions': [{
+        'name': 'create_plans_batch',
+        'arguments': {'plans': [
+          {'title': 'Приготовление яиц', 'wall_day': '2026-11-17',
+           'start_time': '18:00', 'duration_minutes': 30},
+          {'title': 'Приготовление рыбы', 'wall_day': '2026-11-17',
+           'start_time': '18:30', 'duration_minutes': 20},
+        ]},
+      }],
+    });
+    expect(approved.requiresPreview, isTrue);
+    expect(approved.isSingleReversibleWrite, isFalse);
+    expect(approved.actions.single.arguments['plans'], hasLength(2));
+    final missingClock = {
+      'version': 1, 'request_id': 'viktor_batch_20261117',
+      'actions': [{
+        'name': 'create_plans_batch',
+        'arguments': {'plans': [
+          {'title': 'Задача A', 'wall_day': '2026-11-17',
+           'duration_minutes': 30},
+          {'title': 'Задача B', 'wall_day': '2026-11-17',
+           'start_time': '19:00', 'duration_minutes': 20},
+        ]},
+      }],
+    };
+    expect(() => ViktorActionBatch.fromJson(missingClock),
+        throwsFormatException);
+  });
+
+
   group('Viktor action proposals', () {
     test('accepts safe two-step plan edit but mandates preview', () {
       final proposal = ViktorActionBatch.fromJson(batch([
