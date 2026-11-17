@@ -162,12 +162,12 @@ assert.match(compactYandexInstructions, /continue:true ONLY for read-only tools/
 assert.match(compactYandexInstructions, /skip list_day_plans/,
   'Status-filtered bulk replans use Brain-owned fresh data directly');
 assert.match(compactYandexInstructions, /EXACTLY two top-level keys/);
-assert.match(compactYandexInstructions, /Hypothetical itinerary/);
+assert.match(compactYandexInstructions, /Hypothetical draft/);
 assert.match(compactYandexInstructions, /No workaround menus/);
 assert.match(compactYandexInstructions, /actions:\[\]/,
   'Yandex must draft multi-activity weekends without unsafe partial writes');
-assert.match(source, /Distinguish hypothetical timetable discussion/,
-  'Other providers must receive the same read-only multi-event draft rule');
+assert.match(source, /completed activities followed by new chores/,
+  'Other providers must separate observed Records from new Plans');
 assert.ok(compactYandexInstructions.length < 3000,
   'Yandex should receive the compact general tool catalogue');
 assert.match(compactYandexInstructions, /schedule_timezone/);
