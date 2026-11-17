@@ -4,6 +4,31 @@
 class ViktorReadAnswer {
   const ViktorReadAnswer._();
 
+  /// A provider's prose is not a successful completion of an explicit
+  /// scheduling request. This includes natural-language time logs followed
+  /// by planned tasks, not only imperative sentences containing "schedule".
+  static bool requiresScheduleAction(String input) {
+    final text = input.toLowerCase().trim();
+    if (RegExp(
+      r'^(?:пожалуйста[, ]+)?(?:перенеси|перенесите|перемести|'
+      r'создай|добавь|запланируй|распланируй|внеси|скорректируй|'
+      r'исправь|переставь|сдвинь|'
+      r'move|reschedule|create|add|schedule)\s+',
+      caseSensitive: false,
+    ).hasMatch(text) && RegExp(
+      r'план|задач|расписан|врем|день|сегодня|завтра|'
+      r'вчера|task|plan|schedule',
+      caseSensitive: false,
+    ).hasMatch(text)) return true;
+    final isDailyLog = text.contains('сегодня') &&
+        RegExp(r'был|была|занял|длился|после').hasMatch(text);
+    final requestsDayTasks = RegExp(
+      r'приготовлен|обустрой|оставшееся время|'
+      r'дома|по дому|запланир|планы',
+    ).hasMatch(text);
+    return isDailyLog && requestsDayTasks;
+  }
+
   /// A provider's continue flag is advisory, not a command to reject a
   /// valid write. After a read, a mutation proposal is a FINAL proposal and
   /// still goes through the usual Brain preview, confirmation and fresh write.
