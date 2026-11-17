@@ -192,6 +192,18 @@ class ViktorExecutor {
       action: action, source: allDays[firstSource]!, target: const [],
       sourceDay: firstSource, targetDay: null, allDays: allDays,
       wallTime: wallTime, fixedTime: _fixed,
+      autoStart: (date) {
+        final d = ViktorDateScope.parseDay(date);
+        final base = DateTime(d.year, d.month, d.day, 9);
+        final now = db.applyUserOffset(DateTime.now().toUtc());
+        if (ViktorDateScope.key(now) != date || !now.isAfter(base)) {
+          return base;
+        }
+        // A move with no requested hour must not schedule its first task
+        // into the past. Round UP to the next minute in profile wall time.
+        return DateTime(d.year, d.month, d.day, now.hour,
+            now.minute).add(const Duration(minutes: 1));
+      },
       categoryName: (plan) {
         final path = db.getCategoryPath(plan.categoryId).trim();
         return path.isNotEmpty ? path :
