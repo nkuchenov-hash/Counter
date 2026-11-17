@@ -53,6 +53,18 @@ class ViktorExecutor {
   }
   String? _bulkSignature;
   String? _insertionSignature;
+  // A relative "after now" placement must not drift on every preview/apply
+  // refresh. Bind it to the request so approval compares the same timetable.
+  String? _bulkAnchorRequestId;
+  DateTime? _bulkAnchorProfileWall;
+
+  void _anchorBulkClock(String requestId) {
+    if (_bulkAnchorRequestId != requestId ||
+        _bulkAnchorProfileWall == null) {
+      _bulkAnchorRequestId = requestId;
+      _bulkAnchorProfileWall = db.applyUserOffset(DateTime.now().toUtc());
+    }
+  }
 
   bool _isPriorityInsertion(ViktorAction a) =>
       a.name == 'create_plan' && a.arguments['conflict_policy'] == 'shift';
@@ -197,7 +209,8 @@ class ViktorExecutor {
       autoStart: (date) {
         final d = ViktorDateScope.parseDay(date);
         final base = DateTime(d.year, d.month, d.day, 9);
-        final now = db.applyUserOffset(DateTime.now().toUtc());
+        final now = _bulkAnchorProfileWall ??
+            db.applyUserOffset(DateTime.now().toUtc());
         if (ViktorDateScope.key(now) != date || !now.isAfter(base)) {
           return base;
         }
@@ -365,6 +378,7 @@ class ViktorExecutor {
     if (batch.actions.any((a) => a.name == 'bulk_replan')) {
       final bulk = batch.actions.singleWhere(
           (action) => action.name == 'bulk_replan');
+      _anchorBulkClock(batch.requestId);
       final preview = await _planBulk(bulk);
       _bulkSignature = preview.signature;
       final readLines = <String>[];
@@ -651,6 +665,22 @@ class ViktorExecutor {
       final result = await _planBulk(bulk);
       if (result.signature != _bulkSignature) {
         throw StateError('Планы изменились после подтверждения.');
+      }
+      // Auto-placement is a snapshot of "now" at preview time. If the user
+      // kept the approval open beyond the first slot, require a new preview
+      // instead of silently committing tasks that start in the past.
+      final nowProfile = db.applyUserOffset(DateTime.now().toUtc());
+      final nowDay = ViktorDateScope.key(nowProfile);
+      final ops = bulk.arguments['operations'] as List;
+      final usesAutomaticClock = ops.any((raw) {
+        final op = raw as Map;
+        return op['kind'] == 'move' && !op.containsKey('start_time');
+      });
+      if (usesAutomaticClock &&
+          result.moves.any((m) => m.day == nowDay &&
+              m.start.isBefore(nowProfile))) {
+        throw StateError('Проверка устарела: время первого перенесённого '
+            'плана уже прошло. Откройте новый предпросмотр.');
       }
       // One atomic server transaction and independent post-commit read.
       // NEVER fall back to a sequence of per-plan PATCH calls.
