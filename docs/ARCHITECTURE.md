@@ -112,6 +112,12 @@
 
 ---
 
+### Viktor direct action routing and auto-fill boundary (2026-11-17)
+
+User-asserted "move yesterday's incomplete plans to today" is a typed, provider-independent request handled by `ViktorDateScope.directYesterdayCarryForward`, the usual Brain read/preview, user approval, and existing owner-scoped atomic commit. Fixed-category source clocks no longer veto a deliberately selected day transfer; unrelated fixed target blocks remain immutable. Qualifiers, exclusions, and alternate dates are not silently widened.
+
+`ViktorMultiPlanProposal` supports both exact explicit clocks and sequential first-fit placement for user-unspecified clocks, with one optional last `fill_remaining` plan bounded by the next commitment or 23:59. The request-local profile clock anchor is frozen across preview and apply, and the server still validates concrete UTC intervals atomically. An actionable user request with no valid tool result cannot be treated as an answer: the model gets one bounded tool repair/observation, otherwise a short factual no-write message replaces speculative menus. Compound Record+Plan transactions remain separate domains and must not fake atomic success.
+
 ### Viktor atomic multi-plan and carry-forward boundary (2026-11-17)
 
 New timed plans in a single approved request use `ViktorMultiPlanProposal` (read-only scope and collision preview) and `ViktorAtomicCreateGateway` (single authenticated `POST /api/viktor/schedule/create`). The PocketBase hook owns a transaction over all creates, validates plan/category ownership, rejects overlaps, and recognizes an exact replay by deterministic per-item business UUID. It returns IDs for independent client read-back. **No fallback to independent `addPlanningTask` calls or partial success** after an ambiguous response. Only explicit user-approved multi-create is eligible. The model cannot pass raw rows directly to PocketBase.
