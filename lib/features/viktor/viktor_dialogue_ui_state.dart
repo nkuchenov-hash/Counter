@@ -137,7 +137,8 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
         message: response.message, input: input, history: history);
     if (!isSchedule || (!unsafeDraftWrite && !incompleteDraft &&
         !wrongTimezone &&
-        !(requestedWrite && response.actions == null) &&
+        !(requestedWrite && (response.actions == null ||
+            !response.actions!.hasMutations)) &&
         (response.actions != null ||
          !ViktorReadAnswer.isUnfinishedScheduleReply(response.message)))) {
       return response;
@@ -151,7 +152,8 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
       toolObservations: observations,
       requestId: requestId,
       conversationHistory: history,
-      proposalFeedback: requestedWrite && response.actions == null
+      proposalFeedback: requestedWrite && (response.actions == null ||
+          !response.actions!.hasMutations)
           ? 'The latest user message asks for actual LIFE OS changes, NOT '
             'options or a hypothetical schedule. Do not give a workaround '
             'list. Propose the correct available tool now. For existing '
@@ -191,8 +193,7 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
       return null; // No reads, writes, or status-only replies for a draft.
     }
     if (requestedWrite && repaired.actions == null) return null;
-    if (requestedWrite && repaired.needsMoreContext &&
-        repaired.actions != null &&
+    if (requestedWrite && repaired.actions != null &&
         !repaired.actions!.hasMutations) {
       // One bounded real observation for compound record/plan requests.
       // This must remain a read before any consent-gated write.
@@ -215,7 +216,7 @@ mixin _ViktorDialogueUiState on State<ViktorChatPage> {
             'characters. No invented timestamps or fake save.',
         allowRepair: false,
       );
-      return followup.actions == null ? null : followup;
+      return followup.actions?.hasMutations == true ? followup : null;
     }
     return repaired.actions == null &&
             ViktorReadAnswer.isUnfinishedScheduleReply(repaired.message)
