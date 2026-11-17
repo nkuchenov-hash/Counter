@@ -75,8 +75,10 @@ void main() {
     expect(fade, contains('ClipRRect('));
     expect(fade, contains('BackdropFilter('));
     expect(fade, contains('ImageFilter.blur(sigmaX: 18, sigmaY: 18)'));
-    expect(fade, contains('topHeader ? const [0, 0.75, 1]'));
-    expect(fade, contains('topHeader ? const [0, 0.70, 1]'));
+    // Current canonical pinned-header gradient has a progressive five-stop
+    // falloff, shared by the tint and the blur mask (no opaque band).
+    expect('stops: topHeader'.allMatches(fade), hasLength(2));
+    expect('const [0, 0.18, 0.45, 0.72, 1]'.allMatches(fade), hasLength(2));
     // No settings-specific or tab-specific second navigation appearance.
     expect(nav, isNot(contains('seamlessGlass ?')));
     expect(nav, isNot(contains('!seamlessGlass ?')));
