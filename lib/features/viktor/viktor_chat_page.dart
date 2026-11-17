@@ -89,8 +89,12 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     final profileToday = db.getProjectedToday();
     final independentPlan =
         ViktorDateScope.independentDateOnlyPlan(input, profileToday);
-    // Standalone dated plans are deterministic and do not need AI settings.
-    if (independentPlan == null && !_settingsReady) return;
+    final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
+    final carryForward = ViktorDateScope.directYesterdayCarryForward(
+        input: input, profileToday: profileToday, requestId: requestId);
+    // Native schedule commands do not need an LLM key or model connection.
+    if (independentPlan == null && carryForward == null &&
+        !_settingsReady) return;
     // A fresh self-contained dated plan must never inherit an unrelated
     // unfinished itinerary, even when remote chat history is still syncing.
     final hadPreviousRequest = _messages.skip(1).any((turn) => turn.isUser);
@@ -104,7 +108,7 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       _durationConflictIncludesYesterday = false;
     }
     final dialogContext = ViktorDialogueTurn.modelContext(_messages.skip(1));
-    if (independentPlan == null &&
+    if (independentPlan == null && carryForward == null &&
         _settings.mode == 'byok' && !_settings.modelConnected) {
       await _openSettings();
       if (!mounted || !_settings.modelConnected) return;
@@ -124,13 +128,17 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     }
     if (_showCorrectedScheduleDraft(input)) return;
     setState(() => _busy = true);
-    final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
     List<PlanningTask> plansForRecovery = const [];
     var writeStarted = false;
     try {
       final executor = ViktorExecutor(db);
       if (independentPlan != null) {
         await _createIndependentDateOnlyPlan(independentPlan, executor, requestId);
+        return;
+      }
+      if (carryForward != null) {
+        await _runDirectCarryForward(carryForward, executor,
+            onWriteStarted: () => writeStarted = true);
         return;
       }
       final resumePartialDuration =
