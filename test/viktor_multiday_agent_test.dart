@@ -64,6 +64,13 @@ void main() {
     );
     expect((dec!.actions.single.arguments['operations'] as List)
         .single['source_day'], '2026-12-31');
+    final spring = ViktorDateScope.directYesterdayCarryForward(
+      input: 'Перенеси вчерашние невыполненные планы на сегодня',
+      profileToday: DateTime(2027, 3, 15),
+      requestId: 'viktor_direct_spring',
+    );
+    expect((spring!.actions.single.arguments['operations'] as List)
+        .single['source_day'], '2027-03-14');
   });
 
   test('Native transfer never guesses scope of a qualified request', () {
