@@ -322,7 +322,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         final controller = _textControllerFor(block);
         if ((controller.text != block.effectiveText ||
             !_sameRuns(controller.runs, block.effectiveRuns)) &&
-            !(_focusNodes[block.id]?.hasFocus == true &&
+            !((_focusNodes[block.id]?.hasFocus == true ||
+                _editingBlockId == block.id) &&
                 controller.value.composing.isValid &&
                 !controller.value.composing.isCollapsed)) {
           // Do not overwrite Gboard's live composing value during a rebuild.
