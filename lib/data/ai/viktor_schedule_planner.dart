@@ -649,7 +649,7 @@ class ViktorProposedDayDraft {
         'Планы без назначенного времени не размещены на шкале дня. '
             'Смешанные операции с записями требуют отдельного '
             'подтверждения и не могут быть сохранены одной транзакцией.',
-      ].join('\\n');
+      ].join('\n');
     }
     final draft = <({String date, DateTime start, DateTime end,
         String title, String? timezone})>[];
