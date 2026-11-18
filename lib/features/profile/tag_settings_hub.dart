@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
 import 'package:counter/features/profile/tag_default_duration_settings_view.dart';
 import 'package:counter/features/profile/tag_manager_page.dart';
 import 'package:counter/features/profile/tag_settings_view.dart';
@@ -55,16 +56,11 @@ class _TagSettingsHubState extends State<TagSettingsHub>
       data: settingsNeutralTheme(context),
       child: Scaffold(
         backgroundColor: scheme.surfaceContainerLowest,
-        appBar: AppBar(
-          backgroundColor: scheme.surfaceContainerLowest,
-          surfaceTintColor: Colors.transparent,
-          scrolledUnderElevation: 0,
-          title: Text(
-            t(loc, 'tag_settings_hub_title'),
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+        appBar: AppSettingsBreadcrumbBar(
+          parentLabel: loc.toLowerCase().startsWith('ru')
+              ? 'Категории и теги' : 'Categories & tags',
+          title: t(loc, 'tag_settings_hub_title'),
+          onBack: () => Navigator.of(context).maybePop(),
           bottom: TabBar(
             controller: _tabController,
             isScrollable: _showDurationsTab,
