@@ -16,13 +16,11 @@ class ShellCompactBottomNav extends StatelessWidget {
     required this.selectedIndex,
     required this.onDestinationSelected,
     required this.viewportWidth,
-    this.seamlessGlass = false,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final double viewportWidth;
-  final bool seamlessGlass;
 
   static const double _iconSize = 24;
   static const double _labelFontSize = 11;
@@ -118,9 +116,9 @@ class ShellCompactBottomNav extends StatelessWidget {
             child: RepaintBoundary(
               child: AppGlassEdgeFade(
                 edge: AppGlassEdge.bottom,
-                surfaceColor: seamlessGlass
-                    ? scheme.surfaceContainerLowest
-                    : scheme.surface,
+                // One dock fade material for ALL five destinations.
+                // Never branch on the selected tab or the screen's background.
+                surfaceColor: scheme.surfaceContainerLowest,
                 blurSigma: 14,
               ),
             ),
