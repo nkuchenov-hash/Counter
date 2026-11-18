@@ -1,7 +1,8 @@
-## [2026-11-18] — Public Android ARM64 installer distribution [release pending]
+## [2026-11-18] — Android APK signing compatibility fix
 
-- Added standalone release publishing workflow to build the signed-by-project ARM64 Android release APK and attach it to the rolling public GitHub Release `life-os-latest`, with a checksum and a reproducible GitHub Actions artifact.
-- Stable installer asset: `LIFE-OS-Android-arm64.apk`. The workflow verifies the published asset before completion. No application runtime or PocketBase schema changes.
+- Confirmed the 2026-11-18 distributed APK was signed with a fresh per-run Android Debug certificate, so Android correctly rejected updating the installed `com.example.counter` application.
+- Removed the incorrectly introduced public-release workflow; retired the alternative GitHub Pages publisher and its PR fallback. Use only `.github/workflows/android-apk-build.yml`, which restores permanent encrypted signing identity v2 from the private draft backup for `main` builds.
+- Added a fail-closed Gradle release guard: debug-signed release compilation is allowed only for explicitly flagged, non-distributable PR CI, and never for production/public APKs. Verify package and certificate fingerprint against the permanent v2 keystore before upload. Preserve installed app and local data; APKs signed with a different historical key cannot update in place.
 
 ## [2026-11-18] — Inline language, opt-in device timezone, quick favorites [verification pending]
 

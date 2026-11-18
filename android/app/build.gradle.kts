@@ -20,6 +20,22 @@ val hasLifeOsReleaseSigning =
     !lifeOsKeyPassword.isNullOrBlank() &&
     file(lifeOsKeystorePath).exists()
 
+// Production releases must never silently fall back to a fresh debug
+// certificate: Android then rejects installation over the existing app.
+// Unsigned-by-production release compilation is permitted ONLY in PR CI;
+// those artifacts must never be distributed as installable updates.
+val allowDebugSignedReleaseCheck =
+    System.getenv("LIFE_OS_ALLOW_DEBUG_RELEASE_FOR_CI") == "true"
+val releaseTaskRequested = gradle.startParameter.taskNames.any {
+    it.contains("Release", ignoreCase = true)
+}
+if (releaseTaskRequested && !hasLifeOsReleaseSigning && !allowDebugSignedReleaseCheck) {
+    throw org.gradle.api.GradleException(
+        "LIFE OS permanent Android signing v2 is unavailable. Refusing to build a debug-signed release APK. " +
+        "Restore the encrypted signing identity before publishing."
+    )
+}
+
 
 android {
     signingConfigs {
@@ -62,9 +78,9 @@ android {
 
     buildTypes {
         release {
-            // CI uses the persistent LIFE OS release key from repository secrets.
-            // Local builds without those secrets keep the debug fallback so development
-            // remains possible, but published CI releases must use lifeOsRelease.
+            // The canonical main CI restores permanent signing identity v2.
+            // A debug fallback is allowed only for explicitly flagged PR compilation
+            // checks and their APKs are never uploaded or published.
             signingConfig = if (hasLifeOsReleaseSigning) {
                 signingConfigs.getByName("lifeOsRelease")
             } else {
