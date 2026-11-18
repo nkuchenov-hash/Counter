@@ -219,9 +219,11 @@ void main() {
         find.byType(AppGlassEdgeFade));
       expect(fade.edge, AppGlassEdge.bottom);
       expect(fade.blurSigma, 14);
-      expect(fade.surfaceColor, Theme.of(
+      final scheme = Theme.of(
         tester.element(find.byType(ShellCompactBottomNav)),
-      ).colorScheme.surfaceContainerLowest);
+      ).colorScheme;
+      expect(fade.surfaceColor, AppGlassEdgeFade.bottomNavigationFadeColor(scheme));
+      expect(fade.surfaceColor, isNot(scheme.surface));
       final capsule = tester.getRect(find.byType(AppFrostedNavigationPanel));
       if (canonicalCapsule != null) {
         expect(capsule, canonicalCapsule);
@@ -278,6 +280,16 @@ void main() {
     expect(settings, contains('56 + MediaQuery.viewPaddingOf(context).top'));
   });
 
+  test('bottom dock tint has genuine gradient contrast in both themes', () {
+    for (final scheme in [AppColors.lightColorScheme(), AppColors.darkColorScheme()]) {
+      final fade = AppGlassEdgeFade.bottomNavigationFadeColor(scheme);
+      expect(fade, isNot(scheme.surface),
+          reason: 'A same-color tint is invisible on an otherwise flat canvas.');
+      expect(fade, isNot(scheme.surfaceContainerLowest));
+      expect(fade.computeLuminance(), isNot(scheme.surface.computeLuminance()));
+    }
+  });
+
   test('all five phone tabs share one unbranched glass dock', () {
     final chrome = File('lib/app/shell/shared/shell_chrome.dart')
         .readAsStringSync();
@@ -290,7 +302,7 @@ void main() {
     expect(phone, contains('ShellCompactBottomNav('));
     expect(phone, isNot(contains('seamlessGlass')));
     expect(dock, isNot(contains('seamlessGlass')));
-    expect(dock, contains('surfaceColor: scheme.surfaceContainerLowest,'));
+    expect(dock, contains('surfaceColor: AppGlassEdgeFade.bottomNavigationFadeColor(scheme),'));
     expect('AppGlassEdgeFade('.allMatches(dock).length, 1);
     expect('AppFrostedNavigationPanel('.allMatches(dock).length, 1);
     expect('index: '.allMatches(dock).length, 5);
