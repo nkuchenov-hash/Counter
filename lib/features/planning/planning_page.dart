@@ -1193,12 +1193,13 @@ class _PlanningPageState extends State<PlanningPage>
     if (_sortMode == PlanSortMode.tags) {
       return _buildTagGroupedListView(tasks, planActualByPbId);
     }
+    final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
     return ReorderableListView.builder(
       padding: EdgeInsets.symmetric(
-        horizontal: shellUsesSideNavigation(MediaQuery.sizeOf(context).width)
-            ? kShellDesktopContentHorizontalPadding
-            : 12,
+        horizontal: desktop ? kShellDesktopContentHorizontalPadding : 12,
         vertical: 8,
+      ).copyWith(
+        bottom: desktop ? 8 : 116 + MediaQuery.viewPaddingOf(context).bottom,
       ),
       buildDefaultDragHandles: false,
       proxyDecorator: planningReorderProxyDecorator,
@@ -1303,6 +1304,7 @@ class _PlanningPageState extends State<PlanningPage>
         final visiblePlans = displayedForChrome;
         _syncPlanningShellFabBulkReserve();
         return Scaffold(
+          backgroundColor: Colors.transparent,
           resizeToAvoidBottomInset: true,
           body: SafeArea(
             top: false,
