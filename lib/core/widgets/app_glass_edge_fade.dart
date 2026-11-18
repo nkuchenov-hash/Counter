@@ -29,23 +29,34 @@ class AppGlassEdgeFade extends StatelessWidget {
     final end = edge == AppGlassEdge.top
         ? Alignment.bottomCenter
         : Alignment.topCenter;
-    // One symmetric feather for the pinned header and floating dock.
-    // The opaque edge protects labels, while the long easing prevents
-    // a hard horizon in either light or dark themes.
-    const fadeStops = [0.0, 0.35, 0.62, 0.82, 1.0];
+    // Pinned header needs a stronger shield for scrolling text; the bottom
+    // dock uses the same continuous feather with a lighter, clean edge.
+    // Both fade fully to transparency without an opaque full-width plate.
+    final topHeader = edge == AppGlassEdge.top;
+    final fadeStops = topHeader
+        ? const [0.0, 0.20, 0.48, 0.78, 1.0]
+        : const [0.0, 0.32, 0.60, 0.82, 1.0];
     final tint = DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: start,
           end: end,
           stops: fadeStops,
-          colors: [
-            surfaceColor.withValues(alpha: 0.94),
-            surfaceColor.withValues(alpha: 0.90),
-            surfaceColor.withValues(alpha: 0.74),
-            surfaceColor.withValues(alpha: 0.30),
-            AppNeutralTones.transparent,
-          ],
+          colors: topHeader
+              ? [
+                  surfaceColor.withValues(alpha: 0.98),
+                  surfaceColor.withValues(alpha: 0.94),
+                  surfaceColor.withValues(alpha: 0.80),
+                  surfaceColor.withValues(alpha: 0.34),
+                  AppNeutralTones.transparent,
+                ]
+              : [
+                  surfaceColor.withValues(alpha: 0.94),
+                  surfaceColor.withValues(alpha: 0.86),
+                  surfaceColor.withValues(alpha: 0.62),
+                  surfaceColor.withValues(alpha: 0.19),
+                  AppNeutralTones.transparent,
+                ],
         ),
       ),
       child: const SizedBox.expand(),
@@ -57,13 +68,21 @@ class AppGlassEdgeFade extends StatelessWidget {
           begin: start,
           end: end,
           stops: fadeStops,
-          colors: [
-            AppNeutralTones.white,
-            AppNeutralTones.white,
-            AppNeutralTones.white.withValues(alpha: 0.90),
-            AppNeutralTones.white.withValues(alpha: 0.43),
-            AppNeutralTones.transparent,
-          ],
+          colors: topHeader
+              ? [
+                  AppNeutralTones.white,
+                  AppNeutralTones.white,
+                  AppNeutralTones.white.withValues(alpha: 0.92),
+                  AppNeutralTones.white.withValues(alpha: 0.46),
+                  AppNeutralTones.transparent,
+                ]
+              : [
+                  AppNeutralTones.white,
+                  AppNeutralTones.white,
+                  AppNeutralTones.white.withValues(alpha: 0.86),
+                  AppNeutralTones.white.withValues(alpha: 0.34),
+                  AppNeutralTones.transparent,
+                ],
         ).createShader(bounds),
         child: ClipRect(
           child: blurSigma <= 0
@@ -104,10 +123,10 @@ class AppFrostedNavigationPanel extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             // Minimal neutral tint *inside* the dock, never behind it.
-            color: surfaceColor.withValues(alpha: dark ? 0.14 : 0.12),
+            color: surfaceColor.withValues(alpha: dark ? 0.10 : 0.08),
             borderRadius: BorderRadius.circular(cornerRadius),
             border: Border.all(
-              color: scheme.onSurface.withValues(alpha: dark ? 0.13 : 0.09),
+              color: scheme.onSurface.withValues(alpha: dark ? 0.10 : 0.07),
             ),
           ),
           child: Material(type: MaterialType.transparency, child: child),
