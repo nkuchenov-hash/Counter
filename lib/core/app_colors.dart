@@ -68,7 +68,7 @@ abstract final class AppColors {
   // Soft, still visible 1px separators against white/dark card surfaces.
   // Use the shared neutral ramp; avoid the former harsh 300/600 contrast.
   static const Color settingsDivider = AppNeutralTones.gray200;
-  static const Color darkSettingsDivider = AppNeutralTones.gray700;
+  static const Color darkSettingsDivider = Color(0xFF292929);
 
   // --- Semantic (success only — not default action color) ---
   static const Color success = Color(0xFF2E7D32);
@@ -86,8 +86,10 @@ abstract final class AppColors {
   static const Color orangeTagText = Color(0xFFD95400);
 
   // --- Dark surfaces ---
-  static const Color darkAppBackground = Color(0xFF141414);
-  static const Color darkCardSurface = AppNeutralTones.gray800;
+  // True Black adaptation of the existing Life OS visual system.
+  // Keep all layouts, component geometry, typography, and category colors.
+  static const Color darkAppBackground = AppNeutralTones.black;
+  static const Color darkCardSurface = Color(0xFF151515);
   static const Color darkActionPrimary = AppNeutralTones.gray200;
   static const Color onDarkActionPrimary = AppNeutralTones.gray900;
   static const Color darkActionPrimaryContainer = AppNeutralTones.gray800;
@@ -137,11 +139,11 @@ abstract final class AppColors {
         onPrimaryContainer: onDarkActionPrimaryContainer,
         secondary: Color(0xFFCACACA),
         onSecondary: onDarkActionPrimary,
-        secondaryContainer: Color(0xFF333333),
+        secondaryContainer: Color(0xFF242424),
         onSecondaryContainer: darkActionPrimary,
         tertiary: Color(0xFF9E9E9E),
         onTertiary: onDarkActionPrimary,
-        tertiaryContainer: Color(0xFF2A2A2A),
+        tertiaryContainer: Color(0xFF202020),
         onTertiaryContainer: darkActionPrimary,
         error: Color(0xFFF2B8B5),
         onError: Color(0xFF601410),
@@ -149,14 +151,14 @@ abstract final class AppColors {
         onErrorContainer: Color(0xFFF9DEDC),
         surface: darkAppBackground,
         onSurface: darkActionPrimary,
-        surfaceContainerHighest: darkCardSurface,
-        surfaceContainerHigh: darkCardSurface,
+        surfaceContainerHighest: Color(0xFF292929),
+        surfaceContainerHigh: Color(0xFF202020),
         surfaceContainer: darkCardSurface,
-        surfaceContainerLow: darkAppBackground,
+        surfaceContainerLow: Color(0xFF080808),
         surfaceContainerLowest: darkAppBackground,
-        onSurfaceVariant: Color(0xFFB0B0B0),
-        outline: Color(0xFF4A4A4A),
-        outlineVariant: Color(0xFF3A3A3A),
+        onSurfaceVariant: Color(0xFFA3A3A3),
+        outline: Color(0xFF393939),
+        outlineVariant: Color(0xFF2B2B2B),
         shadow: Colors.black,
         scrim: Colors.black,
         inverseSurface: darkActionPrimary,
