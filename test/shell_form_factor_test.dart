@@ -66,8 +66,12 @@ void main() {
     expect(shell, contains('final pages = buildShellPages();'));
     expect(nav, contains('AppFrostedNavigationPanel('));
     expect(nav, isNot(contains('top: -46')));
-    expect(nav, isNot(contains('Positioned(')));
-    expect(nav, isNot(contains('AppGlassEdgeFade(')));
+    // One owner constructs the interactive capsule AND its noninteractive
+    // backdrop; the shell and feature screens never add a second dock layer.
+    expect('Positioned('.allMatches(nav), hasLength(1));
+    expect('AppGlassEdgeFade('.allMatches(nav), hasLength(1));
+    expect(shell, isNot(contains('AppGlassEdgeFade(')));
+    expect(shell, contains('final compactContent = mainColumn;'));
     expect(settings, contains('AppGlassEdgeFade('));
     expect(settings, contains('AppGlassEdge.top'));
     expect('class AppGlassEdgeFade'.allMatches(fade), hasLength(1));
@@ -92,10 +96,11 @@ void main() {
     expect(settings, contains('blurSigma: 16'));
     // All compact destinations (Timeline, Planning, Calendar, Lists, Settings)
     // use the same approved bottom feather, not tab-dependent geometry/blur.
-    expect(shell, contains('height: 176,'));
-    expect(shell, contains('blurSigma: 14,'));
-    expect(shell, isNot(contains('height: settingsGlass ? 176 : 126')));
-    expect(shell, isNot(contains('blurSigma: settingsGlass ? 14 : 0')));
+    expect(nav, contains('height: 176,'));
+    expect(nav, contains('blurSigma: 14,'));
+    expect(nav, contains('clipBehavior: Clip.none'));
+    expect(nav, isNot(contains('height: settingsGlass ? 176 : 126')));
+    expect(nav, isNot(contains('blurSigma: settingsGlass ? 14 : 0')));
     // Initial content starts closer to the pinned title; title/glass dimensions
     // remain untouched and scroll overlap behind the pinned header still works.
     expect(settings, contains('SizedBox(height: 56 + MediaQuery.viewPaddingOf(context).top)'));
@@ -130,8 +135,9 @@ void main() {
         ),
       ),
     ));
-    expect(find.byType(BackdropFilter), findsOneWidget);
-    expect(find.byType(ShaderMask), findsNothing);
+    expect(find.byType(BackdropFilter), findsNWidgets(2));
+    expect(find.byType(ShaderMask), findsOneWidget);
+    expect(find.byType(AppGlassEdgeFade), findsOneWidget);
     expect(find.byType(AppFrostedNavigationPanel), findsOneWidget);
     final capsule = tester.getRect(find.byType(AppFrostedNavigationPanel));
     expect(capsule.left, greaterThanOrEqualTo(12));
@@ -203,12 +209,14 @@ void main() {
       ),
     ));
     await tester.pumpWidget(navFor(false));
-    expect(find.byType(BackdropFilter), findsOneWidget);
-    expect(find.byType(ShaderMask), findsNothing);
+    expect(find.byType(BackdropFilter), findsNWidgets(2));
+    expect(find.byType(ShaderMask), findsOneWidget);
+    expect(find.byType(AppGlassEdgeFade), findsOneWidget);
     expect(find.byType(InkWell), findsNWidgets(5));
     await tester.pumpWidget(navFor(true));
-    expect(find.byType(BackdropFilter), findsOneWidget);
-    expect(find.byType(ShaderMask), findsNothing);
+    expect(find.byType(BackdropFilter), findsNWidgets(2));
+    expect(find.byType(ShaderMask), findsOneWidget);
+    expect(find.byType(AppGlassEdgeFade), findsOneWidget);
     expect(find.byType(InkWell), findsNWidgets(5));
     expect(tester.takeException(), isNull);
   });
