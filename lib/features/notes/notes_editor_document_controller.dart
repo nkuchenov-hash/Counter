@@ -805,33 +805,11 @@ class NotesEditorDocumentController {
     activeSelection = null;
     return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
-  void _commitDocument(
-    NoteDocument next, {
-    bool preserveBlockIndices = false,
-  }) {
-    _undoStack.add(_document);
-    if (_undoStack.length > 100) _undoStack.removeAt(0);
-    _document = next;
-    _visibleBlocksCache = null;
-    // Text/format edits replace a block at the same position. Structural
-    // edits (reorder/insert/delete/Undo) invalidate the id-to-index map.
-    if (!preserveBlockIndices) _blockIndices = null;
-  }
-  void _replaceBlock(NoteBlock replacement) {
-    final index = _indexOf(replacement.id);
-    if (index < 0) return;
-    final nextBlocks = List<NoteBlock>.from(blocks)..[index] = replacement;
-    _commitDocument(
-      _document.copyWith(blocks: nextBlocks),
-      preserveBlockIndices: true,
-    );
-  }
-  int _indexOf(String id) {
-    final indices = _blockIndices ??= <String, int>{
-      for (var i = 0; i < blocks.length; i++) blocks[i].id: i,
-    };
-    return indices[id] ?? -1;
-  }
+  void _commitDocument(NoteDocument next, {bool preserveBlockIndices = false}) =>
+      _commitNoteDocument(this, next, preserveBlockIndices: preserveBlockIndices);
+  void _replaceBlock(NoteBlock replacement) =>
+      _replaceNoteBlock(this, replacement);
+  int _indexOf(String id) => _indexOfNoteBlock(this, id);
   int _indexAfterLastVisibleBlock() {
     for (var index = blocks.length - 1; index >= 0; index--) {
       if (isSupportedProductionBlock(blocks[index].type)) return index + 1;
