@@ -50,11 +50,13 @@ require(glass.count("class AppGlassEdgeFade") == 1 and
         glass.count("class AppFrostedNavigationPanel") == 1 and
         "ClipRRect(" in glass and "BackdropFilter(" in glass,
         "GLASS_COMPONENTS_MUST_BE_CENTRALIZED_AND_CLIPPED")
-require(re.search(r"seamlessGlass\s*\?", nav) is not None and
-        "surfaceContainerLowest" in nav and
+require("seamlessGlass" not in nav and
+        "seamlessGlass" not in phone and
+        "seamlessGlass:" not in shell and
+        "surfaceColor: scheme.surfaceContainerLowest" in nav and
         "Clip.none" in nav and
         "IgnorePointer(" in glass,
-        "ONLY_CANVAS_COLOR_MAY_VARY_WITH_THEME_NOT_DOCK_DESIGN")
+        "ONE_DOCK_MATERIAL_ACROSS_ALL_MOBILE_DESTINATIONS")
 # Feature pages cannot reimplement the root navigation or its full-width fade.
 for feature in ("timeline", "lists", "planning", "calendar"):
     for file in (root / "lib/features" / feature).rglob("*.dart"):
