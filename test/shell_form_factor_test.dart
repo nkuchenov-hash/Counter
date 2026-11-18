@@ -266,6 +266,24 @@ void main() {
     expect(settings, contains('56 + MediaQuery.viewPaddingOf(context).top'));
   });
 
+  test('all five phone tabs share one unbranched glass dock', () {
+    final chrome = File('lib/app/shell/shared/shell_chrome.dart')
+        .readAsStringSync();
+    final phone = File('lib/app/shell/phone/phone_shell_frame.dart')
+        .readAsStringSync();
+    final dock = File('lib/app/shell/phone/shell_bottom_navigation.dart')
+        .readAsStringSync();
+    expect(chrome, contains('PhoneShellBottomNavigation('));
+    expect(chrome, isNot(contains('seamlessGlass:')));
+    expect(phone, contains('ShellCompactBottomNav('));
+    expect(phone, isNot(contains('seamlessGlass')));
+    expect(dock, isNot(contains('seamlessGlass')));
+    expect(dock, contains('surfaceColor: scheme.surfaceContainerLowest,'));
+    expect('AppGlassEdgeFade('.allMatches(dock).length, 1);
+    expect('AppFrostedNavigationPanel('.allMatches(dock).length, 1);
+    expect('index: '.allMatches(dock).length, 5);
+  });
+
   group('single settings navigation', () {
     test('Settings use one native tab workspace across both shell entries', () {
       final chrome = File('lib/app/shell/shared/shell_chrome.dart')
