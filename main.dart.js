@@ -9354,8 +9354,7 @@ this.c=c},
 big:function big(a){this.a=a},
 bih:function bih(a,b){this.a=a
 this.b=b},
-bii:function bii(a,b){this.a=a
-this.b=b},
+bii:function bii(a){this.a=a},
 anW:function anW(){},
 bix:function bix(a,b){this.a=a
 this.b=b},
@@ -9555,18 +9554,16 @@ _.r=e
 _.a=f},
 VF:function VF(a,b){this.c=a
 this.a=b},
-akp:function akp(a,b,c,d,e){var _=this
+akp:function akp(a,b,c,d){var _=this
 _.c=a
 _.d=b
 _.e=c
-_.f=d
-_.a=e},
-anV:function anV(a,b,c,d,e){var _=this
+_.a=d},
+anV:function anV(a,b,c,d){var _=this
 _.c=a
 _.d=b
 _.e=c
-_.f=d
-_.a=e},
+_.a=d},
 biu:function biu(a,b){this.a=a
 this.b=b},
 aCT:function aCT(a,b,c,d,e,f){var _=this
@@ -69528,7 +69525,7 @@ s=a.b
 r=s==null?null:B.b.j(s)
 return(r==null?"":r).length===0},
 cmQ(a){var s=B.b.j(a)
-return"APP_BUILD commit=fc732d5c builtAt=2026-11-18T14:42:40Z"+(s.length!==0?" route="+s:"")},
+return"APP_BUILD commit=21e89418 builtAt=2026-11-18T15:25:54Z"+(s.length!==0?" route="+s:"")},
 bO(a,b){var s,r=null,q=$.aIw().gan()
 if(q==null)return
 q.oq()
@@ -91192,47 +91189,46 @@ A.cIT()
 return j},
 $S:1296}
 A.bik.prototype={
-$2(a2,a3){var s,r,q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b=this,a=null,a0=a3.b,a1=a0==null?a:a0.ay
-if(a1==null)a1=B.dm
-a0=b.b
-s=!a0
-if(s)r=b.a.jt$>3&&b.c.a===B.aW
+$2(a1,a2){var s,r,q,p,o,n,m,l,k,j,i,h,g,f,e,d,c=this,b=null,a=a2.b,a0=a==null?b:a.ay
+if(a0==null)a0=B.dm
+a=c.b
+s=!a
+if(s)r=c.a.jt$>3&&c.c.a===B.aW
 else r=!0
 r=r?B.G:B.aW
-if(s)q=b.a.jt$>3&&b.c.a===B.aW
+if(s)q=c.a.jt$>3&&c.c.a===B.aW
 else q=!0
 q=q?B.aW:B.G
-p=b.c
+p=c.c
 o=p.a===B.aW?B.G:B.aW
-n=a0?p.k2:B.q
-m=b.a
-l=b.d
-if(l){k=p.p2
-if(k==null)k=p.k2}else k=p.k2
-if(s)j=m.jt$<=3
-else j=!0
-if(j){j=a0?B.o:B.hj
-i=a0?p.k3:B.o
-if(a0){h=p.to
-if(h==null){h=p.C
-if(h==null)h=p.k3}h=new A.dF(B.A,B.A,new A.b3(h.T(0.65),1,B.F,-1),B.A)}else h=a
-g=t.p
-f=A.b([],g)
-if(!s||A.ag(a2,B.X,t.w).w.a.a>=430){e=A.b([],g)
-if(a0)B.c.G(e,A.b([new A.cv(new A.aW(p.k3,a,a,A.aF(9),a,a,B.B),B.ab,B.csY,a),B.ch],g))
-d=a0?"LIFE OS":A.r(b.e,"app_title")
-c=A.o(a2).ok.w
-if(c==null)c=a
-else c=c.Js(a0?p.k3:B.o,B.a4,1)
-e.push(A.t(d,a,1,B.N,a,a,a,c,a,a,a,a))
-e.push(B.bf)
-B.c.G(f,e)}e=m.qS$
-e===$&&A.c()
-f.push(A.az(new A.bT(B.ji,a,a,new A.mI(new A.bif(m,a0,p),a,e,a),a),1,a))
-f=A.av(f,B.k,a,B.f,B.h,0,a)
-f=A.mo(A.b([new A.cT(B.qp,"\u0412\u0438\u043a\u0442\u043e\u0440 \u2014 \u0418\u0418-\u043f\u043e\u043c\u043e\u0449\u043d\u0438\u043a",new A.big(m),B.b1,B.bg,B.as,!1,!1,a),B.eV],g),!1,j,a,0,a,i,a,a,0,h,B.q,f,16,48)
-a0=f}else a0=a
-return new A.Fv(a1,A.cmO(A.jM(B.bw,new A.LM(m.a6t$,A.im(a0,k,A.eE(new A.bih(m,b.f)),A.eE(new A.bii(m,l)),a,s,a,a,!0),a),a,a,new A.bij(a2),a,a,a,a),new A.tS(n,a,o,!1,B.q,q,r,!1),t.ev),a)},
+n=a?p.k2:B.q
+m=c.a
+if(c.d){l=p.p2
+if(l==null)l=p.k2}else l=p.k2
+if(s)k=m.jt$<=3
+else k=!0
+if(k){k=a?B.o:B.hj
+j=a?p.k3:B.o
+if(a){i=p.to
+if(i==null){i=p.C
+if(i==null)i=p.k3}i=new A.dF(B.A,B.A,new A.b3(i.T(0.65),1,B.F,-1),B.A)}else i=b
+h=t.p
+g=A.b([],h)
+if(!s||A.ag(a1,B.X,t.w).w.a.a>=430){f=A.b([],h)
+if(a)B.c.G(f,A.b([new A.cv(new A.aW(p.k3,b,b,A.aF(9),b,b,B.B),B.ab,B.csY,b),B.ch],h))
+e=a?"LIFE OS":A.r(c.e,"app_title")
+d=A.o(a1).ok.w
+if(d==null)d=b
+else d=d.Js(a?p.k3:B.o,B.a4,1)
+f.push(A.t(e,b,1,B.N,b,b,b,d,b,b,b,b))
+f.push(B.bf)
+B.c.G(g,f)}f=m.qS$
+f===$&&A.c()
+g.push(A.az(new A.bT(B.ji,b,b,new A.mI(new A.bif(m,a,p),b,f,b),b),1,b))
+g=A.av(g,B.k,b,B.f,B.h,0,b)
+g=A.mo(A.b([new A.cT(B.qp,"\u0412\u0438\u043a\u0442\u043e\u0440 \u2014 \u0418\u0418-\u043f\u043e\u043c\u043e\u0449\u043d\u0438\u043a",new A.big(m),B.b1,B.bg,B.as,!1,!1,b),B.eV],h),!1,k,b,0,b,j,b,b,0,i,B.q,g,16,48)
+a=g}else a=b
+return new A.Fv(a0,A.cmO(A.jM(B.bw,new A.LM(m.a6t$,A.im(a,l,A.eE(new A.bih(m,c.f)),A.eE(new A.bii(m)),b,s,b,b,!0),b),b,b,new A.bij(a1),b,b,b,b),new A.tS(n,b,o,!1,B.q,q,r,!1),t.ev),b)},
 $S:1283}
 A.bij.prototype={
 $1(a){this.a.a2(t.J).f.oq()},
@@ -91263,7 +91259,7 @@ if(A.cb1(q)===B.xi)return B.ad
 s=this.a
 r=s.jt$
 r=r<=3?r:4
-return new A.akp(q,r,s.gbpZ(),this.b,null)},
+return new A.akp(q,r,s.gbpZ(),null)},
 $S:148}
 A.anW.prototype={
 gax6(){var s=$.M().b,r=s==null?null:B.b.j(s)
@@ -92469,8 +92465,7 @@ i=m}return A.bM(!1,B.t,!0,o,A.ci(!1,k,!0,A.c1(k,new A.P(B.J8,A.av(A.b([n,B.bf,A.
 A.VF.prototype={
 A(a){return this.c}}
 A.akp.prototype={
-A(a){var s=this
-return new A.anV(s.d,s.e,s.c,s.f,null)}}
+A(a){return new A.anV(this.d,this.e,this.c,null)}}
 A.anV.prototype={
 Q8(a,b,c){if(this.e<420)return A.r(a,c)
 return A.r(a,b)},
@@ -92481,9 +92476,8 @@ h=A.b([],f)
 for(l=p.c,s=0;s<5;++s){r=e[s]
 k=r.a
 h.push(new A.he(1,B.bW,new A.aCT(k[0],k[3],k[2],l===k[1],new A.biu(p,r),o),o))}q=A.ei(!0,new A.P(B.akh,new A.a8H(g,new A.ac(o,66,A.av(h,B.x,o,B.f,B.h,0,o),o),o),o),o,B.D,!0,!1)
-if(p.f){l=m.p2
-if(l==null)l=g}else l=g
-return A.JU(new A.cB(B.ai,o,B.ar,B.l,A.b([A.d0(0,new A.fS(new A.Qd(B.a9a,l,14,o),o),176,o,0,0,o,o),q],f),o),1)}}
+l=m.p2
+return A.JU(new A.cB(B.ai,o,B.ar,B.l,A.b([A.d0(0,new A.fS(new A.Qd(B.a9a,l==null?g:l,14,o),o),176,o,0,0,o,o),q],f),o),1)}}
 A.biu.prototype={
 $0(){return this.a.d.$1(this.b.a[1])},
 $S:0}
@@ -120611,7 +120605,7 @@ r=A.o(a).ok.z
 if(r==null)r=m
 else{q=A.o(a).ax
 p=q.rx
-r=r.aL(p==null?q.k3:p)}r=A.t(s+" fc732d5c \xb7 2026-11-18T14:42:40Z",m,m,m,m,m,m,r,m,m,m,m)
+r=r.aL(p==null?q.k3:p)}r=A.t(s+" 21e89418 \xb7 2026-11-18T15:25:54Z",m,m,m,m,m,m,r,m,m,m,m)
 s=r
 break
 default:s=m}return new A.lF(A.b([new A.it(k,m,s,m)],t.p),!1,m)},
@@ -122426,7 +122420,7 @@ a8=j.length
 if(a8===0)a8=A.cx(A.t(o?"\u041d\u0438\u0447\u0435\u0433\u043e \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e":"No matching icons",a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2),a2,a2)
 else a8=A.To(a2,B.I,B.ct9,new A.bIR(a3,j,o,a),a8,B.cBv,B.ako,a2)
 a4.push(A.az(a8,1,a2))
-a8=A.az(A.t(""+j.length+" / "+s.length+" \xb7 fc732d5c",B.cBM,1,B.N,a2,a2,a2,A.o(a9).ok.Q,a2,a2,a2,a2),1,a2)
+a8=A.az(A.t(""+j.length+" / "+s.length+" \xb7 21e89418",B.cBM,1,B.N,a2,a2,a2,A.o(a9).ok.Q,a2,a2,a2,a2),1,a2)
 q=A.es(!1,A.t(o?"\u041e\u0442\u043c\u0435\u043d\u0430":"Cancel",a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2),a2,a2,!0,a2,a2,a2,new A.bIS(a9),a2,a2)
 p=a3.d.a
 a3=B.cz.aJ(0,p)||B.e2.aJ(0,p)?new A.bIT(a3,a9):a2
