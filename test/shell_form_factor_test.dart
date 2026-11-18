@@ -155,7 +155,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    for (final settings in [false, true]) {
+    for (var selectedTab = 0; selectedTab < 5; selectedTab++) {
       await tester.pumpWidget(MaterialApp(home: Scaffold(
         extendBody: true,
         body: SafeArea(
@@ -171,8 +171,7 @@ void main() {
         ),
         bottomNavigationBar: ShellCompactBottomNav(
           viewportWidth: 390,
-          selectedIndex: 0,
-          seamlessGlass: settings,
+          selectedIndex: selectedTab,
           onDestinationSelected: (_) {},
         ),
       )));
@@ -200,24 +199,37 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    Widget navFor(bool glass) => MaterialApp(home: Scaffold(
+    Widget navFor(int selectedTab) => MaterialApp(home: Scaffold(
       extendBody: true,
       bottomNavigationBar: ShellCompactBottomNav(
         viewportWidth: 390,
-        selectedIndex: 0, seamlessGlass: glass,
+        selectedIndex: selectedTab,
         onDestinationSelected: (_) {},
       ),
     ));
-    await tester.pumpWidget(navFor(false));
-    expect(find.byType(BackdropFilter), findsNWidgets(2));
-    expect(find.byType(ShaderMask), findsOneWidget);
-    expect(find.byType(AppGlassEdgeFade), findsOneWidget);
-    expect(find.byType(InkWell), findsNWidgets(5));
-    await tester.pumpWidget(navFor(true));
-    expect(find.byType(BackdropFilter), findsNWidgets(2));
-    expect(find.byType(ShaderMask), findsOneWidget);
-    expect(find.byType(AppGlassEdgeFade), findsOneWidget);
-    expect(find.byType(InkWell), findsNWidgets(5));
+    Rect? canonicalCapsule;
+    Color? canonicalFade;
+    for (var selectedTab = 0; selectedTab < 5; selectedTab++) {
+      await tester.pumpWidget(navFor(selectedTab));
+      expect(find.byType(BackdropFilter), findsNWidgets(2));
+      expect(find.byType(ShaderMask), findsOneWidget);
+      expect(find.byType(AppGlassEdgeFade), findsOneWidget);
+      expect(find.byType(InkWell), findsNWidgets(5));
+      final fade = tester.widget<AppGlassEdgeFade>(
+        find.byType(AppGlassEdgeFade));
+      expect(fade.edge, AppGlassEdge.bottom);
+      expect(fade.blurSigma, 14);
+      expect(fade.surfaceColor, Theme.of(
+        tester.element(find.byType(ShellCompactBottomNav)),
+      ).colorScheme.surfaceContainerLowest);
+      final capsule = tester.getRect(find.byType(AppFrostedNavigationPanel));
+      if (canonicalCapsule != null) {
+        expect(capsule, canonicalCapsule);
+        expect(fade.surfaceColor, canonicalFade);
+      }
+      canonicalCapsule = capsule;
+      canonicalFade = fade.surfaceColor;
+    }
     expect(tester.takeException(), isNull);
   });
 
