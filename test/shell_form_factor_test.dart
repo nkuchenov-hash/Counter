@@ -83,9 +83,18 @@ void main() {
     expect(fade, contains('surfaceColor.withValues(alpha: 0.015)'));
     expect(fade, contains('surfaceColor.withValues(alpha: 0.008)'));
     expect(fade, contains('AppNeutralTones.transparent'));
+    // Preserve the approved design-system fade when adjusting content spacing.
+    expect(fade, contains('0.0, 0.12, 0.32, 0.48, 0.62, 0.74'));
+    expect(fade, contains('surfaceColor.withValues(alpha: 0.98)'));
+    expect(fade, contains('AppNeutralTones.white.withValues(alpha: 0.10)'));
     expect(settings, contains('clipBehavior: Clip.none'));
     expect(settings, contains('height: topInset + 162'));
+    expect(settings, contains('blurSigma: 16'));
     expect(shell, contains('height: settingsGlass ? 176 : 126'));
+    expect(shell, contains('blurSigma: settingsGlass ? 14 : 0'));
+    // Initial content starts closer to the pinned title; title/glass dimensions
+    // remain untouched and scroll overlap behind the pinned header still works.
+    expect(settings, contains('SizedBox(height: 56 + MediaQuery.viewPaddingOf(context).top)'));
     // No settings-specific or tab-specific second navigation appearance.
     expect(nav, isNot(contains('seamlessGlass ?')));
     expect(nav, isNot(contains('!seamlessGlass ?')));
