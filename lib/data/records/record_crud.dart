@@ -859,7 +859,6 @@ extension RecordCrudExtension on DatabaseService {
     int? categoryId,
     String? note,
     String? notesDeltaJson,
-
     /// Comma-separated tag **names** (@DATA_MAP `records.tags` string). Omitted when null or blank.
     String? tags,
     List<Map<String, dynamic>>? checklist,
@@ -867,6 +866,7 @@ extension RecordCrudExtension on DatabaseService {
     bool clearSourcePlan = false,
     String? sourcePlanPocketRecordId,
     bool bypassConflictCheck = false,
+    bool alreadyAppliedOptimistically = false,
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return null;
     final originalInput = recordId.trim();
@@ -928,14 +928,13 @@ extension RecordCrudExtension on DatabaseService {
         return _timelineRecordFromCacheInput(originalInput);
       }
       Map<String, dynamic>? rollbackRow;
-      var rollbackIndex = -1;
-      rollbackIndex = existingIndex;
+      final rollbackIndex = existingIndex;
       if (rollbackIndex >= 0) {
         rollbackRow = Map<String, dynamic>.from(
           _cachedFlatRecords[rollbackIndex],
         );
       }
-      applyOptimisticRecordRowEdit(
+      if (!alreadyAppliedOptimistically) applyOptimisticRecordRowEdit(
         recordId: originalInput,
         title: title,
         startTime: startTime,
