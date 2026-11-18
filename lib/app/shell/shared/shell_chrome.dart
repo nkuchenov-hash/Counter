@@ -98,8 +98,6 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
             final desktopShell =
                 shellFormFactorForWidth(MediaQuery.sizeOf(context).width) ==
                 ShellFormFactor.desktop;
-            final settingsGlass = !desktopShell &&
-                (shellPageIndex == 5 || shellPageIndex == 7);
             final builtTabs = kShellDeferHiddenTabsUntilFirstFrame
                 ? 1
                 : pages.length;
@@ -139,8 +137,8 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                       child: ShellLayoutScope(
                         controller: shellLayout,
                         child: Scaffold(
-                          backgroundColor: settingsGlass
-                              ? scheme.surfaceContainerLowest : scheme.surface,
+                          // One canvas behind the one dock across all mobile tabs.
+                          backgroundColor: scheme.surface,
                           resizeToAvoidBottomInset: true,
                           // Scrollable pixels are drawn behind the clipped
                           // dock; floating actions and footers honor safe insets.
