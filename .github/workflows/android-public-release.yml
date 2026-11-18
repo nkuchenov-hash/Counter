@@ -66,7 +66,7 @@ jobs:
           (cd dist && sha256sum LIFE-OS-Android-arm64.apk > SHA256SUMS.txt)
           test -s dist/LIFE-OS-Android-arm64.apk
           file dist/LIFE-OS-Android-arm64.apk
-          sha256sum -c dist/SHA256SUMS.txt
+          (cd dist && sha256sum -c SHA256SUMS.txt)
 
       - name: Upload verified APK artifact
         uses: actions/upload-artifact@v4
