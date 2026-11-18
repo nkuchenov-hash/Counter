@@ -1,4 +1,5 @@
 import 'package:counter/app/shell/phone/shell_bottom_navigation.dart';
+import 'package:counter/core/widgets/app_glass_edge_fade.dart';
 import 'package:flutter/material.dart';
 
 /// Phone (and current tablet) content frame: main column without side nav.
@@ -7,9 +8,42 @@ class PhoneShellFrame extends StatelessWidget {
 
   final Widget child;
 
+  /// The full-height shell body owns the footer feather. A feather placed
+  /// inside bottomNavigationBar cannot reliably paint above that bar's render
+  /// bounds, which produced a solid dark rectangle behind the dock.
+  ///
+  /// The fade is painted inside the extended Scaffold body and remains
+  /// identical for Timeline, Planning, Calendar, Lists and Settings.
   @override
-  Widget build(BuildContext context) => child;
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        child,
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: kPhoneShellDockFadeHeight,
+          child: RepaintBoundary(
+            child: AppGlassEdgeFade(
+              key: const ValueKey('life-os-canonical-bottom-fade'),
+              edge: AppGlassEdge.bottom,
+              surfaceColor: AppGlassEdgeFade.bottomNavigationFadeColor(scheme),
+              blurSigma: 14,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
+
+/// Independent of tab selection and page content. The gradient spans the
+/// navigation capsule and fades naturally into the scroll viewport above.
+const double kPhoneShellDockFadeHeight = 176;
+
 
 /// Phone bottom navigation bar for compact shell widths.
 class PhoneShellBottomNavigation extends StatelessWidget {
