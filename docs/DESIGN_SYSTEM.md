@@ -1,3 +1,11 @@
+## Approved seamless glass feather — canonical design-system component (2026-11-18)
+
+- The user-approved top and bottom fades are **the single canonical `AppGlassEdgeFade`**, owned by `lib/core/widgets/app_glass_edge_fade.dart`. Never implement new or per-screen replacement gradients, flat opacity masks, full-width navigation backplates, or independent frosted-header effects.
+- Preserve the approved ten-stop continuous fade curve (0, .12, .32, .48, .62, .74, .83, .90, .95, 1), its distinct top/bottom tints, and its near-zero tail *before* the visual boundary. Preserve the `ShaderMask` and `BackdropFilter` layering; this prevents horizontal fade seams while scrolling. Header blur remains 16, Settings footer blur 14.
+- On phone Settings, the title remains pinned and the scroll content may pass behind it. The noninteractive top glass extends to `topInset + 162`; the shell-owned Settings bottom fade spans 176 logical px. **Neither height nor fade alpha/stops should change to solve content spacing.**
+- The top gap to the profile/menu is solely the scroll body's leading spacer in `LifeOsSettingsTabsPage`; reduce this spacer for a compact first-screen layout without moving the pinned title, editing its glass component, or changing scroll overlap. Protect this separation with regression checks.
+- The dock remains one shared `ShellCompactBottomNav` inside `AppFrostedNavigationPanel` with the same styling across tabs.
+
 ## P0 mobile shell navigation — one owner and no overlap (2026-11-16)
 
 - `ShellCompactBottomNav` in `lib/app/shell/phone/shell_bottom_navigation.dart` is the **only** mobile primary navigation component on every tab, including Settings. A new menu widget, tab-specific imitation, duplicated frosted background, or parallel navigation implementation is prohibited.
