@@ -842,9 +842,12 @@ class _AppSettingsThemeChoice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final previewBg = dark ? AppNeutralTones.gray800 : AppNeutralTones.white;
-    final previewPanel = dark ? AppNeutralTones.gray700 : AppNeutralTones.gray150;
-    final previewStroke = dark ? AppNeutralTones.gray600 : AppNeutralTones.gray200;
+    // Preview the actual active palette rather than an unrelated gray ramp.
+    final previewScheme =
+        dark ? AppColors.darkColorScheme() : AppColors.lightColorScheme();
+    final previewBg = previewScheme.surface;
+    final previewPanel = previewScheme.surfaceContainerHigh;
+    final previewStroke = previewScheme.outlineVariant;
     final selectedColor = scheme.onSurface;
 
     return Semantics(
