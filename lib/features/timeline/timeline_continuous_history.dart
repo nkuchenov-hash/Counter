@@ -88,9 +88,11 @@ class _TimelineContinuousPageState extends State<TimelineContinuousPage> {
   Widget build(BuildContext context) {
     final isFuture = _visibleDate.isAfter(widget.anchorToday);
     return Scaffold(
+      backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         top: false,
+        bottom: false,
         child: Column(
           children: [
             TimelineHeaderControls(
@@ -350,7 +352,12 @@ class _ContinuousTimelineHistoryState extends State<ContinuousTimelineHistory> {
       );
     }
 
-    slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 80)));
+    // Cards can scroll behind the common frosted dock, but the last record
+    // must be able to settle above its touch targets.
+    final compact = !shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
+    slivers.add(SliverToBoxAdapter(child: SizedBox(
+      height: compact ? 116 + MediaQuery.viewPaddingOf(context).bottom : 80,
+    )));
 
     return CustomScrollView(
       controller: _controller,
