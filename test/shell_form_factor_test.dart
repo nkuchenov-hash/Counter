@@ -293,24 +293,32 @@ void main() {
     expect(settings, contains('56 + MediaQuery.viewPaddingOf(context).top'));
   });
 
-  test('bottom dock feather ALWAYS darkens, never brightens, in either theme', () {
+  test('bottom dock feather never brightens either theme, including true black', () {
     for (final scheme in [
       AppColors.lightColorScheme(),
       AppColors.darkColorScheme(),
     ]) {
       final fade = AppGlassEdgeFade.bottomNavigationFadeColor(scheme);
-      expect(fade, isNot(scheme.surface));
-      expect(fade, isNot(scheme.surfaceContainerLowest));
-      expect(fade.computeLuminance(), lessThan(scheme.surface.computeLuminance()),
-          reason: 'The dock must fade downward into shadow, not create a bright halo.');
+      final canvasLuminance = scheme.surface.computeLuminance();
+      if (canvasLuminance > 0) {
+        expect(fade, isNot(scheme.surface));
+        expect(fade.computeLuminance(), lessThan(canvasLuminance),
+            reason: 'A non-black dock must fade downward into shadow.');
+      } else {
+        // No color is darker than true black. The fade must merge with the
+        // black canvas rather than invent a lighter footer halo.
+        expect(fade, equals(scheme.surface));
+      }
+      expect(fade.computeLuminance(), lessThanOrEqualTo(canvasLuminance),
+          reason: 'The dock must never brighten the page.');
     }
-    // Regression: dark onSurface is LIGHT, and blending toward it made the
-    // entire dark footer glow gray (observed on Android on 18 Nov 2026).
+    // Regression: dark onSurface is LIGHT, so it must not be used to
+    // brighten the bottom feather (observed on Android on 18 Nov 2026).
     final dark = AppColors.darkColorScheme();
     expect(dark.onSurface.computeLuminance(),
         greaterThan(dark.surface.computeLuminance()));
     expect(AppGlassEdgeFade.bottomNavigationFadeColor(dark).computeLuminance(),
-        lessThan(dark.surface.computeLuminance()));
+        lessThanOrEqualTo(dark.surface.computeLuminance()));
   });
 
   test('all five phone tabs share one unbranched glass dock', () {
