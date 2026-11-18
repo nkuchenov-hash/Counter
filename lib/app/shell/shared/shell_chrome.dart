@@ -23,6 +23,7 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
         final r = snapshot.data ?? rules;
         return CategoriesPage(
           rules: r,
+          onBack: () => setState(() => setShellPageIndex(7)),
           onChanged: () async {
             if (mounted) {
               setState(() {
