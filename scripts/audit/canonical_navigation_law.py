@@ -36,13 +36,16 @@ require("AppGlassEdgeFade(" not in shell and
         "AppGlassEdge.bottom" not in shell and
         "extendBody: !desktopShell" in shell,
         "SHELL_MUST_NOT_BUILD_DUPLICATE_NAV_BACKDROP")
-require(nav.count("AppGlassEdgeFade(") == 1 and
-        nav.count("AppFrostedNavigationPanel(") == 1 and
-        nav.count("Positioned(") == 1 and
-        "AppGlassEdge.bottom" in nav and
-        "height: 176" in nav and "blurSigma: 14" in nav and
-        "top: -46" not in nav,
-        "ONE_CANONICAL_NAV_OWNS_BACKDROP_AND_CAPSULE")
+require(phone.count("AppGlassEdgeFade(") == 1 and
+        phone.count("Positioned(") == 1 and
+        "AppGlassEdge.bottom" in phone and
+        "kPhoneShellDockFadeHeight = 176" in phone and
+        "blurSigma: 14" in phone and
+        "StackFit.expand" in phone and
+        nav.count("AppGlassEdgeFade(") == 0 and
+        nav.count("Positioned(") == 0 and
+        nav.count("AppFrostedNavigationPanel(") == 1,
+        "FULL_HEIGHT_PHONE_SHELL_OWNS_FADE_DOCK_OWNS_ONLY_CAPSULE")
 require("AppGlassEdgeFade(" in settings and
         "AppGlassEdge.top" in settings,
         "TOP_HEADER_MUST_USE_CANONICAL_EDGE_FADE")
@@ -53,8 +56,7 @@ require(glass.count("class AppGlassEdgeFade") == 1 and
 require("seamlessGlass" not in nav and
         "seamlessGlass" not in phone and
         "seamlessGlass:" not in shell and
-        "surfaceColor: AppGlassEdgeFade.bottomNavigationFadeColor(scheme)" in nav and
-        "Clip.none" in nav and
+        "surfaceColor: AppGlassEdgeFade.bottomNavigationFadeColor(scheme)" in phone and
         "IgnorePointer(" in glass,
         "ONE_DOCK_MATERIAL_ACROSS_ALL_MOBILE_DESTINATIONS")
 # Feature pages cannot reimplement the root navigation or its full-width fade.
