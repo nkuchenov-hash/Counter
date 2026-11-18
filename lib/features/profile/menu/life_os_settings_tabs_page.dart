@@ -778,12 +778,46 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
               tooltip: tr('Назад к настройкам', 'Back to settings')),
             const SizedBox(width: 16),
           ],
-          Expanded(child: Text(_mobileDetailOpen
-              ? (_planningDefaultTimesOpen ? tr('Время новых планов', 'Default plan times') : (_ru ? selected.ru : selected.en)) : tr('Настройки', 'Settings'),
-            maxLines: 2, overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontSize: _mobileDetailOpen ? 22 : 30,
-              fontWeight: FontWeight.w600))),
+          Expanded(child: _mobileDetailOpen
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  InkWell(
+                    onTap: _backToMobileSettings,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Text(
+                        _planningDefaultTimesOpen
+                            ? (_ru ? selected.ru : selected.en)
+                            : tr('Настройки', 'Settings'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    _planningDefaultTimesOpen
+                        ? tr('Время новых планов', 'Default plan times')
+                        : (_ru ? selected.ru : selected.en),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              )
+            : Text(tr('Настройки', 'Settings'),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontSize: 30, fontWeight: FontWeight.w600,
+                ))),
         ]),
       ),
     ]));
