@@ -308,6 +308,7 @@ Desktop window/tray infrastructure only. Voice/STT production modules live under
 | `app_button.dart` | `AppButton` |
 | `app_text_field.dart` | Canonical app text-field input component |
 | `app_settings_layout.dart` | `AppSettingsPageBody`, `AppSettingsSectionCard`, settings row helpers |
+| `app_settings_breadcrumb_bar.dart` | Shared parent-labelled back header and canonical frosted chrome for secondary Settings routes |
 | `app_icon_button.dart` | `AppIconButton` |
 | `app_timezone_icon.dart` | Canonical solid timezone icon family |
 | `app_loading.dart` | `AppLoading` |
