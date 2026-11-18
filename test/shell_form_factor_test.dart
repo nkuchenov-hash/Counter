@@ -293,14 +293,24 @@ void main() {
     expect(settings, contains('56 + MediaQuery.viewPaddingOf(context).top'));
   });
 
-  test('bottom dock tint has genuine gradient contrast in both themes', () {
-    for (final scheme in [AppColors.lightColorScheme(), AppColors.darkColorScheme()]) {
+  test('bottom dock feather ALWAYS darkens, never brightens, in either theme', () {
+    for (final scheme in [
+      AppColors.lightColorScheme(),
+      AppColors.darkColorScheme(),
+    ]) {
       final fade = AppGlassEdgeFade.bottomNavigationFadeColor(scheme);
-      expect(fade, isNot(scheme.surface),
-          reason: 'A same-color tint is invisible on an otherwise flat canvas.');
+      expect(fade, isNot(scheme.surface));
       expect(fade, isNot(scheme.surfaceContainerLowest));
-      expect(fade.computeLuminance(), isNot(scheme.surface.computeLuminance()));
+      expect(fade.computeLuminance(), lessThan(scheme.surface.computeLuminance()),
+          reason: 'The dock must fade downward into shadow, not create a bright halo.');
     }
+    // Regression: dark onSurface is LIGHT, and blending toward it made the
+    // entire dark footer glow gray (observed on Android on 18 Nov 2026).
+    final dark = AppColors.darkColorScheme();
+    expect(dark.onSurface.computeLuminance(),
+        greaterThan(dark.surface.computeLuminance()));
+    expect(AppGlassEdgeFade.bottomNavigationFadeColor(dark).computeLuminance(),
+        lessThan(dark.surface.computeLuminance()));
   });
 
   test('all five phone tabs share one unbranched glass dock', () {
