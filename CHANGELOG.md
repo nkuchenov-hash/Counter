@@ -1,3 +1,9 @@
+## [2026-11-19] — Android month Calendar cell padding and right-edge cleanup
+
+- Kept the month grid full width while giving each day cell responsive horizontal content padding (6–10 logical px, based on available column width), replacing the former fixed 5 px. Hours and date numbers no longer hug the separators.
+- Hid only the outer right border on compact calendar Sundays; internal day dividers remain. Desktop retains its previous margins and border treatment.
+- Added narrow-phone and standard-phone widget layout regression checks. No PocketBase, date semantics, navigation or data changes.
+
 ## [2026-11-19] — Notes typing hot-path optimization [CI verification pending]
 
 - Cached visible Notes blocks and id-to-index lookups across text edits, invalidating both correctly after structural operations and Undo. Replaced repeated backward numbered-list scans with a single document-revision ordinal pass.

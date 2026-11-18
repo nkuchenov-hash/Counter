@@ -41,6 +41,7 @@ class CalendarMonthGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
+    final compactPhone = calendarIsCompactPhoneWidth(MediaQuery.sizeOf(context).width);
     final monthRowCount = currentMonthOnly
         ? calendarMonthWeekCount(focusedMonth)
         : 6;
@@ -82,6 +83,11 @@ class CalendarMonthGrid extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final cellH = constraints.maxHeight / monthRowCount;
+              // Keep the grid itself edge-to-edge, but inset the content
+              // inside each narrow day column instead of against its dividers.
+              final cellContentInset = compactPhone
+                  ? (constraints.maxWidth / 7 * 0.18).clamp(6.0, 10.0).toDouble()
+                  : 5.0;
               // Reserve the day header and a visible "+N more" overflow line.
               final maxEvents = ((cellH - 42 - 18) / 25)
                   .floor()
@@ -128,6 +134,9 @@ class CalendarMonthGrid extends StatelessWidget {
                                             showEventPills: showEventPills,
                                             maxVisibleEvents: maxEvents,
                                             browsing: browsing,
+                                            horizontalContentPadding: cellContentInset,
+                                            // No vertical stroke at the phone's screen edge.
+                                            showTrailingBorder: !compactPhone || col < 6,
                                             onTap: onDayTap,
                                             onTaskTap: onTaskTap,
                                           ),
@@ -177,6 +186,8 @@ class CalendarMonthDayCell extends StatelessWidget {
     required this.browsing,
     required this.onTap,
     required this.onTaskTap,
+    this.horizontalContentPadding = 5.0,
+    this.showTrailingBorder = true,
   });
 
   final DateTime day;
@@ -187,6 +198,8 @@ class CalendarMonthDayCell extends StatelessWidget {
   final bool showEventPills;
   final int maxVisibleEvents;
   final bool browsing;
+  final double horizontalContentPadding;
+  final bool showTrailingBorder;
   final ValueChanged<DateTime> onTap;
   final ValueChanged<PlanningTask> onTaskTap;
 
@@ -215,14 +228,16 @@ class CalendarMonthDayCell extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           border: Border(
-            right: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.55)),
+            right: showTrailingBorder
+                ? BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.55))
+                : BorderSide.none,
             bottom: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.55)),
           ),
         ),
         child: InkWell(
           onTap: () => onTap(day),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+            padding: EdgeInsets.symmetric(horizontal: horizontalContentPadding, vertical: 5),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
