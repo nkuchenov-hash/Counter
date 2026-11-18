@@ -29,13 +29,14 @@ class AppGlassEdgeFade extends StatelessWidget {
     final end = edge == AppGlassEdge.top
         ? Alignment.bottomCenter
         : Alignment.topCenter;
-    // Pinned header needs a stronger shield for scrolling text; the bottom
-    // dock uses the same continuous feather with a lighter, clean edge.
-    // Both fade fully to transparency without an opaque full-width plate.
+    // Feather the header and dock past the visually recognizable edge.
+    // Sparse, piecewise-linear alpha ramps create a faint horizontal horizon
+    // when blurred scroll content moves beneath them. The denser eased tail
+    // approaches zero well BEFORE the clip boundary and has no visible seam.
     final topHeader = edge == AppGlassEdge.top;
-    final fadeStops = topHeader
-        ? const [0.0, 0.20, 0.48, 0.78, 1.0]
-        : const [0.0, 0.32, 0.60, 0.82, 1.0];
+    const fadeStops = <double>[
+      0.0, 0.12, 0.32, 0.48, 0.62, 0.74, 0.83, 0.90, 0.95, 1.0,
+    ];
     final tint = DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -45,16 +46,26 @@ class AppGlassEdgeFade extends StatelessWidget {
           colors: topHeader
               ? [
                   surfaceColor.withValues(alpha: 0.98),
-                  surfaceColor.withValues(alpha: 0.94),
-                  surfaceColor.withValues(alpha: 0.80),
-                  surfaceColor.withValues(alpha: 0.34),
+                  surfaceColor.withValues(alpha: 0.97),
+                  surfaceColor.withValues(alpha: 0.92),
+                  surfaceColor.withValues(alpha: 0.83),
+                  surfaceColor.withValues(alpha: 0.67),
+                  surfaceColor.withValues(alpha: 0.42),
+                  surfaceColor.withValues(alpha: 0.20),
+                  surfaceColor.withValues(alpha: 0.07),
+                  surfaceColor.withValues(alpha: 0.015),
                   AppNeutralTones.transparent,
                 ]
               : [
-                  surfaceColor.withValues(alpha: 0.94),
-                  surfaceColor.withValues(alpha: 0.86),
-                  surfaceColor.withValues(alpha: 0.62),
-                  surfaceColor.withValues(alpha: 0.19),
+                  surfaceColor.withValues(alpha: 0.90),
+                  surfaceColor.withValues(alpha: 0.85),
+                  surfaceColor.withValues(alpha: 0.76),
+                  surfaceColor.withValues(alpha: 0.61),
+                  surfaceColor.withValues(alpha: 0.43),
+                  surfaceColor.withValues(alpha: 0.25),
+                  surfaceColor.withValues(alpha: 0.12),
+                  surfaceColor.withValues(alpha: 0.04),
+                  surfaceColor.withValues(alpha: 0.008),
                   AppNeutralTones.transparent,
                 ],
         ),
@@ -72,15 +83,25 @@ class AppGlassEdgeFade extends StatelessWidget {
               ? [
                   AppNeutralTones.white,
                   AppNeutralTones.white,
-                  AppNeutralTones.white.withValues(alpha: 0.92),
-                  AppNeutralTones.white.withValues(alpha: 0.46),
+                  AppNeutralTones.white,
+                  AppNeutralTones.white.withValues(alpha: 0.98),
+                  AppNeutralTones.white.withValues(alpha: 0.90),
+                  AppNeutralTones.white.withValues(alpha: 0.73),
+                  AppNeutralTones.white.withValues(alpha: 0.48),
+                  AppNeutralTones.white.withValues(alpha: 0.25),
+                  AppNeutralTones.white.withValues(alpha: 0.10),
                   AppNeutralTones.transparent,
                 ]
               : [
                   AppNeutralTones.white,
                   AppNeutralTones.white,
-                  AppNeutralTones.white.withValues(alpha: 0.86),
-                  AppNeutralTones.white.withValues(alpha: 0.34),
+                  AppNeutralTones.white.withValues(alpha: 0.97),
+                  AppNeutralTones.white.withValues(alpha: 0.90),
+                  AppNeutralTones.white.withValues(alpha: 0.75),
+                  AppNeutralTones.white.withValues(alpha: 0.55),
+                  AppNeutralTones.white.withValues(alpha: 0.33),
+                  AppNeutralTones.white.withValues(alpha: 0.16),
+                  AppNeutralTones.white.withValues(alpha: 0.06),
                   AppNeutralTones.transparent,
                 ],
         ).createShader(bounds),
