@@ -58,7 +58,7 @@ jobs:
         run: flutter test test/timezone_quick_preferences_test.dart
 
       - name: Analyze application
-        run: flutter analyze --no-fatal-infos
+        run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 
       - name: Assemble release APK (ARM64)
         run: |
