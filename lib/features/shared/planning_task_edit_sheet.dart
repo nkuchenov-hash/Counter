@@ -171,7 +171,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.inactive &&
+    if (state != AppLifecycleState.hidden &&
         state != AppLifecycleState.paused &&
         state != AppLifecycleState.detached) {
       return;
@@ -326,7 +326,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     _planAutosaveGate.markClean();
   }
 
-  void _onPlanFieldChanged({bool immediate = false}) {
+  void _onPlanFieldChanged({bool immediate = false, bool fromNotes = false}) {
     // New drafts are committed once by the shell on explicit Save. Building a
     // Quill/checklist draft on every keypress is wasted work on web.
     if (!_isPersistedPlan) return;
@@ -356,10 +356,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     // coalesces the expensive global optimistic merge + Planning refresh.
     _planAutosaveGate.schedule(() {
       final latest = _buildDraftTask();
-      if (latest != null) {
-        applyAndSync(latest);
-      }
-    });
+      if (latest != null) applyAndSync(latest);
+    }, delay: fromNotes ? const Duration(seconds: 15) : null);
   }
 
   bool _planDraftsSemanticallyEqual(PlanningTask a, PlanningTask b) {
@@ -524,7 +522,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
       initialDocument: _noteDocument,
       onDocumentChanged: (document) {
         _noteDocument = document;
-        _onPlanFieldChanged();
+        _onPlanFieldChanged(fromNotes: true);
       },
     ),
   );
