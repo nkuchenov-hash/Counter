@@ -6,6 +6,7 @@ import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/widgets/note_editor_block_widgets.dart';
 import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:counter/features/shared/edit_sheet/record_edit_save_policy.dart';
+import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -585,19 +586,51 @@ void main() {
     expect(editor, contains('child: SelectionArea('));
     expect(editor, contains('final androidIme = Theme.of(context).platform == TargetPlatform.android;'));
     expect(editor, contains('if (composing.isValid && !composing.isCollapsed) return;'));
-    // Record document notifications are debounced rather than dispatched
-    // synchronously for every Android keypress. Last edit is flushed on exit.
+    // The embedded editor hands over an in-memory draft immediately, but
+    // the Record only sends it to Brain after 15 s idle, tab exit or pause.
+    expect(editor, contains('debounce: const Duration(seconds: 15)'));
+    expect(editor, contains('if (widget.onDocumentChanged != null)'));
+    expect(editor, contains('_syncToBrain(); // Record host only caches this draft.'));
     expect(editor, contains('_gate.schedule(_syncToBrain);'));
-    expect(editor, contains('const Duration(milliseconds: 450)'));
-    expect(editor, isNot(contains('      _syncToBrain();')));
     expect(editor, contains('_gate.flush(_syncToBrain, force: true);'));
+    expect(record, contains('delay: const Duration(seconds: 15)'));
+    expect(record, contains('_recordAutosaveGate.flush(_commitRecordAutosave);'));
     expect(record, contains('debounce: const Duration(milliseconds: 1500)'));
     final planning = File(
       'lib/features/shared/planning_task_edit_sheet.dart',
     ).readAsStringSync();
     expect(planning, contains('debounce: const Duration(milliseconds: 1500)'));
+    expect(planning, contains('_onPlanFieldChanged(fromNotes: true);'));
+    expect(planning, contains('delay: fromNotes ? const Duration(seconds: 15) : null'));
     expect(host, contains('return Padding('));
     expect(host, isNot(contains('return AnimatedPadding(')));
+  });
+
+  testWidgets('Notes draft sync only after 15 seconds idle or explicit flush',
+      (tester) async {
+    final gate = EditSheetAutosaveGate(debounce: const Duration(milliseconds: 1500));
+    addTearDown(gate.dispose);
+    var saves = 0;
+    const idle = Duration(seconds: 15);
+    for (var i = 0; i < 10; i++) {
+      gate.schedule(() => saves++, delay: idle);
+      await tester.pump(const Duration(milliseconds: 650));
+    }
+    expect(saves, 0);
+    expect(gate.isDirty, isTrue);
+    await tester.pump(const Duration(seconds: 14));
+    expect(saves, 0);
+    await tester.pump(const Duration(seconds: 1));
+    expect(saves, 1);
+    expect(gate.isDirty, isFalse);
+    gate.flush(() => saves++);
+    expect(saves, 1);
+
+    gate.schedule(() => saves++, delay: idle);
+    gate.flush(() => saves++);
+    expect(saves, 2);
+    await tester.pump(idle);
+    expect(saves, 2);
   });
 
   // Notes typing hot-path stability (standalone and embedded Record editors).

@@ -47,7 +47,7 @@ class TimelineRecordSheetContent extends StatefulWidget {
 }
 
 class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TextEditingController _titleController;
   late NoteDocument _recordNoteDocument;
   int? _categoryId;
@@ -60,22 +60,19 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   bool _plansLoading = false;
   bool _plansLoaded = false;
   bool _notesEditorFocused = false;
-  // Keep Record chrome stable across Android keyboard focus changes.
+  // Keep Record chrome stable across temporary IME focus changes.
   bool _notesImeSessionActive = false;
-  // Android may briefly move focus through the IME/selection overlay.
-  // Keep the compact notes layout until the editor genuinely loses focus.
   final FocusNode _notesScopeFocusNode =
       FocusNode(debugLabel: 'record-notes-scope', skipTraversal: true);
   Timer? _notesFocusExitTimer;
   Timer? _titleAssistDebounce;
   final _recordAutosaveGate = EditSheetAutosaveGate(debounce: const Duration(milliseconds: 1500));
-  /// True when Save/autosave can PATCH an existing/optimistic row (not past-date create).
-  /// Prefer [record.id]; fall back to business `record_id` when fromMap dropped a UUID id.
+  /// Existing/optimistic record key for edits.
   bool get _isPersistedRecord => recordEditHasUpdatableRecordKey(
     systemOrOptimisticId: widget.record.id,
     businessRecordId: widget.record.recordId,
   );
-  /// Prefer REST system / optimistic id; UUID `record_id` keeps updates working when id was filtered.
+  /// Supports REST ids and business ids.
   String get _recordUpdateKey {
     final id = widget.record.id.trim();
     if (id.isNotEmpty) return id;
@@ -234,6 +231,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _tabController = TabController(length: 2, vsync: this)
       ..addListener(_handleRecordTabChanged);
     _titleController = TextEditingController(text: widget.record.title);
@@ -263,6 +261,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
 
   void _handleRecordTabChanged() {
     if (_tabController.index == 0) return;
+    _recordAutosaveGate.flush(_commitRecordAutosave);
     _notesFocusExitTimer?.cancel();
     FocusManager.instance.primaryFocus?.unfocus();
     if (_notesEditorFocused && mounted) {
@@ -280,8 +279,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       }
       return;
     }
-    // Switching between Notes blocks, the Android IME, and the text-selection
-    // toolbar must not alternately expand/collapse the entire record sheet.
+    // Ignore transient focus changes inside Android IME.
     _notesFocusExitTimer = Timer(const Duration(milliseconds: 300), () {
       if (!mounted || _notesScopeFocusNode.hasFocus || !_notesEditorFocused) {
         return;
@@ -295,10 +293,15 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) _recordAutosaveGate.flush(_commitRecordAutosave);
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // MediaQuery changes again when the IME finally closes. Only then is it
-    // safe to unlatch an interrupted Android Notes editing session.
+    // Release session state only after the IME fully closes.
     if (MediaQuery.viewInsetsOf(context).bottom == 0 &&
         !_notesEditorFocused) {
       _notesImeSessionActive = false;
@@ -535,6 +538,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     if (_isPersistedRecord) {
       _recordAutosaveGate.flush(_commitRecordAutosave);
     }
@@ -802,11 +806,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
 
   @override
   Widget build(BuildContext context) {
-    // Do not switch the editor geometry on each Android IME inset frame.
-    // The focus state is held across transient keyboard/selection changes.
-    // Focus can briefly disappear while Android/Gboard still owns the IME.
-    // Keeping the same geometry avoids a full sheet shrink/expand loop during
-    // typing, cursor movement, voice typing, and text selection.
+    // Keep geometry stable while Gboard temporarily shifts focus.
     final notesEditing = recordNotesShouldUseCompactChrome(
       notesFocused: _notesEditorFocused,
       notesImeSessionActive: _notesImeSessionActive,
@@ -1012,7 +1012,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                           initialDocument: _recordNoteDocument,
                           onDocumentChanged: (document) {
                             _recordNoteDocument = document;
-                            _onRecordFieldChanged();
+                            _recordAutosaveGate.schedule(_commitRecordAutosave, delay: const Duration(seconds: 15));
                           },
                         ),
                       ),

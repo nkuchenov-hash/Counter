@@ -1,3 +1,10 @@
+## [2026-11-19] — Notes local-first draft sessions [verification pending]
+
+- Both Notes editors keep keystrokes entirely in memory: standalone Notes defer Brain/PocketBase sync until 15 seconds of inactivity; Record Notes hand off the latest document snapshot immediately to the host without serializing it or refreshing Timeline.
+- Record Notes now defer full-record autosave to 15 seconds of inactivity, flush when leaving the Notes tab, and retain the existing explicit Save/close flush. Both editor hosts flush pending drafts on app background/hidden/detached to reduce unsaved-data exposure.
+- Embedded Plan Notes also use a 15-second inactivity delay; the other Plan/Record fields retain their 1500 ms autosave. Plan lifecycle flush avoids Android IME's transient inactive state. No schema or navigation changes.
+- Expanded Android regression coverage to check idle-delay coalescing, the immediate local Record handoff and exactly-once flush. Device frame-time profiling is still required to confirm the subjective stutter is eliminated.
+
 ## [2026-11-19] — Android month Calendar cell padding and right-edge cleanup
 
 - Kept the month grid full width while giving each day cell responsive horizontal content padding (6–10 logical px, based on available column width), replacing the former fixed 5 px. Hours and date numbers no longer hug the separators.

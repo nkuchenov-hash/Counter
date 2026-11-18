@@ -96,7 +96,7 @@ class NoteEditorPage extends StatefulWidget {
   State<NoteEditorPage> createState() => _NoteEditorPageState();
 }
 
-class _NoteEditorPageState extends State<NoteEditorPage> {
+class _NoteEditorPageState extends State<NoteEditorPage> with WidgetsBindingObserver {
   late PlanningTask _task;
   late NoteDocument _sourceDocument;
   late final NotesEditorDocumentController _editor;
@@ -126,16 +126,13 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _task = widget.task;
     _sourceDocument =
         widget.initialDocument ?? DatabaseService.instance.parseNoteDocument(_task);
     _editor = NotesEditorDocumentController(_sourceDocument);
     _titleController = TextEditingController(text: _task.title);
-    _gate = EditSheetAutosaveGate(
-      debounce: widget.onDocumentChanged == null
-          ? const Duration(milliseconds: 650)
-          : const Duration(milliseconds: 450),
-    );
+    _gate = EditSheetAutosaveGate(debounce: const Duration(seconds: 15));
     _audioPlayback = NotesAudioPlaybackController()
       ..addListener(_onAudioPlaybackChanged);
     if (!widget.parityPreview) {
@@ -143,8 +140,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       _notesEditorSessionRegistered = true;
     }
     _syncEditorsWithDocument();
-    // Standalone Notes open directly into the first editable content line.
-    // Embedded Notes inside Record/Plan editors stay passive until tapped.
+    // Embedded Record Notes remain passive until tapped.
     if (!widget.inlineBodyOnly) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -166,12 +162,17 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     }
   }
 
-  // The EditableText already handles caret visibility when Android changes
-  // keyboard insets. Scheduling another two scroll animations from the host
-  // keyboard transition fought the IME and made the record sheet jump.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden || state == AppLifecycleState.detached) {
+      if (_dirty && !widget.parityPreview) _gate.flush(_syncToBrain);
+    }
+  }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _secondarySelectionGuardTimer?.cancel();
     for (final timer in _imeSplitTimers.values) {
       timer.cancel();
@@ -209,10 +210,11 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
   void _scheduleSave([String? _]) {
     _dirty = true;
-    // Coalesce rapid Gboard edits before notifying the record host. Avoid
-    // invoking its save gate for every keystroke on the UI isolate.
-    // dispose() still flushes the final draft on sheet close.
-    _gate.schedule(_syncToBrain);
+    if (widget.onDocumentChanged != null) {
+      _syncToBrain(); // Record host only caches this draft.
+    } else {
+      _gate.schedule(_syncToBrain);
+    }
   }
 
   void _syncToBrain() {
@@ -261,9 +263,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         final previous = _lastSelections[block.id];
         final next = controller.selection;
         if (previous == next) return;
-        // Toolbar/menu focus can temporarily invalidate Android's selection.
-        // Never replace the last valid caret with (-1, -1): formatting must
-        // still target the line the user was actually editing.
+        // Preserve the valid caret across temporary IME focus loss.
         if (!next.isValid) return;
         _lastSelections[block.id] = next;
         _editor.updateSelection(block.id, next);
@@ -432,8 +432,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     if (mutation.changed && !mutation.requiresRebuild) {
       final updated = _editor.blockById(block.id);
       if (updated != null) {
-        // The platform already notified EditableText for this keystroke.
-        // Refresh formatting without sending a second controller event.
+        // Avoid a second EditableText notification for the same keystroke.
         controller.setRuns(updated.effectiveRuns, notify: false);
       }
     }
