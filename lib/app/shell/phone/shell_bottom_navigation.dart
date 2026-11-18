@@ -116,9 +116,10 @@ class ShellCompactBottomNav extends StatelessWidget {
             child: RepaintBoundary(
               child: AppGlassEdgeFade(
                 edge: AppGlassEdge.bottom,
-                // One dock fade material for ALL five destinations.
-                // Never branch on the selected tab or the screen's background.
-                surfaceColor: scheme.surfaceContainerLowest,
+                // Identical fade on every screen, even when the underlying
+                // canvas is flat and has no scrolling content at this point.
+                // This must be theme-only, never destination-dependent.
+                surfaceColor: AppGlassEdgeFade.bottomNavigationFadeColor(scheme),
                 blurSigma: 14,
               ),
             ),
