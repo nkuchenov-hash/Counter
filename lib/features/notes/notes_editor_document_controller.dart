@@ -50,6 +50,7 @@ class NotesEditorDocumentController {
 
   NoteDocument _document;
   List<NoteBlock>? _visibleBlocksCache;
+  Map<String, int>? _blockIndices;
   final List<NoteDocument> _undoStack = <NoteDocument>[];
   String? activeBlockId;
   TextSelection? activeSelection;
@@ -67,10 +68,8 @@ class NotesEditorDocumentController {
 
   NoteBlock? blockById(String? id) {
     if (id == null) return null;
-    for (final block in blocks) {
-      if (block.id == id) return block;
-    }
-    return null;
+    final index = _indexOf(id);
+    return index < 0 ? null : blocks[index];
   }
 
   bool selectBlock(String id, TextSelection? selection) {
@@ -778,6 +777,7 @@ class NotesEditorDocumentController {
     if (_undoStack.isEmpty) return const NotesEditorMutation();
     _document = _undoStack.removeLast();
     _visibleBlocksCache = null;
+    _blockIndices = null;
     final visible = visibleBlocks;
     if (visible.isEmpty) {
       activeBlockId = null;
@@ -805,19 +805,33 @@ class NotesEditorDocumentController {
     activeSelection = null;
     return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
-  void _commitDocument(NoteDocument next) {
+  void _commitDocument(
+    NoteDocument next, {
+    bool preserveBlockIndices = false,
+  }) {
     _undoStack.add(_document);
     if (_undoStack.length > 100) _undoStack.removeAt(0);
     _document = next;
     _visibleBlocksCache = null;
+    // Text/format edits replace a block at the same position. Structural
+    // edits (reorder/insert/delete/Undo) invalidate the id-to-index map.
+    if (!preserveBlockIndices) _blockIndices = null;
   }
   void _replaceBlock(NoteBlock replacement) {
     final index = _indexOf(replacement.id);
     if (index < 0) return;
     final nextBlocks = List<NoteBlock>.from(blocks)..[index] = replacement;
-    _commitDocument(_document.copyWith(blocks: nextBlocks));
+    _commitDocument(
+      _document.copyWith(blocks: nextBlocks),
+      preserveBlockIndices: true,
+    );
   }
-  int _indexOf(String id) => blocks.indexWhere((block) => block.id == id);
+  int _indexOf(String id) {
+    final indices = _blockIndices ??= <String, int>{
+      for (var i = 0; i < blocks.length; i++) blocks[i].id: i,
+    };
+    return indices[id] ?? -1;
+  }
   int _indexAfterLastVisibleBlock() {
     for (var index = blocks.length - 1; index >= 0; index--) {
       if (isSupportedProductionBlock(blocks[index].type)) return index + 1;
