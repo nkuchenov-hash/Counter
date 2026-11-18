@@ -1,3 +1,9 @@
+## Phone Calendar day-cell spacing and outer edge (2026-11-19)
+
+- The compact month grid remains full-bleed across all seven weekday columns. Each day number, start-time label, and event indicator has responsive horizontal breathing room **inside** its own day cell; do not reintroduce outer 20 px calendar gutters.
+- Internal column and row separators remain visible, but the final Sunday column does not paint an extra vertical line against the phone's right screen edge. Wide/desktop calendar borders and spacing remain unchanged.
+- The selected-day badge, civil-date order, tap to Plans, swipe, drag/drop and dock interaction must remain unaffected.
+
 ## Mobile Calendar full-width grids (2026-11-19)
 
 - On compact phone layouts, Calendar Year/Month/Week grids and focused-week strip fill the full available horizontal viewport inside the OS safe area; no extra 20 px left/right Calendar content gutters. Each day cell owns its internal spacing.
