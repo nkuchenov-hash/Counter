@@ -14,6 +14,14 @@ class EditSheetAutosaveGate {
 
   void markClean() => _dirty = false;
 
+  /// Hold edits in memory while the user is actively typing. Cancels any
+  /// previously scheduled network sync without clearing the unsaved draft.
+  void suspend() {
+    _dirty = true;
+    _timer?.cancel();
+    _timer = null;
+  }
+
   void schedule(void Function() action) {
     _dirty = true;
     _timer?.cancel();
