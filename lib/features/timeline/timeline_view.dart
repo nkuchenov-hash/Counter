@@ -570,9 +570,11 @@ class _TimelinePageState extends State<TimelinePage> {
   Widget build(BuildContext context) {
     rebuildMetricsTick('TimelinePage');
     return Scaffold(
+      backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         top: false,
+        bottom: false,
         child: Column(
           children: [
             Expanded(
