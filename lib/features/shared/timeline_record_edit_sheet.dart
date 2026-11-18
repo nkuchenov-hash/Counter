@@ -60,10 +60,8 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   bool _plansLoading = false;
   bool _plansLoaded = false;
   bool _notesEditorFocused = false;
-  // Android may temporarily move focus out of the field while the software
-  // keyboard or selection overlay is still visible. Preserve the compact
-  // editing geometry for the entire IME session rather than repeatedly
-  // rebuilding record metadata and moving the cursor under the keyboard.
+  // Keep compact Record chrome while Android IME briefly shifts focus.
+  // Do not rebuild metadata or move the caret under the keyboard.
   bool _notesImeSessionActive = false;
   // Android may briefly move focus through the IME/selection overlay.
   // Keep the compact notes layout until the editor genuinely loses focus.
@@ -189,8 +187,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       bypassConflictCheck: true,
     );
   }
-  // Commit the latest embedded Notes document to the local Brain before
-  // starting background sync. Closing the sheet must not discard the draft.
+  // Commit the latest Notes draft locally before background sync.
   void _commitRecordAutosave() {
     if (!_isPersistedRecord) return;
     final title = _titleController.text.trim();
