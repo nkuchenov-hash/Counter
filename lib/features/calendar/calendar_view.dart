@@ -515,6 +515,7 @@ class _CalendarViewState extends State<CalendarView>
 
     final body = SafeArea(
       top: false,
+      bottom: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -573,7 +574,7 @@ class _CalendarViewState extends State<CalendarView>
     );
 
     return Scaffold(
-      backgroundColor: scheme.surface,
+      backgroundColor: Colors.transparent,
       body: !desktopCalendar && !_dayFocusActive
           ? Stack(
               children: [
