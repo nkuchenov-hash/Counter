@@ -138,6 +138,12 @@ git push origin main
 
 Do not add a direct/manual Web deployment bypass around the server-before-client gate.
 
+## Android signed release and update compatibility
+
+- **Only official APK publisher:** `.github/workflows/android-apk-build.yml` on `main`. It restores the permanent v2 Android signing identity from the private, encrypted `life-os-android-signing-identity-v2` backup, verifies `com.example.counter` and compares the actual APK certificate fingerprint with the original v2 keystore certificate before artifact/release upload.
+- A release Gradle build without this identity **must fail**, never fall back to a fresh Android Debug key. PR builds may explicitly enable a non-distributable debug signing mode for compile/test proof; those APKs are never suitable for installation over production.
+- For devices already installed with v2 signing, the APK's package ID, signing fingerprint and monotonic `versionCode` must match update requirements. For installations signed with a lost pre-v2 key, an in-place update cannot be promised; preserve the existing app and all local data until a safe verified migration exists. Do not advise uninstall as a workaround.
+
 ## Windows desktop release
 
 **Normal user path:** one installer — **`CounterSetup.exe`**. No Visual Studio, Flutter SDK, or manual Release-folder copying on the target PC.
