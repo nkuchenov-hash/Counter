@@ -295,6 +295,11 @@ jobs:
           actual_fp="$("$apksigner" verify --print-certs LIFE-OS-Android-arm64.apk |
             awk '/Signer #1 certificate SHA-256 digest:/ {print $NF; exit}' |
             tr '[:lower:]' '[:upper:]')"
+          echo "Permanent v2 key certificate SHA-256: ${expected_fp:-MISSING} (length ${#expected_fp})"
+          echo "Built APK signer certificate SHA-256: ${actual_fp:-MISSING} (length ${#actual_fp})"
+          if [[ -z "$actual_fp" ]]; then
+            "$apksigner" verify --print-certs LIFE-OS-Android-arm64.apk | grep -i 'certificate.*digest' || true
+          fi
           if [[ -z "$expected_fp" || -z "$actual_fp" || "$expected_fp" != "$actual_fp" ]]; then
             echo "::error::APK certificate differs from the permanent LIFE OS v2 signing identity. Aborting distribution."
             exit 1
