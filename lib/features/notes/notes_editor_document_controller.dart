@@ -49,15 +49,20 @@ class NotesEditorDocumentController {
   }
 
   NoteDocument _document;
+  List<NoteBlock>? _visibleBlocksCache;
   final List<NoteDocument> _undoStack = <NoteDocument>[];
   String? activeBlockId;
   TextSelection? activeSelection;
 
   NoteDocument get document => _document;
   List<NoteBlock> get blocks => _document.blocks;
-  List<NoteBlock> get visibleBlocks => blocks
-      .where((block) => isSupportedProductionBlock(block.type))
-      .toList(growable: false);
+  // A single frame can request visibleBlocks dozens of times while laying out
+  // reorderable children. Reuse the same filtered list until the document
+  // changes instead of rescanning every block for every child.
+  List<NoteBlock> get visibleBlocks => _visibleBlocksCache ??=
+      List<NoteBlock>.unmodifiable(
+        blocks.where((block) => isSupportedProductionBlock(block.type)),
+      );
   NoteBlock? get activeBlock => blockById(activeBlockId);
 
   NoteBlock? blockById(String? id) {
@@ -772,6 +777,7 @@ class NotesEditorDocumentController {
   NotesEditorMutation undo() {
     if (_undoStack.isEmpty) return const NotesEditorMutation();
     _document = _undoStack.removeLast();
+    _visibleBlocksCache = null;
     final visible = visibleBlocks;
     if (visible.isEmpty) {
       activeBlockId = null;
@@ -803,6 +809,7 @@ class NotesEditorDocumentController {
     _undoStack.add(_document);
     if (_undoStack.length > 100) _undoStack.removeAt(0);
     _document = next;
+    _visibleBlocksCache = null;
   }
   void _replaceBlock(NoteBlock replacement) {
     final index = _indexOf(replacement.id);
