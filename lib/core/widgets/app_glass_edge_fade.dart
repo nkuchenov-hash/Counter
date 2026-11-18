@@ -23,36 +23,29 @@ class AppGlassEdgeFade extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final topHeader = edge == AppGlassEdge.top;
     final start = edge == AppGlassEdge.top
         ? Alignment.topCenter
         : Alignment.bottomCenter;
     final end = edge == AppGlassEdge.top
         ? Alignment.bottomCenter
         : Alignment.topCenter;
+    // One symmetric feather for the pinned header and floating dock.
+    // The opaque edge protects labels, while the long easing prevents
+    // a hard horizon in either light or dark themes.
+    const fadeStops = [0.0, 0.35, 0.62, 0.82, 1.0];
     final tint = DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: start,
           end: end,
-          // A gentle, full-height falloff keeps the pinned header readable
-          // without the dark band and abrupt edge on scrolling Settings.
-          stops: topHeader
-              ? const [0, 0.18, 0.45, 0.72, 1]
-              : const [0, 0.46, 1],
-          colors: topHeader
-              ? [
-                  surfaceColor.withValues(alpha: 0.72),
-                  surfaceColor.withValues(alpha: 0.55),
-                  surfaceColor.withValues(alpha: 0.29),
-                  surfaceColor.withValues(alpha: 0.08),
-                  AppNeutralTones.transparent,
-                ]
-              : [
-                  surfaceColor.withValues(alpha: 0.96),
-                  surfaceColor.withValues(alpha: 0.78),
-                  AppNeutralTones.transparent,
-                ],
+          stops: fadeStops,
+          colors: [
+            surfaceColor.withValues(alpha: 0.94),
+            surfaceColor.withValues(alpha: 0.90),
+            surfaceColor.withValues(alpha: 0.74),
+            surfaceColor.withValues(alpha: 0.30),
+            AppNeutralTones.transparent,
+          ],
         ),
       ),
       child: const SizedBox.expand(),
@@ -63,24 +56,14 @@ class AppGlassEdgeFade extends StatelessWidget {
         shaderCallback: (bounds) => LinearGradient(
           begin: start,
           end: end,
-          // Feather the header's tint and backdrop blur progressively,
-          // rather than holding full opacity until the final quarter.
-          stops: topHeader
-              ? const [0, 0.18, 0.45, 0.72, 1]
-              : const [0, 0.58, 1],
-          colors: topHeader
-              ? [
-                  AppNeutralTones.white,
-                  AppNeutralTones.white,
-                  AppNeutralTones.white.withValues(alpha: 0.72),
-                  AppNeutralTones.white.withValues(alpha: 0.27),
-                  AppNeutralTones.transparent,
-                ]
-              : const [
-                  AppNeutralTones.white,
-                  AppNeutralTones.white,
-                  AppNeutralTones.transparent,
-                ],
+          stops: fadeStops,
+          colors: [
+            AppNeutralTones.white,
+            AppNeutralTones.white,
+            AppNeutralTones.white.withValues(alpha: 0.90),
+            AppNeutralTones.white.withValues(alpha: 0.43),
+            AppNeutralTones.transparent,
+          ],
         ).createShader(bounds),
         child: ClipRect(
           child: blurSigma <= 0
