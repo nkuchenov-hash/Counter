@@ -53,7 +53,7 @@ require(glass.count("class AppGlassEdgeFade") == 1 and
 require("seamlessGlass" not in nav and
         "seamlessGlass" not in phone and
         "seamlessGlass:" not in shell and
-        "surfaceColor: scheme.surfaceContainerLowest" in nav and
+        "surfaceColor: AppGlassEdgeFade.bottomNavigationFadeColor(scheme)" in nav and
         "Clip.none" in nav and
         "IgnorePointer(" in glass,
         "ONE_DOCK_MATERIAL_ACROSS_ALL_MOBILE_DESTINATIONS")
