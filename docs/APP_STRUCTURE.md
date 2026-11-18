@@ -630,6 +630,7 @@ People is an on-demand Settings feature. External address books stay in a hidden
 | `.github/workflows/architecture-guard.yml` | CI structure gate | PRs to `main` (+ `workflow_dispatch`): `architecture_guard.ps1 -Strict` + `git diff --check` (no Flutter) |
 | `.github/workflows/deploy.yml` | CI web deploy | Push `main` → strict guard → Flutter web → `gh-pages` |
 | `.github/workflows/windows-desktop-build.yml` | CI Windows installer | Manual `workflow_dispatch` → strict guard → Flutter/Inno → `CounterSetup.exe` |
+| `.github/workflows/android-public-release.yml` | Public Android APK | Push to `main` after changing the publishing workflow or manual run → Flutter ARM64 release → verified APK artifact and rolling `life-os-latest` GitHub Release |
 | `pubspec.yaml` | Flutter package manifest | |
 | `analysis_options.yaml` | Analyzer rules | |
 
