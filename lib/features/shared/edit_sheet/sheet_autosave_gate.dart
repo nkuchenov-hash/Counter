@@ -22,10 +22,10 @@ class EditSheetAutosaveGate {
     _timer = null;
   }
 
-  void schedule(void Function() action) {
+  void schedule(void Function() action, {Duration? delay}) {
     _dirty = true;
     _timer?.cancel();
-    _timer = Timer(debounce, () {
+    _timer = Timer(delay ?? debounce, () {
       if (!_dirty) return;
       // Dirty means "draft not dispatched yet", not "network request in flight".
       // Clear it before dispatch so an older request finishing later cannot make a
