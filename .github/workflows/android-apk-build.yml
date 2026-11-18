@@ -293,7 +293,7 @@ jobs:
             openssl x509 -inform DER -noout -fingerprint -sha256 |
             cut -d= -f2 | tr -d ':' | tr '[:lower:]' '[:upper:]')"
           actual_fp="$("$apksigner" verify --print-certs LIFE-OS-Android-arm64.apk |
-            awk '/Signer #1 certificate SHA-256 digest:/ {print $NF; exit}' |
+            awk '/certificate SHA-256 digest:/ {print $NF; exit}' |
             tr '[:lower:]' '[:upper:]')"
           echo "Permanent v2 key certificate SHA-256: ${expected_fp:-MISSING} (length ${#expected_fp})"
           echo "Built APK signer certificate SHA-256: ${actual_fp:-MISSING} (length ${#actual_fp})"
