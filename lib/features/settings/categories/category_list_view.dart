@@ -5,6 +5,7 @@ import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/tag_contrast.dart' show tagSolidAccentOnSurface;
 import 'package:counter/core/widgets/app_icon_button.dart';
+import 'package:counter/core/widgets/app_glass_edge_fade.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
@@ -18,6 +19,7 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/shared/categories/picker/category_tree_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 export 'package:counter/features/settings/categories/category_editor_sheet.dart'
     show CategoryEditorSheet;
@@ -51,10 +53,12 @@ class CategoriesPage extends StatefulWidget {
     super.key,
     required this.rules,
     required this.onChanged,
+    this.onBack,
   });
 
   final List<CategoryRule> rules;
   final Future<void> Function() onChanged;
+  final VoidCallback? onBack;
 
   @override
   State<CategoriesPage> createState() => _CategoriesPageState();
@@ -63,6 +67,8 @@ class CategoriesPage extends StatefulWidget {
 class _CategoriesPageState extends State<CategoriesPage> {
   final TextEditingController _search = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
+  static const _searchPreferenceKey = 'life_os_categories_show_search';
+  bool _showSearch = false;
   final Set<int> _expanded = <int>{};
   StreamSubscription<List<CategoryRule>>? _categoriesSubscription;
   int? _selectedId;
@@ -76,6 +82,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
   void initState() {
     super.initState();
     _search.addListener(_redraw);
+    unawaited(_loadSearchPreference());
     _categoriesSubscription = DatabaseService.instance.categoryStream.listen(
       (_) => _redraw(),
     );
@@ -92,6 +99,45 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
   void _redraw() {
     if (mounted) setState(() {});
+  }
+
+  Future<void> _loadSearchPreference() async {
+    final preferences = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _showSearch = preferences.getBool(_searchPreferenceKey) ?? false;
+    });
+  }
+
+  Future<void> _setShowSearch(bool value) async {
+    if (!value) _search.clear();
+    if (mounted) setState(() => _showSearch = value);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(_searchPreferenceKey, value);
+  }
+
+  void _openCategoryViewSettings() {
+    final ru = currentLocale.value.toLowerCase().startsWith('ru');
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+          child: SwitchListTile.adaptive(
+            title: Text(ru ? 'Показывать поиск' : 'Show search'),
+            subtitle: Text(ru
+                ? 'Отображать строку поиска над категориями'
+                : 'Show a search field above the categories'),
+            value: _showSearch,
+            onChanged: (value) {
+              Navigator.of(sheetContext).pop();
+              unawaited(_setShowSearch(value));
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _notifyChanged() async {
@@ -754,32 +800,33 @@ class _CategoriesPageState extends State<CategoriesPage> {
     );
   }
 
+  Widget _searchField(String locale) => AppTextField(
+    controller: _search,
+    focusNode: _searchFocus,
+    hintText: t(locale, 'category_search'),
+    textInputAction: TextInputAction.search,
+    showSearchIcon: true,
+    suffixIcon: _search.text.isEmpty
+        ? null
+        : IconButton(
+            tooltip: t(locale, 'clear'),
+            onPressed: _search.clear,
+            icon: const Icon(Icons.close_rounded),
+          ),
+  );
+
   Widget _treePanel(bool wide) {
     final loc = currentLocale.value;
     final visible = _visibleRows();
     final allEmpty = DatabaseService.instance.getChildrenOf(null).isEmpty;
+    final mobileSearch = !wide && _showSearch;
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: AppTextField(
-                  controller: _search,
-                  focusNode: _searchFocus,
-                  hintText: t(loc, 'category_search'),
-                  textInputAction: TextInputAction.search,
-                  showSearchIcon: true,
-                  suffixIcon: _search.text.isEmpty
-                      ? null
-                      : IconButton(
-                          tooltip: t(loc, 'clear'),
-                          onPressed: _search.clear,
-                          icon: const Icon(Icons.close_rounded),
-                        ),
-                ),
-              ),
+        if (wide)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
+            child: Row(children: [
+              Expanded(child: _searchField(loc)),
               const SizedBox(width: 8),
               AppIconButton(
                 tooltip: t(loc, _expanded.isEmpty && _search.text.isEmpty
@@ -789,9 +836,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
                     : Icons.unfold_less_rounded,
                 onPressed: _toggleAllCategories,
               ),
-            ],
+            ]),
           ),
-        ),
         Expanded(
           child: allEmpty
               ? EmptyStatePlaceholder(
@@ -802,103 +848,170 @@ class _CategoriesPageState extends State<CategoriesPage> {
                   onAction: () => unawaited(_create()),
                   useFilledAction: true,
                 )
-              : visible.isEmpty
-                  ? Center(child: Text(t(loc, 'category_search_empty')))
-                  : ListView.separated(
-                      key: const ValueKey('category-stationary-tree'),
-                      padding: EdgeInsets.fromLTRB(
-                        12, 4, 12,
-                        wide ? 24 : 116 + MediaQuery.viewPaddingOf(context).bottom,
-                      ),
-                      itemCount: visible.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 4),
-                      itemBuilder: (context, index) =>
-                          _row(context, visible[index], index, wide),
-                    ),
+              : ListView.separated(
+                  key: const ValueKey('category-stationary-tree'),
+                  padding: EdgeInsets.fromLTRB(
+                    12,
+                    wide ? 4 : MediaQuery.viewPaddingOf(context).top + 132,
+                    12,
+                    wide ? 24 : 190 + MediaQuery.viewPaddingOf(context).bottom,
+                  ),
+                  itemCount: visible.length + (mobileSearch ? 1 : 0)
+                      + (visible.isEmpty ? 1 : 0),
+                  separatorBuilder: (_, _) => const SizedBox(height: 4),
+                  itemBuilder: (context, index) {
+                    if (mobileSearch && index == 0) {
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+                        child: _searchField(loc),
+                      );
+                    }
+                    final rowIndex = index - (mobileSearch ? 1 : 0);
+                    if (visible.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Center(child: Text(t(loc, 'category_search_empty'))),
+                      );
+                    }
+                    return _row(context, visible[rowIndex], rowIndex, wide);
+                  },
+                ),
         ),
       ],
     );
   }
 
+  Widget _mobileHeader() {
+    final loc = currentLocale.value;
+    final ru = loc.toLowerCase().startsWith('ru');
+    final scheme = Theme.of(context).colorScheme;
+    final topInset = MediaQuery.viewPaddingOf(context).top;
+    final expanded = _expanded.isNotEmpty || _search.text.isNotEmpty;
+    return SizedBox(
+      height: topInset + 124,
+      child: Stack(clipBehavior: Clip.none, children: [
+        Positioned(
+          top: 0, left: 0, right: 0,
+          height: topInset + 162,
+          child: AppGlassEdgeFade(
+            edge: AppGlassEdge.top,
+            surfaceColor: scheme.surfaceContainerLowest,
+            blurSigma: 16,
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.fromLTRB(16, topInset + 4, 16, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextButton.icon(
+                onPressed: widget.onBack ??
+                    () => Navigator.of(context).maybePop(),
+                icon: const Icon(Icons.chevron_left_rounded, size: 23),
+                label: Text(ru ? 'Категории и теги' : 'Categories & tags'),
+                style: TextButton.styleFrom(
+                  foregroundColor: scheme.onSurfaceVariant,
+                  padding: const EdgeInsets.symmetric(horizontal: 0),
+                  minimumSize: const Size(0, 36),
+                  tapTargetSize: MaterialTapTargetSize.padded,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(children: [
+                Expanded(child: Text(
+                  t(loc, 'categories_title'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                )),
+                AppIconButton(
+                  tooltip: t(loc, expanded
+                      ? 'category_collapse_all' : 'category_expand_all'),
+                  icon: expanded
+                      ? Icons.unfold_less_rounded : Icons.unfold_more_rounded,
+                  onPressed: _toggleAllCategories,
+                ),
+                const SizedBox(width: 4),
+                AppIconButton(
+                  tooltip: ru ? 'Настройки категорий' : 'Category settings',
+                  icon: Icons.settings_outlined,
+                  onPressed: _openCategoryViewSettings,
+                ),
+              ]),
+            ],
+          ),
+        ),
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    final wide = shellUsesSideNavigation(width);
+    final wide = shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
     final loc = currentLocale.value;
     final selected = _selectedId == null
         ? null
         : DatabaseService.instance.getCategoryRuleById(_selectedId!);
-    final controls = AppIconButton(
-      tooltip: t(loc, 'add_category'),
-      icon: Icons.add_rounded,
-      onPressed: () => unawaited(_create()),
-    );
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: wide ? null : AppBar(
-        title: Text(t(loc, 'categories_title')),
-        actions: [controls, const SizedBox(width: 8)],
-      ),
-      body: SafeArea(
-        top: !wide,
-        bottom: wide,
-        child: Column(
-          children: [
-            if (wide) ...[
-              AppDesktopSectionControlRow(
-                title: t(loc, 'categories_title'),
-                controls: AppIconButton(
+      body: wide
+          ? SafeArea(
+              bottom: true,
+              child: Column(children: [
+                AppDesktopSectionControlRow(
+                  title: t(loc, 'categories_title'),
+                  controls: AppIconButton(
+                    tooltip: t(loc, 'add_category'),
+                    icon: Icons.add_rounded,
+                    onPressed: () => unawaited(_create()),
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(child: LayoutBuilder(builder: (context, constraints) {
+                  final leftWidth =
+                      (constraints.maxWidth * 0.37).clamp(300.0, 430.0);
+                  return Row(children: [
+                    SizedBox(width: leftWidth, child: _treePanel(true)),
+                    const VerticalDivider(width: 1),
+                    Expanded(child: selected == null
+                        ? Center(child: Text(
+                            t(loc, 'category_select_to_edit'),
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ))
+                        : CategoryEditorSheet(
+                            key: ValueKey('category-editor-desktop-${selected.id}'),
+                            category: selected,
+                            inline: true,
+                            onCancel: () => setState(() => _selectedId = null),
+                            onSaved: () => unawaited(_notifyChanged()),
+                            onCategoryDeleted: () => _deleted(selected.id),
+                          )),
+                  ]);
+                })),
+              ]),
+            )
+          : Stack(children: [
+              Positioned.fill(child: _treePanel(false)),
+              Positioned(
+                top: 0, left: 0, right: 0,
+                child: _mobileHeader(),
+              ),
+              Positioned(
+                right: 22,
+                bottom: 152 + MediaQuery.viewPaddingOf(context).bottom,
+                child: AppIconButton(
                   tooltip: t(loc, 'add_category'),
                   icon: Icons.add_rounded,
+                  size: AppIconButtonSize.l,
+                  shape: AppIconButtonShape.circular,
+                  variant: AppIconButtonVariant.filled,
                   onPressed: () => unawaited(_create()),
                 ),
               ),
-              const Divider(height: 1),
-            ],
-            Expanded(
-              child: wide
-                  ? LayoutBuilder(builder: (context, constraints) {
-                      final leftWidth =
-                          (constraints.maxWidth * 0.37).clamp(300.0, 430.0);
-                      return Row(
-                        children: [
-                          SizedBox(
-                            width: leftWidth,
-                            child: _treePanel(true),
-                          ),
-                          const VerticalDivider(width: 1),
-                          Expanded(
-                            child: selected == null
-                                ? Center(
-                                    child: Text(
-                                      t(loc, 'category_select_to_edit'),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyLarge,
-                                    ),
-                                  )
-                                : CategoryEditorSheet(
-                                    key: ValueKey(
-                                      'category-editor-desktop-${selected.id}',
-                                    ),
-                                    category: selected,
-                                    inline: true,
-                                    onCancel: () => setState(() => _selectedId = null),
-                                    onSaved: () =>
-                                        unawaited(_notifyChanged()),
-                                    onCategoryDeleted: () =>
-                                        _deleted(selected.id),
-                                  ),
-                          ),
-                        ],
-                      );
-                    })
-                  : _treePanel(false),
-            ),
-          ],
-        ),
-      ),
+            ]),
     );
   }
 }
