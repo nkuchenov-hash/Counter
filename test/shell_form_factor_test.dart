@@ -416,9 +416,30 @@ void main() {
       final people = File('lib/features/settings/people/people_settings_page_impl.dart')
           .readAsStringSync();
       expect(people, contains('final VoidCallback? onBackToMenu;'));
-      expect(people, contains('appBar: embeddedInShell && desktop ? null : AppBar('));
+      expect(people, contains('appBar: embeddedInShell && desktop ? null : AppSettingsBreadcrumbBar('));
+      expect(people, contains('onBack: widget.onBackToMenu ??'));
+      expect(people, contains("parentLabel: _locale.toLowerCase().startsWith('ru')"));
       expect(people, contains('canPop: selectedTab != 8'));
       expect(people, contains('if (!didPop && selectedTab == 8)'));
+    });
+
+    test('Categories use pinned frosted Settings navigation and optional search', () {
+      final categories = File('lib/features/settings/categories/category_list_view.dart')
+          .readAsStringSync();
+      final chrome = File('lib/app/shell/shared/shell_chrome.dart')
+          .readAsStringSync();
+      final breadcrumb = File('lib/core/widgets/app_settings_breadcrumb_bar.dart')
+          .readAsStringSync();
+      expect(categories, contains('AppGlassEdgeFade('));
+      expect(categories, contains("static const _searchPreferenceKey = 'life_os_categories_show_search'"));
+      expect(categories, contains('if (mobileSearch && index == 0)'));
+      expect(categories, contains('onPressed: _openCategoryViewSettings'));
+      expect(categories, contains('onPressed: _toggleAllCategories'));
+      expect(categories, contains('AppIconButtonShape.circular'));
+      expect(categories, contains('widget.onBack ??'));
+      expect(chrome, contains('onBack: () => setState(() => setShellPageIndex(7))'));
+      expect(breadcrumb, contains('scrolledUnderElevation: 0'));
+      expect(breadcrumb, contains('AppGlassEdgeFade('));
     });
 
     testWidgets('settings use neutral gray not blue and clear white cards',
