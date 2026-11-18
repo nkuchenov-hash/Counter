@@ -21,6 +21,18 @@ class AppGlassEdgeFade extends StatelessWidget {
   final Color surfaceColor;
   final double blurSigma;
 
+  /// A frosted dock needs a faint tonal difference from the page canvas.
+  /// Both LIFE OS themes intentionally assign the SAME color to
+  /// surface and surfaceContainerLowest. Reusing either as the fade tint
+  /// made the footer look like a solid, un-faded block over flat pages.
+  ///
+  /// This color depends on theme ONLY, never the active destination.
+  /// The existing ten-stop alpha/blur ramp remains the only fade geometry.
+  static Color bottomNavigationFadeColor(ColorScheme scheme) {
+    final contrast = scheme.brightness == Brightness.dark ? 0.075 : 0.035;
+    return Color.lerp(scheme.surface, scheme.onSurface, contrast)!;
+  }
+
   @override
   Widget build(BuildContext context) {
     final start = edge == AppGlassEdge.top
