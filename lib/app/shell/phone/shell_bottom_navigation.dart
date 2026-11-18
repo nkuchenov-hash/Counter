@@ -70,9 +70,9 @@ class ShellCompactBottomNav extends StatelessWidget {
       ),
     ];
 
-    // The *entire* bottom navigation surface lives here, not partly in
-    // ShellChrome and partly in feature pages. All five phone destinations
-    // render this one component with identical fade geometry and glass.
+    // This widget owns ONLY the interactive translucent capsule. The
+    // full-height PhoneShellFrame behind it owns the fade, so the fade cannot
+    // be clipped at the bottomNavigationBar paint boundary.
     final navigation = SafeArea(
       top: false,
       child: Padding(
@@ -102,31 +102,7 @@ class ShellCompactBottomNav extends StatelessWidget {
     );
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.0,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // Paint outwards, BEHIND the capsule, without expanding its layout
-          // height or capturing touches. The ten-stop feather is the approved
-          // design-system implementation; no screen has its own footer fade.
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: 176,
-            child: RepaintBoundary(
-              child: AppGlassEdgeFade(
-                edge: AppGlassEdge.bottom,
-                // Identical fade on every screen, even when the underlying
-                // canvas is flat and has no scrolling content at this point.
-                // This must be theme-only, never destination-dependent.
-                surfaceColor: AppGlassEdgeFade.bottomNavigationFadeColor(scheme),
-                blurSigma: 14,
-              ),
-            ),
-          ),
-          navigation,
-        ],
-      ),
+      child: navigation,
     );
   }
 }
