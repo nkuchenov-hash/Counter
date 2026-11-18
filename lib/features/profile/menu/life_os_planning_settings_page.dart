@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/time_view_fixed_time_policy.dart';
@@ -184,20 +185,16 @@ class _LifeOsPlanningSettingsPageState
       data: settingsNeutralTheme(context),
       child: Builder(builder: (context) => Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-        appBar: AppBar(
-          title: Text(_openDefaultTimes
+        appBar: AppSettingsBreadcrumbBar(
+          parentLabel: _openDefaultTimes
+              ? (ru ? 'Планирование и время' : 'Planning & time')
+              : (ru ? 'Планирование' : 'Planning'),
+          title: _openDefaultTimes
               ? t(loc, 'plan_default_times_title')
-              : (ru ? 'Настройки' : 'Settings')),
-          leading: _openDefaultTimes
-              ? IconButton(
-                  tooltip: ru ? 'Назад к планированию' : 'Back to Planning',
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  onPressed: () => setState(() => _openDefaultTimes = false),
-                )
-              : null,
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-          surfaceTintColor: Colors.transparent,
-          scrolledUnderElevation: 0,
+              : (ru ? 'Планирование и время' : 'Planning & time'),
+          onBack: _openDefaultTimes
+              ? () => setState(() => _openDefaultTimes = false)
+              : () => Navigator.of(context).maybePop(),
         ),
         body: _openDefaultTimes
             ? const AppSettingsPageBody(children: [DefaultPlanTimesSettingsBlock()])
