@@ -50,7 +50,7 @@ require(glass.count("class AppGlassEdgeFade") == 1 and
         glass.count("class AppFrostedNavigationPanel") == 1 and
         "ClipRRect(" in glass and "BackdropFilter(" in glass,
         "GLASS_COMPONENTS_MUST_BE_CENTRALIZED_AND_CLIPPED")
-require("seamlessGlass ?" in nav and
+require(re.search(r"seamlessGlass\\s*\\?", nav) is not None and
         "surfaceContainerLowest" in nav and
         "Clip.none" in nav and
         "IgnorePointer(" in glass,
