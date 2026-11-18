@@ -134,6 +134,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   RecordOptimisticApplyResult _applyRecordLocalEdit({
     required String title,
     required String noteText,
+    String? notesDeltaSnapshot,
     required List<Map<String, dynamic>> checklistPayload,
     required ({bool sync, bool clear, String? id}) planPatch,
     DateTime? startUtc,
@@ -153,7 +154,8 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       endTime: endUtc,
       categoryId: categoryId ?? _categoryId,
       note: noteText,
-      notesDeltaJson: _recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode(),
+      notesDeltaJson: notesDeltaSnapshot ??
+          (_recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode()),
       checklist: checklistPayload,
       syncSourcePlan: planPatch.sync,
       clearSourcePlan: planPatch.clear,
@@ -202,6 +204,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     _applyRecordLocalEdit(
       title: title,
       noteText: noteText,
+      notesDeltaSnapshot: notesDeltaSnapshot,
       checklistPayload: checklistPayload,
       planPatch: planPatch,
       startUtc: timePatch.startUtc,
