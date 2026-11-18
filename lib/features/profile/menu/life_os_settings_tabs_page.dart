@@ -779,45 +779,22 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
             const SizedBox(width: 16),
           ],
           Expanded(child: _mobileDetailOpen
-            ? Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  InkWell(
-                    onTap: _backToMobileSettings,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Text(
-                        _planningDefaultTimesOpen
-                            ? (_ru ? selected.ru : selected.en)
-                            : tr('Настройки', 'Settings'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Text(
-                    _planningDefaultTimesOpen
-                        ? tr('Время новых планов', 'Default plan times')
-                        : (_ru ? selected.ru : selected.en),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              )
+            ? Column(mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start, children: [
+                InkWell(onTap: _backToMobileSettings,
+                  child: Text(_planningDefaultTimesOpen
+                    ? (_ru ? selected.ru : selected.en) : tr('Настройки', 'Settings'),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant))),
+                Text(_planningDefaultTimesOpen
+                    ? tr('Время новых планов', 'Default plan times')
+                    : (_ru ? selected.ru : selected.en),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge),
+              ])
             : Text(tr('Настройки', 'Settings'),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontSize: 30, fontWeight: FontWeight.w600,
-                ))),
+                  fontSize: 30, fontWeight: FontWeight.w600))),
         ]),
       ),
     ]));
