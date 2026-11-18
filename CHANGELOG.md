@@ -1,3 +1,10 @@
+## [2026-11-19] — Notes typing hot-path optimization [CI verification pending]
+
+- Cached the visible Notes block projection per immutable document revision, including correct invalidation on edits and Undo. Replaced repeated backward numbered-list scans with a single document-revision ordinal pass.
+- Cached rich-text run concatenation in the editing controller; removed quadratic StringBuffer-to-String conversion during large Notes plain-text projection.
+- Embedded Timeline Record autosave now reuses a single serialized document snapshot for local optimistic apply and background PocketBase sync. Keyboard composition and existing debounce/flush rules remain unchanged.
+- Added regression tests for 300-block projection invalidation, Undo and 400-line plain-text equivalence; Android CI includes the new tests alongside Gboard/keyboard regressions. No schema, auth, navigation or gesture changes.
+
 ## [2026-11-19] — Phone Calendar full-width layout
 
 - Removed the extra 20 px horizontal gutters from Calendar year/month/week grids and the focused-week strip on compact phone layouts, allowing all seven weekday columns to fill the available Android screen width. Kept Events list readability gutters, desktop spacing, day cells, navigation and gesture behavior unchanged.
