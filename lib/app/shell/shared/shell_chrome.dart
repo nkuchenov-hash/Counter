@@ -284,8 +284,13 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                                     child: RepaintBoundary(
                                       child: AppGlassEdgeFade(
                                         edge: AppGlassEdge.bottom,
-                                        surfaceColor: scheme.surface,
-                                        blurSigma: 0,
+                                        // Settings uses the lowest canvas surface,
+                                        // not the slightly darker shell surface.
+                                        // Match the top feather and dock exactly.
+                                        surfaceColor: settingsGlass
+                                            ? scheme.surfaceContainerLowest
+                                            : scheme.surface,
+                                        blurSigma: settingsGlass ? 14 : 0,
                                       ),
                                     ),
                                   ),
