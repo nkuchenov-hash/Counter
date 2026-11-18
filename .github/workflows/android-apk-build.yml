@@ -143,7 +143,7 @@ jobs:
       - name: Verify Android and Web production backend parity
         run: flutter test test/pocketbase_production_origin_test.dart
 
-      - name: Verify mobile Notes keyboard stability in record edits
+      - name: Verify mobile Notes input hot path and keyboard stability
         run: flutter test test/record_notes_ime_stability_test.dart test/notes_mobile_keyboard_regression_test.dart
 
       - name: Verify cloud-first sleep synchronization contract

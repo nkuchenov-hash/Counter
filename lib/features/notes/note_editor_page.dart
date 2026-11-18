@@ -107,6 +107,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   final Map<String, TextEditingController> _captionControllers = {};
   final Map<String, FocusNode> _focusNodes = {};
   final Map<String, TextSelection> _lastSelections = {};
+  NoteDocument? _ordinalDocument;
+  List<int> _ordinalCache = const <int>[];
   final Set<String> _pendingImeBlockSplits = <String>{};
   final Map<String, Timer> _imeSplitTimers = <String, Timer>{};
   late final NotesAudioPlaybackController _audioPlayback;
@@ -1408,16 +1410,6 @@ _editor.insertAfter(
     );
   }
 
-  int _numberedOrdinal(int index) {
-    var ordinal = 1;
-    for (var cursor = index - 1; cursor >= 0; cursor--) {
-      if (_editor.visibleBlocks[cursor].type != NoteBlockType.numberedList)
-        break;
-      ordinal++;
-    }
-    return ordinal;
-  }
-
   Widget? _desktopDrawingPreview(BuildContext context, NoteBlock block) {
     if (block.type != NoteBlockType.drawing ||
         MediaQuery.sizeOf(context).width < 768) {
@@ -1487,7 +1479,7 @@ _editor.insertAfter(
     Widget item = NotesEditorBlockItem(
       block: block,
       index: index,
-      numberedOrdinal: _numberedOrdinal(index),
+      numberedOrdinal: _notesOrdinalFor(this, index),
       previousBlockType: index > 0 ? blocks[index - 1].type : null,
       active: active,
       editing: editable && !_blockSelectionMode && _editingBlockId == block.id,

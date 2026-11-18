@@ -60,10 +60,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   bool _plansLoading = false;
   bool _plansLoaded = false;
   bool _notesEditorFocused = false;
-  // Android may temporarily move focus out of the field while the software
-  // keyboard or selection overlay is still visible. Preserve the compact
-  // editing geometry for the entire IME session rather than repeatedly
-  // rebuilding record metadata and moving the cursor under the keyboard.
+  // Keep Record chrome stable across Android keyboard focus changes.
   bool _notesImeSessionActive = false;
   // Android may briefly move focus through the IME/selection overlay.
   // Keep the compact notes layout until the editor genuinely loses focus.
@@ -134,6 +131,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   RecordOptimisticApplyResult _applyRecordLocalEdit({
     required String title,
     required String noteText,
+    String? notesDeltaSnapshot,
     required List<Map<String, dynamic>> checklistPayload,
     required ({bool sync, bool clear, String? id}) planPatch,
     DateTime? startUtc,
@@ -153,7 +151,8 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       endTime: endUtc,
       categoryId: categoryId ?? _categoryId,
       note: noteText,
-      notesDeltaJson: _recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode(),
+      notesDeltaJson: notesDeltaSnapshot ??
+          (_recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode()),
       checklist: checklistPayload,
       syncSourcePlan: planPatch.sync,
       clearSourcePlan: planPatch.clear,
@@ -185,10 +184,10 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       clearSourcePlan: planPatch.clear,
       sourcePlanPocketRecordId: planPatch.id,
       bypassConflictCheck: true,
+      alreadyAppliedOptimistically: true,
     );
   }
-  // Commit the latest embedded Notes document to the local Brain before
-  // starting background sync. Closing the sheet must not discard the draft.
+  // Commit the latest Notes draft locally before background sync.
   void _commitRecordAutosave() {
     if (!_isPersistedRecord) return;
     final title = _titleController.text.trim();
@@ -202,6 +201,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     _applyRecordLocalEdit(
       title: title,
       noteText: noteText,
+      notesDeltaSnapshot: notesDeltaSnapshot,
       checklistPayload: checklistPayload,
       planPatch: planPatch,
       startUtc: timePatch.startUtc,

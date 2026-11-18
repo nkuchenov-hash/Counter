@@ -599,4 +599,97 @@ void main() {
     expect(host, contains('return Padding('));
     expect(host, isNot(contains('return AnimatedPadding(')));
   });
+
+  // Notes typing hot-path stability (standalone and embedded Record editors).
+  test('Notes keeps one visible-block projection per document revision', () {
+    final source = NoteDocument(
+      blocks: List<NoteBlock>.generate(
+        300,
+        (i) => NoteBlock(
+          id: 'block-$i',
+          type: NoteBlockType.paragraph,
+          text: 'Line $i',
+        ),
+      ),
+    );
+    final editor = NotesEditorDocumentController(source);
+    final initial = editor.visibleBlocks;
+    expect(initial, hasLength(300));
+    expect(identical(initial, editor.visibleBlocks), isTrue);
+
+    final change = editor.applyTextInput(
+      'block-0',
+      'Updated',
+      const TextSelection.collapsed(offset: 7),
+      preserveLineBreaks: true,
+    );
+    expect(change.changed, isTrue);
+    final changed = editor.visibleBlocks;
+    expect(identical(changed, initial), isFalse);
+    expect(identical(changed, editor.visibleBlocks), isTrue);
+    expect(changed.first.effectiveText, 'Updated');
+
+    final undo = editor.undo();
+    expect(undo.changed, isTrue);
+    expect(editor.visibleBlocks.first.effectiveText, 'Line 0');
+    expect(identical(changed, editor.visibleBlocks), isFalse);
+    expect(identical(editor.visibleBlocks, editor.visibleBlocks), isTrue);
+  });
+
+  test('Embedded Record Notes does not publish the same optimistic edit twice', () {
+    final recordSheet =
+        File('lib/features/shared/timeline_record_edit_sheet.dart')
+            .readAsStringSync();
+    final brain = File('lib/data/records/record_crud.dart').readAsStringSync();
+    expect(recordSheet, contains('alreadyAppliedOptimistically: true'));
+    expect(brain, contains('bool alreadyAppliedOptimistically = false'));
+    expect(brain, contains(
+        'if (!alreadyAppliedOptimistically) applyOptimisticRecordRowEdit('));
+  });
+
+  test('Block-id lookup survives typing, reorder, and Undo', () {
+    final editor = NotesEditorDocumentController(const NoteDocument(
+      blocks: <NoteBlock>[
+        NoteBlock(id: 'a', type: NoteBlockType.paragraph, text: 'A'),
+        NoteBlock(id: 'b', type: NoteBlockType.paragraph, text: 'B'),
+        NoteBlock(id: 'c', type: NoteBlockType.paragraph, text: 'C'),
+      ],
+    ));
+    expect(editor.blockById('b')?.effectiveText, 'B');
+    editor.applyTextInput(
+      'b',
+      'B2',
+      const TextSelection.collapsed(offset: 2),
+      preserveLineBreaks: true,
+    );
+    expect(editor.blockById('b')?.effectiveText, 'B2');
+
+    final moved = editor.reorderVisible(0, 3);
+    expect(moved.changed, isTrue);
+    expect(editor.blocks.map((block) => block.id).toList(), ['b', 'c', 'a']);
+    expect(editor.blockById('a')?.effectiveText, 'A');
+    expect(editor.blockById('b')?.effectiveText, 'B2');
+
+    expect(editor.undo().changed, isTrue);
+    expect(editor.blocks.map((block) => block.id).toList(), ['a', 'b', 'c']);
+    expect(editor.blockById('b')?.effectiveText, 'B2');
+  });
+
+  test('Large Notes plain-text projection preserves title and all lines', () {
+    final lines = List<String>.generate(400, (i) => 'Line $i');
+    final document = NoteDocument(
+      blocks: <NoteBlock>[
+        for (var i = 0; i < lines.length; i++)
+          NoteBlock(
+            id: 'line-$i',
+            type: NoteBlockType.paragraph,
+            text: lines[i],
+          ),
+      ],
+    );
+
+    expect(document.toPlainText(title: 'Capture'),
+        'Capture\n${lines.join('\n')}');
+    expect(document.toPlainText(), lines.join('\n'));
+  });
 }

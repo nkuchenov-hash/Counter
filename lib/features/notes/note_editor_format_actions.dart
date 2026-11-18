@@ -42,3 +42,25 @@ NotesTextBlockStyle? _notesHeadingStyleFor(_NoteEditorPageState state) {
   if (block.level == 3) return NotesTextBlockStyle.h3;
   return NotesTextBlockStyle.h2;
 }
+
+// Cached across a document revision. Lists of hundreds of numbered blocks
+// must not trigger a backwards scan for every row on an IME-driven rebuild.
+int _notesOrdinalFor(_NoteEditorPageState state, int index) {
+  final document = state._editor.document;
+  if (!identical(state._ordinalDocument, document)) {
+    final blocks = state._editor.visibleBlocks;
+    final ordinals = List<int>.filled(blocks.length, 1);
+    var ordinal = 0;
+    for (var i = 0; i < blocks.length; i++) {
+      ordinal = blocks[i].type == NoteBlockType.numberedList
+          ? ordinal + 1
+          : 0;
+      ordinals[i] = ordinal == 0 ? 1 : ordinal;
+    }
+    state._ordinalCache = ordinals;
+    state._ordinalDocument = document;
+  }
+  return index >= 0 && index < state._ordinalCache.length
+      ? state._ordinalCache[index]
+      : 1;
+}

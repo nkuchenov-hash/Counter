@@ -85,3 +85,38 @@ NotesEditorMutation _convertNotesCurrentLine(
     );
     return editor._focusMutation(styled.id, editor.activeSelection);
 }
+
+// Private cache operations live in this controller library, not the Brain.
+// Keep the hot-path class small while preserving immutable document revisions.
+void _commitNoteDocument(
+  NotesEditorDocumentController editor,
+  NoteDocument next, {
+  bool preserveBlockIndices = false,
+}) {
+  editor._undoStack.add(editor._document);
+  if (editor._undoStack.length > 100) editor._undoStack.removeAt(0);
+  editor._document = next;
+  editor._visibleBlocksCache = null;
+  // Replacing text does not change block order or ids.
+  if (!preserveBlockIndices) editor._blockIndices = null;
+}
+
+void _replaceNoteBlock(
+  NotesEditorDocumentController editor,
+  NoteBlock replacement,
+) {
+  final index = editor._indexOf(replacement.id);
+  if (index < 0) return;
+  final nextBlocks = List<NoteBlock>.from(editor.blocks)..[index] = replacement;
+  editor._commitDocument(
+    editor._document.copyWith(blocks: nextBlocks),
+    preserveBlockIndices: true,
+  );
+}
+
+int _indexOfNoteBlock(NotesEditorDocumentController editor, String id) {
+  final indices = editor._blockIndices ??= <String, int>{
+    for (var i = 0; i < editor.blocks.length; i++) editor.blocks[i].id: i,
+  };
+  return indices[id] ?? -1;
+}

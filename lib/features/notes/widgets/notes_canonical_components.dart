@@ -70,12 +70,16 @@ class NotesTextEditingController extends TextEditingController {
        super(text: text ?? runs.map((run) => run.text).join());
 
   List<NoteTextRun> _runs;
+  // Cached rendered text avoids concatenating every rich-text run on each
+  // EditableText paint/layout pass while typing or moving the cursor.
+  late String _runsText = _runs.map((run) => run.text).join();
   Color? linkColor;
 
   List<NoteTextRun> get runs => _runs;
 
   void setRuns(List<NoteTextRun> runs, {bool notify = true}) {
     _runs = List<NoteTextRun>.unmodifiable(runs);
+    _runsText = _runs.map((run) => run.text).join();
     // onChanged already originates from TextEditingController notifying the
     // EditableText. Do not emit another notification for the rich-text runs
     // of the very same keystroke: Android IME composition can flicker/reset.
@@ -88,6 +92,7 @@ class NotesTextEditingController extends TextEditingController {
     TextSelection? selection,
   }) {
     _runs = List<NoteTextRun>.unmodifiable(runs);
+    _runsText = _runs.map((run) => run.text).join();
     // Structural Enter shortens the original block while the IME still has
     // the old caret position. Clamp both endpoints before updating EditableText
     // so neither Android nor Flutter receives an out-of-bounds selection.
@@ -114,9 +119,7 @@ class NotesTextEditingController extends TextEditingController {
     required bool withComposing,
   }) {
     final baseStyle = style ?? const TextStyle();
-    if (_runs.isEmpty || (_runs.length == 1
-        ? _runs.first.text != text
-        : _runs.map((run) => run.text).join() != text)) {
+    if (_runs.isEmpty || _runsText != text) {
       return TextSpan(style: baseStyle, text: text);
     }
     return TextSpan(

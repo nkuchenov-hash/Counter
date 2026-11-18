@@ -49,23 +49,27 @@ class NotesEditorDocumentController {
   }
 
   NoteDocument _document;
+  List<NoteBlock>? _visibleBlocksCache;
+  Map<String, int>? _blockIndices;
   final List<NoteDocument> _undoStack = <NoteDocument>[];
   String? activeBlockId;
   TextSelection? activeSelection;
 
   NoteDocument get document => _document;
   List<NoteBlock> get blocks => _document.blocks;
-  List<NoteBlock> get visibleBlocks => blocks
-      .where((block) => isSupportedProductionBlock(block.type))
-      .toList(growable: false);
+  // A single frame can request visibleBlocks dozens of times while laying out
+  // reorderable children. Reuse the same filtered list until the document
+  // changes instead of rescanning every block for every child.
+  List<NoteBlock> get visibleBlocks => _visibleBlocksCache ??=
+      List<NoteBlock>.unmodifiable(
+        blocks.where((block) => isSupportedProductionBlock(block.type)),
+      );
   NoteBlock? get activeBlock => blockById(activeBlockId);
 
   NoteBlock? blockById(String? id) {
     if (id == null) return null;
-    for (final block in blocks) {
-      if (block.id == id) return block;
-    }
-    return null;
+    final index = _indexOf(id);
+    return index < 0 ? null : blocks[index];
   }
 
   bool selectBlock(String id, TextSelection? selection) {
@@ -772,6 +776,8 @@ class NotesEditorDocumentController {
   NotesEditorMutation undo() {
     if (_undoStack.isEmpty) return const NotesEditorMutation();
     _document = _undoStack.removeLast();
+    _visibleBlocksCache = null;
+    _blockIndices = null;
     final visible = visibleBlocks;
     if (visible.isEmpty) {
       activeBlockId = null;
@@ -799,18 +805,11 @@ class NotesEditorDocumentController {
     activeSelection = null;
     return const NotesEditorMutation(changed: true, requiresRebuild: true);
   }
-  void _commitDocument(NoteDocument next) {
-    _undoStack.add(_document);
-    if (_undoStack.length > 100) _undoStack.removeAt(0);
-    _document = next;
-  }
-  void _replaceBlock(NoteBlock replacement) {
-    final index = _indexOf(replacement.id);
-    if (index < 0) return;
-    final nextBlocks = List<NoteBlock>.from(blocks)..[index] = replacement;
-    _commitDocument(_document.copyWith(blocks: nextBlocks));
-  }
-  int _indexOf(String id) => blocks.indexWhere((block) => block.id == id);
+  void _commitDocument(NoteDocument next, {bool preserveBlockIndices = false}) =>
+      _commitNoteDocument(this, next, preserveBlockIndices: preserveBlockIndices);
+  void _replaceBlock(NoteBlock replacement) =>
+      _replaceNoteBlock(this, replacement);
+  int _indexOf(String id) => _indexOfNoteBlock(this, id);
   int _indexAfterLastVisibleBlock() {
     for (var index = blocks.length - 1; index >= 0; index--) {
       if (isSupportedProductionBlock(blocks[index].type)) return index + 1;
