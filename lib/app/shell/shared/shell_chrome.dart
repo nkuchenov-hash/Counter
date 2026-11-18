@@ -280,20 +280,20 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                                     left: 0,
                                     right: 0,
                                     bottom: 0,
-                                    // Extend the Settings feather farther into
-                                    // scrolling content so its near-zero tail
-                                    // disappears before reaching the dock.
-                                    height: settingsGlass ? 176 : 126,
+                                    // Every phone destination uses the same
+                                    // approved 176px feather and 14px blur.
+                                    // Previously Timeline/Lists lacked blur and
+                                    // showed a distinct dock backdrop.
+                                    height: 176,
                                     child: RepaintBoundary(
                                       child: AppGlassEdgeFade(
                                         edge: AppGlassEdge.bottom,
-                                        // Settings uses the lowest canvas surface,
-                                        // not the slightly darker shell surface.
-                                        // Match the top feather and dock exactly.
+                                        // Match each page canvas without
+                                        // changing the shared fade component.
                                         surfaceColor: settingsGlass
                                             ? scheme.surfaceContainerLowest
                                             : scheme.surface,
-                                        blurSigma: settingsGlass ? 14 : 0,
+                                        blurSigma: 14,
                                       ),
                                     ),
                                   ),
