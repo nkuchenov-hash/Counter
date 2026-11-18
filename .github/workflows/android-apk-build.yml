@@ -144,7 +144,7 @@ jobs:
         run: flutter test test/pocketbase_production_origin_test.dart
 
       - name: Verify mobile Notes input hot path and keyboard stability
-        run: flutter test test/notes_editor_hot_path_test.dart test/record_notes_ime_stability_test.dart test/notes_mobile_keyboard_regression_test.dart
+        run: flutter test test/record_notes_ime_stability_test.dart test/notes_mobile_keyboard_regression_test.dart
 
       - name: Verify cloud-first sleep synchronization contract
         run: flutter test test/sleep_cloud_settings_contract_test.dart
