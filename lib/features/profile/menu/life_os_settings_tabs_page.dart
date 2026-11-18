@@ -753,8 +753,16 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     final scheme = Theme.of(context).colorScheme;
     final topInset = MediaQuery.viewPaddingOf(context).top;
     // The same canonical frosted edge as the bottom shell navigation.
-    return SizedBox(height: topInset + 114, child: Stack(children: [
-      Positioned.fill(
+    // Keep header geometry and title position fixed. Only extend the
+    // noninteractive feather below its layout box to avoid a visible cutoff.
+    return SizedBox(height: topInset + 114, child: Stack(
+      clipBehavior: Clip.none,
+      children: [
+      Positioned(
+        top: 0,
+        left: 0,
+        right: 0,
+        height: topInset + 162,
         child: AppGlassEdgeFade(
           edge: AppGlassEdge.top,
           surfaceColor: scheme.surfaceContainerLowest,
