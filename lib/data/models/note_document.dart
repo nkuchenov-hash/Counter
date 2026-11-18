@@ -731,9 +731,9 @@ class NoteDocument {
         text = block.caption!.trim();
       }
       if (text.isEmpty) continue;
-      if (buffer.isNotEmpty && !buffer.toString().endsWith('\n')) {
-        buffer.writeln();
-      }
+      // Every previous entry already ends in a newline. Converting the
+      // growing buffer to a String here made plain-text projection quadratic
+      // for large notes (especially during Record editor autosave).
       buffer.writeln(text);
     }
     return buffer.toString().trim();
