@@ -5,6 +5,7 @@ import 'package:counter/core/category_icon_system.dart';
 import 'package:counter/features/settings/categories/category_icon_collection_preference.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
 import 'package:counter/core/widgets/timezone_quick_picker.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
@@ -291,17 +292,10 @@ class _ProfilePageState extends State<ProfilePage> {
             backgroundColor: scheme.surfaceContainerLowest,
             appBar: widget.embeddedInShell || widget.initialDestination == null
                 ? null
-                : AppBar(
-                    toolbarHeight: 60,
-                    backgroundColor: scheme.surfaceContainerLowest,
-                    surfaceTintColor: Colors.transparent,
-                    scrolledUnderElevation: 0,
-                    title: Text(
-                      t(locale, 'settings'),
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                : AppSettingsBreadcrumbBar(
+                    parentLabel: t(locale, 'settings'),
+                    title: _mobileSectionTitle(locale, destination),
+                    onBack: () => Navigator.of(context).maybePop(),
                   ),
             body: widget.embeddedInShell
                 ? Column(
