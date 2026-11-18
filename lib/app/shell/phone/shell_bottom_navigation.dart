@@ -79,11 +79,7 @@ class ShellCompactBottomNav extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 5, 14, 9),
         child: AppFrostedNavigationPanel(
-          // Use the same neutral canvas as the Settings header and footer.
-          // A second surface tone made the bottom look half white, half gray.
-          surfaceColor: seamlessGlass
-              ? scheme.surfaceContainerLowest
-              : scheme.surface,
+          surfaceColor: scheme.surface,
           child: SizedBox(
             height: kShellBottomNavHeight,
             child: Row(
