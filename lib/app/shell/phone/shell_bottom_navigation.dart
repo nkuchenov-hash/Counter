@@ -72,8 +72,9 @@ class ShellCompactBottomNav extends StatelessWidget {
       ),
     ];
 
-    // A single floating capsule on all five tabs. Only the capsule itself
-    // blurs the scene behind it; the rest of the bottom area is transparent.
+    // The *entire* bottom navigation surface lives here, not partly in
+    // ShellChrome and partly in feature pages. All five phone destinations
+    // render this one component with identical fade geometry and glass.
     final navigation = SafeArea(
       top: false,
       child: Padding(
@@ -103,7 +104,30 @@ class ShellCompactBottomNav extends StatelessWidget {
     );
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.0,
-      child: navigation,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Paint outwards, BEHIND the capsule, without expanding its layout
+          // height or capturing touches. The ten-stop feather is the approved
+          // design-system implementation; no screen has its own footer fade.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 176,
+            child: RepaintBoundary(
+              child: AppGlassEdgeFade(
+                edge: AppGlassEdge.bottom,
+                surfaceColor: seamlessGlass
+                    ? scheme.surfaceContainerLowest
+                    : scheme.surface,
+                blurSigma: 14,
+              ),
+            ),
+          ),
+          navigation,
+        ],
+      ),
     );
   }
 }
