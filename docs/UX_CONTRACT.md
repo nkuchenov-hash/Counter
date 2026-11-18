@@ -1,3 +1,9 @@
+## Mobile Calendar full-width grids (2026-11-19)
+
+- On compact phone layouts, Calendar Year/Month/Week grids and focused-week strip fill the full available horizontal viewport inside the OS safe area; no extra 20 px left/right Calendar content gutters. Each day cell owns its internal spacing.
+- The text-heavy Events list retains readable horizontal margins. Desktop Calendar gutters and header/action spacing are unchanged.
+- Preserve seven equal-width weekday columns, civil dates, horizontal period swipe, scroll, drag/drop, and the shell-owned bottom dock without clipping or horizontal overflow.
+
 ## Interface inline language and timezone settings (2026-11-18)
 
 - Settings → Interface edits language directly in a searchable dropdown populated from `supportedUiLanguageCodes()`; no radio group or redundant navigation to a language page. Selection goes through the existing optimistic profile `saveSettings` path.

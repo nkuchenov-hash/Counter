@@ -1,3 +1,8 @@
+## [2026-11-19] — Phone Calendar full-width layout
+
+- Removed the extra 20 px horizontal gutters from Calendar year/month/week grids and the focused-week strip on compact phone layouts, allowing all seven weekday columns to fill the available Android screen width. Kept Events list readability gutters, desktop spacing, day cells, navigation and gesture behavior unchanged.
+- No Brain, PocketBase, time projection or sync changes. Android release verification runs through the canonical signed APK workflow.
+
 ## [2026-11-18] — Android APK signing compatibility fix
 
 - Confirmed the 2026-11-18 distributed APK was signed with a fresh per-run Android Debug certificate, so Android correctly rejected updating the installed `com.example.counter` application.

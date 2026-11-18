@@ -436,11 +436,18 @@ class _CalendarViewState extends State<CalendarView>
     final showPills = calendarShowsEventPills(viewportW);
     final desktopCalendar = viewportW >= kShellDesktopNavBreakpoint;
 
+    // Month/week/year grids and the focused week strip use the full phone
+    // viewport. Only text-heavy Events keeps a readable horizontal inset.
+    final horizontalCalendarInset = desktopCalendar
+        ? kShellDesktopContentHorizontalPadding
+        : _mode == CalendarViewMode.events && !_dayFocusActive
+            ? 20.0
+            : 0.0;
     final calendarArea = Padding(
       padding: EdgeInsets.fromLTRB(
-        desktopCalendar ? kShellDesktopContentHorizontalPadding : 20,
+        horizontalCalendarInset,
         desktopCalendar ? 4 : 2,
-        desktopCalendar ? kShellDesktopContentHorizontalPadding : 20,
+        horizontalCalendarInset,
         desktopCalendar ? 8 : 92,
       ),
       child: desktopCalendar && _dayFocusActive
