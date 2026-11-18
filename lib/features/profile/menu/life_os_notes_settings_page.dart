@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/lists/notes_library_preferences.dart';
@@ -150,11 +151,10 @@ class _LifeOsNotesSettingsPageState extends State<LifeOsNotesSettingsPage> {
       data: settingsNeutralTheme(context),
       child: Builder(builder: (context) => Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-        appBar: AppBar(
-          title: Text(ru ? 'Настройки' : 'Settings'),
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-          surfaceTintColor: Colors.transparent,
-          scrolledUnderElevation: 0,
+        appBar: AppSettingsBreadcrumbBar(
+          parentLabel: ru ? 'Заметки' : 'Notes',
+          title: ru ? 'Заметки и списки' : 'Notes & lists',
+          onBack: () => Navigator.of(context).maybePop(),
         ),
         body: StreamBuilder<UserSettings>(
           stream: DatabaseService.instance.userSettingsStream,
