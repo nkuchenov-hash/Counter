@@ -3,7 +3,7 @@
 - Cached the visible Notes block projection per immutable document revision, including correct invalidation on edits and Undo. Replaced repeated backward numbered-list scans with a single document-revision ordinal pass.
 - Cached rich-text run concatenation in the editing controller; removed quadratic StringBuffer-to-String conversion during large Notes plain-text projection.
 - Embedded Timeline Record autosave now reuses a single serialized document snapshot for local optimistic apply and background PocketBase sync. Keyboard composition and existing debounce/flush rules remain unchanged.
-- Added regression tests for 300-block projection invalidation, Undo and 400-line plain-text equivalence; Android CI includes the new tests alongside Gboard/keyboard regressions. No schema, auth, navigation or gesture changes.
+- Extended the existing Android Record Notes regression suite with 300-block projection invalidation, Undo and 400-line plain-text equivalence; Android CI runs it alongside Gboard/keyboard tests. No schema, auth, navigation or gesture changes.
 
 ## [2026-11-19] — Phone Calendar full-width layout
 
