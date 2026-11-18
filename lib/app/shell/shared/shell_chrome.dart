@@ -268,37 +268,10 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                               // The Settings header owns its status-bar inset.
                               // A shell SafeArea here created a detached, opaque
                               // strip above the frosted pinned header.
-                              final compactContent = Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  mainColumn,
-                                  // One noninteractive bottom feather for every
-                                  // compact destination. Content remains visible
-                                  // underneath the floating capsule; no solid
-                                  // full-width navigation backplate.
-                                  Positioned(
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    // Every phone destination uses the same
-                                    // approved 176px feather and 14px blur.
-                                    // Previously Timeline/Lists lacked blur and
-                                    // showed a distinct dock backdrop.
-                                    height: 176,
-                                    child: RepaintBoundary(
-                                      child: AppGlassEdgeFade(
-                                        edge: AppGlassEdge.bottom,
-                                        // Match each page canvas without
-                                        // changing the shared fade component.
-                                        surfaceColor: settingsGlass
-                                            ? scheme.surfaceContainerLowest
-                                            : scheme.surface,
-                                        blurSigma: 14,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              );
+                              // The canonical PhoneShellBottomNavigation owns
+                              // the complete fade + capsule. Never paint a
+                              // second dock backdrop inside the tab content.
+                              final compactContent = mainColumn;
                               return switch (formFactor) {
                                 ShellFormFactor.desktop => DesktopShellFrame(
                                   selectedIndex: desktopSideNavSelectedIndex(
