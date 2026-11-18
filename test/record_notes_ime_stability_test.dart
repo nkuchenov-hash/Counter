@@ -636,6 +636,34 @@ void main() {
     expect(identical(editor.visibleBlocks, editor.visibleBlocks), isTrue);
   });
 
+  test('Block-id lookup survives typing, reorder, and Undo', () {
+    final editor = NotesEditorDocumentController(const NoteDocument(
+      blocks: <NoteBlock>[
+        NoteBlock(id: 'a', type: NoteBlockType.paragraph, text: 'A'),
+        NoteBlock(id: 'b', type: NoteBlockType.paragraph, text: 'B'),
+        NoteBlock(id: 'c', type: NoteBlockType.paragraph, text: 'C'),
+      ],
+    ));
+    expect(editor.blockById('b')?.effectiveText, 'B');
+    editor.applyTextInput(
+      'b',
+      'B2',
+      const TextSelection.collapsed(offset: 2),
+      preserveLineBreaks: true,
+    );
+    expect(editor.blockById('b')?.effectiveText, 'B2');
+
+    final moved = editor.reorderVisible(0, 3);
+    expect(moved.changed, isTrue);
+    expect(editor.blocks.map((block) => block.id).toList(), ['b', 'c', 'a']);
+    expect(editor.blockById('a')?.effectiveText, 'A');
+    expect(editor.blockById('b')?.effectiveText, 'B2');
+
+    expect(editor.undo().changed, isTrue);
+    expect(editor.blocks.map((block) => block.id).toList(), ['a', 'b', 'c']);
+    expect(editor.blockById('b')?.effectiveText, 'B2');
+  });
+
   test('Large Notes plain-text projection preserves title and all lines', () {
     final lines = List<String>.generate(400, (i) => 'Line $i');
     final document = NoteDocument(
