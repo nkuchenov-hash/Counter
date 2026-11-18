@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: life-os-public-arm64-release
@@ -23,6 +24,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
+
+      - name: Report Android public release run for diagnostics
+        env:
+          GH_TOKEN: ${{ github.token }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          gh pr comment 517 --body "LIFE OS APK publishing run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} (source ${GITHUB_SHA})."
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -92,3 +101,13 @@ jobs:
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" \
             --jq '.assets[] | select(.name == "LIFE-OS-Android-arm64.apk") | [.name,.size,.browser_download_url] | @tsv'
           test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '[.assets[] | select(.name == "LIFE-OS-Android-arm64.apk")] | length')" = 1
+
+      - name: Report public APK publishing outcome
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_JOB_STATUS: ${{ job.status }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          gh pr comment 517 --body "LIFE OS APK publishing outcome: ${RELEASE_JOB_STATUS}. Run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. Public asset: https://github.com/${GITHUB_REPOSITORY}/releases/download/life-os-latest/LIFE-OS-Android-arm64.apk"
