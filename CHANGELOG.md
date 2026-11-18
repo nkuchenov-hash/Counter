@@ -1,3 +1,10 @@
+## [2026-11-19] — Notes local-first draft sessions [verification pending]
+
+- Both Notes editors keep keystrokes entirely in memory: standalone Notes defer Brain/PocketBase sync until 15 seconds of inactivity; Record Notes hand off the latest document snapshot immediately to the host without serializing it or refreshing Timeline.
+- Record Notes now defer full-record autosave to 15 seconds of inactivity, flush when leaving the Notes tab, and retain the existing explicit Save/close flush. Both editor hosts flush pending drafts on app background/hidden/detached to reduce unsaved-data exposure.
+- Ordinary Record title/category autosave retains its existing 1500 ms cadence; Notes remain local-first while typing. No schema or navigation changes.
+- Expanded Android regression coverage to check idle-delay coalescing, the immediate local Record handoff and exactly-once flush. Device frame-time profiling is still required to confirm the subjective stutter is eliminated.
+
 ## [2026-11-19] — Notes typing hot-path optimization [CI verification pending]
 
 - Cached visible Notes blocks and id-to-index lookups across text edits, invalidating both correctly after structural operations and Undo. Replaced repeated backward numbered-list scans with a single document-revision ordinal pass.
