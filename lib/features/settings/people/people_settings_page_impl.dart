@@ -5,6 +5,7 @@ import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
 import 'package:counter/data/people/people_models.dart';
 import 'package:counter/data/people/people_service.dart';
 import 'package:counter/features/settings/people/people_avatar.dart';
@@ -141,11 +142,12 @@ class _PeopleSettingsPageState extends State<PeopleSettingsPage> {
     final page = Theme(
       data: settingsNeutralTheme(context),
       child: Scaffold(
-        appBar: embeddedInShell && desktop ? null : AppBar(
-          leading: embeddedInShell
-              ? BackButton(onPressed: widget.onBackToMenu)
-              : null,
-          title: Text(peopleT(_locale, 'title')),
+        appBar: embeddedInShell && desktop ? null : AppSettingsBreadcrumbBar(
+          parentLabel: _locale.toLowerCase().startsWith('ru')
+              ? 'Настройки' : 'Settings',
+          title: peopleT(_locale, 'title'),
+          onBack: widget.onBackToMenu ??
+              () => Navigator.of(context).maybePop(),
           actions: [
             IconButton(
               tooltip: peopleT(_locale, 'refresh'),
