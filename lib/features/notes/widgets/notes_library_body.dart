@@ -248,7 +248,11 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
       final count = _gridColumnCount(availableWidth);
       return GridView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.only(bottom: availableWidth <= 520 ? 88 : 0),
+        padding: EdgeInsets.only(
+          bottom: availableWidth <= 520
+              ? 192 + MediaQuery.viewPaddingOf(context).bottom
+              : 0,
+        ),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: count,
           mainAxisSpacing: 12,
@@ -288,7 +292,11 @@ class _NotesLibraryBodyState extends State<NotesLibraryBody> {
           Expanded(
             child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.only(bottom: availableWidth <= 520 ? 88 : 0),
+              padding: EdgeInsets.only(
+          bottom: availableWidth <= 520
+              ? 192 + MediaQuery.viewPaddingOf(context).bottom
+              : 0,
+        ),
               itemCount: cards.length,
               itemBuilder: (context, index) => _card(
                 context,
