@@ -636,6 +636,17 @@ void main() {
     expect(identical(editor.visibleBlocks, editor.visibleBlocks), isTrue);
   });
 
+  test('Embedded Record Notes does not publish the same optimistic edit twice', () {
+    final recordSheet =
+        File('lib/features/shared/timeline_record_edit_sheet.dart')
+            .readAsStringSync();
+    final brain = File('lib/data/records/record_crud.dart').readAsStringSync();
+    expect(recordSheet, contains('alreadyAppliedOptimistically: true'));
+    expect(brain, contains('bool alreadyAppliedOptimistically = false'));
+    expect(brain, contains(
+        'if (!alreadyAppliedOptimistically) applyOptimisticRecordRowEdit('));
+  });
+
   test('Block-id lookup survives typing, reorder, and Undo', () {
     final editor = NotesEditorDocumentController(const NoteDocument(
       blocks: <NoteBlock>[
