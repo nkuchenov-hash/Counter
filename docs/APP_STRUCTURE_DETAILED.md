@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `18b385ea` on 2026-11-18.**
+**Generated from input HEAD `4e9c752c` on 2026-11-18.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1028 — each appears **exactly once** below.
+**Tracked files:** 1029 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -30,7 +30,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `test` | 149 |
 | `Brain/data` | 120 |
 | `platform build` | 84 |
-| `shared foundation` | 72 |
+| `shared foundation` | 73 |
 | `developer tool` | 66 |
 | `governing documentation` | 45 |
 | `platform resource` | 44 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 559 |
+| `PROVEN_REQUIRED` | 560 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 277 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 940 |
+| `HIGH` | 941 |
 | `MEDIUM` | 88 |
 
 ---
@@ -13281,7 +13281,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppGlassEdge`, `AppGlassEdgeFade`, `AppFrostedNavigationPanel`).
 - **Key code names:** `AppGlassEdge`, `AppGlassEdgeFade`, `AppFrostedNavigationPanel`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/phone/phone_shell_frame.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/phone/phone_shell_frame.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/core/widgets/app_settings_breadcrumb_bar.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13298,7 +13298,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_glass_edge_fade`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/phone/phone_shell_frame.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/phone/phone_shell_frame.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/core/widgets/app_settings_breadcrumb_bar.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -13419,6 +13419,44 @@ RU:
 - **Владелец / слой:** общий design system
 - **Обязанности:** Реализует в UI: app menu icons.
 - **Когда открывать:** Когда ломается поведение, связанное с `app_menu_icons.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/core/widgets/app_settings_breadcrumb_bar.dart`
+
+EN:
+
+- **Human purpose:** Shared design-system widget — app settings breadcrumb bar. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — app settings breadcrumb bar.
+- **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **Contents:** Canonical Flutter widget (`AppSettingsBreadcrumbBar`).
+- **Key code names:** `AppSettingsBreadcrumbBar`
+- **Repository role:** shared foundation
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/profile/menu/life_os_sync_status_page.dart`, `lib/features/profile/profile_view.dart`, `lib/features/profile/tag_settings_hub.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared design system
+- **Responsibilities:** app settings breadcrumb bar
+- **When to open:** When behavior tied to `app_settings_breadcrumb_bar.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: app settings breadcrumb bar
+
+RU:
+
+- **Зачем файл человеку:** Общий виджет design system — app settings breadcrumb bar. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — app settings breadcrumb bar.
+- **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Содержимое:** Канонический Flutter-виджет (logic in `app_settings_breadcrumb_bar`).
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/profile/menu/life_os_sync_status_page.dart`, `lib/features/profile/profile_view.dart`, `lib/features/profile/tag_settings_hub.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общий design system
+- **Обязанности:** Реализует в UI: app settings breadcrumb bar.
+- **Когда открывать:** Когда ломается поведение, связанное с `app_settings_breadcrumb_bar.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
 
