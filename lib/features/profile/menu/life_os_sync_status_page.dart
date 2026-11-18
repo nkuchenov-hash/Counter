@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -18,9 +19,10 @@ class LifeOsSyncStatusPage extends StatelessWidget {
       data: settingsNeutralTheme(context),
       child: Builder(builder: (context) => Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-        appBar: AppBar(
-          title: Text(ru ? 'Синхронизация' : 'Synchronization'),
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+        appBar: AppSettingsBreadcrumbBar(
+          parentLabel: ru ? 'Профиль' : 'Profile',
+          title: ru ? 'Синхронизация' : 'Synchronization',
+          onBack: () => Navigator.of(context).maybePop(),
         ),
         body: ListenableBuilder(
           listenable: sync,
