@@ -1,5 +1,6 @@
 import 'package:counter/core/app_control_tokens.dart';
 import 'package:counter/app/shell/phone/shell_bottom_navigation.dart';
+import 'package:counter/app/shell/phone/phone_shell_frame.dart';
 import 'package:counter/core/widgets/app_glass_edge_fade.dart';
 import 'dart:io';
 
@@ -66,10 +67,12 @@ void main() {
     expect(shell, contains('final pages = buildShellPages();'));
     expect(nav, contains('AppFrostedNavigationPanel('));
     expect(nav, isNot(contains('top: -46')));
-    // One owner constructs the interactive capsule AND its noninteractive
-    // backdrop; the shell and feature screens never add a second dock layer.
-    expect('Positioned('.allMatches(nav), hasLength(1));
-    expect('AppGlassEdgeFade('.allMatches(nav), hasLength(1));
+    // One full-height shell paints the noninteractive fade and one
+    // bottom navigation widget paints the capsule on top of it.
+    expect('Positioned('.allMatches(wrapper), hasLength(1));
+    expect('AppGlassEdgeFade('.allMatches(wrapper), hasLength(1));
+    expect(nav, isNot(contains('AppGlassEdgeFade(')));
+    expect(nav, isNot(contains('Positioned(')));
     expect(shell, isNot(contains('AppGlassEdgeFade(')));
     expect(shell, contains('final compactContent = mainColumn;'));
     expect(settings, contains('AppGlassEdgeFade('));
@@ -96,9 +99,9 @@ void main() {
     expect(settings, contains('blurSigma: 16'));
     // All compact destinations (Timeline, Planning, Calendar, Lists, Settings)
     // use the same approved bottom feather, not tab-dependent geometry/blur.
-    expect(nav, contains('height: 176,'));
-    expect(nav, contains('blurSigma: 14,'));
-    expect(nav, contains('clipBehavior: Clip.none'));
+    expect(wrapper, contains('kPhoneShellDockFadeHeight = 176'));
+    expect(wrapper, contains('blurSigma: 14,'));
+    expect(wrapper, contains('StackFit.expand'));
     expect(nav, isNot(contains('height: settingsGlass ? 176 : 126')));
     expect(nav, isNot(contains('blurSigma: settingsGlass ? 14 : 0')));
     // Initial content starts closer to the pinned title; title/glass dimensions
@@ -128,6 +131,8 @@ void main() {
     var selected = -1;
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
+        extendBody: true,
+        body: const PhoneShellFrame(child: ColoredBox(color: Color(0xFF333333))),
         bottomNavigationBar: ShellCompactBottomNav(
           viewportWidth: 390,
           selectedIndex: 0,
@@ -158,7 +163,7 @@ void main() {
     for (var selectedTab = 0; selectedTab < 5; selectedTab++) {
       await tester.pumpWidget(MaterialApp(home: Scaffold(
         extendBody: true,
-        body: SafeArea(
+        body: PhoneShellFrame(child: SafeArea(
           top: false,
           child: Align(
             alignment: Alignment.bottomCenter,
@@ -168,7 +173,7 @@ void main() {
               child: const Text('Save'),
             ),
           ),
-        ),
+        )),
         bottomNavigationBar: ShellCompactBottomNav(
           viewportWidth: 390,
           selectedIndex: selectedTab,
@@ -201,6 +206,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     Widget navFor(int selectedTab) => MaterialApp(home: Scaffold(
       extendBody: true,
+      body: const PhoneShellFrame(child: ColoredBox(color: Color(0xFF333333))),
       bottomNavigationBar: ShellCompactBottomNav(
         viewportWidth: 390,
         selectedIndex: selectedTab,
@@ -214,6 +220,9 @@ void main() {
       expect(find.byType(BackdropFilter), findsNWidgets(2));
       expect(find.byType(ShaderMask), findsOneWidget);
       expect(find.byType(AppGlassEdgeFade), findsOneWidget);
+      expect(find.byKey(const ValueKey('life-os-canonical-bottom-fade')), findsOneWidget);
+      final fadeRect = tester.getRect(find.byType(AppGlassEdgeFade));
+      expect(fadeRect.height, kPhoneShellDockFadeHeight);
       expect(find.byType(InkWell), findsNWidgets(5));
       final fade = tester.widget<AppGlassEdgeFade>(
         find.byType(AppGlassEdgeFade));
@@ -225,6 +234,10 @@ void main() {
       expect(fade.surfaceColor, AppGlassEdgeFade.bottomNavigationFadeColor(scheme));
       expect(fade.surfaceColor, isNot(scheme.surface));
       final capsule = tester.getRect(find.byType(AppFrostedNavigationPanel));
+      // The fade belongs to the full body, reaches behind the capsule and
+      // stretches well above its paint bounds on every destination.
+      expect(fadeRect.top, lessThan(capsule.top));
+      expect(fadeRect.bottom, greaterThanOrEqualTo(capsule.bottom - 1));
       if (canonicalCapsule != null) {
         expect(capsule, canonicalCapsule);
         expect(fade.surfaceColor, canonicalFade);
@@ -302,8 +315,9 @@ void main() {
     expect(phone, contains('ShellCompactBottomNav('));
     expect(phone, isNot(contains('seamlessGlass')));
     expect(dock, isNot(contains('seamlessGlass')));
-    expect(dock, contains('surfaceColor: AppGlassEdgeFade.bottomNavigationFadeColor(scheme),'));
-    expect('AppGlassEdgeFade('.allMatches(dock).length, 1);
+    expect(phone, contains('surfaceColor: AppGlassEdgeFade.bottomNavigationFadeColor(scheme),'));
+    expect('AppGlassEdgeFade('.allMatches(phone).length, 1);
+    expect(dock, isNot(contains('AppGlassEdgeFade(')));
     expect('AppFrostedNavigationPanel('.allMatches(dock).length, 1);
     expect('index: '.allMatches(dock).length, 5);
   });
