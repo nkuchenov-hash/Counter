@@ -1410,28 +1410,6 @@ _editor.insertAfter(
     );
   }
 
-  int _numberedOrdinal(int index) {
-    final document = _editor.document;
-    if (!identical(_ordinalDocument, document)) {
-      // Compute ordinals once per document revision. The old backwards scan
-      // was quadratic for a long list and ran during keyboard-driven rebuilds.
-      final blocks = _editor.visibleBlocks;
-      final ordinals = List<int>.filled(blocks.length, 1);
-      var ordinal = 0;
-      for (var i = 0; i < blocks.length; i++) {
-        ordinal = blocks[i].type == NoteBlockType.numberedList
-            ? ordinal + 1
-            : 0;
-        ordinals[i] = ordinal == 0 ? 1 : ordinal;
-      }
-      _ordinalCache = ordinals;
-      _ordinalDocument = document;
-    }
-    return index >= 0 && index < _ordinalCache.length
-        ? _ordinalCache[index]
-        : 1;
-  }
-
   Widget? _desktopDrawingPreview(BuildContext context, NoteBlock block) {
     if (block.type != NoteBlockType.drawing ||
         MediaQuery.sizeOf(context).width < 768) {
@@ -1501,7 +1479,7 @@ _editor.insertAfter(
     Widget item = NotesEditorBlockItem(
       block: block,
       index: index,
-      numberedOrdinal: _numberedOrdinal(index),
+      numberedOrdinal: _notesOrdinalFor(this, index),
       previousBlockType: index > 0 ? blocks[index - 1].type : null,
       active: active,
       editing: editable && !_blockSelectionMode && _editingBlockId == block.id,
