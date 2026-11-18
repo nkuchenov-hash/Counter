@@ -18,20 +18,17 @@ class PhoneShellBottomNavigation extends StatelessWidget {
     required this.viewportWidth,
     required this.selectedIndex,
     required this.onDestinationSelected,
-    this.seamlessGlass = false,
   });
 
   final double viewportWidth;
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
-  final bool seamlessGlass;
 
   @override
   Widget build(BuildContext context) {
     return ShellCompactBottomNav(
       viewportWidth: viewportWidth,
       selectedIndex: selectedIndex,
-      seamlessGlass: seamlessGlass,
       onDestinationSelected: onDestinationSelected,
     );
   }
