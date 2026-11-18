@@ -806,7 +806,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
                   ? Center(child: Text(t(loc, 'category_search_empty')))
                   : ListView.separated(
                       key: const ValueKey('category-stationary-tree'),
-                      padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
+                      padding: EdgeInsets.fromLTRB(
+                        12, 4, 12,
+                        wide ? 24 : 116 + MediaQuery.viewPaddingOf(context).bottom,
+                      ),
                       itemCount: visible.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 4),
                       itemBuilder: (context, index) =>
@@ -832,12 +835,14 @@ class _CategoriesPageState extends State<CategoriesPage> {
     );
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: wide ? null : AppBar(
         title: Text(t(loc, 'categories_title')),
         actions: [controls, const SizedBox(width: 8)],
       ),
       body: SafeArea(
         top: !wide,
+        bottom: wide,
         child: Column(
           children: [
             if (wide) ...[
