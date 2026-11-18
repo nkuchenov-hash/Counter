@@ -98,6 +98,15 @@ jobs:
             if [[ "$attempt" != "3" ]]; then sleep 5; fi
           done
           if [[ "$good" != "true" ]]; then echo "::error::PocketBase unavailable, do not publish broken login APK"; exit 1; fi
+      # ubuntu-latest currently defaults to Java 25, which the pinned Gradle
+      # wrapper cannot parse (Unsupported class file major version 69).
+      # Keep the Android release build on a compatible, fixed JDK.
+      - name: Set up Java 17 for Android Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
         with:
