@@ -1,3 +1,10 @@
+## Dark Settings chrome and layered palette (2026-11-19)
+
+- The dark theme is one achromatic graphite system owned by `AppColors.darkColorScheme()`: canvas `#101010`, low `#181818`, container `#212121`, raised card `#282828`, prominent input `#373737`. Primary text/actions use `#F2F2F2`, secondary text `#BDBDBD`, outlines `#5A5A5A`/`#444444`. Light-theme tones are unchanged.
+- Dark Settings category icons preserve their existing saved hue families but use a 18% shade-500 tint blended over the raised card, with readable shade-200 pictograms. Do not change persistent category/tag swatches; dark text/icon rendering is presentation-only.
+- The mobile Settings Back action is `AppIconButton(size: l, shape: circular, variant: frosted)`: **48dp**, white/high-contrast glyph, 1dp circular rim, 12px backdrop blur fully clipped within the circle. No shadow, top glint, external gradient, or oversized blur region. The canonical `AppGlassEdgeFade` behind the fixed header remains unchanged.
+- Appearance/theme previews derive from the actual light/dark `ColorScheme`; screenshots and the theme picker must show the same palette.
+
 ## Approved seamless glass feather — canonical design-system component (2026-11-18)
 
 - The user-approved top and bottom fades are **the single canonical `AppGlassEdgeFade`**, owned by `lib/core/widgets/app_glass_edge_fade.dart`. Never implement new or per-screen replacement gradients, flat opacity masks, full-width navigation backplates, or independent frosted-header effects.
