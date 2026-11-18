@@ -600,6 +600,8 @@ void main() {
       'lib/features/shared/planning_task_edit_sheet.dart',
     ).readAsStringSync();
     expect(planning, contains('debounce: const Duration(milliseconds: 1500)'));
+    expect(planning, contains('_onPlanFieldChanged(fromNotes: true);'));
+    expect(planning, contains('delay: fromNotes ? const Duration(seconds: 15) : null'));
     expect(host, contains('return Padding('));
     expect(host, isNot(contains('return AnimatedPadding(')));
   });
