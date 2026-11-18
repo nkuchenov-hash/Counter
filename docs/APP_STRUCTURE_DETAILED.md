@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `6405da42` on 2026-11-18.**
+**Generated from input HEAD `de5e9472` on 2026-11-18.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -13281,7 +13281,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppGlassEdge`, `AppGlassEdgeFade`, `AppFrostedNavigationPanel`).
 - **Key code names:** `AppGlassEdge`, `AppGlassEdgeFade`, `AppFrostedNavigationPanel`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/phone/phone_shell_frame.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/settings/categories/category_list_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13298,7 +13298,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_glass_edge_fade`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/phone/phone_shell_frame.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/settings/categories/category_list_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
