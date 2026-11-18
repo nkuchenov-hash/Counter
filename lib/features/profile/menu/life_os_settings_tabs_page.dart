@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:ui' show ImageFilter;
 
 import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/widgets/app_glass_edge_fade.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
 
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/life_color_compat.dart';
@@ -139,12 +139,21 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   _SettingsTab get selected => _tabs.firstWhere((e) => e.id == _tab);
 
   Widget _symbol(AppMenuIconRole icon, MaterialColor family) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
+    final dark = scheme.brightness == Brightness.dark;
+    // Keep saved category swatches unchanged. Dark chrome uses a controlled,
+    // lighter translucent plate over the actual card, not a muddy 900 shade.
+    final plate = dark
+        ? Color.alphaBlend(
+            family[500]!.withValues(alpha: 0.18),
+            scheme.surfaceContainerHigh,
+          )
+        : family[100]!;
     return SizedBox(
       height: 42, width: 42,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: dark ? family[900]!.withValues(alpha: 0.55) : family[100],
+          color: plate,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(AppMenuIcons.icon(icon), size: 22,
@@ -636,10 +645,13 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
             child: Row(children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: kCategoryNeutral[100],
+                backgroundColor: scheme.brightness == Brightness.dark
+                    ? scheme.surfaceContainerHighest : kCategoryNeutral[100],
                 child: Text(name.isEmpty ? '•' : name.substring(0, 1).toUpperCase(),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: kCategoryNeutral[800], fontWeight: FontWeight.w600)),
+                    color: scheme.brightness == Brightness.dark
+                      ? scheme.onSurface : kCategoryNeutral[800],
+                  fontWeight: FontWeight.w600)),
               ),
               const SizedBox(width: 14),
               Expanded(child: Column(
@@ -688,10 +700,13 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
         const SizedBox(height: 10),
         Center(child: CircleAvatar(
           radius: 48,
-          backgroundColor: kCategoryNeutral[100],
+          backgroundColor: scheme.brightness == Brightness.dark
+                    ? scheme.surfaceContainerHighest : kCategoryNeutral[100],
           child: Text(name.isEmpty ? '•' : name.substring(0, 1).toUpperCase(),
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-              color: kCategoryNeutral[800], fontWeight: FontWeight.w500)),
+              color: scheme.brightness == Brightness.dark
+                    ? scheme.onSurface : kCategoryNeutral[800],
+                fontWeight: FontWeight.w500)),
         )),
         const SizedBox(height: 14),
         Text(name.isEmpty ? tr('Мой профиль', 'My profile') : name,
@@ -739,7 +754,8 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 5),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, color: family[600], size: 23),
+          Icon(icon, color: Theme.of(context).brightness == Brightness.dark
+              ? family[200] : family[600], size: 23),
           const SizedBox(height: 6),
           Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
@@ -773,7 +789,11 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
         padding: EdgeInsets.fromLTRB(16, topInset + 12, 16, 12),
         child: Row(children: [
           if (_mobileDetailOpen) ...[
-            _GlassySettingsBackButton(
+            AppIconButton(
+              icon: AppMenuIcons.icon(AppMenuIconRole.back),
+              variant: AppIconButtonVariant.frosted,
+              shape: AppIconButtonShape.circular,
+              size: AppIconButtonSize.l,
               onPressed: _backToMobileSettings,
               tooltip: tr('Назад к настройкам', 'Back to settings')),
             const SizedBox(width: 16),
@@ -844,11 +864,17 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
           ChoiceChip(
             label: Text(_ru ? tab.ru : tab.en),
             avatar: Icon(AppMenuIcons.icon(tab.icon), size: 18,
-                color: tab.family[700]),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? tab.family[200] : tab.family[700]),
             selected: _tab == tab.id,
-            selectedColor: tab.family[100],
+            selectedColor: Theme.of(context).brightness == Brightness.dark
+                ? Color.alphaBlend(tab.family[500]!.withValues(alpha: 0.18),
+                    Theme.of(context).colorScheme.surfaceContainerHigh)
+                : tab.family[100],
             side: BorderSide(color: _tab == tab.id
-                ? tab.family[500]! : Theme.of(context).colorScheme.outlineVariant),
+                ? (Theme.of(context).brightness == Brightness.dark
+                    ? tab.family[400]! : tab.family[500]!)
+                : Theme.of(context).colorScheme.outlineVariant),
             onSelected: (_) => _choose(tab.id),
           ),
       ],
@@ -937,62 +963,4 @@ class _MobileSettingsBounceBehavior extends MaterialScrollBehavior {
   @override
   ScrollPhysics getScrollPhysics(BuildContext context) =>
       const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
-}
-
-/// Tecno-inspired circular frosted Back control with a real backdrop blur.
-/// Frosted Back control: a bright rim and top glint stay visible on dark glass.
-class _GlassySettingsBackButton extends StatelessWidget {
-  const _GlassySettingsBackButton({
-    required this.onPressed, required this.tooltip,
-  });
-  final VoidCallback onPressed;
-  final String tooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final dark = scheme.brightness == Brightness.dark;
-    return Tooltip(message: tooltip, child: DecoratedBox(
-      decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: [
-        BoxShadow(
-          color: dark ? AppNeutralTones.white.withValues(alpha: 0.07)
-              : scheme.shadow.withValues(alpha: 0.13),
-          blurRadius: 22, offset: const Offset(0, 5)),
-      ]),
-      child: SizedBox(height: 56, width: 56, child: ClipOval(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft, end: Alignment.bottomRight,
-                colors: dark
-                  ? [AppNeutralTones.white.withValues(alpha: 0.29),
-                     AppNeutralTones.white.withValues(alpha: 0.12)]
-                  : [AppNeutralTones.white.withValues(alpha: 0.91),
-                     AppNeutralTones.white.withValues(alpha: 0.44)],
-              ),
-              border: Border.all(
-                color: AppNeutralTones.white.withValues(
-                  alpha: dark ? 0.43 : 0.93), width: 1.2),
-            ),
-            child: Stack(children: [
-              Align(alignment: Alignment.topCenter, child: Container(
-                width: 31, height: 2,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(2),
-                  color: AppNeutralTones.white.withValues(
-                    alpha: dark ? 0.46 : 0.80)),
-              )),
-              Material(type: MaterialType.transparency, child: InkWell(
-                onTap: onPressed, customBorder: const CircleBorder(),
-                child: Center(child: Icon(Icons.arrow_back_rounded,
-                  size: 27, color: scheme.onSurface)),
-              )),
-            ]),
-          ),
-        ),
-      )),
-    ));
-  }
 }
