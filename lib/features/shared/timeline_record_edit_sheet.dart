@@ -60,8 +60,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   bool _plansLoading = false;
   bool _plansLoaded = false;
   bool _notesEditorFocused = false;
-  // Keep compact Record chrome while Android IME briefly shifts focus.
-  // Do not rebuild metadata or move the caret under the keyboard.
+  // Keep Record chrome stable across Android keyboard focus changes.
   bool _notesImeSessionActive = false;
   // Android may briefly move focus through the IME/selection overlay.
   // Keep the compact notes layout until the editor genuinely loses focus.
@@ -185,6 +184,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       clearSourcePlan: planPatch.clear,
       sourcePlanPocketRecordId: planPatch.id,
       bypassConflictCheck: true,
+      alreadyAppliedOptimistically: true,
     );
   }
   // Commit the latest Notes draft locally before background sync.
