@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:counter/core/app_control_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -13,6 +15,9 @@ enum AppIconButtonVariant {
 
   /// Destructive icon action.
   danger,
+
+  /// Clipped, translucent circular control; blur never escapes its bounds.
+  frosted,
 }
 
 enum AppIconButtonShape { rounded, circular }
@@ -87,13 +92,14 @@ class AppIconButton extends StatelessWidget {
       if (states.contains(WidgetState.selected) || selected) {
         return switch (variant) {
           AppIconButtonVariant.danger => scheme.errorContainer,
+          AppIconButtonVariant.frosted => null,
           _ => scheme.primary,
         };
       }
       return switch (variant) {
         AppIconButtonVariant.standard || AppIconButtonVariant.subtle => null,
         AppIconButtonVariant.filled => scheme.secondaryContainer,
-        AppIconButtonVariant.danger => null,
+        AppIconButtonVariant.danger || AppIconButtonVariant.frosted => null,
       };
     }
 
@@ -114,6 +120,7 @@ class AppIconButton extends StatelessWidget {
         ),
         AppIconButtonVariant.filled => scheme.onSecondaryContainer,
         AppIconButtonVariant.danger => scheme.error,
+        AppIconButtonVariant.frosted => scheme.onSurface,
       };
     }
 
@@ -139,7 +146,7 @@ class AppIconButton extends StatelessWidget {
       padding: const WidgetStatePropertyAll(EdgeInsets.zero),
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       shape: WidgetStatePropertyAll(
-        shape == AppIconButtonShape.circular
+        shape == AppIconButtonShape.circular || variant == AppIconButtonVariant.frosted
             ? const CircleBorder()
             : RoundedRectangleBorder(borderRadius: radius),
       ),
@@ -160,19 +167,45 @@ class AppIconButton extends StatelessWidget {
           )
         : Icon(icon, size: _iconSize);
 
+    final button = IconButton(
+      tooltip: tooltip,
+      style: _style(context),
+      iconSize: _iconSize,
+      isSelected: selected,
+      onPressed: effectiveOnPressed,
+      icon: iconWidget,
+    );
+    // A local shadow/glint previously produced an oversized halo around
+    // Settings Back. A clipped backdrop is the complete glass boundary;
+    // no blur, shadow or gradient may paint outside the 48dp circle.
+    final Widget painted = variant == AppIconButtonVariant.frosted
+        ? ClipOval(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: scheme.onSurface.withValues(
+                    alpha: scheme.brightness == Brightness.dark ? 0.19 : 0.06,
+                  ),
+                  border: Border.all(
+                    color: scheme.onSurface.withValues(
+                      alpha: scheme.brightness == Brightness.dark ? 0.42 : 0.18,
+                    ),
+                    width: 1,
+                  ),
+                ),
+                child: button,
+              ),
+            ),
+          )
+        : button;
     return Semantics(
       label: tooltip,
       button: true,
       selected: selected,
       enabled: effectiveOnPressed != null,
-      child: IconButton(
-        tooltip: tooltip,
-        style: _style(context),
-        iconSize: _iconSize,
-        isSelected: selected,
-        onPressed: effectiveOnPressed,
-        icon: iconWidget,
-      ),
+      child: painted,
     );
   }
 }

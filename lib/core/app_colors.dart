@@ -64,11 +64,11 @@ abstract final class AppColors {
   // Chevrons must be less prominent than labels; dividers must remain
   // visible on white cards even while neighboring rows are hovered.
   static const Color settingsChevron = AppNeutralTones.gray400;
-  static const Color darkSettingsChevron = AppNeutralTones.gray500;
+  static const Color darkSettingsChevron = Color(0xFF9A9A9A);
   // Soft, still visible 1px separators against white/dark card surfaces.
   // Use the shared neutral ramp; avoid the former harsh 300/600 contrast.
   static const Color settingsDivider = AppNeutralTones.gray200;
-  static const Color darkSettingsDivider = Color(0xFF292929);
+  static const Color darkSettingsDivider = Color(0xFF3B3B3B);
 
   // --- Semantic (success only — not default action color) ---
   static const Color success = Color(0xFF2E7D32);
@@ -86,14 +86,15 @@ abstract final class AppColors {
   static const Color orangeTagText = Color(0xFFD95400);
 
   // --- Dark surfaces ---
-  // True Black adaptation of the existing Life OS visual system.
-  // Keep all layouts, component geometry, typography, and category colors.
-  static const Color darkAppBackground = AppNeutralTones.black;
-  static const Color darkCardSurface = Color(0xFF151515);
-  static const Color darkActionPrimary = AppNeutralTones.gray200;
-  static const Color onDarkActionPrimary = AppNeutralTones.gray900;
-  static const Color darkActionPrimaryContainer = AppNeutralTones.gray800;
-  static const Color onDarkActionPrimaryContainer = AppNeutralTones.gray200;
+  // Layered, achromatic graphite palette. The canvas is no longer pure black:
+  // cards, controls, muted labels and outlines must remain visually distinct.
+  // Semantic category/tag colors are not modified or persisted by theme changes.
+  static const Color darkAppBackground = Color(0xFF101010);
+  static const Color darkCardSurface = Color(0xFF212121);
+  static const Color darkActionPrimary = Color(0xFFF2F2F2);
+  static const Color onDarkActionPrimary = Color(0xFF171717);
+  static const Color darkActionPrimaryContainer = Color(0xFF353535);
+  static const Color onDarkActionPrimaryContainer = Color(0xFFF2F2F2);
 
   static ColorScheme lightColorScheme() => const ColorScheme(
         brightness: Brightness.light,
@@ -137,13 +138,13 @@ abstract final class AppColors {
         onPrimary: onDarkActionPrimary,
         primaryContainer: darkActionPrimaryContainer,
         onPrimaryContainer: onDarkActionPrimaryContainer,
-        secondary: Color(0xFFCACACA),
+        secondary: Color(0xFFD5D5D5),
         onSecondary: onDarkActionPrimary,
-        secondaryContainer: Color(0xFF242424),
+        secondaryContainer: Color(0xFF303030),
         onSecondaryContainer: darkActionPrimary,
-        tertiary: Color(0xFF9E9E9E),
+        tertiary: Color(0xFFC2C2C2),
         onTertiary: onDarkActionPrimary,
-        tertiaryContainer: Color(0xFF202020),
+        tertiaryContainer: Color(0xFF292929),
         onTertiaryContainer: darkActionPrimary,
         error: Color(0xFFF2B8B5),
         onError: Color(0xFF601410),
@@ -151,14 +152,14 @@ abstract final class AppColors {
         onErrorContainer: Color(0xFFF9DEDC),
         surface: darkAppBackground,
         onSurface: darkActionPrimary,
-        surfaceContainerHighest: Color(0xFF292929),
-        surfaceContainerHigh: Color(0xFF202020),
+        surfaceContainerHighest: Color(0xFF373737),
+        surfaceContainerHigh: Color(0xFF282828),
         surfaceContainer: darkCardSurface,
-        surfaceContainerLow: Color(0xFF080808),
+        surfaceContainerLow: Color(0xFF181818),
         surfaceContainerLowest: darkAppBackground,
-        onSurfaceVariant: Color(0xFFA3A3A3),
-        outline: Color(0xFF393939),
-        outlineVariant: Color(0xFF2B2B2B),
+        onSurfaceVariant: Color(0xFFBDBDBD),
+        outline: Color(0xFF5A5A5A),
+        outlineVariant: Color(0xFF444444),
         shadow: Colors.black,
         scrim: Colors.black,
         inverseSurface: darkActionPrimary,
