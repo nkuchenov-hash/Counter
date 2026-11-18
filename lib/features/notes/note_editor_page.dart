@@ -107,6 +107,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   final Map<String, TextEditingController> _captionControllers = {};
   final Map<String, FocusNode> _focusNodes = {};
   final Map<String, TextSelection> _lastSelections = {};
+  NoteDocument? _ordinalDocument;
+  List<int> _ordinalCache = const <int>[];
   final Set<String> _pendingImeBlockSplits = <String>{};
   final Map<String, Timer> _imeSplitTimers = <String, Timer>{};
   late final NotesAudioPlaybackController _audioPlayback;
@@ -1409,13 +1411,25 @@ _editor.insertAfter(
   }
 
   int _numberedOrdinal(int index) {
-    var ordinal = 1;
-    for (var cursor = index - 1; cursor >= 0; cursor--) {
-      if (_editor.visibleBlocks[cursor].type != NoteBlockType.numberedList)
-        break;
-      ordinal++;
+    final document = _editor.document;
+    if (!identical(_ordinalDocument, document)) {
+      // Compute ordinals once per document revision. The old backwards scan
+      // was quadratic for a long list and ran during keyboard-driven rebuilds.
+      final blocks = _editor.visibleBlocks;
+      final ordinals = List<int>.filled(blocks.length, 1);
+      var ordinal = 0;
+      for (var i = 0; i < blocks.length; i++) {
+        ordinal = blocks[i].type == NoteBlockType.numberedList
+            ? ordinal + 1
+            : 0;
+        ordinals[i] = ordinal == 0 ? 1 : ordinal;
+      }
+      _ordinalCache = ordinals;
+      _ordinalDocument = document;
     }
-    return ordinal;
+    return index >= 0 && index < _ordinalCache.length
+        ? _ordinalCache[index]
+        : 1;
   }
 
   Widget? _desktopDrawingPreview(BuildContext context, NoteBlock block) {
