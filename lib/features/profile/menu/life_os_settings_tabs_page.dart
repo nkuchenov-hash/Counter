@@ -870,7 +870,10 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
               child: KeyedSubtree(
                 key: ValueKey(_mobileDetailOpen ? 'detail-$_tab' : 'settings-home'),
                 child: AppSettingsPageBody(transparentBackground: true, children: [
-                  SizedBox(height: 108 + MediaQuery.viewPaddingOf(context).top),
+                  // Compact first-screen spacing. The approved glass feather
+                  // and pinned heading live in a separate overlay above this
+                  // scrolling content; neither needs any visual adjustment.
+                  SizedBox(height: 56 + MediaQuery.viewPaddingOf(context).top),
                   _mobileSettings(),
                   // Scroll the final item above the floating glass navigation.
                   const SizedBox(height: 20),
