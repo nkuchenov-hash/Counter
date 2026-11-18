@@ -259,7 +259,7 @@ class _MobileNotesLibrary extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     // One screen gutter for tabs and cards; full-width folder paper.
-    return SafeArea(top: false, child: Column(
+    return SafeArea(top: false, bottom: false, child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
@@ -309,7 +309,10 @@ class _MobileNotesLibrary extends StatelessWidget {
               categoryId: category.filterCategoryId,
               edgeToEdge: true, child: content)),
             Positioned(
-              left: 0, right: 0, bottom: 0,
+              left: 0, right: 0,
+              // Floating search stays ABOVE the shared dock while note cards
+              // are free to scroll behind its translucent gradient.
+              bottom: 80 + MediaQuery.viewPaddingOf(context).bottom,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
                 child: Row(
