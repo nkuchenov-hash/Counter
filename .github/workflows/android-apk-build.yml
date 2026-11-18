@@ -126,6 +126,9 @@ jobs:
       - name: Verify cloud-first sleep synchronization contract
         run: flutter test test/sleep_cloud_settings_contract_test.dart
 
+      - name: Verify timezone settings regression
+        run: flutter test test/timezone_quick_preferences_test.dart
+
       - name: Analyze runtime app
         run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 
@@ -245,6 +248,10 @@ jobs:
           done
 
       - name: Build one canonical ARM64 release APK
+        # PR build may compile with a debug cert for CI verification only.
+        # Published builds never enable this flag and must use the v2 key.
+        env:
+          LIFE_OS_ALLOW_DEBUG_RELEASE_FOR_CI: ${{ github.event_name == 'pull_request' && 'true' || 'false' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -267,7 +274,18 @@ jobs:
             exit 1
           }
           "$apksigner" verify --verbose LIFE-OS-Android-arm64.apk >/dev/null
-          echo "Verified single canonical package: $actual."
+          expected_fp="$(keytool -exportcert -keystore "$LIFE_OS_KEYSTORE_PATH" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" |
+            openssl x509 -inform DER -noout -fingerprint -sha256 |
+            cut -d= -f2 | tr -d ':' | tr '[:lower:]' '[:upper:]')"
+          actual_fp="$("$apksigner" verify --print-certs LIFE-OS-Android-arm64.apk |
+            awk '/Signer #1 certificate SHA-256 digest:/ {print $NF; exit}' |
+            tr '[:lower:]' '[:upper:]')"
+          if [[ -z "$expected_fp" || -z "$actual_fp" || "$expected_fp" != "$actual_fp" ]]; then
+            echo "::error::APK certificate differs from the permanent LIFE OS v2 signing identity. Aborting distribution."
+            exit 1
+          fi
+          echo "Verified canonical package $actual and permanent signing identity SHA-256 $actual_fp."
 
       # PR builds deliberately use the Android debug key because release
       # secrets are unavailable to pull_request jobs. Do not distribute these
