@@ -8,6 +8,7 @@ on:
       - 'lib/**'
       - 'test/pocketbase_production_origin_test.dart'
       - 'test/life_semantic_palette_test.dart'
+      - 'test/dark_settings_chrome_test.dart'
       - 'test/shell_form_factor_test.dart'
       - 'scripts/audit/canonical_navigation_law.py'
       - 'test/record_notes_ime_stability_test.dart'
@@ -38,6 +39,7 @@ on:
       - 'lib/**'
       - 'test/pocketbase_production_origin_test.dart'
       - 'test/life_semantic_palette_test.dart'
+      - 'test/dark_settings_chrome_test.dart'
       - 'test/shell_form_factor_test.dart'
       - 'scripts/audit/canonical_navigation_law.py'
       - 'test/record_notes_ime_stability_test.dart'
@@ -130,6 +132,9 @@ jobs:
 
       - name: Verify shared LIFE OS semantic palette
         run: flutter test test/life_semantic_palette_test.dart
+
+      - name: Verify readable dark palette and clipped Settings Back
+        run: flutter test test/dark_settings_chrome_test.dart
 
       - name: Verify persistent People/Menu shell and styling contracts
         run: flutter test test/shell_form_factor_test.dart
