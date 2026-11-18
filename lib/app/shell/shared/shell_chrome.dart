@@ -280,7 +280,10 @@ mixin ShellChrome on ShellLifecycle, ShellMoreMenu {
                                     left: 0,
                                     right: 0,
                                     bottom: 0,
-                                    height: 126,
+                                    // Extend the Settings feather farther into
+                                    // scrolling content so its near-zero tail
+                                    // disappears before reaching the dock.
+                                    height: settingsGlass ? 176 : 126,
                                     child: RepaintBoundary(
                                       child: AppGlassEdgeFade(
                                         edge: AppGlassEdge.bottom,
