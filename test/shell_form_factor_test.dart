@@ -90,8 +90,12 @@ void main() {
     expect(settings, contains('clipBehavior: Clip.none'));
     expect(settings, contains('height: topInset + 162'));
     expect(settings, contains('blurSigma: 16'));
-    expect(shell, contains('height: settingsGlass ? 176 : 126'));
-    expect(shell, contains('blurSigma: settingsGlass ? 14 : 0'));
+    // All compact destinations (Timeline, Planning, Calendar, Lists, Settings)
+    // use the same approved bottom feather, not tab-dependent geometry/blur.
+    expect(shell, contains('height: 176,'));
+    expect(shell, contains('blurSigma: 14,'));
+    expect(shell, isNot(contains('height: settingsGlass ? 176 : 126')));
+    expect(shell, isNot(contains('blurSigma: settingsGlass ? 14 : 0')));
     // Initial content starts closer to the pinned title; title/glass dimensions
     // remain untouched and scroll overlap behind the pinned header still works.
     expect(settings, contains('SizedBox(height: 56 + MediaQuery.viewPaddingOf(context).top)'));
