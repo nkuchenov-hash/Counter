@@ -251,7 +251,7 @@ void main() {
     expect(notes, contains('AppIconButtonShape.circular'));
     expect(bulk, contains('AppButton.ghost('));
     expect(bulk, contains('AppIconButtonVariant.danger'));
-    expect(settings, contains('108 + MediaQuery.viewPaddingOf(context).top'));
+    expect(settings, contains('56 + MediaQuery.viewPaddingOf(context).top'));
   });
 
   group('single settings navigation', () {
