@@ -1,3 +1,8 @@
+## [2026-11-18] — Public Android ARM64 installer distribution [release pending]
+
+- Added standalone release publishing workflow to build the signed-by-project ARM64 Android release APK and attach it to the rolling public GitHub Release `life-os-latest`, with a checksum and a reproducible GitHub Actions artifact.
+- Stable installer asset: `LIFE-OS-Android-arm64.apk`. The workflow verifies the published asset before completion. No application runtime or PocketBase schema changes.
+
 ## [2026-11-18] — Inline language, opt-in device timezone, quick favorites [verification pending]
 
 - Settings → Interface now contains a searchable list of every registered UI language, in-place (no language radio buttons and no navigation to a separate time/language page).
