@@ -229,6 +229,10 @@ class TimelineLazyRecordListState extends State<TimelineLazyRecordList> {
       padding: EdgeInsets.symmetric(
         horizontal: desktop ? 0 : 12,
         vertical: 12,
+      ).copyWith(
+        // The feed extends under the dock. Extra scroll extent lets the
+        // final record be positioned fully ABOVE the floating controls.
+        bottom: desktop ? 12 : 116 + MediaQuery.viewPaddingOf(context).bottom,
       ),
       physics: const AlwaysScrollableScrollPhysics(),
       cacheExtent: 320,
