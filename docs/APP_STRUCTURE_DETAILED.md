@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `4e9c752c` on 2026-11-18.**
+**Generated from input HEAD `828637cc` on 2026-11-18.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -13427,8 +13427,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Shared design-system widget — app settings breadcrumb bar. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What this is:** Shared design-system widget — app settings breadcrumb bar.
+- **Human purpose:** Shared design-system widget — Shared parent-labelled back header and canonical frosted chrome for secondary Settings routes. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — Shared parent-labelled back header and canonical frosted chrome for secondary Settings routes.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **Contents:** Canonical Flutter widget (`AppSettingsBreadcrumbBar`).
 - **Key code names:** `AppSettingsBreadcrumbBar`
@@ -13438,15 +13438,15 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared design system
-- **Responsibilities:** app settings breadcrumb bar
+- **Responsibilities:** Shared parent-labelled back header and canonical frosted chrome for secondary Settings routes
 - **When to open:** When behavior tied to `app_settings_breadcrumb_bar.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: app settings breadcrumb bar
+- **Connected to:** APP_STRUCTURE role: Shared parent-labelled back header and canonical frosted chrome for secondary Settings routes
 
 RU:
 
-- **Зачем файл человеку:** Общий виджет design system — app settings breadcrumb bar. Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Что это:** Общий виджет design system — app settings breadcrumb bar.
+- **Зачем файл человеку:** Общий виджет design system — Shared parent-labelled back header and canonical frosted chrome for secondary Settings routes. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — Shared parent-labelled back header and canonical frosted chrome for secondary Settings routes.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_settings_breadcrumb_bar`).
 - **Роль в репозитории:** shared foundation
@@ -13455,7 +13455,7 @@ RU:
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** общий design system
-- **Обязанности:** Реализует в UI: app settings breadcrumb bar.
+- **Обязанности:** Реализует в UI: Shared parent-labelled back header and canonical frosted chrome for secondary Settings routes.
 - **Когда открывать:** Когда ломается поведение, связанное с `app_settings_breadcrumb_bar.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
