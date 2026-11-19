@@ -1,3 +1,10 @@
+## [2026-11-19] — Price Reporter New York default scheduling and timezone favorites [verification pending]
+
+- Interpret each category default plan time in its own configured IANA zone before free-slot/cascade comparisons. Price Reporter legacy 09:00 defaults without an explicit zone inherit America/New_York rather than the active profile zone. Project to profile wall time for display and persist UTC once; honor New York DST and workday rollover across profile midnight.
+- Show the effective category timezone in the default-time editor; explicit configured category zones continue to take precedence.
+- Canonicalize Moscow/New York favorite IDs, serialize rapid device-local multi-select writes, and use the same profile key in Settings and the header. Show specific save errors rather than silently dropping selections.
+- Added regression cases for two simultaneous favorites, legacy IDs, and 09:00 New York → Moscow winter/summer projection. No PocketBase schema change; real web/Android build and live data checks remain required.
+
 ## [2026-11-19] — Notes local-first draft sessions [verification pending]
 
 - Both Notes editors keep keystrokes entirely in memory: standalone Notes defer Brain/PocketBase sync until 15 seconds of inactivity; Record Notes hand off the latest document snapshot immediately to the host without serializing it or refreshing Timeline.
