@@ -37,10 +37,11 @@ class _DefaultPlanTimesSettingsBlockState
 
   void _selectCategory(int id) {
     final rule = _db.getCategoryRuleById(id);
+    final effective = _db.effectiveDefaultPlanScheduleForCategory(id);
     final current = _db.sanitizeDefaultPlanTime(rule?.defaultPlanTime) ??
-        _db.effectiveDefaultPlanTimeForCategory(id) ??
-        '09:00';
-    final ownTimezone = _db.sanitizeDefaultPlanTimezone(rule?.defaultPlanTimezone);
+        effective?.hhmm ?? '09:00';
+    final ownTimezone = _db.sanitizeDefaultPlanTimezone(rule?.defaultPlanTimezone) ??
+        (effective?.sourceCategoryId == id ? effective?.timezoneIana : null);
     setState(() {
       _selectedCategoryId = id;
       _draftTime = TimeOfDay(
@@ -187,7 +188,7 @@ class _DefaultPlanTimesSettingsBlockState
                     : t(_loc, 'plan_default_time_own').replaceFirst(
                         '%s',
                         _db.formatDefaultPlanTimeWithTimezoneLabel(
-                          selectedOwn, selectedRule?.defaultPlanTimezone)),
+                          selectedOwn, inherited?.timezoneIana)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -263,7 +264,7 @@ class _DefaultPlanTimesSettingsBlockState
                 value: _db.formatDefaultPlanTimeWithTimezoneLabel(
                   _db.sanitizeDefaultPlanTime(
                     _db.getCategoryRuleById(pair.id)?.defaultPlanTime)!,
-                  _db.getCategoryRuleById(pair.id)?.defaultPlanTimezone,
+                  _db.effectiveDefaultPlanScheduleForCategory(pair.id)?.timezoneIana,
                 ),
                 onTap: _saving ? null : () => _selectCategory(pair.id),
                 leading: const Icon(Icons.schedule_rounded),
