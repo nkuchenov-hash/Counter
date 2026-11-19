@@ -446,7 +446,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
     final fixedCategoryClock = categoryStartMinutes != null &&
         categorySchedule?.timezoneIana != null;
     final startMinutes = fixedCategoryClock
-        ? categoryStartMinutes
+        ? categoryStartMinutes!
         : max(
             timelineDayStartHour * 60,
             categoryStartMinutes ?? timelineDayStartHour * 60,
@@ -454,7 +454,7 @@ extension PlanTimeCascadeExtension on DatabaseService {
     // A fixed-zone 8-hour workday may cross midnight in the profile zone.
     // Do not truncate it at profile midnight or the visual grid's end.
     final endMinutes = fixedCategoryClock
-        ? categoryStartMinutes + kPlanCategoryOverloadMinutes
+        ? categoryStartMinutes! + kPlanCategoryOverloadMinutes
         : min(
             min(timelineDayEndHour * 60, 24 * 60),
             categoryStartMinutes != null
