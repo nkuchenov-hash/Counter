@@ -436,31 +436,31 @@ extension PlanTimeCascadeExtension on DatabaseService {
     final duration = explicitDurationMinutes != null && explicitDurationMinutes > 0
         ? explicitDurationMinutes.clamp(1, 24 * 60)
         : resolvePlanDurationMinutesFromTags(tags);
-    final defaultHHmm = effectiveDefaultPlanScheduleForCategory(categoryId)?.hhmm;
-    final parts = defaultHHmm?.split(':');
-    final defaultHour = parts != null && parts.length == 2
-        ? int.tryParse(parts[0])
-        : null;
-    final defaultMinute = parts != null && parts.length == 2
-        ? int.tryParse(parts[1])
-        : null;
-    final hasCategoryWorkStart = defaultHour != null &&
-        defaultMinute != null &&
-        defaultHour >= 0 && defaultHour <= 23 &&
-        defaultMinute >= 0 && defaultMinute <= 59;
-    final categoryStartMinutes = hasCategoryWorkStart
-        ? defaultHour! * 60 + defaultMinute!
-        : null;
-    final startMinutes = max(
-      timelineDayStartHour * 60,
-      categoryStartMinutes ?? timelineDayStartHour * 60,
-    );
-    final endMinutes = min(
-      min(timelineDayEndHour * 60, 24 * 60),
-      hasCategoryWorkStart
-          ? categoryStartMinutes! + kPlanCategoryOverloadMinutes
-          : 24 * 60,
-    );
+    final categorySchedule = effectiveDefaultPlanScheduleForCategory(categoryId);
+    final categoryStart = categoryDefaultStartProfileWallForDay(categoryId, wallDay);
+    // Search and compare in PROFILE wall time; 09:00 New York is 17:00
+    // Moscow in winter and 16:00 in summer, never 09:00 Moscow.
+    final categoryStartMinutes = categoryStart == null
+        ? null
+        : categoryStart.hour * 60 + categoryStart.minute;
+    final fixedCategoryClock = categoryStartMinutes != null &&
+        categorySchedule?.timezoneIana != null;
+    final startMinutes = fixedCategoryClock
+        ? categoryStartMinutes!
+        : max(
+            timelineDayStartHour * 60,
+            categoryStartMinutes ?? timelineDayStartHour * 60,
+          );
+    // A fixed-zone 8-hour workday may cross midnight in the profile zone.
+    // Do not truncate it at profile midnight or the visual grid's end.
+    final endMinutes = fixedCategoryClock
+        ? categoryStartMinutes! + kPlanCategoryOverloadMinutes
+        : min(
+            min(timelineDayEndHour * 60, 24 * 60),
+            categoryStartMinutes != null
+                ? categoryStartMinutes + kPlanCategoryOverloadMinutes
+                : 24 * 60,
+          );
     // An impossible work window must not silently create an invisible card.
     if (duration > endMinutes - startMinutes) return null;
 
@@ -580,7 +580,6 @@ extension PlanTimeCascadeExtension on DatabaseService {
         ? explicitDurationMinutes.clamp(1, 24 * 60)
         : resolvePlanDurationMinutesFromTags(tags);
 
-    String? categoryDefaultTimezoneIana;
     var usedCategoryDefault = false;
     late final DateTime startWall;
     if (explicitStartWall != null) {
@@ -593,40 +592,23 @@ extension PlanTimeCascadeExtension on DatabaseService {
       );
       // The after-last preference cannot override a category's 09:00 (or
       // other configured) default start when a new workday is empty.
-      final categorySchedule = effectiveDefaultPlanScheduleForCategory(categoryId);
-      final hhmm = categorySchedule?.hhmm;
-      final h = hhmm != null && hhmm.length >= 5
-          ? int.tryParse(hhmm.substring(0, 2))
-          : null;
-      final m = hhmm != null && hhmm.length >= 5
-          ? int.tryParse(hhmm.substring(3, 5))
-          : null;
-      if (h != null && m != null && h >= 0 && h < 24 && m >= 0 && m < 60) {
+      final categoryStart = categoryDefaultStartProfileWallForDay(
+        categoryId, wallDay,
+      );
+      if (categoryStart != null) {
         usedCategoryDefault = true;
-        categoryDefaultTimezoneIana = categorySchedule!.timezoneIana;
-        final categoryStart = DateTime(wallDay.year, wallDay.month, wallDay.day, h, m);
         startWall = afterLast.isBefore(categoryStart) ? categoryStart : afterLast;
       } else {
         startWall = afterLast;
       }
     } else {
-      final catSchedule = effectiveDefaultPlanScheduleForCategory(categoryId);
-      final hhmm = catSchedule?.hhmm;
-      final h = hhmm != null && hhmm.length >= 5
-          ? int.tryParse(hhmm.substring(0, 2))
-          : null;
-      final m = hhmm != null && hhmm.length >= 5
-          ? int.tryParse(hhmm.substring(3, 5))
-          : null;
-
-      if (h != null && m != null) {
+      final categoryStart = categoryDefaultStartProfileWallForDay(
+        categoryId, wallDay,
+      );
+      if (categoryStart != null) {
         usedCategoryDefault = true;
-        categoryDefaultTimezoneIana = catSchedule!.timezoneIana;
-        final categoryStart = _snapPlanWallDateTime(
-          DateTime(wallDay.year, wallDay.month, wallDay.day, h, m),
-        );
         startWall = _firstAvailablePlanWallStart(
-          earliestStartWall: categoryStart,
+          earliestStartWall: _snapPlanWallDateTime(categoryStart),
           durationMin: durationMin,
           existingDayPlans: relevantDayPlans,
         );
@@ -679,12 +661,9 @@ extension PlanTimeCascadeExtension on DatabaseService {
     endWall = cascadedProbe.endDateTime ?? endWall;
 
     if (usedCategoryDefault) {
-      final startUtc = wallUtcForCategoryDefaultWall(
-        wallDay: wallDay,
-        hour: resolvedStart.hour,
-        minute: resolvedStart.minute,
-        timezoneIana: categoryDefaultTimezoneIana,
-      );
+      // Collision/cascade already ran in profile wall time. Converting that
+      // wall time again AS the category timezone double-applies the zone.
+      final startUtc = _profileUtcFromWall(resolvedStart).toUtc();
       final endUtc = startUtc.add(Duration(minutes: durationMin));
       return (
         startWall: resolvedStart,

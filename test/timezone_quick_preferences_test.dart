@@ -31,6 +31,53 @@ void main() {
     expect(two.favorites, ['London']);
   });
 
+  test('legacy Moscow and New York identifiers become distinct favorites', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'lifeos.timezone.quick.v1.one.favorites': <String>[
+        'GMT+3', 'America/New_York',
+      ],
+    });
+    final selected = await TimezoneQuickPreferenceStore.load(
+      'one', currentTimezone: 'Moscow',
+    );
+    expect(selected.favorites, <String>['Moscow', 'New York']);
+  });
+
+  test('rapid multi-select writes preserve both Moscow and New York', () async {
+    final first = TimezoneQuickPreferenceStore.setFavorites(
+      'one', <String>['Moscow'],
+    );
+    final second = TimezoneQuickPreferenceStore.setFavorites(
+      'one', <String>['Moscow', 'New York'],
+    );
+    await Future.wait(<Future<void>>[first, second]);
+    final selected = await TimezoneQuickPreferenceStore.load(
+      'one', currentTimezone: 'Moscow',
+    );
+    expect(selected.favorites, <String>['Moscow', 'New York']);
+  });
+
+  test('09:00 New York projects to Moscow with DST, not 09:00 Moscow', () {
+    final winterUtc = wall_clock.wallClockToUtcForIanaId(
+      DateTime(2026, 11, 19, 9), 'America/New_York',
+    );
+    final summerUtc = wall_clock.wallClockToUtcForIanaId(
+      DateTime(2027, 6, 19, 9), 'America/New_York',
+    );
+    expect(winterUtc, DateTime.utc(2026, 11, 19, 14));
+    expect(summerUtc, DateTime.utc(2027, 6, 19, 13));
+    final winterMoscow = wall_clock.toWallClockForLabel(
+      winterUtc, 3, 'Moscow',
+    );
+    final summerMoscow = wall_clock.toWallClockForLabel(
+      summerUtc, 3, 'Moscow',
+    );
+    expect(winterMoscow.hour, 17);
+    expect(summerMoscow.hour, 16);
+    expect(winterMoscow.day, 19);
+    expect(summerMoscow.day, 19);
+  });
+
   test('manual mode never overwrites the profile from the OS', () async {
     var writes = 0;
     final ok = await TimezoneQuickPreferenceStore.reconcileAutomatic(

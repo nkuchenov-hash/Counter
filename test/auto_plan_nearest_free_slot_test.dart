@@ -192,19 +192,24 @@ void main() {
     expect(schedule.endWall, DateTime(2026, 7, 24, 10, 45));
   });
 
-  test('after-last placement is resolved before category default lookup', () {
-    final source = File(
-      'lib/data/plans/plan_time_cascade_helpers.dart',
-    ).readAsStringSync();
-    final afterLastBranch = source.indexOf(
-      '} else if (_planAutoPlacementMode == PlanAutoPlacementMode.afterLastPlan) {',
+  test('after-last placement wins over a free gap earlier in the day', () async {
+    await DatabaseService.instance.setPlanAutoPlacementMode(
+      PlanAutoPlacementMode.afterLastPlan,
     );
-    final categoryDefaultLookup = source.indexOf(
-      'final catSchedule = effectiveDefaultPlanScheduleForCategory(categoryId);',
+    final schedule = DatabaseService.instance.resolveAutoPlanSchedule(
+      wallDay: DateTime(2026, 7, 24),
+      categoryId: 1,
+      tags: const [],
+      existingDayPlans: [
+        _plan('morning', DateTime(2026, 7, 24, 9),
+            DateTime(2026, 7, 24, 10)),
+        _plan('afternoon', DateTime(2026, 7, 24, 14),
+            DateTime(2026, 7, 24, 15)),
+      ],
+      timelineDayStartHour: 8,
     );
-
-    expect(afterLastBranch, greaterThanOrEqualTo(0));
-    expect(categoryDefaultLookup, greaterThan(afterLastBranch));
+    expect(schedule.startWall, DateTime(2026, 7, 24, 15));
+    expect(schedule.endWall, DateTime(2026, 7, 24, 15, 30));
   });
 
   test('explicit plan stays in a gap when its full duration fits', () {

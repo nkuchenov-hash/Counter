@@ -2,6 +2,7 @@
 /// the Brain's single wall-clock authority; device detection is opt-in only.
 library;
 
+import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -19,6 +20,13 @@ abstract final class TimezoneQuickPreferenceStore {
   static String _key(String profileId, String suffix) =>
       'lifeos.timezone.quick.v1.${profileId.trim()}.$suffix';
 
+  static String _canonicalZone(String value) =>
+      catalogEntryForStoredTimezone(value)?.profileValue ?? value.trim();
+
+  // Settings chips can be tapped in rapid succession. Serialize writes so
+  // the older selection cannot finish after and overwrite the newer one.
+  static Future<void> _favoritesWrite = Future<void>.value();
+
   static Future<TimezoneQuickPreferences> load(
     String profileId, {
     required String currentTimezone,
@@ -26,7 +34,7 @@ abstract final class TimezoneQuickPreferenceStore {
     if (profileId.trim().isEmpty) {
       return TimezoneQuickPreferences(
         automatic: false,
-        favorites: [currentTimezone],
+        favorites: [_canonicalZone(currentTimezone)],
       );
     }
     final prefs = await SharedPreferences.getInstance();
@@ -34,7 +42,8 @@ abstract final class TimezoneQuickPreferenceStore {
     return TimezoneQuickPreferences(
       automatic: prefs.getBool(_key(profileId, 'automatic')) ?? false,
       favorites: (stored ?? <String>[currentTimezone])
-          .where((item) => item.trim().isNotEmpty)
+          .map(_canonicalZone)
+          .where((item) => item.isNotEmpty)
           .toSet()
           .toList(growable: false),
     );
@@ -49,13 +58,19 @@ abstract final class TimezoneQuickPreferenceStore {
   static Future<void> setFavorites(
     String profileId,
     List<String> timezoneIds,
-  ) async {
-    if (profileId.trim().isEmpty) return;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      _key(profileId, 'favorites'),
-      timezoneIds.toSet().toList(growable: false),
-    );
+  ) {
+    if (profileId.trim().isEmpty) {
+      return Future<void>.error(StateError('Missing profile for time zone favorites'));
+    }
+    final normalized = timezoneIds.map(_canonicalZone)
+        .where((zone) => zone.isNotEmpty).toSet().toList(growable: false);
+    final save = _favoritesWrite.catchError((_) {}).then((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      final ok = await prefs.setStringList(_key(profileId, 'favorites'), normalized);
+      if (!ok) throw StateError('Could not persist time zone favorites');
+    });
+    _favoritesWrite = save.catchError((_) {});
+    return save;
   }
 
   /// OS time zone, never the VPN exit address or a geolocation service.

@@ -50,13 +50,21 @@ extension CategoryDefaultTimeExtension on DatabaseService {
   effectiveDefaultPlanScheduleForCategory(int categoryId) {
     final path = categoryPathFromRootToLocalId(categoryId);
     final ids = path.isEmpty ? <int>[categoryId] : path.reversed.toList();
+    // Legacy Price Reporter defaults predate default_plan_timezone. They
+    // mean New York business time, never the currently selected profile zone.
+    final priceReporter = ids.any((id) {
+      final name = getCategoryRuleById(id)?.name.trim().toLowerCase() ?? '';
+      return name == 'price reporter' || name == 'price reporter inc.' ||
+          name == 'price reporter inc';
+    });
     for (final id in ids) {
       final rule = getCategoryRuleById(id);
       final own = sanitizeDefaultPlanTime(rule?.defaultPlanTime);
       if (own != null) {
         return (
           hhmm: own,
-          timezoneIana: sanitizeDefaultPlanTimezone(rule?.defaultPlanTimezone),
+          timezoneIana: sanitizeDefaultPlanTimezone(rule?.defaultPlanTimezone) ??
+              (priceReporter ? 'America/New_York' : null),
           sourceCategoryId: id,
         );
       }
@@ -70,6 +78,47 @@ extension CategoryDefaultTimeExtension on DatabaseService {
 
   String? effectiveDefaultPlanTimezoneForCategory(int categoryId) {
     return effectiveDefaultPlanScheduleForCategory(categoryId)?.timezoneIana;
+  }
+
+  /// A category's configured time is in its OWN timezone. Convert that anchor
+  /// to the profile-wall day before collision/search/window arithmetic.
+  /// This also handles a late category hour that is on the previous calendar
+  /// date relative to the profile's selected day.
+  DateTime? categoryDefaultStartProfileWallForDay(
+    int categoryId,
+    DateTime profileWallDay,
+  ) {
+    final schedule = effectiveDefaultPlanScheduleForCategory(categoryId);
+    final hhmm = schedule?.hhmm;
+    if (hhmm == null) return null;
+    final hour = int.tryParse(hhmm.substring(0, 2));
+    final minute = int.tryParse(hhmm.substring(3, 5));
+    if (hour == null || minute == null) return null;
+    final selected = DateTime(
+      profileWallDay.year, profileWallDay.month, profileWallDay.day,
+    );
+    if (schedule!.timezoneIana == null) {
+      return DateTime(selected.year, selected.month, selected.day, hour, minute);
+    }
+
+    DateTime? sameCategoryDay;
+    for (final shift in const <int>[0, -1, 1]) {
+      final categoryDay = DateTime(
+        selected.year, selected.month, selected.day + shift,
+      );
+      final instant = wallUtcForCategoryDefaultWall(
+        wallDay: categoryDay, hour: hour, minute: minute,
+        timezoneIana: schedule.timezoneIana,
+      );
+      final wall = _profileWallFromUtc(instant);
+      if (shift == 0) sameCategoryDay = wall;
+      if (wall.year == selected.year &&
+          wall.month == selected.month &&
+          wall.day == selected.day) {
+        return wall;
+      }
+    }
+    return sameCategoryDay;
   }
 
   DateTime wallUtcForCategoryDefaultWall({
