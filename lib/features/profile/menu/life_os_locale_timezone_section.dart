@@ -26,6 +26,7 @@ class _LifeOsLocaleTimezoneControlsState
   bool _savingTimezone = false;
   bool _timezonePreferencesLoaded = false;
   bool _timezoneLoadStarted = false;
+  int _favoriteChangeRevision = 0;
   String? _deviceTimezone;
   TimezoneQuickPreferences _timezonePreferences =
       const TimezoneQuickPreferences(automatic: false, favorites: []);
@@ -62,8 +63,12 @@ class _LifeOsLocaleTimezoneControlsState
     unawaited(_loadTimezoneControls());
   }
 
-  String get _timezoneProfileId =>
-      DatabaseService.instance.currentProfileId ?? '';
+  String get _timezoneProfileId {
+    // Use the same stable key as the header quick switcher (UserSettings).
+    final db = DatabaseService.instance;
+    final settingsId = db.settings.userId.trim();
+    return settingsId.isNotEmpty ? settingsId : (db.currentProfileId ?? '');
+  }
 
   Future<void> _loadTimezoneControls() async {
     try {
@@ -152,7 +157,9 @@ class _LifeOsLocaleTimezoneControlsState
     try {
       final ok = await DatabaseService.instance.updateTimeZone(zone);
       if (!ok) {
-        AppSnack.failed();
+        AppSnack.show(tr(
+          'Не удалось сохранить часовой пояс в профиле',
+          'Could not save the time zone in your profile'), error: true);
         return;
       }
       await TimezoneQuickPreferenceStore.setAutomatic(
@@ -170,12 +177,14 @@ class _LifeOsLocaleTimezoneControlsState
 
   Future<void> _toggleFavoriteTimezone(String zone, bool selected) async {
     if (!_timezonePreferencesLoaded) return;
+    final revision = ++_favoriteChangeRevision;
     final previous = _timezonePreferences;
+    final canonical = catalogEntryForStoredTimezone(zone)?.profileValue ?? zone;
     final next = previous.favorites.toSet();
     if (selected) {
-      next.add(zone);
+      next.add(canonical);
     } else {
-      next.remove(zone);
+      next.remove(canonical);
     }
     setState(() => _timezonePreferences = TimezoneQuickPreferences(
       automatic: previous.automatic, favorites: next.toList(),
@@ -185,8 +194,12 @@ class _LifeOsLocaleTimezoneControlsState
         _timezoneProfileId, next.toList(),
       );
     } catch (_) {
-      if (mounted) setState(() => _timezonePreferences = previous);
-      AppSnack.failed();
+      // A failed earlier write must not erase a newer chip selection.
+      if (mounted && revision == _favoriteChangeRevision) {
+        setState(() => _timezonePreferences = previous);
+      }
+      AppSnack.show(tr('Не удалось сохранить быстрое переключение',
+          'Could not save quick-switch time zones'), error: true);
     }
   }
 
