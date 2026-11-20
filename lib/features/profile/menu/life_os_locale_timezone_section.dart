@@ -26,6 +26,7 @@ class _LifeOsLocaleTimezoneControlsState
   bool _savingTimezone = false;
   bool _timezonePreferencesLoaded = false;
   bool _timezoneLoadStarted = false;
+  String _loadedTimezoneProfileId = '';
   int _favoriteChangeRevision = 0;
   String? _deviceTimezone;
   TimezoneQuickPreferences _timezonePreferences =
@@ -43,24 +44,16 @@ class _LifeOsLocaleTimezoneControlsState
     });
   }
 
-  Widget _section(String title, List<Widget> rows) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(4, 14, 0, 5),
-        child: Text(title,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurfaceVariant)),
-      ),
-      AppSettingsNavigationGroup(children: rows),
-    ],
-  );
-
   void _ensureTimezoneControlsLoaded() {
-    if (_timezoneLoadStarted) return;
+    final profileId = _timezoneProfileId;
+    // A first frame may precede profile hydration. Do NOT mark anonymous
+    // preferences loaded or write favorites under an empty identity.
+    if (profileId.isEmpty ||
+        _timezoneLoadStarted ||
+        (_timezonePreferencesLoaded &&
+            _loadedTimezoneProfileId == profileId)) return;
     _timezoneLoadStarted = true;
-    unawaited(_loadTimezoneControls());
+    unawaited(_loadTimezoneControls(profileId));
   }
 
   String get _timezoneProfileId {
@@ -70,24 +63,35 @@ class _LifeOsLocaleTimezoneControlsState
     return settingsId.isNotEmpty ? settingsId : (db.currentProfileId ?? '');
   }
 
-  Future<void> _loadTimezoneControls() async {
+  Future<void> _loadTimezoneControls(String profileId) async {
     try {
       final db = DatabaseService.instance;
       final values = await Future.wait<Object?>([
         TimezoneQuickPreferenceStore.load(
-          _timezoneProfileId,
+          profileId,
           currentTimezone: db.settings.preferredTimeZone,
         ),
         TimezoneQuickPreferenceStore.deviceTimezone(),
       ]);
-      if (!mounted) return;
+      if (!mounted || _timezoneProfileId != profileId) return;
       setState(() {
         _timezonePreferences = values[0] as TimezoneQuickPreferences;
         _deviceTimezone = values[1] as String?;
+        _loadedTimezoneProfileId = profileId;
         _timezonePreferencesLoaded = true;
       });
     } catch (_) {
-      if (mounted) setState(() => _timezonePreferencesLoaded = true);
+      if (mounted && _timezoneProfileId == profileId) {
+        // Storage failures must not display a fake, editable saved selection.
+        setState(() {
+          _loadedTimezoneProfileId = profileId;
+          _timezonePreferencesLoaded = false;
+        });
+        AppSnack.show(tr('Не удалось загрузить быстрые часовые пояса',
+            'Could not load quick-switch time zones'), error: true);
+      }
+    } finally {
+      _timezoneLoadStarted = false;
     }
   }
 
@@ -110,7 +114,8 @@ class _LifeOsLocaleTimezoneControlsState
   }
 
   Future<void> _setAutomaticTimezone(bool enabled) async {
-    if (_savingTimezone || !_timezonePreferencesLoaded) return;
+    if (_savingTimezone || !_timezonePreferencesLoaded ||
+        _timezoneProfileId != _loadedTimezoneProfileId) return;
     final previous = _timezonePreferences;
     // Optimistic visual feedback before the platform channel / PocketBase.
     setState(() {
@@ -152,7 +157,8 @@ class _LifeOsLocaleTimezoneControlsState
   }
 
   Future<void> _selectManualTimezone(String zone) async {
-    if (_savingTimezone || !_timezonePreferencesLoaded) return;
+    if (_savingTimezone || !_timezonePreferencesLoaded ||
+        _timezoneProfileId != _loadedTimezoneProfileId) return;
     setState(() => _savingTimezone = true);
     try {
       final ok = await DatabaseService.instance.updateTimeZone(zone);
@@ -176,7 +182,8 @@ class _LifeOsLocaleTimezoneControlsState
   }
 
   Future<void> _toggleFavoriteTimezone(String zone, bool selected) async {
-    if (!_timezonePreferencesLoaded) return;
+    if (!_timezonePreferencesLoaded ||
+        _timezoneProfileId != _loadedTimezoneProfileId) return;
     final revision = ++_favoriteChangeRevision;
     final previous = _timezonePreferences;
     final canonical = catalogEntryForStoredTimezone(zone)?.profileValue ?? zone;
@@ -211,6 +218,13 @@ class _LifeOsLocaleTimezoneControlsState
       initialData: db.settings,
       builder: (context, snapshot) {
         final settings = snapshot.data ?? db.settings;
+        if (_timezoneProfileId.isNotEmpty &&
+            _loadedTimezoneProfileId != _timezoneProfileId &&
+            !_timezoneLoadStarted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _ensureTimezoneControlsLoaded();
+          });
+        }
         final current = settings.preferredTimeZone;
         final options = <String, String>{
           for (final zone in kProfileTimezoneCatalog)
@@ -238,103 +252,110 @@ class _LifeOsLocaleTimezoneControlsState
           settings.primaryLanguage.trim().isNotEmpty
               ? settings.primaryLanguage : settings.language,
         );
-        return _section(tr('Язык и время', 'Language & time'), [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                DropdownMenu<String>(
-                  key: ValueKey('inline-language-$language'),
-                  initialSelection: language,
-                  expandedInsets: EdgeInsets.zero,
-                  enableFilter: true,
-                  enableSearch: true,
-                  label: Text(tr('Язык приложения', 'Application language')),
-                  dropdownMenuEntries: [
-                    for (final code in supportedUiLanguageCodes())
-                      DropdownMenuEntry(
-                        value: code, label: nativeUiLanguageLabel(code)),
-                  ],
-                  onSelected: _savingLanguage
-                      ? null : (next) {
-                          if (next != null) unawaited(_setLanguage(next));
-                        },
-                ),
-                const SizedBox(height: 18),
-                Text(tr('Часовой пояс', 'Time zone'),
-                  style: Theme.of(context).textTheme.titleSmall),
-                const SizedBox(height: 10),
-                SegmentedButton<bool>(
-                  segments: [
-                    ButtonSegment(value: true,
-                      label: Text(tr('Автоматически', 'Automatic'))),
-                    ButtonSegment(value: false,
-                      label: Text(tr('Вручную', 'Manual'))),
-                  ],
-                  selected: {_timezonePreferences.automatic},
-                  onSelectionChanged: !_timezonePreferencesLoaded ||
-                          _savingTimezone
-                      ? null : (values) => unawaited(
-                          _setAutomaticTimezone(values.first)),
-                ),
-                const SizedBox(height: 12),
-                if (_timezonePreferences.automatic)
-                  Text(
-                    _deviceTimezone == null
-                      ? tr('Определение по настройкам устройства — без IP и VPN',
-                          'Uses device settings, not IP or VPN')
-                      : tr('Часовой пояс устройства: $_deviceTimezone',
-                          'Device time zone: $_deviceTimezone'),
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(color: scheme.onSurfaceVariant),
-                  )
-                else
-                  DropdownMenu<String>(
-                    key: ValueKey('inline-timezone-$selectedOption'),
-                    initialSelection: selectedOption,
-                    expandedInsets: EdgeInsets.zero,
-                    enableFilter: true,
-                    enableSearch: true,
-                    label: Text(tr('Выбрать часовой пояс', 'Select time zone')),
-                    dropdownMenuEntries: [
-                      for (final item in options.entries)
-                        DropdownMenuEntry(value: item.key, label: item.value),
-                    ],
-                    onSelected: _savingTimezone
-                        ? null : (next) {
-                            if (next != null && next != current) {
-                              unawaited(_selectManualTimezone(next));
-                            }
-                          },
-                  ),
-                const SizedBox(height: 18),
-                Text(tr('Быстрое переключение', 'Quick switching'),
-                  style: Theme.of(context).textTheme.titleSmall),
-                const SizedBox(height: 4),
-                Text(tr('Отметьте пояса, которые должны быть в быстром меню.',
-                        'Check zones to show in the quick menu.'),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant)),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8, runSpacing: 8,
-                  children: [
-                    for (final entry in favoriteOptions.entries)
-                      FilterChip(
-                        label: Text(entry.value),
-                        selected: _timezonePreferences.favorites
-                            .contains(entry.key),
-                        onSelected: !_timezonePreferencesLoaded ? null
-                          : (selected) => unawaited(
-                              _toggleFavoriteTimezone(entry.key, selected)),
-                      ),
-                  ],
-                ),
-              ],
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Form fields are NOT navigation rows: no whole-panel mouse hover.
+            // Each independent topic has its own canonical settings card.
+            AppSettingsSectionCard(
+              title: tr('Язык', 'Language'),
+              child: DropdownMenu<String>(
+                key: ValueKey('inline-language-$language'),
+                initialSelection: language,
+                expandedInsets: EdgeInsets.zero,
+                enableFilter: true,
+                enableSearch: true,
+                label: Text(tr('Язык приложения', 'Application language')),
+                dropdownMenuEntries: [
+                  for (final code in supportedUiLanguageCodes())
+                    DropdownMenuEntry(
+                      value: code, label: nativeUiLanguageLabel(code)),
+                ],
+                onSelected: _savingLanguage
+                    ? null : (next) {
+                        if (next != null) unawaited(_setLanguage(next));
+                      },
+              ),
             ),
-          ),
-        ]);
+            AppSettingsSectionCard(
+              title: tr('Время', 'Time'),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(tr('Часовой пояс', 'Time zone'),
+                    style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 10),
+                  SegmentedButton<bool>(
+                    segments: [
+                      ButtonSegment(value: true,
+                        label: Text(tr('Автоматически', 'Automatic'))),
+                      ButtonSegment(value: false,
+                        label: Text(tr('Вручную', 'Manual'))),
+                    ],
+                    selected: {_timezonePreferences.automatic},
+                    onSelectionChanged: !_timezonePreferencesLoaded ||
+                            _savingTimezone
+                        ? null : (values) => unawaited(
+                            _setAutomaticTimezone(values.first)),
+                  ),
+                  const SizedBox(height: 12),
+                  if (_timezonePreferences.automatic)
+                    Text(
+                      _deviceTimezone == null
+                        ? tr('Определение по настройкам устройства — без IP и VPN',
+                            'Uses device settings, not IP or VPN')
+                        : tr('Часовой пояс устройства: $_deviceTimezone',
+                            'Device time zone: $_deviceTimezone'),
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: scheme.onSurfaceVariant),
+                    )
+                  else
+                    DropdownMenu<String>(
+                      key: ValueKey('inline-timezone-$selectedOption'),
+                      initialSelection: selectedOption,
+                      expandedInsets: EdgeInsets.zero,
+                      enableFilter: true,
+                      enableSearch: true,
+                      label: Text(tr('Выбрать часовой пояс', 'Select time zone')),
+                      dropdownMenuEntries: [
+                        for (final item in options.entries)
+                          DropdownMenuEntry(value: item.key, label: item.value),
+                      ],
+                      onSelected: _savingTimezone
+                          ? null : (next) {
+                              if (next != null && next != current) {
+                                unawaited(_selectManualTimezone(next));
+                              }
+                            },
+                    ),
+                  const SizedBox(height: 18),
+                  Text(tr('Быстрое переключение', 'Quick switching'),
+                    style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 4),
+                  Text(tr('Отметьте пояса, которые должны быть в быстром меню.',
+                          'Check zones to show in the quick menu.'),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant)),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8, runSpacing: 8,
+                    children: [
+                      for (final entry in favoriteOptions.entries)
+                        FilterChip(
+                          label: Text(entry.value),
+                          selected: _timezonePreferences.favorites
+                              .contains(entry.key),
+                          onSelected: !_timezonePreferencesLoaded ? null
+                            : (selected) => unawaited(
+                                _toggleFavoriteTimezone(entry.key, selected)),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
       },
     );
   }

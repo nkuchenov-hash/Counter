@@ -1,5 +1,6 @@
 import 'package:counter/shared/time/timezone_quick_preferences.dart';
 import 'package:counter/shared/time/wall_clock.dart' as wall_clock;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
@@ -33,26 +34,26 @@ void main() {
 
   test('legacy Moscow and New York identifiers become distinct favorites', () async {
     SharedPreferences.setMockInitialValues(<String, Object>{
-      'lifeos.timezone.quick.v1.one.favorites': <String>[
+      'lifeos.timezone.quick.v1.legacy-aliases.favorites': <String>[
         'GMT+3', 'America/New_York',
       ],
     });
     final selected = await TimezoneQuickPreferenceStore.load(
-      'one', currentTimezone: 'Moscow',
+      'legacy-aliases', currentTimezone: 'Moscow',
     );
     expect(selected.favorites, <String>['Moscow', 'New York']);
   });
 
   test('rapid multi-select writes preserve both Moscow and New York', () async {
     final first = TimezoneQuickPreferenceStore.setFavorites(
-      'one', <String>['Moscow'],
+      'rapid-selection', <String>['Moscow'],
     );
     final second = TimezoneQuickPreferenceStore.setFavorites(
-      'one', <String>['Moscow', 'New York'],
+      'rapid-selection', <String>['Moscow', 'New York'],
     );
     await Future.wait(<Future<void>>[first, second]);
     final selected = await TimezoneQuickPreferenceStore.load(
-      'one', currentTimezone: 'Moscow',
+      'rapid-selection', currentTimezone: 'Moscow',
     );
     expect(selected.favorites, <String>['Moscow', 'New York']);
   });
@@ -81,7 +82,7 @@ void main() {
   test('manual mode never overwrites the profile from the OS', () async {
     var writes = 0;
     final ok = await TimezoneQuickPreferenceStore.reconcileAutomatic(
-      profileId: 'one',
+      profileId: 'manual-preference',
       currentTimezone: 'Moscow',
       saveTimezone: (zone) async {
         writes++;
@@ -90,6 +91,29 @@ void main() {
     );
     expect(ok, true);
     expect(writes, 0);
+  });
+
+  test('browser favorites use IndexedDB and survive old prefs reset', () async {
+    if (!kIsWeb) return;
+    const owner = 'timezone-idb-moscow-new-york-regression-v2';
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'lifeos.timezone.quick.v1.$owner.favorites': <String>['Moscow'],
+      'lifeos.timezone.quick.v1.$owner.automatic': true,
+    });
+    // Browser migration preserves preexisting choices and auto setting.
+    final old = await TimezoneQuickPreferenceStore.load(
+      owner, currentTimezone: 'Moscow');
+    expect(old.favorites, <String>['Moscow']);
+
+    await TimezoneQuickPreferenceStore.setFavorites(
+      owner, <String>['Moscow', 'New York'],
+    );
+    await TimezoneQuickPreferenceStore.setAutomatic(owner, false);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final reloaded = await TimezoneQuickPreferenceStore.load(
+      owner, currentTimezone: 'Moscow');
+    expect(reloaded.favorites, <String>['Moscow', 'New York']);
+    expect(reloaded.automatic, false);
   });
 
   test('system IANA zone outside quick presets follows DST', () {

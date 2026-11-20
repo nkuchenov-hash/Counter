@@ -42,26 +42,16 @@ class HeaderTimezoneQuickSwitcher extends StatelessWidget {
       automatic: quick.automatic,
     );
     if (selected == null || !context.mounted) return;
-    final isAuto = selected == kTimezoneAutomaticSelection;
-    final deviceZone = isAuto
-        ? await TimezoneQuickPreferenceStore.deviceTimezone() : null;
-    if (!context.mounted) return;
-    final target = isAuto ? deviceZone : selected;
-    if (target == null) {
-      AppSnack.show(
-        loc.startsWith('ru') ? 'Не удалось определить часовой пояс'
-            : 'Cannot detect device time zone',
-        error: true);
-      return;
-    }
-    final ok = current == target || await save(target);
+    // The header selects saved zones only. Automatic detection is a Settings
+    // preference, never an action in the header quick switcher.
+    final ok = current == selected || await save(selected);
     if (!context.mounted) return;
     if (!ok) {
       AppSnack.show(t(loc, 'timezone_save_failed'), error: true);
       return;
     }
     try {
-      await TimezoneQuickPreferenceStore.setAutomatic(profileId, isAuto);
+      await TimezoneQuickPreferenceStore.setAutomatic(profileId, false);
     } catch (_) {
       AppSnack.show(t(loc, 'timezone_save_failed'), error: true);
     }
@@ -177,11 +167,8 @@ class TimezonePickerField extends StatelessWidget {
   }
 }
 
-/// Selection token for opt-in OS time zone (never a stored profile label).
-const String kTimezoneAutomaticSelection = '__system_auto_timezone__';
-
 /// Adaptive quick timezone picker — bottom sheet (compact) or anchored menu.
-/// When [favoriteIds] is supplied, only checked zones and Auto are shown.
+/// When [favoriteIds] is supplied, only checked zones are shown.
 /// The full picker remains available to the legacy profile editor.
 Future<String?> showTimezoneQuickPicker({
   required BuildContext context,
@@ -235,20 +222,6 @@ Future<String?> showTimezoneQuickPicker({
     position: rect,
     constraints: const BoxConstraints(minWidth: 280, maxWidth: 360),
     items: [
-      if (favoriteIds != null)
-        PopupMenuItem<String>(
-          value: kTimezoneAutomaticSelection,
-          child: Row(children: [
-            Icon(Icons.phone_android_rounded,
-              color: automatic ? Theme.of(context).colorScheme.primary : null),
-            const SizedBox(width: 12),
-            Expanded(child: Text(
-              (currentLocale.value.startsWith('ru')
-                    ? 'Автоматически' : 'Automatic') +
-                  (deviceTimezone == null ? '' : ' · $deviceTimezone'))),
-            if (automatic) const Icon(Icons.check_rounded),
-          ]),
-        ),
       for (final id in favoriteIds ??
           kProfileTimezoneCatalog.map((zone) => zone.profileValue).toList())
         PopupMenuItem<String>(
@@ -338,18 +311,6 @@ class _TimezoneQuickPickerSheetState extends State<_TimezoneQuickPickerSheet> {
             height: math.min(300, MediaQuery.sizeOf(context).height * 0.42),
             child: ListView(
               children: [
-                if (widget.favoriteIds != null)
-                  ListTile(
-                    leading: const Icon(Icons.phone_android_rounded),
-                    title: Text(loc.startsWith('ru')
-                        ? 'Автоматически' : 'Automatic'),
-                    subtitle: widget.deviceTimezone == null ? null
-                        : Text(widget.deviceTimezone!),
-                    trailing: widget.automatic
-                        ? const Icon(Icons.check_rounded) : null,
-                    onTap: () => Navigator.of(context)
-                        .pop(kTimezoneAutomaticSelection),
-                  ),
                 if (widget.favoriteIds == null) ...[
                   if (currentEntry != null)
                     TimezonePickerOptionRow(

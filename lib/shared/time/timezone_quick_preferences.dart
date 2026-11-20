@@ -3,6 +3,8 @@
 library;
 
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
+import 'package:counter/shared/time/web_timezone_quick_store.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -37,22 +39,65 @@ abstract final class TimezoneQuickPreferenceStore {
         favorites: [_canonicalZone(currentTimezone)],
       );
     }
-    final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getStringList(_key(profileId, 'favorites'));
+    // Browser localStorage is shared with the application's old caches and
+    // can be full. Read and write durable timezone choices in IndexedDB.
+    if (kIsWeb) {
+      final stored = await WebTimezoneQuickStore.read(profileId);
+      if (stored != null) return _decode(stored, currentTimezone);
+    }
+
+    List<String>? oldFavorites;
+    var oldAutomatic = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      oldFavorites = prefs.getStringList(_key(profileId, 'favorites'));
+      oldAutomatic = prefs.getBool(_key(profileId, 'automatic')) ?? false;
+    } catch (_) {
+      if (!kIsWeb) rethrow;
+      // A broken localStorage must not prevent first-time IndexedDB setup.
+    }
+    final legacy = _decode(<String, Object?>{
+      'favorites': oldFavorites ?? <String>[currentTimezone],
+      'automatic': oldAutomatic,
+    }, currentTimezone);
+    if (kIsWeb) {
+      await WebTimezoneQuickStore.migrateIfAbsent(
+        profileId,
+        favorites: legacy.favorites,
+        automatic: legacy.automatic,
+      );
+      final persisted = await WebTimezoneQuickStore.read(profileId);
+      return _decode(persisted ?? const <String, Object?>{}, currentTimezone);
+    }
+    return legacy;
+  }
+
+  static TimezoneQuickPreferences _decode(
+    Map<String, Object?> values, String currentTimezone,
+  ) {
+    final raw = values['favorites'];
+    final ids = raw is List
+        ? raw.whereType<String>().toList(growable: false)
+        : <String>[currentTimezone];
     return TimezoneQuickPreferences(
-      automatic: prefs.getBool(_key(profileId, 'automatic')) ?? false,
-      favorites: (stored ?? <String>[currentTimezone])
-          .map(_canonicalZone)
-          .where((item) => item.isNotEmpty)
-          .toSet()
-          .toList(growable: false),
+      automatic: values['automatic'] == true,
+      favorites: ids.map(_canonicalZone)
+          .where((zone) => zone.isNotEmpty).toSet().toList(growable: false),
     );
   }
 
   static Future<void> setAutomatic(String profileId, bool value) async {
-    if (profileId.trim().isEmpty) return;
+    if (profileId.trim().isEmpty) {
+      throw StateError('Missing profile for automatic time zone');
+    }
+    if (kIsWeb) {
+      await WebTimezoneQuickStore.writeAutomatic(profileId, value);
+      return;
+    }
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_key(profileId, 'automatic'), value);
+    if (!await prefs.setBool(_key(profileId, 'automatic'), value)) {
+      throw StateError('Could not persist automatic time zone setting');
+    }
   }
 
   static Future<void> setFavorites(
@@ -65,6 +110,10 @@ abstract final class TimezoneQuickPreferenceStore {
     final normalized = timezoneIds.map(_canonicalZone)
         .where((zone) => zone.isNotEmpty).toSet().toList(growable: false);
     final save = _favoritesWrite.catchError((_) {}).then((_) async {
+      if (kIsWeb) {
+        await WebTimezoneQuickStore.writeFavorites(profileId, normalized);
+        return;
+      }
       final prefs = await SharedPreferences.getInstance();
       final ok = await prefs.setStringList(_key(profileId, 'favorites'), normalized);
       if (!ok) throw StateError('Could not persist time zone favorites');

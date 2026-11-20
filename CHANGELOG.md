@@ -1,3 +1,11 @@
+## [2026-11-20] — Browser timezone favorites, clean header picker, Language/Time grouping [CI pending]
+
+- Web quick timezone favorites and automatic-mode choice now persist in IndexedDB, independent of quota-limited legacy SharedPreferences/localStorage; first read migrates existing profile-scoped favorites without overwriting a newer IndexedDB choice. Android/Windows keep their native SharedPreferences.
+- Profile hydration is required before loading/changing favorites; a transient anonymous first frame cannot create an empty-profile write or misleading selected chip. Rapid user selections remain serialized.
+- The header quick timezone picker shows *only chosen city/time zones* on desktop and mobile. Automatic detection is configured exclusively in Settings; selecting a city turns automatic mode off.
+- Interface Settings now has separate **Language** and **Time** cards using the canonical static settings card; hovering a label or empty area cannot highlight the entire group. Quick switching remains under Time.
+- Added widget and browser IndexedDB persistence regression tests, plus Chrome CI gates for web and Android release flows.
+
 ## [2026-11-19] — Price Reporter New York default scheduling and timezone favorites [verification pending]
 
 - Interpret each category default plan time in its own configured IANA zone before free-slot/cascade comparisons. Price Reporter legacy 09:00 defaults without an explicit zone inherit America/New_York rather than the active profile zone. Project to profile wall time for display and persist UTC once; honor New York DST and workday rollover across profile midnight.
