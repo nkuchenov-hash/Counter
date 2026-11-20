@@ -1,5 +1,8 @@
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
 import 'package:counter/core/widgets/timezone_quick_picker.dart';
+import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/features/profile/menu/life_os_locale_timezone_section.dart';
+import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/features/settings/timezone_settings.dart' as tz_settings;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +16,25 @@ void main() {
   setUpAll(() {
     tz_data.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('UTC'));
+  });
+
+  testWidgets('Language and Time are separate non-navigation settings cards',
+      (tester) async {
+    final old = currentLocale.value;
+    currentLocale.value = 'ru';
+    addTearDown(() => currentLocale.value = old);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await tester.pumpWidget(const MaterialApp(
+      home: Scaffold(body: SingleChildScrollView(
+        child: LifeOsLocaleTimezoneControls(),
+      )),
+    ));
+    await tester.pump();
+    expect(find.text('Язык'), findsOneWidget);
+    expect(find.text('Время'), findsOneWidget);
+    expect(find.text('Язык и время'), findsNothing);
+    expect(find.byType(AppSettingsSectionCard), findsNWidgets(2));
+    expect(find.byType(AppSettingsNavigationGroup), findsNothing);
   });
 
   testWidgets('desktop quick switch contains only chosen time zones', (tester) async {
