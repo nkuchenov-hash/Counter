@@ -34,26 +34,26 @@ void main() {
 
   test('legacy Moscow and New York identifiers become distinct favorites', () async {
     SharedPreferences.setMockInitialValues(<String, Object>{
-      'lifeos.timezone.quick.v1.one.favorites': <String>[
+      'lifeos.timezone.quick.v1.legacy-aliases.favorites': <String>[
         'GMT+3', 'America/New_York',
       ],
     });
     final selected = await TimezoneQuickPreferenceStore.load(
-      'one', currentTimezone: 'Moscow',
+      'legacy-aliases', currentTimezone: 'Moscow',
     );
     expect(selected.favorites, <String>['Moscow', 'New York']);
   });
 
   test('rapid multi-select writes preserve both Moscow and New York', () async {
     final first = TimezoneQuickPreferenceStore.setFavorites(
-      'one', <String>['Moscow'],
+      'rapid-selection', <String>['Moscow'],
     );
     final second = TimezoneQuickPreferenceStore.setFavorites(
-      'one', <String>['Moscow', 'New York'],
+      'rapid-selection', <String>['Moscow', 'New York'],
     );
     await Future.wait(<Future<void>>[first, second]);
     final selected = await TimezoneQuickPreferenceStore.load(
-      'one', currentTimezone: 'Moscow',
+      'rapid-selection', currentTimezone: 'Moscow',
     );
     expect(selected.favorites, <String>['Moscow', 'New York']);
   });
@@ -82,7 +82,7 @@ void main() {
   test('manual mode never overwrites the profile from the OS', () async {
     var writes = 0;
     final ok = await TimezoneQuickPreferenceStore.reconcileAutomatic(
-      profileId: 'one',
+      profileId: 'manual-preference',
       currentTimezone: 'Moscow',
       saveTimezone: (zone) async {
         writes++;
