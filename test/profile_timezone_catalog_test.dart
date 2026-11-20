@@ -1,4 +1,5 @@
 import 'package:counter/shared/time/profile_timezone_catalog.dart';
+import 'package:counter/core/widgets/timezone_quick_picker.dart';
 import 'package:counter/features/settings/timezone_settings.dart' as tz_settings;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,60 @@ void main() {
   setUpAll(() {
     tz_data.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('UTC'));
+  });
+
+  testWidgets('desktop quick switch contains only chosen time zones', (tester) async {
+    tester.view.physicalSize = const Size(1200, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: Center(child: Builder(
+        builder: (context) => TextButton(
+          onPressed: () async => showTimezoneQuickPicker(
+            context: context,
+            currentTimezone: 'Moscow',
+            favoriteIds: const <String>['Moscow', 'New York'],
+          ),
+          child: const Text('Pick time zone'),
+        ),
+      ))),
+    ));
+    await tester.tap(find.text('Pick time zone'));
+    await tester.pumpAndSettle();
+    expect(find.text('Automatic'), findsNothing);
+    expect(find.text('Автоматически'), findsNothing);
+    expect(find.textContaining('Moscow'), findsWidgets);
+    expect(find.textContaining('New York'), findsWidgets);
+  });
+
+  testWidgets('phone quick switch has no automatic option', (tester) async {
+    tester.view.physicalSize = const Size(390, 840);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: Center(child: Builder(
+        builder: (context) => TextButton(
+          onPressed: () async => showTimezoneQuickPicker(
+            context: context,
+            currentTimezone: 'Moscow',
+            favoriteIds: const <String>['Moscow', 'New York'],
+          ),
+          child: const Text('Pick time zone'),
+        ),
+      ))),
+    ));
+    await tester.tap(find.text('Pick time zone'));
+    await tester.pumpAndSettle();
+    expect(find.text('Automatic'), findsNothing);
+    expect(find.text('Автоматически'), findsNothing);
+    expect(find.textContaining('Moscow'), findsWidgets);
+    expect(find.textContaining('New York'), findsWidgets);
   });
 
   group('profile_timezone_catalog', () {
