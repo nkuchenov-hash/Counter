@@ -1,5 +1,6 @@
 import 'package:counter/shared/time/timezone_quick_preferences.dart';
 import 'package:counter/shared/time/wall_clock.dart' as wall_clock;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
@@ -90,6 +91,29 @@ void main() {
     );
     expect(ok, true);
     expect(writes, 0);
+  });
+
+  test('browser favorites use IndexedDB and survive old prefs reset', () async {
+    if (!kIsWeb) return;
+    const owner = 'timezone-idb-moscow-new-york-regression-v2';
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'lifeos.timezone.quick.v1.$owner.favorites': <String>['Moscow'],
+      'lifeos.timezone.quick.v1.$owner.automatic': true,
+    });
+    // Browser migration preserves preexisting choices and auto setting.
+    final old = await TimezoneQuickPreferenceStore.load(
+      owner, currentTimezone: 'Moscow');
+    expect(old.favorites, <String>['Moscow']);
+
+    await TimezoneQuickPreferenceStore.setFavorites(
+      owner, <String>['Moscow', 'New York'],
+    );
+    await TimezoneQuickPreferenceStore.setAutomatic(owner, false);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final reloaded = await TimezoneQuickPreferenceStore.load(
+      owner, currentTimezone: 'Moscow');
+    expect(reloaded.favorites, <String>['Moscow', 'New York']);
+    expect(reloaded.automatic, false);
   });
 
   test('system IANA zone outside quick presets follows DST', () {
