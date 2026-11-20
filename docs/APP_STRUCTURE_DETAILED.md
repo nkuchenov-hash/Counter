@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `af3e6b3a` on 2026-11-19.**
+**Generated from input HEAD `4a2bd90c` on 2026-11-20.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1029 — each appears **exactly once** below.
+**Tracked files:** 1030 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -44,7 +44,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `localization` | 13 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
-| `shared time` | 8 |
+| `shared time` | 9 |
 | `audit tool` | 7 |
 | `asset` | 6 |
 | `package metadata` | 6 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 560 |
+| `PROVEN_REQUIRED` | 561 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 277 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 941 |
+| `HIGH` | 942 |
 | `MEDIUM` | 88 |
 
 ---
@@ -14491,8 +14491,8 @@ EN:
 - **Human purpose:** Shared design-system widget — `HeaderTimezoneQuickSwitcher`, profile timezone quick picker. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
 - **What this is:** Shared design-system widget — `HeaderTimezoneQuickSwitcher`, profile timezone quick picker.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **Contents:** Canonical Flutter widget (`HeaderTimezoneQuickSwitcher`, `TimezonePickerField`, `_TimezoneQuickPickerSheet`, `_TimezoneQuickPickerSheetState`).
-- **Key code names:** `HeaderTimezoneQuickSwitcher`, `TimezonePickerField`, `_TimezoneQuickPickerSheet`, `_TimezoneQuickPickerSheetState`
+- **Contents:** Canonical Flutter widget (`HeaderTimezoneQuickSwitcher`, `TimezonePickerField`, `_TimezoneQuickPickerSheet`, `_TimezoneQuickPickerSheetState`, `TimezonePickerOptionRow`).
+- **Key code names:** `HeaderTimezoneQuickSwitcher`, `TimezonePickerField`, `_TimezoneQuickPickerSheet`, `_TimezoneQuickPickerSheetState`, `TimezonePickerOptionRow`
 - **Repository role:** shared foundation
 - **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/global_app_header.dart`, `lib/features/profile/profile_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -28075,8 +28075,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Shared time ownership — Per-device auto timezone mode and profile-scoped quick favorites (SharedPreferences; no IP detection). UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
-- **What this is:** Shared time ownership — Per-device auto timezone mode and profile-scoped quick favorites (SharedPreferences; no IP detection).
+- **Human purpose:** Shared time ownership — Per-device auto timezone mode and profile-scoped quick favorites (browser IndexedDB, native SharedPreferences; no IP detection). UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **What this is:** Shared time ownership — Per-device auto timezone mode and profile-scoped quick favorites (browser IndexedDB, native SharedPreferences; no IP detection).
 - **Why needed:** UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
 - **Contents:** Time helper or injectable clock hook (`TimezoneQuickPreferences`, `TimezoneQuickPreferenceStore`).
 - **Key code names:** `TimezoneQuickPreferences`, `TimezoneQuickPreferenceStore`
@@ -28086,15 +28086,15 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared time
-- **Responsibilities:** Per-device auto timezone mode and profile-scoped quick favorites (SharedPreferences; no IP detection)
+- **Responsibilities:** Per-device auto timezone mode and profile-scoped quick favorites (browser IndexedDB, native SharedPreferences; no IP detection)
 - **When to open:** When behavior tied to `timezone_quick_preferences.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Per-device auto timezone mode and profile-scoped quick favorites (SharedPreferences
+- **Connected to:** APP_STRUCTURE role: Per-device auto timezone mode and profile-scoped quick favorites (browser IndexedDB, native SharedPreferences
 
 RU:
 
-- **Зачем файл человеку:** Общий time-слой — Per-device auto timezone mode and profile-scoped quick favorites (SharedPreferences; no IP detection). UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
-- **Что это:** Общий time-слой — Per-device auto timezone mode and profile-scoped quick favorites (SharedPreferences; no IP detection).
+- **Зачем файл человеку:** Общий time-слой — Per-device auto timezone mode and profile-scoped quick favorites (browser IndexedDB, native SharedPreferences; no IP detection). UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Что это:** Общий time-слой — Per-device auto timezone mode and profile-scoped quick favorites (browser IndexedDB, native SharedPreferences; no IP detection).
 - **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
 - **Содержимое:** Time helper или injectable clock hook (`TimezoneQuickPreferences`, `TimezoneQuickPreferenceStore`).
 - **Роль в репозитории:** shared time
@@ -28103,7 +28103,7 @@ RU:
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** общий time-слой
-- **Обязанности:** Реализует в shared/time: Per-device auto timezone mode and profile-scoped quick favorites (SharedPreferences; no IP detection).
+- **Обязанности:** Реализует в shared/time: Per-device auto timezone mode and profile-scoped quick favorites (browser IndexedDB, native SharedPreferences; no IP detection).
 - **Когда открывать:** Когда ломается поведение, связанное с `timezone_quick_preferences.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`
@@ -28142,6 +28142,44 @@ RU:
 - **Владелец / слой:** общий time-слой
 - **Обязанности:** Реализует в shared/time: UTC ↔ profile wall-clock conversion; supports preset and arbitrary IANA profile zones, never reads the device directly.
 - **Когда открывать:** Когда ломается поведение, связанное с `wall_clock.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/shared/time/web_timezone_quick_store.dart`
+
+EN:
+
+- **Human purpose:** Shared time ownership — Browser-only durable IndexedDB preference storage with migration from legacy localStorage favorites. UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **What this is:** Shared time ownership — Browser-only durable IndexedDB preference storage with migration from legacy localStorage favorites.
+- **Why needed:** UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **Contents:** Time helper or injectable clock hook (`WebTimezoneQuickStore`).
+- **Key code names:** `WebTimezoneQuickStore`
+- **Repository role:** shared time
+- **Evidence of use:** Imported/exported by production Dart: `lib/shared/time/timezone_quick_preferences.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared time
+- **Responsibilities:** Browser-only durable IndexedDB preference storage with migration from legacy localStorage favorites
+- **When to open:** When behavior tied to `web_timezone_quick_store.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** APP_STRUCTURE role: Browser-only durable IndexedDB preference storage with migration from legacy localStorage favorites
+
+RU:
+
+- **Зачем файл человеку:** Общий time-слой — Browser-only durable IndexedDB preference storage with migration from legacy localStorage favorites. UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Что это:** Общий time-слой — Browser-only durable IndexedDB preference storage with migration from legacy localStorage favorites.
+- **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Содержимое:** Time helper или injectable clock hook (`WebTimezoneQuickStore`).
+- **Роль в репозитории:** shared time
+- **Доказательства использования:** Импортируется production Dart: `lib/shared/time/timezone_quick_preferences.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общий time-слой
+- **Обязанности:** Реализует в shared/time: Browser-only durable IndexedDB preference storage with migration from legacy localStorage favorites.
+- **Когда открывать:** Когда ломается поведение, связанное с `web_timezone_quick_store.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`
 
