@@ -152,6 +152,9 @@ jobs:
       - name: Verify timezone settings regression
         run: flutter test test/timezone_quick_preferences_test.dart
 
+      - name: Verify browser timezone IndexedDB persistence
+        run: flutter test --platform chrome test/timezone_quick_preferences_test.dart
+
       - name: Analyze runtime app
         run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 
