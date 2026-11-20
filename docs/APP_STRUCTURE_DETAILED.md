@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `4a2bd90c` on 2026-11-20.**
+**Generated from input HEAD `7edd83a8` on 2026-11-20.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -28150,8 +28150,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Shared time ownership — Browser-only durable IndexedDB preference storage with migration from legacy localStorage favorites. UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
-- **What this is:** Shared time ownership — Browser-only durable IndexedDB preference storage with migration from legacy localStorage favorites.
+- **Human purpose:** Shared time ownership — Browser-only durable IndexedDB preference storage with migration from earlier localStorage favorites. UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
+- **What this is:** Shared time ownership — Browser-only durable IndexedDB preference storage with migration from earlier localStorage favorites.
 - **Why needed:** UTC and profile wall-clock rules must stay identical for Brain, header, Plans, and settings.
 - **Contents:** Time helper or injectable clock hook (`WebTimezoneQuickStore`).
 - **Key code names:** `WebTimezoneQuickStore`
@@ -28161,15 +28161,15 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared time
-- **Responsibilities:** Browser-only durable IndexedDB preference storage with migration from legacy localStorage favorites
+- **Responsibilities:** Browser-only durable IndexedDB preference storage with migration from earlier localStorage favorites
 - **When to open:** When behavior tied to `web_timezone_quick_store.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Browser-only durable IndexedDB preference storage with migration from legacy localStorage favorites
+- **Connected to:** APP_STRUCTURE role: Browser-only durable IndexedDB preference storage with migration from earlier localStorage favorites
 
 RU:
 
-- **Зачем файл человеку:** Общий time-слой — Browser-only durable IndexedDB preference storage with migration from legacy localStorage favorites. UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
-- **Что это:** Общий time-слой — Browser-only durable IndexedDB preference storage with migration from legacy localStorage favorites.
+- **Зачем файл человеку:** Общий time-слой — Browser-only durable IndexedDB preference storage with migration from earlier localStorage favorites. UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
+- **Что это:** Общий time-слой — Browser-only durable IndexedDB preference storage with migration from earlier localStorage favorites.
 - **Зачем:** UTC и profile wall-clock должны совпадать для Brain, header, Plans и settings.
 - **Содержимое:** Time helper или injectable clock hook (`WebTimezoneQuickStore`).
 - **Роль в репозитории:** shared time
@@ -28178,7 +28178,7 @@ RU:
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** общий time-слой
-- **Обязанности:** Реализует в shared/time: Browser-only durable IndexedDB preference storage with migration from legacy localStorage favorites.
+- **Обязанности:** Реализует в shared/time: Browser-only durable IndexedDB preference storage with migration from earlier localStorage favorites.
 - **Когда открывать:** Когда ломается поведение, связанное с `web_timezone_quick_store.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/shared/time/`, `docs/APP_STRUCTURE.md`
