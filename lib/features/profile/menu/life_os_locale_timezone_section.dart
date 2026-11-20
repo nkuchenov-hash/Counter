@@ -26,6 +26,7 @@ class _LifeOsLocaleTimezoneControlsState
   bool _savingTimezone = false;
   bool _timezonePreferencesLoaded = false;
   bool _timezoneLoadStarted = false;
+  String _loadedTimezoneProfileId = '';
   int _favoriteChangeRevision = 0;
   String? _deviceTimezone;
   TimezoneQuickPreferences _timezonePreferences =
@@ -44,9 +45,15 @@ class _LifeOsLocaleTimezoneControlsState
   }
 
   void _ensureTimezoneControlsLoaded() {
-    if (_timezoneLoadStarted) return;
+    final profileId = _timezoneProfileId;
+    // A first frame may precede profile hydration. Do NOT mark anonymous
+    // preferences loaded or write favorites under an empty identity.
+    if (profileId.isEmpty ||
+        _timezoneLoadStarted ||
+        (_timezonePreferencesLoaded &&
+            _loadedTimezoneProfileId == profileId)) return;
     _timezoneLoadStarted = true;
-    unawaited(_loadTimezoneControls());
+    unawaited(_loadTimezoneControls(profileId));
   }
 
   String get _timezoneProfileId {
@@ -56,24 +63,32 @@ class _LifeOsLocaleTimezoneControlsState
     return settingsId.isNotEmpty ? settingsId : (db.currentProfileId ?? '');
   }
 
-  Future<void> _loadTimezoneControls() async {
+  Future<void> _loadTimezoneControls(String profileId) async {
     try {
       final db = DatabaseService.instance;
       final values = await Future.wait<Object?>([
         TimezoneQuickPreferenceStore.load(
-          _timezoneProfileId,
+          profileId,
           currentTimezone: db.settings.preferredTimeZone,
         ),
         TimezoneQuickPreferenceStore.deviceTimezone(),
       ]);
-      if (!mounted) return;
+      if (!mounted || _timezoneProfileId != profileId) return;
       setState(() {
         _timezonePreferences = values[0] as TimezoneQuickPreferences;
         _deviceTimezone = values[1] as String?;
+        _loadedTimezoneProfileId = profileId;
         _timezonePreferencesLoaded = true;
       });
     } catch (_) {
-      if (mounted) setState(() => _timezonePreferencesLoaded = true);
+      if (mounted && _timezoneProfileId == profileId) {
+        // Storage failures must not display a fake, editable saved selection.
+        setState(() => _timezonePreferencesLoaded = false);
+        AppSnack.show(tr('Не удалось загрузить быстрые часовые пояса',
+            'Could not load quick-switch time zones'), error: true);
+      }
+    } finally {
+      _timezoneLoadStarted = false;
     }
   }
 
@@ -96,7 +111,8 @@ class _LifeOsLocaleTimezoneControlsState
   }
 
   Future<void> _setAutomaticTimezone(bool enabled) async {
-    if (_savingTimezone || !_timezonePreferencesLoaded) return;
+    if (_savingTimezone || !_timezonePreferencesLoaded ||
+        _timezoneProfileId != _loadedTimezoneProfileId) return;
     final previous = _timezonePreferences;
     // Optimistic visual feedback before the platform channel / PocketBase.
     setState(() {
@@ -138,7 +154,8 @@ class _LifeOsLocaleTimezoneControlsState
   }
 
   Future<void> _selectManualTimezone(String zone) async {
-    if (_savingTimezone || !_timezonePreferencesLoaded) return;
+    if (_savingTimezone || !_timezonePreferencesLoaded ||
+        _timezoneProfileId != _loadedTimezoneProfileId) return;
     setState(() => _savingTimezone = true);
     try {
       final ok = await DatabaseService.instance.updateTimeZone(zone);
@@ -162,7 +179,8 @@ class _LifeOsLocaleTimezoneControlsState
   }
 
   Future<void> _toggleFavoriteTimezone(String zone, bool selected) async {
-    if (!_timezonePreferencesLoaded) return;
+    if (!_timezonePreferencesLoaded ||
+        _timezoneProfileId != _loadedTimezoneProfileId) return;
     final revision = ++_favoriteChangeRevision;
     final previous = _timezonePreferences;
     final canonical = catalogEntryForStoredTimezone(zone)?.profileValue ?? zone;
@@ -197,6 +215,13 @@ class _LifeOsLocaleTimezoneControlsState
       initialData: db.settings,
       builder: (context, snapshot) {
         final settings = snapshot.data ?? db.settings;
+        if (_timezoneProfileId.isNotEmpty &&
+            _loadedTimezoneProfileId != _timezoneProfileId &&
+            !_timezoneLoadStarted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _ensureTimezoneControlsLoaded();
+          });
+        }
         final current = settings.preferredTimeZone;
         final options = <String, String>{
           for (final zone in kProfileTimezoneCatalog)
