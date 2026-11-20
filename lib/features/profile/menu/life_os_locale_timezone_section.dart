@@ -83,7 +83,10 @@ class _LifeOsLocaleTimezoneControlsState
     } catch (_) {
       if (mounted && _timezoneProfileId == profileId) {
         // Storage failures must not display a fake, editable saved selection.
-        setState(() => _timezonePreferencesLoaded = false);
+        setState(() {
+          _loadedTimezoneProfileId = profileId;
+          _timezonePreferencesLoaded = false;
+        });
         AppSnack.show(tr('Не удалось загрузить быстрые часовые пояса',
             'Could not load quick-switch time zones'), error: true);
       }
