@@ -72,6 +72,9 @@ class ViktorAtomicCreateGateway {
         if (actual.data['user_id']?.toString() != owner ||
             actual.data['plan_id']?.toString() != expected['plan_id'] ||
             actual.data['title']?.toString() != expected['title'] ||
+            actual.data['category_id']?.toString() != expected['category_id'] ||
+            (actual.data['notes_plain']?.toString() ?? '') !=
+                (expected['notes_plain'] ?? '') ||
             utc('start_time').difference(
                 DateTime.parse(expected['start_time'] as String))
                 .inMilliseconds.abs() > 999 ||
