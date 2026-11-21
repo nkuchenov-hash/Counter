@@ -32,6 +32,7 @@ const end2 = '2026-11-17T18:00:00.000Z';
 const clone = x => JSON.parse(JSON.stringify(x));
 const rows = [
   {plan_id:one, title:'Cook eggs', category_id:category,
+   notes_plain:'Shopping list stays in the note, not the title',
    start_time:start, end_time:end, initial_date_key:'2026-11-17'},
   {plan_id:two, title:'Cook fish', category_id:category,
    start_time:start2, end_time:end2, initial_date_key:'2026-11-17'},
