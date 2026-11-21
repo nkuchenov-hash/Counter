@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `d728a6f7` on 2026-11-21.**
+**Generated from input HEAD `9c941e6f` on 2026-11-21.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1031 — each appears **exactly once** below.
+**Tracked files:** 1035 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -33635,6 +33635,154 @@ RU:
 - **Обязанности:** Корректировать только однозначно определённый маршрут, не затрагивая остальные записи.
 - **Когда открывать:** При проверке исправления расписания или миграций PocketBase.
 - **Можно удалить?** Нет, это сохранённая история миграции.
+- **Связано с:** `pb_migrations/`, `docs/DATA_MAP.md`.
+
+
+### `pb_migrations/1795269601_fix_tara_brooch_personal_category.js`
+
+EN:
+
+- **Human purpose:** Correct the 21 November Tara Brooch event category from RCC to personal/leisure without changing unrelated events.
+- **What this is:** Versioned PocketBase migration for an existing user's 2026-11-21 plans.
+- **Why needed:** Preserve the user's updated route in persistent, synchronized plan data.
+- **Contents:** Narrow owner matching, protected plan edits, schedule times, notes, drive cards and safety checks.
+- **Repository role:** PocketBase migration
+- **Evidence of use:** The server-before-client deployment workflow applies every new migration in `pb_migrations/`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** The migration history and revised route would no longer be reproducible.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Reconcile only the uniquely matching existing itinerary, without editing unrelated users' plans.
+- **When to open:** Auditing the 21 November 2026 route correction, database migration or deployment failure.
+- **Can it be deleted?** No — versioned migrations must remain for audit and fresh installations.
+- **Connected to:** `pb_migrations/`, `docs/DATA_MAP.md`.
+
+RU:
+
+- **Зачем файл человеку:** Исправление категории встречи Tara Brooch с RCC на личное событие, не затрагивая другие события.
+- **Что это:** Версионированная миграция данных PocketBase для существующего расписания на 21 ноября 2026 года.
+- **Зачем:** Чтобы исправление маршрута синхронизировалось между приложением и сервером.
+- **Содержимое:** Однозначный поиск владельца, сохранение прежних карточек, корректировка времени, заметок и переездов.
+- **Роль в репозитории:** миграции PocketBase
+- **Доказательства использования:** Миграция применяется серверным конвейером до развёртывания клиентской части.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Потеряется часть истории обновления маршрута и возможность воспроизведения изменений.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Обновлять только однозначно найденный маршрут, не затрагивая остальных пользователей.
+- **Когда открывать:** При аудите сегодняшнего расписания, проверке миграции и устранении ошибки развёртывания.
+- **Можно удалить?** Нет — это часть истории миграций.
+- **Связано с:** `pb_migrations/`, `docs/DATA_MAP.md`.
+
+
+### `pb_migrations/1795269602_revise_20261121_after_milyutin_delay.js`
+
+EN:
+
+- **Human purpose:** Revise the first delayed venue viewing and convert unused drive cards into a conservative provisional itinerary.
+- **What this is:** Versioned PocketBase migration for an existing user's 2026-11-21 plans.
+- **Why needed:** Preserve the user's updated route in persistent, synchronized plan data.
+- **Contents:** Narrow owner matching, protected plan edits, schedule times, notes, drive cards and safety checks.
+- **Repository role:** PocketBase migration
+- **Evidence of use:** The server-before-client deployment workflow applies every new migration in `pb_migrations/`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** The migration history and revised route would no longer be reproducible.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Reconcile only the uniquely matching existing itinerary, without editing unrelated users' plans.
+- **When to open:** Auditing the 21 November 2026 route correction, database migration or deployment failure.
+- **Can it be deleted?** No — versioned migrations must remain for audit and fresh installations.
+- **Connected to:** `pb_migrations/`, `docs/DATA_MAP.md`.
+
+RU:
+
+- **Зачем файл человеку:** Перерасчёт маршрута после задержки первого осмотра, с сохранением существующих карточек.
+- **Что это:** Версионированная миграция данных PocketBase для существующего расписания на 21 ноября 2026 года.
+- **Зачем:** Чтобы исправление маршрута синхронизировалось между приложением и сервером.
+- **Содержимое:** Однозначный поиск владельца, сохранение прежних карточек, корректировка времени, заметок и переездов.
+- **Роль в репозитории:** миграции PocketBase
+- **Доказательства использования:** Миграция применяется серверным конвейером до развёртывания клиентской части.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Потеряется часть истории обновления маршрута и возможность воспроизведения изменений.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Обновлять только однозначно найденный маршрут, не затрагивая остальных пользователей.
+- **Когда открывать:** При аудите сегодняшнего расписания, проверке миграции и устранении ошибки развёртывания.
+- **Можно удалить?** Нет — это часть истории миграций.
+- **Связано с:** `pb_migrations/`, `docs/DATA_MAP.md`.
+
+
+### `pb_migrations/1795269603_fit_more_visits_short_drive_20261121.js`
+
+EN:
+
+- **Human purpose:** Shorten overestimated inner-city transfers and fit additional venue visits before the fixed evening event.
+- **What this is:** Versioned PocketBase migration for an existing user's 2026-11-21 plans.
+- **Why needed:** Preserve the user's updated route in persistent, synchronized plan data.
+- **Contents:** Narrow owner matching, protected plan edits, schedule times, notes, drive cards and safety checks.
+- **Repository role:** PocketBase migration
+- **Evidence of use:** The server-before-client deployment workflow applies every new migration in `pb_migrations/`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** The migration history and revised route would no longer be reproducible.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Reconcile only the uniquely matching existing itinerary, without editing unrelated users' plans.
+- **When to open:** Auditing the 21 November 2026 route correction, database migration or deployment failure.
+- **Can it be deleted?** No — versioned migrations must remain for audit and fresh installations.
+- **Connected to:** `pb_migrations/`, `docs/DATA_MAP.md`.
+
+RU:
+
+- **Зачем файл человеку:** Сокращение избыточных интервалов переездов и размещение дополнительных осмотров до вечерней встречи.
+- **Что это:** Версионированная миграция данных PocketBase для существующего расписания на 21 ноября 2026 года.
+- **Зачем:** Чтобы исправление маршрута синхронизировалось между приложением и сервером.
+- **Содержимое:** Однозначный поиск владельца, сохранение прежних карточек, корректировка времени, заметок и переездов.
+- **Роль в репозитории:** миграции PocketBase
+- **Доказательства использования:** Миграция применяется серверным конвейером до развёртывания клиентской части.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Потеряется часть истории обновления маршрута и возможность воспроизведения изменений.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Обновлять только однозначно найденный маршрут, не затрагивая остальных пользователей.
+- **Когда открывать:** При аудите сегодняшнего расписания, проверке миграции и устранении ошибки развёртывания.
+- **Можно удалить?** Нет — это часть истории миграций.
+- **Связано с:** `pb_migrations/`, `docs/DATA_MAP.md`.
+
+
+### `pb_migrations/1795269604_actual_santa_done_glukh_1700_20261121.js`
+
+EN:
+
+- **Human purpose:** Apply the user's latest actual order: Milyutin and Santa Gloria visited, Chad next, Glukhovsky fixed at 17:00.
+- **What this is:** Versioned PocketBase migration for an existing user's 2026-11-21 plans.
+- **Why needed:** Preserve the user's updated route in persistent, synchronized plan data.
+- **Contents:** Narrow owner matching, protected plan edits, schedule times, notes, drive cards and safety checks.
+- **Repository role:** PocketBase migration
+- **Evidence of use:** The server-before-client deployment workflow applies every new migration in `pb_migrations/`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** The migration history and revised route would no longer be reproducible.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Reconcile only the uniquely matching existing itinerary, without editing unrelated users' plans.
+- **When to open:** Auditing the 21 November 2026 route correction, database migration or deployment failure.
+- **Can it be deleted?** No — versioned migrations must remain for audit and fresh installations.
+- **Connected to:** `pb_migrations/`, `docs/DATA_MAP.md`.
+
+RU:
+
+- **Зачем файл человеку:** Исправление текущего порядка: Милютина и Санта Глория уже осмотрены, далее Чад и встреча у Глуховского в 17:00.
+- **Что это:** Версионированная миграция данных PocketBase для существующего расписания на 21 ноября 2026 года.
+- **Зачем:** Чтобы исправление маршрута синхронизировалось между приложением и сервером.
+- **Содержимое:** Однозначный поиск владельца, сохранение прежних карточек, корректировка времени, заметок и переездов.
+- **Роль в репозитории:** миграции PocketBase
+- **Доказательства использования:** Миграция применяется серверным конвейером до развёртывания клиентской части.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Потеряется часть истории обновления маршрута и возможность воспроизведения изменений.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Обновлять только однозначно найденный маршрут, не затрагивая остальных пользователей.
+- **Когда открывать:** При аудите сегодняшнего расписания, проверке миграции и устранении ошибки развёртывания.
+- **Можно удалить?** Нет — это часть истории миграций.
 - **Связано с:** `pb_migrations/`, `docs/DATA_MAP.md`.
 
 
