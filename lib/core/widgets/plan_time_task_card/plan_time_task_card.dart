@@ -370,13 +370,16 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
           builder: (context, constraints) {
             final w = constraints.maxWidth;
             final timelineBlockH = widget.timelineBlockHeightPx;
+            final note = (widget.task.notesPlain ?? '').trim();
+            final hasListNote = _isListLike && !widget.timelineFillHeight &&
+                note.isNotEmpty && !note.startsWith('LIFEOS_LINK::');
             final measuredH = isTimeViewCard && timelineBlockH != null
                 ? timelineBlockH
                 : planTimeCardMeasureHeight(
                     hasTags: _visibleTags.isNotEmpty,
                     hasTrackedProgress: widget.planTrackedSeconds > 0,
                     density: effectiveDensity,
-                  );
+                  ) + (hasListNote ? 40.0 : 0.0);
             final h = constraints.maxHeight.isFinite
                 ? constraints.maxHeight
                 : measuredH;
