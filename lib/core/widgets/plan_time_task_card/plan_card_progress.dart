@@ -228,6 +228,7 @@ class PlanCardInvariantBody extends StatelessWidget {
         },
       );
     }
+    final notePreview = (task.notesPlain ?? '').trim();
     return PlanCardBodyTapShell(
       onTap: onBodyTap,
       onLongPress: onBodyLongPress,
@@ -254,6 +255,21 @@ class PlanCardInvariantBody extends StatelessWidget {
               ],
             ),
           ),
+          if (notePreview.isNotEmpty &&
+              !notePreview.startsWith('LIFEOS_LINK::'))
+            Padding(
+              padding: const EdgeInsets.only(top: 3, bottom: 5),
+              child: Text(
+                notePreview,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 1.3,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
           SizedBox(
             height: spacing.tagsSlotHeight(hasTags: visibleTags.isNotEmpty),
             child: Align(
