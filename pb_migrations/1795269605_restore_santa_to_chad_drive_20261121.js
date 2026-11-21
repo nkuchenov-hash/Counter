@@ -1,6 +1,7 @@
 /// <reference path="../pb_data/types.d.ts" />
 // Restore the ONE missing 21 Nov drive interval after production read-only proof.
 // All venue appointments and actual time records stay unchanged. Idempotent.
+// Deployment gate: release this migration only with the 1036-file exact architecture manifest.
 migrate((app) => {
   const day="2026-11-21";
   const normalized=s=>String(s||"").toLowerCase().trim().replace(/\s+/g," ");
