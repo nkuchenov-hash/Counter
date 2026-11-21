@@ -120,6 +120,14 @@ class ViktorExecutor {
   }
 
   CategoryRule _planCategory(ViktorAction action) {
+    final requestedId = action.arguments['category_id'] as String?;
+    if (requestedId != null) {
+      final selected = db.getCategoryRuleByBackendRowId(requestedId);
+      if (selected == null || selected.isArchived) {
+        throw StateError('Выбранная категория не найдена или архивирована.');
+      }
+      return selected;
+    }
     return resolveViktorPlanCategory(
       title: action.arguments['title'] as String,
       identifyCategory: db.identifyCategory,
@@ -156,6 +164,7 @@ class ViktorExecutor {
     return db.addPlanningTaskWithReceipt(PlanningTask(
       id: 0, title: action.arguments['title'] as String,
       categoryId: category.id,
+      notesPlain: action.arguments['note'] as String?,
       dateKey: start == null ? action.arguments['wall_day'] as String
           : ViktorDateScope.key(start),
       startTime: start,
