@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `4b068ef2` on 2026-11-20.**
+**Generated from input HEAD `d728a6f7` on 2026-11-21.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -22717,8 +22717,8 @@ EN:
 - **Human purpose:** `time_view_settings_sheet.dart` on Plans tab (second bottom tab) — Time View settings + default plan times. Users see `time_view_settings_sheet.dart` when using Plans tab (second bottom tab).
 - **What this is:** `time_view_settings_sheet.dart` on Plans tab (second bottom tab) — Time View settings + default plan times.
 - **Why needed:** Users see `time_view_settings_sheet.dart` when using Plans tab (second bottom tab).
-- **Contents:** Primary symbols: `PlanningTimeViewTimeViewSettingsSheet`, `PlanAutoPlacementSettingsBlock`, `_PlanAutoPlacementSettingsBlockState`.
-- **Key code names:** `PlanningTimeViewTimeViewSettingsSheet`, `PlanAutoPlacementSettingsBlock`, `_PlanAutoPlacementSettingsBlockState`
+- **Contents:** Primary symbols: `PlanningTimeViewTimeViewSettingsSheet`, `PlanAutoPlacementSettingsBlock`, `_PlanAutoPlacementSettingsBlockState`, `PlanningTimelineOpeningSettingsBlock`, `_PlanningTimelineOpeningSettingsBlockState`.
+- **Key code names:** `PlanningTimeViewTimeViewSettingsSheet`, `PlanAutoPlacementSettingsBlock`, `_PlanAutoPlacementSettingsBlockState`, `PlanningTimelineOpeningSettingsBlock`, `_PlanningTimelineOpeningSettingsBlockState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -22735,7 +22735,7 @@ RU:
 - **Зачем файл человеку:** `time_view_settings_sheet.dart` на вкладка Plans (вторая снизу) — Пользователь открывает sheet/dialog из entry `time_view_settings_sheet`.. Пользователь видит UI из `time_view_settings_sheet.dart` на вкладка Plans (вторая снизу).
 - **Что это:** `time_view_settings_sheet.dart` на вкладка Plans (вторая снизу) — Пользователь открывает sheet/dialog из entry `time_view_settings_sheet`..
 - **Зачем:** Пользователь видит UI из `time_view_settings_sheet.dart` на вкладка Plans (вторая снизу).
-- **Содержимое:** Основные символы: `PlanningTimeViewTimeViewSettingsSheet`, `PlanAutoPlacementSettingsBlock`, `_PlanAutoPlacementSettingsBlockState`.
+- **Содержимое:** Основные символы: `PlanningTimeViewTimeViewSettingsSheet`, `PlanAutoPlacementSettingsBlock`, `_PlanAutoPlacementSettingsBlockState`, `PlanningTimelineOpeningSettingsBlock`, `_PlanningTimelineOpeningSettingsBlockState`.
 - **Роль в репозитории:** production UI
 - **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`, `lib/features/planning/time_view/planning_time_view_coordinator.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
