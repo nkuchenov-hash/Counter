@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `9c941e6f` on 2026-11-21.**
+**Generated from input HEAD `41ac469a` on 2026-11-21.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1035 — each appears **exactly once** below.
+**Tracked files:** 1036 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -33783,6 +33783,43 @@ RU:
 - **Обязанности:** Обновлять только однозначно найденный маршрут, не затрагивая остальных пользователей.
 - **Когда открывать:** При аудите сегодняшнего расписания, проверке миграции и устранении ошибки развёртывания.
 - **Можно удалить?** Нет — это часть истории миграций.
+- **Связано с:** `pb_migrations/`, `docs/DATA_MAP.md`.
+
+
+### `pb_migrations/1795269605_restore_santa_to_chad_drive_20261121.js`
+
+EN:
+
+- **Human purpose:** Restore the verified missing Santa Gloria to Chad transfer on the user's existing 21 November 2026 itinerary.
+- **What this is:** An idempotent, single-purpose PocketBase data migration.
+- **Why needed:** Production read-only verification found the transfer card missing after the earlier route update.
+- **Contents:** Strict owner matching; no-duplicate guard; preserves completed activity; creates or repairs one transfer card and map links.
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Applied by `deploy-pocketbase.yml` and checked by the production verification job.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** A corrected live itinerary would not be reproducible.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Repair one transfer without altering venue appointments or other users.
+- **When to open:** When auditing the corrected Nov 21 route and production plan synchronisation.
+- **Can it be deleted?** No — versioned migrations are retained.
+- **Connected to:** `pb_migrations/`, `docs/DATA_MAP.md`.
+
+RU:
+
+- **Зачем файл человеку:** Восстанавливает недостающую карточку переезда Санта Глория → Чад на 21 ноября 2026 года.
+- **Что это:** Идемпотентная миграция данных PocketBase.
+- **Зачем:** Прямая проверка рабочей базы обнаружила отсутствие этой карточки после изменения маршрута.
+- **Содержимое:** Проверка владельца и дублей, сохранение истории, добавление одного переезда с адресами и картами.
+- **Роль в репозитории:** миграции PocketBase
+- **Доказательства использования:** Применяется серверным конвейером и проверяется отдельным производственным аудитом.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Снизится воспроизводимость исправленного маршрута.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Исправить только один переезд без изменения встреч и других пользователей.
+- **Когда открывать:** Для проверки маршрута 21 ноября и синхронизации данных.
+- **Можно удалить?** Нет — история миграций сохраняется.
 - **Связано с:** `pb_migrations/`, `docs/DATA_MAP.md`.
 
 
