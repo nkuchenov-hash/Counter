@@ -194,7 +194,7 @@ routerAdd("POST", "/api/viktor/schedule/create", function(e) {
   const proposed = [];
   const cleanFields = new Set([
     "plan_id", "title", "category_id", "start_time", "end_time",
-    "initial_date_key"
+    "initial_date_key", "notes_plain"
   ]);
   try {
     for (const raw of creates) {
@@ -205,6 +205,9 @@ routerAdd("POST", "/api/viktor/schedule/create", function(e) {
           seenIds.has(raw.plan_id) ||
           typeof raw.title !== "string" || !raw.title.trim() ||
           raw.title.length > 160 ||
+          (raw.notes_plain !== undefined &&
+            (typeof raw.notes_plain !== "string" ||
+             !raw.notes_plain.trim() || raw.notes_plain.length > 3000)) ||
           typeof raw.category_id !== "string" ||
           !/^[a-zA-Z0-9]{15}$/.test(raw.category_id) ||
           typeof raw.initial_date_key !== "string" ||
@@ -262,6 +265,7 @@ routerAdd("POST", "/api/viktor/schedule/create", function(e) {
           const oldEnd = Date.parse(old.getString("end_time").replace(" ", "T"));
           if (old.getString("title") !== req.raw.title ||
               old.getString("category_id") !== req.raw.category_id ||
+              old.getString("notes_plain") !== (req.raw.notes_plain || "") ||
               old.getString("initial_date_key") !== req.raw.initial_date_key ||
               old.getBool("is_done") ||
               Math.abs(oldStart - req.start) >= 1000 ||
@@ -299,6 +303,7 @@ routerAdd("POST", "/api/viktor/schedule/create", function(e) {
         row.set("user_id", owner);
         row.set("category_id", p.category_id);
         row.set("title", p.title);
+        if (p.notes_plain) row.set("notes_plain", p.notes_plain);
         row.set("is_done", false);
         row.set("checklist", []);
         row.set("order", i);
