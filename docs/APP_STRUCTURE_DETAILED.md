@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1030 — each appears **exactly once** below.
+**Tracked files:** 1031 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -37,7 +37,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `Desktop Voice runtime` | 36 |
 | `test fixture` | 32 |
 | `PocketBase backend` | 25 |
-| `PocketBase migration` | 21 |
+| `PocketBase migration` | 22 |
 | `shared Voice system` | 20 |
 | `CI/deployment` | 18 |
 | `historical engineering record` | 18 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 561 |
+| `PROVEN_REQUIRED` | 562 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 277 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 942 |
+| `HIGH` | 943 |
 | `MEDIUM` | 88 |
 
 ---
@@ -33599,6 +33599,43 @@ RU:
 - **Когда открывать:** When результат сборки or maintenance cites `1793190000_viktor_thread_context.js`.
 - **Можно удалить?** Нет — конфигурация/инструмент репозитория.
 - **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
+
+
+### `pb_migrations/1795269600_reconcile_20261121_visit_cards.js`
+
+EN:
+
+- **Human purpose:** Safely reconcile an already scheduled driving day, preserving its visit times, categorizing existing event cards, and filling only confirmed empty travel intervals.
+- **What this is:** One-time PocketBase data migration with strict owner and itinerary matching.
+- **Why needed:** Prevent long titles, generic categories and missing travel blocks from continuing in previously created plans.
+- **Contents:** Exact-match checks, category selection, note and map links, non-overlapping travel-card creation.
+- **Repository role:** PocketBase migration
+- **Evidence of use:** Versioned PocketBase data migration; deployed by the server-before-client workflow (see `docs/DEPLOY.md`).
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Versioned data migration history could become incomplete.
+- **Confidence:** HIGH
+- **Owner / layer:** PocketBase migrations
+- **Responsibilities:** Repair only the uniquely identified existing itinerary and leave other accounts unchanged.
+- **When to open:** When reviewing or troubleshooting PocketBase historical plan metadata reconciliation.
+- **Can it be deleted?** No — preserve applied migrations and their audit trail.
+- **Connected to:** `pb_migrations/`, `docs/DATA_MAP.md`.
+
+RU:
+
+- **Зачем файл человеку:** Точечно исправляет существующий маршрут: краткие названия, категории, заметки с картами и отдельные карточки переездов.
+- **Что это:** Однократная миграция пользовательских планов PocketBase с защитой по владельцу и точному набору остановок.
+- **Зачем:** Убирает неверные категории и пустые интервалы, не меняя время уже запланированных осмотров.
+- **Содержимое:** Проверка идентификации, выбор категорий, обновление пояснений, добавление только непересекающихся переездов.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция данных PocketBase, применяемая серверной цепочкой развёртывания.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** История обновления данных может стать неполной.
+- **Уверенность:** HIGH
+- **Владелец / слой:** миграции PocketBase
+- **Обязанности:** Корректировать только однозначно определённый маршрут, не затрагивая остальные записи.
+- **Когда открывать:** При проверке исправления расписания или миграций PocketBase.
+- **Можно удалить?** Нет, это сохранённая история миграции.
+- **Связано с:** `pb_migrations/`, `docs/DATA_MAP.md`.
 
 
 ### `pubspec.lock`
