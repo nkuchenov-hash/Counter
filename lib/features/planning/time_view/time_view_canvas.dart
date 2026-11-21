@@ -60,7 +60,7 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
         ? '${wallNow.hour.toString().padLeft(2, '0')}:${wallNow.minute.toString().padLeft(2, '0')}'
         : null;
     if (nowTop != null) {
-      maybeAutoScrollTimelineToNow(nowTop, canvasHeight);
+      maybeAutoScrollTimelineToNow(nowTop, canvasHeight, grid, planWallDay, rangeStart);
     }
 
     final compact = timelineCompactLayout(host.context);

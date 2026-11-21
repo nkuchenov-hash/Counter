@@ -36,6 +36,7 @@ class _LifeOsPlanningSettingsPageState
   Set<String>? _fixedTagIds;
   bool _loadFailed = false;
   bool _afterLast = false;
+  int _openingLead = PlanningSheetTimelinePrefs.openingLeadMinutes;
   bool _savingPlacement = false;
   bool _openDefaultTimes = false;
 
@@ -48,6 +49,7 @@ class _LifeOsPlanningSettingsPageState
   Future<void> _load() async {
     try {
       final range = await PlanningSheetTimelinePrefs.loadVisibleDayRange();
+      final openingLead = await PlanningSheetTimelinePrefs.loadOpeningLeadMinutes();
       final fixed = await TimeViewFixedTagPrefs.load();
       await DatabaseService.instance.loadPlanAutoPlacementMode();
       final afterLast = DatabaseService.instance.planAutoPlacementMode ==
@@ -55,6 +57,7 @@ class _LifeOsPlanningSettingsPageState
       if (mounted) {
         setState(() {
           _bounds = range;
+          _openingLead = openingLead;
           _fixedTagIds = fixed;
           _afterLast = afterLast;
           _loadFailed = false;
@@ -254,6 +257,23 @@ class _LifeOsPlanningSettingsPageState
                     ]),
                     _heading(context, ru ? 'ВРЕМЕННАЯ ШКАЛА' : 'TIME VIEW'),
                     AppSettingsNavigationGroup(children: [
+                      _menuRow(
+                        ru ? 'Открывать таймлайн' : 'Timeline opening position',
+                        AppMenuIconRole.clock,
+                        () => _openEditor(PlanningTimelineOpeningSettingsBlock(
+                          onChanged: (minutes) {
+                            if (mounted) setState(() => _openingLead = minutes);
+                          },
+                        )),
+                        subtitle: ru
+                          ? 'Текущий момент или за выбранное время до него'
+                          : 'Today or a selected time before now',
+                        value: _openingLead < 0
+                          ? (ru ? 'Начало дня' : 'Day start')
+                          : _openingLead == 0
+                            ? (ru ? 'Сейчас' : 'Now')
+                            : '${_openingLead} min',
+                      ),
                       _menuRow(
                         ru ? 'Фиксированное время для тегов' : 'Fixed-time tags',
                         AppMenuIconRole.shield,

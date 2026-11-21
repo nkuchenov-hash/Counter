@@ -7,6 +7,30 @@ import 'package:shared_preferences/shared_preferences.dart';
 class PlanningSheetTimelinePrefs {
   PlanningSheetTimelinePrefs._();
 
+  // Initial scroll position when opening today's Planning Time View.
+  // -1 = start of visible day; 0 = now; 60 = one hour before now.
+  static const String _keyOpeningLeadMinutes =
+      'planning_time_view_opening_lead_minutes_v1';
+  static const List<int> openingLeadOptions = [-1, 0, 30, 60, 120];
+  static int _openingLeadMinutes = 60;
+  static int get openingLeadMinutes => _openingLeadMinutes;
+
+  static Future<int> loadOpeningLeadMinutes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getInt(_keyOpeningLeadMinutes) ?? 60;
+    _openingLeadMinutes = openingLeadOptions.contains(value) ? value : 60;
+    return _openingLeadMinutes;
+  }
+
+  static Future<void> saveOpeningLeadMinutes(int minutes) async {
+    if (!openingLeadOptions.contains(minutes)) {
+      throw ArgumentError.value(minutes, 'minutes', 'Invalid opening lead');
+    }
+    _openingLeadMinutes = minutes;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_keyOpeningLeadMinutes, minutes);
+  }
+
   static const String _keyStartExtended = 'visibleDayStartHourExtended';
   static const String _keyEndExtended = 'visibleDayEndHourExtended';
   static const String _legacyKeyStart = 'planning_day_start_hour';

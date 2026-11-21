@@ -29,6 +29,7 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
 
   Future<void> loadPlanningTimelineBounds() async {
     final range = await PlanningSheetTimelinePrefs.loadVisibleDayRange();
+    await PlanningSheetTimelinePrefs.loadOpeningLeadMinutes();
     await DatabaseService.instance.loadPlanAutoPlacementMode();
     if (host.mounted) {
       host.notifySetState(() {
@@ -130,6 +131,13 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
                   PlanAutoPlacementSettingsBlock(
                     initialMode: DatabaseService.instance.planAutoPlacementMode,
                     onChanged: DatabaseService.instance.setPlanAutoPlacementMode,
+                  ),
+                  const Divider(height: 24),
+                  PlanningTimelineOpeningSettingsBlock(
+                    onChanged: (_) {
+                      timeModeDidAutoScrollToNow = false;
+                      if (host.mounted) host.notifySetState();
+                    },
                   ),
                   const Divider(height: 24),
                   AppSettingsNavigationGroup(
@@ -260,6 +268,82 @@ class _PlanAutoPlacementSettingsBlockState
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Shared Time View opening-position preference; used from both settings UIs.
+class PlanningTimelineOpeningSettingsBlock extends StatefulWidget {
+  const PlanningTimelineOpeningSettingsBlock({super.key, this.onChanged});
+
+  final ValueChanged<int>? onChanged;
+
+  @override
+  State<PlanningTimelineOpeningSettingsBlock> createState() =>
+      _PlanningTimelineOpeningSettingsBlockState();
+}
+
+class _PlanningTimelineOpeningSettingsBlockState
+    extends State<PlanningTimelineOpeningSettingsBlock> {
+  late int _leadMinutes;
+
+  @override
+  void initState() {
+    super.initState();
+    _leadMinutes = PlanningSheetTimelinePrefs.openingLeadMinutes;
+  }
+
+  String _label(int minutes, bool ru) {
+    if (minutes < 0) return ru ? 'С начала дня' : 'Day start';
+    if (minutes == 0) return ru ? 'Сейчас' : 'Now';
+    if (minutes == 30) return ru ? 'За 30 мин' : '30 min before';
+    if (minutes == 60) return ru ? 'За 1 час' : '1 hour before';
+    return ru ? 'За 2 часа' : '2 hours before';
+  }
+
+  void _select(int minutes) {
+    if (_leadMinutes == minutes) return;
+    setState(() => _leadMinutes = minutes);
+    unawaited(PlanningSheetTimelinePrefs.saveOpeningLeadMinutes(minutes));
+    widget.onChanged?.call(minutes);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ru = currentLocale.value.toLowerCase().startsWith('ru');
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          ru ? 'Открывать таймлайн' : 'Open timeline at',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          ru
+              ? 'Для сегодняшнего дня показывать время от выбранной точки. '
+                'Другие даты открываются с начала дня.'
+              : 'For today, scroll to the selected time. '
+                'Other dates open at the beginning of the day.',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final option in PlanningSheetTimelinePrefs.openingLeadOptions)
+              ChoiceChip(
+                label: Text(_label(option, ru)),
+                selected: _leadMinutes == option,
+                onSelected: (_) => _select(option),
+              ),
+          ],
         ),
       ],
     );

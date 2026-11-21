@@ -79,7 +79,8 @@ class PlanningTimeViewCoordinator {
   }
 
   void resetHourGridScrollForNewDay() {
-    timeModeDidAutoScrollToNow = true;
+    // Re-center when returning to today; other days remain at the top.
+    timeModeDidAutoScrollToNow = false;
     hourGridScrollVelocityPxPerSec = 0;
     hourGridTickerElapsedLast = null;
     if (hourGridEdgeScrollTicker.isActive) {

@@ -524,31 +524,43 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
     return y;
   }
 
-  void maybeAutoScrollTimelineToNow(double nowTopPx, double canvasHeight) {
+  void maybeAutoScrollTimelineToNow(
+    double nowTopPx,
+    double canvasHeight,
+    PlanTimeViewDurationGrid grid,
+    DateTime planWallDay,
+    int startExtended,
+  ) {
     if (!isProfileTodaySelectedForPlanning()) return;
-    if (timeModeDidAutoScrollToNow) return;
+    final leadMinutes = PlanningSheetTimelinePrefs.openingLeadMinutes;
+    if (leadMinutes < 0 || timeModeDidAutoScrollToNow) return;
     if (!hourGridScrollController.hasClients) return;
-    timeModeDidAutoScrollToNow = true;
-    final viewport = MediaQuery.sizeOf(host.context).height * 0.45;
-    final target = (nowTopPx - viewport * 0.35)
+    // Convert wall-clock minutes via the variable-height duration grid.
+    // Subtracting fixed pixels is incorrect when some hours compress.
+    final nowMinute = timelineMinutesFromRangeStart(
+      profileWallNow(), planWallDay, startExtended,
+    );
+    final openingMinute = math.max(0.0, nowMinute - leadMinutes);
+    final target = grid.yForMinutesFromRangeStart(openingMinute)
         .clamp(
           0.0,
           math.max(0.0, hourGridScrollController.position.maxScrollExtent),
         )
         .toDouble();
     final autoScrollDay = host.pageWidget.selectedDateString;
+    timeModeDidAutoScrollToNow = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Do not apply a previously queued "today" jump to the next swiped day.
       if (!host.mounted ||
           host.pageWidget.selectedDateString != autoScrollDay ||
           !isProfileTodaySelectedForPlanning() ||
           !hourGridScrollController.hasClients) {
         return;
       }
-      hourGridScrollController.animateTo(
-        target,
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOutCubic,
+      hourGridScrollController.jumpTo(
+        target.clamp(
+          0.0,
+          hourGridScrollController.position.maxScrollExtent,
+        ),
       );
     });
   }
