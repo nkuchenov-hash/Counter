@@ -130,13 +130,23 @@ class ViktorMultiPlanProposal {
         }
       }
       CategoryRule category;
-      CategoryRule resolve() => resolveViktorPlanCategory(
+      CategoryRule resolve() {
+        final requestedId = input['category_id'] as String?;
+        if (requestedId != null) {
+          final selected = db.getCategoryRuleByBackendRowId(requestedId);
+          if (selected == null || selected.isArchived) {
+            throw StateError('«$title»: выбранная категория не найдена.');
+          }
+          return selected;
+        }
+        return resolveViktorPlanCategory(
         title: title,
         identifyCategory: db.identifyCategory,
         categoryById: db.getCategoryRuleById,
         defaultCategoryId: db.defaultCategoryId,
         rootCategories: db.rules,
       );
+      }
       try {
         category = resolve();
       } on StateError {
@@ -152,11 +162,14 @@ class ViktorMultiPlanProposal {
       rows.add({
         'title': title,
         'category_id': categoryId,
+        if (input['note'] != null) 'notes_plain': input['note'],
         'start_time': db.viktorProfileWallToUtc(start).toIso8601String(),
         'end_time': db.viktorProfileWallToUtc(end).toIso8601String(),
         'initial_date_key': day,
       });
       lines.add('$day ${clock(start)}–${clock(end)}  $title');
+      lines.add('  Категория: ${db.getCategoryPath(category.id)}'
+          '${input['note'] == null ? '' : '; заметка: ${input['note']}'}');
     }
     lines.add('Все изменения будут применены только после подтверждения.');
     return ViktorMultiPlanProposal(lines.join('\n'), rows);
