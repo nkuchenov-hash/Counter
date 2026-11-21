@@ -1,6 +1,7 @@
 /// <reference path="../pb_data/types.d.ts" />
 // Narrow, idempotent repair of the already scheduled 2026-11-21 driving day.
 // Never change user-selected visit times or any other user's tasks.
+// This release synchronizes the reviewed repair with the deployment gate.
 migrate((app) => {
   const day = "2026-11-21";
   const all = app.findRecordsByFilter(
