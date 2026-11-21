@@ -168,8 +168,12 @@ assert.match(compactYandexInstructions, /actions:\[\]/,
   'Yandex must draft multi-activity weekends without unsafe partial writes');
 assert.match(source, /completed activities followed by new chores/,
   'Other providers must separate observed Records from new Plans');
-assert.ok(compactYandexInstructions.length < 3000,
-  'Yandex should receive the compact general tool catalogue');
+assert.ok(compactYandexInstructions.length < 3500,
+  'Yandex should receive a bounded tool catalogue with category and note support');
+assert.match(compactYandexInstructions, /category_id\?/,
+  'Yandex must be able to select the actual category of a plan');
+assert.match(compactYandexInstructions, /note\?/,
+  'Yandex must support descriptions separately from titles');
 assert.match(compactYandexInstructions, /schedule_timezone/);
 assert.match(compactYandexInstructions, /PREVIOUS assistant draft/);
 assert.match(compactYandexInstructions, /next calendar date/);
