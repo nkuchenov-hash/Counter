@@ -387,6 +387,13 @@ class _PlanningPageState extends State<PlanningPage>
     final dayChanged =
         oldWidget.selectedDate != widget.selectedDate ||
         oldWidget.selectedDateString != widget.selectedDateString;
+    // Returning to the Planning tab is a new opening of today's Time View.
+    if (!dayChanged &&
+        _sortMode == PlanSortMode.time &&
+        !oldWidget.shellTabActive &&
+        widget.shellTabActive) {
+      timeView.timeModeDidAutoScrollToNow = false;
+    }
     if (dayChanged && _sortMode == PlanSortMode.time) {
       // External date pickers may change the day during a widget build. A
       // viewport jump there can notify listeners mid-build; settle afterward.

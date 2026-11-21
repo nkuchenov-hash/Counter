@@ -560,7 +560,7 @@ extension PlanningTimeViewPlanningTimeView on PlanningTimeViewCoordinator {
         target.clamp(
           0.0,
           hourGridScrollController.position.maxScrollExtent,
-        ),
+        ).toDouble(),
       );
     });
   }
