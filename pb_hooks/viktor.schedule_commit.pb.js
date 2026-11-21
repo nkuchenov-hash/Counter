@@ -192,6 +192,8 @@ routerAdd("POST", "/api/viktor/schedule/create", function(e) {
   }
   const seenIds = new Set();
   const proposed = [];
+  // Keep category relation and plain-text note in the same atomic create.
+  // Both fields are protected by the authenticated owner and replay checks.
   const cleanFields = new Set([
     "plan_id", "title", "category_id", "start_time", "end_time",
     "initial_date_key", "notes_plain"
