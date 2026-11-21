@@ -413,3 +413,136 @@ jobs:
           path: /tmp/sleep-cloud-result.txt
           if-no-files-found: error
           retention-days: 14
+
+  route_proof_20261121:
+    # Independent evidence: only a read-only query of the live plans table counts.
+    # Save sanitized PASS/FAIL to a separate branch, not to public user data.
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [validate, deploy]
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: write
+    concurrency:
+      group: lifeos-route-proof
+      cancel-in-progress: false
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER || 'root' }}
+      SSH_HOST: ${{ secrets.POCKETBASE_SSH_HOST || secrets.VPS_HOST || secrets.SSH_HOST || '137.22.146.109' }}
+      SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+      POCKETBASE_SERVICE: ${{ secrets.POCKETBASE_SERVICE }}
+      POCKETBASE_DEPLOY_DIR: ${{ secrets.POCKETBASE_DEPLOY_DIR }}
+      TARGET_SHA: ${{ github.sha }}
+      DEPLOY_RESULT: ${{ needs.deploy.result }}
+    steps:
+      - name: Checkout independent evidence branch
+        uses: actions/checkout@v4
+        with:
+          ref: ops/lifeos-route-evidence
+          fetch-depth: 0
+      - name: Verify live route without editing user data and publish evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          RESULT="UNKNOWN"
+          if [[ "$DEPLOY_RESULT" != "success" ]]; then
+            echo '{"verified":false,"reason":"production_deploy_not_successful"}' > evidence/db-check.json
+          elif [[ -z "$SSH_PRIVATE_KEY" ]]; then
+            echo '{"verified":false,"reason":"ssh_secret_missing"}' > evidence/db-check.json
+          else
+            install -m 700 -d ~/.ssh
+            printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/route_proof
+            chmod 600 ~/.ssh/route_proof
+            if ! ssh -o BatchMode=yes -o ConnectTimeout=12 -o StrictHostKeyChecking=accept-new -i ~/.ssh/route_proof -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+                "POCKETBASE_SERVICE='$POCKETBASE_SERVICE' POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' bash -s" \
+                > evidence/db-check.json <<'REMOTE'
+          set -euo pipefail
+          service_name="$POCKETBASE_SERVICE"
+          if [[ -z "$service_name" ]]; then
+            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
+          fi
+          if [[ -z "$service_name" && "$(systemctl show lifeos-recovery-live.service -p LoadState --value 2>/dev/null || true)" == "loaded" ]]; then service_name="lifeos-recovery-live.service"; fi
+          app_dir="$POCKETBASE_DEPLOY_DIR"
+          if [[ -z "$app_dir" && "$service_name" == "lifeos-recovery-live.service" ]]; then app_dir="/opt/lifeos/recovery-candidate"; fi
+          if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
+          if [[ ! -f "$app_dir/pb_data/data.db" ]]; then echo '{"verified":false,"reason":"production_db_unavailable"}'; exit 0; fi
+          python3 - "$app_dir/pb_data/data.db" <<'SQLVERIFY'
+          import json,sqlite3,sys
+          from datetime import datetime,timezone
+          db=sys.argv[1]
+          con=sqlite3.connect("file:"+db+"?mode=ro",uri=True)
+          con.row_factory=sqlite3.Row
+          rows=con.execute("SELECT user_id,title,initial_date_key,start_time,end_time,is_done,is_postponed FROM plans WHERE initial_date_key=?",("2026-11-21",)).fetchall()
+          names=["Особняк Милютина","Санта Глория","Чад — костюмы","Особняк Глуховского","Марсала","Крыша 18","Tara Brooch"]
+          by_owner={}
+          for row in rows:
+              by_owner.setdefault(row["user_id"],[]).append(row)
+          itineraries=[]
+          for owner,items in by_owner.items():
+              matches={}
+              for name in names:
+                  found=[x for x in items if (x["title"] or "").strip().casefold()==name.casefold()]
+                  if len(found)==1:
+                      matches[name]=found[0]
+              if len(matches)==len(names):
+                  itineraries.append((items,matches))
+          def instant(value):
+              v=(value or "").replace(" ","T")
+              if not v: return None
+              if v.endswith("Z"):v=v[:-1]+"+00:00"
+              dt=datetime.fromisoformat(v)
+              if dt.tzinfo is None: dt=dt.replace(tzinfo=timezone.utc)
+              return dt.astimezone(timezone.utc)
+          passed=False;checks={}
+          if len(itineraries)==1:
+              items,m=itineraries[0]
+              tara=instant(m["Tara Brooch"]["start_time"])
+              def offset(name):
+                  start=instant(m[name]["start_time"])
+                  if tara is None or start is None:return None
+                  return round((start-tara).total_seconds()/60)
+              checks={
+                "milyutin_completed":bool(m["Особняк Милютина"]["is_done"]),
+                "santa_gloria_completed":bool(m["Санта Глория"]["is_done"]),
+                "milyutin_before_santa":offset("Особняк Милютина") is not None and offset("Особняк Милютина")<offset("Санта Глория"),
+                "chad_1635":offset("Чад — костюмы")==-145,
+                "glukhovsky_1700":offset("Особняк Глуховского")==-120,
+                "marsala_1755":offset("Марсала")==-65,
+                "roof_deferred":bool(m["Крыша 18"]["is_postponed"]),
+                "santa_to_chad_drive":len([r for r in items if r["title"]=="Дорога: Санта Глория → Чад — костюмы"])==1,
+                "chad_to_glukhovsky_drive":len([r for r in items if r["title"]=="Дорога: Чад — костюмы → Особняк Глуховского"])==1
+              }
+              passed=all(checks.values())
+          print(json.dumps({"verified":passed,"matching_itineraries":len(itineraries),"checks":checks},ensure_ascii=False))
+          con.close()
+          SQLVERIFY
+          REMOTE
+            then
+              echo '{"verified":false,"reason":"production_read_only_probe_failed"}' > evidence/db-check.json
+            fi
+          fi
+          python3 - <<'REPORT'
+          import json,os,datetime
+          path="evidence/db-check.json"
+          try:
+              check=json.load(open(path,encoding="utf-8"))
+          except Exception:
+              check={"verified":False,"reason":"invalid_probe_output"}
+          report={
+              "main_sha":os.environ["TARGET_SHA"],
+              "deploy_result":os.environ["DEPLOY_RESULT"],
+              "checked_at_utc":datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              "database":check,
+              "confirmed":os.environ["DEPLOY_RESULT"]=="success" and check.get("verified") is True,
+          }
+          with open("evidence/route-2026-11-21.json","w",encoding="utf-8") as f:
+              json.dump(report,f,ensure_ascii=False,indent=2)
+          print("route_verification_confirmed="+str(report["confirmed"]).lower())
+          REPORT
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add evidence/route-2026-11-21.json
+          git commit -m "Record audited Nov 21 LIVE route deployment result for $TARGET_SHA"
+          git push origin HEAD:refs/heads/ops/lifeos-route-evidence
