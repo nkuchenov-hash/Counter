@@ -15,6 +15,46 @@ Map<String, dynamic> batch(List<Map<String, dynamic>> actions) => {
     };
 
 void main() {
+  test('Plan creation carries explicit category and separate notes', () {
+    final single = ViktorActionBatch.fromJson(batch([
+      action('create_plan', {
+        'title': 'Крыша 18', 'wall_day': '2026-11-21',
+        'start_time': '15:30', 'duration_minutes': 25,
+        'category_id': planA,
+        'note': 'Осмотреть террасу до заката.',
+      }),
+    ]));
+    expect(single.actions.single.arguments['category_id'], planA);
+    expect(single.actions.single.arguments['note'],
+        'Осмотреть террасу до заката.');
+
+    final second = ViktorActionBatch.fromJson(batch([
+      action('create_plan', {
+        'title': 'Милютин', 'wall_day': '2026-11-21',
+        'start_time': '14:20', 'duration_minutes': 20,
+        'category_id': planA, 'note': 'Осмотр исторического интерьера',
+      }),
+      action('create_plan', {
+        'title': 'Tara Brooch', 'wall_day': '2026-11-21',
+        'start_time': '19:00', 'duration_minutes': 180,
+        'category_id': planB, 'note': 'Встреча RCC',
+      }),
+    ]));
+    final folded = ViktorActionBatch.atomicTimedCreates(second)!;
+    final rows = folded.actions.single.arguments['plans'] as List;
+    expect((rows[0] as Map)['category_id'], planA);
+    expect((rows[0] as Map)['note'], 'Осмотр исторического интерьера');
+    expect((rows[1] as Map)['category_id'], planB);
+    expect((rows[1] as Map)['note'], 'Встреча RCC');
+
+    expect(() => ViktorActionBatch.fromJson(batch([
+      action('create_plan', {
+        'title': 'Invalid note', 'wall_day': '2026-11-21',
+        'note': 'x' * 3001,
+      }),
+    ])), throwsFormatException);
+  });
+
   test('Legacy independent timed creates fold into a single atomic action', () {
     final legacy = ViktorActionBatch.fromJson({
       'version': 1, 'request_id': 'viktor_fold_20261117',
