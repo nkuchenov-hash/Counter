@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:url_launcher/url_launcher.dart';
+
 import 'package:counter/shared/diagnostics/performance/rebuild_metrics.dart';
 import 'package:counter/shared/categories/presentation/plan_category_lookup.dart';
 import 'package:counter/data/models.dart';
@@ -90,10 +92,37 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
     with SingleTickerProviderStateMixin {
   bool _hovered = false;
   late final AnimationController _completionCtrl;
+  Uri? _mapUri;
+
+  /// Read only direct, explicitly stored map links. Never infer a destination
+  /// from a title, which may be ambiguous or name a person.
+  static Uri? _mapUrlFromNote(String? note) {
+    if (note == null || note.isEmpty) return null;
+    for (final match in RegExp(r'https?://[^\s<>"\]]+').allMatches(note)) {
+      final candidate = match.group(0)?.replaceAll(RegExp(r'[.,;!?]+$'), '');
+      if (candidate == null) continue;
+      final uri = Uri.tryParse(candidate);
+      if (uri == null || uri.scheme != 'https') continue;
+      final host = uri.host.toLowerCase();
+      final yandex = (host == 'yandex.ru' ||
+              host.endsWith('.yandex.ru') ||
+              host == 'yandex.com' ||
+              host.endsWith('.yandex.com')) &&
+          uri.path.startsWith('/maps');
+      final google = (host == 'google.com' ||
+              host.endsWith('.google.com') ||
+              host == 'google.ru' ||
+              host.endsWith('.google.ru')) &&
+          uri.path.startsWith('/maps');
+      if (yandex || google) return uri;
+    }
+    return null;
+  }
 
   @override
   void initState() {
     super.initState();
+    _mapUri = _mapUrlFromNote(widget.task.notesPlain);
     _completionCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 260),
@@ -106,6 +135,9 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
   @override
   void didUpdateWidget(covariant PlanTimeTaskCard oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.task.notesPlain != widget.task.notesPlain) {
+      _mapUri = _mapUrlFromNote(widget.task.notesPlain);
+    }
     if (!oldWidget.displayIsDone && widget.displayIsDone) {
       _completionCtrl.forward(from: 0);
     } else if (oldWidget.displayIsDone && !widget.displayIsDone) {
@@ -141,6 +173,23 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
     rebuildMetricsTick('PlanTimeTaskCard');
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
+    final cardMetaIcons = <Widget>[
+      ...widget.metaIcons,
+      if (_mapUri != null)
+        SizedBox(
+          width: 28,
+          height: 28,
+          child: IconButton(
+            icon: const Icon(Icons.map_outlined, size: 18),
+            tooltip: loc.startsWith('ru') ? 'Открыть карту' : 'Open map',
+            padding: EdgeInsets.zero,
+            iconSize: 18,
+            onPressed: () {
+              launchUrl(_mapUri!, mode: LaunchMode.externalApplication);
+            },
+          ),
+        ),
+    ];
     final lookup = PlanCategoryLookup.resolve;
     final categoryPresentation = lookup?.call(widget.task.categoryId);
     final categoryTone =
@@ -234,7 +283,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
         visibleTags: _visibleTags,
         scheduleConflict: widget.scheduleConflict,
         toggleDoneEnabled: widget.toggleDoneEnabled,
-        metaIcons: widget.metaIcons,
+        metaIcons: cardMetaIcons,
         showProgressBar: widget.showProgressBar,
         metricsBlock: progressSlot,
         spacing: cardSpacing,
@@ -258,7 +307,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
             showPlay: _showPlay,
             visibleTags: _visibleTags,
             toggleDoneEnabled: widget.toggleDoneEnabled,
-            metaIcons: widget.metaIcons,
+            metaIcons: cardMetaIcons,
             metricsBlock: progressSlot,
             onToggleDone: widget.onToggleDone,
             onSelectToggle: widget.onSelectToggle,
@@ -278,7 +327,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
             showPlay: _showPlay,
             visibleTags: _visibleTags,
             toggleDoneEnabled: widget.toggleDoneEnabled,
-            metaIcons: widget.metaIcons,
+            metaIcons: cardMetaIcons,
             metricsBlock: progressSlot,
             timelineFillHeight: widget.timelineFillHeight,
             categoryTrail: widget.showFooterBreadcrumb ? categoryTrail : '',
@@ -305,7 +354,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
             visibleTags: _visibleTags,
             scheduleConflict: widget.scheduleConflict,
             toggleDoneEnabled: widget.toggleDoneEnabled,
-            metaIcons: widget.metaIcons,
+            metaIcons: cardMetaIcons,
             metricsBlock: progressSlot,
             spacing: cardSpacing,
             timelineFillHeight: widget.timelineFillHeight,
@@ -331,7 +380,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
             visibleTags: _visibleTags,
             scheduleConflict: widget.scheduleConflict,
             toggleDoneEnabled: widget.toggleDoneEnabled,
-            metaIcons: widget.metaIcons,
+            metaIcons: cardMetaIcons,
             metricsBlock: progressSlot,
             spacing: cardSpacing,
             timelineFillHeight: widget.timelineFillHeight,
