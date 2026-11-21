@@ -380,20 +380,12 @@ class _PlanningPageState extends State<PlanningPage>
       unawaited(DatabaseService.instance.flushPlanningOrderSyncNow());
     }
   }
-
   @override
   void didUpdateWidget(covariant PlanningPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     final dayChanged =
         oldWidget.selectedDate != widget.selectedDate ||
         oldWidget.selectedDateString != widget.selectedDateString;
-    // Returning to the Planning tab is a new opening of today's Time View.
-    if (!dayChanged &&
-        _sortMode == PlanSortMode.time &&
-        !oldWidget.shellTabActive &&
-        widget.shellTabActive) {
-      timeView.timeModeDidAutoScrollToNow = false;
-    }
     if (dayChanged && _sortMode == PlanSortMode.time) {
       // External date pickers may change the day during a widget build. A
       // viewport jump there can notify listeners mid-build; settle afterward.
@@ -407,6 +399,7 @@ class _PlanningPageState extends State<PlanningPage>
     if (dayChanged ||
         oldWidget.isActivePlanningDay != widget.isActivePlanningDay ||
         oldWidget.shellTabActive != widget.shellTabActive) {
+      if (!dayChanged && !oldWidget.shellTabActive && widget.shellTabActive && _sortMode == PlanSortMode.time) timeView.timeModeDidAutoScrollToNow = false;
       setState(() {
         if (widget.isActivePlanningDay) {
           _planningStream = _planningStreamForCurrentDay();
