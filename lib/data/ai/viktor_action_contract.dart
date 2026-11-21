@@ -45,10 +45,12 @@ class ViktorAction {
       case 'create_plan':
         _onlyKeys(args, const {
           'title', 'wall_day', 'duration_minutes', 'start_time',
-          'conflict_policy', 'timezone',
+          'conflict_policy', 'timezone', 'category_id', 'note',
         });
         _title(args, 'title');
         _day(args, 'wall_day');
+        if (args.containsKey('category_id')) _id(args, 'category_id');
+        if (args.containsKey('note')) _planNote(args);
         // Date-only plans are supported by the existing Planning Brain.
         // A timed plan must provide BOTH a valid start and duration; never
         // invent a clock or silently discard a supplied duration.
@@ -91,10 +93,12 @@ class ViktorAction {
           final row = Map<String, Object?>.from(item);
           _onlyKeys(row, const {
             'title', 'wall_day', 'start_time', 'duration_minutes', 'timezone',
-            'fill_remaining',
+            'fill_remaining', 'category_id', 'note',
           });
           final title = _title(row, 'title');
           final date = _day(row, 'wall_day');
+          if (row.containsKey('category_id')) _id(row, 'category_id');
+          if (row.containsKey('note')) _planNote(row);
           final fills = row['fill_remaining'] == true;
           if (row.containsKey('fill_remaining') && !fills) {
             throw const FormatException('fill_remaining must be true');
@@ -516,6 +520,10 @@ class ViktorActionBatch {
               'wall_day': action.arguments['wall_day'],
               'start_time': action.arguments['start_time'],
               'duration_minutes': action.arguments['duration_minutes'],
+               if (action.arguments['category_id'] != null)
+                 'category_id': action.arguments['category_id'],
+               if (action.arguments['note'] != null)
+                 'note': action.arguments['note'],
               if (action.arguments['timezone'] != null)
                 'timezone': action.arguments['timezone'],
             },
@@ -643,6 +651,15 @@ String _text(Map<String, Object?> args, String key, {int maxLength = 160}) {
 
 String _title(Map<String, Object?> args, String key) =>
     _text(args, key, maxLength: 160);
+
+/// Plan descriptions are stored in notes, not squeezed into the title.
+void _planNote(Map<String, Object?> args) {
+  final value = args['note'];
+  if (value is! String || value.trim().isEmpty || value.length > 3000 ||
+      value.contains(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'))) {
+    throw const FormatException('Invalid plan note');
+  }
+}
 
 String _id(Map<String, Object?> args, String key) {
   final value = _text(args, key, maxLength: 15);
