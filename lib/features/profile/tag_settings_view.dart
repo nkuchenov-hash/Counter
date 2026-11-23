@@ -82,7 +82,7 @@ class _TagSettingsViewState extends State<TagSettingsView> {
           const SizedBox(height: 20),
           Text(
             t(loc, 'tag_display_preview_heading'),
-            style: theme.textTheme.titleSmall,
+            style: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: 12),
           SingleChildScrollView(
@@ -107,10 +107,10 @@ class _TagSettingsViewState extends State<TagSettingsView> {
                         ),
                         const SizedBox(height: 6),
                         SizedBox(
-                          width: 92,
+                          width: 112,
                           child: Text(
                             _modeLabel(loc, m),
-                            style: theme.textTheme.labelSmall,
+                            style: theme.textTheme.bodyMedium,
                             textAlign: TextAlign.center,
                             maxLines: 2,
                           ),
@@ -125,7 +125,7 @@ class _TagSettingsViewState extends State<TagSettingsView> {
           const SizedBox(height: 28),
           Text(
             t(loc, 'tag_display_your_style'),
-            style: theme.textTheme.titleSmall,
+            style: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: 4),
           StreamBuilder<UserSettings>(

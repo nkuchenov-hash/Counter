@@ -2,6 +2,7 @@
 // Unified tag settings: list CRUD + global display mode + default plan durations.
 // ---------------------------------------------------------------------------
 
+import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
@@ -10,6 +11,26 @@ import 'package:counter/features/profile/tag_manager_page.dart';
 import 'package:counter/features/profile/tag_settings_view.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+
+/// Shared readable-width host for independently scrolling tag and style tabs.
+class TagSettingsTabFrame extends StatelessWidget {
+  const TagSettingsTabFrame({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: settingsContentMaxWidth(context),
+        ),
+        child: SizedBox(width: double.infinity, child: child),
+      ),
+    );
+  }
+}
 
 class TagSettingsHub extends StatefulWidget {
   const TagSettingsHub({
@@ -83,6 +104,9 @@ class _TagSettingsHubState extends State<TagSettingsHub>
                     ) ? kShellDesktopContentHorizontalPadding : 16,
                   ),
                   child: TabBar(
+                    overlayColor: const WidgetStatePropertyAll(
+                      AppNeutralTones.transparent,
+                    ),
                     controller: _tabController,
                     isScrollable: true,
                     tabAlignment: TabAlignment.start,
@@ -101,11 +125,15 @@ class _TagSettingsHubState extends State<TagSettingsHub>
         body: TabBarView(
           controller: _tabController,
           children: [
-            TagManagerPage(
-              embeddedInHub: true,
-              pocketTagDomain: widget.tagCreateDomain,
+            TagSettingsTabFrame(
+              child: TagManagerPage(
+                embeddedInHub: true,
+                pocketTagDomain: widget.tagCreateDomain,
+              ),
             ),
-            const TagSettingsView(embeddedInHub: true),
+            const TagSettingsTabFrame(
+              child: TagSettingsView(embeddedInHub: true),
+            ),
             if (_showDurationsTab)
               const TagDefaultDurationSettingsView(embeddedInHub: true),
           ],

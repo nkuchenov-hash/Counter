@@ -1,3 +1,12 @@
+## Tag settings three-tab layout parity (2026-11-23)
+- Tag-setting tabs are plain text navigation: inactive labels muted, active text underlined, and no rectangular Material hover overlay. Style previews must keep readable labels (body text size, not micro-labels).
+
+
+- The **Tags**, **Style**, and **Duration** tabs share the **same readable, centered Settings content column** as the title, back arrow, and tab bar. A full-viewport `Scaffold` or `ListView` from a tab child must never stretch controls to the desktop window edges. The header does not count as layout verification unless the tab body follows its geometry.
+- The Tags tab retains its reorderable items, per-tag edit/delete and existing backend semantics. Display those items as one white, radius-matched group with row separators inside the centered column. Use neutral trash icon color until a destructive confirmation; do not scatter bright red delete controls across the window width.
+- Place **New tag** adjacent to the tag list header on desktop, not as a tiny bottom-right floating control beyond the readable column. Always keep the action available for an empty tag collection; preserve the existing standalone-screen FAB where the hub is not used.
+- The Style tab keeps its live previews and selection state but must use the same centered tab body frame, with selector rows never spanning the whole viewport. Duration settings continue using the canonical `AppSettingsPageBody` width. Preserve all three tabs and their current localized titles.
+
 ## Visible day range — Planning Settings geometry (2026-11-23)
 
 - The Schedule setting with the two-thumb slider is named **«Отображаемый период дня» / “Visible day range”**: it controls which hours are *shown* on the Planning timeline, not the duration of the day or the duration of individual plans.
