@@ -1,3 +1,10 @@
+## [2026-11-23] — Remove duplicate oversized Planning settings sheet [verification pending]
+
+- The Plans toolbar gear now opens the existing canonical Planning Settings screen instead of a full-width, 84%-height miscellaneous modal.
+- Reused the Settings layout and groups, removed the redundant large in-body heading, and dropped the separate 780 px wrapper so the shared Settings max-width rule is respected.
+- Preserved the synthetic No Tags chip visibility/color controls in the canonical Additional group (same SharedPreferences keys); return to Planning refreshes visible timeline bounds, fixed-tag IDs and the tag strip.
+- Added a widget test asserting the toolbar gear navigates to the Settings page, not a bottom sheet. Release checks and web deploy pending.
+
 ## [2026-11-23] — Planning unified alignment and text-only hover [CI pending]
 
 - Removed the desktop toolbar's fixed width subtraction and replaced it with the same centered max-width + horizontal gutter as quick entry; the view tabs remain scrollable beside full-size settings and Viktor buttons, anchored to the right edge.

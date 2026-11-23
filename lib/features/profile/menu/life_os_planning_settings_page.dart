@@ -6,6 +6,8 @@ import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/time_view_fixed_time_policy.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
+import 'package:counter/features/planning/planning_quick_add_tags_controller.dart';
+import 'package:counter/features/planning/settings/planning_no_tags_settings.dart';
 import 'package:counter/features/planning/settings/plan_record_link_settings.dart';
 import 'package:counter/features/planning/settings/default_plan_times_settings_block.dart';
 import 'package:counter/features/planning/settings/planning_timeline_bounds_sheet.dart';
@@ -14,6 +16,7 @@ import 'package:counter/features/planning/time_view/time_view_settings_sheet.dar
 import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// The same persisted Planning settings as the Time View context sheet.
 /// The app-level entry has no independent copies of preference state.
@@ -39,6 +42,8 @@ class _LifeOsPlanningSettingsPageState
   int _openingLead = PlanningSheetTimelinePrefs.openingLeadMinutes;
   bool _savingPlacement = false;
   bool _openDefaultTimes = false;
+  bool _noTagsVisible = true;
+  String _noTagsColor = PlanningQuickAddTagsController.defaultNoTagsColorHex;
 
   @override
   void initState() {
@@ -48,6 +53,15 @@ class _LifeOsPlanningSettingsPageState
 
   Future<void> _load() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final noTagsVisible = prefs.getBool(
+            PlanningQuickAddTagsController.prefsKeyNoTagsVisible,
+          ) ??
+          true;
+      final noTagsColor = prefs.getString(
+            PlanningQuickAddTagsController.prefsKeyNoTagsColor,
+          ) ??
+          PlanningQuickAddTagsController.defaultNoTagsColorHex;
       final range = await PlanningSheetTimelinePrefs.loadVisibleDayRange();
       final openingLead = await PlanningSheetTimelinePrefs.loadOpeningLeadMinutes();
       final fixed = await TimeViewFixedTagPrefs.load();
@@ -57,6 +71,8 @@ class _LifeOsPlanningSettingsPageState
       if (mounted) {
         setState(() {
           _bounds = range;
+          _noTagsVisible = noTagsVisible;
+          _noTagsColor = noTagsColor;
           _openingLead = openingLead;
           _fixedTagIds = fixed;
           _afterLast = afterLast;
@@ -91,6 +107,24 @@ class _LifeOsPlanningSettingsPageState
       );
     } finally {
       if (mounted) setState(() => _savingPlacement = false);
+    }
+  }
+
+  Future<void> _saveNoTagsChip(bool visible, String colorHex) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(
+      PlanningQuickAddTagsController.prefsKeyNoTagsVisible,
+      visible,
+    );
+    await prefs.setString(
+      PlanningQuickAddTagsController.prefsKeyNoTagsColor,
+      colorHex,
+    );
+    if (mounted) {
+      setState(() {
+        _noTagsVisible = visible;
+        _noTagsColor = colorHex;
+      });
     }
   }
 
@@ -210,24 +244,7 @@ class _LifeOsPlanningSettingsPageState
                       )
                     : const CircularProgressIndicator(),
               )
-            : Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 780),
-                  child: AppSettingsPageBody(children: [
-                    Text(ru ? 'Планирование и время' : 'Planning & time',
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontSize: 31,
-                        fontWeight: FontWeight.w800,
-                      )),
-                    const SizedBox(height: 7),
-                    Text(
-                      ru
-                          ? 'Расписание, логика размещения задач и отображение временной шкалы.'
-                          : 'Schedule, plan placement rules and timeline display.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
+            : AppSettingsPageBody(children: [
                     _heading(context, ru ? 'РАСПИСАНИЕ' : 'SCHEDULE'),
                     AppSettingsNavigationGroup(children: [
                       _menuRow(
@@ -294,6 +311,18 @@ class _LifeOsPlanningSettingsPageState
                     _heading(context, ru ? 'ДОПОЛНИТЕЛЬНО' : 'ADDITIONAL'),
                     AppSettingsNavigationGroup(children: [
                       _menuRow(
+                        t(loc, 'plan_filter_no_tags'),
+                        AppMenuIconRole.tags,
+                        () => _openEditor(PlanningNoTagsSettingsBlock(
+                          initialVisible: _noTagsVisible,
+                          initialColorHex: _noTagsColor,
+                          onApply: _saveNoTagsChip,
+                        )),
+                        subtitle: ru
+                            ? 'Видимость и цвет чипа без тегов'
+                            : 'Visibility and color of the untagged chip',
+                      ),
+                      _menuRow(
                         t(loc, 'tag_default_durations_title'),
                         AppMenuIconRole.defaultTime,
                         () => Navigator.of(context).push<void>(
@@ -303,8 +332,6 @@ class _LifeOsPlanningSettingsPageState
                       ),
                     ]),
                   ]),
-                ),
-              ),
       )),
     );
   }
