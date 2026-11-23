@@ -553,7 +553,7 @@ class AppSettingsControlRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return SwitchListTile.adaptive(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 5),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 5),
       secondary: leading,
       title: Text(
         title,
@@ -657,9 +657,9 @@ class _AppSettingsNavigationGroupState
     final scheme = Theme.of(context).colorScheme;
     final dark = scheme.brightness == Brightness.dark;
     // Reuse the shared palette rather than assigning a new menu-only gray.
-    final hoverFill = dark
-        ? scheme.onSurface.withValues(alpha: 0.06)
-        : AppNeutralTones.gray200;
+    final hoverFill = scheme.onSurface.withValues(
+      alpha: dark ? 0.06 : 0.055,
+    );
     final dividerFill = dark
         ? AppColors.darkSettingsDivider
         : AppColors.settingsDivider;
@@ -674,12 +674,12 @@ class _AppSettingsNavigationGroupState
           mainAxisSize: MainAxisSize.min,
           children: [
             if (widget.header != null) ...[
-              Padding(padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+              Padding(padding: const EdgeInsets.symmetric(vertical: 8),
                 child: widget.header!),
               if (widget.children.isNotEmpty)
                 SizedBox(width: double.infinity, height: 1,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.only(left: 78, right: 20),
                     child: ColoredBox(color: dividerFill),
                   ),
                 ),
