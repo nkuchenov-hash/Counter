@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -200,52 +201,47 @@ class _TagDefaultDurationSettingsViewState
       );
     }
 
-    final body = ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemCount: _tags.length + 1,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Text(
-              t(loc, 'tag_default_durations_subtitle'),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-            ),
-          );
-        }
-        final tag = _tags[index - 1];
-        final dur = tag.defaultPlanDurationMinutes;
-        final durLabel = dur == null
-            ? t(loc, 'tag_default_duration_not_set')
-            : _durationLabel(dur, loc);
-        return Material(
-          color: scheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(12),
-          child: ListTile(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+    final body = AppSettingsPageBody(children: [
+      Text(
+        t(loc, 'tag_default_durations_subtitle'),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: scheme.onSurfaceVariant,
+        ),
+      ),
+      const SizedBox(height: 16),
+      AppSettingsNavigationGroup(children: [
+        for (final tag in _tags)
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+            minTileHeight: 76,
             title: CategoryChip(
               mode: DatabaseService.instance.settings.tagDisplayMode,
               label: tag.name,
-              color: parseTagDisplayColor(tag.color, tagName: tag.name) ?? scheme.primary,
+              color: parseTagDisplayColor(
+                tag.color,
+                tagName: tag.name,
+              ) ?? scheme.primary,
               icon: iconForTagKey(tag.icon),
-              compactGlyphLayout: true,
-              variant: CategoryChipVariant.compactCard,
             ),
-            subtitle: Text(durLabel),
-            trailing: IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              tooltip: t(loc, 'tag_default_duration_edit'),
-              onPressed: () => unawaited(_editDuration(tag)),
+            subtitle: Text(
+              tag.defaultPlanDurationMinutes == null
+                  ? t(loc, 'tag_default_duration_not_set')
+                  : _durationLabel(tag.defaultPlanDurationMinutes!, loc),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
             ),
+            trailing: Icon(
+              Icons.chevron_right_rounded,
+              color: scheme.onSurfaceVariant,
+              size: 22,
+            ),
+            hoverColor: Colors.transparent,
+            splashColor: Colors.transparent,
+            onTap: () => unawaited(_editDuration(tag)),
           ),
-        );
-      },
-    );
+      ]),
+    ]);
 
     if (widget.embeddedInHub) return body;
     return Scaffold(
