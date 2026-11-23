@@ -50,25 +50,47 @@ void main() {
       theme: appLightTheme,
       home: Scaffold(
         body: AppSettingsNavigationGroup(
-          header: PlanningTimelineBoundsSheet(
-            embedded: true,
-            initialStart: 9,
-            initialEnd: 25,
-            onBoundsChanged: (start, end) =>
-                changed = (start: start, end: end),
-            title: 'Длительность дня',
-            helper: 'Начало и конец дня',
-            valueSummaryBuilder: (start, end) => '$start–$end',
-            prevDayMarker: 'вчера',
-            nextDayMarker: 'завтра',
+          header: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+            titleAlignment: ListTileTitleAlignment.top,
+            leading: const AppSettingsMenuIcon(icon: Icons.schedule),
+            title: PlanningTimelineBoundsSheet(
+              embedded: true,
+              initialStart: 9,
+              initialEnd: 25,
+              onBoundsChanged: (start, end) =>
+                  changed = (start: start, end: end),
+              title: 'Отображаемый период дня',
+              helper: 'Часы временной шкалы',
+              valueSummaryBuilder: (start, end) => '$start–$end',
+              prevDayMarker: 'вчера',
+              nextDayMarker: 'завтра',
+            ),
           ),
-          children: const [],
+          children: [
+            AppSettingsNavigationRow(
+              title: 'Время планов по умолчанию',
+              leading: const AppSettingsMenuIcon(icon: Icons.timer),
+              onTap: () {},
+            ),
+            AppSettingsControlRow(
+              title: 'Планы друг за другом',
+              leading: const AppSettingsMenuIcon(icon: Icons.timeline),
+              value: false,
+              onChanged: (_) {},
+            ),
+          ],
         ),
       ),
     ));
     final slider = find.byType(RangeSlider);
     expect(slider, findsOneWidget);
     expect(find.byType(DropdownButtonFormField<int>), findsNothing);
+    final left = tester.getTopLeft(find.text('Отображаемый период дня')).dx;
+    expect(tester.getTopLeft(find.text('Время планов по умолчанию')).dx,
+        closeTo(left, 1));
+    expect(tester.getTopLeft(find.text('Планы друг за другом')).dx,
+        closeTo(left, 1));
     final control = tester.widget<RangeSlider>(slider);
     expect(control.values, const RangeValues(9, 25));
     control.onChanged!(const RangeValues(8, 26));

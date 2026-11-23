@@ -273,7 +273,13 @@ class _LifeOsPlanningSettingsPageState
             : AppSettingsPageBody(children: [
                     _heading(context, ru ? 'РАСПИСАНИЕ' : 'SCHEDULE'),
                     AppSettingsNavigationGroup(
-                      header: PlanningTimelineBoundsSheet(
+                      header: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                        titleAlignment: ListTileTitleAlignment.top,
+                        leading: AppSettingsMenuIcon(
+                          icon: AppMenuIcons.icon(AppMenuIconRole.clock),
+                        ),
+                        title: PlanningTimelineBoundsSheet(
                         key: const ValueKey('planning-visible-day-range-slider'),
                         embedded: true,
                         initialStart: range.start,
@@ -281,10 +287,10 @@ class _LifeOsPlanningSettingsPageState
                         onBoundsChanged: (start, end) => unawaited(
                           _saveVisibleDayBounds(start, end),
                         ),
-                        title: t(loc, 'day_length_title'),
+                        title: ru ? 'Отображаемый период дня' : 'Visible day range',
                         helper: ru
-                            ? 'Передвигайте два бегунка, чтобы задать начало и конец дня.'
-                            : 'Drag the two handles to set the visible start and end.',
+                            ? 'Выберите часы, отображаемые на временной шкале планов.'
+                            : 'Select the hours shown on the planning timeline.',
                         valueSummaryBuilder: (start, end) {
                           final startClock =
                               PlanningSheetTimelinePrefs.formatExtendedHourClock(start);
@@ -301,6 +307,7 @@ class _LifeOsPlanningSettingsPageState
                         },
                         prevDayMarker: ru ? 'вчера' : 'previous day',
                         nextDayMarker: ru ? 'завтра' : 'next day',
+                        ),
                       ),
                       children: [
                       _menuRow(
