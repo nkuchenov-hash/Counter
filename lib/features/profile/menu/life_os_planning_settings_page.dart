@@ -375,7 +375,12 @@ class _LifeOsPlanningSettingsPageState
                         AppMenuIconRole.defaultTime,
                         () => Navigator.of(context).push<void>(
                           MaterialPageRoute<void>(
-                            builder: (_) => const TagSettingsHub(initialTabIndex: 2))),
+                            builder: (_) => TagSettingsHub(
+                              initialTabIndex: 2,
+                              backLabel: ru
+                                  ? 'Планирование и время'
+                                  : 'Planning & time',
+                            ))),
                         subtitle: t(loc, 'tag_default_durations_sheet_subtitle'),
                       ),
                     ]),
