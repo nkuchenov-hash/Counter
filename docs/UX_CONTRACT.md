@@ -1,3 +1,10 @@
+## Planning settings entry — canonical navigation (2026-11-23)
+
+- Tapping the gear in the Plans view opens the same `LifeOsPlanningSettingsPage` used by the main Settings navigation. It must NOT build a separate edge-to-edge, 84%-height composite bottom sheet with day bounds, radio-style preferences and menu links all mixed together.
+- Use the shared `AppSettingsBreadcrumbBar`, `AppSettingsPageBody`, `AppSettingsNavigationGroup` and `AppSettingsNavigationRow` components; preserve normal grouping, divider, hover and font rules, including desktop readable max width. The page header is not repeated in the content body.
+- Keep the legacy "Без тегов" visibility/color preference accessible under Additional settings; persist the existing device-local keys without changing or resetting saved tag preferences. Reload the quick-add tag strip and Time View settings upon returning to Plans.
+- Individual detail editors may remain short, bounded sheets, but there is exactly one full Planning Settings index. Keep settings navigation independent of horizontal day-swipe behavior.
+
 ## Planning toolbar edge alignment and text-only tab hover (2026-11-23)
 
 - On desktop, Planning title, mode tabs, settings and Viktor actions share the same 1240 px maximum-width frame and 24 px content gutter as the quick-add field and tag row. The Viktor action ends at the quick-add row's right edge; no manual width subtraction or detached 150 px gap.
