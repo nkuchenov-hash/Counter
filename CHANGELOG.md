@@ -1,3 +1,9 @@
+## [2026-11-23] — Planning text tabs and consolidated view actions [verification pending]
+
+- Replaced the four filled Planning view segments with a lightweight text selector: muted inactive labels and a bottom underline under the active view. Persisted view mapping (Category, Time, Tags, Custom) is unchanged.
+- Moved Planning settings and Viktor actions from the quick-add/tag row into the view-switching toolbar on web and mobile. Quick-add and the tag strip remain in place, with no date-swipe, plan or PocketBase behavior changes.
+- Flutter analysis, form-factor smoke tests and web deployment remain pending; do not treat the branch as live.
+
 ## [2026-11-20] — Browser timezone favorites, clean header picker, Language/Time grouping [CI pending]
 
 - Web quick timezone favorites and automatic-mode choice now persist in IndexedDB, independent of quota-limited legacy SharedPreferences/localStorage; first read migrates existing profile-scoped favorites without overwriting a newer IndexedDB choice. Android/Windows keep their native SharedPreferences.
