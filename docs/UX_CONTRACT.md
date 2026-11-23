@@ -1,3 +1,10 @@
+## Planning settings: first-screen day bounds and true route label (2026-11-23)
+
+- Day length is a primary first-screen planning setting. Show separate **Start** and **End** editable hour dropdowns inline inside the Schedule settings group. Never replace them with a single navigation row, separate sheet or slider-only editor. Persist using the existing normalized extended-hour range, including next-day hours; changes must refresh the visible Planning time grid on return.
+- Keep the inline day controls inside the **same** canonical white Settings group as default plan times and sequential-plan placement. Use the shared non-hover form header slot so its dropdowns do not acquire a fake row-wide hover rectangle.
+- The Planning settings header must align exactly to the Settings body content horizontal gutter and readable max-width; avoid an edge-to-edge breadcrumb with centered cards below it. The shared back affordance uses a clearly visible arrow and legible label.
+- The breadcrumb parent label always names the **actual origin** of this navigation. From the Plans gear this is **Plan** (localized), and the back action returns to Plans. From main Settings navigation, default to Settings. From the default-times subview, it returns to Planning settings. Do not label the origin “Planning” when tapping Back actually opens Plan.
+
 ## Planning settings entry — canonical navigation (2026-11-23)
 
 - Tapping the gear in the Plans view opens the same `LifeOsPlanningSettingsPage` used by the main Settings navigation. It must NOT build a separate edge-to-edge, 84%-height composite bottom sheet with day bounds, radio-style preferences and menu links all mixed together.
