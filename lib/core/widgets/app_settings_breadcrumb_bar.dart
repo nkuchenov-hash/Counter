@@ -1,10 +1,11 @@
 import 'package:counter/core/widgets/app_glass_edge_fade.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:flutter/material.dart';
 
-/// Back navigation for secondary Settings routes. The parent label is
-/// actionable; the current section title stays visible below it.
+/// A single-line Settings header: approved frosted circular back action and title.
+/// The parent name is an accessibility/tooltip label, not a visible extra row.
 class AppSettingsBreadcrumbBar extends StatelessWidget
     implements PreferredSizeWidget {
   const AppSettingsBreadcrumbBar({
@@ -26,49 +27,39 @@ class AppSettingsBreadcrumbBar extends StatelessWidget
 
   @override
   Size get preferredSize =>
-      Size.fromHeight(86 + (bottom?.preferredSize.height ?? 0));
+      Size.fromHeight(72 + (bottom?.preferredSize.height ?? 0));
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
-    final header = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
+    // The approved 48dp frosted back control, with no extra breadcrumb row.
+    final header = Row(
       children: [
-        TextButton.icon(
+        AppIconButton(
+          icon: Icons.arrow_back_rounded,
+          tooltip: parentLabel,
           onPressed: onBack,
-          icon: const Icon(Icons.arrow_back_rounded, size: 22),
-          label: Text(
-            parentLabel,
+          variant: AppIconButtonVariant.frosted,
+          shape: AppIconButtonShape.circular,
+          size: AppIconButtonSize.l,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-          ),
-          style: TextButton.styleFrom(
-            foregroundColor: scheme.onSurface,
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            minimumSize: const Size(0, 40),
-            tapTargetSize: MaterialTapTargetSize.padded,
-            textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
             ),
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
           ),
         ),
       ],
     );
 
     return AppBar(
-      toolbarHeight: 86,
+      toolbarHeight: 72,
       titleSpacing: alignWithSettingsBody ? 0 : 16,
       automaticallyImplyLeading: false,
       backgroundColor: scheme.surfaceContainerLowest,

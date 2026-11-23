@@ -5,12 +5,14 @@ import 'package:counter/core/app_control_tokens.dart';
 import 'package:counter/core/theme.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/features/settings/categories/category_tag_input_field.dart';
 import 'package:counter/features/planning/planning_sort_mode.dart';
+import 'package:counter/features/planning/settings/planning_timeline_bounds_sheet.dart';
 import 'package:counter/features/planning/widgets/planning_filter_controls.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/features/timeline/timeline_header_controls.dart';
@@ -41,6 +43,40 @@ void main() {
     await font.load();
   });
 
+  testWidgets('day length remains a two-thumb inline slider, not dropdowns',
+      (tester) async {
+    ({int start, int end})? changed;
+    await tester.pumpWidget(MaterialApp(
+      theme: appLightTheme,
+      home: Scaffold(
+        body: AppSettingsNavigationGroup(
+          header: PlanningTimelineBoundsSheet(
+            embedded: true,
+            initialStart: 9,
+            initialEnd: 25,
+            onBoundsChanged: (start, end) =>
+                changed = (start: start, end: end),
+            title: 'Длительность дня',
+            helper: 'Начало и конец дня',
+            valueSummaryBuilder: (start, end) => '$start–$end',
+            prevDayMarker: 'вчера',
+            nextDayMarker: 'завтра',
+          ),
+          children: const [],
+        ),
+      ),
+    ));
+    final slider = find.byType(RangeSlider);
+    expect(slider, findsOneWidget);
+    expect(find.byType(DropdownButtonFormField<int>), findsNothing);
+    final control = tester.widget<RangeSlider>(slider);
+    expect(control.values, const RangeValues(9, 25));
+    control.onChanged!(const RangeValues(8, 26));
+    await tester.pump();
+    expect(changed, (start: 8, end: 26));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('secondary Planning header aligns with Settings content and returns to Plan',
       (tester) async {
     tester.view.physicalSize = const Size(1440, 900);
@@ -66,12 +102,24 @@ void main() {
 
     final header = find.text('Планирование и время');
     final content = find.text('Settings content edge');
-    expect(tester.getTopLeft(header).dx,
+    final backButton = find.byType(AppIconButton);
+    expect(backButton, findsOneWidget);
+    final glass = tester.widget<AppIconButton>(backButton);
+    expect(glass.variant, AppIconButtonVariant.frosted);
+    expect(glass.shape, AppIconButtonShape.circular);
+    expect(glass.size, AppIconButtonSize.l);
+    expect(glass.tooltip, 'План');
+    // The glass arrow starts at the same content edge as the Settings body.
+    expect(tester.getTopLeft(backButton).dx,
         closeTo(tester.getTopLeft(content).dx, 1));
+    // The arrow and title form one line, not a two-row breadcrumb.
+    expect(tester.getCenter(backButton).dy,
+        closeTo(tester.getCenter(header).dy, 1));
     expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
+    expect(find.byType(TextButton), findsNothing);
+    expect(find.text('План'), findsNothing);
 
-    await tester.tap(find.text('План'));
+    await tester.tap(backButton);
     expect(backCount, 1);
     expect(tester.takeException(), isNull);
   });

@@ -1,3 +1,16 @@
+## [2026-11-23] — Restore approved glass Settings back arrow [verification pending]
+
+- Replaced the incorrectly introduced two-row text breadcrumb with the existing circular, translucent, 48 dp `AppIconButtonVariant.frosted` Back control next to the screen title.
+- Kept the actual origin in the control's tooltip/accessibility label; Back still returns to the originating Plans or Settings route. Applied consistently to secondary Settings pages and tag tabs.
+- Added UI regression assertions for the approved component, single-row geometry, and Back navigation. Web deployment pending.
+
+## [2026-11-23] — Restore day-range handles and compact secondary settings [verification pending]
+
+- Restored the original two-thumb Duration of Day RangeSlider directly in Schedule, with displayed hours and overnight labels; discarded recently introduced dropdown pickers. Existing normalized stored bounds remain unchanged.
+- Desktop single-purpose Planning editors now open centered content-sized dialogs instead of oversized 82%-height bottom drawers; mobile keeps touch-friendly sheets.
+- Tag default-duration rows now follow canonical Settings content width and grouped separators. The duration popup and Tags tabs are compact/aligned, with correct Planning-origin breadcrumb.
+- Added a regression widget test protecting the original slider. Verification and web release pending.
+
 ## [2026-11-23] — Planning first-screen day controls and breadcrumb alignment [CI pending]
 
 - Restored the Start and End dropdowns directly on the first Planning Settings screen; selecting an hour persists through the existing extended-day normalized range instead of requiring a separate slider modal.

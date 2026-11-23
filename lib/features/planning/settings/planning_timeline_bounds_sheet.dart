@@ -10,6 +10,7 @@ class PlanningTimelineBoundsSheet extends StatefulWidget {
     required this.prevDayMarker,
     required this.nextDayMarker,
     this.header,
+    this.embedded = false,
   });
 
   final int initialStart;
@@ -21,6 +22,8 @@ class PlanningTimelineBoundsSheet extends StatefulWidget {
   final String prevDayMarker;
   final String nextDayMarker;
   final Widget? header;
+  /// In Settings, render the existing two-thumb slider without nested scroll.
+  final bool embedded;
 
   @override
   State<PlanningTimelineBoundsSheet> createState() =>
@@ -63,8 +66,7 @@ class PlanningTimelineBoundsSheetState
     final start = _range.start.round();
     final end = _range.end.round();
     final summary = widget.valueSummaryBuilder(start, end);
-    return SingleChildScrollView(
-      child: Column(
+    final content = Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -102,7 +104,7 @@ class PlanningTimelineBoundsSheetState
             onChanged: _commit,
           ),
         ],
-      ),
     );
+    return widget.embedded ? content : SingleChildScrollView(child: content);
   }
 }

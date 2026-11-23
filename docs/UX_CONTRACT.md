@@ -1,3 +1,15 @@
+## Settings secondary Back control — single line (2026-11-23)
+
+- All secondary Settings headers reuse the approved `AppIconButton` with `AppIconButtonVariant.frosted`, circular 48 dp bounds, and a true Back arrow. Its blur/glass treatment stays clipped to the circle; do not replace it with a bare chevron, a text-labelled rectangle, or a new custom glass implementation.
+- Put **one glass back arrow and the section title in a single horizontal row** with vertically aligned centers. No second breadcrumb line or visible parent label. The actual source page is retained only as the tooltip/accessibility label and Back pops to that page.
+- The icon's left edge follows the shared Settings content grid. Keep the title readable in the same row and preserve existing tab navigation below the header when present.
+
+## Planning day-length control and desktop editors (2026-11-23)
+
+- The **Duration of day** control is the original **two-thumb RangeSlider** on the first Planning Settings screen, inline in Schedule. Do not replace the two handles with dropdowns, separate start/end pickers, or a link to another page. Keep the displayed start/end clocks, extended-day overnight handling, and existing local persistence. The in-page variant reuses `PlanningTimelineBoundsSheet` without a nested scrolling surface.
+- Desktop Planning setting detail editors (fixed-time tags, record links, untagged chip) are short, centered, content-sized dialogs. A one-toggle editor must never create an 82%-height bottom drawer or leave a mostly empty overlay. Phone layouts may use compact, touch-friendly sheets.
+- Tag default durations use the same centered Settings content-width and canonical navigation-group rows, not full-viewport rows with tiny pencil icons at the far edge. The duration picker is a compact desktop dialog. The tag-settings header and tabs align to the Settings body, and the back label names the actual origin when opened from Planning.
+
 ## Planning settings: first-screen day bounds and true route label (2026-11-23)
 
 - Day length is a primary first-screen planning setting. Show separate **Start** and **End** editable hour dropdowns inline inside the Schedule settings group. Never replace them with a single navigation row, separate sheet or slider-only editor. Persist using the existing normalized extended-hour range, including next-day hours; changes must refresh the visible Planning time grid on return.
