@@ -11,6 +11,26 @@ import 'package:counter/features/profile/tag_settings_view.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
+/// Shared readable-width host for independently scrolling tag and style tabs.
+class TagSettingsTabFrame extends StatelessWidget {
+  const TagSettingsTabFrame({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: settingsContentMaxWidth(context),
+        ),
+        child: SizedBox(width: double.infinity, child: child),
+      ),
+    );
+  }
+}
+
 class TagSettingsHub extends StatefulWidget {
   const TagSettingsHub({
     super.key,
@@ -50,23 +70,6 @@ class _TagSettingsHubState extends State<TagSettingsHub>
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  /// The tab body follows the exact same readable grid as the header.
-  /// Keep the independently scrollable CRUD/editor views intact.
-  Widget _contentFrame(BuildContext context, Widget child) {
-    return Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: settingsContentMaxWidth(context),
-        ),
-        child: SizedBox(
-          width: double.infinity,
-          child: child,
-        ),
-      ),
-    );
   }
 
   @override
@@ -118,16 +121,14 @@ class _TagSettingsHubState extends State<TagSettingsHub>
         body: TabBarView(
           controller: _tabController,
           children: [
-            _contentFrame(
-              context,
-              TagManagerPage(
+            TagSettingsTabFrame(
+              child: TagManagerPage(
                 embeddedInHub: true,
                 pocketTagDomain: widget.tagCreateDomain,
               ),
             ),
-            _contentFrame(
-              context,
-              const TagSettingsView(embeddedInHub: true),
+            const TagSettingsTabFrame(
+              child: TagSettingsView(embeddedInHub: true),
             ),
             if (_showDurationsTab)
               const TagDefaultDurationSettingsView(embeddedInHub: true),
