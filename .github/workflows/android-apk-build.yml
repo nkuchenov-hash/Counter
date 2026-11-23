@@ -140,6 +140,12 @@ jobs:
       - name: Verify Chrome quick-entry focus and painted text alignment
         run: flutter test --platform chrome test/app_control_consistency_test.dart
 
+      - name: Verify Planning toolbar geometry and text-only hover
+        run: flutter test test/planning_toolbar_alignment_hover_test.dart
+
+      - name: Verify Planning hover without rectangular highlights in Chrome
+        run: flutter test --platform chrome test/planning_toolbar_alignment_hover_test.dart
+
       - name: Verify Android and Web production backend parity
         run: flutter test test/pocketbase_production_origin_test.dart
 
