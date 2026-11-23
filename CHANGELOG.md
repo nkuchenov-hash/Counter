@@ -1,3 +1,10 @@
+## [2026-11-23] — Align visible-day range and Schedule settings [verification pending]
+
+- Renamed Schedule's “Duration of day” to “Visible day range” / «Отображаемый период дня» to clarify that it controls displayed timeline hours, not actual day length.
+- Aligned the inline two-thumb slider with normal Settings text/icon columns using the canonical ListTile layout; matched grouped switch row padding and all Schedule dividers.
+- Replaced oversized solid-gray Settings row hover with a subtle theme-derived neutral tint. Preserved all existing range values and persistence.
+- Expanded the control regression test to assert title x-coordinate parity across range, navigation and switch rows. Architecture Guard and deployment pending.
+
 ## [2026-11-23] — Restore approved glass Settings back arrow [verification pending]
 
 - Replaced the incorrectly introduced two-row text breadcrumb with the existing circular, translucent, 48 dp `AppIconButtonVariant.frosted` Back control next to the screen title.
