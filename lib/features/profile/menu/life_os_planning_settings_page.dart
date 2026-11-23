@@ -10,6 +10,7 @@ import 'package:counter/features/planning/planning_quick_add_tags_controller.dar
 import 'package:counter/features/planning/settings/planning_no_tags_settings.dart';
 import 'package:counter/features/planning/settings/plan_record_link_settings.dart';
 import 'package:counter/features/planning/settings/default_plan_times_settings_block.dart';
+import 'package:counter/features/planning/settings/planning_timeline_bounds_sheet.dart';
 import 'package:counter/features/planning/time_view/time_view_fixed_time_settings.dart';
 import 'package:counter/features/planning/time_view/time_view_settings_sheet.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
@@ -112,43 +113,6 @@ class _LifeOsPlanningSettingsPageState
         ),
       );
     }
-  }
-
-  Widget _dayHourSelect({
-    required String label,
-    required int value,
-    required ValueChanged<int> onChanged,
-  }) {
-    final ru = currentLocale.value.toLowerCase().startsWith('ru');
-    return Expanded(
-      child: DropdownButtonFormField<int>(
-        key: ValueKey('planning-day-$label-$value'),
-        initialValue: value,
-        isExpanded: true,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
-        items: [
-          for (var hour = PlanningSheetTimelinePrefs.extendedMin;
-              hour <= PlanningSheetTimelinePrefs.extendedMax;
-              hour++)
-            DropdownMenuItem<int>(
-              value: hour,
-              child: Text(
-                '${PlanningSheetTimelinePrefs.formatExtendedHourClock(hour)}'
-                '${hour < 0 ? (ru ? ' · вчера' : ' · previous day') : ''}'
-                '${hour >= 24 ? (ru ? ' · завтра' : ' · next day') : ''}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-        ],
-        onChanged: (hour) {
-          if (hour != null) onChanged(hour);
-        },
-      ),
-    );
   }
 
   Future<void> _changePlacement(bool afterLast) async {
@@ -297,46 +261,34 @@ class _LifeOsPlanningSettingsPageState
             : AppSettingsPageBody(children: [
                     _heading(context, ru ? 'РАСПИСАНИЕ' : 'SCHEDULE'),
                     AppSettingsNavigationGroup(
-                      header: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            t(loc, 'day_length_title'),
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            ru
-                                ? 'Начало и конец временной шкалы планов'
-                                : 'Start and end of the planning timeline',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme.onSurfaceVariant,
-                                ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              _dayHourSelect(
-                                label: ru ? 'Начало' : 'Start',
-                                value: range.start,
-                                onChanged: (value) => unawaited(
-                                  _saveVisibleDayBounds(value, range.end),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              _dayHourSelect(
-                                label: ru ? 'Конец' : 'End',
-                                value: range.end,
-                                onChanged: (value) => unawaited(
-                                  _saveVisibleDayBounds(range.start, value),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                      header: PlanningTimelineBoundsSheet(
+                        key: const ValueKey('planning-visible-day-range-slider'),
+                        embedded: true,
+                        initialStart: range.start,
+                        initialEnd: range.end,
+                        onBoundsChanged: (start, end) => unawaited(
+                          _saveVisibleDayBounds(start, end),
+                        ),
+                        title: t(loc, 'day_length_title'),
+                        helper: ru
+                            ? 'Передвигайте два бегунка, чтобы задать начало и конец дня.'
+                            : 'Drag the two handles to set the visible start and end.',
+                        valueSummaryBuilder: (start, end) {
+                          final startClock =
+                              PlanningSheetTimelinePrefs.formatExtendedHourClock(start);
+                          final endClock =
+                              PlanningSheetTimelinePrefs.formatExtendedHourClock(end);
+                          final hours = PlanningSheetTimelinePrefs.visibleDurationHours(
+                            start, end,
+                          );
+                          final suffix = end > 24
+                              ? (ru ? ' · следующий день' : ' · next day')
+                              : '';
+                          return '$startClock – $endClock$suffix · '
+                              '${hours}${ru ? ' ч' : ' h'}';
+                        },
+                        prevDayMarker: ru ? 'вчера' : 'previous day',
+                        nextDayMarker: ru ? 'завтра' : 'next day',
                       ),
                       children: [
                       _menuRow(
