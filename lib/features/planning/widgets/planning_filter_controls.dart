@@ -61,7 +61,7 @@ class PlanningSortModeBar extends StatelessWidget {
               border: Border(
                 bottom: BorderSide(
                   width: 2,
-                  color: scheme.primary.withValues(alpha: selected ? 1 : 0),
+                  color: scheme.primary.withValues(alpha: selected ? 1.0 : 0.0),
                 ),
               ),
             ),
