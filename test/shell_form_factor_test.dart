@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/theme.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/features/timeline/timeline_header_controls.dart';
 import 'package:counter/features/timeline/timeline_day_page.dart';
@@ -46,6 +47,51 @@ void main() {
             reason: 'width=$width');
       }
     });
+  });
+
+  testWidgets('Tags and Style tab content stays in readable Settings width',
+      (tester) async {
+    tester.view.physicalSize = const Size(1600, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(
+      theme: appLightTheme,
+      home: Scaffold(
+        body: TagSettingsTabFrame(
+          child: ColoredBox(
+            key: const ValueKey('tag-settings-body'),
+            color: ThemeData().colorScheme.surface,
+            child: const SizedBox(height: 200),
+          ),
+        ),
+      ),
+    ));
+    final rect = tester.getRect(find.byKey(
+      const ValueKey('tag-settings-body'),
+    ));
+    final expectedWidth = settingsContentMaxWidth(
+      tester.element(find.byType(TagSettingsTabFrame)),
+    );
+    expect(rect.width, closeTo(expectedWidth, 1));
+    expect(rect.center.dx, closeTo(800, 1));
+    expect(rect.width, lessThan(1600));
+    expect(tester.takeException(), isNull);
+  });
+
+  test('Tags and Style use canonical width; Add Tag stays near the list', () {
+    final hub = File('lib/features/profile/tag_settings_hub.dart')
+        .readAsStringSync();
+    final manager = File('lib/features/profile/tag_manager_page.dart')
+        .readAsStringSync();
+    expect('TagSettingsTabFrame('.allMatches(hub), hasLength(3));
+    expect(hub, contains('TagManagerPage('));
+    expect(hub, contains('TagSettingsView(embeddedInHub: true)'));
+    expect(manager, contains('floatingActionButton: widget.embeddedInHub'));
+    expect(manager, contains('if (widget.embeddedInHub) ...['));
+    expect(manager, contains("label: t(loc, 'tag_create')"));
+    expect(manager, contains('ReorderableListView.builder('));
+    expect(manager, contains('onReorder: _onReorder'));
   });
 
   test('canonical mobile shell has one navigation owner and no hit-test overlap', () {
