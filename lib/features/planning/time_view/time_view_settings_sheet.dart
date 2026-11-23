@@ -1,21 +1,16 @@
 import 'dart:async';
 
 import 'package:counter/core/widgets/app_button.dart';
-import 'package:counter/core/widgets/app_settings_layout.dart';
-import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/time_view_fixed_time_policy.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/settings/default_plan_times_settings_block.dart';
-import 'package:counter/features/planning/settings/planning_no_tags_settings.dart';
-import 'package:counter/features/planning/settings/planning_timeline_bounds_sheet.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
 import 'package:counter/features/planning/time_view/time_view_fixed_time_settings.dart';
 import 'package:counter/features/profile/menu/life_os_planning_settings_page.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:counter/features/planning/time_view/time_view_search_delegate.dart';
 
@@ -88,108 +83,23 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
     );
   }
 
-  void showPlanningSettingsSheet() {
-    final loc = currentLocale.value;
-    showModalBottomSheet<void>(
-      context: host.context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(host.context).height * 0.84,
+  /// Planning toolbar routes to the same canonical Settings page used by
+  /// the main menu. Do not assemble a second full-screen sheet here.
+  Future<void> showPlanningSettingsSheet() async {
+    await Navigator.of(host.context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => LifeOsPlanningSettingsPage(
+          onOpenDefaultPlanTimes: showDefaultPlanTimesSheet,
+        ),
       ),
-      backgroundColor: Theme.of(host.context).colorScheme.surfaceContainerLowest,
-      builder: (sheetCtx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-            child: PlanningTimelineBoundsSheet(
-              initialStart: timelineHourStart,
-              initialEnd: timelineHourEnd,
-              onBoundsChanged: onPlanningTimelineBoundsChanged,
-              title: t(loc, 'day_length_title'),
-              helper: t(loc, 'day_length_helper'),
-              valueSummaryBuilder: formatDayLengthValueSummary,
-              prevDayMarker: t(loc, 'day_length_prev_day'),
-              nextDayMarker: t(loc, 'day_length_next_day'),
-              header: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  PlanningNoTagsSettingsBlock(
-                    initialVisible: host.noTagsChipVisible,
-                    initialColorHex: host.noTagsColorHex,
-                    onApply: (visible, colorHex) async {
-                      final p = await SharedPreferences.getInstance();
-                      await p.setBool(host.prefsKeyNoTagsVisible, visible);
-                      await p.setString(host.prefsKeyNoTagsColor, colorHex);
-                      if (!host.mounted) return;
-                      host.applyNoTagsChipSettings(visible, colorHex);
-                      await host.reloadQuickAddTags();
-                    },
-                  ),
-                  const Divider(height: 24),
-                  PlanAutoPlacementSettingsBlock(
-                    initialMode: DatabaseService.instance.planAutoPlacementMode,
-                    onChanged: DatabaseService.instance.setPlanAutoPlacementMode,
-                  ),
-                  const Divider(height: 24),
-                  PlanningTimelineOpeningSettingsBlock(
-                    onChanged: (_) {
-                      timeModeDidAutoScrollToNow = false;
-                      if (host.mounted) host.notifySetState();
-                    },
-                  ),
-                  const Divider(height: 24),
-                  AppSettingsNavigationGroup(
-                    children: [
-                      AppSettingsNavigationRow(
-                        title: t(loc, 'plan_default_times_title'),
-                        subtitle: t(loc, 'plan_default_times_subtitle'),
-                        leading: AppSettingsMenuIcon(
-                          icon: AppMenuIcons.icon(AppMenuIconRole.defaultTime),
-                        ),
-                        onTap: () {
-                          Navigator.of(sheetCtx).pop();
-                          showDefaultPlanTimesSheet();
-                        },
-                      ),
-                      AppSettingsNavigationRow(
-                        title: loc.startsWith('ru')
-                            ? 'Все настройки планирования'
-                            : 'All Planning settings',
-                        leading: AppSettingsMenuIcon(
-                          icon: AppMenuIcons.icon(AppMenuIconRole.filter),
-                        ),
-                        onTap: () {
-                          Navigator.of(sheetCtx).pop();
-                          Navigator.of(host.context).push<void>(
-                            MaterialPageRoute<void>(
-                              builder: (settingsContext) =>
-                                  LifeOsPlanningSettingsPage(
-                                onOpenDefaultPlanTimes: () {
-                                  Navigator.of(settingsContext).pop();
-                                  WidgetsBinding.instance
-                                      .addPostFrameCallback((_) {
-                                    if (host.mounted) {
-                                      showDefaultPlanTimesSheet();
-                                    }
-                                  });
-                                },
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
     );
+    if (!host.mounted) return;
+    await loadPlanningTimelineBounds();
+    await loadTimeViewFixedTagIds();
+    await host.reloadQuickAddTags();
+    timeModeDidAutoScrollToNow = false;
   }
+
 }
 
 class PlanAutoPlacementSettingsBlock extends StatefulWidget {
