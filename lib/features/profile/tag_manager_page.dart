@@ -7,6 +7,7 @@ import 'dart:async';
 
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
+import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/core/tag_contrast.dart';
@@ -323,11 +324,13 @@ class _TagManagerPageState extends State<TagManagerPage> {
           : AppBar(
               title: Text(t(loc, 'tag_manager_title')),
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _loading ? null : () => _presentTagEditor(existing: null),
-        icon: const Icon(Icons.add_rounded),
-        label: Text(t(loc, 'tag_create')),
-      ),
+      floatingActionButton: widget.embeddedInHub
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: _loading ? null : () => _presentTagEditor(existing: null),
+              icon: const Icon(Icons.add_rounded),
+              label: Text(t(loc, 'tag_create')),
+            ),
       body: _loading
           ? const AppLoading()
           : _tags.isEmpty
@@ -339,18 +342,30 @@ class _TagManagerPageState extends State<TagManagerPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                      child: Text(
-                        t(loc, 'tag_manager_reorder_hint'),
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: scheme.onSurfaceVariant),
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              t(loc, 'tag_manager_reorder_hint'),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: scheme.onSurfaceVariant),
+                            ),
+                          ),
+                          if (widget.embeddedInHub) ...[
+                            const SizedBox(width: 12),
+                            AppButton(
+                              label: t(loc, 'tag_create'),
+                              icon: Icons.add_rounded,
+                              onPressed: () => _presentTagEditor(existing: null),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                     Expanded(
                       child: ReorderableListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                         buildDefaultDragHandles: false,
                         itemCount: _tags.length,
                         onReorder: _onReorder,
@@ -367,10 +382,23 @@ class _TagManagerPageState extends State<TagManagerPage> {
                             ),
                             index: i,
                             child: Material(
-                              color: Colors.transparent,
-                              child: ListTile(
-                                contentPadding:
-                                    const EdgeInsets.symmetric(horizontal: 8),
+                              color: scheme.surfaceContainerHigh,
+                              borderRadius: BorderRadius.vertical(
+                                top: i == 0
+                                    ? const Radius.circular(20)
+                                    : Radius.zero,
+                                bottom: i == _tags.length - 1
+                                    ? const Radius.circular(20)
+                                    : Radius.zero,
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ListTile(
+                                    contentPadding:
+                                        const EdgeInsets.symmetric(horizontal: 20),
+                                    minTileHeight: 70,
                                 leading: CircleAvatar(
                                   radius: 20,
                                   backgroundColor: avatarPlate,
@@ -387,6 +415,15 @@ class _TagManagerPageState extends State<TagManagerPage> {
                                       color: scheme.error),
                                   onPressed: () => _confirmDelete(tag),
                                 ),
+                                  ),
+                                  if (i != _tags.length - 1)
+                                    Divider(
+                                      height: 1,
+                                      indent: 76,
+                                      endIndent: 20,
+                                      color: scheme.outlineVariant,
+                                    ),
+                                ],
                               ),
                             ),
                           );
