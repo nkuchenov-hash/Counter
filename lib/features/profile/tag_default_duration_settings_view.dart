@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
@@ -246,8 +247,8 @@ class _TagDefaultDurationSettingsViewState
               color: scheme.onSurfaceVariant,
               size: 22,
             ),
-            hoverColor: Colors.transparent,
-            splashColor: Colors.transparent,
+            hoverColor: AppNeutralTones.transparent,
+            splashColor: AppNeutralTones.transparent,
             onTap: () => unawaited(_editDuration(tag)),
           ),
       ]),
