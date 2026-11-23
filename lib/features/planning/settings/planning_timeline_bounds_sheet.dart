@@ -1,6 +1,7 @@
 import 'package:counter/features/planning/planning_day_start_prefs.dart';import 'package:flutter/material.dart';/// Bottom sheet: local timeline hour range (0–23) for the Planning grid.
 class PlanningTimelineBoundsSheet extends StatefulWidget {
   const PlanningTimelineBoundsSheet({
+    super.key,
     required this.initialStart,
     required this.initialEnd,
     required this.onBoundsChanged,
