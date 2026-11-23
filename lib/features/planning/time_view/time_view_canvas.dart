@@ -64,7 +64,6 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
 
     final compact = timelineCompactLayout(host.context);
     final railWidth = timelineRailWidthPx(host.context);
-    final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(host.context).width);
     // The scroll viewport already has an 8 px gutter, and Time View
     // cards add their own horizontal padding. An additional desktop
     // 24 px inset made their right edge 16 px narrower than quick entry.
