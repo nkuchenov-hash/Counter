@@ -49,7 +49,7 @@ class PlanningSortModeBar extends StatelessWidget {
       selected: selected,
       button: true,
       child: Material(
-        color: Colors.transparent,
+        type: MaterialType.transparency,
         child: InkWell(
           onTap: () => _selectMode(mode),
           child: Container(
@@ -61,7 +61,7 @@ class PlanningSortModeBar extends StatelessWidget {
               border: Border(
                 bottom: BorderSide(
                   width: 2,
-                  color: selected ? scheme.primary : Colors.transparent,
+                  color: scheme.primary.withValues(alpha: selected ? 1 : 0),
                 ),
               ),
             ),
