@@ -59,7 +59,6 @@ ThemeData settingsNeutralTheme(BuildContext context) {
     ),
   );
 }
-
 /// Visual keycap row for hotkey display (Ctrl + Shift + Space).
 ///
 /// Desktop: single [Row] with fixed keycap widths — no [Wrap], no [Expanded].
@@ -117,7 +116,6 @@ class AppHotkeyKeycaps extends StatelessWidget {
     );
   }
 }
-
 class _Keycap extends StatelessWidget {
   const _Keycap({
     required this.text,
@@ -154,7 +152,6 @@ class _Keycap extends StatelessWidget {
     );
   }
 }
-
 /// Neutral settings page shell: soft background + centered max width.
 class AppSettingsPageBody extends StatelessWidget {
   const AppSettingsPageBody({super.key, required this.children,
@@ -197,7 +194,6 @@ class AppSettingsPageBody extends StatelessWidget {
     );
   }
 }
-
 /// White card section for settings groups.
 class AppSettingsSectionCard extends StatelessWidget {
   const AppSettingsSectionCard({
@@ -254,7 +250,6 @@ class AppSettingsSectionCard extends StatelessWidget {
     );
   }
 }
-
 /// Standard settings switch row (min 48px tap target).
 class AppSettingsSwitchRow extends StatelessWidget {
   const AppSettingsSwitchRow({
@@ -286,7 +281,6 @@ class AppSettingsSwitchRow extends StatelessWidget {
     );
   }
 }
-
 /// Label + value info row.
 class AppSettingsInfoRow extends StatelessWidget {
   const AppSettingsInfoRow({
@@ -327,7 +321,6 @@ class AppSettingsInfoRow extends StatelessWidget {
     );
   }
 }
-
 /// Inline action buttons — content width, not full-width bars.
 class AppSettingsActionRow extends StatelessWidget {
   const AppSettingsActionRow({super.key, required this.children});
@@ -337,7 +330,6 @@ class AppSettingsActionRow extends StatelessWidget {
     return Wrap(spacing: 8, runSpacing: 8, children: children);
   }
 }
-
 /// Two-column card grid on wide desktop; single column otherwise.
 class AppSettingsCardGrid extends StatelessWidget {
   const AppSettingsCardGrid({super.key, required this.children});
@@ -365,7 +357,6 @@ class AppSettingsCardGrid extends StatelessWidget {
     );
   }
 }
-
 /// Compact card shell (title optional) for desktop grid cells.
 class AppSettingsGridCard extends StatelessWidget {
   const AppSettingsGridCard({
@@ -439,7 +430,6 @@ class AppSettingsGridCard extends StatelessWidget {
     );
   }
 }
-
 
 /// Canonical navigation row for grouped settings and nested menus.
 /// Prefer this over feature-local ListTile variants.
@@ -543,7 +533,6 @@ class AppSettingsNavigationRow extends StatelessWidget {
   }
 }
 
-
 /// Icon-leading switch row for the approved grouped Settings surfaces.
 /// Unlike a navigation row, its trailing switch changes the persisted setting.
 class AppSettingsControlRow extends StatelessWidget {
@@ -587,7 +576,6 @@ class AppSettingsControlRow extends StatelessWidget {
     );
   }
 }
-
 /// Shared action row for overflow menus and modal sheets.
 class AppMenuActionTile extends StatelessWidget {
   const AppMenuActionTile({
@@ -627,7 +615,6 @@ class AppMenuActionTile extends StatelessWidget {
   }
 }
 
-
 /// Marks rows belonging to a grouped card so ListTile uses the
 /// canonical menu rhythm rather than its platform-dependent minimum.
 class _AppSettingsRowPosition extends InheritedWidget {
@@ -644,7 +631,6 @@ class _AppSettingsRowPosition extends InheritedWidget {
   bool updateShouldNotify(_AppSettingsRowPosition oldWidget) =>
       first != oldWidget.first || last != oldWidget.last;
 }
-
 /// Borderless white group with independently hoverable full-width rows.
 ///
 /// Dividers always remain visible between white-card rows, including on hover.
@@ -656,15 +642,12 @@ class AppSettingsNavigationGroup extends StatefulWidget {
     this.header,
   });
   final List<Widget> children;
-
-  /// Non-interactive inline controls above grouped navigation rows.
-  /// Unlike a row, the header has no hover surface and cannot mask dividers.
+  /// Noninteractive controls remain outside row hover handling.
   final Widget? header;
   @override
   State<AppSettingsNavigationGroup> createState() =>
       _AppSettingsNavigationGroupState();
 }
-
 class _AppSettingsNavigationGroupState
     extends State<AppSettingsNavigationGroup> {
   int? _hoveredIndex;
@@ -691,14 +674,10 @@ class _AppSettingsNavigationGroupState
           mainAxisSize: MainAxisSize.min,
           children: [
             if (widget.header != null) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-                child: widget.header!,
-              ),
+              Padding(padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                child: widget.header!),
               if (widget.children.isNotEmpty)
-                SizedBox(
-                  width: double.infinity,
-                  height: 1,
+                SizedBox(width: double.infinity, height: 1,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: ColoredBox(color: dividerFill),
