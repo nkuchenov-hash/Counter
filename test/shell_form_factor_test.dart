@@ -595,10 +595,10 @@ void main() {
       Color fill(String key) =>
           tester.widget<ColoredBox>(
               find.byKey(ValueKey<String>(key))).color;
-      const hover = AppNeutralTones.gray200;
+      final hover = Theme.of(tester.element(find.text('Two')))
+          .colorScheme.onSurface.withValues(alpha: 0.055);
       const divider = AppColors.settingsDivider;
-      expect(hover.computeLuminance(),
-          lessThan(const Color(0xFFF7F7F7).computeLuminance()));
+      expect(hover.a, lessThan(0.1));
       expect(fill('settings-row-0'), Colors.white);
       expect(fill('settings-row-1'), Colors.white);
       expect(fill('settings-divider-line-0'), divider);
