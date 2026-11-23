@@ -166,7 +166,6 @@ class PlanningQuickAddChrome extends StatelessWidget {
   const PlanningQuickAddChrome({
     super.key,
     required this.desktop,
-    required this.scheme,
     required this.tagStrip,
     required this.controller,
     required this.focusNode,
@@ -177,7 +176,6 @@ class PlanningQuickAddChrome extends StatelessWidget {
   });
 
   final bool desktop;
-  final ColorScheme scheme;
   final Widget tagStrip;
   final TextEditingController controller;
   final FocusNode focusNode;
@@ -188,21 +186,15 @@ class PlanningQuickAddChrome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final inputRow = Row(
-      children: [
-        Expanded(
-          child: AppQuickEntryRow(
-            controller: controller,
-            focusNode: focusNode,
-            hintText: hintText,
-            actionLabel: addLabel,
-            actionIcon: Icons.add_rounded,
-            onAction: onAdd,
-            onSubmitted: (_) => onAdd(),
-            loading: loading,
-          ),
-        ),
-      ],
+    final inputRow = AppQuickEntryRow(
+      controller: controller,
+      focusNode: focusNode,
+      hintText: hintText,
+      actionLabel: addLabel,
+      actionIcon: Icons.add_rounded,
+      onAction: onAdd,
+      onSubmitted: (_) => onAdd(),
+      loading: loading,
     );
     final content = Padding(
       padding: desktop
