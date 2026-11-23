@@ -296,32 +296,49 @@ class _LifeOsPlanningSettingsPageState
               )
             : AppSettingsPageBody(children: [
                     _heading(context, ru ? 'РАСПИСАНИЕ' : 'SCHEDULE'),
-                    AppSettingsSectionCard(
-                      title: ru ? 'Границы видимого дня' : 'Visible day hours',
-                      subtitle: ru
-                          ? 'Начало и конец временной шкалы планов'
-                          : 'Start and end of the planning timeline',
-                      child: Row(
+                    AppSettingsNavigationGroup(
+                      header: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _dayHourSelect(
-                            label: ru ? 'Начало' : 'Start',
-                            value: range.start,
-                            onChanged: (value) => unawaited(
-                              _saveVisibleDayBounds(value, range.end),
-                            ),
+                          Text(
+                            ru ? 'Границы видимого дня' : 'Visible day hours',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
                           ),
-                          const SizedBox(width: 12),
-                          _dayHourSelect(
-                            label: ru ? 'Конец' : 'End',
-                            value: range.end,
-                            onChanged: (value) => unawaited(
-                              _saveVisibleDayBounds(range.start, value),
-                            ),
+                          const SizedBox(height: 4),
+                          Text(
+                            ru
+                                ? 'Начало и конец временной шкалы планов'
+                                : 'Start and end of the planning timeline',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              _dayHourSelect(
+                                label: ru ? 'Начало' : 'Start',
+                                value: range.start,
+                                onChanged: (value) => unawaited(
+                                  _saveVisibleDayBounds(value, range.end),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              _dayHourSelect(
+                                label: ru ? 'Конец' : 'End',
+                                value: range.end,
+                                onChanged: (value) => unawaited(
+                                  _saveVisibleDayBounds(range.start, value),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ),
-                    AppSettingsNavigationGroup(children: [
+                      children: [
                       _menuRow(
                         t(loc, 'plan_default_times_title'),
                         AppMenuIconRole.defaultTime,
