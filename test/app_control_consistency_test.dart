@@ -9,6 +9,9 @@ import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/features/settings/categories/category_tag_input_field.dart';
+import 'package:counter/features/planning/planning_sort_mode.dart';
+import 'package:counter/features/planning/widgets/planning_filter_controls.dart';
+import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/features/timeline/timeline_header_controls.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -769,6 +772,100 @@ void main() {
     }
     await tester.tap(find.byIcon(Icons.arrow_back_rounded));
     expect(presses, 1);
+  });
+
+  testWidgets('Planning toolbar actions and quick-add share desktop edges',
+      (tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final input = TextEditingController();
+    final focus = FocusNode();
+    addTearDown(input.dispose);
+    addTearDown(focus.dispose);
+
+    await tester.pumpWidget(MaterialApp(
+      theme: appLightTheme,
+      home: Scaffold(
+        body: Column(children: [
+          PlanningSortModeBar(
+            sortMode: PlanSortMode.time,
+            onSortModeChanged: (_) {},
+            desktopTitle: 'План',
+            onSettings: () {},
+            onSmart: () {},
+            settingsTooltip: 'Plan settings',
+            smartTooltip: 'Viktor action',
+          ),
+          PlanningQuickAddChrome(
+            desktop: true,
+            tagStrip: const SizedBox(height: 40),
+            controller: input,
+            focusNode: focus,
+            hintText: 'Add plan',
+            addLabel: 'Add',
+            onAdd: () {},
+            loading: false,
+          ),
+        ]),
+      ),
+    ));
+
+    final quickEntry = find.byType(AppQuickEntryRow);
+    final trailingAction = find.byTooltip('Viktor action');
+    expect(quickEntry, findsOneWidget);
+    expect(trailingAction, findsOneWidget);
+    expect(tester.getTopLeft(find.text('План')).dx,
+        closeTo(tester.getTopLeft(quickEntry).dx, 1));
+    expect(tester.getTopRight(trailingAction).dx,
+        closeTo(tester.getTopRight(quickEntry).dx, 1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Planning mode hover changes text color without tile highlight',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      theme: appLightTheme,
+      home: Scaffold(
+        body: PlanningSortModeBar(
+          sortMode: PlanSortMode.time,
+          onSortModeChanged: (_) {},
+          desktopTitle: 'План',
+          onSettings: () {},
+          onSmart: () {},
+          settingsTooltip: 'Plan settings',
+          smartTooltip: 'Viktor action',
+        ),
+      ),
+    ));
+    final tab = find.text(t(currentLocale.value, 'plan_sort_category'));
+    expect(tab, findsOneWidget);
+    expect(find.ancestor(of: tab, matching: find.byType(InkWell)),
+        findsNothing);
+
+    Color? tabColor() => tester.widget<AnimatedDefaultTextStyle>(
+      find.ancestor(
+        of: tab, matching: find.byType(AnimatedDefaultTextStyle),
+      ).first,
+    ).style.color;
+
+    final normalColor = Theme.of(tester.element(tab)).colorScheme.onSurface;
+    final grey = tabColor();
+    expect(grey, isNot(normalColor));
+
+    final mouse = await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+    await mouse.addPointer(location: Offset.zero);
+    await mouse.moveTo(tester.getCenter(tab));
+    await tester.pumpAndSettle();
+    expect(tabColor(), normalColor);
+
+    await mouse.moveTo(Offset.zero);
+    await tester.pumpAndSettle();
+    expect(tabColor(), grey);
+    await mouse.removePointer();
+    expect(tester.takeException(), isNull);
   });
 }
 
