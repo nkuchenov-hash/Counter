@@ -10,75 +10,115 @@ import 'package:flutter/material.dart';
 
 const double kPlanningDesktopChromeMaxWidth = 1240;
 
-/// Compact sort-mode tabs above the Planning quick-add row.
+/// Planning view selector and its actions share one toolbar above quick-add.
+/// The selected view uses an underline; inactive modes stay simple text.
 class PlanningSortModeBar extends StatelessWidget {
   const PlanningSortModeBar({
     super.key,
     required this.sortMode,
     required this.onSortModeChanged,
+    required this.onSettings,
+    required this.onSmart,
+    required this.settingsTooltip,
+    required this.smartTooltip,
     this.desktopTitle,
   });
 
   final PlanSortMode sortMode;
   final ValueChanged<PlanSortMode> onSortModeChanged;
+  final VoidCallback onSettings;
+  final VoidCallback onSmart;
+  final String settingsTooltip;
+  final String smartTooltip;
   final String? desktopTitle;
 
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) =>
-        _buildForWidth(context, constraints.maxWidth),
-  );
-
-  Widget _buildForWidth(BuildContext context, double availableWidth) {
-    final selector = SizedBox(
-      height: kAppCompactControlHeight,
-      child: SegmentedButton<PlanSortMode>(
-        showSelectedIcon: false,
-        style: appCompactSegmentedButtonStyle(context, segmentWidth: 78),
-        segments: [
-          ButtonSegment<PlanSortMode>(
-            value: PlanSortMode.category,
-            label: AppCompactSegmentLabel(
-              text: t(currentLocale.value, 'plan_sort_category'),
-            ),
-          ),
-          ButtonSegment<PlanSortMode>(
-            value: PlanSortMode.time,
-            label: AppCompactSegmentLabel(
-              text: t(currentLocale.value, 'plan_sort_time'),
-            ),
-          ),
-          ButtonSegment<PlanSortMode>(
-            value: PlanSortMode.tags,
-            label: AppCompactSegmentLabel(
-              text: t(currentLocale.value, 'plan_sort_tags'),
-            ),
-          ),
-          ButtonSegment<PlanSortMode>(
-            value: PlanSortMode.custom,
-            label: AppCompactSegmentLabel(
-              text: t(currentLocale.value, 'plan_sort_custom'),
-            ),
-          ),
-        ],
-        selected: {sortMode},
-        onSelectionChanged: (Set<PlanSortMode> next) {
-          if (next.isEmpty) return;
-          final mode = next.first;
-          onSortModeChanged(mode);
-          unawaited(
-            DatabaseService.instance.persistPlanActiveTabIndex(
-              planSortModeToPersistedIndex(mode),
-            ),
-          );
-        },
+  void _selectMode(PlanSortMode next) {
+    if (next == sortMode) return;
+    onSortModeChanged(next);
+    unawaited(
+      DatabaseService.instance.persistPlanActiveTabIndex(
+        planSortModeToPersistedIndex(next),
       ),
     );
-    // Date arrows belong to the left/right edges of the day canvas.
-    // Keep the selector independent from day navigation.
-    final controls = selector;
-    final title = desktopTitle;
-    if (title != null) {
+  }
+
+  Widget _textTab(BuildContext context, PlanSortMode mode, String title) {
+    final scheme = Theme.of(context).colorScheme;
+    final selected = mode == sortMode;
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _selectMode(mode),
+          child: Container(
+            height: kAppCompactControlHeight,
+            alignment: Alignment.center,
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  width: 2,
+                  color: selected ? scheme.primary : Colors.transparent,
+                ),
+              ),
+            ),
+            child: Text(
+              title,
+              maxLines: 1,
+              softWrap: false,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: 15,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: selected
+                    ? scheme.onSurface
+                    : scheme.onSurfaceVariant.withValues(alpha: 0.80),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _modeTabs(BuildContext context) => SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _textTab(context, PlanSortMode.category,
+            t(currentLocale.value, 'plan_sort_category')),
+        _textTab(context, PlanSortMode.time,
+            t(currentLocale.value, 'plan_sort_time')),
+        _textTab(context, PlanSortMode.tags,
+            t(currentLocale.value, 'plan_sort_tags')),
+        _textTab(context, PlanSortMode.custom,
+            t(currentLocale.value, 'plan_sort_custom')),
+      ],
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final desktop = desktopTitle != null;
+    final settingsButton = AppIconButton(
+      icon: Icons.settings_rounded,
+      tooltip: settingsTooltip,
+      onPressed: onSettings,
+      variant: AppIconButtonVariant.subtle,
+      size: desktop ? AppIconButtonSize.m : AppIconButtonSize.s,
+    );
+    final smartButton = AppIconButton(
+      icon: Icons.auto_awesome_rounded,
+      tooltip: smartTooltip,
+      onPressed: onSmart,
+      variant: AppIconButtonVariant.subtle,
+      size: desktop ? AppIconButtonSize.m : AppIconButtonSize.s,
+    );
+
+    if (desktop) {
       return Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
@@ -88,18 +128,33 @@ class PlanningSortModeBar extends StatelessWidget {
           child: SizedBox(
             width: double.infinity,
             child: AppDesktopSectionControlRow(
-              title: title,
-              controls: controls,
+              title: desktopTitle!,
+              controls: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(width: 428, child: _modeTabs(context)),
+                  const SizedBox(width: 10),
+                  settingsButton,
+                  const SizedBox(width: 4),
+                  smartButton,
+                ],
+              ),
             ),
           ),
         ),
       );
     }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
-      child: Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: selector,
+      child: Row(
+        children: [
+          Expanded(child: _modeTabs(context)),
+          const SizedBox(width: 6),
+          settingsButton,
+          const SizedBox(width: 4),
+          smartButton,
+        ],
       ),
     );
   }
@@ -117,11 +172,7 @@ class PlanningQuickAddChrome extends StatelessWidget {
     required this.focusNode,
     required this.hintText,
     required this.addLabel,
-    required this.settingsTooltip,
-    required this.smartTooltip,
     required this.onAdd,
-    required this.onSettings,
-    required this.onSmart,
     required this.loading,
   });
 
@@ -132,33 +183,11 @@ class PlanningQuickAddChrome extends StatelessWidget {
   final FocusNode focusNode;
   final String hintText;
   final String addLabel;
-  final String settingsTooltip;
-  final String smartTooltip;
   final VoidCallback onAdd;
-  final VoidCallback onSettings;
-  final VoidCallback onSmart;
   final bool loading;
 
   @override
   Widget build(BuildContext context) {
-    final settingsButton = AppIconButton(
-      icon: Icons.settings_rounded,
-      tooltip: settingsTooltip,
-      onPressed: onSettings,
-    );
-    final smartButton = AppIconButton(
-      icon: Icons.auto_awesome_rounded,
-      tooltip: smartTooltip,
-      onPressed: onSmart,
-    );
-    final tagsRow = Row(
-      children: [
-        Expanded(child: SizedBox(height: 40, child: tagStrip)),
-        const SizedBox(width: 8),
-        settingsButton,
-        if (desktop) smartButton,
-      ],
-    );
     final inputRow = Row(
       children: [
         Expanded(
@@ -173,10 +202,6 @@ class PlanningQuickAddChrome extends StatelessWidget {
             loading: loading,
           ),
         ),
-        if (!desktop) ...[
-          const SizedBox(width: 8),
-          smartButton,
-        ],
       ],
     );
     final content = Padding(
@@ -192,8 +217,8 @@ class PlanningQuickAddChrome extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: desktop
-            ? [inputRow, const SizedBox(height: 8), tagsRow]
-            : [tagsRow, const SizedBox(height: 10), inputRow],
+            ? [inputRow, const SizedBox(height: 8), SizedBox(height: 40, child: tagStrip)]
+            : [SizedBox(height: 40, child: tagStrip), const SizedBox(height: 10), inputRow],
       ),
     );
     if (!desktop) return content;
