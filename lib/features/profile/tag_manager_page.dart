@@ -319,6 +319,7 @@ class _TagManagerPageState extends State<TagManagerPage> {
     final loc = currentLocale.value;
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
+      backgroundColor: scheme.surfaceContainerLowest,
       appBar: widget.embeddedInHub
           ? null
           : AppBar(
