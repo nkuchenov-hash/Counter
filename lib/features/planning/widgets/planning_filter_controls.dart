@@ -120,14 +120,12 @@ class PlanningSortModeBar extends StatelessWidget {
       tooltip: settingsTooltip,
       onPressed: onSettings,
       variant: AppIconButtonVariant.subtle,
-      size: desktop ? AppIconButtonSize.m : AppIconButtonSize.s,
     );
     final smartButton = AppIconButton(
       icon: Icons.auto_awesome_rounded,
       tooltip: smartTooltip,
       onPressed: onSmart,
       variant: AppIconButtonVariant.subtle,
-      size: desktop ? AppIconButtonSize.m : AppIconButtonSize.s,
     );
 
     if (desktop) {
