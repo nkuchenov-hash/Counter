@@ -1367,6 +1367,10 @@ class _PlanningPageState extends State<PlanningPage>
             sortMode: _sortMode,
             onSortModeChanged: (mode) => setState(() => _sortMode = mode),
             desktopTitle: desktop ? t(currentLocale.value, 'tab_planning') : null,
+            settingsTooltip: t(currentLocale.value, 'plan_settings_tooltip'),
+            smartTooltip: t(currentLocale.value, 'smart_plan_tooltip'),
+            onSettings: timeView.showPlanningSettingsSheet,
+            onSmart: _openViktorChat,
           ),
         PlanningQuickAddChrome(
           desktop: desktop,
@@ -1376,11 +1380,7 @@ class _PlanningPageState extends State<PlanningPage>
           focusNode: _quickAddFocus,
           hintText: t(currentLocale.value, 'input_placeholder_plan'),
           addLabel: t(currentLocale.value, 'add'),
-          settingsTooltip: t(currentLocale.value, 'plan_settings_tooltip'),
-          smartTooltip: t(currentLocale.value, 'smart_plan_tooltip'),
           onAdd: _addTask,
-          onSettings: timeView.showPlanningSettingsSheet,
-          onSmart: _openViktorChat,
           loading: _planQuickAddInFlight,
         ),
         Expanded(
