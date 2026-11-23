@@ -1,3 +1,11 @@
+## Visible day range — Planning Settings geometry (2026-11-23)
+
+- The Schedule setting with the two-thumb slider is named **«Отображаемый период дня» / “Visible day range”**: it controls which hours are *shown* on the Planning timeline, not the duration of the day or the duration of individual plans.
+- The first-setting heading, subtitle, summary and RangeSlider share the **same text-column x-position** as the adjacent “Default plan times” and “Sequential plans” rows. Use a standard Settings ListTile leading clock icon and canonical 24 px row inset, not a detached, full-width left-aligned header.
+- Both navigation and switch rows keep matching 24 px side gutters and consistent icon/text columns. The divider below the slider begins at the same 78 px inset as dividers between rows, not flush to the card edge.
+- Full-row hover is allowed but must be **subtle neutral** (theme onSurface at approximately 5.5% in light mode); do not fill an entire row with solid mid-gray or introduce separate white icon squares on heavy-gray backgrounds.
+- Preserve existing overnight times, two handles, preview, saved range and behavior. The main screen's range must not reset on UI-only changes.
+
 ## Settings secondary Back control — single line (2026-11-23)
 
 - All secondary Settings headers reuse the approved `AppIconButton` with `AppIconButtonVariant.frosted`, circular 48 dp bounds, and a true Back arrow. Its blur/glass treatment stays clipped to the circle; do not replace it with a bare chevron, a text-labelled rectangle, or a new custom glass implementation.
