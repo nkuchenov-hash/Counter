@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/shared/diagnostics/performance/shell_flags.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -65,10 +64,11 @@ extension PlanningTimeViewTimeViewCanvas on PlanningTimeViewCoordinator {
 
     final compact = timelineCompactLayout(host.context);
     final railWidth = timelineRailWidthPx(host.context);
-    final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(host.context).width);
-    final contentHorizontalInset = desktop
-        ? kShellDesktopContentHorizontalPadding
-        : 8.0;
+    // The scroll viewport already has an 8 px gutter, and Time View
+    // cards add their own horizontal padding. An additional desktop
+    // 24 px inset made their right edge 16 px narrower than quick entry.
+    // Use the same final desktop content edge as the Planning chrome.
+    const contentHorizontalInset = 8.0;
     final axisX = railWidth - 10.0;
     const hourLabelHeight = 20.0;
     const hourDotSize = 8.0;

@@ -1,3 +1,10 @@
+## [2026-11-23] — Planning unified alignment and text-only hover [CI pending]
+
+- Removed the desktop toolbar's fixed width subtraction and replaced it with the same centered max-width + horizontal gutter as quick entry; the view tabs remain scrollable beside full-size settings and Viktor buttons, anchored to the right edge.
+- Replaced rectangular InkWell tab hover with a local MouseRegion/GestureDetector: inactive tab text darkens on hover, with no fill or ripple and no full-day rebuild.
+- Corrected Time View's nested desktop gutter so card right edges align with the quick entry. Added a widget regression test covering header/input alignment and text-only hover.
+- Verification and web deployment pending.
+
 ## [2026-11-23] — Planning text tabs and consolidated view actions [verification pending]
 
 - Replaced the four filled Planning view segments with a lightweight text selector: muted inactive labels and a bottom underline under the active view. Persisted view mapping (Category, Time, Tags, Custom) is unchanged.

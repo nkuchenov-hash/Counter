@@ -42,46 +42,12 @@ class PlanningSortModeBar extends StatelessWidget {
     );
   }
 
-  Widget _textTab(BuildContext context, PlanSortMode mode, String title) {
-    final scheme = Theme.of(context).colorScheme;
-    final selected = mode == sortMode;
-    return Semantics(
-      selected: selected,
-      button: true,
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: () => _selectMode(mode),
-          child: Container(
-            height: kAppCompactControlHeight,
-            alignment: Alignment.center,
-            margin: const EdgeInsets.symmetric(horizontal: 3),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  width: 2,
-                  color: scheme.primary.withValues(alpha: selected ? 1.0 : 0.0),
-                ),
-              ),
-            ),
-            child: Text(
-              title,
-              maxLines: 1,
-              softWrap: false,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontSize: 15,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: selected
-                    ? scheme.onSurface
-                    : scheme.onSurfaceVariant.withValues(alpha: 0.80),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget _textTab(BuildContext context, PlanSortMode mode, String title) =>
+      _PlanningTextModeTab(
+        label: title,
+        selected: sortMode == mode,
+        onTap: () => _selectMode(mode),
+      );
 
   Widget _modeTabs(BuildContext context) => SingleChildScrollView(
     scrollDirection: Axis.horizontal,
@@ -101,20 +67,8 @@ class PlanningSortModeBar extends StatelessWidget {
   );
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) => _buildForWidth(context, constraints.maxWidth),
-  );
-
-  Widget _buildForWidth(BuildContext context, double availableWidth) {
+  Widget build(BuildContext context) {
     final desktop = desktopTitle != null;
-    // On a 900 px viewport the side rail leaves only ~628 px for Planning.
-    // Reserve space for the title and fixed action hit targets; scroll only tabs.
-    final contentWidth = availableWidth > kPlanningDesktopChromeMaxWidth
-        ? kPlanningDesktopChromeMaxWidth
-        : availableWidth;
-    final tabsWidth = (contentWidth - 48 - 20 - 198 - 110)
-        .clamp(180.0, 428.0)
-        .toDouble();
     final settingsButton = AppIconButton(
       icon: Icons.settings_rounded,
       tooltip: settingsTooltip,
@@ -128,6 +82,9 @@ class PlanningSortModeBar extends StatelessWidget {
       variant: AppIconButtonVariant.subtle,
     );
 
+    // The same max-width and horizontal gutter as PlanningQuickAddChrome.
+    // One expanded middle slot lets the two actions finish at the exact
+    // same right edge as the Add button, regardless of viewport width.
     if (desktop) {
       return Align(
         alignment: Alignment.topCenter,
@@ -135,14 +92,36 @@ class PlanningSortModeBar extends StatelessWidget {
           constraints: const BoxConstraints(
             maxWidth: kPlanningDesktopChromeMaxWidth,
           ),
-          child: SizedBox(
-            width: double.infinity,
-            child: AppDesktopSectionControlRow(
-              title: desktopTitle!,
-              controls: Row(
-                mainAxisSize: MainAxisSize.min,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              kShellDesktopContentHorizontalPadding,
+              kShellDesktopContentTopPadding,
+              kShellDesktopContentHorizontalPadding,
+              6,
+            ),
+            child: SizedBox(
+              height: kAppCompactControlHeight,
+              child: Row(
                 children: [
-                  SizedBox(width: tabsWidth, child: _modeTabs(context)),
+                  Text(
+                    desktopTitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      height: 1.0,
+                    ),
+                  ),
+                  const SizedBox(width: 18),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 428),
+                        child: _modeTabs(context),
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: 10),
                   settingsButton,
                   const SizedBox(width: 4),
@@ -156,7 +135,7 @@ class PlanningSortModeBar extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
       child: Row(
         children: [
           Expanded(child: _modeTabs(context)),
@@ -169,6 +148,79 @@ class PlanningSortModeBar extends StatelessWidget {
     );
   }
 }
+
+/// Text-only view tab. Hover changes the label color, not its rectangle.
+/// This widget owns only its local hover state and never rebuilds the day grid.
+class _PlanningTextModeTab extends StatefulWidget {
+  const _PlanningTextModeTab({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  State<_PlanningTextModeTab> createState() => _PlanningTextModeTabState();
+}
+
+class _PlanningTextModeTabState extends State<_PlanningTextModeTab> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final highlighted = widget.selected || _hovered;
+    return Semantics(
+      button: true,
+      selected: widget.selected,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          child: Container(
+            height: kAppCompactControlHeight,
+            alignment: Alignment.center,
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: widget.selected
+                    ? BorderSide(color: scheme.primary, width: 2)
+                    : BorderSide.none,
+              ),
+            ),
+            child: AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 120),
+              style: (Theme.of(context).textTheme.bodyMedium ??
+                      const TextStyle())
+                  .copyWith(
+                fontSize: 15,
+                fontWeight: widget.selected
+                    ? FontWeight.w700
+                    : FontWeight.w500,
+                color: highlighted
+                    ? scheme.onSurface
+                    : scheme.onSurfaceVariant.withValues(alpha: 0.80),
+              ),
+              child: Text(
+                widget.label,
+                maxLines: 1,
+                softWrap: false,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 
 /// Planning quick-entry chrome. All form factors use the same canonical
 /// quick-entry row; phone/tablet only differ in surrounding action placement.

@@ -1,3 +1,10 @@
+## Planning toolbar edge alignment and text-only tab hover (2026-11-23)
+
+- On desktop, Planning title, mode tabs, settings and Viktor actions share the same 1240 px maximum-width frame and 24 px content gutter as the quick-add field and tag row. The Viktor action ends at the quick-add row's right edge; no manual width subtraction or detached 150 px gap.
+- Mode tabs have **no rectangular hover surface, fill or ripple**. On pointer hover, only the inactive text changes from muted grey to the normal dark foreground; active text remains underlined. The hover state is local to the label and must not rebuild the Time View/day canvas.
+- Time View's existing 8 px scroll gutter and per-card horizontal padding already account for the shared right edge. Do not add a second desktop-only 24 px inset inside the timeline canvas.
+- Narrow viewports keep text tabs horizontally scrollable, while actions remain full-size tap targets. Do not change category/tag data, plan times or day-swipe gesture ownership.
+
 ## Planning view toolbar (2026-11-23)
 
 - Category / Time / Tags / Custom modes use a text-only horizontal tab row: inactive labels are visually subdued and the active label is underlined. No filled segmented-control backgrounds or duplicate mode selection UI.
