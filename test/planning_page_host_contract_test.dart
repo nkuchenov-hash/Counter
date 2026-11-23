@@ -3,6 +3,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/planning/widgets/planning_empty_states.dart';
+import 'package:counter/features/profile/menu/life_os_planning_settings_page.dart';
 import 'package:counter/features/planning/widgets/planning_filter_controls.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -83,6 +84,31 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(PlanningPage), findsOneWidget);
       expect(find.byType(PlanningSortModeBar), findsOneWidget);
+    });
+
+    testWidgets('Planning gear opens canonical Settings page, not giant sheet',
+        (tester) async {
+      tester.view.physicalSize = const Size(1400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final shellLayout = ShellLayoutController();
+      addTearDown(shellLayout.dispose);
+      await _pumpPlanningPageHarness(tester, shellLayout: shellLayout);
+
+      final gear = find.descendant(
+        of: find.byType(PlanningSortModeBar),
+        matching: find.byIcon(Icons.settings_rounded),
+      );
+      expect(gear, findsOneWidget);
+      await tester.tap(gear);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(LifeOsPlanningSettingsPage), findsOneWidget);
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('empty day renders PlanningDayEmptyState (no network)',
