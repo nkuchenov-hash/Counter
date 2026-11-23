@@ -1,4 +1,6 @@
 ## [2026-11-23] — Center Tags and Style settings and unify list actions [verification pending]
+- Removed rectangular tab hover background and increased Style preview label/section typography for legibility.
+
 
 - Repaired Tags settings body-width regression: Tags and Style now use a shared, testable readable-width tab frame aligned to header/tabs; Duration retains the canonical Settings page body.
 - Tags CRUD now displays grouped white rows and dividers within the settings column, with neutral delete icons and the New Tag action next to the list, including when the catalog is empty. Preserved reorder, edit/delete, domains and PocketBase storage.
