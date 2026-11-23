@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `41ac469a` on 2026-11-21.**
+**Generated from input HEAD `9379e9c5` on 2026-11-23.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -36,8 +36,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | `platform resource` | 44 |
 | `Desktop Voice runtime` | 36 |
 | `test fixture` | 32 |
+| `PocketBase migration` | 27 |
 | `PocketBase backend` | 25 |
-| `PocketBase migration` | 22 |
 | `shared Voice system` | 20 |
 | `CI/deployment` | 18 |
 | `historical engineering record` | 18 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 562 |
+| `PROVEN_REQUIRED` | 567 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 277 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 943 |
+| `HIGH` | 948 |
 | `MEDIUM` | 88 |
 
 ---
@@ -13395,7 +13395,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppMenuIconRole`, `AppMenuIcons`).
 - **Key code names:** `AppMenuIconRole`, `AppMenuIcons`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/menu/life_os_menu_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13412,7 +13412,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_menu_icons`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/core/widgets/app_settings_layout.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/profile/menu/life_os_menu_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21810,7 +21810,7 @@ EN:
 - **Contents:** `PlanningQuickAddTagsController` with reload/merge/reorder/persist and TagSettingsHub navigation.
 - **Key code names:** `PlanningQuickAddTagsController`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21827,7 +21827,7 @@ RU:
 - **Зачем:** Выносит prefs и выбор тегов из оркестратора дня Plans без смены submit и Time View.
 - **Содержимое:** `PlanningQuickAddTagsController` с reload/merge/reorder/persist и навигацией в TagSettingsHub.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/planning_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22150,7 +22150,7 @@ EN:
 - **Contents:** Primary symbols: `PlanningNoTagsSettingsBlock`, `PlanningNoTagsSettingsBlockState`.
 - **Key code names:** `PlanningNoTagsSettingsBlock`, `PlanningNoTagsSettingsBlockState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22167,7 +22167,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `planning_no_tags_settings.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `planning_no_tags_settings.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22188,7 +22188,7 @@ EN:
 - **Contents:** Primary symbols: `PlanningTimelineBoundsSheet`, `PlanningTimelineBoundsSheetState`.
 - **Key code names:** `PlanningTimelineBoundsSheet`, `PlanningTimelineBoundsSheetState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -22205,7 +22205,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `planning_timeline_bounds_sheet.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Основные символы: `PlanningTimelineBoundsSheet`, `PlanningTimelineBoundsSheetState`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/planning/time_view/time_view_settings_sheet.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/menu/life_os_planning_settings_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22983,8 +22983,8 @@ EN:
 - **Human purpose:** `planning_filter_controls.dart` on Plans tab (second bottom tab) — Sort-mode segmented control. Users see `planning_filter_controls.dart` when using Plans tab (second bottom tab).
 - **What this is:** `planning_filter_controls.dart` on Plans tab (second bottom tab) — Sort-mode segmented control.
 - **Why needed:** Users see `planning_filter_controls.dart` when using Plans tab (second bottom tab).
-- **Contents:** Primary symbols: `PlanningSortModeBar`, `PlanningQuickAddChrome`.
-- **Key code names:** `PlanningSortModeBar`, `PlanningQuickAddChrome`
+- **Contents:** Primary symbols: `PlanningSortModeBar`, `_PlanningTextModeTab`, `_PlanningTextModeTabState`, `PlanningQuickAddChrome`.
+- **Key code names:** `PlanningSortModeBar`, `_PlanningTextModeTab`, `_PlanningTextModeTabState`, `PlanningQuickAddChrome`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/planning/planning_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -33605,222 +33605,222 @@ RU:
 
 EN:
 
-- **Human purpose:** Safely reconcile an already scheduled driving day, preserving its visit times, categorizing existing event cards, and filling only confirmed empty travel intervals.
-- **What this is:** One-time PocketBase data migration with strict owner and itinerary matching.
-- **Why needed:** Prevent long titles, generic categories and missing travel blocks from continuing in previously created plans.
-- **Contents:** Exact-match checks, category selection, note and map links, non-overlapping travel-card creation.
+- **Human purpose:** JavaScript source `1795269600_reconcile_20261121_visit_cards.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1795269600_reconcile_20261121_visit_cards.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1795269600_reconcile_20261121_visit_cards.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1795269600_reconcile_20261121_visit_cards.js` for build, CI, or maintenance.
+- **Contents:** Open `1795269600_reconcile_20261121_visit_cards.js` when working on `pb_migrations` (see folder section above).
 - **Repository role:** PocketBase migration
-- **Evidence of use:** Versioned PocketBase data migration; deployed by the server-before-client workflow (see `docs/DEPLOY.md`).
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
 - **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Versioned data migration history could become incomplete.
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
 - **Confidence:** HIGH
 - **Owner / layer:** PocketBase migrations
-- **Responsibilities:** Repair only the uniquely identified existing itinerary and leave other accounts unchanged.
-- **When to open:** When reviewing or troubleshooting PocketBase historical plan metadata reconciliation.
-- **Can it be deleted?** No — preserve applied migrations and their audit trail.
-- **Connected to:** `pb_migrations/`, `docs/DATA_MAP.md`.
+- **Responsibilities:** Supports `pb_migrations` workflow for `1795269600_reconcile_20261121_visit_cards.js`.
+- **When to open:** When build output or maintenance cites `1795269600_reconcile_20261121_visit_cards.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 RU:
 
-- **Зачем файл человеку:** Точечно исправляет существующий маршрут: краткие названия, категории, заметки с картами и отдельные карточки переездов.
-- **Что это:** Однократная миграция пользовательских планов PocketBase с защитой по владельцу и точному набору остановок.
-- **Зачем:** Убирает неверные категории и пустые интервалы, не меняя время уже запланированных осмотров.
-- **Содержимое:** Проверка идентификации, выбор категорий, обновление пояснений, добавление только непересекающихся переездов.
+- **Зачем файл человеку:** `1795269600_reconcile_20261121_visit_cards.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1795269600_reconcile_20261121_visit_cards.js`.
+- **Что это:** `1795269600_reconcile_20261121_visit_cards.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1795269600_reconcile_20261121_visit_cards.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1795269600_reconcile_20261121_visit_cards.js`.
 - **Роль в репозитории:** PocketBase migration
-- **Доказательства использования:** Версионированная миграция данных PocketBase, применяемая серверной цепочкой развёртывания.
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
 - **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** История обновления данных может стать неполной.
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
 - **Уверенность:** HIGH
 - **Владелец / слой:** миграции PocketBase
-- **Обязанности:** Корректировать только однозначно определённый маршрут, не затрагивая остальные записи.
-- **Когда открывать:** При проверке исправления расписания или миграций PocketBase.
-- **Можно удалить?** Нет, это сохранённая история миграции.
-- **Связано с:** `pb_migrations/`, `docs/DATA_MAP.md`.
+- **Обязанности:** Реализует JavaScript-часть сценария `1795269600_reconcile_20261121_visit_cards.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1795269600_reconcile_20261121_visit_cards.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 
 ### `pb_migrations/1795269601_fix_tara_brooch_personal_category.js`
 
 EN:
 
-- **Human purpose:** Correct the 21 November Tara Brooch event category from RCC to personal/leisure without changing unrelated events.
-- **What this is:** Versioned PocketBase migration for an existing user's 2026-11-21 plans.
-- **Why needed:** Preserve the user's updated route in persistent, synchronized plan data.
-- **Contents:** Narrow owner matching, protected plan edits, schedule times, notes, drive cards and safety checks.
+- **Human purpose:** JavaScript source `1795269601_fix_tara_brooch_personal_category.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1795269601_fix_tara_brooch_personal_category.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1795269601_fix_tara_brooch_personal_category.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1795269601_fix_tara_brooch_personal_category.js` for build, CI, or maintenance.
+- **Contents:** Open `1795269601_fix_tara_brooch_personal_category.js` when working on `pb_migrations` (see folder section above).
 - **Repository role:** PocketBase migration
-- **Evidence of use:** The server-before-client deployment workflow applies every new migration in `pb_migrations/`.
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
 - **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** The migration history and revised route would no longer be reproducible.
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
 - **Confidence:** HIGH
 - **Owner / layer:** PocketBase migrations
-- **Responsibilities:** Reconcile only the uniquely matching existing itinerary, without editing unrelated users' plans.
-- **When to open:** Auditing the 21 November 2026 route correction, database migration or deployment failure.
-- **Can it be deleted?** No — versioned migrations must remain for audit and fresh installations.
-- **Connected to:** `pb_migrations/`, `docs/DATA_MAP.md`.
+- **Responsibilities:** Supports `pb_migrations` workflow for `1795269601_fix_tara_brooch_personal_category.js`.
+- **When to open:** When build output or maintenance cites `1795269601_fix_tara_brooch_personal_category.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 RU:
 
-- **Зачем файл человеку:** Исправление категории встречи Tara Brooch с RCC на личное событие, не затрагивая другие события.
-- **Что это:** Версионированная миграция данных PocketBase для существующего расписания на 21 ноября 2026 года.
-- **Зачем:** Чтобы исправление маршрута синхронизировалось между приложением и сервером.
-- **Содержимое:** Однозначный поиск владельца, сохранение прежних карточек, корректировка времени, заметок и переездов.
-- **Роль в репозитории:** миграции PocketBase
-- **Доказательства использования:** Миграция применяется серверным конвейером до развёртывания клиентской части.
+- **Зачем файл человеку:** `1795269601_fix_tara_brooch_personal_category.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1795269601_fix_tara_brooch_personal_category.js`.
+- **Что это:** `1795269601_fix_tara_brooch_personal_category.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1795269601_fix_tara_brooch_personal_category.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1795269601_fix_tara_brooch_personal_category.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
 - **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Потеряется часть истории обновления маршрута и возможность воспроизведения изменений.
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
 - **Уверенность:** HIGH
 - **Владелец / слой:** миграции PocketBase
-- **Обязанности:** Обновлять только однозначно найденный маршрут, не затрагивая остальных пользователей.
-- **Когда открывать:** При аудите сегодняшнего расписания, проверке миграции и устранении ошибки развёртывания.
-- **Можно удалить?** Нет — это часть истории миграций.
-- **Связано с:** `pb_migrations/`, `docs/DATA_MAP.md`.
+- **Обязанности:** Реализует JavaScript-часть сценария `1795269601_fix_tara_brooch_personal_category.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1795269601_fix_tara_brooch_personal_category.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 
 ### `pb_migrations/1795269602_revise_20261121_after_milyutin_delay.js`
 
 EN:
 
-- **Human purpose:** Revise the first delayed venue viewing and convert unused drive cards into a conservative provisional itinerary.
-- **What this is:** Versioned PocketBase migration for an existing user's 2026-11-21 plans.
-- **Why needed:** Preserve the user's updated route in persistent, synchronized plan data.
-- **Contents:** Narrow owner matching, protected plan edits, schedule times, notes, drive cards and safety checks.
+- **Human purpose:** JavaScript source `1795269602_revise_20261121_after_milyutin_delay.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1795269602_revise_20261121_after_milyutin_delay.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1795269602_revise_20261121_after_milyutin_delay.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1795269602_revise_20261121_after_milyutin_delay.js` for build, CI, or maintenance.
+- **Contents:** Open `1795269602_revise_20261121_after_milyutin_delay.js` when working on `pb_migrations` (see folder section above).
 - **Repository role:** PocketBase migration
-- **Evidence of use:** The server-before-client deployment workflow applies every new migration in `pb_migrations/`.
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
 - **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** The migration history and revised route would no longer be reproducible.
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
 - **Confidence:** HIGH
 - **Owner / layer:** PocketBase migrations
-- **Responsibilities:** Reconcile only the uniquely matching existing itinerary, without editing unrelated users' plans.
-- **When to open:** Auditing the 21 November 2026 route correction, database migration or deployment failure.
-- **Can it be deleted?** No — versioned migrations must remain for audit and fresh installations.
-- **Connected to:** `pb_migrations/`, `docs/DATA_MAP.md`.
+- **Responsibilities:** Supports `pb_migrations` workflow for `1795269602_revise_20261121_after_milyutin_delay.js`.
+- **When to open:** When build output or maintenance cites `1795269602_revise_20261121_after_milyutin_delay.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 RU:
 
-- **Зачем файл человеку:** Перерасчёт маршрута после задержки первого осмотра, с сохранением существующих карточек.
-- **Что это:** Версионированная миграция данных PocketBase для существующего расписания на 21 ноября 2026 года.
-- **Зачем:** Чтобы исправление маршрута синхронизировалось между приложением и сервером.
-- **Содержимое:** Однозначный поиск владельца, сохранение прежних карточек, корректировка времени, заметок и переездов.
-- **Роль в репозитории:** миграции PocketBase
-- **Доказательства использования:** Миграция применяется серверным конвейером до развёртывания клиентской части.
+- **Зачем файл человеку:** `1795269602_revise_20261121_after_milyutin_delay.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1795269602_revise_20261121_after_milyutin_delay.js`.
+- **Что это:** `1795269602_revise_20261121_after_milyutin_delay.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1795269602_revise_20261121_after_milyutin_delay.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1795269602_revise_20261121_after_milyutin_delay.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
 - **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Потеряется часть истории обновления маршрута и возможность воспроизведения изменений.
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
 - **Уверенность:** HIGH
 - **Владелец / слой:** миграции PocketBase
-- **Обязанности:** Обновлять только однозначно найденный маршрут, не затрагивая остальных пользователей.
-- **Когда открывать:** При аудите сегодняшнего расписания, проверке миграции и устранении ошибки развёртывания.
-- **Можно удалить?** Нет — это часть истории миграций.
-- **Связано с:** `pb_migrations/`, `docs/DATA_MAP.md`.
+- **Обязанности:** Реализует JavaScript-часть сценария `1795269602_revise_20261121_after_milyutin_delay.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1795269602_revise_20261121_after_milyutin_delay.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 
 ### `pb_migrations/1795269603_fit_more_visits_short_drive_20261121.js`
 
 EN:
 
-- **Human purpose:** Shorten overestimated inner-city transfers and fit additional venue visits before the fixed evening event.
-- **What this is:** Versioned PocketBase migration for an existing user's 2026-11-21 plans.
-- **Why needed:** Preserve the user's updated route in persistent, synchronized plan data.
-- **Contents:** Narrow owner matching, protected plan edits, schedule times, notes, drive cards and safety checks.
+- **Human purpose:** JavaScript source `1795269603_fit_more_visits_short_drive_20261121.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1795269603_fit_more_visits_short_drive_20261121.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1795269603_fit_more_visits_short_drive_20261121.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1795269603_fit_more_visits_short_drive_20261121.js` for build, CI, or maintenance.
+- **Contents:** Open `1795269603_fit_more_visits_short_drive_20261121.js` when working on `pb_migrations` (see folder section above).
 - **Repository role:** PocketBase migration
-- **Evidence of use:** The server-before-client deployment workflow applies every new migration in `pb_migrations/`.
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
 - **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** The migration history and revised route would no longer be reproducible.
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
 - **Confidence:** HIGH
 - **Owner / layer:** PocketBase migrations
-- **Responsibilities:** Reconcile only the uniquely matching existing itinerary, without editing unrelated users' plans.
-- **When to open:** Auditing the 21 November 2026 route correction, database migration or deployment failure.
-- **Can it be deleted?** No — versioned migrations must remain for audit and fresh installations.
-- **Connected to:** `pb_migrations/`, `docs/DATA_MAP.md`.
+- **Responsibilities:** Supports `pb_migrations` workflow for `1795269603_fit_more_visits_short_drive_20261121.js`.
+- **When to open:** When build output or maintenance cites `1795269603_fit_more_visits_short_drive_20261121.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 RU:
 
-- **Зачем файл человеку:** Сокращение избыточных интервалов переездов и размещение дополнительных осмотров до вечерней встречи.
-- **Что это:** Версионированная миграция данных PocketBase для существующего расписания на 21 ноября 2026 года.
-- **Зачем:** Чтобы исправление маршрута синхронизировалось между приложением и сервером.
-- **Содержимое:** Однозначный поиск владельца, сохранение прежних карточек, корректировка времени, заметок и переездов.
-- **Роль в репозитории:** миграции PocketBase
-- **Доказательства использования:** Миграция применяется серверным конвейером до развёртывания клиентской части.
+- **Зачем файл человеку:** `1795269603_fit_more_visits_short_drive_20261121.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1795269603_fit_more_visits_short_drive_20261121.js`.
+- **Что это:** `1795269603_fit_more_visits_short_drive_20261121.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1795269603_fit_more_visits_short_drive_20261121.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1795269603_fit_more_visits_short_drive_20261121.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
 - **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Потеряется часть истории обновления маршрута и возможность воспроизведения изменений.
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
 - **Уверенность:** HIGH
 - **Владелец / слой:** миграции PocketBase
-- **Обязанности:** Обновлять только однозначно найденный маршрут, не затрагивая остальных пользователей.
-- **Когда открывать:** При аудите сегодняшнего расписания, проверке миграции и устранении ошибки развёртывания.
-- **Можно удалить?** Нет — это часть истории миграций.
-- **Связано с:** `pb_migrations/`, `docs/DATA_MAP.md`.
+- **Обязанности:** Реализует JavaScript-часть сценария `1795269603_fit_more_visits_short_drive_20261121.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1795269603_fit_more_visits_short_drive_20261121.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 
 ### `pb_migrations/1795269604_actual_santa_done_glukh_1700_20261121.js`
 
 EN:
 
-- **Human purpose:** Apply the user's latest actual order: Milyutin and Santa Gloria visited, Chad next, Glukhovsky fixed at 17:00.
-- **What this is:** Versioned PocketBase migration for an existing user's 2026-11-21 plans.
-- **Why needed:** Preserve the user's updated route in persistent, synchronized plan data.
-- **Contents:** Narrow owner matching, protected plan edits, schedule times, notes, drive cards and safety checks.
+- **Human purpose:** JavaScript source `1795269604_actual_santa_done_glukh_1700_20261121.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1795269604_actual_santa_done_glukh_1700_20261121.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1795269604_actual_santa_done_glukh_1700_20261121.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1795269604_actual_santa_done_glukh_1700_20261121.js` for build, CI, or maintenance.
+- **Contents:** Open `1795269604_actual_santa_done_glukh_1700_20261121.js` when working on `pb_migrations` (see folder section above).
 - **Repository role:** PocketBase migration
-- **Evidence of use:** The server-before-client deployment workflow applies every new migration in `pb_migrations/`.
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
 - **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** The migration history and revised route would no longer be reproducible.
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
 - **Confidence:** HIGH
 - **Owner / layer:** PocketBase migrations
-- **Responsibilities:** Reconcile only the uniquely matching existing itinerary, without editing unrelated users' plans.
-- **When to open:** Auditing the 21 November 2026 route correction, database migration or deployment failure.
-- **Can it be deleted?** No — versioned migrations must remain for audit and fresh installations.
-- **Connected to:** `pb_migrations/`, `docs/DATA_MAP.md`.
+- **Responsibilities:** Supports `pb_migrations` workflow for `1795269604_actual_santa_done_glukh_1700_20261121.js`.
+- **When to open:** When build output or maintenance cites `1795269604_actual_santa_done_glukh_1700_20261121.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 RU:
 
-- **Зачем файл человеку:** Исправление текущего порядка: Милютина и Санта Глория уже осмотрены, далее Чад и встреча у Глуховского в 17:00.
-- **Что это:** Версионированная миграция данных PocketBase для существующего расписания на 21 ноября 2026 года.
-- **Зачем:** Чтобы исправление маршрута синхронизировалось между приложением и сервером.
-- **Содержимое:** Однозначный поиск владельца, сохранение прежних карточек, корректировка времени, заметок и переездов.
-- **Роль в репозитории:** миграции PocketBase
-- **Доказательства использования:** Миграция применяется серверным конвейером до развёртывания клиентской части.
+- **Зачем файл человеку:** `1795269604_actual_santa_done_glukh_1700_20261121.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1795269604_actual_santa_done_glukh_1700_20261121.js`.
+- **Что это:** `1795269604_actual_santa_done_glukh_1700_20261121.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1795269604_actual_santa_done_glukh_1700_20261121.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1795269604_actual_santa_done_glukh_1700_20261121.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
 - **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Потеряется часть истории обновления маршрута и возможность воспроизведения изменений.
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
 - **Уверенность:** HIGH
 - **Владелец / слой:** миграции PocketBase
-- **Обязанности:** Обновлять только однозначно найденный маршрут, не затрагивая остальных пользователей.
-- **Когда открывать:** При аудите сегодняшнего расписания, проверке миграции и устранении ошибки развёртывания.
-- **Можно удалить?** Нет — это часть истории миграций.
-- **Связано с:** `pb_migrations/`, `docs/DATA_MAP.md`.
+- **Обязанности:** Реализует JavaScript-часть сценария `1795269604_actual_santa_done_glukh_1700_20261121.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1795269604_actual_santa_done_glukh_1700_20261121.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 
 ### `pb_migrations/1795269605_restore_santa_to_chad_drive_20261121.js`
 
 EN:
 
-- **Human purpose:** Restore the verified missing Santa Gloria to Chad transfer on the user's existing 21 November 2026 itinerary.
-- **What this is:** An idempotent, single-purpose PocketBase data migration.
-- **Why needed:** Production read-only verification found the transfer card missing after the earlier route update.
-- **Contents:** Strict owner matching; no-duplicate guard; preserves completed activity; creates or repairs one transfer card and map links.
+- **Human purpose:** JavaScript source `1795269605_restore_santa_to_chad_drive_20261121.js` in `pb_migrations` — repo tooling or config. Tracked because `pb_migrations` needs `1795269605_restore_santa_to_chad_drive_20261121.js` for build, CI, or maintenance.
+- **What this is:** JavaScript source `1795269605_restore_santa_to_chad_drive_20261121.js` in `pb_migrations` — repo tooling or config.
+- **Why needed:** Tracked because `pb_migrations` needs `1795269605_restore_santa_to_chad_drive_20261121.js` for build, CI, or maintenance.
+- **Contents:** Open `1795269605_restore_santa_to_chad_drive_20261121.js` when working on `pb_migrations` (see folder section above).
 - **Repository role:** PocketBase migration
-- **Evidence of use:** Applied by `deploy-pocketbase.yml` and checked by the production verification job.
+- **Evidence of use:** Versioned PocketBase schema/data migration; applied by PocketBase before client code that depends on the schema (see `docs/DEPLOY.md`).
 - **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** A corrected live itinerary would not be reproducible.
+- **Deletion consequence:** Production schema history becomes incomplete or a required data migration is lost.
 - **Confidence:** HIGH
 - **Owner / layer:** PocketBase migrations
-- **Responsibilities:** Repair one transfer without altering venue appointments or other users.
-- **When to open:** When auditing the corrected Nov 21 route and production plan synchronisation.
-- **Can it be deleted?** No — versioned migrations are retained.
-- **Connected to:** `pb_migrations/`, `docs/DATA_MAP.md`.
+- **Responsibilities:** Supports `pb_migrations` workflow for `1795269605_restore_santa_to_chad_drive_20261121.js`.
+- **When to open:** When build output or maintenance cites `1795269605_restore_santa_to_chad_drive_20261121.js`.
+- **Can it be deleted?** No — part of repository tooling or config.
+- **Connected to:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 RU:
 
-- **Зачем файл человеку:** Восстанавливает недостающую карточку переезда Санта Глория → Чад на 21 ноября 2026 года.
-- **Что это:** Идемпотентная миграция данных PocketBase.
-- **Зачем:** Прямая проверка рабочей базы обнаружила отсутствие этой карточки после изменения маршрута.
-- **Содержимое:** Проверка владельца и дублей, сохранение истории, добавление одного переезда с адресами и картами.
-- **Роль в репозитории:** миграции PocketBase
-- **Доказательства использования:** Применяется серверным конвейером и проверяется отдельным производственным аудитом.
+- **Зачем файл человеку:** `1795269605_restore_santa_to_chad_drive_20261121.js` — JavaScript-модуль для области `pb_migrations`. Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1795269605_restore_santa_to_chad_drive_20261121.js`.
+- **Что это:** `1795269605_restore_santa_to_chad_drive_20261121.js` — JavaScript-модуль для области `pb_migrations`.
+- **Зачем:** Обеспечивает автоматизацию или web-логику области `pb_migrations` для сценария `1795269605_restore_santa_to_chad_drive_20261121.js`.
+- **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `1795269605_restore_santa_to_chad_drive_20261121.js`.
+- **Роль в репозитории:** PocketBase migration
+- **Доказательства использования:** Версионированная миграция схемы/данных PocketBase; применяется до клиента, который зависит от этой схемы (см. `docs/DEPLOY.md`).
 - **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Снизится воспроизводимость исправленного маршрута.
+- **Что будет, если удалить:** История production-схемы станет неполной или пропадёт нужная миграция данных.
 - **Уверенность:** HIGH
 - **Владелец / слой:** миграции PocketBase
-- **Обязанности:** Исправить только один переезд без изменения встреч и других пользователей.
-- **Когда открывать:** Для проверки маршрута 21 ноября и синхронизации данных.
-- **Можно удалить?** Нет — история миграций сохраняется.
-- **Связано с:** `pb_migrations/`, `docs/DATA_MAP.md`.
+- **Обязанности:** Реализует JavaScript-часть сценария `1795269605_restore_santa_to_chad_drive_20261121.js` в своём каталоге.
+- **Когда открывать:** When результат сборки or maintenance cites `1795269605_restore_santa_to_chad_drive_20261121.js`.
+- **Можно удалить?** Нет — конфигурация/инструмент репозитория.
+- **Связано с:** `pb_migrations/`, `docs/APP_STRUCTURE.md`.
 
 
 ### `pubspec.lock`
