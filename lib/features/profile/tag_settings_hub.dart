@@ -2,6 +2,7 @@
 // Unified tag settings: list CRUD + global display mode + default plan durations.
 // ---------------------------------------------------------------------------
 
+import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
@@ -103,6 +104,9 @@ class _TagSettingsHubState extends State<TagSettingsHub>
                     ) ? kShellDesktopContentHorizontalPadding : 16,
                   ),
                   child: TabBar(
+                    overlayColor: const WidgetStatePropertyAll(
+                      AppNeutralTones.transparent,
+                    ),
                     controller: _tabController,
                     isScrollable: true,
                     tabAlignment: TabAlignment.start,
