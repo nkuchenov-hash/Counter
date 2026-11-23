@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `9379e9c5` on 2026-11-23.**
+**Generated from input HEAD `5c16e373` on 2026-11-23.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 567 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 277 |
+| `PROVEN_REQUIRED` | 566 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 278 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 948 |
-| `MEDIUM` | 88 |
+| `HIGH` | 947 |
+| `MEDIUM` | 89 |
 
 ---
 
@@ -13471,7 +13471,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`, `AppSettingsSwitchRow`, `AppSettingsInfoRow`).
 - **Key code names:** `AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`, `AppSettingsSwitchRow`, `AppSettingsInfoRow`, `AppSettingsActionRow`, `AppSettingsCardGrid`, `AppSettingsGridCard`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/settings/default_plan_times_settings_block.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/app_settings_breadcrumb_bar.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/paths/paths_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13488,7 +13488,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_settings_layout`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/settings/default_plan_times_settings_block.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/core/widgets/app_settings_breadcrumb_bar.dart`, `lib/features/calendar/calendar_view.dart`, `lib/features/notes/widgets/notes_library_production_shell.dart`, `lib/features/paths/paths_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -22188,14 +22188,14 @@ EN:
 - **Contents:** Primary symbols: `PlanningTimelineBoundsSheet`, `PlanningTimelineBoundsSheetState`.
 - **Key code names:** `PlanningTimelineBoundsSheet`, `PlanningTimelineBoundsSheetState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/menu/life_os_planning_settings_page.dart`.
-- **Necessity status:** PROVEN_REQUIRED
-- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
-- **Confidence:** HIGH
+- **Evidence of use:** Mentioned by tracked docs/scripts: `docs/APP_STRUCTURE.md`, `docs/reports/PLANNING_PAGE_SEAM_AUDIT_2026-07-06.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
 - **Owner / layer:** Planning UI
 - **Responsibilities:** Visible hour range slider sheet
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
-- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Can it be deleted?** Removing it breaks a required repository capability.
 - **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Visible hour range slider sheet
 
 RU:
@@ -22205,10 +22205,10 @@ RU:
 - **Зачем:** Пользователь видит UI из `planning_timeline_bounds_sheet.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Основные символы: `PlanningTimelineBoundsSheet`, `PlanningTimelineBoundsSheetState`.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/menu/life_os_planning_settings_page.dart`.
-- **Статус необходимости:** PROVEN_REQUIRED
-- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
-- **Уверенность:** HIGH
+- **Доказательства использования:** Упоминается в docs/scripts: `docs/APP_STRUCTURE.md`, `docs/reports/PLANNING_PAGE_SEAM_AUDIT_2026-07-06.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** UI планов
 - **Обязанности:** Пользователь открывает sheet/dialog из entry `planning_timeline_bounds_sheet`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
