@@ -5,6 +5,7 @@ import 'package:counter/core/app_control_tokens.dart';
 import 'package:counter/core/theme.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
@@ -101,12 +102,24 @@ void main() {
 
     final header = find.text('Планирование и время');
     final content = find.text('Settings content edge');
-    expect(tester.getTopLeft(header).dx,
+    final backButton = find.byType(AppIconButton);
+    expect(backButton, findsOneWidget);
+    final glass = tester.widget<AppIconButton>(backButton);
+    expect(glass.variant, AppIconButtonVariant.frosted);
+    expect(glass.shape, AppIconButtonShape.circular);
+    expect(glass.size, AppIconButtonSize.l);
+    expect(glass.tooltip, 'План');
+    // The glass arrow starts at the same content edge as the Settings body.
+    expect(tester.getTopLeft(backButton).dx,
         closeTo(tester.getTopLeft(content).dx, 1));
+    // The arrow and title form one line, not a two-row breadcrumb.
+    expect(tester.getCenter(backButton).dy,
+        closeTo(tester.getCenter(header).dy, 1));
     expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
+    expect(find.byType(TextButton), findsNothing);
+    expect(find.text('План'), findsNothing);
 
-    await tester.tap(find.text('План'));
+    await tester.tap(backButton);
     expect(backCount, 1);
     expect(tester.takeException(), isNull);
   });
