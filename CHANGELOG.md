@@ -1,3 +1,9 @@
+## [2026-11-23] — Restore approved glass Settings back arrow [verification pending]
+
+- Replaced the incorrectly introduced two-row text breadcrumb with the existing circular, translucent, 48 dp `AppIconButtonVariant.frosted` Back control next to the screen title.
+- Kept the actual origin in the control's tooltip/accessibility label; Back still returns to the originating Plans or Settings route. Applied consistently to secondary Settings pages and tag tabs.
+- Added UI regression assertions for the approved component, single-row geometry, and Back navigation. Web deployment pending.
+
 ## [2026-11-23] — Restore day-range handles and compact secondary settings [verification pending]
 
 - Restored the original two-thumb Duration of Day RangeSlider directly in Schedule, with displayed hours and overnight labels; discarded recently introduced dropdown pickers. Existing normalized stored bounds remain unchanged.
