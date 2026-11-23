@@ -1,4 +1,6 @@
 ## Tag settings three-tab layout parity (2026-11-23)
+- Tag-setting tabs are plain text navigation: inactive labels muted, active text underlined, and no rectangular Material hover overlay. Style previews must keep readable labels (body text size, not micro-labels).
+
 
 - The **Tags**, **Style**, and **Duration** tabs share the **same readable, centered Settings content column** as the title, back arrow, and tab bar. A full-viewport `Scaffold` or `ListView` from a tab child must never stretch controls to the desktop window edges. The header does not count as layout verification unless the tab body follows its geometry.
 - The Tags tab retains its reorderable items, per-tag edit/delete and existing backend semantics. Display those items as one white, radius-matched group with row separators inside the centered column. Use neutral trash icon color until a destructive confirmation; do not scatter bright red delete controls across the window width.
