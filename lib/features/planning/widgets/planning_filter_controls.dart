@@ -101,8 +101,20 @@ class PlanningSortModeBar extends StatelessWidget {
   );
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => _buildForWidth(context, constraints.maxWidth),
+  );
+
+  Widget _buildForWidth(BuildContext context, double availableWidth) {
     final desktop = desktopTitle != null;
+    // On a 900 px viewport the side rail leaves only ~628 px for Planning.
+    // Reserve space for the title and fixed action hit targets; scroll only tabs.
+    final contentWidth = availableWidth > kPlanningDesktopChromeMaxWidth
+        ? kPlanningDesktopChromeMaxWidth
+        : availableWidth;
+    final tabsWidth = (contentWidth - 48 - 20 - 198 - 110)
+        .clamp(180.0, 428.0)
+        .toDouble();
     final settingsButton = AppIconButton(
       icon: Icons.settings_rounded,
       tooltip: settingsTooltip,
@@ -132,7 +144,7 @@ class PlanningSortModeBar extends StatelessWidget {
               controls: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(width: 428, child: _modeTabs(context)),
+                  SizedBox(width: tabsWidth, child: _modeTabs(context)),
                   const SizedBox(width: 10),
                   settingsButton,
                   const SizedBox(width: 4),
