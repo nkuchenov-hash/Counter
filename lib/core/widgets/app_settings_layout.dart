@@ -653,8 +653,13 @@ class AppSettingsNavigationGroup extends StatefulWidget {
   const AppSettingsNavigationGroup({
     super.key,
     required this.children,
+    this.header,
   });
   final List<Widget> children;
+
+  /// Non-interactive inline controls above grouped navigation rows.
+  /// Unlike a row, the header has no hover surface and cannot mask dividers.
+  final Widget? header;
   @override
   State<AppSettingsNavigationGroup> createState() =>
       _AppSettingsNavigationGroupState();
@@ -685,6 +690,21 @@ class _AppSettingsNavigationGroupState
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (widget.header != null) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                child: widget.header!,
+              ),
+              if (widget.children.isNotEmpty)
+                SizedBox(
+                  width: double.infinity,
+                  height: 1,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: ColoredBox(color: dividerFill),
+                  ),
+                ),
+            ],
             for (var index = 0; index < widget.children.length; index++) ...[
               MouseRegion(
                 onEnter: (_) {
