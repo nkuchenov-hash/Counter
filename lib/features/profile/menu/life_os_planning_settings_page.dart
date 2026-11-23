@@ -160,27 +160,39 @@ class _LifeOsPlanningSettingsPageState
   }
 
   void _openEditor(Widget child) {
+    final scheme = Theme.of(context).colorScheme;
+    if (MediaQuery.sizeOf(context).width >= 900) {
+      // Desktop uses a compact, content-sized dialog, not an 82%-height
+      // bottom drawer for a single toggle or a handful of tag chips.
+      showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          scrollable: true,
+          backgroundColor: scheme.surfaceContainerHigh,
+          contentPadding: const EdgeInsets.all(24),
+          content: SizedBox(
+            width: 520,
+            child: child,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Compact devices retain a touch-friendly sheet but size it to content.
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-      builder: (sheetContext) => SafeArea(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.82,
-          ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-            child: Material(
-              color: Theme.of(context).colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(22),
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: child,
-              ),
-            ),
-          ),
+      backgroundColor: scheme.surfaceContainerLowest,
+      constraints: BoxConstraints(
+        maxWidth: 620,
+        maxHeight: MediaQuery.sizeOf(context).height * 0.76,
+      ),
+      builder: (_) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+          child: child,
         ),
       ),
     );
