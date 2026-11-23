@@ -301,7 +301,7 @@ class _LifeOsPlanningSettingsPageState
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            ru ? 'Границы видимого дня' : 'Visible day hours',
+                            t(loc, 'day_length_title'),
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.w600),
                           ),
