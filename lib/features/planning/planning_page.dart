@@ -1374,7 +1374,6 @@ class _PlanningPageState extends State<PlanningPage>
           ),
         PlanningQuickAddChrome(
           desktop: desktop,
-          scheme: scheme,
           tagStrip: tagStrip,
           controller: _textController,
           focusNode: _quickAddFocus,
