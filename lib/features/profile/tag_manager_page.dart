@@ -333,12 +333,7 @@ class _TagManagerPageState extends State<TagManagerPage> {
             ),
       body: _loading
           ? const AppLoading()
-          : _tags.isEmpty
-              ? AppEmptyState(
-                  message: t(loc, 'tag_manager_empty'),
-                  icon: Icons.sell_outlined,
-                )
-              : Column(
+          : Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Padding(
@@ -364,7 +359,12 @@ class _TagManagerPageState extends State<TagManagerPage> {
                       ),
                     ),
                     Expanded(
-                      child: ReorderableListView.builder(
+                      child: _tags.isEmpty
+                          ? AppEmptyState(
+                              message: t(loc, 'tag_manager_empty'),
+                              icon: Icons.sell_outlined,
+                            )
+                          : ReorderableListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                         buildDefaultDragHandles: false,
                         itemCount: _tags.length,
@@ -412,7 +412,7 @@ class _TagManagerPageState extends State<TagManagerPage> {
                                 trailing: IconButton(
                                   tooltip: t(loc, 'delete'),
                                   icon: Icon(Icons.delete_outline_rounded,
-                                      color: scheme.error),
+                                      color: scheme.onSurfaceVariant),
                                   onPressed: () => _confirmDelete(tag),
                                 ),
                                   ),
