@@ -4,6 +4,7 @@ import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/planning/widgets/planning_empty_states.dart';
 import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
+import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/features/profile/menu/life_os_planning_settings_page.dart';
 import 'package:counter/features/planning/widgets/planning_filter_controls.dart';
 import 'package:flutter/material.dart';
@@ -114,11 +115,12 @@ void main() {
       final breadcrumb = tester.widget<AppSettingsBreadcrumbBar>(
         find.byType(AppSettingsBreadcrumbBar),
       );
-      expect(breadcrumb.parentLabel, 'Plan');
+      final planLabel = t(currentLocale.value, 'tab_planning');
+      expect(breadcrumb.parentLabel, planLabel);
       expect(breadcrumb.alignWithSettingsBody, isTrue);
 
       // The new entry must remain a normal route: Back returns to Plans.
-      await tester.tap(find.text('Plan').last);
+      await tester.tap(find.text(planLabel).last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.byType(PlanningPage), findsOneWidget);
