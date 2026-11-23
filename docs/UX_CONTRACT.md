@@ -1,3 +1,9 @@
+## Planning view toolbar (2026-11-23)
+
+- Category / Time / Tags / Custom modes use a text-only horizontal tab row: inactive labels are visually subdued and the active label is underlined. No filled segmented-control backgrounds or duplicate mode selection UI.
+- Planning settings and Viktor actions sit beside the view selector, not within the tag strip or quick-entry line; on narrow screens, tabs may scroll horizontally while the two actions stay tappable.
+- Keep tag chips, quick entry, persisted view selection and content-only horizontal date swipes intact. Moving chrome must not create a second swipe owner or change the Plan/Record data flow.
+
 ## Phone Calendar day-cell spacing and outer edge (2026-11-19)
 
 - The compact month grid remains full-bleed across all seven weekday columns. Each day number, start-time label, and event indicator has responsive horizontal breathing room **inside** its own day cell; do not reintroduce outer 20 px calendar gutters.
