@@ -91,6 +91,7 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
       MaterialPageRoute<void>(
         builder: (_) => LifeOsPlanningSettingsPage(
           onOpenDefaultPlanTimes: showDefaultPlanTimesSheet,
+          backLabel: t(currentLocale.value, 'tab_planning'),
         ),
       ),
     );
