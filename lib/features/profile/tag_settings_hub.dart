@@ -52,6 +52,23 @@ class _TagSettingsHubState extends State<TagSettingsHub>
     super.dispose();
   }
 
+  /// The tab body follows the exact same readable grid as the header.
+  /// Keep the independently scrollable CRUD/editor views intact.
+  Widget _contentFrame(BuildContext context, Widget child) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: settingsContentMaxWidth(context),
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          child: child,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
@@ -101,11 +118,17 @@ class _TagSettingsHubState extends State<TagSettingsHub>
         body: TabBarView(
           controller: _tabController,
           children: [
-            TagManagerPage(
-              embeddedInHub: true,
-              pocketTagDomain: widget.tagCreateDomain,
+            _contentFrame(
+              context,
+              TagManagerPage(
+                embeddedInHub: true,
+                pocketTagDomain: widget.tagCreateDomain,
+              ),
             ),
-            const TagSettingsView(embeddedInHub: true),
+            _contentFrame(
+              context,
+              const TagSettingsView(embeddedInHub: true),
+            ),
             if (_showDurationsTab)
               const TagDefaultDurationSettingsView(embeddedInHub: true),
           ],
