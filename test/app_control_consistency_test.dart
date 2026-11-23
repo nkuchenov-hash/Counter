@@ -4,6 +4,7 @@ import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/app_control_tokens.dart';
 import 'package:counter/core/theme.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
@@ -38,6 +39,41 @@ void main() {
     final font = FontLoader('Onest')
       ..addFont(rootBundle.load('assets/fonts/Onest-Variable.ttf'));
     await font.load();
+  });
+
+  testWidgets('secondary Planning header aligns with Settings content and returns to Plan',
+      (tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    var backCount = 0;
+    await tester.pumpWidget(MaterialApp(
+      theme: appLightTheme,
+      home: Scaffold(
+        appBar: AppSettingsBreadcrumbBar(
+          parentLabel: 'План',
+          title: 'Планирование и время',
+          alignWithSettingsBody: true,
+          onBack: () => backCount++,
+        ),
+        body: const AppSettingsPageBody(children: [
+          Text('Settings content edge'),
+        ]),
+      ),
+    ));
+
+    final header = find.text('Планирование и время');
+    final content = find.text('Settings content edge');
+    expect(tester.getTopLeft(header).dx,
+        closeTo(tester.getTopLeft(content).dx, 1));
+    expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
+
+    await tester.tap(find.text('План'));
+    expect(backCount, 1);
+    expect(tester.takeException(), isNull);
   });
 
   test('all standard control components use one geometry source', () {
