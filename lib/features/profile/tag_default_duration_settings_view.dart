@@ -89,70 +89,80 @@ class _TagDefaultDurationSettingsViewState
       text: current?.toString() ?? '',
     );
 
-    final picked = await showModalBottomSheet<int?>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * 0.82,
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  t(loc, 'tag_default_duration_edit_title'),
-                  style: Theme.of(ctx).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final m in _presets)
-                      AppButton(
-                        label: _durationLabel(m, loc),
-                        variant: current == m
-                            ? AppButtonVariant.primary
-                            : AppButtonVariant.outlined,
-                        onPressed: () => Navigator.of(ctx).pop(m),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: customCtrl,
-                  variant: AppTextFieldVariant.number,
-                  labelText: t(loc, 'tag_default_duration_custom'),
-                  suffixText: t(loc, 'tag_default_duration_min_suffix'),
-                ),
-                const SizedBox(height: 12),
-                AppButton(
-                  label: t(loc, 'tag_default_duration_apply_custom'),
-                  onPressed: () {
-                    final n = int.tryParse(customCtrl.text.trim());
-                    if (n == null || n < 1) return;
-                    Navigator.of(ctx).pop(n.clamp(1, 24 * 60));
-                  },
-                ),
-                if (current != null) ...[
-                  const SizedBox(height: 8),
-                  AppButton(
-                    label: t(loc, 'tag_default_duration_clear'),
-                    variant: AppButtonVariant.ghost,
-                    onPressed: () => Navigator.of(ctx).pop(-1),
-                  ),
-                ],
-              ],
-            ),
+    Widget editor(BuildContext ctx) => Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            t(loc, 'tag_default_duration_edit_title'),
+            style: Theme.of(ctx).textTheme.titleMedium,
           ),
-        );
-      },
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final m in _presets)
+                AppButton(
+                  label: _durationLabel(m, loc),
+                  variant: current == m
+                      ? AppButtonVariant.primary
+                      : AppButtonVariant.outlined,
+                  onPressed: () => Navigator.of(ctx).pop(m),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          AppTextField(
+            controller: customCtrl,
+            variant: AppTextFieldVariant.number,
+            labelText: t(loc, 'tag_default_duration_custom'),
+            suffixText: t(loc, 'tag_default_duration_min_suffix'),
+          ),
+          const SizedBox(height: 12),
+          AppButton(
+            label: t(loc, 'tag_default_duration_apply_custom'),
+            onPressed: () {
+              final n = int.tryParse(customCtrl.text.trim());
+              if (n == null || n < 1) return;
+              Navigator.of(ctx).pop(n.clamp(1, 24 * 60));
+            },
+          ),
+          if (current != null) ...[
+            const SizedBox(height: 8),
+            AppButton(
+              label: t(loc, 'tag_default_duration_clear'),
+              variant: AppButtonVariant.ghost,
+              onPressed: () => Navigator.of(ctx).pop(-1),
+            ),
+          ],
+        ],
+      ),
     );
+
+    final picked = MediaQuery.sizeOf(context).width >= 900
+        ? await showDialog<int>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              scrollable: true,
+              contentPadding: const EdgeInsets.all(12),
+              content: SizedBox(width: 480, child: editor(ctx)),
+            ),
+          )
+        : await showModalBottomSheet<int>(
+            context: context,
+            isScrollControlled: true,
+            showDragHandle: true,
+            constraints: BoxConstraints(
+              maxWidth: 620,
+              maxHeight: MediaQuery.sizeOf(context).height * 0.76,
+            ),
+            builder: (ctx) => SafeArea(
+              child: SingleChildScrollView(child: editor(ctx)),
+            ),
+          );
 
     customCtrl.dispose();
     if (!mounted || picked == null) return;
