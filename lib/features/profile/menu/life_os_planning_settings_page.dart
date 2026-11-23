@@ -10,7 +10,6 @@ import 'package:counter/features/planning/planning_quick_add_tags_controller.dar
 import 'package:counter/features/planning/settings/planning_no_tags_settings.dart';
 import 'package:counter/features/planning/settings/plan_record_link_settings.dart';
 import 'package:counter/features/planning/settings/default_plan_times_settings_block.dart';
-import 'package:counter/features/planning/settings/planning_timeline_bounds_sheet.dart';
 import 'package:counter/features/planning/time_view/time_view_fixed_time_settings.dart';
 import 'package:counter/features/planning/time_view/time_view_settings_sheet.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
@@ -24,9 +23,12 @@ class LifeOsPlanningSettingsPage extends StatefulWidget {
   const LifeOsPlanningSettingsPage({
     super.key,
     required this.onOpenDefaultPlanTimes,
+    this.backLabel,
   });
 
   final VoidCallback onOpenDefaultPlanTimes;
+  /// Label of the actual route opened before this page (e.g. Plans).
+  final String? backLabel;
 
   @override
   State<LifeOsPlanningSettingsPage> createState() =>
@@ -82,6 +84,71 @@ class _LifeOsPlanningSettingsPageState
     } catch (_) {
       if (mounted) setState(() => _loadFailed = true);
     }
+  }
+
+  Future<void> _saveVisibleDayBounds(int start, int end) async {
+    final normalized = PlanningSheetTimelinePrefs.normalizeExtendedRange(
+      start,
+      end,
+    );
+    if (_bounds == normalized) return;
+    final previous = _bounds;
+    setState(() => _bounds = normalized);
+    try {
+      await PlanningSheetTimelinePrefs.saveVisibleDayRange(
+        normalized.start,
+        normalized.end,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _bounds = previous);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            currentLocale.value.startsWith('ru')
+                ? 'Не удалось сохранить границы дня'
+                : 'Could not save visible day bounds',
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _dayHourSelect({
+    required String label,
+    required int value,
+    required ValueChanged<int> onChanged,
+  }) {
+    final ru = currentLocale.value.toLowerCase().startsWith('ru');
+    return Expanded(
+      child: DropdownButtonFormField<int>(
+        key: ValueKey('planning-day-$label-$value'),
+        initialValue: value,
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+        items: [
+          for (var hour = PlanningSheetTimelinePrefs.extendedMin;
+              hour <= PlanningSheetTimelinePrefs.extendedMax;
+              hour++)
+            DropdownMenuItem<int>(
+              value: hour,
+              child: Text(
+                '${PlanningSheetTimelinePrefs.formatExtendedHourClock(hour)}'
+                '${hour < 0 ? (ru ? ' · вчера' : ' · previous day') : ''}'
+                '${hour >= 24 ? (ru ? ' · завтра' : ' · next day') : ''}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+        ],
+        onChanged: (hour) {
+          if (hour != null) onChanged(hour);
+        },
+      ),
+    );
   }
 
   Future<void> _changePlacement(bool afterLast) async {
@@ -188,25 +255,6 @@ class _LifeOsPlanningSettingsPageState
     final range = _bounds;
     final ids = _fixedTagIds;
 
-    void editBounds() {
-      if (range == null) return;
-      _openEditor(PlanningTimelineBoundsSheet(
-        initialStart: range.start,
-        initialEnd: range.end,
-        onBoundsChanged: (start, end) {
-          if (mounted) setState(() => _bounds = (start: start, end: end));
-          unawaited(PlanningSheetTimelinePrefs.saveVisibleDayRange(start, end));
-        },
-        title: t(loc, 'day_length_title'),
-        helper: t(loc, 'day_length_helper'),
-        valueSummaryBuilder: (start, end) =>
-            '${PlanningSheetTimelinePrefs.formatExtendedHourClock(start)} — '
-            '${PlanningSheetTimelinePrefs.formatExtendedHourClock(end)}',
-        prevDayMarker: t(loc, 'day_length_prev_day'),
-        nextDayMarker: t(loc, 'day_length_next_day'),
-      ));
-    }
-
     void editFixedTags() {
       if (ids == null) return;
       _openEditor(TimeViewFixedTagsSettingsBlock(
@@ -223,9 +271,11 @@ class _LifeOsPlanningSettingsPageState
       child: Builder(builder: (context) => Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
         appBar: AppSettingsBreadcrumbBar(
+          alignWithSettingsBody: true,
           parentLabel: _openDefaultTimes
               ? (ru ? 'Планирование и время' : 'Planning & time')
-              : (ru ? 'Планирование' : 'Planning'),
+              : (widget.backLabel ??
+                  (ru ? 'Настройки' : 'Settings')),
           title: _openDefaultTimes
               ? t(loc, 'plan_default_times_title')
               : (ru ? 'Планирование и время' : 'Planning & time'),
@@ -246,15 +296,49 @@ class _LifeOsPlanningSettingsPageState
               )
             : AppSettingsPageBody(children: [
                     _heading(context, ru ? 'РАСПИСАНИЕ' : 'SCHEDULE'),
-                    AppSettingsNavigationGroup(children: [
-                      _menuRow(
-                        t(loc, 'day_length_title'),
-                        AppMenuIconRole.clock,
-                        editBounds,
-                        subtitle: ru ? 'Начало и конец видимого дня' : 'Visible day start and end',
-                        value: '${PlanningSheetTimelinePrefs.formatExtendedHourClock(range.start)}–'
-                               '${PlanningSheetTimelinePrefs.formatExtendedHourClock(range.end)}',
+                    AppSettingsNavigationGroup(
+                      header: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            t(loc, 'day_length_title'),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            ru
+                                ? 'Начало и конец временной шкалы планов'
+                                : 'Start and end of the planning timeline',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              _dayHourSelect(
+                                label: ru ? 'Начало' : 'Start',
+                                value: range.start,
+                                onChanged: (value) => unawaited(
+                                  _saveVisibleDayBounds(value, range.end),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              _dayHourSelect(
+                                label: ru ? 'Конец' : 'End',
+                                value: range.end,
+                                onChanged: (value) => unawaited(
+                                  _saveVisibleDayBounds(range.start, value),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
+                      children: [
                       _menuRow(
                         t(loc, 'plan_default_times_title'),
                         AppMenuIconRole.defaultTime,

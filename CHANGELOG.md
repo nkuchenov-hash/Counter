@@ -1,3 +1,10 @@
+## [2026-11-23] — Planning first-screen day controls and breadcrumb alignment [CI pending]
+
+- Restored the Start and End dropdowns directly on the first Planning Settings screen; selecting an hour persists through the existing extended-day normalized range instead of requiring a separate slider modal.
+- Kept Schedule controls together in one canonical grouped Settings card using a non-hover inline header slot; no duplicate isolated controls or mixed layouts.
+- The gear-origin breadcrumb now reads Plan and goes back to Plans; the header is horizontally aligned with the Settings content, with a stronger back arrow and readable text. The default-times detail retains its proper parent.
+- Added UI regression coverage for header/body alignment and localized back navigation. Verification and deployment pending.
+
 ## [2026-11-23] — Remove duplicate oversized Planning settings sheet [verification pending]
 
 - The Plans toolbar gear now opens the existing canonical Planning Settings screen instead of a full-width, 84%-height miscellaneous modal.
