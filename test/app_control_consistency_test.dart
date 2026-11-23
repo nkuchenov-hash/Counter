@@ -11,6 +11,7 @@ import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/features/settings/categories/category_tag_input_field.dart';
 import 'package:counter/features/planning/planning_sort_mode.dart';
+import 'package:counter/features/planning/settings/planning_timeline_bounds_sheet.dart';
 import 'package:counter/features/planning/widgets/planning_filter_controls.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/features/timeline/timeline_header_controls.dart';
@@ -39,6 +40,40 @@ void main() {
     final font = FontLoader('Onest')
       ..addFont(rootBundle.load('assets/fonts/Onest-Variable.ttf'));
     await font.load();
+  });
+
+  testWidgets('day length remains a two-thumb inline slider, not dropdowns',
+      (tester) async {
+    ({int start, int end})? changed;
+    await tester.pumpWidget(MaterialApp(
+      theme: appLightTheme,
+      home: Scaffold(
+        body: AppSettingsNavigationGroup(
+          header: PlanningTimelineBoundsSheet(
+            embedded: true,
+            initialStart: 9,
+            initialEnd: 25,
+            onBoundsChanged: (start, end) =>
+                changed = (start: start, end: end),
+            title: 'Длительность дня',
+            helper: 'Начало и конец дня',
+            valueSummaryBuilder: (start, end) => '$start–$end',
+            prevDayMarker: 'вчера',
+            nextDayMarker: 'завтра',
+          ),
+          children: const [],
+        ),
+      ),
+    ));
+    final slider = find.byType(RangeSlider);
+    expect(slider, findsOneWidget);
+    expect(find.byType(DropdownButtonFormField<int>), findsNothing);
+    final control = tester.widget<RangeSlider>(slider);
+    expect(control.values, const RangeValues(9, 25));
+    control.onChanged!(const RangeValues(8, 26));
+    await tester.pump();
+    expect(changed, (start: 8, end: 26));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('secondary Planning header aligns with Settings content and returns to Plan',
