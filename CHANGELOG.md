@@ -1,3 +1,10 @@
+## [2026-11-23] — Restore day-range handles and compact secondary settings [verification pending]
+
+- Restored the original two-thumb Duration of Day RangeSlider directly in Schedule, with displayed hours and overnight labels; discarded recently introduced dropdown pickers. Existing normalized stored bounds remain unchanged.
+- Desktop single-purpose Planning editors now open centered content-sized dialogs instead of oversized 82%-height bottom drawers; mobile keeps touch-friendly sheets.
+- Tag default-duration rows now follow canonical Settings content width and grouped separators. The duration popup and Tags tabs are compact/aligned, with correct Planning-origin breadcrumb.
+- Added a regression widget test protecting the original slider. Verification and web release pending.
+
 ## [2026-11-23] — Planning first-screen day controls and breadcrumb alignment [CI pending]
 
 - Restored the Start and End dropdowns directly on the first Planning Settings screen; selecting an hour persists through the existing extended-day normalized range instead of requiring a separate slider modal.
