@@ -18,9 +18,11 @@ class AccountSecuritySection extends StatelessWidget {
   const AccountSecuritySection({
     super.key,
     this.showPeopleEntry = true,
+    this.showIdentity = true,
   });
 
   final bool showPeopleEntry;
+  final bool showIdentity;
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +52,7 @@ class AccountSecuritySection extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Expanded(
+                  if (showIdentity) Expanded(
                     child: Text.rich(
                       TextSpan(
                         style: theme.textTheme.bodyLarge,
@@ -66,7 +68,7 @@ class AccountSecuritySection extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  if (showIdentity) const SizedBox(width: 8),
                   TextButton.icon(
                     onPressed: () => _logout(context),
                     icon: Icon(

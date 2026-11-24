@@ -227,7 +227,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
           AppMenuIconRole.shield, LifeOsMenuAction.accountSecurity),
       ]),
       const SizedBox(height: 14),
-      const AccountSecuritySection(showPeopleEntry: false),
+      const AccountSecuritySection(showPeopleEntry: false, showIdentity: false),
     ]);
 
   Widget _dayHourSelect(String label, int value, ValueChanged<int> onChanged) =>
@@ -687,7 +687,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
             kNordicHealth, LifeOsMenuAction.accountSecurity)),
         ]),
         const SizedBox(height: 24),
-        const AccountSecuritySection(showPeopleEntry: false),
+        const AccountSecuritySection(showPeopleEntry: false, showIdentity: false),
       ]);
     },
   );

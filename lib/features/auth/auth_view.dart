@@ -214,24 +214,10 @@ class _AuthViewState extends State<AuthView> {
     if (_loading) return;
     setState(() => _loading = true);
     try {
-      final result = await AuthBridge.requestPasswordReset(email);
+      await AuthBridge.requestPasswordReset(email);
       if (!mounted) return;
       setState(() => _loading = false);
-      switch (result) {
-        case PasswordResetRequestResult.sent:
-          _showMessage(_t('auth_reset_email_sent'));
-          break;
-        case PasswordResetRequestResult.notFound:
-          _showMessage(
-            _t('auth_reset_email_not_found'),
-            actionLabel: _t('auth_register_action'),
-            onAction: () {
-              if (!mounted) return;
-              setState(() => _loginMode = false);
-            },
-          );
-          break;
-      }
+      _showMessage(_t('auth_reset_email_sent'));
     } on AuthBridgeException catch (e) {
       if (mounted) {
         setState(() => _loading = false);

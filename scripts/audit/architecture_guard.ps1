@@ -377,7 +377,8 @@ $canonicalInputConsumers = @(
     'lib/features/settings/categories/category_tag_input_field.dart',
     'lib/features/settings/categories/create_category_dialog.dart',
     'lib/features/auth/auth_view.dart',
-    'lib/features/profile/profile_view.dart'
+    'lib/features/profile/settings/account_settings_section.dart',
+    'lib/features/profile/settings/security_settings_section.dart'
 )
 foreach ($rel in $canonicalInputConsumers) {
     $absolute = Join-Path $script:RepoRoot $rel

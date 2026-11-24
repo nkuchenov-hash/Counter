@@ -308,7 +308,7 @@ Desktop window/tray infrastructure only. Voice/STT production modules live under
 | `app_button.dart` | `AppButton` |
 | `app_text_field.dart` | Canonical app text-field input component |
 | `app_settings_layout.dart` | `AppSettingsPageBody`, `AppSettingsSectionCard`, settings row helpers |
-| `app_settings_breadcrumb_bar.dart` | Shared parent-labelled back header and canonical frosted chrome for secondary Settings routes |
+| `app_settings_breadcrumb_bar.dart` | `AppSettingsBreadcrumbBar` and `AppSettingsBackHeader`: shared parent-labelled back action and canonical frosted chrome for secondary Settings routes |
 | `app_icon_button.dart` | `AppIconButton` |
 | `app_timezone_icon.dart` | Canonical solid timezone icon family |
 | `app_loading.dart` | `AppLoading` |
@@ -735,10 +735,10 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `planning/widgets/planning_category_grouped_list.dart` | Category-sort grouped plan list |
 | `planning/widgets/planning_tag_grouped_list.dart` | Tags-sort grouped plan list |
 | `planning/widgets/planning_group_section.dart` | Shared grouped-list section widgets |
-| `profile/settings/account_settings_section.dart` | Signed-in identity + logout row |
+| `profile/settings/account_settings_section.dart` | Shared `ProfileNameEditor`, signed-in identity and logout action |
 | `profile/calendar_integrations/calendar_integrations_section.dart` | In-app Microsoft/Google calendar connection, calendar selection, sync, and per-calendar fallback-category settings |
 | `profile/settings/notification_settings_section.dart` | OS notification permission block |
-| `profile/settings/security_settings_section.dart` | Password reset + biometric lock |
+| `profile/settings/security_settings_section.dart` | Authenticated password change, recovery and capability-gated biometric lock |
 | `shared/activity_detail_sheet.dart` | Edit sheet router (`ActivityDetailKind`) |
 | `shared/planning_task_edit_sheet.dart` | Plan/list task edit sheet |
 | `shared/timeline_record_edit_sheet.dart` | Timeline record edit sheet |
