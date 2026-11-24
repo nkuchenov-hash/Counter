@@ -160,8 +160,9 @@ void main() {
       expect(backWidget.variant, AppIconButtonVariant.frosted);
       expect(backWidget.tooltip, planLabel);
       await tester.tap(backButton);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
+      // Material route transitions can exceed 300ms on current Flutter.
+      // Wait for the actual route dismissal rather than a fixed animation tick.
+      await tester.pumpAndSettle();
       expect(find.byType(PlanningPage), findsOneWidget);
       expect(find.byType(LifeOsPlanningSettingsPage), findsNothing);
       expect(tester.takeException(), isNull);
