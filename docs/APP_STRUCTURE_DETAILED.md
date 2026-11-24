@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `0a53dfa9` on 2026-11-24.**
+**Generated from input HEAD `7a4a1c43` on 2026-11-24.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -13441,7 +13441,7 @@ EN:
 - **Responsibilities:** `AppSettingsBreadcrumbBar` and `AppSettingsBackHeader`: shared parent-labelled back action and canonical frosted chrome for secondary Settings routes
 - **When to open:** When behavior tied to `app_settings_breadcrumb_bar.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: `AppSettingsBreadcrumbBar` and `AppSettingsBackHeader`: shared parent-labelled back action and canonical frosted chrome 
+- **Connected to:** APP_STRUCTURE role: `AppSettingsBreadcrumbBar` and `AppSettingsBackHeader`: shared parent-labelled back action and canonical frosted chrome
 
 RU:
 
