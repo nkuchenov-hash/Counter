@@ -778,7 +778,7 @@ def connected_for(path: str, role: str) -> tuple[str, str]:
         en_parts.append("`.cursorrules`, `docs/ARCHITECTURE.md`")
         ru_parts.append("`.cursorrules`, `docs/ARCHITECTURE.md`")
     if role and not is_generic_en(role):
-        short = role.split(";")[0].strip()[:120]
+        short = role.split(";")[0].strip()[:120].rstrip()
         en_parts.append(f"APP_STRUCTURE role: {short}")
         # English role text belongs in EN block only — never copy into RU «Связано с».
     parent = PurePosixPath(p).parent.as_posix()
