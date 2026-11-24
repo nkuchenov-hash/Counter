@@ -42,6 +42,44 @@ XIAOMI_LATEST_PATH = "/app/v1/relatives/get_latest_data"
 XIAOMI_SELF_AGGREGATED_PATH = "/app/v1/data/get_aggregated_fitness_data_by_time"
 XIAOMI_SELF_FITNESS_PATH = "/app/v1/data/get_fitness_data_by_time"
 
+# Five serial endpoint calls per region; two bounded regional phases must fit
+# below the PocketBase subprocess hard limit of 90 seconds.
+XIAOMI_REQUEST_TIMEOUT_SECONDS = 6.0
+XIAOMI_REGION_TIMEOUT_SECONDS = 35.0
+
+
+class XiaomiCloudUnavailable(RuntimeError):
+    pass
+
+
+class XiaomiCloudTimeout(RuntimeError):
+    pass
+
+
+class XiaomiCloudAuthError(RuntimeError):
+    pass
+
+
+async def _query_sleep(client: MiHealthClient, stats: dict[str, Any], method: str, path: str, **kwargs: Any) -> Any:
+    try:
+        response = await asyncio.wait_for(
+            client._request(method, path, **kwargs),
+            timeout=XIAOMI_REQUEST_TIMEOUT_SECONDS,
+        )
+        if not isinstance(response, dict):
+            raise ValueError("invalid Xiaomi response")
+        code = response.get("code")
+        if code is not None and str(code) not in ("0", "200"):
+            if str(code) in ("401", "403"):
+                raise XiaomiCloudAuthError()
+            raise XiaomiCloudUnavailable()
+        stats["success"] += 1
+        return response
+    except Exception as exc:
+        # Store only sanitized error classes, never credentials or response bodies.
+        stats["errors"].append(type(exc).__name__)
+        return {}
+
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -169,11 +207,12 @@ async def _fetch_relatives_sleep_api(
     start: int,
     end: int,
     limit: int,
+    stats: dict[str, Any],
 ) -> dict[str, dict[str, Any]]:
     sessions: dict[str, dict[str, Any]] = {}
 
     try:
-        response = await client._request(
+        response = await _query_sleep(client, stats,
             "GET",
             XIAOMI_AGGREGATED_PATH,
             params={
@@ -190,7 +229,7 @@ async def _fetch_relatives_sleep_api(
         pass
 
     try:
-        latest_response = await client._request(
+        latest_response = await _query_sleep(client, stats,
             "GET",
             XIAOMI_LATEST_PATH,
             params={"relative_uid": uid},
@@ -205,7 +244,7 @@ async def _fetch_relatives_sleep_api(
         pass
 
     try:
-        raw_response = await client._request(
+        raw_response = await _query_sleep(client, stats,
             "GET",
             XIAOMI_FITNESS_PATH,
             params={
@@ -228,6 +267,7 @@ async def _fetch_self_sleep_api(
     start: int,
     end: int,
     limit: int,
+    stats: dict[str, Any],
 ) -> dict[str, dict[str, Any]]:
     """Read the authenticated account's own sleep through Xiaomi data APIs.
 
@@ -238,7 +278,7 @@ async def _fetch_self_sleep_api(
     sessions: dict[str, dict[str, Any]] = {}
 
     try:
-        response = await client._request(
+        response = await _query_sleep(client, stats,
             "POST",
             XIAOMI_SELF_AGGREGATED_PATH,
             params={
@@ -254,7 +294,7 @@ async def _fetch_self_sleep_api(
         pass
 
     try:
-        raw_response = await client._request(
+        raw_response = await _query_sleep(client, stats,
             "POST",
             XIAOMI_SELF_FITNESS_PATH,
             params={
@@ -278,14 +318,52 @@ async def _fetch_sleep_for_base(
     start: int,
     end: int,
     limit: int,
-) -> dict[str, dict[str, Any]]:
-    async with MiHealthClient.from_token(token_path, base_url=base_url) as client:
-        sessions: dict[str, dict[str, Any]] = {}
-        relatives = await _fetch_relatives_sleep_api(client, uid, start, end, limit)
-        sessions.update(relatives)
-        self_data = await _fetch_self_sleep_api(client, start, end, limit)
-        sessions.update(self_data)
-        return sessions
+) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    stats: dict[str, Any] = {"success": 0, "errors": []}
+    sessions: dict[str, dict[str, Any]] = {}
+    try:
+        async with MiHealthClient.from_token(token_path, base_url=base_url) as client:
+            sessions.update(await _fetch_relatives_sleep_api(client, uid, start, end, limit, stats))
+            sessions.update(await _fetch_self_sleep_api(client, start, end, limit, stats))
+    except Exception as exc:
+        stats["errors"].append(type(exc).__name__)
+    return sessions, stats
+
+
+async def _probe_region(token_path: Path, uid: int, base_url: str, start: int, end: int, limit: int) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    try:
+        return await asyncio.wait_for(
+            _fetch_sleep_for_base(token_path, uid, base_url, start, end, limit),
+            timeout=XIAOMI_REGION_TIMEOUT_SECONDS,
+        )
+    except Exception as exc:
+        return {}, {"success": 0, "errors": [type(exc).__name__]}
+
+
+async def _select_sleep_region(token_path: Path, uid: int, start: int, end: int, limit: int, stale_cutoff: float) -> tuple[dict[str, dict[str, Any]], str]:
+    selected_base = XIAOMI_HEALTH_BASE_URL
+    sessions, stats = await _probe_region(token_path, uid, selected_base, start, end, limit)
+    total_success = stats["success"]
+    errors = list(stats["errors"])
+    if _latest_end_epoch(sessions) < stale_cutoff:
+        bases = [base for base in XIAOMI_HEALTH_REGION_URLS if base != selected_base]
+        # Each region has an independent client. Do not serialize five regions
+        # behind the slowest one, or share an authenticated client across them.
+        results = await asyncio.gather(*(
+            _probe_region(token_path, uid, base, start, end, limit) for base in bases
+        ))
+        for base, (candidate, candidate_stats) in zip(bases, results):
+            total_success += candidate_stats["success"]
+            errors.extend(candidate_stats["errors"])
+            if _latest_end_epoch(candidate) > _latest_end_epoch(sessions):
+                sessions, selected_base = candidate, base
+    if not total_success:
+        if errors and all("auth" in e.lower() or "unauthorized" in e.lower() for e in errors):
+            raise XiaomiCloudAuthError()
+        if any("timeout" in e.lower() for e in errors):
+            raise XiaomiCloudTimeout()
+        raise XiaomiCloudUnavailable()
+    return sessions, selected_base
 
 
 async def _login(args: argparse.Namespace) -> int:
@@ -380,30 +458,9 @@ async def _sync(args: argparse.Namespace) -> int:
         start = end - (days + 1) * 86400 + 1
         limit = max(30, days + 2)
 
-        sessions = await _fetch_sleep_for_base(
-            token_path, uid, XIAOMI_HEALTH_BASE_URL, start, end, limit
+        sessions, selected_base = await _select_sleep_region(
+            token_path, uid, start, end, limit, now.timestamp() - 36 * 3600
         )
-        selected_base = XIAOMI_HEALTH_BASE_URL
-
-        # Region placement is account-dependent. A valid response containing old
-        # rows does not prove that region receives the newest device uploads.
-        # Probe all known Xiaomi Health regions while the newest sleep is stale.
-        stale_cutoff = now.timestamp() - 36 * 3600
-        if _latest_end_epoch(sessions) < stale_cutoff:
-            for base_url in XIAOMI_HEALTH_REGION_URLS:
-                if base_url == XIAOMI_HEALTH_BASE_URL:
-                    continue
-                try:
-                    candidate = await _fetch_sleep_for_base(
-                        token_path, uid, base_url, start, end, limit
-                    )
-                except Exception:
-                    continue
-                if _latest_end_epoch(candidate) > _latest_end_epoch(sessions):
-                    sessions = candidate
-                    selected_base = base_url
-                if _latest_end_epoch(sessions) >= stale_cutoff:
-                    break
 
         ordered = sorted(sessions.values(), key=lambda item: item["start"])
         region = selected_base.split("//", 1)[-1].split(".", 1)[0]
@@ -416,7 +473,10 @@ async def _sync(args: argparse.Namespace) -> int:
                 separators=(",", ":"),
             )
         )
-        return 3
+        # The JSVM reads stdout using cmd.output(), which discards the JSON
+        # when the child exits nonzero. Report handled cloud failures through
+        # the existing ok=false protocol; process crashes still fail normally.
+        return 0
 
 
 def main() -> int:
