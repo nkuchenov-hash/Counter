@@ -26,12 +26,25 @@ class PhoneShellFrame extends StatelessWidget {
           right: 0,
           bottom: 0,
           height: kPhoneShellDockFadeHeight,
-          child: RepaintBoundary(
-            child: AppGlassEdgeFade(
-              key: const ValueKey('life-os-canonical-bottom-fade'),
-              edge: AppGlassEdge.bottom,
-              surfaceColor: AppGlassEdgeFade.bottomNavigationFadeColor(scheme),
-              blurSigma: 14,
+          // Scaffold consumes the bottom view inset when resizing its body.
+          // Observe the actual Flutter view only for this decorative layer,
+          // without reintroducing the keyboard inset into page content.
+          child: MediaQuery.fromView(
+            view: View.of(context),
+            child: Builder(
+              builder: (context) {
+                if (MediaQuery.viewInsetsOf(context).bottom > 0) {
+                  return const SizedBox.shrink();
+                }
+                return RepaintBoundary(
+                  child: AppGlassEdgeFade(
+                    key: const ValueKey('life-os-canonical-bottom-fade'),
+                    edge: AppGlassEdge.bottom,
+                    surfaceColor: AppGlassEdgeFade.bottomNavigationFadeColor(scheme),
+                    blurSigma: 14,
+                  ),
+                );
+              },
             ),
           ),
         ),

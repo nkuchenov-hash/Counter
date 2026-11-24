@@ -200,6 +200,40 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('keyboard removes the dock fade without obscuring page content',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetViewInsets);
+
+    const fadeKey = ValueKey('life-os-canonical-bottom-fade');
+    const contentKey = ValueKey('keyboard-test-content');
+    await tester.pumpWidget(const MaterialApp(
+      home: Scaffold(
+        resizeToAvoidBottomInset: true,
+        body: PhoneShellFrame(
+          child: ColoredBox(key: contentKey, color: Colors.white),
+        ),
+      ),
+    ));
+    expect(find.byKey(fadeKey), findsOneWidget);
+    expect(tester.getSize(find.byKey(contentKey)).height, 844);
+
+    tester.view.viewInsets = const FakeViewPadding(bottom: 380);
+    await tester.pumpAndSettle();
+    expect(find.byKey(fadeKey), findsNothing);
+    expect(find.byType(BackdropFilter), findsNothing);
+    expect(tester.getSize(find.byKey(contentKey)).height, 464);
+
+    tester.view.resetViewInsets();
+    await tester.pumpAndSettle();
+    expect(find.byKey(fadeKey), findsOneWidget);
+    expect(tester.getSize(find.byKey(contentKey)).height, 844);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('record action cannot overlap any of five nav destinations',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
