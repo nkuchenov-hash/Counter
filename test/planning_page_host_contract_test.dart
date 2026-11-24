@@ -7,6 +7,8 @@ import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/features/profile/menu/life_os_planning_settings_page.dart';
+import 'package:counter/features/profile/menu/life_os_settings_tabs_page.dart';
+import 'package:counter/features/planning/settings/default_plan_times_settings_block.dart';
 import 'package:counter/features/planning/widgets/planning_filter_controls.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -72,6 +74,33 @@ void main() {
   });
 
   group('PlanningPage host contract', () {
+    for (final width in [1440.0, 390.0]) {
+      testWidgets('Default plan times has one title and one navigation level at $width', (tester) async {
+        tester.view.physicalSize = Size(width, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final loc = currentLocale.value;
+        await tester.pumpWidget(MaterialApp(home: Scaffold(
+          body: LifeOsSettingsTabsPage(
+            initialTab: 'planning', initialDefaultPlanTimes: true, onAction: (_) {},
+          ),
+        )));
+        await tester.pump();
+        expect(find.text(t(loc, 'plan_default_times_title')), findsOneWidget);
+        expect(find.byType(DefaultPlanTimesSettingsBlock), findsOneWidget);
+        expect(find.byType(AppSettingsBackHeader), findsOneWidget);
+        expect(find.text(loc.startsWith('ru') ? 'Добавить правило' : 'Add rule'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        if (width >= 900) expect(find.byType(ChoiceChip), findsNothing);
+        await tester.tap(find.byType(AppIconButton).first);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(find.byType(DefaultPlanTimesSettingsBlock), findsNothing);
+        expect(tester.takeException(), isNull);
+      });
+    }
+
     testWidgets('PlanningPage pumps under ShellLayoutScope without throwing',
         (tester) async {
       tester.view.physicalSize = const Size(900, 1400);

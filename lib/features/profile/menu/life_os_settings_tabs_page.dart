@@ -251,9 +251,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     ));
 
   Widget _planning() {
-    if (_planningDefaultTimesOpen) return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      const DefaultPlanTimesSettingsBlock(),
-    ]);
+    if (_planningDefaultTimesOpen) return const DefaultPlanTimesSettingsBlock();
     final bounds = _bounds;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       _form(tr('Расписание', 'Schedule'),
@@ -295,7 +293,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
             ]),
       ),
       _section(tr('Дополнительные правила', 'Additional rules'), [
-        AppSettingsNavigationRow(title: tr('Время новых планов', 'Default plan times'),
+        AppSettingsNavigationRow(title: t(currentLocale.value, 'plan_default_times_title'),
           leading: _symbol(AppMenuIconRole.defaultTime, selected.family),
           onTap: () => setState(() => _planningDefaultTimesOpen = true)),
         _link(tr('Фиксированное время и связь записей', 'Fixed time and record links'),
@@ -742,7 +740,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
                 ? tr('Назад к планированию', 'Back to Planning')
                 : tr('Назад к настройкам', 'Back to settings'),
               title: _planningDefaultTimesOpen
-                ? tr('Время новых планов', 'Default plan times')
+                ? t(currentLocale.value, 'plan_default_times_title')
                 : (_ru ? selected.ru : selected.en),
               onBack: _backToMobileSettings,
             ))
@@ -824,24 +822,26 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
       data: settingsNeutralTheme(context),
       child: Builder(builder: (context) => desktop
           ? AppSettingsPageBody(children: [
-              Text(tr('Настройки', 'Settings'),
-                style: Theme.of(context).textTheme.headlineLarge),
-              const SizedBox(height: 16),
-              _tabNavigation(desktop),
-              const SizedBox(height: 22),
               if (_planningDefaultTimesOpen)
                 AppSettingsBackHeader(
                   parentLabel: tr('Назад к планированию', 'Back to Planning'),
-                  title: tr('Время новых планов', 'Default plan times'),
+                  title: t(currentLocale.value, 'plan_default_times_title'),
                   onBack: () => setState(() => _planningDefaultTimesOpen = false),
                 )
-              else Row(children: [
-                _symbol(selected.icon, selected.family),
-                const SizedBox(width: 12),
-                Expanded(child: Text(_ru ? selected.ru : selected.en,
-                  style: Theme.of(context).textTheme.titleLarge)),
-              ]),
-              const SizedBox(height: 8),
+              else ...[
+                Text(tr('Настройки', 'Settings'),
+                  style: Theme.of(context).textTheme.headlineLarge),
+                const SizedBox(height: 16),
+                _tabNavigation(desktop),
+                const SizedBox(height: 22),
+                Row(children: [
+                  _symbol(selected.icon, selected.family),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(_ru ? selected.ru : selected.en,
+                    style: Theme.of(context).textTheme.titleLarge)),
+                ]),
+              ],
+              SizedBox(height: _planningDefaultTimesOpen ? 16 : 8),
               _tabContent(),
             ])
           : _MobileSettingsMotion(

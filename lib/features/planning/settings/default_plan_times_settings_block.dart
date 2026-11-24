@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/data/database_service.dart';
@@ -103,7 +104,12 @@ class _DefaultPlanTimesSettingsBlockState
         id, _hhmm(_draftTime), _useProfileTimezone ? null : _fixedTimezone,
       );
       if (!mounted) return;
-      if (!result.ok) _error(result.timezoneFieldMissing);
+      if (!result.ok) {
+        _error(result.timezoneFieldMissing);
+      } else {
+        setState(() => _selectedCategoryId = null);
+        AppSnack.saved();
+      }
     } catch (_) {
       if (mounted) _error(false);
     } finally {
@@ -122,6 +128,7 @@ class _DefaultPlanTimesSettingsBlockState
         _error(result.timezoneFieldMissing);
       } else {
         setState(() => _selectedCategoryId = null);
+        AppSnack.updated();
       }
     } catch (_) {
       if (mounted) _error(false);
@@ -147,35 +154,45 @@ class _DefaultPlanTimesSettingsBlockState
     final inherited = _selectedCategoryId == null
         ? null : _db.effectiveDefaultPlanScheduleForCategory(_selectedCategoryId!);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(t(_loc, 'plan_default_times_title'),
-          style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 8),
+    // The route owns the only page title and back action. Keep the editor
+    // aligned to its leading edge, with a readable width on wide displays.
+    return Align(
+      alignment: Alignment.topLeft,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 680),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
         Text(
           _ru
-              ? 'Начальное время для новых планов выбранной категории. Если оно занято, план размещается в следующем свободном промежутке.'
-              : 'Earliest start for new plans in this category. If occupied, the next available slot is used.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              ? 'Новые планы начинаются в заданное время или в ближайший свободный промежуток после него.'
+              : 'New plans start at the specified time or the next available slot.',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 6),
         Text(t(_loc, 'plan_default_times_profile_tz_notice')
             .replaceFirst('%s', _db.profileTimezoneShortLabel()),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant)),
-        const SizedBox(height: 20),
-        AppSettingsNavigationGroup(children: [
-          AppSettingsNavigationRow(
-            title: t(_loc, 'plan_default_time_select_category'),
-            subtitle: selectedPath,
-            onTap: pairs.isEmpty || _saving ? null : () => unawaited(_chooseCategory()),
-            leading: const Icon(Icons.search_rounded),
-          ),
-        ]),
+        const SizedBox(height: 24),
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12, runSpacing: 8,
+          children: [
+            Text(t(_loc, 'plan_default_time_configured_categories'),
+              style: Theme.of(context).textTheme.titleMedium),
+            AppButton.primary(
+              label: _ru ? 'Добавить правило' : 'Add rule',
+              icon: Icons.add_rounded,
+              onPressed: _saving || pairs.isEmpty || _selectedCategoryId != null
+                ? null : () => unawaited(_chooseCategory()),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
         if (_selectedCategoryId != null && selectedPath != null) ...[
-          const SizedBox(height: 18),
           AppSettingsSectionCard(
             title: selectedPath,
             subtitle: selectedOwn == null && inherited?.hhmm != null
@@ -194,6 +211,7 @@ class _DefaultPlanTimesSettingsBlockState
               children: [
                 AppSettingsNavigationGroup(children: [
                   AppSettingsNavigationRow(
+                    compact: true,
                     title: t(_loc, 'plan_default_time_field_time'),
                     value: _hhmm(_draftTime),
                     onTap: _saving ? null : () => unawaited(_chooseTime()),
@@ -223,6 +241,7 @@ class _DefaultPlanTimesSettingsBlockState
                   const SizedBox(height: 12),
                   AppSettingsNavigationGroup(children: [
                     AppSettingsNavigationRow(
+                      compact: true,
                       title: timezone_settings
                           .shortLabelForCategoryDefaultTimezoneIana(_fixedTimezone),
                       subtitle: _fixedTimezone.replaceAll('_', ' '),
@@ -235,7 +254,12 @@ class _DefaultPlanTimesSettingsBlockState
                 Wrap(spacing: 8, runSpacing: 8, children: [
                   AppButton.primary(
                     label: t(_loc, 'save'),
+                    loading: _saving,
                     onPressed: _saving ? null : () => unawaited(_save()),
+                  ),
+                  AppButton.ghost(
+                    label: t(_loc, 'cancel'),
+                    onPressed: _saving ? null : () => setState(() => _selectedCategoryId = null),
                   ),
                   AppButton.secondary(
                     label: t(_loc, 'plan_default_time_clear'),
@@ -247,30 +271,29 @@ class _DefaultPlanTimesSettingsBlockState
             ),
           ),
         ],
-        const SizedBox(height: 15),
-        Text(t(_loc, 'plan_default_time_configured_categories'),
-          style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 9),
-        if (configured.isEmpty)
+        if (configured.isEmpty && _selectedCategoryId == null)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 14),
             child: Text(t(_loc, 'plan_default_time_none')),
           )
-        else
+        else if (configured.isNotEmpty)
           AppSettingsNavigationGroup(children: [
             for (final pair in configured)
               AppSettingsNavigationRow(
+                compact: true,
                 title: pair.path,
                 value: _db.formatDefaultPlanTimeWithTimezoneLabel(
                   _db.sanitizeDefaultPlanTime(
                     _db.getCategoryRuleById(pair.id)?.defaultPlanTime)!,
                   _db.effectiveDefaultPlanScheduleForCategory(pair.id)?.timezoneIana,
                 ),
-                onTap: _saving ? null : () => _selectCategory(pair.id),
+                onTap: _saving || _selectedCategoryId != null ? null : () => _selectCategory(pair.id),
                 leading: const Icon(Icons.schedule_rounded),
               ),
           ]),
-      ],
+          ],
+        ),
+      ),
     );
   }
 }

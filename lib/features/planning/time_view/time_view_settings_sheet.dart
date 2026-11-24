@@ -77,7 +77,12 @@ extension PlanningTimeViewTimeViewSettingsSheet on PlanningTimeViewCoordinator {
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-            child: const DefaultPlanTimesSettingsBlock(),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Text(t(currentLocale.value, 'plan_default_times_title'),
+                style: Theme.of(sheetCtx).textTheme.titleLarge),
+              const SizedBox(height: 16),
+              const DefaultPlanTimesSettingsBlock(),
+            ]),
           ),
         ),
       ),
