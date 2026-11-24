@@ -39,6 +39,7 @@ jobs:
           (( ${#files[@]} > 0 ))
           for file in "${files[@]}"; do node --check "$file"; done
           python3 -m py_compile pb_hooks/xiaomi_sleep_bridge.py
+          python3 test/xiaomi_sleep_bridge_test.py
           node test/viktor_pocketbase_hook_test.cjs
           node test/viktor_audio_transcribe_hook_test.cjs
           node test/viktor_yandex_voice_hook_test.cjs
