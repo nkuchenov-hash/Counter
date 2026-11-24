@@ -163,134 +163,134 @@ class _DefaultPlanTimesSettingsBlockState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-        Text(
-          _ru
-              ? 'Новые планы начинаются в заданное время или в ближайший свободный промежуток после него.'
-              : 'New plans start at the specified time or the next available slot.',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant),
-        ),
-        const SizedBox(height: 6),
-        Text(t(_loc, 'plan_default_times_profile_tz_notice')
-            .replaceFirst('%s', _db.profileTimezoneShortLabel()),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant)),
-        const SizedBox(height: 24),
-        Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 12, runSpacing: 8,
-          children: [
-            Text(t(_loc, 'plan_default_time_configured_categories'),
-              style: Theme.of(context).textTheme.titleMedium),
-            AppButton.primary(
-              label: _ru ? 'Добавить правило' : 'Add rule',
-              icon: Icons.add_rounded,
-              onPressed: _saving || pairs.isEmpty || _selectedCategoryId != null
-                ? null : () => unawaited(_chooseCategory()),
+            Text(
+              _ru
+                  ? 'Новые планы начинаются в заданное время или в ближайший свободный промежуток после него.'
+                  : 'New plans start at the specified time or the next available slot.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        if (_selectedCategoryId != null && selectedPath != null) ...[
-          AppSettingsSectionCard(
-            title: selectedPath,
-            subtitle: selectedOwn == null && inherited?.hhmm != null
-                ? t(_loc, 'plan_default_time_inherited').replaceFirst(
-                    '%s',
-                    _db.formatDefaultPlanTimeWithTimezoneLabel(
-                      inherited!.hhmm!, inherited.timezoneIana))
-                : selectedOwn == null
-                    ? t(_loc, 'plan_default_time_none')
-                    : t(_loc, 'plan_default_time_own').replaceFirst(
-                        '%s',
-                        _db.formatDefaultPlanTimeWithTimezoneLabel(
-                          selectedOwn, inherited?.timezoneIana)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            const SizedBox(height: 6),
+            Text(t(_loc, 'plan_default_times_profile_tz_notice')
+                .replaceFirst('%s', _db.profileTimezoneShortLabel()),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            const SizedBox(height: 24),
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12, runSpacing: 8,
               children: [
-                AppSettingsNavigationGroup(children: [
-                  AppSettingsNavigationRow(
-                    compact: true,
-                    title: t(_loc, 'plan_default_time_field_time'),
-                    value: _hhmm(_draftTime),
-                    onTap: _saving ? null : () => unawaited(_chooseTime()),
-                    leading: const Icon(Icons.access_time_rounded),
-                  ),
-                ]),
-                const SizedBox(height: 15),
-                Text(t(_loc, 'plan_default_time_field_timezone'),
+                Text(t(_loc, 'plan_default_time_configured_categories'),
                   style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Wrap(spacing: 8, runSpacing: 8, children: [
-                  ChoiceChip(
-                    label: Text(t(_loc, 'plan_default_time_tz_profile')
-                        .replaceFirst('%s', _db.profileTimezoneShortLabel())),
-                    selected: _useProfileTimezone,
-                    onSelected: _saving ? null :
-                        (_) => setState(() => _useProfileTimezone = true),
-                  ),
-                  ChoiceChip(
-                    label: Text(t(_loc, 'plan_default_time_tz_fixed')),
-                    selected: !_useProfileTimezone,
-                    onSelected: _saving ? null :
-                        (_) => setState(() => _useProfileTimezone = false),
-                  ),
-                ]),
-                if (!_useProfileTimezone) ...[
-                  const SizedBox(height: 12),
-                  AppSettingsNavigationGroup(children: [
-                    AppSettingsNavigationRow(
-                      compact: true,
-                      title: timezone_settings
-                          .shortLabelForCategoryDefaultTimezoneIana(_fixedTimezone),
-                      subtitle: _fixedTimezone.replaceAll('_', ' '),
-                      onTap: _saving ? null : () => unawaited(_chooseTimezone()),
-                      leading: const Icon(Icons.public_rounded),
-                    ),
-                  ]),
-                ],
-                const SizedBox(height: 18),
-                Wrap(spacing: 8, runSpacing: 8, children: [
-                  AppButton.primary(
-                    label: t(_loc, 'save'),
-                    loading: _saving,
-                    onPressed: _saving ? null : () => unawaited(_save()),
-                  ),
-                  AppButton.ghost(
-                    label: t(_loc, 'cancel'),
-                    onPressed: _saving ? null : () => setState(() => _selectedCategoryId = null),
-                  ),
-                  AppButton.secondary(
-                    label: t(_loc, 'plan_default_time_clear'),
-                    onPressed: _saving || selectedOwn == null
-                        ? null : () => unawaited(_clear()),
-                  ),
-                ]),
+                AppButton.primary(
+                  label: _ru ? 'Добавить правило' : 'Add rule',
+                  icon: Icons.add_rounded,
+                  onPressed: _saving || pairs.isEmpty || _selectedCategoryId != null
+                    ? null : () => unawaited(_chooseCategory()),
+                ),
               ],
             ),
-          ),
-        ],
-        if (configured.isEmpty && _selectedCategoryId == null)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Text(t(_loc, 'plan_default_time_none')),
-          )
-        else if (configured.isNotEmpty)
-          AppSettingsNavigationGroup(children: [
-            for (final pair in configured)
-              AppSettingsNavigationRow(
-                compact: true,
-                title: pair.path,
-                value: _db.formatDefaultPlanTimeWithTimezoneLabel(
-                  _db.sanitizeDefaultPlanTime(
-                    _db.getCategoryRuleById(pair.id)?.defaultPlanTime)!,
-                  _db.effectiveDefaultPlanScheduleForCategory(pair.id)?.timezoneIana,
+            const SizedBox(height: 12),
+            if (_selectedCategoryId != null && selectedPath != null) ...[
+              AppSettingsSectionCard(
+                title: selectedPath,
+                subtitle: selectedOwn == null && inherited?.hhmm != null
+                    ? t(_loc, 'plan_default_time_inherited').replaceFirst(
+                        '%s',
+                        _db.formatDefaultPlanTimeWithTimezoneLabel(
+                          inherited!.hhmm!, inherited.timezoneIana))
+                    : selectedOwn == null
+                        ? t(_loc, 'plan_default_time_none')
+                        : t(_loc, 'plan_default_time_own').replaceFirst(
+                            '%s',
+                            _db.formatDefaultPlanTimeWithTimezoneLabel(
+                              selectedOwn, inherited?.timezoneIana)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AppSettingsNavigationGroup(children: [
+                      AppSettingsNavigationRow(
+                        compact: true,
+                        title: t(_loc, 'plan_default_time_field_time'),
+                        value: _hhmm(_draftTime),
+                        onTap: _saving ? null : () => unawaited(_chooseTime()),
+                        leading: const Icon(Icons.access_time_rounded),
+                      ),
+                    ]),
+                    const SizedBox(height: 15),
+                    Text(t(_loc, 'plan_default_time_field_timezone'),
+                      style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    Wrap(spacing: 8, runSpacing: 8, children: [
+                      ChoiceChip(
+                        label: Text(t(_loc, 'plan_default_time_tz_profile')
+                            .replaceFirst('%s', _db.profileTimezoneShortLabel())),
+                        selected: _useProfileTimezone,
+                        onSelected: _saving ? null :
+                            (_) => setState(() => _useProfileTimezone = true),
+                      ),
+                      ChoiceChip(
+                        label: Text(t(_loc, 'plan_default_time_tz_fixed')),
+                        selected: !_useProfileTimezone,
+                        onSelected: _saving ? null :
+                            (_) => setState(() => _useProfileTimezone = false),
+                      ),
+                    ]),
+                    if (!_useProfileTimezone) ...[
+                      const SizedBox(height: 12),
+                      AppSettingsNavigationGroup(children: [
+                        AppSettingsNavigationRow(
+                          compact: true,
+                          title: timezone_settings
+                              .shortLabelForCategoryDefaultTimezoneIana(_fixedTimezone),
+                          subtitle: _fixedTimezone.replaceAll('_', ' '),
+                          onTap: _saving ? null : () => unawaited(_chooseTimezone()),
+                          leading: const Icon(Icons.public_rounded),
+                        ),
+                      ]),
+                    ],
+                    const SizedBox(height: 18),
+                    Wrap(spacing: 8, runSpacing: 8, children: [
+                      AppButton.primary(
+                        label: t(_loc, 'save'),
+                        loading: _saving,
+                        onPressed: _saving ? null : () => unawaited(_save()),
+                      ),
+                      AppButton.ghost(
+                        label: t(_loc, 'cancel'),
+                        onPressed: _saving ? null : () => setState(() => _selectedCategoryId = null),
+                      ),
+                      AppButton.secondary(
+                        label: t(_loc, 'plan_default_time_clear'),
+                        onPressed: _saving || selectedOwn == null
+                            ? null : () => unawaited(_clear()),
+                      ),
+                    ]),
+                  ],
                 ),
-                onTap: _saving || _selectedCategoryId != null ? null : () => _selectCategory(pair.id),
-                leading: const Icon(Icons.schedule_rounded),
               ),
-          ]),
+            ],
+            if (configured.isEmpty && _selectedCategoryId == null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: Text(t(_loc, 'plan_default_time_none')),
+              )
+            else if (configured.isNotEmpty)
+              AppSettingsNavigationGroup(children: [
+                for (final pair in configured)
+                  AppSettingsNavigationRow(
+                    compact: true,
+                    title: pair.path,
+                    value: _db.formatDefaultPlanTimeWithTimezoneLabel(
+                      _db.sanitizeDefaultPlanTime(
+                        _db.getCategoryRuleById(pair.id)?.defaultPlanTime)!,
+                      _db.effectiveDefaultPlanScheduleForCategory(pair.id)?.timezoneIana,
+                    ),
+                    onTap: _saving || _selectedCategoryId != null ? null : () => _selectCategory(pair.id),
+                    leading: const Icon(Icons.schedule_rounded),
+                  ),
+              ]),
           ],
         ),
       ),
