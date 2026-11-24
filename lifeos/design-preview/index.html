@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#000000" />
-<title>Life OS Glass V73 — Card comparison</title>
+<title>Life OS Glass V74 — Card comparison</title>
 <style>
 :root{color-scheme:dark;--accent:#aebacb;--accent-soft:color-mix(in srgb,var(--accent) 22%,transparent);--accent-line:color-mix(in srgb,var(--accent) 52%,transparent);--glass-alpha:.31;--glass-blur:23px;--text:#f2f2f6;--muted:#b2b4be;--edge:rgba(255,255,255,.16);--bg:#07090d;--card-radius:20px}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#000000;color:var(--text)}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}body{overflow-x:hidden}
@@ -2253,6 +2253,49 @@ html[data-card-layout="instrument"] .record-duration{font-size:17px!important;}
 html[data-card-layout="instrument"] .duration-cell{text-align:right;display:flex;flex-direction:column;gap:3px;white-space:nowrap;}
 @media(max-width:350px){html[data-card-layout="fluid"] .record-interval{gap:4px;}html[data-card-layout="fluid"] .record-interval .time-rail{width:8px;flex-basis:8px;}html[data-card-layout="fluid"] .record-duration{padding:4px 6px;}html[data-card-layout="instrument"] .record-interval{gap:8px;}}
 
+
+/* V74 — three additional reversible compositions; existing candidates retained. */
+html[data-card-layout="rail"] .record .record-inner{
+ grid-template-columns:54px minmax(0,1fr) auto!important;
+ column-gap:10px!important; row-gap:0!important;align-items:start!important;
+}
+html[data-card-layout="rail"] .record .record-info{grid-column:2;grid-row:1;}
+html[data-card-layout="rail"] .record .record-tools{grid-column:3;grid-row:1;align-self:start;}
+html[data-card-layout="rail"] .record .record-time{display:contents!important;}
+html[data-card-layout="rail"] .record-interval{
+ grid-column:1;grid-row:1/3;align-self:stretch;display:flex;flex-direction:column;align-items:flex-start;
+ justify-content:center;gap:7px;padding:0 9px 0 0;border-right:1px solid color-mix(in srgb,var(--category) 20%,transparent);
+ font-size:13px;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+html[data-card-layout="rail"] .record-interval .rail-line{height:9px;width:1px;background:var(--category);opacity:.5;margin-left:4px;}
+html[data-card-layout="rail"] .record-duration{grid-column:2/4;grid-row:2;justify-self:end;margin-top:6px;}
+html[data-card-layout="rail"] .record .record-inner{padding-bottom:12px!important;}
+/* Time header: metadata first, then the full-width title and category. */
+html[data-card-layout="timehead"] .record .record-inner{grid-template-columns:minmax(0,1fr) auto!important;row-gap:7px!important;}
+html[data-card-layout="timehead"] .record .record-time{grid-column:1;grid-row:1;margin:0!important;min-height:40px;gap:8px!important;justify-content:flex-start!important;}
+html[data-card-layout="timehead"] .record .record-interval{white-space:nowrap;}
+html[data-card-layout="timehead"] .record .record-duration{margin-left:auto;color:inherit;}
+html[data-card-layout="timehead"] .record.running .record-duration{font-size:22px!important;}
+html[data-card-layout="timehead"] .record .record-tools{grid-column:2;grid-row:1;}
+html[data-card-layout="timehead"] .record .record-info{grid-column:1/-1;grid-row:2;}
+html[data-card-layout="timehead"] .record .record-title{font-size:18px!important;}
+/* Side metric: title and interval on the left; aligned duration column on the right. */
+html[data-card-layout="metric"] .record .record-inner{grid-template-columns:minmax(0,1fr) minmax(87px,auto)!important;column-gap:12px!important;row-gap:0!important;}
+html[data-card-layout="metric"] .record .record-info{grid-column:1;grid-row:1;}
+html[data-card-layout="metric"] .record .record-time{display:contents!important;}
+html[data-card-layout="metric"] .record .record-interval{grid-column:1;grid-row:2;align-self:end;margin-top:8px;font-size:13px;line-height:1.3;font-variant-numeric:tabular-nums;}
+html[data-card-layout="metric"] .record .record-tools{grid-column:2;grid-row:1;justify-content:flex-end;}
+html[data-card-layout="metric"] .record .record-duration{grid-column:2;grid-row:2;align-self:end;justify-self:end;font-size:18px!important;margin-top:8px;}
+html[data-card-layout="metric"] .record.running .record-duration{font-size:25px!important;}
+html[data-card-layout="metric"] .record .record-title{font-size:18px!important;}
+@media(max-width:360px){
+ html[data-card-layout="rail"] .record .record-inner{grid-template-columns:48px minmax(0,1fr) auto!important;column-gap:6px!important;}
+ html[data-card-layout="rail"] .record-interval{padding-right:5px;}
+ html[data-card-layout="timehead"] .record .record-time{flex-wrap:wrap;align-content:center;gap:2px 6px!important;}
+ html[data-card-layout="timehead"] .record .record-duration{margin-left:0;}
+ html[data-card-layout="metric"] .record .record-inner{column-gap:8px!important;}
+}
+
 </style>
 </head>
 <body>
@@ -2269,7 +2312,7 @@ html[data-card-layout="instrument"] .duration-cell{text-align:right;display:flex
  <symbol id="i-settings-filled" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M9.35 1.7h5.3l.75 2.3 2 1.14 2.34-.52 2.6 4.5-1.65 1.83v2.13l1.65 1.8-2.6 4.53-2.34-.53-2 1.16-.75 2.26h-5.3l-.75-2.26-2-1.16-2.34.53-2.6-4.53 1.65-1.8v-2.13L1.66 9.12l2.6-4.5 2.34.52 2-1.14.75-2.3ZM12 8.1a3.9 3.9 0 1 0 0 7.8 3.9 3.9 0 0 0 0-7.8Z" clip-rule="evenodd"/></symbol>
  <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M7 7.5 C7 5.9 8.6 5 10 5.8 L18 10.3 C19.4 11.1 19.4 12.9 18 13.7 L10 18.2 C8.6 19 7 18.1 7 16.5 Z"/></symbol>
  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor"/></symbol>
- <symbol id="i-more" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></g></symbol>
+ <symbol id="i-more" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></g></symbol>
  <symbol id="i-trash" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 10v6M14 10v6"/></g></symbol>
  <symbol id="i-time" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m3 19 6-7 5 3 7-10"/><circle cx="3" cy="19" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="14" cy="15" r="1.5"/><circle cx="21" cy="5" r="1.5"/></g></symbol>
  <symbol id="i-plan" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m3 5 2 2 3-3M11 6h10M3 13l2 2 3-3M11 14h10M3 21l2 2 3-3M11 22h10"/></g></symbol>
@@ -2325,7 +2368,9 @@ html[data-card-layout="instrument"] .duration-cell{text-align:right;display:flex
  <button type="button" class="preset" data-layout="editorial" aria-pressed="false">01 Editorial</button>
  <button type="button" class="preset" data-layout="fluid" aria-pressed="false">03 Fluid Timeline</button>
  <button type="button" class="preset" data-layout="quiet" aria-pressed="false">04 Quiet Type</button>
- <button type="button" class="preset" data-layout="instrument" aria-pressed="false">05 Precision</button>
+ <button type="button" class="preset" data-layout="rail" aria-pressed="false">06 Time Rail</button>
+ <button type="button" class="preset" data-layout="timehead" aria-pressed="false">07 Time Header</button>
+ <button type="button" class="preset" data-layout="metric" aria-pressed="false">08 Side Metric</button>
  </div>
  <label class="smalllabel">Тема оформления</label>
  <div class="presets" id="themeModes"><button class="preset active" data-theme="light" type="button">☀ Светлая</button><button class="preset" data-theme="dark" type="button">☾ Тёмная</button></div>
@@ -2427,7 +2472,7 @@ function stopRecord(x){const minutes=Math.floor(elapsed(x)/60);x.running=false;x
 function timeParts(x){const m=x.time.match(/^(.*) \(([^()]*)\)$/);return [x.running?x.time.split(' — ')[0]+' — сейчас':m?m[1]:x.time,x.running?timerText(x):m?m[2]:''];}
 setInterval(()=>{document.querySelectorAll('.record.running .record-duration').forEach(n=>{const x=records.find(r=>r.id===Number(n.closest('.record').dataset.id));if(x?.running)n.textContent=timerText(x);});},1000);
 
-const cardLayoutOptions=['base','editorial','fluid','quiet','instrument'];
+const cardLayoutOptions=['base','editorial','fluid','quiet','rail','timehead','metric'];
 let cardLayout=new URLSearchParams(location.search).get('layout')||'base';
 if(!cardLayoutOptions.includes(cardLayout))cardLayout='base';
 function applyCardLayout(next,updateUrl=false){
@@ -2441,12 +2486,14 @@ function intervalMarkup(x){
  const time=timeParts(x)[0],parts=time.split(' — '),a=escapeHtml(parts[0]),b=escapeHtml(parts.slice(1).join(' — '));
  if(parts.length!==2)return '<span class="record-interval">'+escapeHtml(time)+'</span>';
  if(cardLayout==='fluid')return '<span class="record-interval"><i class="time-point" aria-hidden="true"></i><span>'+a+'</span><i class="time-rail" aria-hidden="true"></i><i class="time-point" aria-hidden="true"></i><span>'+b+'</span></span>';
- if(cardLayout==='instrument')return '<span class="record-interval"><span class="time-cell"><span class="time-caption">Начало</span><span>'+a+'</span></span><span class="time-cell"><span class="time-caption">Конец</span><span>'+b+'</span></span></span>';
+
+ if(cardLayout==='rail')return '<span class="record-interval"><span>'+a+'</span><i class="rail-line" aria-hidden="true"></i><span>'+b+'</span></span>';
+
  return '<span class="record-interval">'+escapeHtml(time)+'</span>';
 }
 function durationMarkup(x){
  const d='<span class="record-duration">'+escapeHtml(timeParts(x)[1])+'</span>';
- return cardLayout==='instrument'?'<span class="duration-cell"><span class="time-caption">Длительность</span>'+d+'</span>':d;
+ return d;
 }
 
 function render(){const scroll=el('scroll');scroll.scrollTop=0;if(mode==='stats'){scroll.innerHTML=`<div class="stats"><div class="stats-title">Время по категориям</div>${[['Работа', '4 ч 25 мин',68,'#9f83e0'],['Личное', '2 ч 17 мин',38,'#df945c'],['Сон','6 ч 52 мин',91,'#9b9cba']].map(i=>`<div class="statbar"><div class="stathead"><span>${i[0]}</span><span>${i[1]}</span></div><div class="statrail"><span style="width:${i[2]}%;background:${i[3]}"></span></div></div>`).join('')}</div>`;return}
