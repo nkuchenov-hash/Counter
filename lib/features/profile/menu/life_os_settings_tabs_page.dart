@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:counter/features/settings/categories/category_icon_collection_preference.dart';
+
 import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/widgets/app_glass_edge_fade.dart';
 
@@ -400,6 +402,8 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
           AppMenuIconRole.folder, LifeOsMenuAction.categories,
           subtitle: tr('Создание, перенос и порядок', 'Create, move and order')),
       ]),
+      _form(tr('Иконки категорий', 'Category icons'),
+        CategoryIconCollectionPreference(isRussian: _ru)),
       _section(tr('Теги', 'Tags'), [
         _link(tr('Управление тегами', 'Manage tags'),
           AppMenuIconRole.tags, LifeOsMenuAction.tags),
@@ -527,10 +531,6 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
         ),
       ),
       const LifeOsLocaleTimezoneControls(),
-      _section(tr('Категории', 'Categories'), [
-        _link(tr('Набор иконок категорий', 'Category icon collection'),
-          AppMenuIconRole.appearance, LifeOsMenuAction.appearance),
-      ]),
     ],
   );
 

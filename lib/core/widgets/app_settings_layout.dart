@@ -225,8 +225,7 @@ class AppSettingsSectionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (title.isNotEmpty)
-              Text(
+            if (title.isNotEmpty) Text(
                 title,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
@@ -243,8 +242,7 @@ class AppSettingsSectionCard extends StatelessWidget {
                 ),
               ),
             ],
-            if (title.isNotEmpty || (subtitle?.isNotEmpty ?? false))
-              const SizedBox(height: 16),
+            if (title.isNotEmpty || (subtitle?.isNotEmpty ?? false)) const SizedBox(height: 16),
             child,
           ],
         ),

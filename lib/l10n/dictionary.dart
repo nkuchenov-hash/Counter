@@ -260,6 +260,40 @@ const Map<String, String> _calendarIntegrationsRu = {
   'calendar_integrations_never_synced': 'Ещё не синхронизировано',
 };
 
+const Map<String, String> _accountSecurityEn = {
+  'settings_password_change': 'Change password',
+  'settings_password_current': 'Current password',
+  'settings_password_new': 'New password',
+  'settings_password_different': 'Choose a password different from your current one.',
+  'settings_password_wrong_current': 'The current password is incorrect.',
+  'settings_password_change_failed': 'Could not change your password. Check the current password, the new password requirements, and your connection.',
+  'settings_password_changed': 'Password changed.',
+  'settings_password_changed_sign_in': 'Password changed. Please sign in again.',
+  'settings_password_hint': 'Use a long, unique password.',
+  'settings_password_recovery': 'Account recovery',
+  'settings_password_recovery_hint': 'Forgot your password or signed in with Google or Yandex? Request a link to set a new password.',
+  'settings_password_recovery_send': 'Email me a recovery link',
+  'settings_device_protection': 'App protection',
+  'settings_sign_out_pending': 'You have unsaved changes. Reconnect and try signing out again.',
+};
+
+const Map<String, String> _accountSecurityRu = {
+  'settings_password_change': 'Изменить пароль',
+  'settings_password_current': 'Текущий пароль',
+  'settings_password_new': 'Новый пароль',
+  'settings_password_different': 'Новый пароль должен отличаться от текущего.',
+  'settings_password_wrong_current': 'Текущий пароль введён неверно.',
+  'settings_password_change_failed': 'Не удалось изменить пароль. Проверьте текущий пароль, требования к новому паролю и соединение.',
+  'settings_password_changed': 'Пароль изменён.',
+  'settings_password_changed_sign_in': 'Пароль изменён. Войдите снова.',
+  'settings_password_hint': 'Используйте длинный уникальный пароль.',
+  'settings_password_recovery': 'Восстановление доступа',
+  'settings_password_recovery_hint': 'Забыли пароль или входите через Google или Яндекс? Получите ссылку для установки нового пароля.',
+  'settings_password_recovery_send': 'Получить ссылку на email',
+  'settings_device_protection': 'Защита приложения',
+  'settings_sign_out_pending': 'Есть несохранённые изменения. Подключитесь к интернету и попробуйте выйти снова.',
+};
+
 /// Voice Vault: locale state + assembled translation catalog.
 /// Canonical EN/RU strings live in [kEnL10n] / [kRuL10n] (`lib/l10n/langs/`).
 /// Other locales layer on English via [_layerOnEnglish].
@@ -273,6 +307,7 @@ final Map<String, String> _englishCatalog = Map<String, String>.unmodifiable({
   ..._planningAutoPlacementEn,
   ..._healthAndGapEn,
   ..._calendarIntegrationsEn,
+  ..._accountSecurityEn,
 });
 
 final Map<String, String> _russianCatalog = Map<String, String>.unmodifiable({
@@ -282,6 +317,7 @@ final Map<String, String> _russianCatalog = Map<String, String>.unmodifiable({
   ..._planningAutoPlacementRu,
   ..._healthAndGapRu,
   ..._calendarIntegrationsRu,
+  ..._accountSecurityRu,
 });
 
 Map<String, String> _layerOnEnglish(Map<String, String> partial) {

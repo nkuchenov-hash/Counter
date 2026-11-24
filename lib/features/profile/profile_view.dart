@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:counter/core/app_build_info.dart';
-import 'package:counter/core/category_icon_system.dart';
-import 'package:counter/features/settings/categories/category_icon_collection_preference.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
@@ -379,10 +377,6 @@ class _ProfilePageState extends State<ProfilePage> {
             unawaited(_saveTheme(next));
           },
         ),
-        const SizedBox(height: 24),
-        const Divider(),
-        const SizedBox(height: 16),
-        CategoryIconCollectionPreference(isRussian: locale.startsWith('ru')),
       ],
     );
   }

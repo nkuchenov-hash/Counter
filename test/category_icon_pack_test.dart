@@ -168,13 +168,15 @@ void main() {
     });
   });
 
-  test('Appearance exposes searchable collection controls', () {
+  test('Category settings expose searchable collection controls', () {
     final screen = File(
       'lib/features/settings/categories/category_icon_collection_preference.dart',
     ).readAsStringSync();
-    final profile = File('lib/features/profile/profile_view.dart')
+    final settings = File('lib/features/profile/menu/life_os_settings_tabs_page.dart')
         .readAsStringSync();
-    expect(profile, contains('CategoryIconCollectionPreference'));
+    final profile = File('lib/features/profile/profile_view.dart').readAsStringSync();
+    expect(settings, contains('CategoryIconCollectionPreference'));
+    expect(profile, isNot(contains('CategoryIconCollectionPreference')));
     expect(screen, contains('showCategoryIconCollectionEditor'));
     expect(screen, contains('matched-icon-collection-grid'));
     expect(screen, contains('reset-default-icons'));
