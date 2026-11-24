@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#000000" />
-<title>Life OS Glass V70</title>
+<title>Life OS Glass V71</title>
 <style>
 :root{color-scheme:dark;--accent:#aebacb;--accent-soft:color-mix(in srgb,var(--accent) 22%,transparent);--accent-line:color-mix(in srgb,var(--accent) 52%,transparent);--glass-alpha:.31;--glass-blur:23px;--text:#f2f2f6;--muted:#b2b4be;--edge:rgba(255,255,255,.16);--bg:#07090d;--card-radius:20px}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#000000;color:var(--text)}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}body{overflow-x:hidden}
@@ -2182,6 +2182,37 @@ html.theme-light #entry.field:focus {
 html:not(.theme-light) #entry.field:focus {
   outline:1.5px solid color-mix(in srgb,var(--accent) 75%,#ffffff) !important;
   outline-offset:-1.5px !important;
+}
+
+/* V71 — combined options 1+2+3: 58 x 42 graphite glass action, inside unchanged 46px composer. */
+html.theme-light #entry.field,
+html.theme-light #entry.field:focus,
+html:not(.theme-light) #entry.field {
+  padding-right:72px !important;
+}
+html.theme-light #add.action,
+html:not(.theme-light) #add.action {
+  right:2px !important; top:2px !important;
+  width:58px !important; min-width:58px !important;
+  height:42px !important; min-height:42px !important; max-height:42px !important;
+  border-radius:21px !important;
+  border:0 !important; box-shadow:none !important;
+  color:#ffffff !important;
+  background:linear-gradient(150deg,#505760,#373d44) !important;
+}
+html:not(.theme-light) #add.action {
+  background:linear-gradient(150deg,rgba(124,134,148,.72),rgba(77,85,96,.82)) !important;
+}
+html.theme-light #add.action:hover {
+  background:linear-gradient(150deg,#606870,#444b53) !important;
+}
+html:not(.theme-light) #add.action:hover {
+  background:linear-gradient(150deg,rgba(144,154,168,.80),rgba(91,101,114,.88)) !important;
+}
+html.theme-light #add.action svg,
+html:not(.theme-light) #add.action svg {
+  width:30px !important; height:30px !important;
+  color:inherit !important; transform:translateX(.5px) !important;
 }
 
 </style>
