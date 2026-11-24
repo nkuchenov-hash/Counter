@@ -32,6 +32,12 @@ jobs:
           node --check pb_hooks/calendar_integrations.pb.js
           node --check pb_migrations/1785960000_calendar_integrations.js
 
+      - name: Set up Java 17 for Android Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
         with:
