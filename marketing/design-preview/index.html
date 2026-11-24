@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#000000" />
-<title>Life OS Glass V72</title>
+<title>Life OS Glass V73 — Card comparison</title>
 <style>
 :root{color-scheme:dark;--accent:#aebacb;--accent-soft:color-mix(in srgb,var(--accent) 22%,transparent);--accent-line:color-mix(in srgb,var(--accent) 52%,transparent);--glass-alpha:.31;--glass-blur:23px;--text:#f2f2f6;--muted:#b2b4be;--edge:rgba(255,255,255,.16);--bg:#07090d;--card-radius:20px}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#000000;color:var(--text)}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}body{overflow-x:hidden}
@@ -2215,6 +2215,44 @@ html:not(.theme-light) #add.action svg {
   color:inherit !important; transform:translateX(.5px) !important;
 }
 
+
+/* V73 — reversible card layout candidates. Base V72 stays intact. */
+#cardLayouts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+#cardLayouts .preset{font-size:13px;min-height:40px;padding:8px 4px;}
+#cardLayouts .preset:first-child{grid-column:1/-1;}
+html[data-card-layout]:not([data-card-layout="base"]) .record .record-inner{padding:12px 12px 11px 16px!important;column-gap:8px;row-gap:0;align-items:start;}
+html[data-card-layout]:not([data-card-layout="base"]) .record .record-title{font-size:17px!important;font-weight:550!important;line-height:1.27!important;letter-spacing:-.35px!important;overflow-wrap:anywhere;white-space:normal;}
+html[data-card-layout]:not([data-card-layout="base"]) .record .breadcrumb{font-size:13px!important;margin:5px 0 0!important;line-height:1.35!important;flex-wrap:wrap;white-space:normal;overflow:visible;}
+html[data-card-layout]:not([data-card-layout="base"]) .record .category-label{font-weight:400!important;overflow-wrap:anywhere;}
+html[data-card-layout]:not([data-card-layout="base"]) .record .record-tools{gap:4px;align-items:center;}
+html[data-card-layout]:not([data-card-layout="base"]) .record .stop{width:40px!important;height:40px!important;border-radius:50%!important;flex:none;background:linear-gradient(150deg,#505760,#373d44)!important;color:white!important;box-shadow:none!important;border:0!important;}
+html[data-card-layout]:not([data-card-layout="base"]):not(.theme-light) .record .stop{background:linear-gradient(150deg,#737e8d,#4a515e)!important;}
+html[data-card-layout]:not([data-card-layout="base"]) .record .stop svg{width:20px!important;height:20px!important;color:white!important;}
+html[data-card-layout]:not([data-card-layout="base"]) .record .more{width:28px;height:36px;}
+html[data-card-layout]:not([data-card-layout="base"]) .record .menu{top:44px;}
+html[data-card-layout]:not([data-card-layout="base"]) .record .record-time{margin:10px 0 0!important;min-height:26px;align-items:center!important;line-height:1.25!important;font-size:13px!important;}
+html[data-card-layout]:not([data-card-layout="base"]) .record .record-duration{font-size:15px!important;font-weight:550!important;line-height:1.25!important;letter-spacing:-.25px;}
+html[data-card-layout]:not([data-card-layout="base"]) .record.running .record-duration{font-size:23px!important;font-weight:550!important;font-variant-numeric:tabular-nums;}
+html[data-card-layout="editorial"] .record-time{border-top:1px solid color-mix(in srgb,var(--category) 17%,transparent);padding-top:8px;}
+html[data-card-layout="fluid"] .record-time{gap:8px!important;}
+html[data-card-layout="fluid"] .record-duration{padding:5px 10px;border-radius:18px;background:color-mix(in srgb,var(--category) 13%,transparent);}
+html[data-card-layout="fluid"] .record-interval{display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;}
+html[data-card-layout="fluid"] .record-interval .time-point{width:5px;height:5px;border-radius:50%;background:var(--category);flex:none;}
+html[data-card-layout="fluid"] .record-interval .time-rail{width:17px;height:1px;background:var(--category);opacity:.55;flex:0 1 17px;}
+html[data-card-layout="quiet"] .record .record-inner{padding-top:14px!important;padding-bottom:14px!important;}
+html[data-card-layout="quiet"] .record .record-title{font-size:19px!important;font-weight:500!important;letter-spacing:-.55px!important;}
+html[data-card-layout="quiet"] .record .record-time{margin-top:7px!important;}
+html[data-card-layout="quiet"] .record .record-duration{font-weight:600!important;}
+html[data-card-layout="quiet"] .record .record-interval{opacity:.85;}
+html[data-card-layout="instrument"] .record .record-inner{grid-template-columns:minmax(0,1fr) auto!important;}
+html[data-card-layout="instrument"] .record .record-time{border-top:1px solid color-mix(in srgb,var(--category) 16%,transparent);padding-top:8px;align-items:flex-end!important;}
+html[data-card-layout="instrument"] .record-interval{display:flex;align-items:flex-end;gap:15px;}
+html[data-card-layout="instrument"] .time-cell{display:flex;flex-direction:column;gap:3px;white-space:nowrap;}
+html[data-card-layout="instrument"] .time-caption{font-size:10px;letter-spacing:.3px;opacity:.8;}
+html[data-card-layout="instrument"] .record-duration{font-size:17px!important;}
+html[data-card-layout="instrument"] .duration-cell{text-align:right;display:flex;flex-direction:column;gap:3px;white-space:nowrap;}
+@media(max-width:350px){html[data-card-layout="fluid"] .record-interval{gap:4px;}html[data-card-layout="fluid"] .record-interval .time-rail{width:8px;flex-basis:8px;}html[data-card-layout="fluid"] .record-duration{padding:4px 6px;}html[data-card-layout="instrument"] .record-interval{gap:8px;}}
+
 </style>
 </head>
 <body>
@@ -2281,6 +2319,14 @@ html:not(.theme-light) #add.action svg {
 <aside class="settings" id="panel">
  <div class="palettehead"><h1>Life OS · Night Glass</h1><button class="closepanel" id="closepanel">×</button></div>
  <p>Тот же прототип V10 без изменений сетки и компонентов. Переключите светлую / тёмную палитру и сравните карточки на демонстрационных записях.</p>
+ <label class="smalllabel">Компоновка карточек · сравнение</label>
+ <div class="presets" id="cardLayouts" role="group" aria-label="Компоновка карточек">
+ <button type="button" class="preset active" data-layout="base" aria-pressed="true">Исходная V72</button>
+ <button type="button" class="preset" data-layout="editorial" aria-pressed="false">01 Editorial</button>
+ <button type="button" class="preset" data-layout="fluid" aria-pressed="false">03 Fluid Timeline</button>
+ <button type="button" class="preset" data-layout="quiet" aria-pressed="false">04 Quiet Type</button>
+ <button type="button" class="preset" data-layout="instrument" aria-pressed="false">05 Precision</button>
+ </div>
  <label class="smalllabel">Тема оформления</label>
  <div class="presets" id="themeModes"><button class="preset active" data-theme="light" type="button">☀ Светлая</button><button class="preset" data-theme="dark" type="button">☾ Тёмная</button></div>
  <div class="rangebox"><span>Затемнение светлого фона</span><span id="lightToneVal">0%</span></div>
@@ -2330,7 +2376,8 @@ const demoRecords=[
  {id:109,title:'Переписка по проекту',path:'Работа',cat:'#6597ee',time:'10:20 — 11:10 (50 мин)',wm:'network'},
  {id:110,title:'Домашние дела',path:'Дела',cat:'#e86570',time:'09:40 — 10:20 (40 мин)',wm:'home'},
  {id:111,title:'Планирование недели',path:'Работа',cat:'#6597ee',time:'08:50 — 09:40 (50 мин)',wm:'work'},
- {id:112,title:'Утренние заметки',path:'Жизнь',cat:'#63b679',time:'08:15 — 08:50 (35 мин)',wm:'sleep'}
+ {id:112,title:'Утренние заметки',path:'Жизнь',cat:'#63b679',time:'08:15 — 08:50 (35 мин)',wm:'sleep'},
+ {id:113,title:'Новая запись',path:'Без категории',cat:'#98a3b4',time:'07:55 — 08:15 (20 мин)',wm:'work'}
  ];
 const el=id=>document.getElementById(id); const icon=(name)=>`<svg><use href="#i-${name}"></use></svg>`; const scene=el('scene');
 
@@ -2379,9 +2426,32 @@ function timerText(x){const t=elapsed(x);const h=Math.floor(t/3600);return (h?St
 function stopRecord(x){const minutes=Math.floor(elapsed(x)/60);x.running=false;x.time=x.time.split(' — ')[0]+' — '+demoTime()+' ('+(minutes>=60?Math.floor(minutes/60)+' ч ':'')+(minutes%60)+' мин)';}
 function timeParts(x){const m=x.time.match(/^(.*) \(([^()]*)\)$/);return [x.running?x.time.split(' — ')[0]+' — сейчас':m?m[1]:x.time,x.running?timerText(x):m?m[2]:''];}
 setInterval(()=>{document.querySelectorAll('.record.running .record-duration').forEach(n=>{const x=records.find(r=>r.id===Number(n.closest('.record').dataset.id));if(x?.running)n.textContent=timerText(x);});},1000);
+
+const cardLayoutOptions=['base','editorial','fluid','quiet','instrument'];
+let cardLayout=new URLSearchParams(location.search).get('layout')||'base';
+if(!cardLayoutOptions.includes(cardLayout))cardLayout='base';
+function applyCardLayout(next,updateUrl=false){
+ cardLayout=next;root.dataset.cardLayout=next;
+ document.querySelectorAll('[data-layout]').forEach(b=>{const selected=b.dataset.layout===next;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected));});
+ if(updateUrl){try{const u=new URL(location.href);u.searchParams.set('layout',next);history.replaceState(null,'',u);}catch(e){}}
+}
+applyCardLayout(cardLayout);
+document.querySelectorAll('[data-layout]').forEach(b=>b.addEventListener('click',()=>{const pos=el('scroll').scrollTop;applyCardLayout(b.dataset.layout,true);render();el('scroll').scrollTop=pos;}));
+function intervalMarkup(x){
+ const time=timeParts(x)[0],parts=time.split(' — '),a=escapeHtml(parts[0]),b=escapeHtml(parts.slice(1).join(' — '));
+ if(parts.length!==2)return '<span class="record-interval">'+escapeHtml(time)+'</span>';
+ if(cardLayout==='fluid')return '<span class="record-interval"><i class="time-point" aria-hidden="true"></i><span>'+a+'</span><i class="time-rail" aria-hidden="true"></i><i class="time-point" aria-hidden="true"></i><span>'+b+'</span></span>';
+ if(cardLayout==='instrument')return '<span class="record-interval"><span class="time-cell"><span class="time-caption">Начало</span><span>'+a+'</span></span><span class="time-cell"><span class="time-caption">Конец</span><span>'+b+'</span></span></span>';
+ return '<span class="record-interval">'+escapeHtml(time)+'</span>';
+}
+function durationMarkup(x){
+ const d='<span class="record-duration">'+escapeHtml(timeParts(x)[1])+'</span>';
+ return cardLayout==='instrument'?'<span class="duration-cell"><span class="time-caption">Длительность</span>'+d+'</span>':d;
+}
+
 function render(){const scroll=el('scroll');scroll.scrollTop=0;if(mode==='stats'){scroll.innerHTML=`<div class="stats"><div class="stats-title">Время по категориям</div>${[['Работа', '4 ч 25 мин',68,'#9f83e0'],['Личное', '2 ч 17 мин',38,'#df945c'],['Сон','6 ч 52 мин',91,'#9b9cba']].map(i=>`<div class="statbar"><div class="stathead"><span>${i[0]}</span><span>${i[1]}</span></div><div class="statrail"><span style="width:${i[2]}%;background:${i[3]}"></span></div></div>`).join('')}</div>`;return}
 if(day!==20){scroll.innerHTML='<div class="empty">Для этой даты нет записей в прототипе.<br>Выберите 20 ноября.</div>';return}
-const renderCard=x=>{const parts=x.path.split(' › ');const main=parts[0]||x.path;const sub=parts.slice(1).join(' · ');return `<article class="record ${x.running?'running':''}" style="--category:${x.cat}" data-id="${x.id}"><span class="record-watermark-clip" aria-hidden="true"><svg class="record-watermark"><use href="#wm-${x.wm||'work'}"/></svg></span><div class="record-inner"><div class="record-info"><div class="record-title">${escapeHtml(x.title)}</div><div class="breadcrumb"><span class="category-label">${escapeHtml(main)}</span>${sub?`<span class="chev">·</span><span class="category-label">${escapeHtml(sub)}</span>`:''}</div></div><div class="record-tools">${x.running?`<button class="stop" data-stop="${x.id}" title="Остановить запись" aria-label="Стоп">${icon('stop')}</button>`:''}<button class="more" data-more="${x.id}" aria-label="Ещё">${icon('more')}</button><div class="menu" id="menu-${x.id}"><button data-delete="${x.id}">Удалить запись</button></div></div><div class="record-time"><span>${escapeHtml(timeParts(x)[0])}</span><span class="record-duration">${escapeHtml(timeParts(x)[1])}</span></div></div></article>`};
+const renderCard=x=>{const parts=x.path.split(' › ');const main=parts[0]||x.path;const sub=parts.slice(1).join(' · ');return `<article class="record ${x.running?'running':''}" style="--category:${x.cat}" data-id="${x.id}"><span class="record-watermark-clip" aria-hidden="true"><svg class="record-watermark"><use href="#wm-${x.wm||'work'}"/></svg></span><div class="record-inner"><div class="record-info"><div class="record-title">${escapeHtml(x.title)}</div><div class="breadcrumb"><span class="category-label">${escapeHtml(main)}</span>${sub?`<span class="chev">·</span><span class="category-label">${escapeHtml(sub)}</span>`:''}</div></div><div class="record-tools">${x.running?`<button class="stop" data-stop="${x.id}" title="Остановить запись" aria-label="Стоп">${icon('stop')}</button>`:''}<button class="more" data-more="${x.id}" aria-label="Ещё">${icon('more')}</button><div class="menu" id="menu-${x.id}"><button data-delete="${x.id}">Удалить запись</button></div></div><div class="record-time">${intervalMarkup(x)}${durationMarkup(x)}</div></div></article>`};
 scroll.innerHTML=records.map(renderCard).join('')+`<div class="demo-divider"><span>Дополнительные записи · демонстрация прокрутки</span></div>`+demoRecords.map(renderCard).join('');
 const closeMenus=(except)=>{scroll.querySelectorAll('.menu').forEach(m=>{if(m!==except){m.classList.remove('open');m.closest('.record')?.classList.remove('menu-open')}})};
 scroll.querySelectorAll('[data-more]').forEach(btn=>btn.addEventListener('click',(e)=>{e.stopPropagation(); const menu=el('menu-'+btn.dataset.more); const open=!menu.classList.contains('open'); closeMenus(open?menu:null); menu.classList.toggle('open',open);menu.closest('.record')?.classList.toggle('menu-open',open)}));
