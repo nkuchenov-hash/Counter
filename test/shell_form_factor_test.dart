@@ -414,8 +414,10 @@ void main() {
       expect(settings, contains('UnfilledTimeGapService.instance.setMinimumGapMinutes'));
       expect(settings, contains('UnfilledTimeGapService.instance.setNotificationDelayMinutes'));
       expect(settings, contains('kNordicEntertainment'));
-      expect(settings, contains('AppTextField('));
-      expect(settings, contains('AppButton.primary('));
+      expect(settings, contains('ProfileNameEditor('));
+      final account = File('lib/features/profile/settings/account_settings_section.dart').readAsStringSync();
+      expect(account, contains('AppTextField('));
+      expect(account, contains('AppButton.primary('));
     });
 
     test('Profile never opens a parallel desktop settings hub', () {

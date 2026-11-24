@@ -2,14 +2,14 @@ import 'dart:async';
 
 import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/widgets/app_glass_edge_fade.dart';
-import 'package:counter/core/widgets/app_icon_button.dart';
 
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/core/life_color_compat.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
-import 'package:counter/core/widgets/app_button.dart';
-import 'package:counter/core/widgets/app_text_field.dart';
+import 'package:counter/core/app_build_info.dart';
+import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
+import 'package:counter/features/profile/settings/account_settings_section.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/data/database_service.dart';
@@ -61,14 +61,15 @@ class _SettingsTab {
 const _tabs = <_SettingsTab>[
   _SettingsTab('profile', 'Профиль', 'Profile', AppMenuIconRole.account, kCategoryNeutral),
   _SettingsTab('planning', 'Планирование', 'Planning', AppMenuIconRole.planning, kNordicWork),
-  _SettingsTab('notes', 'Заметки', 'Notes', AppMenuIconRole.notes, kNordicStudy),
+  _SettingsTab('notes', 'Заметки и списки', 'Notes & lists', AppMenuIconRole.notes, kNordicStudy),
   _SettingsTab('categories', 'Категории и теги', 'Categories & tags', AppMenuIconRole.categories, kNordicErrands),
   _SettingsTab('people', 'Люди', 'People', AppMenuIconRole.people, kNordicPeople),
   _SettingsTab('notifications', 'Уведомления', 'Notifications', AppMenuIconRole.notifications, kNordicEntertainment),
   _SettingsTab('viktor', 'Виктор', 'Viktor', AppMenuIconRole.viktor, kNordicMovement),
   _SettingsTab('health', 'Здоровье', 'Health', AppMenuIconRole.health, kNordicHealth),
-  _SettingsTab('data', 'Подключения и данные', 'Connections & data', AppMenuIconRole.connections, kNordicTransport),
+  _SettingsTab('data', 'Интеграции', 'Integrations', AppMenuIconRole.connections, kNordicTransport),
   _SettingsTab('appearance', 'Интерфейс', 'Appearance', AppMenuIconRole.appearance, kCategoryBlack),
+  _SettingsTab('about', 'О приложении', 'About', AppMenuIconRole.about, kCategoryNeutral),
 ];
 
 class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
@@ -77,12 +78,10 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   // Desktop retains the existing tabs and preference editors.
   bool _mobileDetailOpen = false;
   bool _planningDefaultTimesOpen = false;
-  final _name = TextEditingController();
   ({int start, int end})? _bounds;
   bool _afterLast = false;
   bool _loadingPlans = true;
   bool _savingPlan = false;
-  bool _savingProfile = false;
 
   bool get _ru => currentLocale.value.toLowerCase().startsWith('ru');
   String tr(String ru, String en) => _ru ? ru : en;
@@ -93,16 +92,13 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     _tab = _tabs.any((e) => e.id == widget.initialTab)
         ? widget.initialTab : 'profile';
     _planningDefaultTimesOpen = _mobileDetailOpen = widget.initialDefaultPlanTimes;
-    _name.text = DatabaseService.instance.settings.displayName ?? '';
-    unawaited(_load());
+    _loadSection(_tab);
   }
 
   Future<void> _load() async {
     try {
       final bounds = await PlanningSheetTimelinePrefs.loadVisibleDayRange();
       await DatabaseService.instance.loadPlanAutoPlacementMode();
-      await NotesLibraryPreferences.load();
-      await UnfilledTimeGapService.instance.start();
       if (!mounted) return;
       setState(() {
         _bounds = bounds;
@@ -115,10 +111,10 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     }
   }
 
-  @override
-  void dispose() {
-    _name.dispose();
-    super.dispose();
+  void _loadSection(String id) {
+    if (id == 'planning' && _bounds == null) unawaited(_load());
+    if (id == 'notes') unawaited(NotesLibraryPreferences.load());
+    if (id == 'notifications') unawaited(UnfilledTimeGapService.instance.start());
   }
 
   void _open(LifeOsMenuAction action) => widget.onAction(action);
@@ -129,6 +125,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
       _tab = next;
       _mobileDetailOpen = true; _planningDefaultTimesOpen = false;
     });
+    _loadSection(next);
   }
 
   void _backToMobileSettings() {
@@ -215,17 +212,6 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     }
   }
 
-  Future<void> _saveName() async {
-    if (_savingProfile) return;
-    setState(() => _savingProfile = true);
-    try {
-      final db = DatabaseService.instance;
-      await db.saveSettings(db.settings.copyWith(displayName: _name.text.trim()));
-    } finally {
-      if (mounted) setState(() => _savingProfile = false);
-    }
-  }
-
   Future<void> _setTheme(String mode) async {
     final db = DatabaseService.instance;
     await db.saveSettings(db.settings.copyWith(themeMode: mode));
@@ -233,49 +219,16 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   }
 
 
-  Widget _profile() {
-    final theme = Theme.of(context);
-    final email = AuthBridge.currentAuthEmail ?? '';
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      _form(tr('Мои данные', 'My details'), Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          AppTextField(
-            controller: _name,
-            textCapitalization: TextCapitalization.words,
-            labelText: tr('Отображаемое имя', 'Display name'),
-            onSubmitted: (_) => unawaited(_saveName()),
-          ),
-          const SizedBox(height: 12),
-          if (email.isNotEmpty) Text(email,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant)),
-          const SizedBox(height: 12),
-          Align(alignment: Alignment.centerLeft, child: AppButton.primary(
-            onPressed: _savingProfile ? null : () => unawaited(_saveName()),
-            label: tr('Сохранить имя', 'Save name'),
-          )),
-        ],
-      )),
+  Widget _profile() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _form(tr('Мои данные', 'My details'), const ProfileNameEditor()),
       _section(tr('Безопасность', 'Security'), [
         _link(tr('Пароль и защита', 'Password & protection'),
-          AppMenuIconRole.shield, LifeOsMenuAction.accountSecurity,
-          subtitle: tr('Восстановление пароля и биометрия', 'Password recovery and biometrics')),
-      ]),
-      _section(tr('Данные и помощь', 'Data & help'), [
-        _link(tr('Состояние данных', 'Data status'), AppMenuIconRole.sync,
-          LifeOsMenuAction.syncStatus,
-          subtitle: tr('Офлайн-изменения и ошибки', 'Offline changes and errors')),
-        _link(tr('О приложении', 'About'), AppMenuIconRole.about,
-          LifeOsMenuAction.about),
+          AppMenuIconRole.shield, LifeOsMenuAction.accountSecurity),
       ]),
       const SizedBox(height: 14),
-      AppButton.outlined(
-        onPressed: () => _open(LifeOsMenuAction.accountSession),
-        icon: Icons.logout_rounded,
-        label: tr('Выйти из аккаунта', 'Sign out'),
-      ),
+      const AccountSecuritySection(showPeopleEntry: false),
     ]);
-  }
 
   Widget _dayHourSelect(String label, int value, ValueChanged<int> onChanged) =>
     Flexible(child: DropdownButtonFormField<int>(
@@ -297,10 +250,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
 
   Widget _planning() {
     if (_planningDefaultTimesOpen) return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      AppSettingsNavigationRow(title: tr('Назад к планированию', 'Back to Planning'),
-        leading: const Icon(Icons.arrow_back_rounded),
-        onTap: () => setState(() => _planningDefaultTimesOpen = false)),
-      const SizedBox(height: 16), const DefaultPlanTimesSettingsBlock(),
+      const DefaultPlanTimesSettingsBlock(),
     ]);
     final bounds = _bounds;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -348,8 +298,6 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
           onTap: () => setState(() => _planningDefaultTimesOpen = true)),
         _link(tr('Фиксированное время и связь записей', 'Fixed time and record links'),
           AppMenuIconRole.link, LifeOsMenuAction.planningSettings),
-        _link(tr('Подключённые календари', 'Connected calendars'),
-          AppMenuIconRole.calendar, LifeOsMenuAction.calendars),
       ]),
       _section(tr('Местоположение и активность', 'Location & activity'), [
         _link(tr('Отслеживание перемещений', 'Movement tracking'),
@@ -468,9 +416,6 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
       _section(tr('Люди и связи', 'People & relationships'), [
         _link(tr('Список людей и круги', 'People and circles'),
           AppMenuIconRole.people, LifeOsMenuAction.people),
-        _link(tr('Источники контактов', 'Contact sources'),
-          AppMenuIconRole.connections, LifeOsMenuAction.peopleSources,
-          subtitle: tr('Телефон, Google, Microsoft и другие', 'Device, Google, Microsoft and more')),
       ]),
     ],
   );
@@ -598,12 +543,22 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
         _link(tr('Источники контактов', 'Contact sources'),
           AppMenuIconRole.people, LifeOsMenuAction.peopleSources),
       ]),
-      _section(tr('Данные приложения', 'Application data'), [
-        _link(tr('Синхронизация и офлайн-очередь', 'Sync and offline queue'),
-          AppMenuIconRole.sync, LifeOsMenuAction.syncStatus),
-      ]),
     ],
   );
+
+  Widget _about() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _form(tr('Версия приложения', 'App version'), Text(
+        '${AppBuildInfo.gitCommit} · ${AppBuildInfo.builtAt}',
+        style: Theme.of(context).textTheme.bodyMedium)),
+      if (DatabaseService.instance.settings.isAdmin)
+        _section(tr('Для разработчиков', 'Developer tools'), [
+          _link(tr('Диагностика', 'Diagnostics'), AppMenuIconRole.filter,
+            LifeOsMenuAction.diagnostics),
+          _link('Dev / Design Lab', AppMenuIconRole.appearance,
+            LifeOsMenuAction.componentLab),
+        ]),
+    ]);
 
   // Sections reuse the exact canonical category families, never a
   // new palette of arbitrary bright settings colors.
@@ -632,7 +587,8 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     initialData: DatabaseService.instance.settings,
     builder: (context, snapshot) {
       final scheme = Theme.of(context).colorScheme;
-      final name = (snapshot.data?.displayName ?? '').trim();
+      final name = ProfileServiceExtension.resolveProfileDisplayLabelFor(
+        settings: snapshot.data ?? DatabaseService.instance.settings);
       final email = AuthBridge.currentAuthEmail?.trim() ?? '';
       return Material(
         color: scheme.surfaceContainerHigh,
@@ -685,7 +641,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
       _mobileMenuGroup('ЛИЧНОЕ', 'PERSONAL',
         ['notifications', 'viktor', 'health']),
       _mobileMenuGroup('ПРИЛОЖЕНИЕ', 'APPLICATION',
-        ['data', 'appearance']),
+        ['data', 'appearance', 'about']),
     ],
   );
 
@@ -694,7 +650,8 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     initialData: DatabaseService.instance.settings,
     builder: (context, snapshot) {
       final scheme = Theme.of(context).colorScheme;
-      final name = (snapshot.data?.displayName ?? '').trim();
+      final name = ProfileServiceExtension.resolveProfileDisplayLabelFor(
+        settings: snapshot.data ?? DatabaseService.instance.settings);
       final email = AuthBridge.currentAuthEmail?.trim() ?? '';
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const SizedBox(height: 10),
@@ -728,18 +685,9 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
           Expanded(child: _mobileProfileAction(
             tr('Защита', 'Security'), Icons.shield_outlined,
             kNordicHealth, LifeOsMenuAction.accountSecurity)),
-          const SizedBox(width: 9),
-          Expanded(child: _mobileProfileAction(
-            tr('Сеансы', 'Sessions'), Icons.devices_rounded,
-            kNordicErrands, LifeOsMenuAction.accountSession)),
         ]),
         const SizedBox(height: 24),
-        _section(tr('Профиль и данные', 'Profile & data'), [
-          _link(tr('Мои данные', 'My details'), AppMenuIconRole.account,
-            LifeOsMenuAction.account),
-          _link(tr('Синхронизация', 'Synchronization'), AppMenuIconRole.sync,
-            LifeOsMenuAction.syncStatus),
-        ]),
+        const AccountSecuritySection(showPeopleEntry: false),
       ]);
     },
   );
@@ -788,33 +736,20 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
       Padding(
         padding: EdgeInsets.fromLTRB(16, topInset + 12, 16, 12),
         child: Row(children: [
-          if (_mobileDetailOpen) ...[
-            AppIconButton(
-              icon: AppMenuIcons.icon(AppMenuIconRole.back),
-              variant: AppIconButtonVariant.frosted,
-              shape: AppIconButtonShape.circular,
-              size: AppIconButtonSize.l,
-              onPressed: _backToMobileSettings,
-              tooltip: tr('Назад к настройкам', 'Back to settings')),
-            const SizedBox(width: 16),
-          ],
-          Expanded(child: _mobileDetailOpen
-            ? Column(mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start, children: [
-                InkWell(onTap: _backToMobileSettings,
-                  child: Text(_planningDefaultTimesOpen
-                    ? (_ru ? selected.ru : selected.en) : tr('Настройки', 'Settings'),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant))),
-                Text(_planningDefaultTimesOpen
-                    ? tr('Время новых планов', 'Default plan times')
-                    : (_ru ? selected.ru : selected.en),
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleLarge),
-              ])
-            : Text(tr('Настройки', 'Settings'),
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontSize: 30, fontWeight: FontWeight.w600))),
+          if (_mobileDetailOpen)
+            Expanded(child: AppSettingsBackHeader(
+              parentLabel: _planningDefaultTimesOpen
+                ? tr('Назад к планированию', 'Back to Planning')
+                : tr('Назад к настройкам', 'Back to settings'),
+              title: _planningDefaultTimesOpen
+                ? tr('Время новых планов', 'Default plan times')
+                : (_ru ? selected.ru : selected.en),
+              onBack: _backToMobileSettings,
+            ))
+          else
+            Expanded(child: Text(tr('Настройки', 'Settings'),
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontSize: 30, fontWeight: FontWeight.w600))),
         ]),
       ),
     ]));
@@ -852,6 +787,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     'health' => _health(),
     'data' => _data(),
     'appearance' => _appearance(),
+    'about' => _about(),
     _ => _profile(),
   };
 
@@ -893,7 +829,13 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
               const SizedBox(height: 16),
               _tabNavigation(desktop),
               const SizedBox(height: 22),
-              Row(children: [
+              if (_planningDefaultTimesOpen)
+                AppSettingsBackHeader(
+                  parentLabel: tr('Назад к планированию', 'Back to Planning'),
+                  title: tr('Время новых планов', 'Default plan times'),
+                  onBack: () => setState(() => _planningDefaultTimesOpen = false),
+                )
+              else Row(children: [
                 _symbol(selected.icon, selected.family),
                 const SizedBox(width: 12),
                 Expanded(child: Text(_ru ? selected.ru : selected.en,

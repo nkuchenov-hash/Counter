@@ -3,6 +3,7 @@ import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/app_menu_icons.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -226,13 +227,6 @@ const _sections = <_LifeOsMenuSection>[
           'Contact sources', AppMenuIconRole.people,
           LifeOsMenuAction.peopleSources),
     ]),
-    _LifeOsMenuGroup('ДАННЫЕ', 'DATA', [
-      _LifeOsMenuRow('syncStatus', 'Синхронизация',
-          'Synchronization', AppMenuIconRole.sync,
-          LifeOsMenuAction.syncStatus,
-          helpRu: 'Статус подключения и офлайн-очередь',
-          helpEn: 'Connection state and offline queue'),
-    ]),
   ]),
   _LifeOsMenuSection('health', 'Здоровье и сон', 'Health & sleep',
       AppMenuIconRole.health, [
@@ -276,9 +270,6 @@ const _sections = <_LifeOsMenuSection>[
     _LifeOsMenuGroup('LIFE OS', 'LIFE OS', [
       _LifeOsMenuRow('version', 'Версия приложения',
           'App version', AppMenuIconRole.about, LifeOsMenuAction.about),
-      _LifeOsMenuRow('support', 'Диагностика',
-          'Diagnostics', AppMenuIconRole.filter,
-          LifeOsMenuAction.diagnostics),
     ]),
   ]),
 ];
@@ -403,7 +394,7 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
       initialData: DatabaseService.instance.settings,
       builder: (context, snapshot) {
         final settings = snapshot.data ?? DatabaseService.instance.settings;
-        final name = (settings.displayName ?? '').trim();
+        final name = ProfileServiceExtension.resolveProfileDisplayLabelFor(settings: settings);
         final email = AuthBridge.currentAuthEmail?.trim() ?? '';
         return Material(
           color: Theme.of(context).colorScheme.surfaceContainerHigh,
@@ -535,28 +526,11 @@ class _LifeOsMenuPageState extends State<LifeOsMenuPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        InkWell(
-          onTap: _back,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              children: [
-                Icon(AppMenuIcons.icon(AppMenuIconRole.back)),
-                const SizedBox(width: 9),
-                Text(_ru ? 'Настройки' : 'Settings',
-                  style: Theme.of(context).textTheme.bodyLarge),
-              ],
-            ),
-          ),
+        AppSettingsBackHeader(
+          parentLabel: _ru ? 'Настройки' : 'Settings',
+          title: section.title(_ru),
+          onBack: _back,
         ),
-        const SizedBox(height: 14),
-        Text(section.title(_ru),
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            fontSize: 30,
-            fontWeight: FontWeight.w500,
-            color: Theme.of(context).colorScheme.onSurface,
-          )),
         if (section.subtitle(_ru).isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(section.subtitle(_ru),

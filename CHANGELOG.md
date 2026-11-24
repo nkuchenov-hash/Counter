@@ -6,6 +6,10 @@
 - Tags CRUD now displays grouped white rows and dividers within the settings column, with neutral delete icons and the New Tag action next to the list, including when the catalog is empty. Preserved reorder, edit/delete, domains and PocketBase storage.
 - Added UI and source regression coverage for desktop width, centered alignment, and persistence of Add/reorder controls. CI and publication pending.
 
+## [2026-11-24] - Settings organization and profile consistency
+
+- Preserve desktop tabs and mobile styling; move About to its own section, remove ordinary sync diagnostics and duplicate integration links, and use the existing Glassy back/title component consistently in settings. Share the explicit-save display-name editor and roll back failed name updates. Sync queues and automatic replay remain unchanged.
+
 ## [2026-11-23] — Align visible-day range and Schedule settings [verification pending]
 
 - Renamed Schedule's “Duration of day” to “Visible day range” / «Отображаемый период дня» to clarify that it controls displayed timeline hours, not actual day length.

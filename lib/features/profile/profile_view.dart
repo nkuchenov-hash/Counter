@@ -8,7 +8,6 @@ import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/app_settings_breadcrumb_bar.dart';
 import 'package:counter/core/widgets/timezone_quick_picker.dart';
 import 'package:counter/core/widgets/app_button.dart';
-import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/shared/voice/platforms/desktop/desktop_voice_settings.dart';
 import 'package:counter/features/settings/timezone_settings.dart'
@@ -80,17 +79,10 @@ class _ProfilePageState extends State<ProfilePage> {
   late String _language;
   late String _timeZone;
   late String _themeMode;
-  late final TextEditingController _displayNameController;
-  late final FocusNode _displayNameFocus;
-
-  Timer? _displayNameDebounce;
-  String _lastSavedDisplayName = '';
-  bool _savingDisplayName = false;
   bool _savingTheme = false;
   bool _savingLanguage = false;
 
   bool _savingTimeZone = false;
-  static const _nameDebounceDuration = Duration(milliseconds: 600);
 
   @override
   void initState() {
@@ -99,75 +91,6 @@ class _ProfilePageState extends State<ProfilePage> {
     _language = resolvedUiLanguageCode(s.language);
     _timeZone = s.preferredTimeZone;
     _themeMode = s.themeMode;
-    _lastSavedDisplayName = s.displayName?.trim() ?? '';
-    _displayNameController = TextEditingController(text: s.displayName ?? '');
-    _displayNameFocus = FocusNode();
-    _displayNameFocus.addListener(_onDisplayNameFocusChange);
-  }
-
-  void _onDisplayNameFocusChange() {
-    if (!_displayNameFocus.hasFocus) {
-      _flushDisplayNameSave();
-    }
-  }
-
-  @override
-  void dispose() {
-    _displayNameDebounce?.cancel();
-    _displayNameFocus.removeListener(_onDisplayNameFocusChange);
-    _displayNameFocus.dispose();
-    _displayNameController.dispose();
-    super.dispose();
-  }
-
-  void _scheduleDisplayNameSave() {
-    _displayNameDebounce?.cancel();
-    _displayNameDebounce = Timer(_nameDebounceDuration, () {
-      unawaited(_persistDisplayNameIfNeeded());
-    });
-  }
-
-  void _flushDisplayNameSave() {
-    _displayNameDebounce?.cancel();
-    _displayNameDebounce = null;
-    unawaited(_persistDisplayNameIfNeeded());
-  }
-
-  Future<void> _persistDisplayNameIfNeeded() async {
-    final trimmed = _displayNameController.text.trim();
-    if (trimmed == _lastSavedDisplayName) return;
-    if (_savingDisplayName) {
-      _displayNameDebounce?.cancel();
-      _displayNameDebounce = Timer(const Duration(milliseconds: 120), () {
-        unawaited(_persistDisplayNameIfNeeded());
-      });
-      return;
-    }
-    if (!mounted) return;
-    setState(() => _savingDisplayName = true);
-    try {
-      final ok = await DatabaseService.instance.saveSettings(
-        DatabaseService.instance.settings.copyWith(
-          displayName: trimmed.isEmpty ? null : trimmed,
-        ),
-      );
-      if (!mounted) return;
-      if (ok) {
-        _lastSavedDisplayName = trimmed;
-        widget.onSaved?.call();
-        AppSnack.saved();
-      } else {
-        AppSnack.failed();
-      }
-    } catch (_) {
-      if (mounted) AppSnack.failed();
-    } finally {
-      if (mounted) setState(() => _savingDisplayName = false);
-      final again = _displayNameController.text.trim();
-      if (mounted && again != _lastSavedDisplayName) {
-        _scheduleDisplayNameSave();
-      }
-    }
   }
 
   Future<void> _saveTheme(String next) async {
@@ -290,37 +213,20 @@ class _ProfilePageState extends State<ProfilePage> {
           return Scaffold(
             resizeToAvoidBottomInset: true,
             backgroundColor: scheme.surfaceContainerLowest,
-            appBar: widget.embeddedInShell || widget.initialDestination == null
-                ? null
-                : AppSettingsBreadcrumbBar(
-                    parentLabel: t(locale, 'settings'),
-                    title: _mobileSectionTitle(locale, destination),
-                    onBack: () => Navigator.of(context).maybePop(),
-                  ),
-            body: widget.embeddedInShell
-                ? Column(
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 12, 16, 4),
-                          child: TextButton.icon(
-                            onPressed: widget.onBackToMenu,
-                            icon: const Icon(Icons.arrow_back_rounded),
-                            label: Text(locale.startsWith('ru')
-                                ? 'Назад'
-                                : 'Back'),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildMobileSettingsDetail(
-                            context, locale, safeTimeZone, destination),
-                      ),
-                    ],
-                  )
-                : _buildMobileSettingsDetail(
-                    context, locale, safeTimeZone, destination),
+            appBar: AppSettingsBreadcrumbBar(
+              parentLabel: t(locale, 'settings'),
+              title: _mobileSectionTitle(locale, destination),
+              alignWithSettingsBody: true,
+              onBack: () {
+                if (widget.embeddedInShell && widget.onBackToMenu != null) {
+                  widget.onBackToMenu!();
+                } else {
+                  Navigator.of(context).maybePop();
+                }
+              },
+            ),
+            body: _buildMobileSettingsDetail(
+                context, locale, safeTimeZone, destination),
           );
         },
       ),
@@ -357,7 +263,6 @@ class _ProfilePageState extends State<ProfilePage> {
     String safeTimeZone,
     ProfileSettingsDestination section,
   ) {
-    final title = _mobileSectionTitle(locale, section);
     // The approved Appearance screen combines theme previews and locale options.
     // Render it as two independent white groups, not one legacy preference tab.
     if (section == ProfileSettingsDestination.notificationsRoutines) {
@@ -406,7 +311,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
     final content = switch (section) {
       ProfileSettingsDestination.account =>
-          _buildDisplayNameField(context, locale),
+          ProfileNameEditor(onSaved: widget.onSaved),
       ProfileSettingsDestination.security =>
           SecuritySection(onSaved: widget.onSaved, embedded: true),
       ProfileSettingsDestination.session =>
@@ -447,31 +352,13 @@ class _ProfilePageState extends State<ProfilePage> {
     return AppSettingsPageBody(
       children: [
         AppSettingsSectionCard(
-          title: title,
+          title: section == ProfileSettingsDestination.account
+              ? (locale.startsWith('ru') ? 'Мои данные' : 'My details')
+              : '',
           subtitle: section == ProfileSettingsDestination.notifications && !kIsWeb
               ? t(locale, 'profile_notifications_subtitle')
               : null,
           child: content,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDisplayNameField(BuildContext context, String locale) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AppTextField(
-          controller: _displayNameController,
-          focusNode: _displayNameFocus,
-          labelText: t(locale, 'display_name_label'),
-          hintText: t(locale, 'display_name_hint'),
-          suffixIcon: _savingDisplayName
-              ? const Center(child: AppLoading(size: AppLoadingSize.small))
-              : null,
-          textCapitalization: TextCapitalization.words,
-          onChanged: (_) => _scheduleDisplayNameSave(),
-          onEditingComplete: _flushDisplayNameSave,
         ),
       ],
     );

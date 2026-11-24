@@ -54,6 +54,26 @@ extension ProfileSettingsExtension on DatabaseService {
     }
   }
 
+  /// One name mutation path. Do not leave an unconfirmed value in the
+  /// profile stream when the server rejects it or the device is offline.
+  Future<bool> saveDisplayName(String value) async {
+    final name = value.trim();
+    if (name.isEmpty) return false;
+    final before = _settings;
+    if (name == before.displayName?.trim()) return true;
+    bool ok = false;
+    try {
+      ok = await saveSettings(before.copyWith(displayName: name));
+    } finally {
+      if (!ok && _settings.userId == before.userId &&
+          _settings.displayName?.trim() == name) {
+        _settings = _settings.copyWith(displayName: before.displayName ?? '');
+        _settingsController.add(_settings);
+      }
+    }
+    return ok;
+  }
+
   /// UI-first: update state immediately; then PocketBase PATCH on **profiles** auth row.
   /// Only fields that changed vs current [_settings] are PATCHed (never `is_admin`).
   Future<bool> saveSettings(UserSettings s) async {
