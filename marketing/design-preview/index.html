@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#000000" />
-<title>Life OS Glass V74 — Card comparison</title>
+<title>Life OS Glass V75 — Card comparison</title>
 <style>
 :root{color-scheme:dark;--accent:#aebacb;--accent-soft:color-mix(in srgb,var(--accent) 22%,transparent);--accent-line:color-mix(in srgb,var(--accent) 52%,transparent);--glass-alpha:.31;--glass-blur:23px;--text:#f2f2f6;--muted:#b2b4be;--edge:rgba(255,255,255,.16);--bg:#07090d;--card-radius:20px}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#000000;color:var(--text)}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}body{overflow-x:hidden}
@@ -2254,48 +2254,7 @@ html[data-card-layout="instrument"] .duration-cell{text-align:right;display:flex
 @media(max-width:350px){html[data-card-layout="fluid"] .record-interval{gap:4px;}html[data-card-layout="fluid"] .record-interval .time-rail{width:8px;flex-basis:8px;}html[data-card-layout="fluid"] .record-duration{padding:4px 6px;}html[data-card-layout="instrument"] .record-interval{gap:8px;}}
 
 
-/* V74 — three additional reversible compositions; existing candidates retained. */
-html[data-card-layout="rail"] .record .record-inner{
- grid-template-columns:54px minmax(0,1fr) auto!important;
- column-gap:10px!important; row-gap:0!important;align-items:start!important;
-}
-html[data-card-layout="rail"] .record .record-info{grid-column:2;grid-row:1;}
-html[data-card-layout="rail"] .record .record-tools{grid-column:3;grid-row:1;align-self:start;}
-html[data-card-layout="rail"] .record .record-time{display:contents!important;}
-html[data-card-layout="rail"] .record-interval{
- grid-column:1;grid-row:1/3;align-self:stretch;display:flex;flex-direction:column;align-items:flex-start;
- justify-content:center;gap:7px;padding:0 9px 0 0;border-right:1px solid color-mix(in srgb,var(--category) 20%,transparent);
- font-size:13px;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap;
-}
-html[data-card-layout="rail"] .record-interval .rail-line{height:9px;width:1px;background:var(--category);opacity:.5;margin-left:4px;}
-html[data-card-layout="rail"] .record-duration{grid-column:2/4;grid-row:2;justify-self:end;margin-top:6px;}
-html[data-card-layout="rail"] .record .record-inner{padding-bottom:12px!important;}
-/* Time header: metadata first, then the full-width title and category. */
-html[data-card-layout="timehead"] .record .record-inner{grid-template-columns:minmax(0,1fr) auto!important;row-gap:7px!important;}
-html[data-card-layout="timehead"] .record .record-time{grid-column:1;grid-row:1;margin:0!important;min-height:40px;gap:8px!important;justify-content:flex-start!important;}
-html[data-card-layout="timehead"] .record .record-interval{white-space:nowrap;}
-html[data-card-layout="timehead"] .record .record-duration{margin-left:auto;color:inherit;}
-html[data-card-layout="timehead"] .record.running .record-duration{font-size:22px!important;}
-html[data-card-layout="timehead"] .record .record-tools{grid-column:2;grid-row:1;}
-html[data-card-layout="timehead"] .record .record-info{grid-column:1/-1;grid-row:2;}
-html[data-card-layout="timehead"] .record .record-title{font-size:18px!important;}
-/* Side metric: title and interval on the left; aligned duration column on the right. */
-html[data-card-layout="metric"] .record .record-inner{grid-template-columns:minmax(0,1fr) minmax(87px,auto)!important;column-gap:12px!important;row-gap:0!important;}
-html[data-card-layout="metric"] .record .record-info{grid-column:1;grid-row:1;}
-html[data-card-layout="metric"] .record .record-time{display:contents!important;}
-html[data-card-layout="metric"] .record .record-interval{grid-column:1;grid-row:2;align-self:end;margin-top:8px;font-size:13px;line-height:1.3;font-variant-numeric:tabular-nums;}
-html[data-card-layout="metric"] .record .record-tools{grid-column:2;grid-row:1;justify-content:flex-end;}
-html[data-card-layout="metric"] .record .record-duration{grid-column:2;grid-row:2;align-self:end;justify-self:end;font-size:18px!important;margin-top:8px;}
-html[data-card-layout="metric"] .record.running .record-duration{font-size:25px!important;}
-html[data-card-layout="metric"] .record .record-title{font-size:18px!important;}
-@media(max-width:360px){
- html[data-card-layout="rail"] .record .record-inner{grid-template-columns:48px minmax(0,1fr) auto!important;column-gap:6px!important;}
- html[data-card-layout="rail"] .record-interval{padding-right:5px;}
- html[data-card-layout="timehead"] .record .record-time{flex-wrap:wrap;align-content:center;gap:2px 6px!important;}
- html[data-card-layout="timehead"] .record .record-duration{margin-left:0;}
- html[data-card-layout="metric"] .record .record-inner{column-gap:8px!important;}
-}
-
+/* V75 — rejected layouts removed; vertical menu retained. */
 </style>
 </head>
 <body>
@@ -2368,9 +2327,6 @@ html[data-card-layout="metric"] .record .record-title{font-size:18px!important;}
  <button type="button" class="preset" data-layout="editorial" aria-pressed="false">01 Editorial</button>
  <button type="button" class="preset" data-layout="fluid" aria-pressed="false">03 Fluid Timeline</button>
  <button type="button" class="preset" data-layout="quiet" aria-pressed="false">04 Quiet Type</button>
- <button type="button" class="preset" data-layout="rail" aria-pressed="false">06 Time Rail</button>
- <button type="button" class="preset" data-layout="timehead" aria-pressed="false">07 Time Header</button>
- <button type="button" class="preset" data-layout="metric" aria-pressed="false">08 Side Metric</button>
  </div>
  <label class="smalllabel">Тема оформления</label>
  <div class="presets" id="themeModes"><button class="preset active" data-theme="light" type="button">☀ Светлая</button><button class="preset" data-theme="dark" type="button">☾ Тёмная</button></div>
@@ -2472,7 +2428,7 @@ function stopRecord(x){const minutes=Math.floor(elapsed(x)/60);x.running=false;x
 function timeParts(x){const m=x.time.match(/^(.*) \(([^()]*)\)$/);return [x.running?x.time.split(' — ')[0]+' — сейчас':m?m[1]:x.time,x.running?timerText(x):m?m[2]:''];}
 setInterval(()=>{document.querySelectorAll('.record.running .record-duration').forEach(n=>{const x=records.find(r=>r.id===Number(n.closest('.record').dataset.id));if(x?.running)n.textContent=timerText(x);});},1000);
 
-const cardLayoutOptions=['base','editorial','fluid','quiet','rail','timehead','metric'];
+const cardLayoutOptions=['base','editorial','fluid','quiet'];
 let cardLayout=new URLSearchParams(location.search).get('layout')||'base';
 if(!cardLayoutOptions.includes(cardLayout))cardLayout='base';
 function applyCardLayout(next,updateUrl=false){
@@ -2487,7 +2443,6 @@ function intervalMarkup(x){
  if(parts.length!==2)return '<span class="record-interval">'+escapeHtml(time)+'</span>';
  if(cardLayout==='fluid')return '<span class="record-interval"><i class="time-point" aria-hidden="true"></i><span>'+a+'</span><i class="time-rail" aria-hidden="true"></i><i class="time-point" aria-hidden="true"></i><span>'+b+'</span></span>';
 
- if(cardLayout==='rail')return '<span class="record-interval"><span>'+a+'</span><i class="rail-line" aria-hidden="true"></i><span>'+b+'</span></span>';
 
  return '<span class="record-interval">'+escapeHtml(time)+'</span>';
 }
