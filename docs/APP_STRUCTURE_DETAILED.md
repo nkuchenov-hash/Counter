@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `08badb96` on 2026-11-23.**
+**Generated from input HEAD `4edaf66f` on 2026-11-24.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -12193,7 +12193,7 @@ EN:
 - **Contents:** `AppBuildInfo` — `gitCommit`, `builtAt`, `bootLogLine()`, perf test markers.
 - **Key code names:** `AppBuildInfo`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/profile_view.dart`, `lib/features/settings/categories/category_icon_collection_preference.dart`, `lib/features/settings/categories/category_icon_picker.dart`, `lib/main.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_installed_identity.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/profile_view.dart`, `lib/features/settings/categories/category_icon_collection_preference.dart`, `lib/features/settings/categories/category_icon_picker.dart`, `lib/main.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -12210,7 +12210,7 @@ RU:
 - **Зачем:** Маркеры logcat/console (`APP_BUILD`, P0N/P0O) показывают, какой APK на устройстве.
 - **Содержимое:** `AppBuildInfo` — `gitCommit`, `builtAt`, `bootLogLine()`, perf-маркеры.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/profile_view.dart`, `lib/features/settings/categories/category_icon_collection_preference.dart`, `lib/features/settings/categories/category_icon_picker.dart`, `lib/main.dart`, `lib/shared/voice/platforms/desktop/desktop_voice_installed_identity.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/profile_view.dart`, `lib/features/settings/categories/category_icon_collection_preference.dart`, `lib/features/settings/categories/category_icon_picker.dart`, `lib/main.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -13427,35 +13427,35 @@ RU:
 
 EN:
 
-- **Human purpose:** Shared design-system widget — Shared parent-labelled back header and canonical frosted chrome for secondary Settings routes. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What this is:** Shared design-system widget — Shared parent-labelled back header and canonical frosted chrome for secondary Settings routes.
+- **Human purpose:** Shared design-system widget — `AppSettingsBreadcrumbBar` and `AppSettingsBackHeader`: shared parent-labelled back action and canonical frosted chrome for secondary Settings routes. Plans, Timeline, and Lists reuse this instead of copying button/card styles.
+- **What this is:** Shared design-system widget — `AppSettingsBreadcrumbBar` and `AppSettingsBackHeader`: shared parent-labelled back action and canonical frosted chrome for secondary Settings routes.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **Contents:** Canonical Flutter widget (`AppSettingsBreadcrumbBar`).
-- **Key code names:** `AppSettingsBreadcrumbBar`
+- **Contents:** Canonical Flutter widget (`AppSettingsBreadcrumbBar`, `AppSettingsBackHeader`).
+- **Key code names:** `AppSettingsBreadcrumbBar`, `AppSettingsBackHeader`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/profile/menu/life_os_sync_status_page.dart`, `lib/features/profile/profile_view.dart`, `lib/features/profile/tag_settings_hub.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/menu/life_os_sync_status_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** shared design system
-- **Responsibilities:** Shared parent-labelled back header and canonical frosted chrome for secondary Settings routes
+- **Responsibilities:** `AppSettingsBreadcrumbBar` and `AppSettingsBackHeader`: shared parent-labelled back action and canonical frosted chrome for secondary Settings routes
 - **When to open:** When behavior tied to `app_settings_breadcrumb_bar.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Shared parent-labelled back header and canonical frosted chrome for secondary Settings routes
+- **Connected to:** APP_STRUCTURE role: `AppSettingsBreadcrumbBar` and `AppSettingsBackHeader`: shared parent-labelled back action and canonical frosted chrome 
 
 RU:
 
-- **Зачем файл человеку:** Общий виджет design system — Shared parent-labelled back header and canonical frosted chrome for secondary Settings routes. Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Что это:** Общий виджет design system — Shared parent-labelled back header and canonical frosted chrome for secondary Settings routes.
+- **Зачем файл человеку:** Общий виджет design system — `AppSettingsBreadcrumbBar` and `AppSettingsBackHeader`: shared parent-labelled back action and canonical frosted chrome for secondary Settings routes. Один стиль кнопок и карточек на Plans, Timeline и Lists.
+- **Что это:** Общий виджет design system — `AppSettingsBreadcrumbBar` and `AppSettingsBackHeader`: shared parent-labelled back action and canonical frosted chrome for secondary Settings routes.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_settings_breadcrumb_bar`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/profile/menu/life_os_sync_status_page.dart`, `lib/features/profile/profile_view.dart`, `lib/features/profile/tag_settings_hub.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/menu/life_os_menu_page.dart`, `lib/features/profile/menu/life_os_notes_settings_page.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/menu/life_os_sync_status_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
 - **Владелец / слой:** общий design system
-- **Обязанности:** Реализует в UI: Shared parent-labelled back header and canonical frosted chrome for secondary Settings routes.
+- **Обязанности:** Реализует в UI: `AppSettingsBreadcrumbBar` and `AppSettingsBackHeader`: shared parent-labelled back action and canonical frosted chrome for secondary Settings routes.
 - **Когда открывать:** Когда ломается поведение, связанное с `app_settings_breadcrumb_bar.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/widgets/`, `docs/APP_STRUCTURE.md`
@@ -23399,8 +23399,8 @@ EN:
 - **Human purpose:** `life_os_menu_page.dart` on More → Profile and settings — life os menu page. Users see `life_os_menu_page.dart` when using More → Profile and settings.
 - **What this is:** `life_os_menu_page.dart` on More → Profile and settings — life os menu page.
 - **Why needed:** Users see `life_os_menu_page.dart` when using More → Profile and settings.
-- **Contents:** Primary symbols: `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`.
-- **Key code names:** `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`
+- **Contents:** Primary symbols: `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`, `_LifeOsMenuPageState`.
+- **Key code names:** `LifeOsMenuAction`, `LifeOsMenuPage`, `_LifeOsMenuRow`, `_LifeOsMenuGroup`, `_LifeOsMenuSection`, `_LifeOsMenuPageState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/profile/menu/life_os_settings_tabs_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -23662,21 +23662,21 @@ RU:
 
 EN:
 
-- **Human purpose:** `account_settings_section.dart` on More → Profile and settings — Signed-in identity + logout row. Users see `account_settings_section.dart` when using More → Profile and settings.
-- **What this is:** `account_settings_section.dart` on More → Profile and settings — Signed-in identity + logout row.
+- **Human purpose:** `account_settings_section.dart` on More → Profile and settings — ProfileNameEditor. Users see `account_settings_section.dart` when using More → Profile and settings.
+- **What this is:** `account_settings_section.dart` on More → Profile and settings — ProfileNameEditor.
 - **Why needed:** Users see `account_settings_section.dart` when using More → Profile and settings.
-- **Contents:** Primary symbols: `AccountSecuritySection`.
-- **Key code names:** `AccountSecuritySection`
+- **Contents:** Primary symbols: `AccountSecuritySection`, `ProfileNameEditor`, `_ProfileNameEditorState`.
+- **Key code names:** `AccountSecuritySection`, `ProfileNameEditor`, `_ProfileNameEditorState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/profile_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/profile_view.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Profile UI
-- **Responsibilities:** Signed-in identity + logout row
+- **Responsibilities:** ProfileNameEditor
 - **When to open:** When behavior tied to `account_settings_section.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Signed-in identity + logout row
+- **Connected to:** APP_STRUCTURE role: Shared `ProfileNameEditor`, signed-in identity and logout action
 
 RU:
 
@@ -23685,7 +23685,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `account_settings_section.dart` на More → Profile и настройки.
 - **Содержимое:** Dart-модуль `account_settings_section.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/profile_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/profile/menu/life_os_settings_tabs_page.dart`, `lib/features/profile/profile_view.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -23776,8 +23776,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `security_settings_section.dart` on More → Profile and settings — Password reset + biometric lock. Users see `security_settings_section.dart` when using More → Profile and settings.
-- **What this is:** `security_settings_section.dart` on More → Profile and settings — Password reset + biometric lock.
+- **Human purpose:** `security_settings_section.dart` on More → Profile and settings — Authenticated password change, recovery and capability-gated biometric lock. Users see `security_settings_section.dart` when using More → Profile and settings.
+- **What this is:** `security_settings_section.dart` on More → Profile and settings — Authenticated password change, recovery and capability-gated biometric lock.
 - **Why needed:** Users see `security_settings_section.dart` when using More → Profile and settings.
 - **Contents:** Primary symbols: `SecuritySection`, `SecuritySectionState`.
 - **Key code names:** `SecuritySection`, `SecuritySectionState`
@@ -23787,10 +23787,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Profile UI
-- **Responsibilities:** Password reset + biometric lock
+- **Responsibilities:** Authenticated password change, recovery and capability-gated biometric lock
 - **When to open:** When behavior tied to `security_settings_section.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** APP_STRUCTURE role: Password reset + biometric lock
+- **Connected to:** APP_STRUCTURE role: Authenticated password change, recovery and capability-gated biometric lock
 
 RU:
 
@@ -23893,8 +23893,8 @@ EN:
 - **Human purpose:** `tag_settings_hub.dart` on More → Profile and settings — Profile & tag settings. Users see `tag_settings_hub.dart` when using More → Profile and settings.
 - **What this is:** `tag_settings_hub.dart` on More → Profile and settings — Profile & tag settings.
 - **Why needed:** Users see `tag_settings_hub.dart` when using More → Profile and settings.
-- **Contents:** Primary symbols: `TagSettingsHub`, `_TagSettingsHubState`.
-- **Key code names:** `TagSettingsHub`, `_TagSettingsHubState`
+- **Contents:** Primary symbols: `TagSettingsTabFrame`, `TagSettingsHub`, `_TagSettingsHubState`.
+- **Key code names:** `TagSettingsTabFrame`, `TagSettingsHub`, `_TagSettingsHubState`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/features/planning/planning_quick_add_tags_controller.dart`, `lib/features/profile/menu/life_os_planning_settings_page.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/planning_task_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
