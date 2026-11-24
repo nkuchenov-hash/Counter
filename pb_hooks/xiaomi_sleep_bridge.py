@@ -323,8 +323,10 @@ async def _fetch_sleep_for_base(
     sessions: dict[str, dict[str, Any]] = {}
     try:
         async with MiHealthClient.from_token(token_path, base_url=base_url) as client:
-            sessions.update(await _fetch_relatives_sleep_api(client, uid, start, end, limit, stats))
-            sessions.update(await _fetch_self_sleep_api(client, start, end, limit, stats))
+            relatives = await _fetch_relatives_sleep_api(client, uid, start, end, limit, stats)
+            sessions.update(relatives)
+            self_data = await _fetch_self_sleep_api(client, start, end, limit, stats)
+            sessions.update(self_data)
     except Exception as exc:
         stats["errors"].append(type(exc).__name__)
     return sessions, stats
