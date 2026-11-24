@@ -420,6 +420,21 @@ void main() {
       expect(account, contains('AppButton.primary('));
     });
 
+    test('Account and settings destinations stay logically separated', () {
+      final settings = File('lib/features/profile/menu/life_os_settings_tabs_page.dart').readAsStringSync();
+      final profile = File('lib/features/profile/profile_view.dart').readAsStringSync();
+      final routes = File('lib/app/shell/shared/shell_more_menu.dart').readAsStringSync();
+      final security = File('lib/features/profile/settings/security_settings_section.dart').readAsStringSync();
+      expect(settings, contains("_SettingsTab('about'"));
+      expect(settings, isNot(contains('LifeOsMenuAction.syncStatus')));
+      expect(settings, contains('ProfileNameEditor('));
+      expect(profile, contains('ProfileNameEditor('));
+      expect(profile, contains('alignWithSettingsBody: true'));
+      expect(routes, contains('if (!DatabaseService.instance.settings.isAdmin) return;'));
+      expect(security, contains('AuthBridge.changePassword('));
+      expect(security, contains('AuthBridge.requestPasswordReset('));
+    });
+
     test('Profile never opens a parallel desktop settings hub', () {
       final profile =
           File('lib/features/profile/profile_view.dart').readAsStringSync();

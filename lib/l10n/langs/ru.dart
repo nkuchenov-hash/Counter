@@ -629,6 +629,20 @@ const Map<String, String> kRuL10n = {
   'current_activity_from': 'Текущая активность (от %s)',
   'manual_entry': 'Ручная запись',
   'duration': 'Длительность',
+  'settings_password_change': 'Изменить пароль',
+  'settings_password_current': 'Текущий пароль',
+  'settings_password_new': 'Новый пароль',
+  'settings_password_different': 'Новый пароль должен отличаться от текущего.',
+  'settings_password_wrong_current': 'Текущий пароль введён неверно.',
+  'settings_password_change_failed': 'Не удалось изменить пароль. Проверьте текущий пароль, требования к новому паролю и соединение.',
+  'settings_password_changed': 'Пароль изменён.',
+  'settings_password_changed_sign_in': 'Пароль изменён. Войдите снова.',
+  'settings_password_hint': 'Используйте длинный уникальный пароль.',
+  'settings_password_recovery': 'Восстановление доступа',
+  'settings_password_recovery_hint': 'Забыли пароль или входите через Google или Яндекс? Получите ссылку для установки нового пароля.',
+  'settings_password_recovery_send': 'Получить ссылку на email',
+  'settings_device_protection': 'Защита приложения',
+  'settings_sign_out_pending': 'Есть несохранённые изменения. Подключитесь к интернету и попробуйте выйти снова.',
   'security_section': 'Безопасность',
   'profile_password_reset_subtitle':
       'Мы отправим ссылку для смены пароля на email вашего аккаунта.',
@@ -688,7 +702,7 @@ const Map<String, String> kRuL10n = {
   'auth_hide_password': 'Скрыть пароль',
   'auth_forgot_password': 'Забыли пароль?',
   'auth_reset_email_sent':
-      'Письмо для восстановления пароля отправлено. Проверьте почту.',
+      'Если аккаунт существует, вы получите письмо для восстановления пароля. Проверьте почту.',
   'auth_reset_email_not_found':
       'Аккаунт с таким email не найден. Проверьте email или зарегистрируйтесь.',
   'auth_reset_mail_unavailable':

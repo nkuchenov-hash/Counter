@@ -324,11 +324,64 @@ class AuthBridge {
     await loginWithPassword(trimmedEmail, password);
   }
 
+  /// Change the signed-in account password using PocketBase's authenticated
+  /// oldPassword contract. Returns whether the replacement session was restored.
+  static Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String confirmation,
+  }) async {
+    if (currentPassword.isEmpty || newPassword.isEmpty ||
+        newPassword != confirmation || currentPassword == newPassword) {
+      throw AuthBridgeException('invalid_password_change');
+    }
+    final db = DatabaseService.instance;
+    await db.ensurePocketBaseReady();
+    final pb = db.pocketBase;
+    final record = pb.authStore.record;
+    final email = currentAuthEmail;
+    if (!pb.authStore.isValid || record == null || email == null) {
+      throw AuthBridgeException('session_expired');
+    }
+    final id = record.id;
+    try {
+      await pb.collection(PbCollections.profiles).update(id, body: {
+        'oldPassword': currentPassword,
+        'password': newPassword,
+        'passwordConfirm': confirmation,
+      });
+    } on ClientException catch (e) {
+      // Never log password payloads or return raw server exceptions.
+      final data = e.response['data'];
+      if (data is Map && data.containsKey('oldPassword')) {
+        throw AuthBridgeException('wrong_current_password', statusCode: e.statusCode);
+      }
+      throw AuthBridgeException('password_change_failed', statusCode: e.statusCode);
+    }
+    // Password changes invalidate existing tokens. Do not keep a stale token.
+    if (pb.authStore.record?.id != id) return false;
+    try {
+      await pb.collection(PbCollections.profiles).authWithPassword(email, newPassword);
+      if (pb.authStore.record?.id != id) {
+        pb.authStore.clear();
+        return false;
+      }
+      await _persistProfileIdAfterAuth();
+      unawaited(db.ensureRecordsRealtimeBridge());
+      return true;
+    } catch (_) {
+      if (pb.authStore.record?.id == id) {
+        pb.authStore.clear();
+        db.onSignOut?.call();
+      }
+      return false;
+    }
+  }
+
   /// Password reset email via app-owned safe route.
   ///
   /// Falls back to PocketBase's native request endpoint only when the custom
-  /// route has not been deployed yet; that fallback cannot distinguish unknown
-  /// emails from successful sends.
+  /// route has not been deployed yet. Both paths use a neutral response.
   static Future<PasswordResetRequestResult> requestPasswordReset(
     String email,
   ) async {
@@ -381,10 +434,10 @@ class AuthBridge {
       if (decoded is! Map<String, dynamic>) {
         throw AuthBridgeException('reset_mail_unavailable');
       }
-      if (decoded['exists'] == false) {
-        return PasswordResetRequestResult.notFound;
-      }
-      if (decoded['exists'] == true && decoded['sent'] == true) {
+      // Accept both the neutral current response and legacy server responses.
+      // The public UI must not disclose whether an account exists.
+      if (decoded['accepted'] == true || decoded['exists'] == false ||
+          (decoded['exists'] == true && decoded['sent'] == true)) {
         return PasswordResetRequestResult.sent;
       }
       throw AuthBridgeException('reset_mail_unavailable');

@@ -25,6 +25,9 @@ extension ProfileSettingsExtension on DatabaseService {
       fields['preferred_timezone'] = next.preferredTimeZone;
       fields['timezone_offset'] = next.timezoneOffsetHours;
     }
+    if (next.biometricEnabled != prev.biometricEnabled) {
+      fields['biometric_enabled'] = next.biometricEnabled;
+    }
     if (next.themeMode != prev.themeMode) {
       fields['theme_mode'] = next.themeMode;
     }
@@ -52,6 +55,21 @@ extension ProfileSettingsExtension on DatabaseService {
     if (currentLocale.value != code) {
       currentLocale.value = code;
     }
+  }
+
+  Future<bool> saveBiometricPreference(bool value) async {
+    final before = _settings;
+    bool ok = false;
+    try {
+      ok = await saveSettings(before.copyWith(biometricEnabled: value));
+    } finally {
+      if (!ok && _settings.userId == before.userId &&
+          _settings.biometricEnabled == value) {
+        _settings = _settings.copyWith(biometricEnabled: before.biometricEnabled);
+        _settingsController.add(_settings);
+      }
+    }
+    return ok;
   }
 
   /// One name mutation path. Do not leave an unconfirmed value in the

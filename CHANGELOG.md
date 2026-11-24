@@ -9,6 +9,7 @@
 ## [2026-11-24] - Settings organization and profile consistency
 
 - Preserve desktop tabs and mobile styling; move About to its own section, remove ordinary sync diagnostics and duplicate integration links, and use the existing Glassy back/title component consistently in settings. Share the explicit-save display-name editor and roll back failed name updates. Sync queues and automatic replay remain unchanged.
+- Add authenticated password change, separate recovery, generic password-reset responses and biometric preference persistence; prevent sign-out while unsent changes remain.
 
 ## [2026-11-23] — Align visible-day range and Schedule settings [verification pending]
 

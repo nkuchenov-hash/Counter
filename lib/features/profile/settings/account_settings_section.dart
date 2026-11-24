@@ -108,8 +108,11 @@ class AccountSecuritySection extends StatelessWidget {
 
   Future<void> _logout(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
-    if (navigator.canPop()) navigator.pop(context);
+    final db = DatabaseService.instance;
+    if (db.offlineSync.pendingCount > 0 || db.offlineSync.isSyncing) {
+      AppSnack.show(t(currentLocale.value, 'settings_sign_out_pending'), error: true);
+      return;
+    }
     var showSlowSnackBar = true;
     Future.delayed(const Duration(seconds: 1), () {
       if (showSlowSnackBar) {
