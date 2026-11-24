@@ -64,13 +64,10 @@ const _tabs = <_SettingsTab>[
   _SettingsTab('profile', 'Профиль', 'Profile', AppMenuIconRole.account, kCategoryNeutral),
   _SettingsTab('planning', 'Планирование', 'Planning', AppMenuIconRole.planning, kNordicWork),
   _SettingsTab('notes', 'Заметки и списки', 'Notes & lists', AppMenuIconRole.notes, kNordicStudy),
-  _SettingsTab('categories', 'Категории и теги', 'Categories & tags', AppMenuIconRole.categories, kNordicErrands),
-  _SettingsTab('people', 'Люди', 'People', AppMenuIconRole.people, kNordicPeople),
+  _SettingsTab('categories', 'Организация', 'Organization', AppMenuIconRole.categories, kNordicErrands),
   _SettingsTab('notifications', 'Уведомления', 'Notifications', AppMenuIconRole.notifications, kNordicEntertainment),
-  _SettingsTab('viktor', 'Виктор', 'Viktor', AppMenuIconRole.viktor, kNordicMovement),
-  _SettingsTab('health', 'Здоровье', 'Health', AppMenuIconRole.health, kNordicHealth),
   _SettingsTab('data', 'Интеграции', 'Integrations', AppMenuIconRole.connections, kNordicTransport),
-  _SettingsTab('appearance', 'Интерфейс', 'Appearance', AppMenuIconRole.appearance, kCategoryBlack),
+  _SettingsTab('appearance', 'Общие', 'General', AppMenuIconRole.appearance, kCategoryBlack),
   _SettingsTab('about', 'О приложении', 'About', AppMenuIconRole.about, kCategoryNeutral),
 ];
 
@@ -91,8 +88,11 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   @override
   void initState() {
     super.initState();
-    _tab = _tabs.any((e) => e.id == widget.initialTab)
-        ? widget.initialTab : 'profile';
+    final initial = switch (widget.initialTab) {
+      'people' => 'categories', 'health' => 'data',
+      'viktor' => 'appearance', _ => widget.initialTab,
+    };
+    _tab = _tabs.any((e) => e.id == initial) ? initial : 'profile';
     _planningDefaultTimesOpen = _mobileDetailOpen = widget.initialDefaultPlanTimes;
     _loadSection(_tab);
   }
@@ -164,7 +164,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   Widget _link(String title, AppMenuIconRole icon, LifeOsMenuAction action,
       {String? subtitle}) =>
       AppSettingsNavigationRow(
-        title: title,
+        title: title, compact: true,
         subtitle: subtitle,
         leading: _symbol(icon, selected.family),
         onTap: () => _open(action),
@@ -173,14 +173,15 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
   Widget _section(String title, List<Widget> rows) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(4, 14, 0, 5),
-        child: Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(
+      if (title.isNotEmpty) Padding(
+        padding: const EdgeInsets.fromLTRB(4, 12, 0, 8),
+        child: Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(
           fontWeight: FontWeight.w600,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         )),
       ),
       AppSettingsNavigationGroup(children: rows),
+      const SizedBox(height: 8),
     ],
   );
 
@@ -293,7 +294,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
             ]),
       ),
       _section(tr('Дополнительные правила', 'Additional rules'), [
-        AppSettingsNavigationRow(title: t(currentLocale.value, 'plan_default_times_title'),
+        AppSettingsNavigationRow(compact: true, title: t(currentLocale.value, 'plan_default_times_title'),
           leading: _symbol(AppMenuIconRole.defaultTime, selected.family),
           onTap: () => setState(() => _planningDefaultTimesOpen = true)),
         _link(tr('Фиксированное время и связь записей', 'Fixed time and record links'),
@@ -410,11 +411,6 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
         _link(tr('Длительность по тегам', 'Duration by tag'),
           AppMenuIconRole.defaultTime, LifeOsMenuAction.tagDurations),
       ]),
-    ],
-  );
-
-  Widget _people() => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       _section(tr('Люди и связи', 'People & relationships'), [
         _link(tr('Список людей и круги', 'People and circles'),
           AppMenuIconRole.people, LifeOsMenuAction.people),
@@ -494,18 +490,6 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     ],
   );
 
-  Widget _viktor() => _section(tr('Виктор', 'Viktor'), [
-    _link(tr('Голосовое управление Виктором', 'Viktor voice controls'),
-      AppMenuIconRole.microphone, LifeOsMenuAction.voiceSettings,
-      subtitle: tr('Микрофон, горячие клавиши и запуск на Windows',
-        'Microphone, hotkeys and Windows startup')),
-  ]);
-
-  Widget _health() => _section(tr('Сон', 'Sleep'), [
-    _link(tr('Подключение Xiaomi / Mi Fitness', 'Connect Xiaomi / Mi Fitness'),
-      AppMenuIconRole.health, LifeOsMenuAction.sleep),
-  ]);
-
   Widget _appearance() => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       _form(tr('Тема', 'Theme'),
@@ -529,17 +513,27 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
         ),
       ),
       const LifeOsLocaleTimezoneControls(),
+      _section(tr('Голосовое управление', 'Voice controls'), [
+        _link(tr('Виктор', 'Viktor'),
+          AppMenuIconRole.microphone, LifeOsMenuAction.voiceSettings,
+          subtitle: tr('Микрофон, горячие клавиши и запуск на Windows',
+            'Microphone, hotkeys and Windows startup')),
+      ]),
     ],
   );
 
   Widget _data() => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      _section(tr('Подключения', 'Connections'), [
+      _section('', [
         _link(tr('Календари', 'Calendars'), AppMenuIconRole.calendar,
-          LifeOsMenuAction.calendars),
-        _link(tr('Источники контактов', 'Contact sources'),
+          LifeOsMenuAction.calendars,
+          subtitle: tr('Google и Microsoft', 'Google and Microsoft')),
+        _link(tr('Контакты', 'Contacts'),
           AppMenuIconRole.people, LifeOsMenuAction.peopleSources),
+        _link(tr('Сон и здоровье', 'Sleep & health'),
+          AppMenuIconRole.health, LifeOsMenuAction.sleep,
+          subtitle: 'Xiaomi / Mi Fitness'),
       ]),
     ],
   );
@@ -635,9 +629,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     children: [
       _mobileProfileCard(),
       _mobileMenuGroup('ОРГАНИЗАЦИЯ', 'ORGANIZATION',
-        ['planning', 'notes', 'categories', 'people']),
-      _mobileMenuGroup('ЛИЧНОЕ', 'PERSONAL',
-        ['notifications', 'viktor', 'health']),
+        ['planning', 'notes', 'categories', 'notifications']),
       _mobileMenuGroup('ПРИЛОЖЕНИЕ', 'APPLICATION',
         ['data', 'appearance', 'about']),
     ],
@@ -779,10 +771,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
     'planning' => _planning(),
     'notes' => _notes(),
     'categories' => _categories(),
-    'people' => _people(),
     'notifications' => _notifications(),
-    'viktor' => _viktor(),
-    'health' => _health(),
     'data' => _data(),
     'appearance' => _appearance(),
     'about' => _about(),
@@ -801,6 +790,7 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
                 color: Theme.of(context).brightness == Brightness.dark
                     ? tab.family[200] : tab.family[700]),
             selected: _tab == tab.id,
+            showCheckmark: false,
             selectedColor: Theme.of(context).brightness == Brightness.dark
                 ? Color.alphaBlend(tab.family[500]!.withValues(alpha: 0.18),
                     Theme.of(context).colorScheme.surfaceContainerHigh)
@@ -833,16 +823,15 @@ class _LifeOsSettingsTabsPageState extends State<LifeOsSettingsTabsPage> {
                   style: Theme.of(context).textTheme.headlineLarge),
                 const SizedBox(height: 16),
                 _tabNavigation(desktop),
-                const SizedBox(height: 22),
-                Row(children: [
-                  _symbol(selected.icon, selected.family),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(_ru ? selected.ru : selected.en,
-                    style: Theme.of(context).textTheme.titleLarge)),
-                ]),
               ],
-              SizedBox(height: _planningDefaultTimesOpen ? 16 : 8),
-              _tabContent(),
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.topLeft,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: _tabContent(),
+                ),
+              ),
             ])
           : _MobileSettingsMotion(
               header: _mobilePinnedHeader(),

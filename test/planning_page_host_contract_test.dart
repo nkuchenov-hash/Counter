@@ -74,6 +74,29 @@ void main() {
   });
 
   group('PlanningPage host contract', () {
+    testWidgets('Desktop settings have no empty intermediary tabs or repeated heading', (tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final ru = currentLocale.value.startsWith('ru');
+      String label(String russian, String english) => ru ? russian : english;
+      await tester.pumpWidget(MaterialApp(home: Scaffold(
+        body: LifeOsSettingsTabsPage(initialTab: 'health', onAction: (_) {}),
+      )));
+      await tester.pump();
+      expect(find.text(label('Интеграции', 'Integrations')), findsOneWidget);
+      expect(find.text(label('Здоровье', 'Health')), findsNothing);
+      expect(find.text(label('Календари', 'Calendars')), findsOneWidget);
+      expect(find.text(label('Контакты', 'Contacts')), findsOneWidget);
+      expect(find.text('Xiaomi / Mi Fitness'), findsOneWidget);
+      for (final chip in tester.widgetList<ChoiceChip>(find.byType(ChoiceChip))) {
+        expect(chip.showCheckmark, isFalse);
+      }
+      expect(tester.takeException(), isNull);
+    });
+
+
     for (final width in [1440.0, 390.0]) {
       testWidgets('Default plan times has one title and one navigation level at $width', (tester) async {
         tester.view.physicalSize = Size(width, 900);
