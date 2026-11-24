@@ -441,14 +441,14 @@ class AppSettingsNavigationRow extends StatelessWidget {
     this.subtitle,
     this.leading,
     this.value,
-    this.showDivider = false,
+    this.showDivider = false, this.compact = false,
   });
   final String title;
   final String? subtitle;
   final Widget? leading;
   final String? value;
   final VoidCallback? onTap;
-  final bool showDivider;
+  final bool showDivider, compact;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -463,7 +463,7 @@ class AppSettingsNavigationRow extends StatelessWidget {
           contentPadding: grouped
               ? const EdgeInsets.symmetric(horizontal: 24)
               : const EdgeInsets.fromLTRB(24, 10, 24, 10),
-          minTileHeight: grouped ? 74 : null,
+          minTileHeight: grouped ? (compact ? 56 : 74) : null,
           minVerticalPadding: 8,
           leading: leading,
           title: Text(title, style: theme.textTheme.bodyLarge?.copyWith(

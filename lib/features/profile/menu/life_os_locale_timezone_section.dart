@@ -259,13 +259,16 @@ class _LifeOsLocaleTimezoneControlsState
             // Each independent topic has its own canonical settings card.
             AppSettingsSectionCard(
               title: tr('Язык', 'Language'),
-              child: DropdownMenu<String>(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: DropdownMenu<String>(
                 key: ValueKey('inline-language-$language'),
                 initialSelection: language,
                 expandedInsets: EdgeInsets.zero,
                 enableFilter: true,
                 enableSearch: true,
-                label: Text(tr('Язык приложения', 'Application language')),
                 dropdownMenuEntries: [
                   for (final code in supportedUiLanguageCodes())
                     DropdownMenuEntry(
@@ -275,17 +278,18 @@ class _LifeOsLocaleTimezoneControlsState
                     ? null : (next) {
                         if (next != null) unawaited(_setLanguage(next));
                       },
+                  ),
+                ),
               ),
             ),
             AppSettingsSectionCard(
-              title: tr('Время', 'Time'),
+              title: tr('Часовой пояс', 'Time zone'),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(tr('Часовой пояс', 'Time zone'),
-                    style: Theme.of(context).textTheme.titleSmall),
-                  const SizedBox(height: 10),
-                  SegmentedButton<bool>(
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: SegmentedButton<bool>(
                     segments: [
                       ButtonSegment(value: true,
                         label: Text(tr('Автоматически', 'Automatic'))),
@@ -297,6 +301,7 @@ class _LifeOsLocaleTimezoneControlsState
                             _savingTimezone
                         ? null : (values) => unawaited(
                             _setAutomaticTimezone(values.first)),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   if (_timezonePreferences.automatic)
@@ -310,13 +315,16 @@ class _LifeOsLocaleTimezoneControlsState
                           ?.copyWith(color: scheme.onSurfaceVariant),
                     )
                   else
-                    DropdownMenu<String>(
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 440),
+                        child: DropdownMenu<String>(
                       key: ValueKey('inline-timezone-$selectedOption'),
                       initialSelection: selectedOption,
                       expandedInsets: EdgeInsets.zero,
                       enableFilter: true,
                       enableSearch: true,
-                      label: Text(tr('Выбрать часовой пояс', 'Select time zone')),
                       dropdownMenuEntries: [
                         for (final item in options.entries)
                           DropdownMenuEntry(value: item.key, label: item.value),
@@ -327,6 +335,8 @@ class _LifeOsLocaleTimezoneControlsState
                                 unawaited(_selectManualTimezone(next));
                               }
                             },
+                        ),
+                      ),
                     ),
                   const SizedBox(height: 18),
                   Text(tr('Быстрое переключение', 'Quick switching'),

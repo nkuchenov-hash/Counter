@@ -31,7 +31,9 @@ void main() {
     ));
     await tester.pump();
     expect(find.text('Язык'), findsOneWidget);
-    expect(find.text('Время'), findsOneWidget);
+    expect(find.text('Часовой пояс'), findsOneWidget);
+    expect(find.text('Время'), findsNothing);
+    expect(find.text('Язык приложения'), findsNothing);
     expect(find.text('Язык и время'), findsNothing);
     expect(find.byType(AppSettingsSectionCard), findsNWidgets(2));
     expect(find.byType(AppSettingsNavigationGroup), findsNothing);
