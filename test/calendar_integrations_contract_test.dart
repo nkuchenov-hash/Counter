@@ -61,7 +61,13 @@ void main() {
       'lib/features/profile/calendar_integrations/calendar_integrations_section.dart',
     ).readAsStringSync();
 
-    expect(account, contains('CalendarIntegrationsSection'));
+    final settings = File('lib/features/profile/menu/life_os_settings_tabs_page.dart').readAsStringSync();
+    final routes = File('lib/app/shell/shared/shell_more_menu.dart').readAsStringSync();
+    final profile = File('lib/features/profile/profile_view.dart').readAsStringSync();
+    expect(account, isNot(contains('CalendarIntegrationsSection')));
+    expect(settings, contains('LifeOsMenuAction.calendars'));
+    expect(routes, contains('_openProfileDestination(ProfileSettingsDestination.calendars);'));
+    expect(profile, contains('ProfileSettingsDestination.calendars => const CalendarIntegrationsSection()'));
     expect(ui, contains('calendar_integrations_fallback_category'));
     expect(ui, contains('allCategoryIdPathPairs'));
     expect(service, contains('calendarIntegrationConnect'));

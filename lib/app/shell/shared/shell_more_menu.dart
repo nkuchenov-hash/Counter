@@ -193,6 +193,7 @@ mixin ShellMoreMenu on ShellVoiceIntegration {
         break;
       case LifeOsMenuAction.syncStatus:
       case LifeOsMenuAction.diagnostics:
+        if (!DatabaseService.instance.settings.isAdmin) return;
         Navigator.of(context).push<void>(MaterialPageRoute<void>(
           builder: (_) => const LifeOsSyncStatusPage()));
         break;

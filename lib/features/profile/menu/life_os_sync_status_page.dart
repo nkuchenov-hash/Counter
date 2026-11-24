@@ -20,8 +20,9 @@ class LifeOsSyncStatusPage extends StatelessWidget {
       child: Builder(builder: (context) => Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
         appBar: AppSettingsBreadcrumbBar(
-          parentLabel: ru ? 'Профиль' : 'Profile',
-          title: ru ? 'Синхронизация' : 'Synchronization',
+          parentLabel: ru ? 'О приложении' : 'About',
+          title: ru ? 'Диагностика данных' : 'Data diagnostics',
+          alignWithSettingsBody: true,
           onBack: () => Navigator.of(context).maybePop(),
         ),
         body: ListenableBuilder(

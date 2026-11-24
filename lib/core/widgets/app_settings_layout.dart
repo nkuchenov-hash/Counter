@@ -225,13 +225,13 @@ class AppSettingsSectionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
+            if (title.isNotEmpty) Text(
+                title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                ),
               ),
-            ),
             if (subtitle != null && subtitle!.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text(
@@ -242,7 +242,7 @@ class AppSettingsSectionCard extends StatelessWidget {
                 ),
               ),
             ],
-            const SizedBox(height: 16),
+            if (title.isNotEmpty || (subtitle?.isNotEmpty ?? false)) const SizedBox(height: 16),
             child,
           ],
         ),

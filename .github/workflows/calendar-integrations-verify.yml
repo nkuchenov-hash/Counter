@@ -32,6 +32,12 @@ jobs:
           node --check pb_hooks/calendar_integrations.pb.js
           node --check pb_migrations/1785960000_calendar_integrations.js
 
+      - name: Set up Java 17 for Android Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Set up Flutter 3.41.6
         uses: subosito/flutter-action@v2
         with:
@@ -55,5 +61,9 @@ jobs:
       - name: Build web release
         run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run
 
-      - name: Build Android arm64 release
+      # Verification only: no APK artifact is published from this workflow.
+      # The canonical Android release workflow alone restores and verifies v2 signing.
+      - name: Build Android arm64 verification APK (never published)
+        env:
+          LIFE_OS_ALLOW_DEBUG_RELEASE_FOR_CI: 'true'
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons

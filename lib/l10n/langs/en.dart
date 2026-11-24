@@ -834,7 +834,7 @@ const Map<String, String> kEnL10n = {
   'auth_show_password': 'Show password',
   'auth_hide_password': 'Hide password',
   'auth_forgot_password': 'Forgot password?',
-  'auth_reset_email_sent': 'Password reset email sent. Check your inbox.',
+  'auth_reset_email_sent': 'If the account exists, you will receive a password reset email. Check your inbox.',
   'auth_reset_email_not_found':
       'No account found with this email. Check the email or register.',
   'auth_reset_mail_unavailable':

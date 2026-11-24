@@ -25,6 +25,9 @@ extension ProfileSettingsExtension on DatabaseService {
       fields['preferred_timezone'] = next.preferredTimeZone;
       fields['timezone_offset'] = next.timezoneOffsetHours;
     }
+    if (next.biometricEnabled != prev.biometricEnabled) {
+      fields['biometric_enabled'] = next.biometricEnabled;
+    }
     if (next.themeMode != prev.themeMode) {
       fields['theme_mode'] = next.themeMode;
     }
@@ -52,6 +55,41 @@ extension ProfileSettingsExtension on DatabaseService {
     if (currentLocale.value != code) {
       currentLocale.value = code;
     }
+  }
+
+  Future<bool> saveBiometricPreference(bool value) async {
+    final before = _settings;
+    bool ok = false;
+    try {
+      ok = await saveSettings(before.copyWith(biometricEnabled: value));
+    } finally {
+      if (!ok && _settings.userId == before.userId &&
+          _settings.biometricEnabled == value) {
+        _settings = _settings.copyWith(biometricEnabled: before.biometricEnabled);
+        _settingsController.add(_settings);
+      }
+    }
+    return ok;
+  }
+
+  /// One name mutation path. Do not leave an unconfirmed value in the
+  /// profile stream when the server rejects it or the device is offline.
+  Future<bool> saveDisplayName(String value) async {
+    final name = value.trim();
+    if (name.isEmpty) return false;
+    final before = _settings;
+    if (name == before.displayName?.trim()) return true;
+    bool ok = false;
+    try {
+      ok = await saveSettings(before.copyWith(displayName: name));
+    } finally {
+      if (!ok && _settings.userId == before.userId &&
+          _settings.displayName?.trim() == name) {
+        _settings = _settings.copyWith(displayName: before.displayName ?? '');
+        _settingsController.add(_settings);
+      }
+    }
+    return ok;
   }
 
   /// UI-first: update state immediately; then PocketBase PATCH on **profiles** auth row.

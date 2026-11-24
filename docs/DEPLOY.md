@@ -104,7 +104,7 @@ PocketBase Admin requirements for production:
 - Android no longer declares Supabase-era callback schemes (`io.supabase.flutter://login-callback` or `mycounter://auth`). The current PocketBase Dart SDK all-in-one OAuth flow uses the PocketBase `/api/oauth2-redirect` endpoint; no app-owned Android deep link is active yet.
 - Real-device Android Google/Yandex OAuth still must be verified after provider admin setup is complete. If the all-in-one flow cannot survive Android browser/app lifecycle behavior, add a deliberate `authWithOAuth2Code` exchange with a new app-owned redirect scheme instead of reusing Supabase callbacks.
 - Deploy `pb_hooks/auth.request_password_reset.pb.js` to the production PocketBase `pb_hooks/` directory and reload/restart PocketBase. Flutter calls `POST /api/auth/request-password-reset` so the server can check `profiles.email` without exposing broad public profile search rules.
-- The reset route returns only structured booleans (`exists`, `sent`) and never profile data. If the route is missing, Flutter falls back to PocketBase's native `profiles.requestPasswordReset(email)` endpoint, but that fallback cannot reliably distinguish unknown emails from successful sends.
+- The reset route returns a neutral acceptance response regardless of account existence, and never profile data. Legacy boolean keys are constant compatibility fields. Flutter falls back to PocketBase's native `profiles.requestPasswordReset(email)` endpoint when the route is missing; both paths show the same user-facing acceptance message. Validate mail delivery and SMTP failures through server diagnostics.
 - Settings → Mail settings:
   - SMTP enabled.
   - Correct SMTP host.

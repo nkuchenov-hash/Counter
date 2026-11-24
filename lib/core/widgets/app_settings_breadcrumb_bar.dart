@@ -33,29 +33,10 @@ class AppSettingsBreadcrumbBar extends StatelessWidget
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final desktop = shellUsesSideNavigation(MediaQuery.sizeOf(context).width);
-    // The approved 48dp frosted back control, with no extra breadcrumb row.
-    final header = Row(
-      children: [
-        AppIconButton(
-          icon: Icons.arrow_back_rounded,
-          tooltip: parentLabel,
-          onPressed: onBack,
-          variant: AppIconButtonVariant.frosted,
-          shape: AppIconButtonShape.circular,
-          size: AppIconButtonSize.l,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ],
+    final header = AppSettingsBackHeader(
+      parentLabel: parentLabel,
+      title: title,
+      onBack: onBack,
     );
 
     return AppBar(
@@ -96,4 +77,44 @@ class AppSettingsBreadcrumbBar extends StatelessWidget
       bottom: bottom,
     );
   }
+}
+
+
+/// Shared back-and-title row for pinned headers and app bars.
+class AppSettingsBackHeader extends StatelessWidget {
+  const AppSettingsBackHeader({
+    super.key,
+    required this.parentLabel,
+    required this.title,
+    required this.onBack,
+  });
+
+  final String parentLabel;
+  final String title;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      AppIconButton(
+        icon: Icons.arrow_back_rounded,
+        tooltip: parentLabel,
+        onPressed: onBack,
+        variant: AppIconButtonVariant.frosted,
+        shape: AppIconButtonShape.circular,
+        size: AppIconButtonSize.l,
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    ],
+  );
 }

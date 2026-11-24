@@ -10,10 +10,7 @@ function __authResetEmail(raw) {
 
 function __authResetClientIp(e) {
     try {
-        const info = e.requestInfo();
-        const fwd = (info.headers["x-forwarded-for"] || "").split(",")[0].trim();
-        if (fwd) return fwd;
-        return info.headers["x-real-ip"] || "";
+        return e.realIP() || e.remoteIP() || "";
     } catch (_) {
         return "";
     }
@@ -38,15 +35,18 @@ routerAdd("POST", "/api/auth/request-password-reset", (e) => {
         return e.json(429, { "error": "rate_limited" });
     }
 
+    // All valid requests have the same public response, including SMTP errors.
+    // Legacy booleans are constant compatibility fields, not account existence.
+    const accepted = { "accepted": true, "exists": true, "sent": true };
     let record = null;
     try {
         record = e.app.findAuthRecordByEmail("profiles", email);
     } catch (_) {
-        return e.json(200, { "exists": false });
+        return e.json(200, accepted);
     }
 
     if (!record) {
-        return e.json(200, { "exists": false });
+        return e.json(200, accepted);
     }
 
     try {
@@ -55,12 +55,8 @@ routerAdd("POST", "/api/auth/request-password-reset", (e) => {
         try {
             e.app.logger().error("auth.request_password_reset mail send failed", err);
         } catch (_) {}
-        return e.json(503, {
-            "exists": true,
-            "sent": false,
-            "error": "mail_unavailable",
-        });
+        return e.json(200, accepted);
     }
 
-    return e.json(200, { "exists": true, "sent": true });
+    return e.json(200, accepted);
 });

@@ -688,7 +688,7 @@ const Map<String, String> kRuL10n = {
   'auth_hide_password': 'Скрыть пароль',
   'auth_forgot_password': 'Забыли пароль?',
   'auth_reset_email_sent':
-      'Письмо для восстановления пароля отправлено. Проверьте почту.',
+      'Если аккаунт существует, вы получите письмо для восстановления пароля. Проверьте почту.',
   'auth_reset_email_not_found':
       'Аккаунт с таким email не найден. Проверьте email или зарегистрируйтесь.',
   'auth_reset_mail_unavailable':

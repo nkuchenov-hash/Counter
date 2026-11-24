@@ -735,6 +735,10 @@ void main() {
         PlanningSortModeBar(
           sortMode: PlanSortMode.custom,
           onSortModeChanged: (_) {},
+          onSettings: () {},
+          onSmart: () {},
+          settingsTooltip: 'Settings',
+          smartTooltip: 'Smart',
         ),
         Expanded(child: PlanningDaySwipeRegion(
           dayKey: '2026-11-10',
@@ -801,6 +805,10 @@ void main() {
         PlanningSortModeBar(
           sortMode: PlanSortMode.custom,
           onSortModeChanged: (_) {},
+          onSettings: () {},
+          onSmart: () {},
+          settingsTooltip: 'Settings',
+          smartTooltip: 'Smart',
         ),
         Expanded(child: PlanningDaySwipeRegion(
           onDayChange: (_) {},
@@ -828,6 +836,10 @@ void main() {
             PlanningSortModeBar(
               sortMode: PlanSortMode.custom,
               onSortModeChanged: (_) {},
+              onSettings: () {},
+              onSmart: () {},
+              settingsTooltip: 'Settings',
+              smartTooltip: 'Smart',
               desktopTitle: 'Planning',
             ),
             Expanded(child: PlanningDaySwipeRegion(

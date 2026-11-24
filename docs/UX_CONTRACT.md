@@ -820,3 +820,10 @@ The web microphone MUST capture actual audio through `record`, not browser `Spee
 ---
 
 - Category rows have no vertical color stripes and their three-dot actions are visually subdued; colors identify categories through the icon tiles. Editor has one compact icon/title breadcrumb header, no redundant preview card, a consistently visible footer Delete action, a neutral ghost Cancel and a primary Save. Advanced settings have no expansion dividers.
+
+
+## Settings organization and account changes
+
+- Keep existing desktop tabs and mobile settings presentation. About is outside Account; integrations have one normal-user destination. Detailed PocketBase queue diagnostics are admin-only; normal users receive actionable offline/auth/error state through existing status bars.
+- Nested settings use AppSettingsBackHeader through AppSettingsBreadcrumbBar or the existing pinned mobile header, with header/content alignment. Never introduce a parallel small text Back control.
+- Display-name changes use one explicit-save editor; failed server writes restore the confirmed name while preserving the editable draft. Password change verifies the old password via PocketBase, and recovery uses a separate neutral email request. App lock is capability-gated; sign-out with pending data must not silently discard queued changes.
