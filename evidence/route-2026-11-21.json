@@ -1,10 +1,21 @@
 {
-  "main_sha": "cf80b24d78c8aed0635ade9dd47d34755c2172ea",
-  "deploy_result": "skipped",
-  "checked_at_utc": "2026-11-25T22:17:02.327344+00:00",
+  "main_sha": "cfa4b903a9e98f06640a714e601a19355cfc1cd9",
+  "deploy_result": "success",
+  "checked_at_utc": "2026-11-25T22:23:34.341070+00:00",
   "database": {
-    "verified": false,
-    "reason": "production_deploy_not_successful"
+    "verified": true,
+    "matching_itineraries": 1,
+    "checks": {
+      "milyutin_completed": true,
+      "santa_gloria_completed": true,
+      "milyutin_before_santa": true,
+      "chad_1635": true,
+      "glukhovsky_1700": true,
+      "marsala_1755": true,
+      "roof_deferred": true,
+      "santa_to_chad_drive": true,
+      "chad_to_glukhovsky_drive": true
+    }
   },
-  "confirmed": false
+  "confirmed": true
 }
