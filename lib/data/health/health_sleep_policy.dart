@@ -97,7 +97,7 @@ Map<String, dynamic>? findExistingSleepRecord({
   return best;
 }
 
- 
+
 /// A device fallback fills gaps; it must not replace existing sleep or delete
 /// completed activities. The canonical server interval hook may close a prior
 /// running record at the start of an otherwise empty night.
