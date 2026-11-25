@@ -185,8 +185,11 @@ jobs:
           echo "SSH connected; detecting PocketBase service and working directory."
           if [[ "$(id -u)" -eq 0 ]]; then SUDO=""; else SUDO="sudo -n"; fi
           service_name="${POCKETBASE_SERVICE:-}"
+          if [[ -z "$service_name" ]] && systemctl is-active --quiet lifeos-recovery-live.service; then
+            service_name="lifeos-recovery-live.service"
+          fi
           if [[ -z "$service_name" ]]; then
-            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
+            service_name="$(systemctl list-units --type=service --state=running --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
           fi
           # LIFEOS2's active unit was installed as lifeos-recovery-live.service.
           # Detect it only if systemd confirms that the unit is loaded.
@@ -199,7 +202,7 @@ jobs:
             exit 1
           fi
           service_exec="$(systemctl show "$service_name" -p ExecStart --value 2>/dev/null || true)"
-          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+          pid="$(systemctl show "$service_name" -p MainPID --value 2>/dev/null || true)"
           app_dir="${POCKETBASE_DEPLOY_DIR:-}"
           if [[ -z "$app_dir" && "$service_name" == "lifeos-recovery-live.service" ]]; then
             # This recovery unit stores its live database under recovery-candidate
@@ -228,6 +231,22 @@ jobs:
           if [[ ! -x "$pb_binary" || "$service_exec" != *"$pb_binary"* ]]; then
             echo "PocketBase executable does not match active service; aborting." >&2
             exit 1
+          fi
+          # Refuse to overwrite an inactive recovery database or unrelated service.
+          if [[ -n "$pid" && "$pid" != 0 ]]; then
+            python3 - "$pid" "$app_dir/pb_data/data.db" <<'CHECKDB'
+          import os, sys
+          from pathlib import Path
+          expected = Path(sys.argv[2]).resolve()
+          opened = []
+          for entry in (Path("/proc") / sys.argv[1] / "fd").iterdir():
+              try:
+                  opened.append(Path(os.readlink(entry)).resolve())
+              except OSError:
+                  pass
+          if expected not in opened:
+              raise SystemExit("Deployment target database is not open by active PocketBase")
+          CHECKDB
           fi
           echo "Existing PocketBase service, live data path and binary verified; beginning isolated preflight."
 
@@ -382,13 +401,40 @@ jobs:
             "POCKETBASE_DEPLOY_DIR='$POCKETBASE_DEPLOY_DIR' POCKETBASE_SERVICE='$POCKETBASE_SERVICE' bash -s" > /tmp/sleep-cloud-result.txt <<'REMOTE'
           set -euo pipefail
           service_name="${POCKETBASE_SERVICE:-}"
-          if [[ -z "$service_name" ]]; then
-            service_name="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
+          if [[ -z "$service_name" ]] && systemctl is-active --quiet lifeos-recovery-live.service; then
+            service_name="lifeos-recovery-live.service"
           fi
-          pid="$(pgrep -f '[p]ocketbase.*serve' | sed -n '1p' || true)"
+          if [[ -z "$service_name" ]]; then
+            service_name="$(systemctl list-units --type=service --state=running --no-legend 2>/dev/null | awk 'tolower($1) ~ /pocketbase/ && !found {print $1; found=1}')"
+          fi
+          pid="$(systemctl show "$service_name" -p MainPID --value 2>/dev/null || true)"
           app_dir="${POCKETBASE_DEPLOY_DIR:-}"
+          service_exec="$(systemctl show "$service_name" -p ExecStart --value 2>/dev/null || true)"
+          if [[ -z "$app_dir" && "$service_name" == "lifeos-recovery-live.service" ]]; then
+            candidate="/opt/lifeos/recovery-candidate"
+            [[ "$service_exec" == *"$candidate/pb_data"* && -f "$candidate/pb_data/data.db" ]] || exit 1
+            app_dir="$candidate"
+          fi
           if [[ -z "$app_dir" && -n "$service_name" ]]; then app_dir="$(systemctl show "$service_name" -p WorkingDirectory --value 2>/dev/null || true)"; fi
-          if [[ -z "$app_dir" && -n "$pid" ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          if [[ -z "$app_dir" && -n "$pid" && "$pid" != 0 ]]; then app_dir="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"; fi
+          [[ -n "$service_name" && -f "$app_dir/pb_data/data.db" && -n "$pid" && "$pid" != 0 ]] || exit 1
+          # Verify the exact database opened by the active process, not a
+          # schema-only SQLite file left by a recovery candidate or old unit.
+          python3 - "$pid" "$app_dir/pb_data/data.db" <<'CHECKDB'
+          import os, sys
+          from pathlib import Path
+          expected = Path(sys.argv[2]).resolve()
+          fd = Path("/proc") / sys.argv[1] / "fd"
+          opened = []
+          for entry in fd.iterdir():
+              try:
+                  opened.append(Path(os.readlink(entry)).resolve())
+              except OSError:
+                  pass
+          if expected not in opened:
+              raise SystemExit("Verification database is not open by active PocketBase")
+          print("live_database_verified=true")
+          CHECKDB
 
           hook_line="$(journalctl -u "$service_name" --since '15 minutes ago' --no-pager 2>/dev/null | grep '\[ETNIKA_HOMEPAGE_PATH_ONCE\]' | tail -1 || true)"
           hook_status="no_log"
