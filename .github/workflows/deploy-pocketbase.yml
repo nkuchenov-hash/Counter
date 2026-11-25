@@ -43,6 +43,7 @@ jobs:
           """Regression checks for the server-only Xiaomi sleep bridge (no real credentials)."""
           import asyncio
           import importlib.util
+          import json
           import sys
           import types
           import unittest
@@ -94,6 +95,18 @@ jobs:
                   with patch.object(bridge, "_probe_region", probe):
                       with self.assertRaises(bridge.XiaomiCloudTimeout):
                           await bridge._select_sleep_region(Path("unused"), 1, 0, 1, 30, 1)
+
+              def test_nested_sleep_formats_and_no_stage_import(self):
+                  from datetime import timedelta
+                  end = int((datetime.now(timezone.utc) - timedelta(hours=1)).timestamp())
+                  start = end - 8 * 3600
+                  interval = {"bedtime": start, "device_wake_up_time": end}
+                  for value in (interval, json.dumps([interval]), json.dumps(json.dumps({"sleep_data": interval})),
+                                {"segmentDetails": [{"bedTime": start * 1000, "wakeUpTime": end * 1000}]}):
+                      with self.subTest(value_type=type(value).__name__):
+                          self.assertEqual(len(bridge._sessions_from_rows([{"key":"sleep","value":value}])), 1)
+                  self.assertEqual(bridge._sessions_from_rows([{"key":"sleep","value":{"items":[{"start_time":start,"end_time":end,"stage":2}]}}]), {})
+                  self.assertEqual(bridge._sessions_from_rows([{"key":"steps","value":interval}]), {})
 
               async def test_valid_empty_response_is_not_auth_failure(self):
                   async def probe(*args):
@@ -441,6 +454,7 @@ jobs:
           # SDK logs, account identifiers, tokens or exception messages.
           /opt/lifeos-xiaomi-sleep/bin/python - "$app_dir" <<'XIAOMI_PROBE' 2>/dev/null || echo "xiaomi_probe=failed"
           import asyncio, json, os, shutil, sqlite3, sys, tempfile
+          from collections import Counter
           from datetime import datetime, timezone
           from pathlib import Path
           from loguru import logger
@@ -474,6 +488,7 @@ jobs:
                   ("relative_latest","GET", b.XIAOMI_LATEST_PATH, {"relative_uid":uid}),
                   ("self_raw","POST",b.XIAOMI_SELF_FITNESS_PATH,{"data":json.dumps({"key":"sleep","startTime":recent*1000,"endTime":end*1000,"reverse":True,"next_key":None})}),
                   ("self_aggregate","POST",b.XIAOMI_SELF_AGGREGATED_PATH,{"data":json.dumps({"key":"sleep","tag":"daily_report","startTime":old*1000,"endTime":end*1000,"reverse":True,"cursor":None})}),
+                  ("self_daily_fitness","POST",b.XIAOMI_SELF_AGGREGATED_PATH,{"data":json.dumps({"key":"sleep","tag":"daily_fitness","startTime":old*1000,"endTime":end*1000,"reverse":True,"cursor":None})}),
               ]
               async with MiHealthClient.from_token(copy, base_url=base) as client:
                   for label, method, endpoint, params in requests:
@@ -486,6 +501,36 @@ jobs:
                           latest = b._latest_end_epoch(sessions)
                           day = datetime.fromtimestamp(latest,timezone.utc).date().isoformat() if latest else "none"
                           print(f"xiaomi_probe {region} {label} rows={len(rows)} sessions={len(sessions)} latest_day={day}", flush=True)
+                          if rows and not sessions:
+                              # Report only field names from this fixed schema
+                              # vocabulary and counts, never raw data or IDs.
+                              fields = {"bedtime","bed_time","bedTime","wake_up_time","device_wake_up_time","wakeUpTime","deviceWakeUpTime","start","end","start_time","end_time","startTime","endTime","time","duration","sleep_duration","sleep_stage","stage","type","status","segment_details","segmentDetails","items","sleep","sleep_data","sleepData","data","value","key","data_type","sleep_deep_duration","sleep_light_duration","sleep_rem_duration","sleep_awake_duration"}
+                              kinds, shapes, values, depths = Counter(), Counter(), Counter(), Counter()
+                              def visit(node, level=0):
+                                  if level > 4:
+                                      return
+                                  node = b._decode_value(node)
+                                  if isinstance(node, dict):
+                                      shapes.update([",".join(sorted(set(node) & fields)) or "other_fields"])
+                                      depths.update([level])
+                                      for k in ("value","items","segment_details","segmentDetails","sleep","sleep_data","sleepData","data"):
+                                          if k in node:
+                                              visit(node[k],level+1)
+                                  elif isinstance(node,list):
+                                      for child in node[:20]:
+                                          visit(child,level+1)
+                              for record in rows:
+                                  if not isinstance(record,dict):
+                                      kinds.update(["non_object"])
+                                      continue
+                                  kind = str(record.get("key") or record.get("data_type") or "").lower()
+                                  kinds.update(["sleep" if kind=="sleep" else "missing" if not kind else "other"])
+                                  values.update([type(b._decode_value(record.get("value"))).__name__])
+                                  visit(record)
+                              print(f"xiaomi_shape {region} {label} kinds={dict(kinds)} values={dict(values)} fields={shapes.most_common(12)}",flush=True)
+                              result = response.get("result")
+                              if isinstance(result,dict):
+                                  print(f"xiaomi_paging {region} {label} has_more={bool(result.get('has_more'))} has_cursor={bool(result.get('next_key'))}",flush=True)
                       except Exception as e:
                           http = getattr(e,"status_code",0)
                           code = getattr(e,"code",0)

@@ -140,21 +140,29 @@ def _safe_session(start_raw: Any, end_raw: Any) -> dict[str, Any] | None:
     }
 
 
+def _decode_value(value: Any) -> Any:
+    # Some Xiaomi raw values are JSON arrays or double-encoded JSON objects.
+    for _ in range(2):
+        if not isinstance(value, str) or not value:
+            break
+        try:
+            value = json.loads(value)
+        except (TypeError, ValueError):
+            return None
+    return value
+
+
 def _value_object(row: Any) -> dict[str, Any]:
     if not isinstance(row, dict):
         return {}
-    value = row.get("value")
-    if value is None and ("bedtime" in row or "segment_details" in row):
-        return row
+    value = _decode_value(row.get("value"))
     if isinstance(value, dict):
         return value
-    if not isinstance(value, str) or not value:
-        return {}
-    try:
-        parsed = json.loads(value)
-    except (TypeError, ValueError, json.JSONDecodeError):
-        return {}
-    return parsed if isinstance(parsed, dict) else {}
+    if isinstance(value, list):
+        return {"segment_details": value}
+    if value is None:
+        return row
+    return {}
 
 
 def _rows_from_response(response: Any) -> list[Any]:
@@ -171,42 +179,48 @@ def _rows_from_response(response: Any) -> list[Any]:
     return rows if isinstance(rows, list) else []
 
 
+def _explicit_sleep_interval(value: dict[str, Any]) -> dict[str, Any] | None:
+    # Whole sleep boundaries only. Generic stage start/end/time are not
+    # sufficient evidence of a completed sleep session.
+    start = value.get("bedtime") or value.get("bed_time") or value.get("bedTime")
+    end = (value.get("wake_up_time") or value.get("device_wake_up_time")
+           or value.get("wakeUpTime") or value.get("deviceWakeUpTime"))
+    return _safe_session(start, end)
+
+
+def _sleep_candidates(value: Any, depth: int = 0):
+    if depth > 4:
+        return
+    value = _decode_value(value)
+    if isinstance(value, list):
+        for item in value:
+            yield from _sleep_candidates(item, depth + 1)
+    elif isinstance(value, dict):
+        # Prefer explicitly aggregated intervals where provided.
+        segments = _decode_value(value.get("segment_details") or value.get("segmentDetails"))
+        if isinstance(segments, list) and segments:
+            yield from _sleep_candidates(segments, depth + 1)
+            return
+        yield value
+        for key in ("sleep", "sleep_data", "sleepData", "data", "items"):
+            if key in value:
+                yield from _sleep_candidates(value[key], depth + 1)
+
+
 def _sessions_from_rows(rows: Any) -> dict[str, dict[str, Any]]:
     sessions: dict[str, dict[str, Any]] = {}
     if not isinstance(rows, list):
         return sessions
     for row in rows:
-        value = _value_object(row)
-        # A daily report contains whole-sleep segments, whereas raw sleep
-        # rows carry the whole interval directly; their items are sleep stages.
-        # Never turn individual stage start/end timestamps into Timeline sleep.
-        segments = value.get("segment_details")
-        candidates = segments if isinstance(segments, list) and segments else [value]
-        for segment in candidates:
-            if not isinstance(segment, dict):
-                continue
-            normalized = _safe_session(
-                segment.get("bedtime"),
-                segment.get("wake_up_time") or segment.get("device_wake_up_time"),
-            )
+        if not isinstance(row, dict):
+            continue
+        kind = str(row.get("key") or row.get("data_type") or "").lower()
+        if kind and kind != "sleep":
+            continue
+        for candidate in _sleep_candidates(_value_object(row)):
+            normalized = _explicit_sleep_interval(candidate)
             if normalized:
                 sessions[normalized["external_id"]] = normalized
-        # Some older API responses wrap whole-sleep intervals in items.
-        # Only accept explicit bedtime/wake fields, not stage boundaries.
-        if not segments and not any(
-            key in value for key in ("bedtime", "wake_up_time", "device_wake_up_time")
-        ):
-            items = value.get("items")
-            if isinstance(items, list):
-                for item in items:
-                    if not isinstance(item, dict):
-                        continue
-                    normalized = _safe_session(
-                        item.get("bedtime"),
-                        item.get("wake_up_time") or item.get("device_wake_up_time"),
-                    )
-                    if normalized:
-                        sessions[normalized["external_id"]] = normalized
     return sessions
 
 
