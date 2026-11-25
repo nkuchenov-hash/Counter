@@ -1,10 +1,10 @@
 {
-  "main_sha": "f12d25829bca9aafc39dd17031b56dfca3d96352",
-  "deploy_result": "success",
-  "checked_at_utc": "2026-11-25T07:54:25.784205+00:00",
+  "main_sha": "962edf27eb07055e12be2cc74cf9aa1d3c7ffcfe",
+  "deploy_result": "skipped",
+  "checked_at_utc": "2026-11-25T08:04:32.985974+00:00",
   "database": {
     "verified": false,
-    "reason": "production_read_only_probe_failed"
+    "reason": "production_deploy_not_successful"
   },
   "confirmed": false
 }
