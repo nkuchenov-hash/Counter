@@ -36,7 +36,7 @@ Authenticated self-account data family:
 - `/app/v1/data/get_aggregated_fitness_data_by_time`
 - `/app/v1/data/get_fitness_data_by_time`
 
-The self-account data endpoints use Xiaomi's encrypted **POST** request path with a JSON-encoded `data` argument, camelCase `startTime` / `endTime` in milliseconds, and do not require `relative_uid`. The relatives endpoints use the library's current GET path. Neither family may short-circuit the other merely because it returned one or more old rows.
+The self-account data endpoints use Xiaomi's encrypted **POST** request path (and probe encrypted GET as an alternative for raw sleep when POST does not yield fresh intervals) with a JSON-encoded `data` argument, camelCase `startTime` / `endTime` in milliseconds, and do not require `relative_uid`. The relatives endpoints use the library's current GET path. Neither family may short-circuit the other merely because it returned one or more old rows.
 
 The bridge reconciles aggregate + latest + raw relatives data with self-account aggregate/raw data on every pass. Daily-report `segment_details` and direct raw intervals (`bedtime` with `wake_up_time` or `device_wake_up_time`) are both accepted; individual stage timestamps must never be imported as separate sleep sessions. Raw JSON arrays, nested sleep objects and camelCase whole-sleep boundaries are accepted, but explicitly non-sleep rows are rejected. Production diagnostics distinguish row counts, normalized interval counts, and allowlisted structural field counts without exposing raw health payloads. If the primary regional backend has no completed sleep ending on or after profile-local midnight, it probes the known Xiaomi Health regions and keeps the freshest successful result. Yesterday's sleep must not suppress today's region fallback.
 
@@ -157,3 +157,5 @@ Never expose Xiaomi credentials, token files, user ids, server secrets, or raw a
 ## Device recovery when Xiaomi Cloud is unavailable
 
 Xiaomi Cloud remains the primary shared source. On a supported Android or iOS device, an explicit recovery control reuses the existing authorized Health Connect / Apple Health adapter and the canonical offline-first record write path. A 14-day minimum lookback recovers missing nights even after earlier empty reads. The fallback never updates an existing sleep or deletes an overlapping completed activity; conflicting nights are skipped. Only a prior open timer may be closed by the canonical server interval hook. The device path requires operating-system consent and depends on Mi Fitness exporting sleep locally. It is not evidence that Xiaomi Cloud has recovered.
+
+The regional fallback includes the international `region.hlth.io.mi.com` hostname. The GET alternative is based on the public mihealth-api client implementation; actual account compatibility and production sleep import must be confirmed separately.

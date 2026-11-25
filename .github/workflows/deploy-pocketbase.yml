@@ -96,6 +96,18 @@ jobs:
                       with self.assertRaises(bridge.XiaomiCloudTimeout):
                           await bridge._select_sleep_region(Path("unused"), 1, 0, 1, 30, 1)
 
+              async def test_self_get_recovers_when_post_has_no_sleep(self):
+                  end = int(datetime.now(timezone.utc).timestamp()) - 3600
+                  start = end - 8 * 3600
+                  class Client:
+                      async def _request(self, method, path, **kwargs):
+                          if method == "GET" and path == bridge.XIAOMI_SELF_FITNESS_PATH:
+                              return {"code": 0, "result": {"data_list": [{"key": "sleep", "value": {"bedtime": start, "device_wake_up_time": end}}]}}
+                          return {"code": 0, "result": {"data_list": []}}
+                  stats = {"success": 0, "errors": []}
+                  sessions = await bridge._fetch_self_sleep_api(Client(), start, end + 3600, 30, stats)
+                  self.assertEqual(len(sessions), 1)
+
               def test_nested_sleep_formats_and_no_stage_import(self):
                   from datetime import timedelta
                   end = int((datetime.now(timezone.utc) - timedelta(hours=1)).timestamp())
@@ -487,6 +499,8 @@ jobs:
                   ("relative_raw","GET", b.XIAOMI_FITNESS_PATH, {"relative_uid":uid,"key":"sleep","start_time":old,"end_time":end,"limit":30}),
                   ("relative_latest","GET", b.XIAOMI_LATEST_PATH, {"relative_uid":uid}),
                   ("self_raw","POST",b.XIAOMI_SELF_FITNESS_PATH,{"data":json.dumps({"key":"sleep","startTime":recent*1000,"endTime":end*1000,"reverse":True,"next_key":None})}),
+                  ("self_raw_get","GET",b.XIAOMI_SELF_FITNESS_PATH,{"data":json.dumps({"key":"sleep","startTime":recent*1000,"endTime":end*1000,"reverse":True,"next_key":None})}),
+                  ("self_aggregate_get","GET",b.XIAOMI_SELF_AGGREGATED_PATH,{"data":json.dumps({"key":"sleep","tag":"daily_report","startTime":old*1000,"endTime":end*1000,"reverse":True,"cursor":None})}),
                   ("self_aggregate","POST",b.XIAOMI_SELF_AGGREGATED_PATH,{"data":json.dumps({"key":"sleep","tag":"daily_report","startTime":old*1000,"endTime":end*1000,"reverse":True,"cursor":None})}),
                   ("self_daily_fitness","POST",b.XIAOMI_SELF_AGGREGATED_PATH,{"data":json.dumps({"key":"sleep","tag":"daily_fitness","startTime":old*1000,"endTime":end*1000,"reverse":True,"cursor":None})}),
               ]

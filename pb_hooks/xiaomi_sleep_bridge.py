@@ -26,6 +26,7 @@ XIAOMI_HEALTH_BASE_URL = os.environ.get(
 ).rstrip("/")
 XIAOMI_HEALTH_REGION_URLS = (
     "https://hlth.io.mi.com",
+    "https://region.hlth.io.mi.com",
     "https://ru.hlth.io.mi.com",
     "https://de.hlth.io.mi.com",
     "https://i2.hlth.io.mi.com",
@@ -42,10 +43,9 @@ XIAOMI_LATEST_PATH = "/app/v1/relatives/get_latest_data"
 XIAOMI_SELF_AGGREGATED_PATH = "/app/v1/data/get_aggregated_fitness_data_by_time"
 XIAOMI_SELF_FITNESS_PATH = "/app/v1/data/get_fitness_data_by_time"
 
-# Five serial endpoint calls per region; two bounded regional phases must fit
-# below the PocketBase subprocess hard limit of 90 seconds.
+# Two bounded regional phases must fit below the 90-second subprocess limit.
 XIAOMI_REQUEST_TIMEOUT_SECONDS = 6.0
-XIAOMI_REGION_TIMEOUT_SECONDS = 35.0
+XIAOMI_REGION_TIMEOUT_SECONDS = 40.0
 
 
 class XiaomiCloudUnavailable(RuntimeError):
@@ -346,6 +346,25 @@ async def _fetch_self_sleep_api(
     except Exception:
         pass
 
+    # The international self-account API has also been observed to accept
+    # encrypted GET with the same JSON data envelope. Try it if POST did not
+    # yield an explicit sleep interval; do not treat non-sleep rows as success.
+    if not sessions or _latest_end_epoch(sessions) < end - 2 * 86400:
+        try:
+            response = await _query_sleep(client, stats,
+                "GET",
+                XIAOMI_SELF_FITNESS_PATH,
+                params={"data": json.dumps({
+                    "key": "sleep",
+                    "startTime": start * 1000,
+                    "endTime": end * 1000,
+                    "reverse": True,
+                    "next_key": None,
+                }, separators=(",", ":"))},
+            )
+            sessions.update(_sessions_from_rows(_rows_from_response(response)))
+        except Exception:
+            pass
     return sessions
 
 
