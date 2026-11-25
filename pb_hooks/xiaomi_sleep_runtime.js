@@ -422,7 +422,11 @@ function __xiaomiRunConnection(app, connection) {
     connection.set("last_sleep_count", sessions.length);
     connection.set("last_activity_count", 0);
     if (fullDue) connection.set("last_full_sync_at", now.toISOString());
-    connection.set("last_error", missingExpectedSleep ? "xiaomi_sleep_not_available_today" : "");
+    var sourceStatus = String(payload.source_status || "");
+    var missingReason = sourceStatus === "network_unavailable" ? "XiaomiCloudUnavailable"
+        : sourceStatus === "authorization_failed" ? "XiaomiCloudAuthError"
+        : "xiaomi_sleep_not_available_today";
+    connection.set("last_error", missingExpectedSleep ? missingReason : "");
     app.save(connection);
     __xiaomiDisableGoogleProviders(app, userId);
     return { sessions: sessions.length, imported: imported, sleep: sessions.length };
@@ -625,6 +629,7 @@ function run(e) {
 function remove(e) {
     var connection = __xiaomiConnection(e.app, e.auth.id, false);
     __xiaomiRemove(__xiaomiTokenPath(e.auth.id));
+    __xiaomiRemove(__xiaomiTokenPath(e.auth.id) + ".route.json");
     __xiaomiRemove(__xiaomiStatePath(e.auth.id));
     if (connection) e.app.delete(connection);
     __xiaomiDisableGoogleProviders(e.app, e.auth.id);

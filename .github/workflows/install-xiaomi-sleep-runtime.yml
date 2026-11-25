@@ -39,3 +39,140 @@ jobs:
           assert bridge and XiaomiAuth and MiHealthClient
           print('xiaomi_bridge=valid')
           PY
+
+      - name: Exercise endpoint failover, remembered route, and cache safety without credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import asyncio, json, tempfile, time, unittest
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from unittest.mock import patch
+          from pb_hooks import xiaomi_sleep_bridge as b
+
+          A = "https://ru.hlth.io.mi.com"
+          B = "https://ru.hlth.xiaomiwear.com"
+          C = "https://de.hlth.io.mi.com"
+          OK = {"success": 1, "errors": []}
+          DOWN = {"success": 0, "errors": ["TimeoutError"]}
+          AUTH = {"success": 0, "errors": ["XiaomiCloudAuthError"]}
+          def session(end, hours=8):
+              start = end - hours * 3600
+              return {"start": datetime.fromtimestamp(start, timezone.utc).isoformat(),
+                      "end": datetime.fromtimestamp(end, timezone.utc).isoformat()}
+
+          class RouteTests(unittest.IsolatedAsyncioTestCase):
+              def setUp(self):
+                  self.tmp = tempfile.TemporaryDirectory()
+                  self.addCleanup(self.tmp.cleanup)
+                  self.token = Path(self.tmp.name) / "test.token.json"
+                  self.token.write_text("{}")
+                  self.now = int(time.time())
+                  self.fresh = {"new": session(self.now - 60)}
+                  self.cutoff = self.now - 3600
+                  self.calls = []
+                  self.responses = {}
+                  for name, value in (("XIAOMI_HEALTH_BASE_URL", A),
+                                      ("XIAOMI_HEALTH_REGION_URLS", (A, B, C))):
+                      mock = patch.object(b, name, value)
+                      mock.start()
+                      self.addCleanup(mock.stop)
+                  async def probe(token, uid, host, start, end, limit):
+                      self.calls.append(host)
+                      await asyncio.sleep(0)
+                      return self.responses.get(host, ({}, DOWN))
+                  mock = patch.object(b, "_probe_region", probe)
+                  mock.start()
+                  self.addCleanup(mock.stop)
+
+              async def sync(self, diagnostics=None):
+                  return await b._select_sleep_region(
+                      self.token, 1, self.now - 14*86400, self.now, 30,
+                      self.cutoff, diagnostics=diagnostics)
+
+              async def test_verified_alias_is_a_builtin_candidate(self):
+                  self.assertIn(B, b._route_candidates())
+                  self.responses[B] = (self.fresh, OK)
+                  sessions, selected = await self.sync()
+                  self.assertEqual((sessions, selected), (self.fresh, B))
+                  self.calls.clear()
+                  await self.sync()
+                  self.assertEqual(self.calls, [B])
+                  state = json.loads(b._route_cache_path(self.token).read_text())
+                  self.assertEqual(state["preferred"], B)
+                  self.assertIn(A, state["cooldowns"])
+                  self.assertEqual(b._route_cache_path(self.token).stat().st_mode & 0o777, 0o600)
+
+              async def test_remembered_route_fails_over_again(self):
+                  self.responses[B] = (self.fresh, OK)
+                  await self.sync()
+                  self.responses[B] = ({}, DOWN)
+                  self.responses[C] = (self.fresh, OK)
+                  # A third route failed in the previous pass; after its
+                  # cooldown expires it may become eligible again.
+                  cache = b._route_cache_path(self.token)
+                  doc = json.loads(cache.read_text())
+                  doc["cooldowns"].pop(C, None)
+                  cache.write_text(json.dumps(doc))
+                  self.calls.clear()
+                  _, selected = await self.sync()
+                  self.assertEqual(selected, C)
+                  self.assertEqual(self.calls, [B, C])
+                  self.calls.clear()
+                  await self.sync()
+                  self.assertEqual(self.calls, [C])
+
+              async def test_untrusted_cache_never_receives_credentials(self):
+                  b._route_cache_path(self.token).write_text(json.dumps({
+                      "preferred": "https://example.invalid", "confirmed_at": self.now,
+                      "cooldowns": {A: self.now + 999999},
+                  }))
+                  self.responses[A] = (self.fresh, OK)
+                  await self.sync()
+                  self.assertEqual(self.calls, [A])
+
+              async def test_corrupt_cache_does_not_block_import(self):
+                  b._route_cache_path(self.token).write_text("{broken")
+                  self.responses[A] = (self.fresh, OK)
+                  self.assertEqual((await self.sync())[1], A)
+
+              async def test_empty_wrong_region_cannot_mask_known_route_timeout(self):
+                  self.responses[B] = ({}, OK)
+                  with self.assertRaises(b.XiaomiCloudTimeout):
+                      await self.sync()
+
+              async def test_authorization_failure_not_reported_as_empty_sleep(self):
+                  self.responses[A] = ({}, AUTH)
+                  self.responses[B] = ({}, OK)
+                  with self.assertRaises(b.XiaomiCloudAuthError):
+                      await self.sync()
+
+              async def test_valid_empty_primary_is_not_an_outage(self):
+                  self.responses[A] = ({}, OK)
+                  diag = {}
+                  sessions, selected = await self.sync(diag)
+                  self.assertEqual(sessions, {})
+                  self.assertEqual(diag["source_status"], "no_fresh_sleep")
+
+              async def test_missing_history_from_other_region_is_recovered_without_revisions(self):
+                  old = {"old": session(self.now - 86400),
+                         "revision": session(self.now - 60, 7)}
+                  self.responses[A] = (old, OK)
+                  self.responses[B] = (self.fresh, OK)
+                  sessions, selected = await self.sync()
+                  # Ensure the freshest response wins on identical latest ends
+                  # by making the first region stale instead.
+                  self.assertIn("old", sessions)
+                  self.assertEqual(len(sessions), 2)
+
+              async def test_all_routes_on_cooldown_still_retry(self):
+                  b._save_route_state(self.token, B, self.now,
+                                      {host: self.now + 100 for host in (A,B,C)})
+                  self.responses[B] = (self.fresh, OK)
+                  _, selected = await self.sync()
+                  self.assertEqual(selected, B)
+                  self.assertIn(B, self.calls)
+
+          unittest.main()
+          PY
