@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `c2a170c9` on 2026-11-25.**
+**Generated from input HEAD `4600edbe` on 2026-11-25.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -4735,7 +4735,7 @@ EN:
 - **Why needed:** The CI system loads `.github/workflows/android-apk-build.yml` to run its declared triggers, permissions, jobs, and checks.
 - **Contents:** YAML workflow definition specific to `android-apk-build.yml`.
 - **Repository role:** CI/deployment
-- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `CHANGELOG.md`, `docs/APP_STRUCTURE.md`, `docs/DEPLOY.md`.
+- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `.github/workflows/viktor-record-resize-verify.yml`, `CHANGELOG.md`, `docs/APP_STRUCTURE.md`, `docs/DEPLOY.md`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
 - **Confidence:** HIGH
@@ -15057,8 +15057,8 @@ RU:
 
 EN:
 
-- **Human purpose:** Brain helper for data/sync — viktor plan note. Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What this is:** Brain helper for data/sync — viktor plan note.
+- **Human purpose:** Brain helper for data/sync — Converts Viktor plan notes into canonical editable NoteDocument headings, dividers, paragraphs and checklist projections. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — Converts Viktor plan notes into canonical editable NoteDocument headings, dividers, paragraphs and checklist projections.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
 - **Contents:** Dart helpers and types (logic in `viktor_plan_note`).
 - **Repository role:** Brain/data
@@ -15067,10 +15067,10 @@ EN:
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain/data
-- **Responsibilities:** viktor plan note
+- **Responsibilities:** Converts Viktor plan notes into canonical editable NoteDocument headings, dividers, paragraphs and checklist projections
 - **When to open:** When behavior tied to `viktor_plan_note.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
-- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor plan note
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: Converts Viktor plan notes into canonical editable NoteDocument headings, dividers, paragraphs and checklist projections
 
 RU:
 
