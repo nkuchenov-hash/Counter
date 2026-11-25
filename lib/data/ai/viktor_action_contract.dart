@@ -559,6 +559,34 @@ class ViktorActionBatch {
              'start_record', 'stop_record',
            }.contains(a.name)));
 
+
+  /// Normalize representation only; strict validation still runs afterwards.
+  static List<dynamic> normalizeProviderCreateArguments(List<dynamic> raw) {
+    return raw.map<dynamic>((item) {
+      if (item is! Map || item['name'] != 'create_plan' ||
+          item['arguments'] is! Map) return item;
+      final args = Map<dynamic, dynamic>.from(item['arguments'] as Map);
+      final time = args['start_time'];
+      if (time is String) {
+        final m = RegExp(r'^(\d{1,2})[:.-](\d{2})$')
+            .firstMatch(time.trim());
+        if (m != null && int.parse(m[1]!) < 24 &&
+            int.parse(m[2]!) < 60) {
+          args['start_time'] = '${m[1]!.padLeft(2, '0')}:${m[2]}';
+        }
+      }
+      final duration = args['duration_minutes'];
+      if (duration is String && RegExp(r'^\d{1,4}$').hasMatch(duration)) {
+        args['duration_minutes'] = int.parse(duration);
+      } else if (duration is double && duration.isFinite &&
+          duration >= 10 && duration <= 1440 &&
+          duration == duration.roundToDouble()) {
+        args['duration_minutes'] = duration.toInt();
+      }
+      return {...item, 'arguments': args};
+    }).toList(growable: false);
+  }
+
   factory ViktorActionBatch.fromJson(Map<String, dynamic> raw) {
     _onlyKeys(raw, const {'version', 'request_id', 'actions'});
     if (raw['version'] != version) {

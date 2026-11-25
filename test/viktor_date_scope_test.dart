@@ -1,4 +1,6 @@
+import 'package:counter/data/ai/viktor_action_contract.dart';
 import 'package:counter/data/ai/viktor_date_scope.dart';
+import 'package:counter/data/ai/viktor_plan_note.dart';
 import 'package:counter/data/ai/viktor_existing_plan.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +8,83 @@ import 'package:timezone/data/latest.dart' as tz_data;
 
 void main() {
   setUpAll(tz_data.initializeTimeZones);
+
+  test('Forwarded appointment note uses native editable blocks and mirrors', () {
+    const source = 'Запись на 07/12 в 10-00 ЛОР. Клиника Пример, '
+        'ул. Примерная, 9, телефон 8(812)000-00-00 '
+        'подойти за 30 минут в регистратуру ДМС с собой паспорт родителя, '
+        'полис, СНИЛС, маска и мед. Документы';
+    final doc = viktorPlanNoteDocument(source);
+    expect(doc.blocks.where((b) => b.type == NoteBlockType.heading)
+        .map((b) => b.text), ['Информация', 'Перед посещением', 'С собой']);
+    expect(doc.blocks.where((b) => b.type == NoteBlockType.divider), hasLength(2));
+    expect(doc.toChecklistProjection(), [
+      {'text': 'паспорт родителя', 'done': false},
+      {'text': 'полис', 'done': false},
+      {'text': 'СНИЛС', 'done': false},
+      {'text': 'маска', 'done': false},
+      {'text': 'мед. Документы', 'done': false},
+    ]);
+    final restored = NoteDocument.tryParse(
+        notesDeltaJson: doc.encode(), notesPlain: doc.toPlainText(),
+        checklist: doc.toChecklistProjection());
+    expect(restored.toChecklistProjection(), doc.toChecklistProjection());
+    expect(restored.blocks.where((b) => b.type == NoteBlockType.divider),
+        hasLength(2));
+    expect(restored.toPlainText(), contains('подойти за 30 минут'));
+    expect(restored.toPlainText(), contains('8(812)000-00-00'));
+    expect(restored.blocks.map((b) => b.id).toSet().length, doc.blocks.length);
+  });
+
+  test('Provider note formatting creates canonical headings and checkboxes', () {
+    final doc = viktorPlanNoteDocument(
+        '## Подготовка\n- [ ] Документы\n---\nОбычный текст');
+    expect(doc.blocks.map((b) => b.type), [
+      NoteBlockType.heading, NoteBlockType.checklist,
+      NoteBlockType.divider, NoteBlockType.paragraph,
+    ]);
+    expect(doc.toChecklistProjection(), [{'text': 'Документы', 'done': false}]);
+    expect(viktorPlanNoteDocument('Обычная заметка').blocks.single.text,
+        'Обычная заметка');
+  });
+
+
+  test('Forwarded Russian appointment keeps clock, date and all instructions', () {
+    const message = 'Запись на 07/12 в 10-00 оперирующий ЛОР. '
+        'Клиника Пример, г СПб, ул. Примерная, 9, телефон 8(812)000-00-00 '
+        'подойти за 30 минут до приёма, с собой паспорт, полис, СНИЛС.';
+    final result = ViktorDateScope.forwardedTimedPlan(
+        input: message, profileToday: DateTime(2026, 11, 25),
+        requestId: 'viktor_test_appointment');
+    expect(result, isNotNull);
+    final args = result!.actions.single.arguments;
+    expect(args['wall_day'], '2026-12-07');
+    expect(args['start_time'], '10:00');
+    expect(args['duration_minutes'], 30);
+    expect(args['title'], 'Запись: оперирующий ЛОР.');
+    expect(args['note'], message);
+    expect(args['timezone'], 'Europe/Moscow');
+    expect(args['conflict_policy'], 'reject');
+  });
+
+  test('Forwarded booking supports dotted and named dates, including year rollover', () {
+    ViktorActionBatch? parse(String input) => ViktorDateScope.forwardedTimedPlan(
+        input: input, profileToday: DateTime(2026, 12, 30),
+        requestId: 'viktor_test_booking');
+    expect(parse('Бронь на 02.01 в 19:30 Ресторан')!
+        .actions.single.arguments['wall_day'], '2027-01-02');
+    expect(parse('Встреча 2 января 2027 в 9:05 Проект')!
+        .actions.single.arguments['start_time'], '09:05');
+    expect(parse('Запись на 31/02 в 10:00 Приём'), isNull);
+    expect(parse('Запись на 02/01/2026 в 10:00 Приём'), isNull);
+    expect(parse('Запись на 02/01 в 25:00 Приём'), isNull);
+    expect(parse('Запись на 02/01 в 10:00 Приём?'), isNull);
+    expect(parse('Запись на 02/01 в 10:00 Приём до 11:00'), isNull);
+    expect(parse('Запись на 02/01 в 10:00 Приём 45 минут'), isNull);
+    expect(parse('Запись на 02/01 в 10:00 Приём отменён'), isNull);
+    expect(parse('Перенеси запись на 02/01 в 10:00 Приём'), isNull);
+  });
+
 
   test('UTC plan instant projects to Moscow rather than NY clock', () {
     final utc = DateTime.utc(2026, 10, 24, 17);

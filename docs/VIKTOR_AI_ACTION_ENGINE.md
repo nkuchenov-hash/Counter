@@ -171,3 +171,10 @@ integration tests, web release build and Android ARM64 smoke if shared
 runtime changes. Update `CHANGELOG.md`, `ARCHITECTURE.md`,
 `UX_CONTRACT.md`, `APP_STRUCTURE.md`, `DATA_MAP.md` /
 `POCKETBASE_MANIFEST.md` when the respective contracts actually change.
+
+
+## Forwarded event capture (2026-11-25)
+
+Standalone Russian appointment/booking headers with unambiguous date and clock can use a deterministic proposal without a provider call. Preserve the original message in the plan note; a 30-minute duration is a tentative planning assumption and requires explicit approval. Existing category resolution, timezone conversion, conflict validation, deduplication and Brain mutation path remain authoritative. Ambiguous or multi-event messages remain in the general agent. Provider create-plan clock/duration representation normalization never relaxes the typed action contract. No external booking or reminder is implied.
+
+For single-plan creation, Viktor note text is converted into canonical `NoteDocument` blocks (headings, paragraphs, dividers and unchecked checklist items). The Brain receives `notes_delta`, `notes_plain` and `checklist` together through the existing create path. A clearly enumerated Russian `с собой` section becomes an interactive preparation checklist; other prose is retained. No Notes editor UI or schema change.

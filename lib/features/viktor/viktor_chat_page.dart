@@ -49,8 +49,6 @@ class _ViktorChatPageState extends State<ViktorChatPage>
   final _messages = <ViktorDialogueTurn>[];
   final _gateway = const ViktorGateway();
   bool _busy = false;
-  // A conversational follow-up can resume a rejected tag-duration request.
-  // Only a fresh, explicitly requested preview may result in a write.
   bool _durationConflictPending = false;
   bool _durationConflictIncludesYesterday = false;
   bool _listening = false;
@@ -90,16 +88,17 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     final independentPlan =
         ViktorDateScope.independentDateOnlyPlan(input, profileToday);
     final requestId = 'viktor_${DateTime.now().microsecondsSinceEpoch}';
+    final forwardedPlan = ViktorDateScope.forwardedTimedPlan(
+        input: input, profileToday: profileToday, requestId: requestId);
     final carryForward = ViktorDateScope.directYesterdayCarryForward(
         input: input, profileToday: profileToday, requestId: requestId);
     final structuredChores = ViktorDateScope.narratedChoreBatch(
         input: input, profileToday: profileToday, requestId: requestId);
-    if (independentPlan == null && carryForward == null &&
-        structuredChores == null && !_settingsReady) return;
-    // A fresh self-contained dated plan must never inherit an unrelated
-    // unfinished itinerary, even when remote chat history is still syncing.
+    if (independentPlan == null && forwardedPlan == null &&
+        carryForward == null && structuredChores == null && !_settingsReady) return;
+    // Standalone dated plans must not inherit an unfinished itinerary.
     final hadPreviousRequest = _messages.skip(1).any((turn) => turn.isUser);
-    if ((independentPlan != null && hadPreviousRequest) ||
+    if (((independentPlan != null || forwardedPlan != null) && hadPreviousRequest) ||
         (_dialogueLoaded && ViktorThreadRouter.shouldOpenNew(
           input: input, previous: _messages.skip(1).toList(),
           nowUtc: DateTime.now().toUtc(),
@@ -109,8 +108,8 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       _durationConflictIncludesYesterday = false;
     }
     final dialogContext = ViktorDialogueTurn.modelContext(_messages.skip(1));
-    if (independentPlan == null && carryForward == null &&
-        structuredChores == null && _settings.mode == 'byok' &&
+    if (independentPlan == null && forwardedPlan == null &&
+        carryForward == null && structuredChores == null && _settings.mode == 'byok' &&
         !_settings.modelConnected) {
       await _openSettings();
       if (!mounted || !_settings.modelConnected) return;
@@ -119,8 +118,11 @@ class _ViktorChatPageState extends State<ViktorChatPage>
     if (!mounted) return;
     _controller.clear();
     final revisionOfDraft = ViktorReadAnswer.isDraftRevision(input: input, history: dialogContext);
-    final intentDay = ViktorDateScope.itineraryDay(input, widget.wallDay,
-        dialogContext, revision: revisionOfDraft, profileToday: profileToday);
+    final intentDay = forwardedPlan != null
+        ? ViktorDateScope.parseDay(
+            forwardedPlan.actions.single.arguments['wall_day'] as String)
+        : ViktorDateScope.itineraryDay(input, widget.wallDay,
+            dialogContext, revision: revisionOfDraft, profileToday: profileToday);
     _push(input, mine: true);
     if (ViktorReadAnswer.isExplicitCancellation(input)) {
       _durationConflictPending = false;
@@ -136,6 +138,11 @@ class _ViktorChatPageState extends State<ViktorChatPage>
       final executor = ViktorExecutor(db);
       if (independentPlan != null) {
         await _createIndependentDateOnlyPlan(independentPlan, executor, requestId);
+        return;
+      }
+      if (forwardedPlan != null) {
+        await _runForwardedPlan(forwardedPlan, executor, intentDay,
+            onWriteStarted: () => writeStarted = true);
         return;
       }
       if (carryForward != null) {
@@ -486,7 +493,6 @@ class _ViktorChatPageState extends State<ViktorChatPage>
   }
   Future<bool> _confirm(ViktorActionBatch batch, String preview) =>
       _confirmPreview(preview);
-
   Future<bool> _confirmPreview(String preview) async {
     final answer = await showDialog<bool>(
       context: context,
@@ -990,5 +996,4 @@ class _ViktorChatPageState extends State<ViktorChatPage>
   }
   @override
   Widget build(BuildContext context) => _buildViktorLayout(context);
-
 }

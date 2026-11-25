@@ -5,6 +5,7 @@ import 'viktor_historical_records.dart';
 import 'viktor_record_tools.dart';
 import 'viktor_schedule_planner.dart';
 import 'viktor_domain_tools.dart';
+import 'viktor_plan_note.dart';
 import 'viktor_date_scope.dart';
 import 'viktor_plan_category.dart';
 import 'viktor_existing_plan.dart';
@@ -22,14 +23,12 @@ import 'package:timezone/timezone.dart' as tz;
 class ViktorExecutor {
   ViktorExecutor(this.db);
   final DatabaseService db;
-
   final ViktorSchedulePlanner _planner = const ViktorSchedulePlanner();
   final ViktorBulkPlanner _bulk = const ViktorBulkPlanner();
   final ViktorPlanInsertionPlanner _insertion = const ViktorPlanInsertionPlanner();
   late final ViktorDomainTools _domain = ViktorDomainTools(db);
   late final ViktorHistoricalRecords _history = ViktorHistoricalRecords(db);
   late final ViktorRecordTools _recordTools = ViktorRecordTools(db);
-
   Future<ViktorRecordCreatePreview> _recordCreatePreview(
       ViktorAction action) async {
     final a = action.arguments;
@@ -40,7 +39,6 @@ class ViktorExecutor {
           .toList(),
     );
   }
-
   Future<ViktorHistoricalPreview> _historicalPreview(
       ViktorAction action) async {
     final args = action.arguments;
@@ -65,7 +63,6 @@ class ViktorExecutor {
       _createAnchorProfileWall = db.applyUserOffset(DateTime.now().toUtc());
     }
   }
-
   void _anchorBulkClock(String requestId) {
     if (_bulkAnchorRequestId != requestId ||
         _bulkAnchorProfileWall == null) {
@@ -161,10 +158,15 @@ class ViktorExecutor {
       await db.refreshCategoryRulesFromServer();
       category = _planCategory(action);
     }
+    final title = action.arguments['title'] as String;
+    final sourceNote = action.arguments['note'] as String?;
+    final note = sourceNote == null ? null : viktorPlanNoteDocument(sourceNote);
     return db.addPlanningTaskWithReceipt(PlanningTask(
-      id: 0, title: action.arguments['title'] as String,
+      id: 0, title: title,
       categoryId: category.id,
-      notesPlain: action.arguments['note'] as String?,
+      notesPlain: note?.toPlainText(title: title),
+      notesDeltaJson: note?.encode(),
+      checklist: note?.toChecklistProjection() ?? const [],
       dateKey: start == null ? action.arguments['wall_day'] as String
           : ViktorDateScope.key(start),
       startTime: start,

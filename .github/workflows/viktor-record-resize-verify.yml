@@ -27,6 +27,11 @@ jobs:
           node test/viktor_atomic_record_hook_test.cjs
           node test/viktor_atomic_schedule_hook_test.cjs
           node test/viktor_atomic_create_hook_test.cjs
+      - name: Set up Java 17 for Android Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -42,11 +47,45 @@ jobs:
         run: >
           flutter test
           test/viktor_action_contract_test.dart
+          test/viktor_date_scope_test.dart
           test/viktor_record_tools_test.dart
           test/viktor_read_answer_test.dart
           test/viktor_multiday_agent_test.dart
           test/viktor_schedule_planner_test.dart
       - name: Build web
         run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run
-      - name: Build Android arm64
+      - name: Install required Android NDK with retries
+        shell: bash
+        run: |
+          set -euo pipefail
+          NDK_VERSION="28.2.13676358"
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then
+            SDKMANAGER="$(command -v sdkmanager)"
+          fi
+          for attempt in 1 2 3; do
+            if [[ -f "$SDK_ROOT/ndk/$NDK_VERSION/source.properties" ]]; then
+              echo "Verified NDK $NDK_VERSION is already installed."
+              break
+            fi
+            rm -rf "$SDK_ROOT/ndk/$NDK_VERSION"
+            # yes may exit with SIGPIPE after sdkmanager succeeds, so
+            # verify the installed payload instead of the pipeline status.
+            yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" "ndk;$NDK_VERSION" || true
+            if [[ -f "$SDK_ROOT/ndk/$NDK_VERSION/source.properties" ]]; then
+              echo "Installed NDK $NDK_VERSION."
+              break
+            fi
+            if [[ "$attempt" == 3 ]]; then
+              echo "::error::NDK download is broken after 3 attempts"
+              exit 1
+            fi
+            sleep $((attempt * 10))
+          done
+
+      - name: Build Android arm64 (CI only, no publication)
+        # Match the canonical PR build. Production APK signing remains in android-apk-build.yml.
+        env:
+          LIFE_OS_ALLOW_DEBUG_RELEASE_FOR_CI: 'true'
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons

@@ -151,6 +151,7 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 | `ai/viktor_historical_records.dart` | Deterministic past-activity intent routing, authenticated Timeline anchor resolution, collision-safe record interval preview and approved completed-record backfill |
 | `ai/viktor_record_tools.dart` | Owner-scoped Timeline reads, completed-record creation and previewed consecutive-record duration changes, with UTC/concurrency/conflict validation |
 | `ai/viktor_record_note_tools.dart` | Owner-scoped historical Record note retrieval by actual creation date and content, never raw database writes |
+| `ai/viktor_plan_note.dart` | Converts Viktor plan notes into canonical editable NoteDocument headings, dividers, paragraphs and checklist projections |
 | `ai/viktor_atomic_bulk_gateway.dart` | Brain-owned authenticated atomic bulk schedule gateway and post-save verification |
 | `ai/viktor_atomic_create_gateway.dart` | Owner-scoped atomic multi-plan create gateway with retry-stable IDs and independent read-back |
 | `ai/viktor_multi_plan_proposal.dart` | Read-only protected batch-create preview against current scheduled commitments and duplicate titles |

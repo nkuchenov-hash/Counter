@@ -141,6 +141,111 @@ class ViktorDateScope {
       tz.TZDateTime.from(instant.toUtc(), tz.getLocation(ianaZone));
 
 
+
+  /// Unambiguous standalone Russian appointment/booking confirmations.
+  /// The entire source becomes the note. No writes or provider calls here.
+  /// The caller must preview and confirm the tentative duration.
+  static ViktorActionBatch? forwardedTimedPlan({
+    required String input,
+    required DateTime profileToday,
+    required String requestId,
+  }) {
+    final source = input.trim();
+    if (source.isEmpty || source.length > 3000 || source.contains('?') ||
+        RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]').hasMatch(source)) {
+      return null;
+    }
+    final header = RegExp(
+      r'^(запись|при[её]м|встреча|бронь|бронирование)\s*'
+      r'(?:[:—–]\s*)?(?:на\s+)?'
+      r'(\d{1,2})[./](\d{1,2})(?:[./](20\d{2}|\d{2}))?'
+      r'\s+(?:в\s+)?(\d{1,2})[:.-](\d{2})(?=\s|[,;:]|$)'
+      r'[\s,;:]+(.+)$',
+      caseSensitive: false, dotAll: true,
+    ).firstMatch(source);
+    final named = header == null ? RegExp(
+      r'^(запись|при[её]м|встреча|бронь|бронирование)\s*'
+      r'(?:[:—–]\s*)?(?:на\s+)?'
+      r'(\d{1,2})\s+'
+      r'(января|февраля|марта|апреля|мая|июня|июля|августа|'
+      r'сентября|октября|ноября|декабря)'
+      r'(?:\s+(20\d{2})(?:\s+г(?:ода|\.)?)?)?'
+      r'\s+(?:в\s+)?(\d{1,2})[:.-](\d{2})(?=\s|[,;:]|$)'
+      r'[\s,;:]+(.+)$',
+      caseSensitive: false, dotAll: true,
+    ).firstMatch(source) : null;
+    final match = header ?? named;
+    if (match == null) return null;
+    const months = ['января', 'февраля', 'марта', 'апреля', 'мая',
+      'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября',
+      'декабря'];
+    final month = header != null ? int.parse(match[3]!) :
+        months.indexOf(match[3]!.toLowerCase()) + 1;
+    final day = int.parse(match[2]!);
+    final hour = int.parse(match[5]!);
+    final minute = int.parse(match[6]!);
+    if (month < 1 || month > 12 || day < 1 || day > 31 ||
+        hour > 23 || minute > 59) return null;
+    final detail = match[7]!.trim();
+    // Ambiguous events, durations, additional clocks, cancellation and
+    // explicit timezone instructions remain with the general agent.
+    if (RegExp(
+      r'отмен[а-яё]*|перенес[а-яё]*|перенос[а-яё]*|'
+      r'не\s+(?:создавай|добавляй|записывай)|'
+      r'длительность|продолжительность|'
+      r'(?:в|до|с|на)\s+\d{1,2}[:.-]\d{2}(?!\d)|'
+      r'\d{1,2}[./]\d{1,2}\s+в\s+\d|'
+      r'(?:часов(?:ой|ому)|по\s+(?:мск|москве|местному\s+времени))',
+      caseSensitive: false,
+    ).hasMatch(detail) ||
+        RegExp(r'\d{1,3}\s*(?:минут[а-яё]*|мин\.?|час[а-яё]*)',
+          caseSensitive: false).allMatches(detail).any((m) {
+            final before = detail.substring(0, m.start).trimRight().toLowerCase();
+            final after = detail.substring(m.end).trimLeft().toLowerCase();
+            // Arrival buffer, not event duration.
+            return !before.endsWith('за') && !after.startsWith('до');
+          })) return null;
+    final rawYear = match[4];
+    final today = DateTime(profileToday.year, profileToday.month,
+        profileToday.day);
+    DateTime? eventDay;
+    final firstYear = rawYear == null ? today.year :
+        int.parse(rawYear) + (rawYear.length == 2 ? 2000 : 0);
+    final lastYear = rawYear == null ? firstYear + 4 : firstYear;
+    for (var year = firstYear; year <= lastYear; year++) {
+      final candidate = DateTime(year, month, day);
+      if (candidate.month == month && candidate.day == day &&
+          !candidate.isBefore(today)) {
+        eventDay = candidate;
+        break;
+      }
+    }
+    if (eventDay == null) return null;
+    final label = match[1]!;
+    final subject = detail.split(RegExp(
+      r'\s+(?=клиника(?=\s|$)|адрес(?=\s|$)|телефон(?=\s|$)|'
+      r'подойти(?=\s|$)|прибыть(?=\s|$)|регистратур)|[\r\n;]',
+      caseSensitive: false,
+    )).first.trim();
+    if (subject.length < 3) return null;
+    final shortSubject = subject.length > 110 ?
+        '${subject.substring(0, 107).trimRight()}…' : subject;
+    final title = '${label[0].toUpperCase()}${label.substring(1)}: $shortSubject';
+    final clock = '${hour.toString().padLeft(2, '0')}:'
+        '${minute.toString().padLeft(2, '0')}';
+    return ViktorActionBatch.fromJson({
+      'version': 1, 'request_id': requestId,
+      'actions': [{'name': 'create_plan', 'arguments': {
+        'title': title, 'wall_day': key(eventDay), 'start_time': clock,
+        'duration_minutes': 30, 'note': source,
+        'conflict_policy': 'reject',
+        if (RegExp(r'(?:^|[^а-яё])(?:спб|санкт-петербург|москва|москве)(?=$|[^а-яё])',
+            caseSensitive: false).hasMatch(detail))
+          'timezone': 'Europe/Moscow',
+      }}],
+    });
+  }
+
   /// Relative dates use the profile's current date, never the opened tab.
   static DateTime? relativeDay(String input, DateTime profileToday) {
     final m = RegExp(
