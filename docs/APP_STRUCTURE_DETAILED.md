@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `1b1c8675` on 2026-11-25.**
+**Generated from input HEAD `c2a170c9` on 2026-11-25.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1036 — each appears **exactly once** below.
+**Tracked files:** 1037 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -28,7 +28,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | :--- | ---: |
 | `production UI` | 206 |
 | `test` | 149 |
-| `Brain/data` | 120 |
+| `Brain/data` | 121 |
 | `platform build` | 84 |
 | `shared foundation` | 73 |
 | `developer tool` | 66 |
@@ -57,7 +57,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 567 |
+| `PROVEN_REQUIRED` | 568 |
 | `REQUIRED_FOR_TEST_OR_TOOLING` | 277 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 948 |
+| `HIGH` | 949 |
 | `MEDIUM` | 88 |
 
 ---
@@ -15049,6 +15049,43 @@ RU:
 - **Владелец / слой:** Brain/data
 - **Обязанности:** Поддерживает операции данных в `viktor_plan_category`.
 - **Когда открывать:** Когда ломается поведение, связанное с `viktor_plan_category.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** UI вызывает `DatabaseService.instance`
+
+
+### `lib/data/ai/viktor_plan_note.dart`
+
+EN:
+
+- **Human purpose:** Brain helper for data/sync — viktor plan note. Shared PocketBase/auth/parse logic used by multiple tabs.
+- **What this is:** Brain helper for data/sync — viktor plan note.
+- **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
+- **Contents:** Dart helpers and types (logic in `viktor_plan_note`).
+- **Repository role:** Brain/data
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/ai/viktor_executor.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** Brain/data
+- **Responsibilities:** viktor plan note
+- **When to open:** When behavior tied to `viktor_plan_note.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** UI calls via `DatabaseService.instance`; APP_STRUCTURE role: viktor plan note
+
+RU:
+
+- **Зачем файл человеку:** Вспомогательный модуль данных — viktor_plan_note. Общая логика PocketBase и auth для нескольких вкладок.
+- **Что это:** Вспомогательный модуль данных — viktor_plan_note.
+- **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
+- **Содержимое:** Dart-хелперы и типы (logic in `viktor_plan_note`).
+- **Роль в репозитории:** Brain/data
+- **Доказательства использования:** Импортируется production Dart: `lib/data/ai/viktor_executor.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Brain/data
+- **Обязанности:** Поддерживает операции данных в `viktor_plan_note`.
+- **Когда открывать:** Когда ломается поведение, связанное с `viktor_plan_note.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`
 
