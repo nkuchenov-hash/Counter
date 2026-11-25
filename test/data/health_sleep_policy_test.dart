@@ -2,6 +2,27 @@ import 'package:counter/data/health/health_sleep_policy.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('device fallback fills only missing, non-conflicting nights', () {
+    final start = DateTime.utc(2026, 11, 24, 23);
+    final end = DateTime.utc(2026, 11, 25, 7);
+    bool allowed(List<Map<String, dynamic>> records) => canRecoverMissingSleep(
+      records: records,
+      sleepStartUtc: start,
+      sleepEndUtc: end,
+    );
+    expect(allowed([]), isTrue);
+    expect(allowed([{'title': 'Work', 'start_time': start.subtract(
+      const Duration(hours: 1)).toIso8601String(), 'end_time': null}]), isTrue);
+    expect(allowed([{'title': 'Сон', 'start_time': start.toIso8601String(),
+      'end_time': end.toIso8601String()}]), isFalse);
+    expect(allowed([{'title': 'Work', 'start_time': start.add(
+      const Duration(hours: 1)).toIso8601String(),
+      'end_time': end.toIso8601String()}]), isFalse);
+    expect(allowed([{'title': 'Work', 'start_time': start.subtract(
+      const Duration(hours: 1)).toIso8601String(),
+      'end_time': end.toIso8601String()}]), isFalse);
+  });
+
   test(
     'sleep trims prior action, deletes conflicts, and matches correction',
     () {

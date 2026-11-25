@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/data/health/cloud_sleep_sync_service.dart';
+import 'package:counter/data/health/health_sleep_sync_service.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -20,6 +21,7 @@ class SleepSyncSettingsSection extends StatefulWidget {
 class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
     with WidgetsBindingObserver {
   final CloudSleepSyncService _cloud = CloudSleepSyncService.instance;
+  final HealthSleepSyncService _device = HealthSleepSyncService.instance;
   bool _firstLoad = true;
   bool _actionRunning = false;
 
@@ -47,6 +49,7 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
   Future<void> _load() async {
     try {
       await _cloud.loadStatus();
+      if (_device.isSupported) await _device.start();
     } finally {
       if (mounted && _firstLoad) setState(() => _firstLoad = false);
     }
@@ -90,6 +93,20 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
       if (!await _cloud.setEnabled(true)) return;
     }
     await _cloud.syncNow();
+  });
+
+  Future<void> _recoverFromDevice() => _perform(() async {
+    if (!_device.isSupported) return;
+    if (_device.state.value.enabled) {
+      // A permission can be revoked in system settings; request it again.
+      if (_device.state.value.phase == HealthSleepSyncPhase.needsPermission) {
+        await _device.requestAuthorizationAndEnable();
+      } else {
+        await _device.sync(force: true);
+      }
+    } else {
+      await _device.requestAuthorizationAndEnable();
+    }
   });
 
   Future<void> _confirmDisconnect() async {
@@ -152,8 +169,8 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
     final normalized = raw.toLowerCase();
     if (normalized.contains('xiaomi_sleep_not_available_today')) {
       return _copy(
-        'Xiaomi has not published today\'s sleep yet. LIFE OS will check again automatically.',
-        'Xiaomi ещё не передал сон за сегодня. LIFE OS проверит данные повторно автоматически.',
+        'No completed sleep was received from Xiaomi Cloud today. Automatic retries continue.',
+        'Из Xiaomi Cloud не получен завершённый сон за сегодня. Автоматические проверки продолжаются.',
       );
     }
     if (normalized.contains('server_sleep_sync_not_deployed')) {
@@ -205,6 +222,30 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
         state.lastSessionCount.toString() +
         _copy(' · imported/updated: ', ' · добавлено/обновлено: ') +
         state.lastImportedCount.toString();
+  }
+
+  String _deviceStatus(HealthSleepSyncState state) {
+    switch (state.phase) {
+      case HealthSleepSyncPhase.needsPermission:
+        return _copy('Allow sleep read access in system settings.',
+            'Разрешите чтение сна в системных настройках.');
+      case HealthSleepSyncPhase.syncing:
+        return _copy('Checking device sleep…', 'Проверяем сон на устройстве…');
+      case HealthSleepSyncPhase.noData:
+        return _copy('No sleep was found on this device. Check Mi Fitness data sharing.',
+            'На устройстве нет доступных данных сна. Проверьте передачу данных из Mi Fitness.');
+      case HealthSleepSyncPhase.error:
+        return _copy('Device import failed. Check access and retry.',
+            'Импорт с устройства не выполнен. Проверьте доступ и повторите.');
+      case HealthSleepSyncPhase.synced:
+        return _copy('Sessions read: ', 'Прочитано периодов: ') +
+            (state.lastReadSessionCount ?? 0).toString() +
+            _copy(' · new records queued: ', ' · новых записей сохранено локально: ') +
+            (state.lastImportedSessionCount ?? 0).toString();
+      default:
+        return _copy('Fills missing nights from the last 14 days when available.',
+            'Восстанавливает пропущенный сон за последние 14 дней при наличии данных.');
+    }
   }
 
   @override
@@ -318,6 +359,47 @@ class _SleepSyncSettingsSectionState extends State<SleepSyncSettingsSection>
               );
             },
           ),
+        if (!_firstLoad && _device.isSupported) ...[
+          const SizedBox(height: 20),
+          Text(_copy('Device recovery', 'Резервный импорт с устройства'),
+              style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Text(_copy(
+            'If Xiaomi Cloud is unavailable, recover missing nights from Health Connect or Apple Health. Existing records are preserved.',
+            'Если Xiaomi Cloud недоступен, восстановите пропущенный сон из Health Connect или Apple Health. Существующие записи сохраняются.',
+          ), style: theme.textTheme.bodyMedium),
+          const SizedBox(height: 8),
+          ValueListenableBuilder<HealthSleepSyncState>(
+            valueListenable: _device.state,
+            builder: (context, state, _) {
+              final busy = _actionRunning ||
+                  state.phase == HealthSleepSyncPhase.syncing;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_deviceStatus(state), style: theme.textTheme.bodyMedium),
+                  const SizedBox(height: 12),
+                  AppButton.secondary(
+                    label: _copy('Recover missing sleep', 'Восстановить пропущенный сон'),
+                    icon: Icons.sync_rounded,
+                    fullWidth: true,
+                    loading: busy,
+                    onPressed: busy ? null : () => unawaited(_recoverFromDevice()),
+                  ),
+                  if (state.enabled) ...[
+                    const SizedBox(height: 8),
+                    AppButton.ghost(
+                      label: _copy('Disable device recovery', 'Отключить резервный импорт'),
+                      onPressed: busy ? null : () => unawaited(
+                        _perform(() => _device.setEnabled(false)),
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
+        ],
       ],
     );
   }

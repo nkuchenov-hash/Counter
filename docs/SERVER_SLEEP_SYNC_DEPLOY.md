@@ -153,3 +153,7 @@ For an authenticated client use `GET /api/sleep-sync/status`. Operationally veri
 If the bridge is fresh but PocketBase is stale, investigate scheduler/import logic. If both are stale while Mi Fitness visibly has newer sleep, investigate all Xiaomi API families/regions before touching Timeline UI.
 
 Never expose Xiaomi credentials, token files, user ids, server secrets, or raw authorization payloads in logs or user-facing diagnostics.
+
+## Device recovery when Xiaomi Cloud is unavailable
+
+Xiaomi Cloud remains the primary shared source. On a supported Android or iOS device, an explicit recovery control reuses the existing authorized Health Connect / Apple Health adapter and the canonical offline-first record write path. A 14-day minimum lookback recovers missing nights even after earlier empty reads. The fallback never updates an existing sleep or deletes an overlapping completed activity; conflicting nights are skipped. Only a prior open timer may be closed by the canonical server interval hook. The device path requires operating-system consent and depends on Mi Fitness exporting sleep locally. It is not evidence that Xiaomi Cloud has recovered.

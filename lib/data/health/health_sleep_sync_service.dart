@@ -194,6 +194,7 @@ class HealthSleepSyncService {
   static const Duration _automaticSyncThrottle = Duration(minutes: 10);
   static const Duration _firstSyncLookback = Duration(days: 30);
   static const Duration _correctionLookback = Duration(days: 2);
+  static const Duration _missingSleepLookback = Duration(days: 14);
   static const Duration _backgroundFrequency = Duration(minutes: 30);
 
   final ValueNotifier<HealthSleepSyncState> state =
@@ -407,23 +408,32 @@ class HealthSleepSyncService {
       }
 
       final previousSync = state.value.lastSyncUtc;
-      final readStart = previousSync == null
+      final incrementalStart = previousSync == null
           ? now.subtract(_firstSyncLookback)
           : previousSync.subtract(_correctionLookback);
+      // Empty reads must not move the recovery window past missed nights.
+      final recoveryStart = now.subtract(_missingSleepLookback);
+      final readStart = incrementalStart.isBefore(recoveryStart)
+          ? incrementalStart
+          : recoveryStart;
       final sessions = await DeviceHealthSleepService.instance.readSessions(
         startUtc: readStart,
         endUtc: now,
       );
       final finished =
           sessions
-              .where((session) => !session.endUtc.isAfter(now))
+              .where((session) =>
+                  !session.endUtc.isAfter(now) &&
+                  session.endUtc.difference(session.startUtc) >=
+                      const Duration(minutes: 20) &&
+                  session.endUtc.difference(session.startUtc) <=
+                      const Duration(hours: 36))
               .toList(growable: false)
             ..sort((a, b) => a.endUtc.compareTo(b.endUtc));
 
       var importedCount = 0;
       for (final session in finished) {
-        await _importSession(session);
-        importedCount++;
+        if (await _importSession(session)) importedCount++;
       }
 
       final sourceNames =
@@ -516,75 +526,38 @@ class HealthSleepSyncService {
     await Workmanager().cancelByTag(_backgroundTaskTag);
   }
 
-  Future<void> _importSession(HealthSleepSession session) async {
+  Future<bool> _importSession(HealthSleepSession session) async {
     final db = DatabaseService.instance;
     final records = await db.fetchRecords(forceNetwork: false);
-    final existing = findExistingSleepRecord(
+    if (!canRecoverMissingSleep(
       records: records,
       sleepStartUtc: session.startUtc,
       sleepEndUtc: session.endUtc,
-    );
-    final existingKey = existing == null ? null : recordIdentityKey(existing);
-
-    final actions = planSleepConflictActions(
-      records: records,
-      sleepStartUtc: session.startUtc,
-      sleepEndUtc: session.endUtc,
-      existingSleepRecordKey: existingKey,
-    );
-    for (final action in actions) {
-      switch (action.kind) {
-        case SleepConflictKind.trimToSleepStart:
-          await db.updateRecord(
-            recordId: action.recordKey,
-            endTime: session.startUtc,
-            bypassConflictCheck: true,
-          );
-          break;
-        case SleepConflictKind.delete:
-          await db.deleteRecordByDocId(action.recordKey);
-          break;
-      }
-    }
+    )) return false;
 
     final categoryId = await _ensureSleepCategory(db);
     if (categoryId == null) {
       throw StateError('Sleep category could not be resolved');
     }
     final title = t(currentLocale.value, 'health_sleep_record_title');
-
-    if (existingKey != null && existingKey.isNotEmpty) {
-      final updated = await db.updateRecord(
-        recordId: existingKey,
-        title: title,
-        startTime: session.startUtc,
-        endTime: session.endUtc,
-        categoryId: categoryId,
-        bypassConflictCheck: true,
-      );
-      if (updated == null) {
-        throw StateError('Existing sleep record could not be updated');
-      }
-    } else {
-      final wall = db.applyUserOffset(session.startUtc);
-      final dateKey =
-          '${wall.year}-${wall.month.toString().padLeft(2, '0')}-${wall.day.toString().padLeft(2, '0')}';
-      final createdId = await db.writeRecord(
-        dateKey,
-        title,
-        categoryId: categoryId,
-        explicitStartTime: session.startUtc,
-        explicitEndTime: session.endUtc,
-      );
-      if (createdId == null || createdId.isEmpty) {
-        throw StateError('Sleep record could not be created');
-      }
+    final wall = db.applyUserOffset(session.startUtc);
+    final dateKey =
+        '${wall.year}-${wall.month.toString().padLeft(2, '0')}-${wall.day.toString().padLeft(2, '0')}';
+    final createdId = await db.writeRecord(
+      dateKey,
+      title,
+      categoryId: categoryId,
+      explicitStartTime: session.startUtc,
+      explicitEndTime: session.endUtc,
+    );
+    if (createdId == null || createdId.isEmpty) {
+      throw StateError('Sleep record could not be created');
     }
-
     state.value = state.value.copyWith(
       lastImportedStartUtc: session.startUtc,
       lastImportedEndUtc: session.endUtc,
     );
+    return true;
   }
 
   Future<int?> _ensureSleepCategory(DatabaseService db) async {

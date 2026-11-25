@@ -96,3 +96,33 @@ Map<String, dynamic>? findExistingSleepRecord({
   }
   return best;
 }
+
+ 
+/// A device fallback fills gaps; it must not replace existing sleep or delete
+/// completed activities. The canonical server interval hook may close a prior
+/// running record at the start of an otherwise empty night.
+bool canRecoverMissingSleep({
+  required Iterable<Map<String, dynamic>> records,
+  required DateTime sleepStartUtc,
+  required DateTime sleepEndUtc,
+}) {
+  if (!sleepEndUtc.isAfter(sleepStartUtc)) return false;
+  if (findExistingSleepRecord(
+    records: records,
+    sleepStartUtc: sleepStartUtc,
+    sleepEndUtc: sleepEndUtc,
+  ) != null) return false;
+  for (final row in records) {
+    if ((row['parent_id'] ?? '').toString().trim().isNotEmpty) continue;
+    final start = recordUtc(row['start_time'] ?? row['startTime']);
+    final end = recordUtc(row['end_time'] ?? row['endTime']);
+    if (start == null || !start.isBefore(sleepEndUtc)) continue;
+    if (end != null && !end.isAfter(sleepStartUtc)) continue;
+    // Preserve all completed overlapping activities and any activity that
+    // started during the proposed sleep. Only a prior open timer is safe.
+    if (end == null && start.isBefore(sleepStartUtc) &&
+        !isSleepTitle(row['title'])) continue;
+    return false;
+  }
+  return true;
+}

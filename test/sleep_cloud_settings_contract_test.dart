@@ -17,7 +17,12 @@ void main() {
     expect(settings, contains('state.lastSessionCount'));
     expect(settings, contains('state.lastImportedCount'));
     expect(settings, contains('state.error'));
-    expect(settings, isNot(contains('HealthSleepSyncService.instance')));
+    // Server cloud remains canonical; device recovery is an explicit,
+    // supported-device-only fallback, not a prerequisite for Xiaomi login.
+    expect(settings, contains('HealthSleepSyncService.instance'));
+    expect(settings, contains('_device.isSupported'));
+    expect(settings, contains('_device.requestAuthorizationAndEnable()'));
+    expect(settings, contains('Восстановить пропущенный сон'));
     expect(settings, isNot(contains('_useDeviceSource')));
     expect(settings, isNot(contains('connectGoogleFit()')));
   });

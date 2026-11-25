@@ -147,7 +147,7 @@ jobs:
         run: flutter test test/record_notes_ime_stability_test.dart test/notes_mobile_keyboard_regression_test.dart
 
       - name: Verify cloud-first sleep synchronization contract
-        run: flutter test test/sleep_cloud_settings_contract_test.dart
+        run: flutter test test/sleep_cloud_settings_contract_test.dart test/data/health_sleep_policy_test.dart
 
       - name: Verify timezone settings regression
         run: flutter test test/timezone_quick_preferences_test.dart

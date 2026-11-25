@@ -2,6 +2,10 @@
 
 - Recognize standalone Russian appointment and booking messages with explicit dates and clocks before provider inference; preserve source details as plan notes and require a preview for the tentative 30-minute duration. Persist single-plan preparation notes as canonical NoteDocument blocks with heading, divider and interactive checklist mirrors. Normalize equivalent provider clock/duration representations before the strict action contract; retain existing Brain conflict, category, deduplication and write verification.
 
+## [2026-11-25] - Device sleep recovery during Xiaomi cloud outage
+
+* Restore an opt-in Health Connect / Apple Health recovery control; preserve existing sleep and completed activities, retry a 14-day window, and count only new locally accepted records. Server Xiaomi remains primary. Real-device validation pending.
+
 ## [2026-11-25] - Xiaomi cloud response normalization and source diagnostics
 
 * Extend normalization to explicit completed sleep boundaries in nested and encoded responses; reject stage-only and non-sleep records. Add mocked regression cases and production schema/count diagnostics for successful unparsed responses. Live import remains to be verified.
