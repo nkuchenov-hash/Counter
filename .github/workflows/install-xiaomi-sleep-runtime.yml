@@ -156,15 +156,16 @@ jobs:
                   self.assertEqual(diag["source_status"], "no_fresh_sleep")
 
               async def test_missing_history_from_other_region_is_recovered_without_revisions(self):
-                  old = {"old": session(self.now - 86400),
-                         "revision": session(self.now - 60, 7)}
+                  old = {"old": session(self.now - 2*86400),
+                         "revision": session(self.now - 86400, 7)}
+                  recent = {**self.fresh, "previous": session(self.now - 86400)}
                   self.responses[A] = (old, OK)
-                  self.responses[B] = (self.fresh, OK)
+                  self.responses[B] = (recent, OK)
                   sessions, selected = await self.sync()
-                  # Ensure the freshest response wins on identical latest ends
-                  # by making the first region stale instead.
-                  self.assertIn("old", sessions)
-                  self.assertEqual(len(sessions), 2)
+                  self.assertEqual(selected, B)
+                  self.assertEqual(set(sessions), {"old", "previous", "new"})
+                  self.assertNotIn("revision", sessions)
+                  self.assertIn(B, self.calls)
 
               async def test_all_routes_on_cooldown_still_retry(self):
                   b._save_route_state(self.token, B, self.now,
