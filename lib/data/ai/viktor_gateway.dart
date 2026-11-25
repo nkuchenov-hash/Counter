@@ -635,7 +635,7 @@ class ViktorGateway {
       actions = raw.isEmpty ? null : ViktorActionBatch.fromJson({
         'version': map['version'],
         'request_id': map['request_id'],
-        'actions': raw,
+        'actions': ViktorActionBatch.normalizeProviderCreateArguments(raw),
       });
     } on FormatException catch (error) {
       // Model output is untrusted. Give the model one schema correction turn
@@ -657,7 +657,10 @@ class ViktorGateway {
           'Invalid action structure: ${error.message}',
           if (error.message.contains('Timed plans require'))
             'Schema correction: create_plan requires BOTH start_time and '
-            'duration_minutes, or NEITHER. For several new chores with '
+            'duration_minutes, or NEITHER. If one event has an explicit '
+            'clock but no duration, retain its date and clock and use a '
+            'tentative 30-minute planning block; never drop the clock. '
+            'For several new chores with '
             'given durations but no start clock, use exactly ONE '
             'create_plans_batch action with plans:[{title,wall_day,'
             'duration_minutes}, ...] and OMIT start_time. A final '

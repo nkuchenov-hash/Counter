@@ -42,6 +42,7 @@ jobs:
         run: >
           flutter test
           test/viktor_action_contract_test.dart
+          test/viktor_date_scope_test.dart
           test/viktor_record_tools_test.dart
           test/viktor_read_answer_test.dart
           test/viktor_multiday_agent_test.dart

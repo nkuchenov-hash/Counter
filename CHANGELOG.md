@@ -1,3 +1,7 @@
+## [2026-11-25] — Viktor forwarded appointment reliability [pending verification]
+
+- Recognize standalone Russian appointment and booking messages with explicit dates and clocks before provider inference; preserve source details as plan notes and require a preview for the tentative 30-minute duration. Normalize equivalent provider clock/duration representations before the strict action contract; retain existing Brain conflict, category, deduplication and write verification.
+
 ## [2026-11-23] — Center Tags and Style settings and unify list actions [verification pending]
 - Removed rectangular tab hover background and increased Style preview label/section typography for legibility.
 

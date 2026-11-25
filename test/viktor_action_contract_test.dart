@@ -15,6 +15,41 @@ Map<String, dynamic> batch(List<Map<String, dynamic>> actions) => {
     };
 
 void main() {
+
+  test('Provider adapter normalizes representation without weakening validation', () {
+    final raw = [action('create_plan', {
+      'title': 'Meeting', 'wall_day': '2026-12-07',
+      'start_time': '9-05', 'duration_minutes': '30',
+      'note': 'Original details',
+    })];
+    final normalized = ViktorActionBatch.normalizeProviderCreateArguments(raw);
+    final parsed = ViktorActionBatch.fromJson({
+      'version': 1, 'request_id': 'viktor_test_normalize', 'actions': normalized,
+    });
+    expect(parsed.actions.single.arguments['start_time'], '09:05');
+    expect(parsed.actions.single.arguments['duration_minutes'], 30);
+    expect(raw.single['arguments']['start_time'], '9-05');
+    expect(parsed.actions.single.arguments['note'], 'Original details');
+    for (final invalid in [
+      action('create_plan', {
+        'title': 'Meeting', 'wall_day': '2026-12-07', 'start_time': '10:00',
+      }),
+      action('create_plan', {
+        'title': 'Meeting', 'wall_day': '2026-12-07',
+        'start_time': '25:00', 'duration_minutes': '30',
+      }),
+      action('create_plan', {
+        'title': 'Meeting', 'wall_day': '2026-12-07',
+        'start_time': '10:00', 'duration_minutes': '30', 'unknown': true,
+      }),
+    ]) {
+      expect(() => ViktorActionBatch.fromJson({
+        'version': 1, 'request_id': 'viktor_test_normalize',
+        'actions': ViktorActionBatch.normalizeProviderCreateArguments([invalid]),
+      }), throwsFormatException);
+    }
+  });
+
   test('Plan creation carries explicit category and separate notes', () {
     final single = ViktorActionBatch.fromJson(batch([
       action('create_plan', {
