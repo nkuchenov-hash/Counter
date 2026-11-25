@@ -44,7 +44,8 @@ XIAOMI_SELF_AGGREGATED_PATH = "/app/v1/data/get_aggregated_fitness_data_by_time"
 XIAOMI_SELF_FITNESS_PATH = "/app/v1/data/get_fitness_data_by_time"
 
 # Two bounded regional phases must fit below the 90-second subprocess limit.
-XIAOMI_REQUEST_TIMEOUT_SECONDS = 6.0
+XIAOMI_REQUEST_TIMEOUT_SECONDS = 22.0
+XIAOMI_FALLBACK_TIMEOUT_SECONDS = 12.0
 XIAOMI_REGION_TIMEOUT_SECONDS = 40.0
 
 
@@ -60,11 +61,11 @@ class XiaomiCloudAuthError(RuntimeError):
     pass
 
 
-async def _query_sleep(client: MiHealthClient, stats: dict[str, Any], method: str, path: str, **kwargs: Any) -> Any:
+async def _query_sleep(client: MiHealthClient, stats: dict[str, Any], method: str, path: str, *, request_timeout: float | None = None, **kwargs: Any) -> Any:
     try:
         response = await asyncio.wait_for(
             client._request(method, path, **kwargs),
-            timeout=XIAOMI_REQUEST_TIMEOUT_SECONDS,
+            timeout=request_timeout if request_timeout is not None else XIAOMI_REQUEST_TIMEOUT_SECONDS,
         )
         if not isinstance(response, dict):
             raise ValueError("invalid Xiaomi response")
@@ -77,7 +78,11 @@ async def _query_sleep(client: MiHealthClient, stats: dict[str, Any], method: st
         return response
     except Exception as exc:
         # Store only sanitized error classes, never credentials or response bodies.
-        stats["errors"].append(type(exc).__name__)
+        code = getattr(exc, "code", None)
+        name = type(exc).__name__
+        if name in ("TokenExpiredError", "AuthError") or code == 2:
+            name = "XiaomiCloudAuthError"
+        stats["errors"].append(name)
         return {}
 
 
@@ -245,56 +250,25 @@ async def _fetch_relatives_sleep_api(
     limit: int,
     stats: dict[str, Any],
 ) -> dict[str, dict[str, Any]]:
+    shared = {"relative_uid": uid, "key": "sleep", "start_time": start,
+              "end_time": end, "limit": limit}
+    # Run independent reads concurrently so one slow endpoint cannot starve
+    # every other endpoint. The SDK serializes authentication refresh itself.
+    aggregate, latest, raw = await asyncio.gather(
+        _query_sleep(client, stats, "GET", XIAOMI_AGGREGATED_PATH,
+                     params={**shared, "tag": "daily_report"}),
+        _query_sleep(client, stats, "GET", XIAOMI_LATEST_PATH,
+                     params={"relative_uid": uid}),
+        _query_sleep(client, stats, "GET", XIAOMI_FITNESS_PATH, params=shared),
+    )
     sessions: dict[str, dict[str, Any]] = {}
-
-    try:
-        response = await _query_sleep(client, stats,
-            "GET",
-            XIAOMI_AGGREGATED_PATH,
-            params={
-                "relative_uid": uid,
-                "key": "sleep",
-                "tag": "daily_report",
-                "start_time": start,
-                "end_time": end,
-                "limit": limit,
-            },
-        )
+    for response in (aggregate, raw):
         sessions.update(_sessions_from_rows(_rows_from_response(response)))
-    except Exception:
-        pass
-
-    try:
-        latest_response = await _query_sleep(client, stats,
-            "GET",
-            XIAOMI_LATEST_PATH,
-            params={"relative_uid": uid},
-        )
-        latest_rows = _rows_from_response(latest_response)
-        sleep_rows = [
-            row for row in latest_rows
-            if isinstance(row, dict) and str(row.get("key") or row.get("data_type") or "").lower() == "sleep"
-        ]
-        sessions.update(_sessions_from_rows(sleep_rows or latest_rows))
-    except Exception:
-        pass
-
-    try:
-        raw_response = await _query_sleep(client, stats,
-            "GET",
-            XIAOMI_FITNESS_PATH,
-            params={
-                "relative_uid": uid,
-                "key": "sleep",
-                "start_time": start,
-                "end_time": end,
-                "limit": limit,
-            },
-        )
-        sessions.update(_sessions_from_rows(_rows_from_response(raw_response)))
-    except Exception:
-        pass
-
+    # Latest includes other health types. Only explicitly tagged sleep rows
+    # can be imported from this unfiltered endpoint.
+    latest_rows = [r for r in _rows_from_response(latest) if isinstance(r, dict)
+                   and str(r.get("key") or r.get("data_type") or "").lower() == "sleep"]
+    sessions.update(_sessions_from_rows(latest_rows))
     return sessions
 
 
@@ -305,66 +279,52 @@ async def _fetch_self_sleep_api(
     limit: int,
     stats: dict[str, Any],
 ) -> dict[str, dict[str, Any]]:
-    """Read the authenticated account's own sleep through Xiaomi data APIs.
+    """Keep both the legacy (previously deployed) and newer self API shapes."""
+    legacy = {"key": "sleep", "start_time": start, "end_time": end, "limit": limit}
+    raw_data = {"key": "sleep", "startTime": start * 1000, "endTime": end * 1000,
+                "reverse": True, "next_key": None}
+    aggregated_data = {"key": "sleep", "tag": "daily_report", "startTime": start * 1000,
+                       "endTime": end * 1000, "reverse": True, "cursor": None}
 
-    These endpoints use encrypted POST requests and intentionally do not pass a
-    relative_uid. They are merged with the relatives API because either Xiaomi
-    family can be stale independently while still returning a successful result.
-    """
-    sessions: dict[str, dict[str, Any]] = {}
+    def envelope(data: dict[str, Any]) -> dict[str, str]:
+        return {"data": json.dumps(data, separators=(",", ":"))}
 
-    try:
-        response = await _query_sleep(client, stats,
-            "POST",
-            XIAOMI_SELF_AGGREGATED_PATH,
-            params={"data": json.dumps({
-                "key": "sleep",
-                "tag": "daily_report",
-                "startTime": start * 1000,
-                "endTime": end * 1000,
-                "cursor": None,
-                "reverse": True,
-            }, separators=(",", ":"))},
-        )
-        sessions.update(_sessions_from_rows(_rows_from_response(response)))
-    except Exception:
-        pass
-
-    try:
-        raw_response = await _query_sleep(client, stats,
+    responses = await asyncio.gather(
+        _query_sleep(client, stats,
             "POST",
             XIAOMI_SELF_FITNESS_PATH,
-            params={"data": json.dumps({
-                "key": "sleep",
-                "startTime": start * 1000,
-                "endTime": end * 1000,
-                "reverse": True,
-                "next_key": None,
-            }, separators=(",", ":"))},
-        )
-        sessions.update(_sessions_from_rows(_rows_from_response(raw_response)))
-    except Exception:
-        pass
+            params=legacy,
+        ),
+        _query_sleep(client, stats, "POST", XIAOMI_SELF_AGGREGATED_PATH,
+                     params={**legacy, "tag": "daily_report"}),
+        _query_sleep(client, stats, "POST", XIAOMI_SELF_FITNESS_PATH,
+                     params=envelope(raw_data)),
+        _query_sleep(client, stats, "GET", XIAOMI_SELF_FITNESS_PATH,
+                     params=envelope(raw_data)),
+        _query_sleep(client, stats, "POST", XIAOMI_SELF_AGGREGATED_PATH,
+                     params=envelope(aggregated_data)),
+    )
+    sessions: dict[str, dict[str, Any]] = {}
+    for response in responses:
+        sessions.update(_sessions_from_rows(_rows_from_response(response)))
 
-    # The international self-account API has also been observed to accept
-    # encrypted GET with the same JSON data envelope. Try it if POST did not
-    # yield an explicit sleep interval; do not treat non-sleep rows as success.
-    if not sessions or _latest_end_epoch(sessions) < end - 2 * 86400:
-        try:
-            response = await _query_sleep(client, stats,
-                "GET",
-                XIAOMI_SELF_FITNESS_PATH,
-                params={"data": json.dumps({
-                    "key": "sleep",
-                    "startTime": start * 1000,
-                    "endTime": end * 1000,
-                    "reverse": True,
-                    "next_key": None,
-                }, separators=(",", ":"))},
-            )
-            sessions.update(_sessions_from_rows(_rows_from_response(response)))
-        except Exception:
-            pass
+    # The Singapore response showed has_more=true. Check one further page
+    # only when the first page does not contain fresh sleep; retain strict
+    # filtering so unrelated health records cannot become sleep intervals.
+    if _latest_end_epoch(sessions) < end - 2 * 86400:
+        followups = []
+        for method, response in (("POST", responses[2]), ("GET", responses[3])):
+            result = response.get("result")
+            data = result if isinstance(result, dict) else response
+            cursor = data.get("next_key")
+            if data.get("has_more") and isinstance(cursor, str) and cursor:
+                followups.append(_query_sleep(
+                    client, stats, method, XIAOMI_SELF_FITNESS_PATH,
+                    request_timeout=XIAOMI_FALLBACK_TIMEOUT_SECONDS,
+                    params=envelope({**raw_data, "next_key": cursor})))
+        if followups:
+            for response in await asyncio.gather(*followups):
+                sessions.update(_sessions_from_rows(_rows_from_response(response)))
     return sessions
 
 
@@ -380,9 +340,13 @@ async def _fetch_sleep_for_base(
     sessions: dict[str, dict[str, Any]] = {}
     try:
         async with MiHealthClient.from_token(token_path, base_url=base_url) as client:
-            relatives = await _fetch_relatives_sleep_api(client, uid, start, end, limit, stats)
+            # Parallel families fit a 22-second first pass and a 12-second
+            # cursor follow-up inside the 40-second region deadline.
+            relatives, self_data = await asyncio.gather(
+                _fetch_relatives_sleep_api(client, uid, start, end, limit, stats),
+                _fetch_self_sleep_api(client, start, end, limit, stats),
+            )
             sessions.update(relatives)
-            self_data = await _fetch_self_sleep_api(client, start, end, limit, stats)
             sessions.update(self_data)
     except Exception as exc:
         stats["errors"].append(type(exc).__name__)

@@ -96,6 +96,34 @@ jobs:
                       with self.assertRaises(bridge.XiaomiCloudTimeout):
                           await bridge._select_sleep_region(Path("unused"), 1, 0, 1, 30, 1)
 
+              async def test_legacy_flat_self_params_remain_compatible(self):
+                  end = int(datetime.now(timezone.utc).timestamp()) - 3600
+                  start = end - 8 * 3600
+                  class Client:
+                      async def _request(self, method, path, **kwargs):
+                          params = kwargs.get("params", {})
+                          if method == "POST" and path == bridge.XIAOMI_SELF_FITNESS_PATH and params.get("key") == "sleep":
+                              return {"code": 0, "result": {"data_list": [{"key": "sleep", "value": {"bedtime": start, "wake_up_time": end}}]}}
+                          return {"code": 0, "result": {"data_list": []}}
+                  sessions = await bridge._fetch_self_sleep_api(Client(), start, end + 3600, 30, {"success": 0, "errors": []})
+                  self.assertEqual(len(sessions), 1)
+
+              async def test_paged_raw_sleep_ignores_unrelated_metrics(self):
+                  end = int(datetime.now(timezone.utc).timestamp()) - 3600
+                  start = end - 8 * 3600
+                  class Client:
+                      async def _request(self, method, path, **kwargs):
+                          params = kwargs.get("params", {})
+                          if method != "GET" or path != bridge.XIAOMI_SELF_FITNESS_PATH:
+                              return {"code": 0, "result": {"data_list": []}}
+                          data = json.loads(params["data"])
+                          interval = {"bedtime": start, "wake_up_time": end}
+                          if data["next_key"] == "cursor":
+                              return {"code": 0, "result": {"data_list": [{"key": "sleep", "value": interval}]}}
+                          return {"code": 0, "result": {"data_list": [{"key": "steps", "value": interval}], "has_more": True, "next_key": "cursor"}}
+                  sessions = await bridge._fetch_self_sleep_api(Client(), start, end + 3600, 30, {"success": 0, "errors": []})
+                  self.assertEqual(len(sessions), 1)
+
               async def test_self_get_recovers_when_post_has_no_sleep(self):
                   end = int(datetime.now(timezone.utc).timestamp()) - 3600
                   start = end - 8 * 3600
@@ -465,7 +493,7 @@ jobs:
           # temporary copies of credentials; never output raw provider data,
           # SDK logs, account identifiers, tokens or exception messages.
           /opt/lifeos-xiaomi-sleep/bin/python - "$app_dir" <<'XIAOMI_PROBE' 2>/dev/null || echo "xiaomi_probe=failed"
-          import asyncio, json, os, shutil, sqlite3, sys, tempfile
+          import asyncio, json, os, shutil, socket, ssl, sqlite3, sys, tempfile, time
           from collections import Counter
           from datetime import datetime, timezone
           from pathlib import Path
@@ -496,6 +524,8 @@ jobs:
               region = base.split("//", 1)[-1].split(".", 1)[0]
               requests = [
                   ("relative_aggregate","GET", b.XIAOMI_AGGREGATED_PATH, {"relative_uid":uid,"key":"sleep","tag":"daily_report","start_time":old,"end_time":end,"limit":30}),
+                  ("legacy_self_raw","POST",b.XIAOMI_SELF_FITNESS_PATH,{"key":"sleep","start_time":old,"end_time":end,"limit":30}),
+                  ("legacy_self_aggregate","POST",b.XIAOMI_SELF_AGGREGATED_PATH,{"key":"sleep","tag":"daily_report","start_time":old,"end_time":end,"limit":30}),
                   ("relative_raw","GET", b.XIAOMI_FITNESS_PATH, {"relative_uid":uid,"key":"sleep","start_time":old,"end_time":end,"limit":30}),
                   ("relative_latest","GET", b.XIAOMI_LATEST_PATH, {"relative_uid":uid}),
                   ("self_raw","POST",b.XIAOMI_SELF_FITNESS_PATH,{"data":json.dumps({"key":"sleep","startTime":recent*1000,"endTime":end*1000,"reverse":True,"next_key":None})}),
@@ -551,7 +581,25 @@ jobs:
                           http = http if isinstance(http,int) else 0
                           code = code if isinstance(code,int) else 0
                           print(f"xiaomi_probe {region} {label} error={type(e).__name__} http={http} code={code}", flush=True)
+          def network_probe(base):
+              host = base.split("//", 1)[-1].split("/", 1)[0]
+              region = host.split(".", 1)[0]
+              start = time.monotonic()
+              try:
+                  socket.getaddrinfo(host,443,type=socket.SOCK_STREAM)
+              except OSError as e:
+                  print(f"xiaomi_network {region} dns_error={type(e).__name__}",flush=True)
+                  return
+              try:
+                  with socket.create_connection((host,443),timeout=8) as sock:
+                      tcp_ms = int((time.monotonic()-start)*1000)
+                      with ssl.create_default_context().wrap_socket(sock,server_hostname=host):
+                          print(f"xiaomi_network {region} tcp_ms={tcp_ms} tls_ms={int((time.monotonic()-start)*1000)}",flush=True)
+              except OSError as e:
+                  print(f"xiaomi_network {region} connection_error={type(e).__name__}",flush=True)
           async def main():
+              bases = list(dict.fromkeys([b.XIAOMI_HEALTH_BASE_URL,*b.XIAOMI_HEALTH_REGION_URLS]))
+              await asyncio.gather(*(asyncio.to_thread(network_probe,base) for base in bases))
               with tempfile.TemporaryDirectory(prefix="lifeos-xiaomi-probe-") as tmp:
                   jobs = []
                   for i, base in enumerate(dict.fromkeys([b.XIAOMI_HEALTH_BASE_URL,*b.XIAOMI_HEALTH_REGION_URLS])):
