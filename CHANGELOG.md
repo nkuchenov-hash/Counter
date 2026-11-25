@@ -6,6 +6,10 @@
 - Tags CRUD now displays grouped white rows and dividers within the settings column, with neutral delete icons and the New Tag action next to the list, including when the catalog is empty. Preserved reorder, edit/delete, domains and PocketBase storage.
 - Added UI and source regression coverage for desktop width, centered alignment, and persistence of Add/reorder controls. CI and publication pending.
 
+## [2026-11-25] - Xiaomi sleep ingestion compatibility
+
+* Correct self-account request envelope and timestamp units; normalize both raw whole-sleep intervals and daily-report segments without importing individual stages. Regional fallback uses profile-local midnight instead of a rolling 36-hour freshness window. Production import verification pending.
+
 ## [2026-11-24] - Settings organization and density
 
 - Consolidate external integrations, remove empty intermediary tabs and duplicate headings, and align desktop settings content and controls without changing persisted preferences or the established palette.

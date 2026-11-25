@@ -144,6 +144,8 @@ def _value_object(row: Any) -> dict[str, Any]:
     if not isinstance(row, dict):
         return {}
     value = row.get("value")
+    if value is None and ("bedtime" in row or "segment_details" in row):
+        return row
     if isinstance(value, dict):
         return value
     if not isinstance(value, str) or not value:
@@ -159,6 +161,8 @@ def _rows_from_response(response: Any) -> list[Any]:
     if not isinstance(response, dict):
         return []
     result = response.get("result")
+    if isinstance(result, list):
+        return result
     if isinstance(result, dict):
         rows = result.get("data_list") or result.get("data") or result.get("items")
         if isinstance(rows, list):
@@ -173,18 +177,36 @@ def _sessions_from_rows(rows: Any) -> dict[str, dict[str, Any]]:
         return sessions
     for row in rows:
         value = _value_object(row)
-        segments = value.get("segment_details") or value.get("items") or []
-        if not isinstance(segments, list):
-            continue
-        for segment in segments:
+        # A daily report contains whole-sleep segments, whereas raw sleep
+        # rows carry the whole interval directly; their items are sleep stages.
+        # Never turn individual stage start/end timestamps into Timeline sleep.
+        segments = value.get("segment_details")
+        candidates = segments if isinstance(segments, list) and segments else [value]
+        for segment in candidates:
             if not isinstance(segment, dict):
                 continue
             normalized = _safe_session(
                 segment.get("bedtime"),
-                segment.get("wake_up_time"),
+                segment.get("wake_up_time") or segment.get("device_wake_up_time"),
             )
             if normalized:
                 sessions[normalized["external_id"]] = normalized
+        # Some older API responses wrap whole-sleep intervals in items.
+        # Only accept explicit bedtime/wake fields, not stage boundaries.
+        if not segments and not any(
+            key in value for key in ("bedtime", "wake_up_time", "device_wake_up_time")
+        ):
+            items = value.get("items")
+            if isinstance(items, list):
+                for item in items:
+                    if not isinstance(item, dict):
+                        continue
+                    normalized = _safe_session(
+                        item.get("bedtime"),
+                        item.get("wake_up_time") or item.get("device_wake_up_time"),
+                    )
+                    if normalized:
+                        sessions[normalized["external_id"]] = normalized
     return sessions
 
 
@@ -281,13 +303,14 @@ async def _fetch_self_sleep_api(
         response = await _query_sleep(client, stats,
             "POST",
             XIAOMI_SELF_AGGREGATED_PATH,
-            params={
+            params={"data": json.dumps({
                 "key": "sleep",
                 "tag": "daily_report",
-                "start_time": start,
-                "end_time": end,
-                "limit": limit,
-            },
+                "startTime": start * 1000,
+                "endTime": end * 1000,
+                "cursor": None,
+                "reverse": True,
+            }, separators=(",", ":"))},
         )
         sessions.update(_sessions_from_rows(_rows_from_response(response)))
     except Exception:
@@ -297,12 +320,13 @@ async def _fetch_self_sleep_api(
         raw_response = await _query_sleep(client, stats,
             "POST",
             XIAOMI_SELF_FITNESS_PATH,
-            params={
+            params={"data": json.dumps({
                 "key": "sleep",
-                "start_time": start,
-                "end_time": end,
-                "limit": limit,
-            },
+                "startTime": start * 1000,
+                "endTime": end * 1000,
+                "reverse": True,
+                "next_key": None,
+            }, separators=(",", ":"))},
         )
         sessions.update(_sessions_from_rows(_rows_from_response(raw_response)))
     except Exception:
@@ -461,7 +485,9 @@ async def _sync(args: argparse.Namespace) -> int:
         limit = max(30, days + 2)
 
         sessions, selected_base = await _select_sleep_region(
-            token_path, uid, start, end, limit, now.timestamp() - 36 * 3600
+            token_path, uid, start, end, limit,
+            args.today_start if args.today_start is not None
+            else datetime(now.year, now.month, now.day, tzinfo=timezone.utc).timestamp()
         )
 
         ordered = sorted(sessions.values(), key=lambda item: item["start"])
@@ -493,6 +519,8 @@ def main() -> int:
     sync = sub.add_parser("sync")
     sync.add_argument("--token-path", required=True)
     sync.add_argument("--days", type=int, default=14)
+    sync.add_argument("--today-start", type=float, default=None,
+                      help="Profile-local midnight as UTC epoch seconds")
 
     args = parser.parse_args()
     if args.command == "login":

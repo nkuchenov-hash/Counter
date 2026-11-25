@@ -36,9 +36,9 @@ Authenticated self-account data family:
 - `/app/v1/data/get_aggregated_fitness_data_by_time`
 - `/app/v1/data/get_fitness_data_by_time`
 
-The self-account data endpoints use Xiaomi's encrypted **POST** request path and do not require `relative_uid`. The relatives endpoints use the library's current GET path. Neither family may short-circuit the other merely because it returned one or more old rows.
+The self-account data endpoints use Xiaomi's encrypted **POST** request path with a JSON-encoded `data` argument, camelCase `startTime` / `endTime` in milliseconds, and do not require `relative_uid`. The relatives endpoints use the library's current GET path. Neither family may short-circuit the other merely because it returned one or more old rows.
 
-The bridge reconciles aggregate + latest + raw relatives data with self-account aggregate/raw data on every pass. If the primary regional backend is stale, it probes the known Xiaomi Health regions and keeps the freshest successful result.
+The bridge reconciles aggregate + latest + raw relatives data with self-account aggregate/raw data on every pass. Daily-report `segment_details` and direct raw intervals (`bedtime` with `wake_up_time` or `device_wake_up_time`) are both accepted; individual stage timestamps must never be imported as separate sleep sessions. If the primary regional backend has no completed sleep ending on or after profile-local midnight, it probes the known Xiaomi Health regions and keeps the freshest successful result. Yesterday's sleep must not suppress today's region fallback.
 
 ## Missing-day synchronization law
 

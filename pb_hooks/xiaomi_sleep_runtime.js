@@ -321,7 +321,7 @@ function __xiaomiNormalizeSessions(payload) {
     return out;
 }
 
-function __xiaomiRunBridge(userId, days) {
+function __xiaomiRunBridge(userId, days, todayStart) {
     var cmd = $os.cmd(
         "timeout",
         "90",
@@ -331,7 +331,9 @@ function __xiaomiRunBridge(userId, days) {
         "--token-path",
         __xiaomiTokenPath(userId),
         "--days",
-        String(days || 14)
+        String(days || 14),
+        "--today-start",
+        String(todayStart.getTime() / 1000)
     );
     var raw = toString(cmd.output()).trim();
     if (!raw) throw new Error("Xiaomi sleep bridge returned no data");
@@ -399,14 +401,15 @@ function __xiaomiRunConnection(app, connection) {
     var now = new Date();
     var lastFull = __xiaomiDate(connection.get("last_full_sync_at"));
     var fullDue = !lastFull || now.getTime() - lastFull.getTime() >= __xiaomiFullSyncMs;
-    var payload = __xiaomiRunBridge(userId, fullDue ? 30 : 14);
+    var local = __xiaomiLocalClock(profile, now);
+    var todayBounds = __xiaomiLocalDayUtcBounds(profile, local.day);
+    var payload = __xiaomiRunBridge(userId, fullDue ? 30 : 14, todayBounds.start);
     var sessions = __xiaomiNormalizeSessions(payload);
     var category = __xiaomiSleepCategory(app, userId, profile.get("primary_language"));
     var imported = 0;
     for (var i = 0; i < sessions.length; i++) {
         imported += __xiaomiUpsert(app, userId, profile, category, sessions[i]);
     }
-    var local = __xiaomiLocalClock(profile, now);
     var missingExpectedSleep =
         !__xiaomiHasSleepForLocalDay(app, userId, profile, local.day) &&
         (local.minutes >= 10 * 60 || !__xiaomiHasRecentSleep(app, userId));
