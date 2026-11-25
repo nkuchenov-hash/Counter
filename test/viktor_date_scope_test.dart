@@ -1,6 +1,6 @@
 import 'package:counter/data/ai/viktor_action_contract.dart';
 import 'package:counter/data/ai/viktor_date_scope.dart';
-import 'package:counter/data/ai/viktor_executor.dart';
+import 'package:counter/data/ai/viktor_domain_tools.dart';
 import 'package:counter/data/ai/viktor_existing_plan.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter_test/flutter_test.dart';

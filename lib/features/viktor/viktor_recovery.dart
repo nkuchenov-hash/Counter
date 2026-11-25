@@ -3,6 +3,26 @@ part of 'viktor_chat_page.dart';
 // Error handling stays out of the large hot-path chat widget.
 // This extension shares the same library and cannot bypass Brain execution.
 extension _ViktorRecoveryDialogue on _ViktorChatPageState {
+  Future<void> _runForwardedPlan(ViktorActionBatch batch,
+      ViktorExecutor executor, DateTime day,
+      {required void Function() onWriteStarted}) async {
+    final preview = await executor.describe(batch, day);
+    if (!mounted) return;
+    final args = batch.actions.single.arguments;
+    final approved = await _confirm(batch,
+        '$preview\nДлительность не указана: предварительно 30 минут.'
+        '\nИсходное сообщение будет сохранено в заметке:\n${args['note']}');
+    if (!mounted) return;
+    if (!approved) {
+      _push('Создание плана отменено.');
+      return;
+    }
+    onWriteStarted();
+    final receipt = await executor.apply(batch, day,
+        approvedPreview: preview);
+    if (mounted) _push(receipt);
+  }
+
   /// An explicit "move yesterday's incomplete plans to today" is a native
   /// action. Real source/target state is loaded by ViktorExecutor. There is
   /// no LLM answer, and no alternate conversational-choice menu.
