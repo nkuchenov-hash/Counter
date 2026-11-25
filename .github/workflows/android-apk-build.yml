@@ -69,6 +69,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require owner approval for critical runtime content
+        env:
+          LIFEOS_CRITICAL_APPROVED_DIGEST: ${{ vars.LIFEOS_CRITICAL_APPROVED_DIGEST }}
+        run: python scripts/audit/critical_release_guard.py
 
       - name: Expose canonical signed Android build run
         if: github.event_name != 'pull_request'

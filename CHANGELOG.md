@@ -2,6 +2,10 @@
 
 - Recognize standalone Russian appointment and booking messages with explicit dates and clocks before provider inference; preserve source details as plan notes and require a preview for the tentative 30-minute duration. Persist single-plan preparation notes as canonical NoteDocument blocks with heading, divider and interactive checklist mirrors. Normalize equivalent provider clock/duration representations before the strict action contract; retain existing Brain conflict, category, deduplication and write verification.
 
+## [2026-11-25] - Owner-controlled critical release gate
+
+* Lock critical runtime content by fingerprint; reject unapproved edits, additions and deletions in architecture and release workflows. Add CODEOWNERS and explicit owner-approval policy. Repository-level branch protection and independent identity enforcement require administrator configuration. No runtime functionality changed.
+
 ## [2026-11-25] - Preserve legacy Xiaomi requests and tolerate slow cloud responses
 
 * Restore the pre-incident flat request format alongside newer envelopes, run independent requests concurrently within the existing process deadline, follow a bounded raw cursor, and diagnose DNS/TCP/TLS separately. Add regression cases for legacy and paged results. Real production recovery remains unverified.

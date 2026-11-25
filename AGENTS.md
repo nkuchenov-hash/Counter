@@ -172,6 +172,35 @@ For any production Notes editor change, `docs/NOTES_EDITOR_CONTRACT.md` is manda
 - Do not modify archived, quarantine, generated, or cleanup-report-listed legacy files unless explicitly requested.
 - Do not leave explicitly requested implementation work on an unmerged branch or PR after required verification passes. Commit, push, merge, deploy the affected production target, and verify the live result unless the user explicitly says not to ship/deploy.
 
+## Critical function change freeze (owner approval required)
+
+This section overrides the default merge/deploy completion rule for protected content.
+The user must explicitly authorize the exact critical function change before an agent
+edits it. An adjacent task, refactor, general maintenance, or an earlier approval of
+another version is not permission. Do not change protected files to satisfy an
+unrelated task. Read-only diagnosis and proposals are allowed.
+
+- Protected runtime: all `lib/data/`, startup/shell, auth UI, health settings and
+  device health adapters, PocketBase hooks/migrations, dependency manifests and
+  mobile health/auth permission manifests. The exact path list is in
+  `scripts/audit/critical_release_guard.py`.
+- An authorized critical implementation belongs in a separate branch/PR, with
+  focused behavior tests and an exact diff for the owner. Do not push it directly
+  to main, merge it, or publish it without the owner's explicit release approval.
+- The release gate rejects any protected tree fingerprint that differs from the
+  bootstrap revision or the owner-approved repository variable
+  `LIFEOS_CRITICAL_APPROVED_DIGEST`. Only a human repository administrator may
+  update that variable, after inspecting the precise diff and verification evidence.
+  Agents must never set it or change the baseline, protected path list, guard,
+  workflows, CODEOWNERS, or permissions to bypass the gate.
+- For provider integrations, mocked tests are insufficient to claim recovery.
+  Require a successful live import of expected data, not merely an HTTP response,
+  CI success, a connection flag, or a deployment. Distinguish an existing external
+  outage from a regression introduced by a release.
+- CODEOWNERS and CI are defense in depth; enforce required review/status checks,
+  no direct pushes or bypass, and separate human/agent identities in GitHub
+  repository settings. A shared administrator identity cannot enforce human approval.
+
 ## Delivery and Deployment Completion Rule
 
 For an explicitly requested LIFE OS implementation or bug fix, **"done" means shipped**, not merely coded:

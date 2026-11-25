@@ -44,6 +44,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require owner approval for critical runtime content
+        env:
+          LIFEOS_CRITICAL_APPROVED_DIGEST: ${{ vars.LIFEOS_CRITICAL_APPROVED_DIGEST }}
+        run: python scripts/audit/critical_release_guard.py
 
       - name: Run strict architecture guard
         run: pwsh -NoProfile -NonInteractive -File ./scripts/audit/architecture_guard.ps1 -Strict

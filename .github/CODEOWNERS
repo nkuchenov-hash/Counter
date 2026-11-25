@@ -1,0 +1,20 @@
+# Critical runtime and security/release policy. Required code-owner reviews
+# and disallowing bypass must be enabled in GitHub repository settings.
+/lib/main.dart @nkuchenov-hash
+/lib/app/shell/ @nkuchenov-hash
+/lib/data/ @nkuchenov-hash
+/lib/features/auth/ @nkuchenov-hash
+/lib/features/settings/health/ @nkuchenov-hash
+/lib/services/health_connect/ @nkuchenov-hash
+/pb_hooks/ @nkuchenov-hash
+/pb_migrations/ @nkuchenov-hash
+/pubspec.yaml @nkuchenov-hash
+/pubspec.lock @nkuchenov-hash
+/android/app/src/main/AndroidManifest.xml @nkuchenov-hash
+/ios/Runner/Runner.entitlements @nkuchenov-hash
+/.github/ @nkuchenov-hash
+/scripts/audit/ @nkuchenov-hash
+/AGENTS.md @nkuchenov-hash
+/docs/DEPLOY.md @nkuchenov-hash
+/docs/ARCHITECTURE.md @nkuchenov-hash
+/docs/SERVER_SLEEP_SYNC_DEPLOY.md @nkuchenov-hash

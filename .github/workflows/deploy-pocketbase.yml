@@ -23,6 +23,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Require owner approval for critical runtime content
+        env:
+          LIFEOS_CRITICAL_APPROVED_DIGEST: ${{ vars.LIFEOS_CRITICAL_APPROVED_DIGEST }}
+        run: python scripts/audit/critical_release_guard.py
+
       - name: Validate main architecture contracts
         shell: bash
         run: |

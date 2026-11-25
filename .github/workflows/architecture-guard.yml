@@ -25,6 +25,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Test critical release guard
+        run: python scripts/audit/critical_release_guard.py --self-test
+
+      - name: Require owner approval for critical runtime content
+        env:
+          LIFEOS_CRITICAL_APPROVED_DIGEST: ${{ vars.LIFEOS_CRITICAL_APPROVED_DIGEST }}
+        run: python scripts/audit/critical_release_guard.py
+
       - name: Enforce canonical navigation and no interactive overlap
         run: python3 scripts/audit/canonical_navigation_law.py
 
