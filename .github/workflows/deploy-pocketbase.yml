@@ -436,6 +436,77 @@ jobs:
           print("live_database_verified=true")
           CHECKDB
 
+          # Diagnose the source independently of the importer. Use private
+          # temporary copies of credentials; never output raw provider data,
+          # SDK logs, account identifiers, tokens or exception messages.
+          /opt/lifeos-xiaomi-sleep/bin/python - "$app_dir" <<'XIAOMI_PROBE' 2>/dev/null || echo "xiaomi_probe=failed"
+          import asyncio, json, os, shutil, sqlite3, sys, tempfile
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from loguru import logger
+          logger.remove()
+          root = Path(sys.argv[1])
+          sys.path.insert(0, str(root / "pb_hooks"))
+          import xiaomi_sleep_bridge as b
+          db = sqlite3.connect(f"file:{root / 'pb_data/data.db'}?mode=ro", uri=True)
+          row = db.execute("SELECT user_id,last_error FROM sleep_sync_connections WHERE provider='xiaomi' AND enabled=1 LIMIT 1").fetchone()
+          if not row:
+              print("xiaomi_probe=no_enabled_connection")
+              raise SystemExit(0)
+          error = row[1] or ""
+          known = ("xiaomi_sleep_not_available_today", "XiaomiCloudAuthError", "XiaomiCloudTimeout", "XiaomiCloudUnavailable", "TokenExpiredError")
+          print("xiaomi_importer_error=" + next((v for v in known if v in error), "none" if not error else "other"))
+          token = root / "pb_data/xiaomi_sleep" / (row[0] + ".token.json")
+          if not token.is_file():
+              print("xiaomi_probe=missing_token")
+              raise SystemExit(0)
+          async def inspect(base, copy):
+              from mi_fitness import MiHealthClient
+              uid = int(json.loads(copy.read_text())["user_id"])
+              now = int(datetime.now(timezone.utc).timestamp())
+              old = now - 15 * 86400
+              recent = now - 36 * 3600
+              end = now + 3600
+              region = base.split("//", 1)[-1].split(".", 1)[0]
+              requests = [
+                  ("relative_aggregate","GET", b.XIAOMI_AGGREGATED_PATH, {"relative_uid":uid,"key":"sleep","tag":"daily_report","start_time":old,"end_time":end,"limit":30}),
+                  ("relative_raw","GET", b.XIAOMI_FITNESS_PATH, {"relative_uid":uid,"key":"sleep","start_time":old,"end_time":end,"limit":30}),
+                  ("relative_latest","GET", b.XIAOMI_LATEST_PATH, {"relative_uid":uid}),
+                  ("self_raw","POST",b.XIAOMI_SELF_FITNESS_PATH,{"data":json.dumps({"key":"sleep","startTime":recent*1000,"endTime":end*1000,"reverse":True,"next_key":None})}),
+                  ("self_aggregate","POST",b.XIAOMI_SELF_AGGREGATED_PATH,{"data":json.dumps({"key":"sleep","tag":"daily_report","startTime":old*1000,"endTime":end*1000,"reverse":True,"cursor":None})}),
+              ]
+              async with MiHealthClient.from_token(copy, base_url=base) as client:
+                  for label, method, endpoint, params in requests:
+                      try:
+                          response = await asyncio.wait_for(client._request(method,endpoint,params=params), timeout=12)
+                          rows = b._rows_from_response(response)
+                          if label == "relative_latest":
+                              rows = [r for r in rows if isinstance(r,dict) and r.get("key")=="sleep"]
+                          sessions = b._sessions_from_rows(rows)
+                          latest = b._latest_end_epoch(sessions)
+                          day = datetime.fromtimestamp(latest,timezone.utc).date().isoformat() if latest else "none"
+                          print(f"xiaomi_probe {region} {label} rows={len(rows)} sessions={len(sessions)} latest_day={day}", flush=True)
+                      except Exception as e:
+                          http = getattr(e,"status_code",0)
+                          code = getattr(e,"code",0)
+                          http = http if isinstance(http,int) else 0
+                          code = code if isinstance(code,int) else 0
+                          print(f"xiaomi_probe {region} {label} error={type(e).__name__} http={http} code={code}", flush=True)
+          async def main():
+              with tempfile.TemporaryDirectory(prefix="lifeos-xiaomi-probe-") as tmp:
+                  jobs = []
+                  for i, base in enumerate(dict.fromkeys([b.XIAOMI_HEALTH_BASE_URL,*b.XIAOMI_HEALTH_REGION_URLS])):
+                      copy = Path(tmp) / str(i)
+                      shutil.copyfile(token,copy)
+                      os.chmod(copy,0o600)
+                      jobs.append(inspect(base,copy))
+                  results = await asyncio.gather(*jobs,return_exceptions=True)
+                  for result in results:
+                      if isinstance(result,BaseException):
+                          print("xiaomi_probe_worker_error="+type(result).__name__)
+          asyncio.run(main())
+          XIAOMI_PROBE
+
           hook_line="$(journalctl -u "$service_name" --since '15 minutes ago' --no-pager 2>/dev/null | grep '\[ETNIKA_HOMEPAGE_PATH_ONCE\]' | tail -1 || true)"
           hook_status="no_log"
           case "$hook_line" in
