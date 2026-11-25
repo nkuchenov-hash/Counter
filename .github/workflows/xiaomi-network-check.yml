@@ -10,35 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - name: Check public DNS and TLS endpoints without credentials
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          import socket, ssl, concurrent.futures, time
-          hosts = ['ru.hlth.io.mi.com','ru.hlth.xiaomiwear.com','ru.watch.iot.mi.com','de.hlth.io.mi.com','hlth.io.mi.com','sg.hlth.io.mi.com']
-          def probe(host):
-              try:
-                  addresses = socket.getaddrinfo(host,443,type=socket.SOCK_STREAM)
-                  print(host, 'DNS', sorted({r[4][0] for r in addresses}), flush=True)
-              except OSError as e:
-                  print(host, 'DNS', type(e).__name__, flush=True)
-                  return
-              for family, kind, proto, _, addr in dict.fromkeys(addresses):
-                  try:
-                      with socket.socket(family,kind,proto) as sock:
-                          sock.settimeout(8)
-                          start=time.monotonic()
-                          sock.connect(addr)
-                          tcp=int((time.monotonic()-start)*1000)
-                          with ssl.create_default_context().wrap_socket(sock,server_hostname=host):
-                              print(host, addr[0], 'TCP', tcp, 'TLS OK',flush=True)
-                  except OSError as e:
-                      print(host, addr[0], type(e).__name__, flush=True)
-          with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
-              list(ex.map(probe,hosts))
-          PY
-
-      - name: Compare identical public addresses from LIFE OS server
+      - name: Test existing Xiaomi session against alternative official Russian hostname
         env:
           LIFEOS_SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
           LIFEOS_SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
@@ -56,43 +28,60 @@ jobs:
           printf '%s\n' "$LIFEOS_SSH_PRIVATE_KEY" > "$key"
           chmod 600 "$key"
           ssh-keyscan -T 8 -p "$port" -H "$host" >> "$HOME/.ssh/known_hosts" 2>/dev/null
-          ssh -i "$key" -p "$port" -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=yes "$user@$host" 'python3 -' <<'PY'
-          import socket, ssl, concurrent.futures, time
-          hosts = {
-              'ru.hlth.io.mi.com': ['107.155.52.38','107.155.53.125','107.155.53.34','169.197.117.177'],
-              'ru.hlth.xiaomiwear.com': ['107.155.53.109','107.155.53.111'],
-              'ru.watch.iot.mi.com': ['107.155.52.38','107.155.53.125','107.155.53.34','169.197.117.177'],
-              'de.hlth.io.mi.com': [],
-          }
-          context = ssl.create_default_context()
-          jobs = set()
-          for host, comparison in hosts.items():
-              try:
-                  addresses = sorted({r[4][0] for r in socket.getaddrinfo(host,443,type=socket.SOCK_STREAM)})
-                  print('VPS DNS',host,addresses,flush=True)
-                  for addr in addresses + comparison:
-                      jobs.add((host,addr))
-              except OSError as e:
-                  print('VPS DNS',host,type(e).__name__,flush=True)
-                  for addr in comparison:
-                      jobs.add((host,addr))
-          def probe(job):
-              host, ip = job
-              phase='tcp'
-              try:
-                  start=time.monotonic()
-                  with socket.create_connection((ip,443),timeout=8) as sock:
-                      tcp=int((time.monotonic()-start)*1000)
-                      phase='tls'
-                      with context.wrap_socket(sock,server_hostname=host) as secure:
-                          tls=int((time.monotonic()-start)*1000)
-                          phase='http'
-                          secure.sendall(('GET /app/v1/data/get_fitness_data_by_time HTTP/1.1\r\nHost: '+host+'\r\nConnection: close\r\n\r\n').encode('ascii'))
-                          line=secure.recv(128).split(b'\r\n',1)[0].decode('ascii','replace')
-                          if not line.startswith('HTTP/'): line='no_http_status'
-                          print('VPS',host,ip,'tcp_ms',tcp,'tls_ms',tls,line,flush=True)
-              except OSError as e:
-                  print('VPS',host,ip,phase,type(e).__name__,flush=True)
-          with concurrent.futures.ThreadPoolExecutor(max_workers=12) as pool:
-              list(pool.map(probe,sorted(jobs)))
+          ssh -i "$key" -p "$port" -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=yes "$user@$host" '/opt/lifeos-xiaomi-sleep/bin/python -' <<'PY'
+          import asyncio, json, os, shutil, sqlite3, subprocess, sys, tempfile
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from loguru import logger
+          logger.remove()
+          def main():
+              unit = "lifeos-recovery-live.service"
+              if subprocess.run(["systemctl","is-active","--quiet",unit]).returncode:
+                  print("alternative_probe=active_service_not_identified")
+                  return
+              pid = subprocess.check_output(["systemctl","show",unit,"-p","MainPID","--value"],text=True).strip()
+              files=set()
+              for fd in Path("/proc",pid,"fd").iterdir():
+                  try:
+                      p=Path(os.readlink(fd))
+                      if p.name=="data.db" and p.is_file(): files.add(p.resolve())
+                  except OSError: pass
+              if len(files)!=1:
+                  print("alternative_probe=database_not_identified")
+                  return
+              dbfile=files.pop()
+              root=dbfile.parent.parent
+              sys.path.insert(0,str(root/"pb_hooks"))
+              import xiaomi_sleep_bridge as b
+              db=sqlite3.connect(f"file:{dbfile}?mode=ro",uri=True)
+              rows=db.execute("SELECT user_id FROM sleep_sync_connections WHERE provider='xiaomi' AND enabled=1").fetchall()
+              if len(rows)!=1:
+                  print("alternative_probe=connection_not_unique")
+                  return
+              token=root/"pb_data"/"xiaomi_sleep"/(rows[0][0]+".token.json")
+              if not token.is_file():
+                  print("alternative_probe=missing_token")
+                  return
+              now=int(datetime.now(timezone.utc).timestamp())
+              with tempfile.TemporaryDirectory(prefix="lifeos-xiaomi-probe-") as temp:
+                  copy=Path(temp)/"token.json"
+                  shutil.copyfile(token,copy)
+                  os.chmod(copy,0o600)
+                  uid=int(json.loads(copy.read_text())["user_id"])
+                  async def query():
+                      result,stats=await b._probe_region(copy,uid,"https://ru.hlth.xiaomiwear.com",now-15*86400,now+3600,30)
+                      end=b._latest_end_epoch(result)
+                      latest=datetime.fromtimestamp(end,timezone.utc).date().isoformat() if end else "none"
+                      recent=sum(1 for item in result.values() if item.get("end","")[:10] > "2026-11-21")
+                      print("alternative_probe=completed",flush=True)
+                      print(f"alternative_sessions={len(result)}",flush=True)
+                      print(f"alternative_recent_sessions={recent}",flush=True)
+                      print(f"alternative_latest_day={latest}",flush=True)
+                      print(f"alternative_success_requests={stats['success']}",flush=True)
+                      print(f"alternative_error_types={sorted(set(stats['errors']))}",flush=True)
+                  asyncio.run(query())
+          try:
+              main()
+          except Exception as exc:
+              print("alternative_probe_error="+type(exc).__name__)
           PY
