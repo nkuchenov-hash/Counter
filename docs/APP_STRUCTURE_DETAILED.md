@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `4600edbe` on 2026-11-25.**
+**Generated from input HEAD `4600edbe` on 2026-11-25; reconciled two protection files from `da5a664c`.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1037 — each appears **exactly once** below.
+**Tracked files:** 1039 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -39,13 +39,13 @@ python scripts/manual/generate_app_structure_detailed.py
 | `PocketBase migration` | 27 |
 | `PocketBase backend` | 25 |
 | `shared Voice system` | 20 |
-| `CI/deployment` | 18 |
+| `CI/deployment` | 19 |
 | `historical engineering record` | 18 |
 | `localization` | 13 |
 | `installer` | 12 |
 | `Brain Voice` | 10 |
 | `shared time` | 9 |
-| `audit tool` | 7 |
+| `audit tool` | 8 |
 | `asset` | 6 |
 | `package metadata` | 6 |
 | `shared diagnostics` | 6 |
@@ -4688,6 +4688,44 @@ RU:
 - **Можно удалить?** Нет — конфигурация/инструмент репозитория.
 - **Связано с:** `.cursor/rules/flutter_expert.mdc`, `docs/ARCHITECTURE.md`.
 
+
+### `.github/CODEOWNERS`
+
+EN:
+
+- **Human purpose:** Declares code owners for critical runtime and governance paths; requires GitHub review settings for enforcement.
+- **What this is:** Declares code owners for critical runtime and governance paths; requires GitHub review settings for enforcement.
+- **Why needed:** Prevents unauthorized changes to release-critical functionality.
+- **Contents:** GitHub code-owner path patterns.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub CODEOWNERS; `AGENTS.md`, `docs/DEPLOY.md`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removes a layer of critical release protection.
+- **Confidence:** HIGH
+- **Owner / layer:** Repository governance
+- **Responsibilities:** Owner-approved changes only.
+- **When to open:** When reviewing a critical change or release approval.
+- **Can it be deleted?** No, without explicit owner approval.
+- **Connected to:** `AGENTS.md`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Назначает владельца критических файлов и правил; принудительное ревью требует настроек GitHub.
+- **Что это:** Назначает владельца критических файлов и правил; принудительное ревью требует настроек GitHub.
+- **Зачем:** Блокирует неутверждённые изменения критического кода при выпуске.
+- **Содержимое:** Правила владельцев файлов GitHub.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub CODEOWNERS; `AGENTS.md`, `docs/DEPLOY.md`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Утрата слоя защиты критического выпуска.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Управление репозиторием
+- **Обязанности:** Изменения только с одобрения владельца.
+- **Когда открывать:** При проверке критического изменения.
+- **Можно удалить?** Нет, без отдельного согласования.
+- **Связано с:** `AGENTS.md`, `docs/DEPLOY.md`.
+
+---
 
 ### `.github/copilot-instructions.md`
 
@@ -34007,6 +34045,44 @@ RU:
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
+
+### `scripts/audit/critical_release_guard.py`
+
+EN:
+
+- **Human purpose:** Compares protected Git tree fingerprints with the approved baseline and fails release checks on unapproved changes.
+- **What this is:** Compares protected Git tree fingerprints with the approved baseline and fails release checks on unapproved changes.
+- **Why needed:** Prevents unauthorized changes to release-critical functionality.
+- **Contents:** Python fingerprint check and isolated regression self-test.
+- **Repository role:** audit tool
+- **Evidence of use:** `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/android-apk-build.yml`, `.github/workflows/windows-desktop-build.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removes a layer of critical release protection.
+- **Confidence:** HIGH
+- **Owner / layer:** Repository governance
+- **Responsibilities:** Owner-approved changes only.
+- **When to open:** When reviewing a critical change or release approval.
+- **Can it be deleted?** No, without explicit owner approval.
+- **Connected to:** `AGENTS.md`, `docs/DEPLOY.md`.
+
+RU:
+
+- **Зачем файл человеку:** Сравнивает отпечаток защищённого дерева Git с утверждённой версией и блокирует выпуск при расхождении.
+- **Что это:** Сравнивает отпечаток защищённого дерева Git с утверждённой версией и блокирует выпуск при расхождении.
+- **Зачем:** Блокирует неутверждённые изменения критического кода при выпуске.
+- **Содержимое:** Python-проверка отпечатка и изолированные тесты.
+- **Роль в репозитории:** audit tool
+- **Доказательства использования:** `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/android-apk-build.yml`, `.github/workflows/windows-desktop-build.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Утрата слоя защиты критического выпуска.
+- **Уверенность:** HIGH
+- **Владелец / слой:** Управление репозиторием
+- **Обязанности:** Изменения только с одобрения владельца.
+- **Когда открывать:** При проверке критического изменения.
+- **Можно удалить?** Нет, без отдельного согласования.
+- **Связано с:** `AGENTS.md`, `docs/DEPLOY.md`.
+
+---
 
 ### `scripts/audit/deployment_contract.py`
 
