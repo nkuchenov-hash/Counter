@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
-      - name: Apply verified Xiaomi endpoint via existing server configuration and verify real import
+      - name: Read final live sleep status without changing server configuration
         env:
           LIFEOS_SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
           LIFEOS_SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
@@ -30,76 +30,11 @@ jobs:
           ssh-keyscan -T 8 -p "$port" -H "$host" >> "$HOME/.ssh/known_hosts" 2>/dev/null
           ssh -i "$key" -p "$port" -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=yes "$user@$host" 'if [ "$(id -u)" = 0 ]; then exec bash -s; else exec sudo -n bash -s; fi' <<'REMOTE'
           set -euo pipefail
-          unit=lifeos-recovery-live.service
-          expected=https://ru.hlth.xiaomiwear.com
-          dir="/etc/systemd/system/$unit.d"
-          conf="$dir/90-lifeos-xiaomi-endpoint.conf"
-          systemctl is-active --quiet "$unit"
-          before_pid="$(systemctl show "$unit" -p MainPID --value)"
-          [[ "$before_pid" =~ ^[1-9][0-9]*$ ]]
-          # Never alter the hooks, token, database or unrelated environment.
-          # The existing bridge explicitly supports XIAOMI_HEALTH_BASE_URL.
-          python3 - "$before_pid" <<'CHECK'
+          pid="$(systemctl show lifeos-recovery-live.service -p MainPID --value)"
+          python3 - "$pid" <<'PY'
           import os, sqlite3, sys
           from pathlib import Path
-          files=set()
-          for fd in Path("/proc",sys.argv[1],"fd").iterdir():
-              try:
-                  p=Path(os.readlink(fd))
-                  if p.name=="data.db" and p.is_file(): files.add(p.resolve())
-              except OSError: pass
-          if len(files)!=1: raise SystemExit("active_database_not_identified")
-          db=sqlite3.connect(f"file:{files.pop()}?mode=ro",uri=True)
-          n=db.execute("SELECT count(*) FROM sleep_sync_connections WHERE provider='xiaomi' AND enabled=1").fetchone()[0]
-          if n!=1: raise SystemExit("enabled_xiaomi_connection_not_unique")
-          print("active_database_verified=true")
-          CHECK
-          created=false
-          healthy=false
-          rollback() {
-            if [[ "$created" == true && "$healthy" != true ]]; then
-              rm -f "$conf"
-              systemctl daemon-reload
-              systemctl restart "$unit" || true
-              echo "endpoint_config_rolled_back=true"
-            fi
-          }
-          trap rollback EXIT
-          expected_conf="$(printf '[Service]\nEnvironment="XIAOMI_HEALTH_BASE_URL=%s"\n' "$expected")"
-          if [[ -e "$conf" ]]; then
-            [[ "$(cat "$conf")" == "$expected_conf" ]] || { echo "existing_config_conflict=true"; exit 1; }
-          else
-            install -d -m 755 "$dir"
-            tmp="$(mktemp "$dir/.xiaomi-endpoint.XXXXXX")"
-            printf '%s\n' "$expected_conf" > "$tmp"
-            chmod 644 "$tmp"
-            mv -T "$tmp" "$conf"
-            created=true
-          fi
-          systemctl daemon-reload
-          systemctl restart "$unit"
-          for attempt in {1..60}; do
-            health="$(curl -sS --connect-timeout 3 --max-time 5 -o /dev/null -w '%{http_code}' https://137-22-146-109.sslip.io/api/health 2>/dev/null || true)"
-            if [[ "$health" == 200 ]]; then break; fi
-            sleep 2
-          done
-          [[ "$health" == 200 ]] || { echo "backend_health_failed=true"; exit 1; }
-          pid="$(systemctl show "$unit" -p MainPID --value)"
-          python3 - "$pid" "$expected" <<'ENV'
-          import sys
-          from pathlib import Path
-          entries=Path("/proc",sys.argv[1],"environ").read_bytes().split(b"\0")
-          expected=("XIAOMI_HEALTH_BASE_URL="+sys.argv[2]).encode()
-          if expected not in entries: raise SystemExit("active_endpoint_not_applied")
-          print("active_endpoint_verified=true")
-          ENV
-          healthy=true
-          echo "backend_health=200"
-          # Read the actual live database until the canonical startup import
-          # has completed. Do not synthesize records or manually write SQLite.
-          python3 - "$pid" <<'VERIFY'
-          import os,sqlite3,sys,time
-          from pathlib import Path
+          from datetime import datetime, timezone, timedelta
           files=set()
           for fd in Path("/proc",sys.argv[1],"fd").iterdir():
               try:
@@ -109,21 +44,19 @@ jobs:
           if len(files)!=1: raise SystemExit("active_database_not_identified")
           db=sqlite3.connect(f"file:{files.pop()}?mode=ro",uri=True)
           db.row_factory=sqlite3.Row
-          for attempt in range(37):
-              r=db.execute("SELECT user_id,status,last_session_count,last_imported_count FROM sleep_sync_connections WHERE provider='xiaomi' AND enabled=1").fetchone()
-              if r:
-                  days=db.execute("SELECT date(end_time) AS day,count(*) AS n FROM records WHERE user_id=? AND (sleep_source='xiaomi' OR external_source='xiaomi') AND date(end_time) >= '2026-11-22' GROUP BY day ORDER BY day",(r["user_id"],)).fetchall()
-                  total=db.execute("SELECT count(*) FROM records WHERE user_id=? AND (sleep_source='xiaomi' OR external_source='xiaomi')",(r["user_id"],)).fetchone()[0]
-                  latest=db.execute("SELECT date(max(end_time)) FROM records WHERE user_id=? AND (sleep_source='xiaomi' OR external_source='xiaomi')",(r["user_id"],)).fetchone()[0]
-                  if latest and latest >= "2026-11-25" and r["status"]!="syncing": break
-              if attempt<36: time.sleep(5)
-          print("xiaomi_status="+str(r["status"] if r else "missing"))
-          print("xiaomi_sessions="+str(r["last_session_count"] if r else 0))
-          print("xiaomi_imported="+str(r["last_imported_count"] if r else 0))
-          print("xiaomi_record_count="+str(total if r else 0))
-          print("xiaomi_latest_sleep_day="+str(latest if r else "none"))
-          for day in days if r else []: print("xiaomi_recovered_day="+day["day"]+" count="+str(day["n"]))
-          if not r or not latest or latest < "2026-11-25": raise SystemExit("live_import_not_confirmed")
-          print("live_sleep_import_confirmed=true")
-          VERIFY
+          r=db.execute("SELECT user_id,status,last_error,last_sync_at,last_sync_local_day,last_session_count,last_imported_count,enabled FROM sleep_sync_connections WHERE provider='xiaomi' AND enabled=1").fetchone()
+          if not r: raise SystemExit("missing_connection")
+          p=db.execute("SELECT timezone_offset FROM profiles WHERE id=?",(r["user_id"],)).fetchone()
+          offset=float(p["timezone_offset"] or 0) if p else 0
+          now=datetime.now(timezone.utc)+timedelta(hours=offset)
+          error=r["last_error"] or ""
+          print("status="+str(r["status"]))
+          print("error_class="+("missing_expected_sleep" if "xiaomi_sleep_not_available_today" in error else "none" if not error else "other"))
+          print("profile_day="+now.date().isoformat())
+          print("last_sync_local_day="+str(r["last_sync_local_day"]))
+          print("auto_sync_enabled="+str(bool(r["enabled"])).lower())
+          print("last_session_count="+str(r["last_session_count"]))
+          print("last_imported_count="+str(r["last_imported_count"]))
+          print("latest_sleep_day="+str(db.execute("SELECT date(max(end_time)) FROM records WHERE user_id=? AND (sleep_source='xiaomi' OR external_source='xiaomi')",(r["user_id"],)).fetchone()[0]))
+          PY
           REMOTE
