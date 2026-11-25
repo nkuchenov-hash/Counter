@@ -1,5 +1,6 @@
 import 'package:counter/data/ai/viktor_action_contract.dart';
 import 'package:counter/data/ai/viktor_date_scope.dart';
+import 'package:counter/data/ai/viktor_executor.dart';
 import 'package:counter/data/ai/viktor_existing_plan.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +8,46 @@ import 'package:timezone/data/latest.dart' as tz_data;
 
 void main() {
   setUpAll(tz_data.initializeTimeZones);
+
+  test('Forwarded appointment note uses native editable blocks and mirrors', () {
+    const source = 'Запись на 07/12 в 10-00 ЛОР. Клиника Пример, '
+        'ул. Примерная, 9, телефон 8(812)000-00-00 '
+        'подойти за 30 минут в регистратуру ДМС с собой паспорт родителя, '
+        'полис, СНИЛС, маска и мед. Документы';
+    final doc = viktorPlanNoteDocument(source);
+    expect(doc.blocks.where((b) => b.type == NoteBlockType.heading)
+        .map((b) => b.text), ['Информация', 'Перед посещением', 'С собой']);
+    expect(doc.blocks.where((b) => b.type == NoteBlockType.divider), hasLength(2));
+    expect(doc.toChecklistProjection(), [
+      {'text': 'паспорт родителя', 'done': false},
+      {'text': 'полис', 'done': false},
+      {'text': 'СНИЛС', 'done': false},
+      {'text': 'маска', 'done': false},
+      {'text': 'мед. Документы', 'done': false},
+    ]);
+    final restored = NoteDocument.tryParse(
+        notesDeltaJson: doc.encode(), notesPlain: doc.toPlainText(),
+        checklist: doc.toChecklistProjection());
+    expect(restored.toChecklistProjection(), doc.toChecklistProjection());
+    expect(restored.blocks.where((b) => b.type == NoteBlockType.divider),
+        hasLength(2));
+    expect(restored.toPlainText(), contains('подойти за 30 минут'));
+    expect(restored.toPlainText(), contains('8(812)000-00-00'));
+    expect(restored.blocks.map((b) => b.id).toSet().length, doc.blocks.length);
+  });
+
+  test('Provider note formatting creates canonical headings and checkboxes', () {
+    final doc = viktorPlanNoteDocument(
+        '## Подготовка\n- [ ] Документы\n---\nОбычный текст');
+    expect(doc.blocks.map((b) => b.type), [
+      NoteBlockType.heading, NoteBlockType.checklist,
+      NoteBlockType.divider, NoteBlockType.paragraph,
+    ]);
+    expect(doc.toChecklistProjection(), [{'text': 'Документы', 'done': false}]);
+    expect(viktorPlanNoteDocument('Обычная заметка').blocks.single.text,
+        'Обычная заметка');
+  });
+
 
   test('Forwarded Russian appointment keeps clock, date and all instructions', () {
     const message = 'Запись на 07/12 в 10-00 оперирующий ЛОР. '
