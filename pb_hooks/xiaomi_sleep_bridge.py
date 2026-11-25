@@ -13,6 +13,8 @@ import asyncio
 import json
 import os
 import sys
+import tempfile
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -22,9 +24,10 @@ from mi_fitness import MiHealthClient, XiaomiAuth
 
 XIAOMI_HEALTH_BASE_URL = os.environ.get(
     "XIAOMI_HEALTH_BASE_URL",
-    "https://ru.hlth.io.mi.com",
+    "https://ru.hlth.xiaomiwear.com",
 ).rstrip("/")
 XIAOMI_HEALTH_REGION_URLS = (
+    "https://ru.hlth.xiaomiwear.com",
     "https://hlth.io.mi.com",
     "https://region.hlth.io.mi.com",
     "https://ru.hlth.io.mi.com",
@@ -47,6 +50,9 @@ XIAOMI_SELF_FITNESS_PATH = "/app/v1/data/get_fitness_data_by_time"
 XIAOMI_REQUEST_TIMEOUT_SECONDS = 22.0
 XIAOMI_FALLBACK_TIMEOUT_SECONDS = 12.0
 XIAOMI_REGION_TIMEOUT_SECONDS = 40.0
+XIAOMI_ROUTE_TTL_SECONDS = 7 * 86400
+XIAOMI_NETWORK_COOLDOWN_SECONDS = 30 * 60
+XIAOMI_RECENT_ROUTE_SLEEP_SECONDS = 36 * 3600
 
 
 class XiaomiCloudUnavailable(RuntimeError):
@@ -363,30 +369,183 @@ async def _probe_region(token_path: Path, uid: int, base_url: str, start: int, e
         return {}, {"success": 0, "errors": [type(exc).__name__]}
 
 
-async def _select_sleep_region(token_path: Path, uid: int, start: int, end: int, limit: int, stale_cutoff: float) -> tuple[dict[str, dict[str, Any]], str]:
-    selected_base = XIAOMI_HEALTH_BASE_URL
-    sessions, stats = await _probe_region(token_path, uid, selected_base, start, end, limit)
-    total_success = stats["success"]
-    errors = list(stats["errors"])
-    if _latest_end_epoch(sessions) < stale_cutoff:
-        bases = [base for base in XIAOMI_HEALTH_REGION_URLS if base != selected_base]
-        # Each region has an independent client. Do not serialize five regions
-        # behind the slowest one, or share an authenticated client across them.
-        results = await asyncio.gather(*(
-            _probe_region(token_path, uid, base, start, end, limit) for base in bases
+def _route_cache_path(token_path: Path) -> Path:
+    return token_path.with_name(token_path.name + ".route.json")
+
+
+def _route_candidates() -> tuple[str, ...]:
+    # Only deployment-configured or hardcoded Xiaomi hosts may receive tokens.
+    # A local cache is an optimization, never an arbitrary URL source.
+    return tuple(dict.fromkeys((XIAOMI_HEALTH_BASE_URL, *XIAOMI_HEALTH_REGION_URLS)))
+
+
+def _load_route_state(token_path: Path, now: float) -> tuple[str | None, dict[str, float]]:
+    try:
+        raw = json.loads(_route_cache_path(token_path).read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            return None, {}
+        allowed = set(_route_candidates())
+        preferred = raw.get("preferred")
+        confirmed = raw.get("confirmed_at", 0)
+        if (not isinstance(preferred, str) or preferred not in allowed
+                or not isinstance(confirmed, (int, float))
+                or not 0 <= now - confirmed <= XIAOMI_ROUTE_TTL_SECONDS):
+            preferred = None
+        failures = raw.get("cooldowns", {})
+        if not isinstance(failures, dict):
+            failures = {}
+        cooldowns = {
+            host: float(until) for host, until in failures.items()
+            if host in allowed and isinstance(until, (float, int))
+            and now < until <= now + XIAOMI_NETWORK_COOLDOWN_SECONDS
+        }
+        return preferred, cooldowns
+    except (OSError, ValueError, TypeError):
+        return None, {}
+
+
+def _save_route_state(token_path: Path, preferred: str | None, confirmed: float,
+                      cooldowns: dict[str, float]) -> None:
+    # Cache failures must never prevent sleep import. Unique temporary names
+    # prevent overlapping bridge processes from truncating one another's file.
+    if not token_path.is_file():
+        return
+    tmp = None
+    try:
+        target = _route_cache_path(token_path)
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=target.parent, prefix=".xiaomi-route-",
+            delete=False,
+        ) as f:
+            tmp = Path(f.name)
+            json.dump({"preferred": preferred, "confirmed_at": confirmed,
+                       "cooldowns": cooldowns}, f, separators=(",", ":"))
+        os.chmod(tmp, 0o600)
+        os.replace(tmp, target)
+        tmp = None
+    except OSError:
+        pass
+    finally:
+        if tmp is not None:
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
+
+
+def _network_failure(stats: dict[str, Any]) -> bool:
+    if stats.get("success"):
+        return False
+    names = [str(e).lower() for e in stats.get("errors", [])]
+    return any(any(marker in name for marker in (
+        "timeout", "connecterror", "networkerror", "readerror", "writeerror",
+        "remoteprotocolerror", "proxyerror", "oserror", "sslerror", "gaierror",
+    )) for name in names)
+
+
+def _failure_class(stats: dict[str, Any]) -> type[RuntimeError]:
+    errors = [str(e).lower() for e in stats.get("errors", [])]
+    if errors and all("auth" in e or "unauthorized" in e for e in errors):
+        return XiaomiCloudAuthError
+    if _network_failure(stats):
+        return XiaomiCloudTimeout if any("timeout" in e for e in errors) else XiaomiCloudUnavailable
+    return XiaomiCloudUnavailable
+
+
+def _merge_missing_intervals(target: dict[str, dict[str, Any]],
+                             other: dict[str, dict[str, Any]]) -> None:
+    # Preserve the preferred provider version of revised overlapping nights.
+    # Only add independent, complete intervals from other queried regions.
+    for key, row in other.items():
+        if key in target:
+            continue
+        try:
+            start = datetime.fromisoformat(row["start"].replace("Z", "+00:00")).timestamp()
+            end = datetime.fromisoformat(row["end"].replace("Z", "+00:00")).timestamp()
+            if end <= start:
+                continue
+            overlaps = False
+            for current in target.values():
+                a = datetime.fromisoformat(current["start"].replace("Z", "+00:00")).timestamp()
+                b = datetime.fromisoformat(current["end"].replace("Z", "+00:00")).timestamp()
+                shorter = min(end - start, b - a)
+                if shorter > 0 and max(0, min(end, b) - max(start, a)) / shorter >= 0.60:
+                    overlaps = True
+                    break
+            if not overlaps:
+                target[key] = row
+        except (KeyError, TypeError, ValueError, AttributeError):
+            continue
+
+
+async def _select_sleep_region(token_path: Path, uid: int, start: int, end: int,
+                               limit: int, stale_cutoff: float,
+                               diagnostics: dict[str, Any] | None = None) -> tuple[dict[str, dict[str, Any]], str]:
+    now = time.time()
+    cached, cooldowns = _load_route_state(token_path, now)
+    preferred = cached or XIAOMI_HEALTH_BASE_URL
+    candidates = _route_candidates()
+    available = [host for host in candidates if host not in cooldowns]
+    # Cooldowns must not suppress an entire sync if all routes were unhealthy.
+    if not available:
+        available = list(candidates)
+    primary = preferred if preferred in available else available[0]
+    results: dict[str, tuple[dict[str, dict[str, Any]], dict[str, Any]]] = {}
+    results[primary] = await _probe_region(token_path, uid, primary, start, end, limit)
+    if _latest_end_epoch(results[primary][0]) < stale_cutoff:
+        others = [host for host in available if host != primary]
+        # Preserve existing bounded parallel regional fallback. Always include
+        # the verified Russian alias in the candidate set even on a new host.
+        probed = await asyncio.gather(*(
+            _probe_region(token_path, uid, host, start, end, limit) for host in others
         ))
-        for base, (candidate, candidate_stats) in zip(bases, results):
-            total_success += candidate_stats["success"]
-            errors.extend(candidate_stats["errors"])
-            if _latest_end_epoch(candidate) > _latest_end_epoch(sessions):
-                sessions, selected_base = candidate, base
-    if not total_success:
-        if errors and all("auth" in e.lower() or "unauthorized" in e.lower() for e in errors):
+        results.update(zip(others, probed))
+    for host, (_, stats) in results.items():
+        if _network_failure(stats):
+            cooldowns[host] = now + XIAOMI_NETWORK_COOLDOWN_SECONDS
+        elif stats.get("success"):
+            cooldowns.pop(host, None)
+
+    selected = max(results, key=lambda host: (
+        _latest_end_epoch(results[host][0]), host == preferred,
+        host == primary,
+    ))
+    sessions = dict(results[selected][0])
+    for host, (candidate, _) in results.items():
+        if host != selected:
+            _merge_missing_intervals(sessions, candidate)
+
+    trusted_stats = results.get(preferred, ({}, {"success": 0, "errors": []}))[1]
+    total_success = sum(stats["success"] for _, stats in results.values())
+    all_errors = [e for _, stats in results.values() for e in stats["errors"]]
+    recent = _latest_end_epoch(results[selected][0]) >= max(1, now - XIAOMI_RECENT_ROUTE_SLEEP_SECONDS)
+    if recent:
+        _save_route_state(token_path, selected, now, cooldowns)
+    else:
+        # Do not renew an old preference on empty or historical-only responses.
+        old_confirmed = 0.0
+        if cached:
+            try:
+                old_confirmed = float(json.loads(_route_cache_path(token_path).read_text(encoding="utf-8"))["confirmed_at"])
+            except (OSError, ValueError, TypeError, KeyError):
+                cached = None
+        _save_route_state(token_path, cached, old_confirmed, cooldowns)
+
+    source_status = "available" if _latest_end_epoch(sessions) >= stale_cutoff else "no_fresh_sleep"
+    if source_status != "available" and not trusted_stats.get("success"):
+        if _network_failure(trusted_stats) or preferred in cooldowns:
+            source_status = "network_unavailable"
+        elif _failure_class(trusted_stats) is XiaomiCloudAuthError:
+            source_status = "authorization_failed"
+    if diagnostics is not None:
+        diagnostics.update({"source_status": source_status})
+    if not sessions and (not total_success or source_status in ("network_unavailable", "authorization_failed")):
+        if source_status == "authorization_failed":
             raise XiaomiCloudAuthError()
-        if any("timeout" in e.lower() for e in errors):
-            raise XiaomiCloudTimeout()
-        raise XiaomiCloudUnavailable()
-    return sessions, selected_base
+        if source_status == "network_unavailable":
+            raise XiaomiCloudTimeout() if preferred in cooldowns else _failure_class(trusted_stats)()
+        raise _failure_class({"success": 0, "errors": all_errors})()
+    return sessions, selected
 
 
 async def _login(args: argparse.Namespace) -> int:
@@ -435,6 +594,11 @@ async def _login(args: argparse.Namespace) -> int:
                 os.chmod(tmp_token, 0o600)
                 os.replace(tmp_token, token_path)
                 os.chmod(token_path, 0o600)
+            # A new authorization must never inherit an older account's routing state.
+            try:
+                _route_cache_path(token_path).unlink(missing_ok=True)
+            except OSError:
+                pass
             _atomic_json(state_path, {"status": "connected", "updated_at": _utc_now()})
             return 0
         except Exception as exc:
@@ -481,15 +645,18 @@ async def _sync(args: argparse.Namespace) -> int:
         start = end - (days + 1) * 86400 + 1
         limit = max(30, days + 2)
 
+        diagnostics: dict[str, Any] = {}
         sessions, selected_base = await _select_sleep_region(
             token_path, uid, start, end, limit,
             args.today_start if args.today_start is not None
-            else datetime(now.year, now.month, now.day, tzinfo=timezone.utc).timestamp()
+            else datetime(now.year, now.month, now.day, tzinfo=timezone.utc).timestamp(),
+            diagnostics=diagnostics,
         )
 
         ordered = sorted(sessions.values(), key=lambda item: item["start"])
         region = selected_base.split("//", 1)[-1].split(".", 1)[0]
-        print(json.dumps({"ok": True, "sessions": ordered, "region": region}, separators=(",", ":")))
+        print(json.dumps({"ok": True, "sessions": ordered, "region": region,
+                          **diagnostics}, separators=(",", ":")))
         return 0
     except Exception as exc:
         print(

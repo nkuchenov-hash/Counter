@@ -2,6 +2,10 @@
 
 - Recognize standalone Russian appointment and booking messages with explicit dates and clocks before provider inference; preserve source details as plan notes and require a preview for the tentative 30-minute duration. Persist single-plan preparation notes as canonical NoteDocument blocks with heading, divider and interactive checklist mirrors. Normalize equivalent provider clock/duration representations before the strict action contract; retain existing Brain conflict, category, deduplication and write verification.
 
+## [2026-11-25] - Xiaomi endpoint failover and verified-route memory (proposed)
+
+* Add the live-verified Russian alternative to the built-in routing candidates; remember a verified route, temporarily defer unreachable routes, preserve historical gaps from queried regions, and distinguish transport/auth failures from empty sleep responses. Add isolated credential-free regression tests. Critical release approval and production verification required.
+
 ## [2026-11-25] - Owner-controlled critical release gate
 
 * Lock critical runtime content by fingerprint; reject unapproved edits, additions and deletions in architecture and release workflows. Add CODEOWNERS and explicit owner-approval policy. Repository-level branch protection and independent identity enforcement require administrator configuration. No runtime functionality changed.
