@@ -170,6 +170,12 @@ extension RecordServiceExtension on DatabaseService {
     return true;
   }
 
+  @visibleForTesting
+  static bool debugRecordTimelineEquivalentForTest(
+    Map<String, dynamic> before,
+    Map<String, dynamic> after,
+  ) => _flatTimelineVisuallyEquivalent(before, after);
+
   /// Merge one PocketBase **records** row into [_cachedFlatRecords] without refetching the full list.
   bool _upsertFlatRecordFromPbModel(
     RecordModel r, {
