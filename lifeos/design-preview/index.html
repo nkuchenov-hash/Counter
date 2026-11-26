@@ -2514,7 +2514,7 @@ function v77RenderTimeline(scroll){
  const ends=[];
  items.forEach(item=>{let col=ends.findIndex(e=>e<=item.a);if(col<0)col=ends.length;ends[col]=item.b;item.col=col});
  const count=Math.max(1,ends.length),now=v77Minute(demoTime());
- const top='<div class="v77-tl-top"><strong>Таймлайн дня</strong><span>1 час · 72 px</span></div>';
+ const top='<div class="v77-tl-top"><strong>Таймлайн дня</strong><span>00:00–24:00</span></div>';
  const hours=Array.from({length:25},(_,i)=>'<div class="v77-hour" style="top:'+(i*72)+'px"><span>'+v77Time(i*60)+'</span><i></i></div>').join('');
  const blocks=items.map(({x,a,b,col})=>{
    const h=Math.max(2,(b-a)*v77Px);
