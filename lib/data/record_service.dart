@@ -239,6 +239,10 @@ extension RecordServiceExtension on DatabaseService {
           _cachedFlatRecords = next;
           if (!suppressTimelineNotify && !silent &&
               !_tryPublishIndexedRecordMetadataEdit(row, m)) {
+            _invalidateTimelineReadCachesAfterRecordEdit(
+              dayKey: _recordEditCalendarDayKeyFromRow(m),
+              previousDayKey: _recordEditCalendarDayKeyFromRow(row),
+            );
             _notifyTimelineAfterRecordCacheMutation();
           }
           return true;
