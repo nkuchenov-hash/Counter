@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#000000" />
-<title>Life OS Glass V78 — Карточки, Таймлайн, Список</title>
+<title>Life OS Glass V79 — Представления записей</title>
 <style>
 :root{color-scheme:dark;--accent:#aebacb;--accent-soft:color-mix(in srgb,var(--accent) 22%,transparent);--accent-line:color-mix(in srgb,var(--accent) 52%,transparent);--glass-alpha:.31;--glass-blur:23px;--text:#f2f2f6;--muted:#b2b4be;--edge:rgba(255,255,255,.16);--bg:#07090d;--card-radius:20px}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#000000;color:var(--text)}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}body{overflow-x:hidden}
@@ -2255,42 +2255,52 @@ html[data-card-layout="instrument"] .duration-cell{text-align:right;display:flex
 
 
 /* V75 — rejected layouts removed; vertical menu retained. */
-/* V78 — four aligned text tabs, a continuous duration ribbon and a compact record log. */
-html .static-controls > .segment.v78-tabs,html.theme-light .static-controls > .segment.v78-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;align-items:stretch!important;justify-items:stretch!important;gap:0!important;align-self:stretch!important;width:100%!important;min-width:0!important;max-width:100%!important;height:36px!important;min-height:36px!important;padding:0!important;margin:0!important;overflow:visible!important}
-html .static-controls > .segment.v78-tabs button[data-mode],html.theme-light .static-controls > .segment.v78-tabs button[data-mode]{display:flex!important;align-items:center!important;justify-content:center!important;flex:none!important;width:100%!important;min-width:0!important;max-width:100%!important;height:36px!important;min-height:36px!important;padding:0!important;margin:0!important;font-size:clamp(11px,3.35vw,13px)!important;letter-spacing:-.25px!important;line-height:1!important;white-space:nowrap!important;text-align:center!important;gap:0!important}
-html .static-controls > .segment.v78-tabs button.active::after,html.theme-light .static-controls > .segment.v78-tabs button.active::after{left:10%!important;right:10%!important;bottom:1px!important;height:2px!important}
-.v78-view{--v78-fg:#f2f2f6;--v78-muted:#a5acb9;--v78-line:rgba(255,255,255,.12);color:var(--v78-fg);margin:7px 3px 14px}
-html.theme-light .v78-view{--v78-fg:#202b39;--v78-muted:#66717d;--v78-line:rgba(35,50,70,.10)}
-.v78-summary{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--v78-muted);margin:0 0 12px}
-.v78-summary strong{font-size:13px;font-weight:650;color:var(--v78-fg)}
-.v78-track{display:flex;flex-direction:column;position:relative}
-.v78-tl-row{display:grid;grid-template-columns:43px 18px minmax(0,1fr);align-items:stretch;min-width:0;position:relative}
-.v78-tl-clock{align-self:start;padding:4px 5px 0 0;font-size:10px;font-variant-numeric:tabular-nums;color:var(--v78-muted);white-space:nowrap}
-.v78-tl-strip{background:var(--category);opacity:.83;position:relative}
-.v78-tl-row+.v78-tl-row .v78-tl-strip{box-shadow:inset 0 1px rgba(255,255,255,.45)}
-.v78-tl-row:first-child .v78-tl-strip{border-radius:5px 5px 0 0}
-.v78-tl-row:last-child .v78-tl-strip{border-radius:0 0 5px 5px}
-.v78-tl-row:only-child .v78-tl-strip{border-radius:5px}
-.v78-tl-label{align-self:stretch;display:flex;align-items:center;gap:6px;min-width:0;padding:0 0 0 10px;border:0;background:transparent;color:inherit;text-align:left;overflow:hidden}
-.v78-tl-label span{min-width:0;flex:1}
-.v78-tl-label strong,.v78-log-main strong{display:block;font-size:13px;font-weight:650;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.v78-tl-label small,.v78-log-main small{display:block;color:var(--v78-muted);font-size:11px;line-height:1.4;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.v78-duration{flex:none;white-space:nowrap;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--v78-muted)}
-.v78-tl-row.short .v78-tl-label small{display:none}
-.v78-tl-row.tiny .v78-tl-label strong,.v78-tl-row.tiny .v78-duration,.v78-tl-row.tiny .v78-tl-clock{font-size:9px}
-.v78-tl-row.tiny .v78-tl-clock{padding-top:0}
-.v78-tl-row.running .v78-duration,.v78-log-row.running .v78-duration{color:var(--category)}
-.v78-log-row{display:grid;grid-template-columns:7px minmax(0,1fr) auto;gap:9px;align-items:center;min-height:49px;padding:8px 0;border:0;border-bottom:1px solid var(--v78-line);background:transparent;color:inherit;width:100%;text-align:left}
-.v78-log-dot{width:7px;height:7px;border-radius:50%;background:var(--category)}
-.v78-log-main{min-width:0}
-.v78-inspect{margin:0 0 10px;padding:10px;border:1px solid var(--v78-line);border-radius:8px;font-size:12px;line-height:1.55}
-.v78-inspect button{border:0;background:transparent;color:inherit;text-decoration:underline;padding:4px 0 0;margin-right:12px}
+/* V79: keep V76 mode styling and intrinsic tab widths. Fit the actual device, not viewport. */
+.static-controls{container-type:inline-size}
+html .segment.v79-modes,html.theme-light .segment.v79-modes{width:max-content!important;max-width:100%!important;gap:12px!important;justify-content:flex-start!important;overflow:visible!important}
+html .segment.v79-modes button[data-mode],html.theme-light .segment.v79-modes button[data-mode]{width:auto!important;flex:0 0 auto!important;white-space:nowrap;gap:5px!important}
+@container(max-width:365px){
+ html .segment.v79-modes,html.theme-light .segment.v79-modes{gap:9px!important}
+ html .segment.v79-modes button[data-mode] svg{display:none!important}
+}
+@container(max-width:295px){
+ html .segment.v79-modes,html.theme-light .segment.v79-modes{gap:5px!important}
+ html .segment.v79-modes button[data-mode],html.theme-light .segment.v79-modes button[data-mode]{font-size:12px!important}
+}
+.v79-timeline{display:flex;flex-direction:column;gap:4px}
+.v79-timeline .record{margin:0!important;flex:none;height:var(--v79-height)!important;min-height:var(--v79-height)!important}
+.v79-timeline .record .record-inner{height:100%;box-sizing:border-box;align-content:space-between!important;grid-template-rows:auto 1fr auto!important}
+.v79-timeline .record .record-time{grid-row:3;align-self:end}
+.v79-timeline .record .record-info{align-self:start}
+.v79-timeline .record .record-tools{align-self:start}
+.v79-timeline .record.short .record-inner{grid-template-rows:auto auto!important;align-content:center!important}
+.v79-timeline .record.short .record-time{grid-row:2}
+.v79-timeline .record.short .record-title{font-size:15px!important;line-height:1.2!important}
+.v79-timeline .record.short .breadcrumb{font-size:11px!important;line-height:1.25!important;margin-top:3px!important}
+.v79-timeline .record.short .record-time{font-size:12px!important;line-height:16px!important;margin-top:3px!important;min-height:0!important}
+.v79-log{--log-text:#f2f2f6;--log-muted:#a5acb9;--log-line:rgba(255,255,255,.085);color:var(--log-text)}
+html.theme-light .v79-log{--log-text:#202b39;--log-muted:#677380;--log-line:rgba(35,50,70,.09)}
+.v79-log-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:2px 2px 12px;color:var(--log-muted);font-size:12px}
+.v79-log-head strong{font-weight:600;color:var(--log-text);font-size:14px}
+.v79-log-row{display:grid;grid-template-columns:42px minmax(0,1fr) max-content;gap:10px;align-items:start;padding:13px 2px;border-bottom:1px solid var(--log-line);min-height:60px}
+.v79-log-clock{font-size:12px;color:var(--log-muted);font-variant-numeric:tabular-nums;line-height:20px;white-space:nowrap}
+.v79-log-clock small{display:block;font-size:11px;line-height:17px}
+.v79-log-main{min-width:0}
+.v79-log-title{font-size:15px;line-height:20px;font-weight:550;overflow-wrap:anywhere;letter-spacing:-.15px}
+.v79-log-category{display:flex;align-items:center;gap:5px;color:var(--log-muted);font-size:11px;line-height:17px;margin-top:3px;min-width:0}
+.v79-log-category span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v79-log-category i{width:6px;height:6px;border-radius:50%;background:var(--category);flex:none}
+.v79-log-duration{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;line-height:20px;white-space:nowrap}
+.v79-log-row.running .v79-log-duration{color:var(--category)}
+.v79-log-end{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.v79-log-stop{display:grid;place-items:center;width:25px;height:25px;border:0;border-radius:50%;background:color-mix(in srgb,var(--category) 14%,transparent);color:var(--log-text);padding:0}
+.v79-log-stop svg{width:15px;height:15px}
 </style>
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
  <symbol id="i-list" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01" stroke-width="3"/></g></symbol>
- <symbol id="i-timeline" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 3v18"/><rect x="9" y="3" width="10" height="7" rx="2"/><rect x="9" y="13" width="10" height="8" rx="2"/></g></symbol><symbol id="i-timeline-filled" viewBox="0 0 24 24"><path d="M5 3v18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="9" y="3" width="11" height="7" rx="2" fill="currentColor"/><rect x="9" y="13" width="11" height="8" rx="2" fill="currentColor"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol><symbol id="i-chart" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 17v-6M12 17V7M17 17v-9"/></g></symbol>
+ <symbol id="i-cards" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/></g></symbol><symbol id="i-cards-filled" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="7" rx="2" fill="currentColor"/><rect x="3" y="14" width="18" height="7" rx="2" fill="currentColor"/></symbol><symbol id="i-timeline" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 3v18"/><rect x="8" y="3" width="12" height="11" rx="2"/><rect x="8" y="17" width="12" height="4" rx="1"/></g></symbol><symbol id="i-timeline-filled" viewBox="0 0 24 24"><path d="M4 3v18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="8" y="3" width="12" height="11" rx="2" fill="currentColor"/><rect x="8" y="17" width="12" height="4" rx="1" fill="currentColor"/></symbol><symbol id="i-chart" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 17v-6M12 17V7M17 17v-9"/></g></symbol>
 
  <!-- Filled states: same functional glyphs but solid shapes for selection -->
  <symbol id="i-time-filled" viewBox="0 0 24 24"><path d="M3.1 20.5 9.3 11.5l4.8 3.2 6.3-10" fill="none" stroke="currentColor" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"/><circle cx="3.2" cy="20.1" r="2.4" fill="currentColor"/><circle cx="9.3" cy="11.5" r="2.45" fill="currentColor"/><circle cx="14" cy="14.7" r="2.4" fill="currentColor"/><circle cx="20.4" cy="4.8" r="2.45" fill="currentColor"/></symbol>
@@ -2331,7 +2341,7 @@ html.theme-light .v78-view{--v78-fg:#202b39;--v78-muted:#66717d;--v78-line:rgba(
   </header>
   <div class="content">
    <div class="static-controls">
-    <div class="segment v78-tabs" role="group" aria-label="Вид записей"><button class="active" data-mode="list" aria-pressed="true">Карточки</button><button data-mode="timeline" aria-pressed="false">Таймлайн</button><button data-mode="today" aria-pressed="false">Список</button><button data-mode="stats" aria-pressed="false">Статистика</button></div>
+    <div class="segment v79-modes"><button class="active" data-mode="list" aria-pressed="true"><svg><use href="#i-cards"/></svg>Карточки</button><button data-mode="timeline" aria-pressed="false"><svg><use href="#i-timeline"/></svg>Таймлайн</button><button data-mode="today" aria-pressed="false"><svg><use href="#i-list"/></svg>Список</button><button data-mode="stats" aria-pressed="false"><svg><use href="#i-chart"/></svg>Статистика</button></div>
     <div class="quick"><input class="field" id="entry" placeholder="Добавить запись" aria-label="Добавить запись"/><button class="action" id="add" title="Старт" aria-label="Начать запись"><svg aria-hidden="true"><use href="#i-play"/></svg></button></div>
     <div class="divider"></div>
    </div>
@@ -2444,7 +2454,7 @@ function syncSelectionIcons(){
     if(u&&glyph)u.setAttribute('href','#i-'+glyph+(btn.classList.contains('active')?'-filled':''));
   });
   document.querySelectorAll('[data-mode]').forEach(btn=>{
-    btn.setAttribute('aria-pressed',String(btn.classList.contains('active')));const glyph=({stats:'chart',timeline:'timeline',today:'list',list:'list'})[btn.dataset.mode]||'list';
+    btn.setAttribute('aria-pressed',String(btn.classList.contains('active')));const glyph=({stats:'chart',timeline:'timeline',today:'list',list:'cards'})[btn.dataset.mode]||'list';
     btn.querySelector('svg use')?.setAttribute('href','#i-'+glyph+(btn.classList.contains('active')?'-filled':''));
   });
 }
@@ -2481,61 +2491,30 @@ function durationMarkup(x){
  return d;
 }
 
-let v78Selected=null;
-const v78Minute=value=>{const m=String(value).match(/(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null};
-function v78Duration(x){
+function v79Duration(x){
  if(x.running)return elapsed(x)/60;
  const d=timeParts(x)[1],h=d.match(/(\d+)\s*ч/),m=d.match(/(\d+)\s*мин/);
  if(h||m)return Number(h?.[1]||0)*60+Number(m?.[1]||0);
- const parts=timeParts(x)[0].split(' — '),start=v78Minute(parts[0]),end=v78Minute(parts[1]);
- return start===null||end===null?0:(end-start+1440)%1440;
+ const parts=timeParts(x)[0].split(' — ').map(t=>{const m=t.match(/(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null});
+ return parts.length===2&&parts.every(n=>n!==null)?(parts[1]-parts[0]+1440)%1440:0;
 }
-function v78Fmt(minutes){const n=Math.floor(minutes),h=Math.floor(n/60),m=n%60;return (h?h+' ч ':'')+m+' мин'}
-function v78Records(){
- return records.map(x=>({x,minutes:v78Duration(x),end:x.running?v78Minute(demoTime()):v78Minute(timeParts(x)[0].split(' — ')[1])})).sort((a,b)=>(b.end??0)-(a.end??0)||b.x.id-a.x.id);
+function v79Fmt(minutes){const n=Math.floor(minutes),h=Math.floor(n/60),m=n%60;return (h?h+' ч ':'')+m+' мин'}
+function v79Height(x){return Math.max(88,Math.round(v79Duration(x)*1.25))}
+function v79RenderLog(scroll){
+ const total=records.reduce((a,x)=>a+v79Duration(x),0);
+ const row=x=>{
+ const [interval,duration]=timeParts(x),[start,end]=interval.split(' — ');
+ return '<div class="v79-log-row '+(x.running?'running':'')+'" style="--category:'+x.cat+'" data-id="'+x.id+'"><div class="v79-log-clock">'+escapeHtml(start)+'<small>'+escapeHtml(x.running?'сейчас':end||'')+'</small></div><div class="v79-log-main"><div class="v79-log-title">'+escapeHtml(x.title)+'</div><div class="v79-log-category"><i></i><span>'+escapeHtml(x.path.replaceAll(' › ',' · '))+'</span></div></div><div class="v79-log-end"><span class="v79-log-duration">'+escapeHtml(duration)+'</span>'+(x.running?'<button type="button" class="v79-log-stop" data-v79-stop="'+x.id+'" aria-label="Остановить запись">'+icon('stop')+'</button>':'')+'</div></div>';
+ };
+ scroll.innerHTML='<section class="v79-log"><div class="v79-log-head"><strong>Записи за день</strong><span>'+v79Fmt(total)+'</span></div>'+records.map(row).join('')+(!records.length?'<div class="empty">Нет записей.</div>':'')+'</section>';
+ scroll.querySelectorAll('[data-v79-stop]').forEach(btn=>btn.addEventListener('click',()=>{const x=records.find(r=>r.id===Number(btn.dataset.v79Stop));if(x?.running)stopRecord(x);render()}));
 }
-function v78Detail(items){
- const x=items.find(i=>i.x.id===v78Selected)?.x;
- if(!x)return '';
- return '<div class="v78-inspect"><strong>'+escapeHtml(x.title)+'</strong><div>'+escapeHtml(x.path)+'</div><div>'+escapeHtml(timeParts(x).join(' · '))+'</div>'+(x.running?'<button type="button" data-v78-stop="'+x.id+'">Остановить запись</button>':'')+'<button type="button" data-v78-close>Закрыть</button></div>';
-}
-function v78Bind(scroll){
- const redraw=()=>{const pos=scroll.scrollTop;render();scroll.scrollTop=pos};
- scroll.querySelectorAll('[data-v78-id]').forEach(btn=>btn.addEventListener('click',()=>{const id=Number(btn.dataset.v78Id);v78Selected=v78Selected===id?null:id;redraw();if(v78Selected!==null)scroll.querySelector('.v78-inspect')?.scrollIntoView({block:'nearest'})}));
- scroll.querySelectorAll('[data-v78-stop]').forEach(btn=>btn.addEventListener('click',()=>{const x=records.find(r=>r.id===Number(btn.dataset.v78Stop));if(x?.running)stopRecord(x);redraw()}));
- scroll.querySelectorAll('[data-v78-close]').forEach(btn=>btn.addEventListener('click',()=>{v78Selected=null;redraw()}));
-}
-function v78Render(scroll,timeline){
- if(day!==20){scroll.innerHTML='<div class="empty">Для этой даты нет записей в прототипе.</div>';return}
- const items=v78Records(),total=items.reduce((sum,i)=>sum+i.minutes,0);
- const summary='<div class="v78-summary"><strong>'+items.length+' записей</strong><span>'+v78Fmt(total)+'</span></div>';
- let body='';
- if(timeline){
-  // Reverse chronological order; the colored strip is uninterrupted and scales linearly with duration.
-  body='<div class="v78-track">'+items.map(({x,minutes})=>{
-   const height=Math.max(2,minutes*.8),short=height<38,tiny=height<20;
-   const interval=timeParts(x)[0],end=x.running?'сейчас':interval.split(' — ').pop();
-   return '<div class="v78-tl-row '+(short?'short ':'')+(tiny?'tiny ':'')+(x.running?'running':'')+'" style="--category:'+x.cat+';height:'+height+'px"><span class="v78-tl-clock">'+escapeHtml(end)+'</span><span class="v78-tl-strip" aria-hidden="true"></span><button type="button" class="v78-tl-label" data-v78-id="'+x.id+'" title="'+escapeHtml(x.title+' · '+interval+' · '+v78Fmt(minutes))+'" aria-label="'+escapeHtml(x.title+' · '+interval+' · '+v78Fmt(minutes))+'"><span><strong>'+escapeHtml(x.title)+'</strong><small>'+escapeHtml(interval)+'</small></span><b class="v78-duration">'+escapeHtml(x.running?timerText(x):v78Fmt(minutes))+'</b></button></div>';
-  }).join('')+'</div>';
- }else{
-  body=items.map(({x,minutes})=>'<button type="button" class="v78-log-row '+(x.running?'running':'')+'" style="--category:'+x.cat+'" data-v78-id="'+x.id+'"><span class="v78-log-dot"></span><span class="v78-log-main"><strong>'+escapeHtml(x.title)+'</strong><small>'+escapeHtml(timeParts(x)[0])+'</small></span><b class="v78-duration">'+escapeHtml(x.running?timerText(x):v78Fmt(minutes))+'</b></button>').join('');
- }
- scroll.innerHTML='<section class="v78-view">'+summary+v78Detail(items)+(items.length?body:'<div class="empty">Нет записей.</div>')+'</section>';
- v78Bind(scroll);
-}
-function v77SyncComposer(){
- el('entry').parentElement.style.display=mode==='stats'?'none':'flex';
- el('entry').placeholder='Добавить запись';
- el('entry').setAttribute('aria-label','Добавить запись');
- el('add').innerHTML=icon('play');
- el('add').title='Старт';
- el('add').setAttribute('aria-label','Начать запись');
-}
-setInterval(()=>{if(!['timeline','today'].includes(mode)||day!==20)return;const scroll=el('scroll'),pos=scroll.scrollTop;v78Render(scroll,mode==='timeline');scroll.scrollTop=pos},30000);
-function render(){const scroll=el('scroll');scroll.scrollTop=0;if(mode==='timeline'||mode==='today'){v78Render(scroll,mode==='timeline');return}if(mode==='stats'){scroll.innerHTML=`<div class="stats"><div class="stats-title">Время по категориям</div>${[['Работа', '4 ч 25 мин',68,'#9f83e0'],['Личное', '2 ч 17 мин',38,'#df945c'],['Сон','6 ч 52 мин',91,'#9b9cba']].map(i=>`<div class="statbar"><div class="stathead"><span>${i[0]}</span><span>${i[1]}</span></div><div class="statrail"><span style="width:${i[2]}%;background:${i[3]}"></span></div></div>`).join('')}</div>`;return}
+setInterval(()=>{if(mode==='timeline'){el('scroll').querySelectorAll('.v79-timeline .record.running').forEach(n=>{const x=records.find(r=>r.id===Number(n.dataset.id));if(x?.running){const h=v79Height(x);n.style.setProperty('--v79-height',h+'px');n.classList.toggle('short',h<112)}})}else if(mode==='today'){el('scroll').querySelectorAll('.v79-log-row.running .v79-log-duration').forEach(n=>{const x=records.find(r=>r.id===Number(n.closest('[data-id]').dataset.id));if(x?.running)n.textContent=timerText(x)})}},1000);
+function render(){const scroll=el('scroll');scroll.scrollTop=0;if(mode==='stats'){scroll.innerHTML=`<div class="stats"><div class="stats-title">Время по категориям</div>${[['Работа', '4 ч 25 мин',68,'#9f83e0'],['Личное', '2 ч 17 мин',38,'#df945c'],['Сон','6 ч 52 мин',91,'#9b9cba']].map(i=>`<div class="statbar"><div class="stathead"><span>${i[0]}</span><span>${i[1]}</span></div><div class="statrail"><span style="width:${i[2]}%;background:${i[3]}"></span></div></div>`).join('')}</div>`;return}
 if(day!==20){scroll.innerHTML='<div class="empty">Для этой даты нет записей в прототипе.<br>Выберите 20 ноября.</div>';return}
-const renderCard=x=>{const parts=x.path.split(' › ');const main=parts[0]||x.path;const sub=parts.slice(1).join(' · ');return `<article class="record ${x.running?'running':''}" style="--category:${x.cat}" data-id="${x.id}"><span class="record-watermark-clip" aria-hidden="true"><svg class="record-watermark"><use href="#wm-${x.wm||'work'}"/></svg></span><div class="record-inner"><div class="record-info"><div class="record-title">${escapeHtml(x.title)}</div><div class="breadcrumb"><span class="category-label">${escapeHtml(main)}</span>${sub?`<span class="chev">·</span><span class="category-label">${escapeHtml(sub)}</span>`:''}</div></div><div class="record-tools">${x.running?`<button class="stop" data-stop="${x.id}" title="Остановить запись" aria-label="Стоп">${icon('stop')}</button>`:''}<button class="more" data-more="${x.id}" aria-label="Ещё">${icon('more')}</button><div class="menu" id="menu-${x.id}"><button data-delete="${x.id}">Удалить запись</button></div></div><div class="record-time">${intervalMarkup(x)}${durationMarkup(x)}</div></div></article>`};
-scroll.innerHTML=records.map(renderCard).join('')+`<div class="demo-divider"><span>Дополнительные записи · демонстрация прокрутки</span></div>`+demoRecords.map(renderCard).join('');
+if(mode==='today'){v79RenderLog(scroll);return}
+const renderCard=x=>{const parts=x.path.split(' › ');const main=parts[0]||x.path;const sub=parts.slice(1).join(' · ');return `<article class="record ${x.running?'running':''} ${mode==='timeline'&&v79Height(x)<112?'short':''}" style="--category:${x.cat}${mode==='timeline'?';--v79-height:'+v79Height(x)+'px':''}" data-id="${x.id}"><span class="record-watermark-clip" aria-hidden="true"><svg class="record-watermark"><use href="#wm-${x.wm||'work'}"/></svg></span><div class="record-inner"><div class="record-info"><div class="record-title">${escapeHtml(x.title)}</div><div class="breadcrumb"><span class="category-label">${escapeHtml(main)}</span>${sub?`<span class="chev">·</span><span class="category-label">${escapeHtml(sub)}</span>`:''}</div></div><div class="record-tools">${x.running?`<button class="stop" data-stop="${x.id}" title="Остановить запись" aria-label="Стоп">${icon('stop')}</button>`:''}<button class="more" data-more="${x.id}" aria-label="Ещё">${icon('more')}</button><div class="menu" id="menu-${x.id}"><button data-delete="${x.id}">Удалить запись</button></div></div><div class="record-time">${intervalMarkup(x)}${durationMarkup(x)}</div></div></article>`};
+scroll.innerHTML=mode==='timeline'?'<div class="v79-timeline">'+records.map(renderCard).join('')+'</div>':records.map(renderCard).join('')+`<div class="demo-divider"><span>Дополнительные записи · демонстрация прокрутки</span></div>`+demoRecords.map(renderCard).join('');
 const closeMenus=(except)=>{scroll.querySelectorAll('.menu').forEach(m=>{if(m!==except){m.classList.remove('open');m.closest('.record')?.classList.remove('menu-open')}})};
 scroll.querySelectorAll('[data-more]').forEach(btn=>btn.addEventListener('click',(e)=>{e.stopPropagation(); const menu=el('menu-'+btn.dataset.more); const open=!menu.classList.contains('open'); closeMenus(open?menu:null); menu.classList.toggle('open',open);menu.closest('.record')?.classList.toggle('menu-open',open)}));
 scroll.querySelectorAll('[data-delete]').forEach(btn=>btn.addEventListener('click',(e)=>{e.stopPropagation(); records=records.filter(x=>x.id!==Number(btn.dataset.delete));demoRecords.splice(0,demoRecords.length,...demoRecords.filter(x=>x.id!==Number(btn.dataset.delete)));render()}));scroll.querySelectorAll('[data-stop]').forEach(btn=>btn.addEventListener('click',()=>{let item=records.find(x=>x.id===Number(btn.dataset.stop));if(item){stopRecord(item);render()}})); scroll.querySelectorAll('.record-info').forEach(info=>info.addEventListener('click',()=>closeMenus(null)))
@@ -2547,7 +2526,7 @@ el('customColor').addEventListener('input',e=>accent(e.target.value));
 el('opacity').addEventListener('input',e=>{root.style.setProperty('--glass-alpha',Number(e.target.value)/100);el('opacityVal').textContent=e.target.value+'%'});
 el('blur').addEventListener('input',e=>{root.style.setProperty('--glass-blur',e.target.value+'px');el('blurVal').textContent=e.target.value+' px'});
 const presets={crystal:[58,6],frost:[41,16],smoke:[12,4]};document.querySelectorAll('[data-pres]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-pres]').forEach(v=>v.classList.toggle('active',v===btn));const [a,b]=presets[btn.dataset.pres];el('opacity').value=a;el('opacity').dispatchEvent(new Event('input'));el('blur').value=b;el('blur').dispatchEvent(new Event('input'))}));
-document.querySelectorAll('[data-mode]').forEach(btn=>btn.addEventListener('click',()=>{mode=btn.dataset.mode;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b===btn));syncSelectionIcons();el('entry').value='';v78Selected=null;v77SyncComposer();render()}));document.querySelectorAll('[data-bgmode]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-bgmode]').forEach(b=>b.classList.toggle('active',b===btn));scene.dataset.bg=btn.dataset.bgmode;}));el('artOpacity').addEventListener('input',e=>{root.style.setProperty('--art-opacity', Number(e.target.value)/100);el('artOpacityValue').textContent=e.target.value+'%';});
+document.querySelectorAll('[data-mode]').forEach(btn=>btn.addEventListener('click',()=>{mode=btn.dataset.mode;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b===btn));syncSelectionIcons();el('entry').parentElement.style.display=mode==='stats'?'none':'flex';render()}));document.querySelectorAll('[data-bgmode]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-bgmode]').forEach(b=>b.classList.toggle('active',b===btn));scene.dataset.bg=btn.dataset.bgmode;}));el('artOpacity').addEventListener('input',e=>{root.style.setProperty('--art-opacity', Number(e.target.value)/100);el('artOpacityValue').textContent=e.target.value+'%';});
 el('dayPick').addEventListener('click',()=>{day=day===20?18:day+1;updateDate();render()});
 const add=()=>{const v=el('entry').value.trim();if(!v)return;day=20;updateDate();records.forEach(r=>{if(r.running){stopRecord(r)}});records.unshift({id:Date.now(),title:v,path:'Без категории',cat:'#98a3b4',time:demoTime()+' — ... (0 мин)',startedAt:Date.now(),running:true,wm:'work'});el('entry').value='';render()};el('add').addEventListener('click',add);el('entry').addEventListener('keydown',e=>{if(e.key==='Enter')add()});
 function panelOpen(yes){el('panel').classList.toggle('open',yes);el('overlay').classList.toggle('open',yes)}el('palette').addEventListener('click',()=>panelOpen(true));el('closepanel').addEventListener('click',()=>panelOpen(false));el('overlay').addEventListener('click',()=>panelOpen(false));
