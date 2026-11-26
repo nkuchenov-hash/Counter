@@ -111,7 +111,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> with WidgetsBindingObse
   List<int> _ordinalCache = const <int>[];
   final Set<String> _pendingImeBlockSplits = <String>{};
   final Map<String, Timer> _imeSplitTimers = <String, Timer>{};
-  late final NotesAudioPlaybackController _audioPlayback;
+  NotesAudioPlaybackController? _audioPlayback;
+  final ValueNotifier<int> _audioUiRevision = ValueNotifier<int>(0);
   final Set<String> _transcribingAudioIds = <String>{};
   String? _editingBlockId;
   bool _blockSelectionMode = false;
@@ -133,8 +134,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> with WidgetsBindingObse
     _editor = NotesEditorDocumentController(_sourceDocument);
     _titleController = TextEditingController(text: _task.title);
     _gate = EditSheetAutosaveGate(debounce: const Duration(seconds: 15));
-    _audioPlayback = NotesAudioPlaybackController()
-      ..addListener(_onAudioPlaybackChanged);
     if (!widget.parityPreview) {
       DatabaseService.instance.beginNotesEditorSession();
       _notesEditorSessionRegistered = true;
@@ -184,8 +183,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> with WidgetsBindingObse
     _gate.dispose();
     _blockScrollController.dispose();
     _audioPlayback
-      ..removeListener(_onAudioPlaybackChanged)
+      ?..removeListener(_onAudioPlaybackChanged)
       ..dispose();
+    _audioUiRevision.dispose();
     _titleController.dispose();
     for (final controller in _textControllers.values) {
       controller.dispose();
@@ -205,7 +205,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> with WidgetsBindingObse
   }
 
   void _onAudioPlaybackChanged() {
-    if (mounted) setState(() {});
+    if (mounted) _audioUiRevision.value++;
   }
 
   void _scheduleSave([String? _]) {
@@ -1304,7 +1304,9 @@ _editor.insertAfter(
     final audio = _editor.blockById(blockId)?.audio;
     if (audio == null) return;
     try {
-      await _audioPlayback.toggle(blockId, audio);
+      final playback = _audioPlayback ??= (NotesAudioPlaybackController()
+        ..addListener(_onAudioPlaybackChanged));
+      await playback.toggle(blockId, audio);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1319,7 +1321,7 @@ _editor.insertAfter(
     if (_transcribingAudioIds.contains(blockId)) {
       return NotesAudioState.transcribing;
     }
-    if (_audioPlayback.isPlaying(blockId)) return NotesAudioState.playing;
+    if (_audioPlayback?.isPlaying(blockId) == true) return NotesAudioState.playing;
     final audio = _editor.blockById(blockId)?.audio;
     if (audio?.transcriptStatus == NoteAudioTranscriptStatus.error) {
       return NotesAudioState.transcriptError;
@@ -1475,7 +1477,7 @@ _editor.insertAfter(
     final editable = NotesEditorDocumentController.isEditableText(block.type);
     final focusNode = editable ? _focusNodeFor(block) : null;
     final active = !_blockSelectionMode && _editor.activeBlockId == block.id;
-    Widget item = NotesEditorBlockItem(
+    Widget buildItem() => NotesEditorBlockItem(
       block: block,
       index: index,
       numberedOrdinal: block.type == NoteBlockType.numberedList
@@ -1525,6 +1527,12 @@ block.type == NoteBlockType.image ||
 ? () => _openAudioTranscript(block.id)
 : null,
     );
+    Widget item = block.type == NoteBlockType.audio
+        ? ValueListenableBuilder<int>(
+            valueListenable: _audioUiRevision,
+            builder: (context, revision, child) => buildItem(),
+          )
+        : buildItem();
     final drawingPreview = _desktopDrawingPreview(context, block);
     if (drawingPreview != null) {
       item = Column(
