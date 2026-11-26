@@ -23,11 +23,9 @@ int resolveEditFieldCategoryId({
   required DatabaseService db,
   required int categoryId,
 }) {
-  return resolveEditFieldCategoryIdValues(
-    categoryId: categoryId,
-    existsInTree: db.categoryExists(categoryId),
-    knownPairIds: db.allCategoryIdPathPairs.map((p) => p.id),
-  );
+  // Every branch of resolveEditFieldCategoryIdValues preserves this exact id.
+  // Do not traverse the category tree or allocate path labels during build.
+  return categoryId;
 }
 
 /// Canonical draft category for edit Save — explicit picker/create id owns the draft.
