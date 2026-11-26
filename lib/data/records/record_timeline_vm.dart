@@ -18,32 +18,36 @@ extension RecordTimelineVmExtension on DatabaseService {
     if (dayKey != null && dayKey.trim().isNotEmpty) {
       final k = dayKey.trim();
       _timelineDayViewCache.remove(k);
+      _timelineDayVmCache.remove(k);
       _timelineRecordsDayIndex.remove(k);
       _timelineLazyRowVmByDay.remove(k);
     } else {
       _timelineDayViewCache.clear();
+      _timelineDayVmCache.clear();
       _timelineRecordsDayIndex.clear();
     }
   }
 
-  /// After in-place record edit: rebuild warm snapshots even when flat count unchanged.
-  void _refreshTimelineWarmSnapshotsAfterRecordMutation({String? dayKey}) {
-    if (_timelineWarm.center == null) return;
-    if (dayKey != null && dayKey.trim().isNotEmpty) {
-      final k = dayKey.trim();
-      final day = WarmSnapshotWindow.parseDateKey(k);
-      _timelineWarm.put(k, _buildTimelineDaySnapshot(day));
-      return;
+  /// Invalidate derived data, rather than synchronously building snapshots
+  /// that the generic notification would immediately invalidate again.
+  /// Both dates must be evicted when an interval moves across midnight.
+  void _invalidateTimelineReadCachesAfterRecordEdit({
+    String? dayKey,
+    String? previousDayKey,
+  }) {
+    _markTimelineDayIndexDirty();
+    final keys = <String>{
+      if (dayKey != null && dayKey.isNotEmpty) dayKey,
+      if (previousDayKey != null && previousDayKey.isNotEmpty) previousDayKey,
+    };
+    if (keys.isEmpty || dayKey == null || dayKey.isEmpty) {
+      keys.addAll(_timelineWarmWindow?.dateKeys ?? const <String>[]);
+      keys.addAll(_timelineBodyCache?.dateKeys ?? const <String>[]);
     }
-    for (final key in _timelineWarm.dateKeys.toList()) {
-      final day = WarmSnapshotWindow.parseDateKey(key);
-      _timelineWarm.put(key, _buildTimelineDaySnapshot(day));
+    for (final key in keys) {
+      _timelineWarmWindow?.remove(key);
+      _timelineBodyCache?.remove(key);
     }
-  }
-
-  void _invalidateTimelineReadCachesAfterRecordEdit({String? dayKey}) {
-    _markTimelineDayIndexDirty(dayKey: dayKey);
-    _refreshTimelineWarmSnapshotsAfterRecordMutation(dayKey: dayKey);
   }
 
   /// Patch an already indexed record without reprojecting unrelated days.
