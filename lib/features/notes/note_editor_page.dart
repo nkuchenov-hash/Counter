@@ -1478,7 +1478,9 @@ _editor.insertAfter(
     Widget item = NotesEditorBlockItem(
       block: block,
       index: index,
-      numberedOrdinal: _notesOrdinalFor(this, index),
+      numberedOrdinal: block.type == NoteBlockType.numberedList
+          ? _notesOrdinalFor(this, index)
+          : 1,
       previousBlockType: index > 0 ? blocks[index - 1].type : null,
       active: active,
       editing: editable && !_blockSelectionMode && _editingBlockId == block.id,
