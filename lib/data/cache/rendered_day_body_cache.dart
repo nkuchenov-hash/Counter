@@ -72,6 +72,8 @@ final class DayBodyCache<TEntry> {
     _evictIfNeeded();
   }
 
+  void remove(String dateKey) => _entries.remove(dateKey);
+
   void setCenter(String centerKey) => _centerKey = centerKey;
 
   Iterable<String> get dateKeys => _entries.keys;
