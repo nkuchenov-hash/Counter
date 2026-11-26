@@ -314,8 +314,10 @@ class _NoteEditorPageState extends State<NoteEditorPage> with WidgetsBindingObse
       visibleIds.add(block.id);
       if (NotesEditorDocumentController.isEditableText(block.type)) {
         textIds.add(block.id);
-        final controller = _textControllerFor(block);
-        if ((controller.text != block.effectiveText ||
+        // ListView builds off-screen fields lazily; reconcile only controllers
+        // that have already been requested by a mounted row or focus action.
+        final controller = _textControllers[block.id];
+        if (controller != null && (controller.text != block.effectiveText ||
             !_sameRuns(controller.runs, block.effectiveRuns)) &&
             !((_focusNodes[block.id]?.hasFocus == true ||
                 _editingBlockId == block.id) &&
@@ -330,15 +332,14 @@ class _NoteEditorPageState extends State<NoteEditorPage> with WidgetsBindingObse
         }
         if (block.type != NoteBlockType.quote) {
           focusIds.add(block.id);
-          _focusNodeFor(block);
         }
       }
       if (block.type == NoteBlockType.image ||
           block.type == NoteBlockType.drawing) {
         captionIds.add(block.id);
-        final controller = _captionControllerFor(block);
+        final controller = _captionControllers[block.id];
         final caption = block.caption ?? '';
-        if (controller.text != caption) {
+        if (controller != null && controller.text != caption) {
           controller.value = TextEditingValue(
             text: caption,
             selection: TextSelection.collapsed(
