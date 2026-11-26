@@ -1,3 +1,9 @@
+## [2026-11-26] — P0 record editor hot-path reductions [verification pending]
+
+- Remove redundant category-tree/path traversals when the explicit edit category ID is already known; preserve the existing missing-category fallback and picker/create handoff semantics.
+- Skip numbered-list ordinal calculation for non-numbered note blocks; keep the existing numbered-list cache and editing/IME behavior unchanged.
+- Static audit confirms Timeline edit cache invalidation can cause full-history scans and duplicate notification paths. Protected Brain changes require exact owner approval; no protected runtime or release guard files changed. Runtime before/after profiling, Flutter tests and deployment are pending.
+
 ## [2026-11-25] — Viktor forwarded appointment reliability [pending verification]
 
 - Recognize standalone Russian appointment and booking messages with explicit dates and clocks before provider inference; preserve source details as plan notes and require a preview for the tentative 30-minute duration. Persist single-plan preparation notes as canonical NoteDocument blocks with heading, divider and interactive checklist mirrors. Normalize equivalent provider clock/duration representations before the strict action contract; retain existing Brain conflict, category, deduplication and write verification.
