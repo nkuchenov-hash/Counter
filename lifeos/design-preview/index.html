@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#000000" />
-<title>Life OS Glass V81 — Представления записей</title>
+<title>Life OS Glass V82 — Таймлайн со шкалой</title>
 <style>
 :root{color-scheme:dark;--accent:#aebacb;--accent-soft:color-mix(in srgb,var(--accent) 22%,transparent);--accent-line:color-mix(in srgb,var(--accent) 52%,transparent);--glass-alpha:.31;--glass-blur:23px;--text:#f2f2f6;--muted:#b2b4be;--edge:rgba(255,255,255,.16);--bg:#07090d;--card-radius:20px}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#000000;color:var(--text)}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}body{overflow-x:hidden}
@@ -2275,6 +2275,23 @@ html .v79-timeline .record .record-time{grid-row:3;align-self:end}
 .v81-gap{display:flex;align-items:center;gap:8px;min-height:16px;padding:0 6px;font-size:11px;line-height:16px;color:var(--muted);font-variant-numeric:tabular-nums}
 .v81-gap::before,.v81-gap::after{content:"";flex:1;border-top:1px dashed currentColor;opacity:.24}
 .v81-gap span{white-space:nowrap;opacity:.82}
+/* V82 — segmented, reverse chronological clock scale. The rail follows the actual
+   card height, so short readable cards and compressed untracked time stay aligned. */
+.v82-timeline-row{display:grid;grid-template-columns:42px minmax(0,1fr);column-gap:7px;align-items:stretch;min-width:0}
+.v82-timeline-row>.record{min-width:0}
+.v82-ruler{position:relative;min-width:0;color:var(--muted);font-size:10px;font-weight:450;line-height:12px;font-variant-numeric:tabular-nums}
+.v82-ruler::before{content:"";position:absolute;top:-4px;bottom:-4px;right:1px;width:1px;background:currentColor;opacity:.2}
+.v82-tick{position:absolute;left:0;right:0;top:var(--tick);height:0;display:flex;align-items:center;justify-content:flex-end;gap:4px;white-space:nowrap;pointer-events:none}
+.v82-tick::after{content:"";width:5px;height:1px;background:currentColor;opacity:.55;flex:none}
+.v82-tick.now{color:var(--category,#6597ee);font-weight:650}
+.v82-tick.now::after{width:7px;height:2px;opacity:1}
+.v82-gap-row{display:grid;grid-template-columns:42px minmax(0,1fr);column-gap:7px;align-items:center}
+.v82-gap-row .v82-ruler{height:100%;min-height:16px}
+.v82-gap-row .v82-ruler::before{background:none;border-left:1px dashed currentColor;opacity:.25}
+.v82-last-row{display:grid;grid-template-columns:42px minmax(0,1fr);column-gap:7px;height:9px}
+.v82-last-row .v82-ruler::before{top:-4px;bottom:50%}
+@container(max-width:325px){.v82-timeline-row,.v82-gap-row,.v82-last-row{grid-template-columns:37px minmax(0,1fr);column-gap:5px}.v82-ruler{font-size:9px}}
+
 .v79-log{--log-text:#f2f2f6;--log-muted:#a5acb9;--log-line:rgba(255,255,255,.085);color:var(--log-text)}
 html.theme-light .v79-log{--log-text:#202b39;--log-muted:#677380;--log-line:rgba(35,50,70,.09)}
 .v79-log-row{display:grid;grid-template-columns:minmax(0,1fr) max-content;column-gap:12px;row-gap:5px;align-items:start;padding:12px 3px;border-bottom:1px solid var(--log-line)}
@@ -2501,11 +2518,40 @@ function v81Gap(newer,older){
  if(start===null||end===null)return 0;
  return Math.max(0,start-end);
 }
+function v82ClockLabel(n){
+ const minute=((Math.round(n)%1440)+1440)%1440;
+ return String(Math.floor(minute/60)).padStart(2,'0')+':'+String(minute%60).padStart(2,'0');
+}
+function v82Interval(x){
+ const [start,end]=timeParts(x)[0].split(' — ');
+ let a=v81Clock(start),b=x.running?v81Clock(demoTime()):v81Clock(end);
+ if(a===null||b===null)return null;
+ if(a>b)a-=1440;
+ return {a,b};
+}
+function v82Tick(n,p,now=false){
+ return '<span class="v82-tick'+(now?' now':'')+'" style="--tick:'+p.toFixed(3)+'%">'+v82ClockLabel(n)+'</span>';
+}
+function v82Ticks(x,index){
+ const t=v82Interval(x);if(!t)return '';
+ const {a,b}=t,span=Math.max(1,b-a),height=v79Height(x);
+ let out=v82Tick(b,0,!!x.running),lastY=0;
+ for(let h=Math.floor(b/60)*60;h>a;h-=60){
+   const y=(b-h)/span*height;
+   if(y-lastY<18||height-y<18)continue;
+   out+=v82Tick(h,(b-h)/span*100);lastY=y;
+ }
+ return out;
+}
 function v81Timeline(renderCard){
- return records.map((x,i)=>{
+ let out=records.map((x,i)=>{
  const gap=i>0?v81Gap(records[i-1],x):0;
- return (gap>0?'<div class="v81-gap"><span>'+escapeHtml(v79Fmt(gap))+' без записи</span></div>':'')+renderCard(x);
+ const gapRow=gap>0?'<div class="v82-gap-row"><div class="v82-ruler" aria-hidden="true"></div><div class="v81-gap"><span>'+escapeHtml(v79Fmt(gap))+' без записи</span></div></div>':'';
+ return gapRow+'<div class="v82-timeline-row" style="--category:'+x.cat+'"><div class="v82-ruler" aria-hidden="true">'+v82Ticks(x,i)+'</div>'+renderCard(x)+'</div>';
  }).join('');
+ const last=records.length?v82Interval(records[records.length-1]):null;
+ if(last)out+='<div class="v82-last-row"><div class="v82-ruler" aria-hidden="true">'+v82Tick(last.a,0)+'</div></div>';
+ return out;
 }
 function v79RenderLog(scroll){
  const row=x=>{
@@ -2515,7 +2561,7 @@ function v79RenderLog(scroll){
  scroll.innerHTML='<section class="v79-log">'+records.map(row).join('')+(!records.length?'<div class="empty">Нет записей.</div>':'')+'</section>';
  scroll.querySelectorAll('[data-v79-stop]').forEach(btn=>btn.addEventListener('click',()=>{const x=records.find(r=>r.id===Number(btn.dataset.v79Stop));if(x?.running)stopRecord(x);render()}));
 }
-setInterval(()=>{if(mode==='timeline'){el('scroll').querySelectorAll('.v79-timeline .record.running').forEach(n=>{const x=records.find(r=>r.id===Number(n.dataset.id));if(x?.running){const h=v79Height(x);n.style.setProperty('--v79-height',h+'px')}})}else if(mode==='today'){el('scroll').querySelectorAll('.v79-log-row.running .v79-log-duration').forEach(n=>{const x=records.find(r=>r.id===Number(n.closest('[data-id]').dataset.id));if(x?.running)n.textContent=timerText(x)})}},1000);
+setInterval(()=>{if(mode==='timeline'){el('scroll').querySelectorAll('.v79-timeline .record.running').forEach(n=>{const x=records.find(r=>r.id===Number(n.dataset.id));if(x?.running){const h=v79Height(x);n.style.setProperty('--v79-height',h+'px');const ruler=n.parentElement.querySelector('.v82-ruler');if(ruler)ruler.innerHTML=v82Ticks(x,0)}})}else if(mode==='today'){el('scroll').querySelectorAll('.v79-log-row.running .v79-log-duration').forEach(n=>{const x=records.find(r=>r.id===Number(n.closest('[data-id]').dataset.id));if(x?.running)n.textContent=timerText(x)})}},1000);
 function render(){const scroll=el('scroll');scroll.scrollTop=0;if(mode==='stats'){scroll.innerHTML=`<div class="stats"><div class="stats-title">Время по категориям</div>${[['Работа', '4 ч 25 мин',68,'#9f83e0'],['Личное', '2 ч 17 мин',38,'#df945c'],['Сон','6 ч 52 мин',91,'#9b9cba']].map(i=>`<div class="statbar"><div class="stathead"><span>${i[0]}</span><span>${i[1]}</span></div><div class="statrail"><span style="width:${i[2]}%;background:${i[3]}"></span></div></div>`).join('')}</div>`;return}
 if(day!==20){scroll.innerHTML='<div class="empty">Для этой даты нет записей в прототипе.<br>Выберите 20 ноября.</div>';return}
 if(mode==='today'){v79RenderLog(scroll);return}
