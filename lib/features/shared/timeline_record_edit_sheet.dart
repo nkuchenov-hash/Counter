@@ -50,6 +50,20 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TextEditingController _titleController;
   late NoteDocument _recordNoteDocument;
+  NoteDocument? _noteSnapshotSource;
+  ({String plain, String encoded})? _noteTextSnapshot;
+
+  ({String plain, String encoded}) get _recordNoteTextSnapshot {
+    final document = _recordNoteDocument;
+    if (!identical(_noteSnapshotSource, document)) {
+      _noteTextSnapshot = (
+        plain: document.toPlainText().trim(),
+        encoded: document.isEmpty ? '' : document.encode(),
+      );
+      _noteSnapshotSource = document;
+    }
+    return _noteTextSnapshot!;
+  }
   int? _categoryId;
   DateTime? _startDisplay;
   DateTime? _endDisplay;
@@ -118,7 +132,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       endTime: endUtc,
       categoryId: _categoryId,
       note: noteText.isEmpty ? null : noteText,
-      notesDeltaJson: _recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode(),
+      notesDeltaJson: _recordNoteTextSnapshot.encoded,
       checklist: checklistPayload.isEmpty ? null : checklistPayload,
       sourcePlanId: planPatch.sync
           ? (planPatch.clear ? null : planPatch.id)
@@ -149,7 +163,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       categoryId: categoryId ?? _categoryId,
       note: noteText,
       notesDeltaJson: notesDeltaSnapshot ??
-          (_recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode()),
+          (_recordNoteTextSnapshot.encoded),
       checklist: checklistPayload,
       syncSourcePlan: planPatch.sync,
       clearSourcePlan: planPatch.clear,
@@ -175,7 +189,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       categoryId: categoryId ?? _categoryId,
       note: noteText,
       notesDeltaJson: notesDeltaSnapshot ??
-          (_recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode()),
+          (_recordNoteTextSnapshot.encoded),
       checklist: checklistPayload,
       syncSourcePlan: planPatch.sync,
       clearSourcePlan: planPatch.clear,
@@ -189,9 +203,9 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     if (!_isPersistedRecord) return;
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
-    final noteText = _recordNoteDocument.toPlainText().trim();
+    final noteText = _recordNoteTextSnapshot.plain;
     final notesDeltaSnapshot =
-        _recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode();
+        _recordNoteTextSnapshot.encoded;
     final checklistPayload = _checklistForApi();
     final planPatch = _sourcePlanPatchArgs();
     final timePatch = _autosaveTimePatch();
@@ -575,7 +589,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
 
   Future<void> _save() async {
     final title = _titleController.text.trim();
-    final noteText = _recordNoteDocument.toPlainText().trim();
+    final noteText = _recordNoteTextSnapshot.plain;
     final checklistPayload = _checklistForApi();
     final planPatch = _sourcePlanPatchArgs();
     final validation = validateRecordEditSave(
@@ -622,7 +636,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
         endUtc,
         categoryId: _categoryId,
         note: noteText,
-        notesDeltaJson: _recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode(),
+        notesDeltaJson: _recordNoteTextSnapshot.encoded,
         checklist: checklistPayload,
       );
       if (!mounted) return;
