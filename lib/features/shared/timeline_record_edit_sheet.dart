@@ -81,6 +81,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   Timer? _notesFocusExitTimer;
   Timer? _titleAssistDebounce;
   final _recordAutosaveGate = EditSheetAutosaveGate(debounce: const Duration(milliseconds: 1500));
+  bool _recordFieldsDirty = false;
   /// Existing/optimistic record key for edits.
   bool get _isPersistedRecord => recordEditHasUpdatableRecordKey(
     systemOrOptimisticId: widget.record.id,
@@ -207,6 +208,27 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     final notesDeltaSnapshot =
         _recordNoteTextSnapshot.encoded;
     final checklistPayload = _checklistForApi();
+    // Notes-only edits must not reassert unchanged title, category, plan link
+    // or interval values (including changes received from another device).
+    if (!_recordFieldsDirty) {
+      final db = DatabaseService.instance;
+      db.applyOptimisticRecordRowEdit(
+        recordId: _recordUpdateKey,
+        note: noteText,
+        notesDeltaJson: notesDeltaSnapshot,
+        checklist: checklistPayload,
+      );
+      unawaited(db.updateRecord(
+        recordId: _recordUpdateKey,
+        note: noteText,
+        notesDeltaJson: notesDeltaSnapshot,
+        checklist: checklistPayload,
+        bypassConflictCheck: true,
+        alreadyAppliedOptimistically: true,
+      ).then<void>((_) {}));
+      return;
+    }
+    _recordFieldsDirty = false;
     final planPatch = _sourcePlanPatchArgs();
     final timePatch = _autosaveTimePatch();
     _applyRecordLocalEdit(
@@ -233,6 +255,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   void _onRecordFieldChanged({bool immediate = false}) {
     if (!_isPersistedRecord) return;
     if (_titleController.text.trim().isEmpty) return;
+    _recordFieldsDirty = true;
     // Avoid Timeline rebuilding on every keystroke. Publish once per debounce,
     // and commit synchronously before leaving the sheet.
     _recordAutosaveGate.markDirty();
