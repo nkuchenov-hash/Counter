@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#000000" />
-<title>Life OS Glass V80 — Представления записей</title>
+<title>Life OS Glass V81 — Представления записей</title>
 <style>
 :root{color-scheme:dark;--accent:#aebacb;--accent-soft:color-mix(in srgb,var(--accent) 22%,transparent);--accent-line:color-mix(in srgb,var(--accent) 52%,transparent);--glass-alpha:.31;--glass-blur:23px;--text:#f2f2f6;--muted:#b2b4be;--edge:rgba(255,255,255,.16);--bg:#07090d;--card-radius:20px}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#000000;color:var(--text)}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}body{overflow-x:hidden}
@@ -2255,46 +2255,39 @@ html[data-card-layout="instrument"] .duration-cell{text-align:right;display:flex
 
 
 /* V75 — rejected layouts removed; vertical menu retained. */
-/* V79: keep V76 mode styling and intrinsic tab widths. Fit the actual device, not viewport. */
+/* V81: preserve V76 text+icon navigation, original card material and readable content. */
 .static-controls{container-type:inline-size}
-html .segment.v79-modes,html.theme-light .segment.v79-modes{width:max-content!important;max-width:100%!important;gap:12px!important;justify-content:flex-start!important;overflow:visible!important}
-html .segment.v79-modes button[data-mode],html.theme-light .segment.v79-modes button[data-mode]{width:auto!important;flex:0 0 auto!important;white-space:nowrap;gap:5px!important}
+html .segment.v79-modes,html.theme-light .segment.v79-modes{display:flex!important;width:100%!important;max-width:100%!important;gap:8px!important;justify-content:flex-start!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important}
+.segment.v79-modes::-webkit-scrollbar{display:none}
+html .segment.v79-modes button[data-mode],html.theme-light .segment.v79-modes button[data-mode]{width:auto!important;flex:0 0 auto!important;white-space:nowrap;gap:4px!important;padding:0 3px!important;font-size:13px!important;letter-spacing:-.2px!important}
+html .segment.v79-modes button[data-mode] svg,html.theme-light .segment.v79-modes button[data-mode] svg{width:15px!important;height:15px!important;display:block!important;flex:0 0 15px!important}
 @container(max-width:365px){
- html .segment.v79-modes,html.theme-light .segment.v79-modes{gap:9px!important}
- html .segment.v79-modes button[data-mode] svg{display:none!important}
-}
-@container(max-width:295px){
  html .segment.v79-modes,html.theme-light .segment.v79-modes{gap:5px!important}
- html .segment.v79-modes button[data-mode],html.theme-light .segment.v79-modes button[data-mode]{font-size:12px!important}
+ html .segment.v79-modes button[data-mode],html.theme-light .segment.v79-modes button[data-mode]{font-size:12px!important;padding:0 2px!important;gap:3px!important}
+ html .segment.v79-modes button[data-mode] svg,html.theme-light .segment.v79-modes button[data-mode] svg{width:13px!important;height:13px!important;flex-basis:13px!important}
 }
-.v79-timeline{display:flex;flex-direction:column;gap:10px!important}
-.v79-timeline .record{margin:0!important;flex:none;height:var(--v79-height)!important;min-height:var(--v79-height)!important}
-.v79-timeline .record .record-inner{height:100%;box-sizing:border-box;align-content:space-between!important;grid-template-rows:auto 1fr auto!important}
-.v79-timeline .record .record-time{grid-row:3;align-self:end}
+.v79-timeline{display:flex;flex-direction:column;gap:8px!important;isolation:isolate}
+.v79-timeline .record{margin:0!important;flex:none;height:auto!important;min-height:var(--v79-height)!important}
+html .v79-timeline .record .record-inner{height:auto!important;min-height:calc(var(--v79-height) - 2px);box-sizing:border-box;align-content:space-between!important;grid-template-rows:auto minmax(0,1fr) auto!important}
+html .v79-timeline .record .record-time{grid-row:3;align-self:end}
 .v79-timeline .record .record-info{align-self:start}
 .v79-timeline .record .record-tools{align-self:start}
-.v79-timeline .record.short .record-inner{grid-template-rows:auto auto!important;align-content:center!important}
-.v79-timeline .record.short .record-time{grid-row:2}
-.v79-timeline .record.short .record-title{font-size:15px!important;line-height:1.2!important}
-.v79-timeline .record.short .breadcrumb{font-size:11px!important;line-height:1.25!important;margin-top:3px!important}
-.v79-timeline .record.short .record-time{font-size:12px!important;line-height:16px!important;margin-top:3px!important;min-height:0!important}
+.v81-gap{display:flex;align-items:center;gap:8px;min-height:16px;padding:0 6px;font-size:11px;line-height:16px;color:var(--muted);font-variant-numeric:tabular-nums}
+.v81-gap::before,.v81-gap::after{content:"";flex:1;border-top:1px dashed currentColor;opacity:.24}
+.v81-gap span{white-space:nowrap;opacity:.82}
 .v79-log{--log-text:#f2f2f6;--log-muted:#a5acb9;--log-line:rgba(255,255,255,.085);color:var(--log-text)}
 html.theme-light .v79-log{--log-text:#202b39;--log-muted:#677380;--log-line:rgba(35,50,70,.09)}
-.v79-log-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:2px 2px 12px;color:var(--log-muted);font-size:12px}
-.v79-log-head strong{font-weight:600;color:var(--log-text);font-size:14px}
-.v79-log-row{display:grid;grid-template-columns:42px minmax(0,1fr) max-content;gap:10px;align-items:start;padding:13px 2px;border-bottom:1px solid var(--log-line);min-height:60px}
-.v79-log-clock{font-size:12px;color:var(--log-muted);font-variant-numeric:tabular-nums;line-height:20px;white-space:nowrap}
-.v79-log-clock small{display:block;font-size:11px;line-height:17px}
-.v79-log-main{min-width:0}
-.v79-log-title{font-size:15px;line-height:20px;font-weight:550;overflow-wrap:anywhere;letter-spacing:-.15px}
-.v79-log-category{display:flex;align-items:center;gap:5px;color:var(--log-muted);font-size:11px;line-height:17px;margin-top:3px;min-width:0}
+.v79-log-row{display:grid;grid-template-columns:minmax(0,1fr) max-content;column-gap:12px;row-gap:5px;align-items:start;padding:12px 3px;border-bottom:1px solid var(--log-line)}
+.v79-log-title{font-size:15px;line-height:20px;font-weight:600;overflow-wrap:anywhere;letter-spacing:-.15px}
+.v79-log-category{display:flex;align-items:center;gap:6px;color:var(--log-muted);font-size:12px;line-height:17px;min-width:0}
 .v79-log-category span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.v79-log-category i{width:6px;height:6px;border-radius:50%;background:var(--category);flex:none}
-.v79-log-duration{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;line-height:20px;white-space:nowrap}
+.v79-log-category i{width:7px;height:7px;border-radius:50%;background:var(--category);flex:none}
+.v79-log-duration{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;line-height:20px;white-space:nowrap;text-align:right}
+.v79-log-clock{font-size:11px;color:var(--log-muted);font-variant-numeric:tabular-nums;line-height:17px;white-space:nowrap;text-align:right}
 .v79-log-row.running .v79-log-duration{color:var(--category)}
-.v79-log-end{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-.v79-log-stop{display:grid;place-items:center;width:25px;height:25px;border:0;border-radius:50%;background:color-mix(in srgb,var(--category) 14%,transparent);color:var(--log-text);padding:0}
-.v79-log-stop svg{width:15px;height:15px}
+.v79-log-end{display:flex;align-items:center;justify-content:flex-end;gap:6px}
+.v79-log-stop{display:grid;place-items:center;width:22px;height:22px;border:0;border-radius:50%;background:color-mix(in srgb,var(--category) 14%,transparent);color:var(--log-text);padding:0}
+.v79-log-stop svg{width:14px;height:14px}
 </style>
 </head>
 <body>
@@ -2499,22 +2492,35 @@ function v79Duration(x){
  return parts.length===2&&parts.every(n=>n!==null)?(parts[1]-parts[0]+1440)%1440:0;
 }
 function v79Fmt(minutes){const n=Math.floor(minutes),h=Math.floor(n/60),m=n%60;return (h?h+' ч ':'')+m+' мин'}
-function v79Height(x){return Math.max(88,Math.round(v79Duration(x)*1.25))}
+function v79Height(x){return Math.round(100+v79Duration(x)*.40)}
+function v81Clock(t){const m=String(t).match(/^(\d{1,2}):(\d{2})$/);return m?Number(m[1])*60+Number(m[2]):null}
+function v81Gap(newer,older){
+ if(!newer||!older)return 0;
+ const start=v81Clock(timeParts(newer)[0].split(' — ')[0]);
+ const end=v81Clock(timeParts(older)[0].split(' — ')[1]);
+ if(start===null||end===null)return 0;
+ return Math.max(0,start-end);
+}
+function v81Timeline(renderCard){
+ return records.map((x,i)=>{
+ const gap=i>0?v81Gap(records[i-1],x):0;
+ return (gap>0?'<div class="v81-gap"><span>'+escapeHtml(v79Fmt(gap))+' без записи</span></div>':'')+renderCard(x);
+ }).join('');
+}
 function v79RenderLog(scroll){
- const total=records.reduce((a,x)=>a+v79Duration(x),0);
  const row=x=>{
- const [interval,duration]=timeParts(x),[start,end]=interval.split(' — ');
- return '<div class="v79-log-row '+(x.running?'running':'')+'" style="--category:'+x.cat+'" data-id="'+x.id+'"><div class="v79-log-clock">'+escapeHtml(start)+'<small>'+escapeHtml(x.running?'сейчас':end||'')+'</small></div><div class="v79-log-main"><div class="v79-log-title">'+escapeHtml(x.title)+'</div><div class="v79-log-category"><i></i><span>'+escapeHtml(x.path.replaceAll(' › ',' · '))+'</span></div></div><div class="v79-log-end"><span class="v79-log-duration">'+escapeHtml(duration)+'</span>'+(x.running?'<button type="button" class="v79-log-stop" data-v79-stop="'+x.id+'" aria-label="Остановить запись">'+icon('stop')+'</button>':'')+'</div></div>';
+ const [interval,duration]=timeParts(x);
+ return '<div class="v79-log-row '+(x.running?'running':'')+'" style="--category:'+x.cat+'" data-id="'+x.id+'"><div class="v79-log-title">'+escapeHtml(x.title)+'</div><div class="v79-log-end"><span class="v79-log-duration">'+escapeHtml(duration)+'</span>'+(x.running?'<button type="button" class="v79-log-stop" data-v79-stop="'+x.id+'" aria-label="Остановить запись">'+icon('stop')+'</button>':'')+'</div><div class="v79-log-category"><i></i><span>'+escapeHtml(x.path.replaceAll(' › ',' · '))+'</span></div><div class="v79-log-clock">'+escapeHtml(interval)+'</div></div>';
  };
- scroll.innerHTML='<section class="v79-log"><div class="v79-log-head"><strong>Записи за день</strong><span>'+v79Fmt(total)+'</span></div>'+records.map(row).join('')+(!records.length?'<div class="empty">Нет записей.</div>':'')+'</section>';
+ scroll.innerHTML='<section class="v79-log">'+records.map(row).join('')+(!records.length?'<div class="empty">Нет записей.</div>':'')+'</section>';
  scroll.querySelectorAll('[data-v79-stop]').forEach(btn=>btn.addEventListener('click',()=>{const x=records.find(r=>r.id===Number(btn.dataset.v79Stop));if(x?.running)stopRecord(x);render()}));
 }
-setInterval(()=>{if(mode==='timeline'){el('scroll').querySelectorAll('.v79-timeline .record.running').forEach(n=>{const x=records.find(r=>r.id===Number(n.dataset.id));if(x?.running){const h=v79Height(x);n.style.setProperty('--v79-height',h+'px');n.classList.toggle('short',h<112)}})}else if(mode==='today'){el('scroll').querySelectorAll('.v79-log-row.running .v79-log-duration').forEach(n=>{const x=records.find(r=>r.id===Number(n.closest('[data-id]').dataset.id));if(x?.running)n.textContent=timerText(x)})}},1000);
+setInterval(()=>{if(mode==='timeline'){el('scroll').querySelectorAll('.v79-timeline .record.running').forEach(n=>{const x=records.find(r=>r.id===Number(n.dataset.id));if(x?.running){const h=v79Height(x);n.style.setProperty('--v79-height',h+'px')}})}else if(mode==='today'){el('scroll').querySelectorAll('.v79-log-row.running .v79-log-duration').forEach(n=>{const x=records.find(r=>r.id===Number(n.closest('[data-id]').dataset.id));if(x?.running)n.textContent=timerText(x)})}},1000);
 function render(){const scroll=el('scroll');scroll.scrollTop=0;if(mode==='stats'){scroll.innerHTML=`<div class="stats"><div class="stats-title">Время по категориям</div>${[['Работа', '4 ч 25 мин',68,'#9f83e0'],['Личное', '2 ч 17 мин',38,'#df945c'],['Сон','6 ч 52 мин',91,'#9b9cba']].map(i=>`<div class="statbar"><div class="stathead"><span>${i[0]}</span><span>${i[1]}</span></div><div class="statrail"><span style="width:${i[2]}%;background:${i[3]}"></span></div></div>`).join('')}</div>`;return}
 if(day!==20){scroll.innerHTML='<div class="empty">Для этой даты нет записей в прототипе.<br>Выберите 20 ноября.</div>';return}
 if(mode==='today'){v79RenderLog(scroll);return}
-const renderCard=x=>{const parts=x.path.split(' › ');const main=parts[0]||x.path;const sub=parts.slice(1).join(' · ');return `<article class="record ${x.running?'running':''} ${mode==='timeline'&&v79Height(x)<112?'short':''}" style="--category:${x.cat}${mode==='timeline'?';--v79-height:'+v79Height(x)+'px':''}" data-id="${x.id}"><span class="record-watermark-clip" aria-hidden="true"><svg class="record-watermark"><use href="#wm-${x.wm||'work'}"/></svg></span><div class="record-inner"><div class="record-info"><div class="record-title">${escapeHtml(x.title)}</div><div class="breadcrumb"><span class="category-label">${escapeHtml(main)}</span>${sub?`<span class="chev">·</span><span class="category-label">${escapeHtml(sub)}</span>`:''}</div></div><div class="record-tools">${x.running?`<button class="stop" data-stop="${x.id}" title="Остановить запись" aria-label="Стоп">${icon('stop')}</button>`:''}<button class="more" data-more="${x.id}" aria-label="Ещё">${icon('more')}</button><div class="menu" id="menu-${x.id}"><button data-delete="${x.id}">Удалить запись</button></div></div><div class="record-time">${intervalMarkup(x)}${durationMarkup(x)}</div></div></article>`};
-scroll.innerHTML=mode==='timeline'?'<div class="v79-timeline">'+records.map(renderCard).join('')+'</div>':records.map(renderCard).join('')+`<div class="demo-divider"><span>Дополнительные записи · демонстрация прокрутки</span></div>`+demoRecords.map(renderCard).join('');
+const renderCard=x=>{const parts=x.path.split(' › ');const main=parts[0]||x.path;const sub=parts.slice(1).join(' · ');return `<article class="record ${x.running?'running':''}" style="--category:${x.cat}${mode==='timeline'?';--v79-height:'+v79Height(x)+'px':''}" data-id="${x.id}"><span class="record-watermark-clip" aria-hidden="true"><svg class="record-watermark"><use href="#wm-${x.wm||'work'}"/></svg></span><div class="record-inner"><div class="record-info"><div class="record-title">${escapeHtml(x.title)}</div><div class="breadcrumb"><span class="category-label">${escapeHtml(main)}</span>${sub?`<span class="chev">·</span><span class="category-label">${escapeHtml(sub)}</span>`:''}</div></div><div class="record-tools">${x.running?`<button class="stop" data-stop="${x.id}" title="Остановить запись" aria-label="Стоп">${icon('stop')}</button>`:''}<button class="more" data-more="${x.id}" aria-label="Ещё">${icon('more')}</button><div class="menu" id="menu-${x.id}"><button data-delete="${x.id}">Удалить запись</button></div></div><div class="record-time">${intervalMarkup(x)}${durationMarkup(x)}</div></div></article>`};
+scroll.innerHTML=mode==='timeline'?'<div class="v79-timeline">'+v81Timeline(renderCard)+'</div>':records.map(renderCard).join('')+`<div class="demo-divider"><span>Дополнительные записи · демонстрация прокрутки</span></div>`+demoRecords.map(renderCard).join('');
 const closeMenus=(except)=>{scroll.querySelectorAll('.menu').forEach(m=>{if(m!==except){m.classList.remove('open');m.closest('.record')?.classList.remove('menu-open')}})};
 scroll.querySelectorAll('[data-more]').forEach(btn=>btn.addEventListener('click',(e)=>{e.stopPropagation(); const menu=el('menu-'+btn.dataset.more); const open=!menu.classList.contains('open'); closeMenus(open?menu:null); menu.classList.toggle('open',open);menu.closest('.record')?.classList.toggle('menu-open',open)}));
 scroll.querySelectorAll('[data-delete]').forEach(btn=>btn.addEventListener('click',(e)=>{e.stopPropagation(); records=records.filter(x=>x.id!==Number(btn.dataset.delete));demoRecords.splice(0,demoRecords.length,...demoRecords.filter(x=>x.id!==Number(btn.dataset.delete)));render()}));scroll.querySelectorAll('[data-stop]').forEach(btn=>btn.addEventListener('click',()=>{let item=records.find(x=>x.id===Number(btn.dataset.stop));if(item){stopRecord(item);render()}})); scroll.querySelectorAll('.record-info').forEach(info=>info.addEventListener('click',()=>closeMenus(null)))
@@ -2526,7 +2532,7 @@ el('customColor').addEventListener('input',e=>accent(e.target.value));
 el('opacity').addEventListener('input',e=>{root.style.setProperty('--glass-alpha',Number(e.target.value)/100);el('opacityVal').textContent=e.target.value+'%'});
 el('blur').addEventListener('input',e=>{root.style.setProperty('--glass-blur',e.target.value+'px');el('blurVal').textContent=e.target.value+' px'});
 const presets={crystal:[58,6],frost:[41,16],smoke:[12,4]};document.querySelectorAll('[data-pres]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-pres]').forEach(v=>v.classList.toggle('active',v===btn));const [a,b]=presets[btn.dataset.pres];el('opacity').value=a;el('opacity').dispatchEvent(new Event('input'));el('blur').value=b;el('blur').dispatchEvent(new Event('input'))}));
-document.querySelectorAll('[data-mode]').forEach(btn=>btn.addEventListener('click',()=>{mode=btn.dataset.mode;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b===btn));syncSelectionIcons();el('entry').parentElement.style.display=mode==='stats'?'none':'flex';render()}));document.querySelectorAll('[data-bgmode]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-bgmode]').forEach(b=>b.classList.toggle('active',b===btn));scene.dataset.bg=btn.dataset.bgmode;}));el('artOpacity').addEventListener('input',e=>{root.style.setProperty('--art-opacity', Number(e.target.value)/100);el('artOpacityValue').textContent=e.target.value+'%';});
+document.querySelectorAll('[data-mode]').forEach(btn=>btn.addEventListener('click',()=>{mode=btn.dataset.mode;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b===btn));syncSelectionIcons();btn.scrollIntoView({block:'nearest',inline:'nearest'});el('entry').parentElement.style.display=mode==='stats'?'none':'flex';render()}));document.querySelectorAll('[data-bgmode]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-bgmode]').forEach(b=>b.classList.toggle('active',b===btn));scene.dataset.bg=btn.dataset.bgmode;}));el('artOpacity').addEventListener('input',e=>{root.style.setProperty('--art-opacity', Number(e.target.value)/100);el('artOpacityValue').textContent=e.target.value+'%';});
 el('dayPick').addEventListener('click',()=>{day=day===20?18:day+1;updateDate();render()});
 const add=()=>{const v=el('entry').value.trim();if(!v)return;day=20;updateDate();records.forEach(r=>{if(r.running){stopRecord(r)}});records.unshift({id:Date.now(),title:v,path:'Без категории',cat:'#98a3b4',time:demoTime()+' — ... (0 мин)',startedAt:Date.now(),running:true,wm:'work'});el('entry').value='';render()};el('add').addEventListener('click',add);el('entry').addEventListener('keydown',e=>{if(e.key==='Enter')add()});
 function panelOpen(yes){el('panel').classList.toggle('open',yes);el('overlay').classList.toggle('open',yes)}el('palette').addEventListener('click',()=>panelOpen(true));el('closepanel').addEventListener('click',()=>panelOpen(false));el('overlay').addEventListener('click',()=>panelOpen(false));
