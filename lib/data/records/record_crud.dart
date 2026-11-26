@@ -98,6 +98,7 @@ extension RecordCrudExtension on DatabaseService {
       originalQueryId: originalInput,
       restId: resolvedPbId,
       fields: _nocoFieldsForPatch(Map<String, dynamic>.from(updates)),
+      notifyTimelineOnChange: true,
     );
     if (patchCode == 404) {
       if (rollbackRow != null && rollbackIndex >= 0) {
@@ -111,7 +112,7 @@ extension RecordCrudExtension on DatabaseService {
       return false;
     }
     if (patchCode >= 200 && patchCode < 300) {
-      _notifyTimelineAfterRecordCacheMutation();
+      // The response merge publishes only a genuine changed projection.
       unawaited(offlineSync.refreshPendingCount());
       return true;
     }
@@ -506,10 +507,13 @@ extension RecordCrudExtension on DatabaseService {
     var updatedPending = false;
     var categoryApplied = false;
     String? dayKey;
+    Map<String, dynamic>? beforeEdit;
+    Map<String, dynamic>? afterEdit;
 
     final idx = _indexOfCachedRecordRow(resolved, originalInput);
     if (idx >= 0) {
       final row = _cachedFlatRecords[idx];
+      beforeEdit = Map<String, dynamic>.from(row);
       if (title != null) row['title'] = title;
       final storedStart = CategoryServiceExtension._parseDateTimeUtc(
         row['start_time'] ?? row['startTime'],
@@ -576,6 +580,7 @@ extension RecordCrudExtension on DatabaseService {
         }
       }
       updatedFlat = true;
+      afterEdit = row;
       dayKey ??= _recordEditCalendarDayKeyFromRow(row);
     }
 
@@ -621,10 +626,15 @@ extension RecordCrudExtension on DatabaseService {
     }
 
     if (updatedFlat || updatedPending) {
-      _invalidateTimelineReadCachesAfterRecordEdit(
-        dayKey: dayKey?.isNotEmpty == true ? dayKey : null,
-      );
-      _notifyTimelineAfterRecordCacheMutation();
+      final published = !updatedPending &&
+          beforeEdit != null && afterEdit != null &&
+          _tryPublishIndexedRecordMetadataEdit(beforeEdit, afterEdit);
+      if (!published) {
+        _invalidateTimelineReadCachesAfterRecordEdit(
+          dayKey: dayKey?.isNotEmpty == true ? dayKey : null,
+        );
+        _notifyTimelineAfterRecordCacheMutation();
+      }
     }
 
     return RecordOptimisticApplyResult(
