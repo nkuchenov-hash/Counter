@@ -18,11 +18,11 @@ void main() {
     db.debugResetRecordBrainTestHarness();
   });
 
-  void seed(DateTime start) {
+  void seed(DateTime start, {String id = recordId, String biz = businessId}) {
     db.debugSeedFlatRecordRowForTest({
-      'id': recordId,
-      '_pb_record_id': recordId,
-      'record_id': businessId,
+      'id': id,
+      '_pb_record_id': id,
+      'record_id': biz,
       'user_id': owner,
       'title': 'Original',
       'type': 'record',
@@ -38,8 +38,10 @@ void main() {
     final day = DateTime(2026, 11, 20);
     final other = DateTime(2026, 11, 19);
     seed(start);
+    seed(DateTime(2026, 11, 19, 12), id: 'record987654321', biz: 'unrelated');
     expect(db.peekTimelineRecordsForDate(day).single['title'], 'Original');
     final unrelated = db.peekTimelineRowVmsForDate(other);
+    expect(unrelated, hasLength(1));
     db.timelineWarmSnapshotForDate(day);
     db.timelineBodyEntryForDate(day);
     var emissions = 0;
@@ -81,4 +83,30 @@ void main() {
     expect(db.timelineBodyEntryForDate(oldDay).records, isEmpty);
     expect(db.timelineBodyEntryForDate(nextDay).records, hasLength(1));
   });
+  test('network echo is silent only when structured record fields match', () {
+    final before = <String, dynamic>{
+      'record_id': businessId,
+      'title': 'Edited',
+      'note': 'same visible text',
+      'notes_delta': '{"blocks":[{"text":"same visible text"}]}',
+      'checklist': '[{"text":"task","isDone":false}]',
+      'tags_link': ['tag123456789012'],
+      'source_plan_id': 'plan12345678901',
+      'user_id': owner,
+    };
+    final after = <String, dynamic>{
+      ...before,
+      'notes_delta': {'blocks': [{'text': 'same visible text'}]},
+      'checklist': [{'text': 'task', 'isDone': false}],
+    };
+    bool equivalent(Map<String, dynamic> candidate) =>
+        RecordServiceExtension.debugRecordTimelineEquivalentForTest(before, candidate);
+    expect(equivalent(after), isTrue);
+    expect(equivalent({...after, 'notes_delta': {'blocks': [{'text': 'different'}]}}), isFalse);
+    expect(equivalent({...after, 'checklist': [{'text': 'task', 'isDone': true}]}), isFalse);
+    expect(equivalent({...after, 'source_plan_id': 'plan98765432101'}), isFalse);
+    expect(equivalent({...after, 'tags_link': []}), isFalse);
+    expect(equivalent({...after, 'user_id': 'anotherOwner123'}), isFalse);
+  });
+
 }
