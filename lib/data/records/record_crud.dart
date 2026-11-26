@@ -632,6 +632,8 @@ extension RecordCrudExtension on DatabaseService {
       if (!published) {
         _invalidateTimelineReadCachesAfterRecordEdit(
           dayKey: dayKey?.isNotEmpty == true ? dayKey : null,
+          previousDayKey: beforeEdit == null
+              ? null : _recordEditCalendarDayKeyFromRow(beforeEdit),
         );
         _notifyTimelineAfterRecordCacheMutation();
       }
