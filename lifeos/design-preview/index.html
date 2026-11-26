@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#000000" />
-<title>Life OS Glass V76 — Card comparison</title>
+<title>Life OS Glass V77 — Таймлайн и Сегодня</title>
 <style>
 :root{color-scheme:dark;--accent:#aebacb;--accent-soft:color-mix(in srgb,var(--accent) 22%,transparent);--accent-line:color-mix(in srgb,var(--accent) 52%,transparent);--glass-alpha:.31;--glass-blur:23px;--text:#f2f2f6;--muted:#b2b4be;--edge:rgba(255,255,255,.16);--bg:#07090d;--card-radius:20px}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#000000;color:var(--text)}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}body{overflow-x:hidden}
@@ -2255,12 +2255,49 @@ html[data-card-layout="instrument"] .duration-cell{text-align:right;display:flex
 
 
 /* V75 — rejected layouts removed; vertical menu retained. */
+/* V77 — extra views only; original record cards and materials unchanged. */
+html .segment,html.theme-light .segment{width:100%!important;max-width:100%!important;gap:4px!important;justify-content:space-between!important;overflow:visible!important}
+html .segment button,html.theme-light .segment button{flex:1 1 0!important;min-width:0!important;padding:0 2px!important;font-size:13px!important;gap:4px!important;white-space:nowrap;justify-content:center!important}
+html .segment button svg,html.theme-light .segment button svg{width:14px!important;height:14px!important;flex:0 0 14px!important}
+@media(max-width:420px){html .segment button svg,html.theme-light .segment button svg{display:none!important}}
+.v77-timeline,.v77-today{--v77-fg:#f2f2f6;--v77-muted:#a5acb9;--v77-line:rgba(255,255,255,.12);color:var(--v77-fg)}
+html.theme-light .v77-timeline,html.theme-light .v77-today{--v77-fg:#202b39;--v77-muted:#66717d;--v77-line:rgba(35,50,70,.10)}
+.v77-timeline{--hour:72px;margin:6px 0 14px}
+.v77-tl-top,.v77-task-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 4px 17px;font-size:13px;color:var(--v77-muted)}
+.v77-tl-top strong,.v77-task-head strong{color:var(--v77-fg);font-size:15px;font-weight:650}
+.v77-scale{position:relative;height:1728px;margin:0 0 12px;padding-left:44px}
+.v77-hour{position:absolute;left:0;right:0;height:0;display:flex;align-items:center;pointer-events:none}
+.v77-hour span{width:44px;font-size:11px;font-variant-numeric:tabular-nums;color:var(--v77-muted);transform:translateY(-1px)}
+.v77-hour i{height:1px;background:var(--v77-line);flex:1}
+.v77-lane{position:absolute;left:45px;right:1px;top:0;bottom:0}
+.v77-block{position:absolute;overflow:hidden;border:0;border-left:3px solid var(--category);border-radius:8px;color:var(--v77-fg);background:linear-gradient(110deg,color-mix(in srgb,var(--category) 23%,transparent),color-mix(in srgb,var(--category) 8%,transparent));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--category) 18%,transparent);padding:6px 9px;min-width:0;cursor:pointer;text-align:left;display:flex;flex-direction:column;justify-content:flex-start;gap:3px}
+html.theme-light .v77-block{background:linear-gradient(110deg,color-mix(in srgb,var(--category) 15%,white),color-mix(in srgb,var(--category) 6%,white))}
+.v77-block strong{font-size:13px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.v77-block small{font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--v77-muted);overflow:hidden;text-overflow:ellipsis}
+.v77-block.compact{padding:1px 5px;gap:0;justify-content:center}
+.v77-block.compact small{display:none}
+.v77-block.tiny{padding:0;min-height:2px}
+.v77-block.tiny>*{visibility:hidden}
+.v77-block.running{border-left-width:3px}
+.v77-now{position:absolute;left:-3px;right:0;border-top:1px solid #e86570;z-index:3;pointer-events:none}
+.v77-now:before{content:"";position:absolute;left:0;top:-3px;width:5px;height:5px;border-radius:50%;background:#e86570}
+.v77-inspect{margin:0 0 12px 44px;padding:8px 10px;border-radius:10px;border:1px solid var(--v77-line);font-size:12px;line-height:1.5}
+.v77-inspect button{border:0;background:transparent;color:inherit;text-decoration:underline;padding:4px 0 0}
+.v77-today{margin:8px 2px}
+.v77-task{display:flex;align-items:center;gap:12px;min-height:52px;padding:9px 3px;border-bottom:1px solid var(--v77-line)}
+.v77-task-check{appearance:none;display:grid;place-items:center;flex:0 0 21px;width:21px;height:21px;border-radius:7px;border:1.5px solid var(--v77-muted);background:transparent;cursor:pointer;margin:0}
+.v77-task-check:checked{background:#438968;border-color:#438968;color:white}
+.v77-task-check:checked:after{content:"";height:9px;width:5px;border:solid white;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.v77-task label{flex:1;font-size:15px;line-height:1.4;cursor:pointer;overflow-wrap:anywhere}
+.v77-task.done label{text-decoration:line-through;color:var(--v77-muted)}
+.v77-task-delete{border:0;background:transparent;color:var(--v77-muted);font-size:20px;line-height:1;padding:8px;opacity:.7}
+.v77-completed{font-size:12px;color:var(--v77-muted);margin:23px 3px 4px}
 </style>
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
  <symbol id="i-list" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01" stroke-width="3"/></g></symbol>
- <symbol id="i-chart" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 17v-6M12 17V7M17 17v-9"/></g></symbol>
+ <symbol id="i-timeline" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 3v18"/><rect x="9" y="3" width="10" height="7" rx="2"/><rect x="9" y="13" width="10" height="8" rx="2"/></g></symbol><symbol id="i-timeline-filled" viewBox="0 0 24 24"><path d="M5 3v18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="9" y="3" width="11" height="7" rx="2" fill="currentColor"/><rect x="9" y="13" width="11" height="8" rx="2" fill="currentColor"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol><symbol id="i-chart" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 17v-6M12 17V7M17 17v-9"/></g></symbol>
 
  <!-- Filled states: same functional glyphs but solid shapes for selection -->
  <symbol id="i-time-filled" viewBox="0 0 24 24"><path d="M3.1 20.5 9.3 11.5l4.8 3.2 6.3-10" fill="none" stroke="currentColor" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"/><circle cx="3.2" cy="20.1" r="2.4" fill="currentColor"/><circle cx="9.3" cy="11.5" r="2.45" fill="currentColor"/><circle cx="14" cy="14.7" r="2.4" fill="currentColor"/><circle cx="20.4" cy="4.8" r="2.45" fill="currentColor"/></symbol>
@@ -2301,7 +2338,7 @@ html[data-card-layout="instrument"] .duration-cell{text-align:right;display:flex
   </header>
   <div class="content">
    <div class="static-controls">
-    <div class="segment"><button class="active" data-mode="list"><svg><use href="#i-list"/></svg>Список</button><button data-mode="stats"><svg><use href="#i-chart"/></svg>Статистика</button></div>
+    <div class="segment"><button class="active" data-mode="list"><svg><use href="#i-list"/></svg>Список</button><button data-mode="timeline"><svg><use href="#i-timeline"/></svg>Таймлайн</button><button data-mode="today"><svg><use href="#i-plan"/></svg>Сегодня</button><button data-mode="stats"><svg><use href="#i-chart"/></svg>Статистика</button></div>
     <div class="quick"><input class="field" id="entry" placeholder="Добавить запись" aria-label="Добавить запись"/><button class="action" id="add" title="Старт" aria-label="Начать запись"><svg aria-hidden="true"><use href="#i-play"/></svg></button></div>
     <div class="divider"></div>
    </div>
@@ -2414,11 +2451,11 @@ function syncSelectionIcons(){
     if(u&&glyph)u.setAttribute('href','#i-'+glyph+(btn.classList.contains('active')?'-filled':''));
   });
   document.querySelectorAll('[data-mode]').forEach(btn=>{
-    const glyph=btn.dataset.mode==='stats'?'chart':'list';
+    const glyph=({stats:'chart',timeline:'timeline',today:'plan',list:'list'})[btn.dataset.mode]||'list';
     btn.querySelector('svg use')?.setAttribute('href','#i-'+glyph+(btn.classList.contains('active')?'-filled':''));
   });
 }
-function updateDate(){const days=['среда · 18 нояб.','четверг · 19 нояб.','пятница · 20 нояб.'];el('dayPick').textContent=days[Math.max(0,Math.min(2,day-18))]||'пятница · 20 нояб.';el('add').innerHTML=icon('play')}
+function updateDate(){const days=['среда · 18 нояб.','четверг · 19 нояб.','пятница · 20 нояб.'];el('dayPick').textContent=days[Math.max(0,Math.min(2,day-18))]||'пятница · 20 нояб.';el('add').innerHTML=icon(mode==='today'?'plus':'play')}
 const demoStart=Date.now();
 const demoTime=()=>{const t=9*60+57+Math.floor((Date.now()-demoStart)/60000);return String(Math.floor(t/60)%24).padStart(2,'0')+':'+String(t%60).padStart(2,'0');};
 records[0].startedAt=demoStart-(48*60+52)*1000;
@@ -2451,7 +2488,64 @@ function durationMarkup(x){
  return d;
 }
 
-function render(){const scroll=el('scroll');scroll.scrollTop=0;if(mode==='stats'){scroll.innerHTML=`<div class="stats"><div class="stats-title">Время по категориям</div>${[['Работа', '4 ч 25 мин',68,'#9f83e0'],['Личное', '2 ч 17 мин',38,'#df945c'],['Сон','6 ч 52 мин',91,'#9b9cba']].map(i=>`<div class="statbar"><div class="stathead"><span>${i[0]}</span><span>${i[1]}</span></div><div class="statrail"><span style="width:${i[2]}%;background:${i[3]}"></span></div></div>`).join('')}</div>`;return}
+const v77Tasks=[
+{id:1,title:'Проверить список гостей',done:false},
+{id:2,title:'Отправить отчёт клиенту',done:false},
+{id:3,title:'Купить продукты',done:false},
+{id:4,title:'Подготовить документы',done:true}
+];
+let v77TaskId=5,v77Selected=null;
+const v77Minute=(value)=>{const m=String(value).match(/(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null};
+const v77Time=(value)=>String(Math.floor(value/60)).padStart(2,'0')+':'+String(value%60).padStart(2,'0');
+const v77Px=1.2;
+function v77Intervals(){
+ const now=v77Minute(demoTime());
+ return records.map(x=>{
+  const parts=timeParts(x)[0].split(' — ');
+  let a=v77Minute(parts[0]),b=x.running?now:v77Minute(parts[1]);
+  if(a===null||b===null)return null;
+  if(b<a)a-=1440;
+  return {x,a:Math.max(0,a),b:Math.min(1440,b)};
+ }).filter(Boolean).sort((a,b)=>a.a-b.a||a.b-b.b);
+}
+function v77RenderTimeline(scroll){
+ if(day!==20){scroll.innerHTML='<div class="empty">Для этой даты нет записей в прототипе.</div>';return}
+ const items=v77Intervals();
+ const ends=[];
+ items.forEach(item=>{let col=ends.findIndex(e=>e<=item.a);if(col<0)col=ends.length;ends[col]=item.b;item.col=col});
+ const count=Math.max(1,ends.length),now=v77Minute(demoTime());
+ const top='<div class="v77-tl-top"><strong>Таймлайн дня</strong><span>1 час · 72 px</span></div>';
+ const hours=Array.from({length:25},(_,i)=>'<div class="v77-hour" style="top:'+(i*72)+'px"><span>'+v77Time(i*60)+'</span><i></i></div>').join('');
+ const blocks=items.map(({x,a,b,col})=>{
+   const h=Math.max(2,(b-a)*v77Px);
+   const desc=timeParts(x).join(' · ');
+   return '<button type="button" class="v77-block '+(x.running?'running ':'')+(h<20?'tiny':h<43?'compact':'')+'" data-v77-record="'+x.id+'" style="--category:'+x.cat+';top:'+(a*v77Px)+'px;height:'+h+'px;left:calc('+(col*100/count)+'% + 1px);width:calc('+(100/count)+'% - 3px)" title="'+escapeHtml(x.title+' · '+desc)+'" aria-label="'+escapeHtml(x.title+' · '+desc)+'"><strong>'+escapeHtml(x.title)+'</strong><small>'+escapeHtml(desc)+'</small></button>';
+ }).join('');
+ const current=items.find(i=>i.x.id===v77Selected)?.x;
+ const detail=current?'<div class="v77-inspect"><strong>'+escapeHtml(current.title)+'</strong><div>'+escapeHtml(timeParts(current).join(' · '))+'</div>'+(current.running?'<button type="button" data-v77-stop="'+current.id+'">Остановить запись</button>':'')+'</div>':'';
+ scroll.innerHTML='<section class="v77-timeline">'+top+detail+'<div class="v77-scale">'+hours+'<div class="v77-lane">'+blocks+'<div class="v77-now" style="top:'+(now*v77Px)+'px"></div></div></div></section>';
+ scroll.querySelectorAll('[data-v77-record]').forEach(btn=>btn.addEventListener('click',()=>{v77Selected=Number(btn.dataset.v77Record);const pos=scroll.scrollTop;render();scroll.scrollTop=pos}));
+ scroll.querySelectorAll('[data-v77-stop]').forEach(btn=>btn.addEventListener('click',()=>{const x=records.find(r=>r.id===Number(btn.dataset.v77Stop));if(x?.running)stopRecord(x);const pos=scroll.scrollTop;render();scroll.scrollTop=pos}));
+}
+function v77RenderTasks(scroll){
+ if(day!==20){scroll.innerHTML='<div class="empty">На эту дату нет дел в прототипе.</div>';return}
+ const pending=v77Tasks.filter(t=>!t.done),done=v77Tasks.filter(t=>t.done);
+ const row=t=>'<div class="v77-task '+(t.done?'done':'')+'"><input class="v77-task-check" type="checkbox" id="v77-task-'+t.id+'" data-v77-task="'+t.id+'" '+(t.done?'checked':'')+'/><label for="v77-task-'+t.id+'">'+escapeHtml(t.title)+'</label><button type="button" class="v77-task-delete" data-v77-delete="'+t.id+'" aria-label="Удалить дело">×</button></div>';
+ scroll.innerHTML='<section class="v77-today"><div class="v77-task-head"><strong>Дела на сегодня</strong><span>'+done.length+' из '+v77Tasks.length+'</span></div>'+pending.map(row).join('')+(done.length?'<div class="v77-completed">Выполнено</div>'+done.map(row).join(''):'')+(!v77Tasks.length?'<div class="empty">Добавьте первое дело.</div>':'')+'</section>';
+ scroll.querySelectorAll('[data-v77-task]').forEach(input=>input.addEventListener('change',()=>{const t=v77Tasks.find(t=>t.id===Number(input.dataset.v77Task));if(t)t.done=input.checked;render()}));
+ scroll.querySelectorAll('[data-v77-delete]').forEach(btn=>btn.addEventListener('click',()=>{const i=v77Tasks.findIndex(t=>t.id===Number(btn.dataset.v77Delete));if(i>=0)v77Tasks.splice(i,1);render()}));
+}
+function v77SyncComposer(){
+ const today=mode==='today';
+ el('entry').parentElement.style.display=mode==='stats'?'none':'flex';
+ el('entry').placeholder=today?'Добавить дело':'Добавить запись';
+ el('entry').setAttribute('aria-label',el('entry').placeholder);
+ el('add').innerHTML=icon(today?'plus':'play');
+ el('add').title=today?'Добавить дело':'Старт';
+ el('add').setAttribute('aria-label',today?'Добавить дело':'Начать запись');
+}
+setInterval(()=>{if(mode!=='timeline'||day!==20)return;const scroll=el('scroll');const pos=scroll.scrollTop;v77RenderTimeline(scroll);scroll.scrollTop=pos},30000);
+function render(){const scroll=el('scroll');scroll.scrollTop=0;if(mode==='timeline'){v77RenderTimeline(scroll);return}if(mode==='today'){v77RenderTasks(scroll);return}if(mode==='stats'){scroll.innerHTML=`<div class="stats"><div class="stats-title">Время по категориям</div>${[['Работа', '4 ч 25 мин',68,'#9f83e0'],['Личное', '2 ч 17 мин',38,'#df945c'],['Сон','6 ч 52 мин',91,'#9b9cba']].map(i=>`<div class="statbar"><div class="stathead"><span>${i[0]}</span><span>${i[1]}</span></div><div class="statrail"><span style="width:${i[2]}%;background:${i[3]}"></span></div></div>`).join('')}</div>`;return}
 if(day!==20){scroll.innerHTML='<div class="empty">Для этой даты нет записей в прототипе.<br>Выберите 20 ноября.</div>';return}
 const renderCard=x=>{const parts=x.path.split(' › ');const main=parts[0]||x.path;const sub=parts.slice(1).join(' · ');return `<article class="record ${x.running?'running':''}" style="--category:${x.cat}" data-id="${x.id}"><span class="record-watermark-clip" aria-hidden="true"><svg class="record-watermark"><use href="#wm-${x.wm||'work'}"/></svg></span><div class="record-inner"><div class="record-info"><div class="record-title">${escapeHtml(x.title)}</div><div class="breadcrumb"><span class="category-label">${escapeHtml(main)}</span>${sub?`<span class="chev">·</span><span class="category-label">${escapeHtml(sub)}</span>`:''}</div></div><div class="record-tools">${x.running?`<button class="stop" data-stop="${x.id}" title="Остановить запись" aria-label="Стоп">${icon('stop')}</button>`:''}<button class="more" data-more="${x.id}" aria-label="Ещё">${icon('more')}</button><div class="menu" id="menu-${x.id}"><button data-delete="${x.id}">Удалить запись</button></div></div><div class="record-time">${intervalMarkup(x)}${durationMarkup(x)}</div></div></article>`};
 scroll.innerHTML=records.map(renderCard).join('')+`<div class="demo-divider"><span>Дополнительные записи · демонстрация прокрутки</span></div>`+demoRecords.map(renderCard).join('');
@@ -2466,9 +2560,9 @@ el('customColor').addEventListener('input',e=>accent(e.target.value));
 el('opacity').addEventListener('input',e=>{root.style.setProperty('--glass-alpha',Number(e.target.value)/100);el('opacityVal').textContent=e.target.value+'%'});
 el('blur').addEventListener('input',e=>{root.style.setProperty('--glass-blur',e.target.value+'px');el('blurVal').textContent=e.target.value+' px'});
 const presets={crystal:[58,6],frost:[41,16],smoke:[12,4]};document.querySelectorAll('[data-pres]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-pres]').forEach(v=>v.classList.toggle('active',v===btn));const [a,b]=presets[btn.dataset.pres];el('opacity').value=a;el('opacity').dispatchEvent(new Event('input'));el('blur').value=b;el('blur').dispatchEvent(new Event('input'))}));
-document.querySelectorAll('[data-mode]').forEach(btn=>btn.addEventListener('click',()=>{mode=btn.dataset.mode;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b===btn));syncSelectionIcons();el('entry').parentElement.style.display=mode==='stats'?'none':'flex';render()}));document.querySelectorAll('[data-bgmode]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-bgmode]').forEach(b=>b.classList.toggle('active',b===btn));scene.dataset.bg=btn.dataset.bgmode;}));el('artOpacity').addEventListener('input',e=>{root.style.setProperty('--art-opacity', Number(e.target.value)/100);el('artOpacityValue').textContent=e.target.value+'%';});
+document.querySelectorAll('[data-mode]').forEach(btn=>btn.addEventListener('click',()=>{mode=btn.dataset.mode;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b===btn));syncSelectionIcons();el('entry').value='';v77SyncComposer();if(mode==='today'){day=20;updateDate()}render()}));document.querySelectorAll('[data-bgmode]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-bgmode]').forEach(b=>b.classList.toggle('active',b===btn));scene.dataset.bg=btn.dataset.bgmode;}));el('artOpacity').addEventListener('input',e=>{root.style.setProperty('--art-opacity', Number(e.target.value)/100);el('artOpacityValue').textContent=e.target.value+'%';});
 el('dayPick').addEventListener('click',()=>{day=day===20?18:day+1;updateDate();render()});
-const add=()=>{const v=el('entry').value.trim();if(!v)return;day=20;updateDate();records.forEach(r=>{if(r.running){stopRecord(r)}});records.unshift({id:Date.now(),title:v,path:'Без категории',cat:'#98a3b4',time:demoTime()+' — ... (0 мин)',startedAt:Date.now(),running:true,wm:'work'});el('entry').value='';render()};el('add').addEventListener('click',add);el('entry').addEventListener('keydown',e=>{if(e.key==='Enter')add()});
+const add=()=>{const v=el('entry').value.trim();if(!v)return;if(mode==='today'){day=20;updateDate();v77Tasks.push({id:v77TaskId++,title:v,done:false});el('entry').value='';render();return}day=20;updateDate();records.forEach(r=>{if(r.running){stopRecord(r)}});records.unshift({id:Date.now(),title:v,path:'Без категории',cat:'#98a3b4',time:demoTime()+' — ... (0 мин)',startedAt:Date.now(),running:true,wm:'work'});el('entry').value='';render()};el('add').addEventListener('click',add);el('entry').addEventListener('keydown',e=>{if(e.key==='Enter')add()});
 function panelOpen(yes){el('panel').classList.toggle('open',yes);el('overlay').classList.toggle('open',yes)}el('palette').addEventListener('click',()=>panelOpen(true));el('closepanel').addEventListener('click',()=>panelOpen(false));el('overlay').addEventListener('click',()=>panelOpen(false));
 el('viktor').addEventListener('click',()=>alert('В оригинальном приложении эта кнопка открывает Виктора. Здесь только визуальный прототип.'));
 document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b===btn));syncSelectionIcons();if(btn.dataset.tab==='Настройки'){panelOpen(true);return}if(btn.dataset.tab!=='Записи'){alert('Это предпросмотр выделения «'+btn.dataset.tab+'». В HTML показан только экран «Тайм»; нажмите «Записи», чтобы вернуться.')}}));
