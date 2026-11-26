@@ -520,15 +520,13 @@ class _TimelinePageState extends State<TimelinePage> {
 
   bool get _visibleIsFuture => _visibleDate.isAfter(widget.anchorToday);
 
-  bool get _shouldListenToTimeline => widget.isActivePage && widget.shellTabActive;
-
   void _attachLiveTimelineUpdates() {
-    if (!_shouldListenToTimeline || _timelineUpdatesSub != null) return;
+    if (!widget.isActivePage || _timelineUpdatesSub != null) return;
     // Listen synchronously during initState / activation, not after the first
     // frame or an awaited network read. Incoming SSE updates must never be
     // dropped during that window.
     _timelineUpdatesSub = DatabaseService.instance.timeUpdates.listen((_) {
-      if (mounted && _shouldListenToTimeline) setState(() {});
+      if (mounted && widget.isActivePage) setState(() {});
     });
   }
 
@@ -554,9 +552,9 @@ class _TimelinePageState extends State<TimelinePage> {
   @override
   void didUpdateWidget(covariant TimelinePage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_shouldListenToTimeline) {
+    if (!oldWidget.isActivePage && widget.isActivePage) {
       _attachLiveTimelineUpdates();
-    } else if (_timelineUpdatesSub != null) {
+    } else if (oldWidget.isActivePage && !widget.isActivePage) {
       _timelineUpdatesSub?.cancel();
       _timelineUpdatesSub = null;
     }
