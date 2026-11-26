@@ -804,6 +804,11 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     );
   }
 
+  int _fallbackRecordCategoryId() {
+    final pairs = DatabaseService.instance.allCategoryIdPathPairs;
+    return pairs.isEmpty ? CategoryRule.uncategorizedSyntheticId : pairs.first.id;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Keep geometry stable while Gboard temporarily shifts focus.
@@ -812,17 +817,11 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       notesImeSessionActive: _notesImeSessionActive,
       keyboardInset: MediaQuery.viewInsetsOf(context).bottom,
     );
-    final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     // ACTIVE_STATUS_LAW: running ⇔ end_time null (UI mirrors Brain).
     final isRunning = widget.record.endTime == null;
-    final int catVal = _categoryId != null
-        ? resolveEditFieldCategoryId(
-            db: DatabaseService.instance,
-            categoryId: _categoryId!,
-          )
-        : (pairs.isNotEmpty
-              ? pairs.first.id
-              : CategoryRule.uncategorizedSyntheticId);
+    // The explicit draft id is authoritative; build the category path list
+    // only for the legacy missing-category fallback.
+    final int catVal = _categoryId ?? _fallbackRecordCategoryId();
     return Material(
       clipBehavior: Clip.none,
       color: Theme.of(context).colorScheme.surface,
