@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mouser — Device control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"><style>
+:root{color-scheme:light;--paper:#faf7f2;--ink:#25251f;--sub:#66645a;--rule:#ded9d1;--accent:#a7482a;--panel:#f0ece5}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 "Segoe UI",Arial,sans-serif}body.dark{color-scheme:dark;--paper:#24251f;--ink:#eeeade;--sub:#b9b6aa;--rule:#47483e;--accent:#e5a181;--panel:#33342c}button,input,select{font:inherit;color:inherit}button{cursor:pointer;background:none;border:0;padding:9px 10px}button:hover,button:focus-visible{color:var(--accent)}button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}button[aria-selected=true]{font-weight:600;color:var(--ink);border-bottom:2px solid var(--ink)}.shell{max-width:1450px;margin:auto;padding:28px 44px 20px}.top{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--rule);padding-bottom:22px;gap:24px}.brand{font-size:35px;font-weight:850;letter-spacing:-.085em;line-height:1}.brand i{font-style:normal;color:var(--accent)}nav{display:flex;gap:18px}.small{font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:var(--sub);font-weight:600}.strip{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--rule);padding:10px 0;gap:14px}.strip select{max-width:250px}select,input{border:1px solid var(--rule);border-radius:3px;padding:9px 12px;background:var(--paper);min-width:0}main{display:grid;grid-template-columns:minmax(0,1.52fr) minmax(325px,1fr);gap:35px}.studio{min-width:0;padding:28px 30px 28px 0;border-right:1px solid var(--rule)}h1{font-size:clamp(42px,5.5vw,82px);font-weight:740;letter-spacing:-.075em;line-height:.98;margin:12px 0 8px}h2{font-size:33px;letter-spacing:-.045em;line-height:1.1;margin:10px 0 20px}p{color:var(--sub)}.canvas-wrap{position:relative;margin:15px 0 0;aspect-ratio:1.35;overflow:hidden;background:var(--paper)}canvas{display:block;width:100%;height:100%}.hot{position:absolute;transform:translate(-50%,-50%);width:29px;height:29px;padding:0;border:1px solid #fff9;border-radius:50%;background:#272722dc;color:white;font-size:11px;box-shadow:0 0 0 4px #ffffff42;display:grid;place-items:center}.hot[aria-pressed=true]{background:#a7482a;box-shadow:0 0 0 5px #a7482a38}.viewbar{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--rule);padding-top:12px;gap:12px;flex-wrap:wrap}.views{display:flex;gap:7px}.views button{border:1px solid transparent}.views button[aria-selected=true]{border:1px solid var(--rule);background:var(--panel)}.controls{padding:28px 0}.map{width:100%;display:grid;grid-template-columns:24px minmax(0,1fr) minmax(0,1.1fr) 12px;align-items:center;gap:8px;text-align:left;border-top:1px solid var(--rule);padding:12px 4px}.map .num{font-size:11px;color:var(--sub)}.map .action{text-align:right;font-size:12px;color:var(--sub)}.map[aria-pressed=true]{background:var(--panel);box-shadow:inset 2px 0 var(--accent);padding-left:9px}.map[aria-pressed=true] .action{color:var(--accent)}.edit{border-top:1px solid var(--rule);padding-top:18px;margin-top:3px}.edit h3{margin:8px 0;font-size:21px;letter-spacing:-.035em}.edit select,.edit input{width:100%}.keys{display:flex;gap:6px;min-height:38px;align-items:center;margin-top:8px}kbd{border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:4px 8px;font:12px inherit}.foot{border-top:1px solid var(--rule);display:flex;justify-content:space-between;gap:16px;padding-top:13px}.other{padding:32px 0;max-width:760px;min-height:65vh}.setting{display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid var(--rule);padding:15px 0}.setting button{border:1px solid var(--rule)}[hidden]{display:none!important}.warning{position:absolute;inset:0;display:grid;place-items:center;color:var(--sub);padding:30px;text-align:center}.model-caption{display:flex;justify-content:space-between;gap:12px;color:var(--sub);font-size:11px;margin:6px 0 13px}.add{display:flex;gap:10px;margin:20px 0}.add input{flex:1}.add button{background:var(--ink);color:var(--paper)}@media(max-width:850px){.shell{padding:20px}main{grid-template-columns:1fr;gap:0}.studio{border-right:0;border-bottom:1px solid var(--rule);padding-right:0}.top{flex-wrap:wrap}nav{gap:4px}.controls{padding-top:22px}.strip{flex-wrap:wrap}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+/* Technical typography: separate UI and machine-readable identifiers. */
+:root{--ui:"IBM Plex Sans","Segoe UI Variable","Segoe UI",sans-serif;--mono:"IBM Plex Mono",Consolas,monospace}
+body{font-family:var(--ui);font-size:14px;line-height:1.45}
+.brand{font-family:var(--ui);font-size:34px;font-weight:700;letter-spacing:-.075em}
+h1,h2,.edit h3{font-family:var(--ui);font-weight:600;letter-spacing:-.045em}
+h1{font-size:clamp(43px,5.6vw,82px);line-height:.96;margin:16px 0 0}
+h2{font-size:31px;letter-spacing:-.035em;margin:10px 0 20px}
+.small,.model-caption,.map .num,.hot,.views,#finish,kbd,#custom,.foot{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.small{font-size:11px;letter-spacing:.065em;font-weight:500}
+.map{grid-template-columns:37px minmax(0,1fr) minmax(0,1.1fr) 12px;gap:10px;padding-block:12px}
+.map .num{font-size:11px;letter-spacing:-.03em}.map .action{font-size:13px}
+.hot{font-size:10px;font-weight:600;width:32px;height:32px}
+.views button,#finish{font-size:11px;letter-spacing:.035em}
+kbd{font:500 12px/1.35 var(--mono);text-transform:uppercase}
+#custom{font-size:13px}
+.canvas-wrap{margin-top:24px}
+.model-caption{font-size:10px;letter-spacing:.025em}
+.foot .small{font-size:10px}
+nav button{font-weight:500}
+.device-head{display:flex;align-items:end;justify-content:space-between;gap:14px;flex-wrap:wrap}.device-head h1{font-size:clamp(35px,4.2vw,64px);line-height:1.04;margin:8px 0 0;letter-spacing:-.055em}.family-picker{display:grid;gap:5px;min-width:145px}.family-picker select{font-size:13px;width:100%;border-radius:0}.canvas-wrap{margin:8px 0 0;aspect-ratio:1.40}.studio{padding-top:25px}.model-caption{margin-top:0}.hot{border-radius:3px;width:auto;min-width:28px;height:24px;padding:0 5px;box-shadow:none;background:#24251fd9;font-size:10px}.hot[aria-pressed=true]{box-shadow:0 0 0 2px #f5f2e7,0 0 0 3px #a7482a}.map{padding-block:10px}.controls h2{margin-bottom:14px}.map .num{font-size:10px}.control-scroll{max-height:450px;overflow:auto;scrollbar-width:thin}.foot{margin-top:5px}@media(max-width:850px){.device-head h1{font-size:42px}.control-scroll{max-height:none}}
+
+
+/* Design 07: accessible round input markers and visible device family rail. */
+.hot{width:34px;height:34px;min-width:34px;padding:0;border-radius:50%;font-size:10px;font-weight:600;box-shadow:0 0 0 3px #f4f1e655;line-height:1}
+.hot[aria-pressed=true]{background:#a7482a;box-shadow:0 0 0 3px #f5f2e7,0 0 0 4px #a7482a}
+.family-picker{margin-top:15px;display:block;min-width:0}
+#families{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-block:1px solid var(--rule)}
+.family-tab{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;padding:9px 2px;color:var(--sub);font:500 10px/1.2 var(--mono);border-right:1px solid var(--rule);border-bottom:2px solid transparent;text-transform:uppercase}
+.family-tab:last-child{border-right:0}
+.family-tab[aria-pressed=true]{border-bottom-color:var(--accent);color:var(--ink);background:var(--panel)}
+.family-tab svg{width:42px;height:42px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.device-head h1{font-size:clamp(35px,4.2vw,64px)}
+.canvas-wrap{margin:4px 0 0;aspect-ratio:1.4}
+@media(max-width:500px){#families{grid-template-columns:repeat(3,minmax(0,1fr))}.family-tab:nth-child(-n+3){border-bottom:1px solid var(--rule)}.family-tab[aria-pressed=true]{box-shadow:inset 0 -2px var(--accent)}}
+
+/* UI 08: optically balanced model framing and separate mapping editor. */
+.edit{margin-top:32px;padding:20px 20px 18px;border:1px solid var(--rule);background:var(--panel)}
+.edit-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--rule)}
+.edit h3{margin:15px 0 11px;font-size:23px}
+.edit select,.edit input{background:var(--paper)}
+.edit .keys:empty{display:none}
+.edit #reset{display:block;margin-top:12px;padding:7px 0;text-align:left;color:var(--sub);font-size:12px}
+.edit #reset:hover{color:var(--accent)}
+.canvas-wrap{aspect-ratio:1.55}
+@media(max-width:850px){.edit{margin-top:26px;padding:17px}}
+
+/* UI 09: unboxed, open editorial composition. */
+#families{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;border:0}
+.family-picker{margin-top:19px}
+.family-tab{flex:1;min-width:0;background:transparent!important;border:0;border-bottom:1px solid transparent;padding:8px 0 11px;gap:5px;color:var(--sub)}
+.family-tab:last-child{border-right:0}
+.family-tab[aria-pressed=true]{border-bottom-color:var(--ink);box-shadow:none;background:transparent;color:var(--ink)}
+.family-tab svg{width:37px;height:40px;stroke-width:1.35}
+.family-tab span{font-size:10px;letter-spacing:.025em}
+.edit{margin-top:44px;padding:20px 0 0;background:transparent;border:0;border-top:1px solid var(--rule)}
+.edit-top{padding:0;border:0;justify-content:space-between}
+.edit h3{margin:12px 0;font-size:23px}
+.edit select,.edit input{background:transparent}
+.edit #reset{margin-top:15px}
+.map[aria-pressed=true]{background:transparent;box-shadow:none;color:var(--accent);padding-left:4px}
+.map[aria-pressed=true] .num{color:var(--accent)}
+.model-link{font:500 11px var(--mono);color:var(--sub);text-decoration:none}
+.model-link:hover{color:var(--accent);text-decoration:underline}
+@media(max-width:500px){#families{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.family-tab:nth-child(-n+3){border-bottom:1px solid transparent}.family-tab[aria-pressed=true]{border-bottom-color:var(--ink);box-shadow:none}}
+
+/* UI 10 — single-current-value controls, no boxed selects. */
+.strip{padding:9px 0;min-height:43px}
+.model-control{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 0 13px;margin:0 0 25px;border-bottom:1px solid var(--rule)}
+.plain-picker{position:relative;min-width:0}
+.picker-trigger{display:flex;align-items:center;justify-content:flex-end;gap:9px;width:100%;padding:5px 0;border:0;background:transparent;line-height:1.45;font-weight:500;white-space:nowrap}
+.picker-trigger>svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.4;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none;color:var(--sub)}
+.picker-trigger[aria-expanded=true]>svg{transform:rotate(180deg)}
+.picker-trigger:hover{color:var(--accent)}
+.picker-icon,.picker-option-icon{width:24px;height:27px;display:grid;place-items:center;flex:none}
+.picker-icon svg,.picker-option-icon svg{width:22px;height:25px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.picker-menu,#families.picker-menu{position:absolute;top:calc(100% + 6px);right:0;display:block;width:max-content;min-width:210px;max-width:min(330px,90vw);z-index:20;background:var(--paper);border:1px solid var(--rule);box-shadow:0 9px 23px #17171114;padding:5px 10px;max-height:320px;overflow:auto}
+.picker-option{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:8px 3px;color:var(--ink);border:0;background:transparent;white-space:normal;font-size:13px}
+.picker-option+.picker-option{border-top:1px solid var(--rule)}
+.picker-option:hover,.picker-option:focus-visible{color:var(--accent);background:var(--panel)}
+.picker-option[aria-selected=true]{font-weight:600}
+.picker-check{margin-left:auto;min-width:15px;color:var(--accent)}
+.action-picker .picker-trigger{justify-content:space-between;text-align:left;padding:9px 0;border-bottom:1px solid var(--rule);white-space:normal}
+.action-picker .picker-menu{left:0;right:0;width:100%;max-width:none}
+.canvas-wrap{margin-top:8px}
+.controls{padding-top:25px}
+@media(max-width:850px){.model-control{margin-bottom:20px}.picker-menu,#families.picker-menu{max-width:90vw}}
+
+/* UI 11 — model selection belongs to the device header. */
+.device-head{align-items:flex-start;position:relative;gap:12px}
+.device-head>div:first-child{min-width:0;flex:1}
+.device-head .model-control{flex:none;padding:0;margin:0;border:0;align-self:flex-start;display:block}
+.device-head #familyPicker .picker-trigger{padding:0 0 3px;gap:7px;min-height:26px}
+.device-head #familyPicker .picker-value{font-size:13px;font-weight:500}
+.device-head #familyPicker .picker-icon{width:20px;height:24px}
+.device-head #familyPicker .picker-icon svg{width:18px;height:22px}
+.device-head .picker-menu{z-index:30}
+html:not(.keyboard-mode) .picker-trigger:focus-visible,html:not(.keyboard-mode) .picker-option:focus-visible{outline:none}
+@media(max-width:500px){.device-head{flex-wrap:wrap}.device-head>div:first-child{flex-basis:100%}.device-head .model-control{margin-left:auto}}
+
+/* UI 12: real sourced GLB meshes in the main mapping surface. */
+.canvas-wrap{aspect-ratio:1.55;overflow:visible;margin-top:8px}
+#mouse{width:100%;height:100%;display:block;background:transparent;--poster-color:transparent;--progress-bar-color:var(--accent);--progress-bar-height:2px}
+#mouse .hot{position:relative;transform:none;width:34px;height:34px;min-width:34px;border-radius:50%;border:1px solid #fff9;background:#25251fe8;color:#fff;box-shadow:0 0 0 3px #f4f1e655;display:grid;place-items:center}
+#mouse .hot[aria-pressed=true]{background:#a7482a;box-shadow:0 0 0 3px #f5f2e7,0 0 0 4px #a7482a}
+#mouse .hot[data-visible=false]{opacity:.25}
+#mouse .hot:hover{opacity:1}
+#mouse .hot:focus-visible{outline:2px solid var(--accent)}
+
+/* UI 13: isolated product photography; no live 3D dependency. */
+.canvas-wrap{aspect-ratio:1.55;position:relative;overflow:visible;margin-top:8px}
+#renderFrame{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:0;height:0}
+#mouse{width:100%;height:100%;display:block;background:transparent}
+#hotspots{position:absolute;inset:0;pointer-events:none}
+#hotspots .hot{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;border-radius:50%;width:32px;height:32px;min-width:32px;padding:0;display:grid;place-items:center;line-height:1;font-size:10px;border:1px solid #fff9;background:#25251fe8;color:white;box-shadow:0 0 0 3px #f4f1e655;z-index:2}
+#hotspots .hot[aria-pressed=true]{background:#a7482a;box-shadow:0 0 0 2px var(--paper),0 0 0 3px #a7482a;z-index:3}
+#hotspots .hot:hover{z-index:4}
+.finishes{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.swatch{width:15px;height:15px;padding:0;border:1px solid #7775;border-radius:50%;background:var(--swatch);position:relative}
+.swatch[aria-pressed=true]{outline:1px solid var(--ink);outline-offset:3px}
+.swatch:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.finish-name{font:500 10px var(--mono);letter-spacing:.03em;min-width:72px;text-align:right}
+@media(max-width:500px){#hotspots .hot{width:27px;height:27px;min-width:27px;font-size:9px}.finishes{gap:7px}.finish-name{min-width:0}}
+/* UI 16: continuous photographic studio surface, no silhouette cutout. */
+body:not(.dark){--paper:#faf7f2;--panel:#f0ece5;--rule:#ded9d1}
+body.dark #stage{background:#faf7f2}
+#hotspots .hot{width:26px;height:26px;min-width:26px;font-size:9px;box-shadow:0 0 0 1px #ffffff90}
+#hotspots .hot[aria-pressed=true]{box-shadow:0 0 0 2px #faf7f2,0 0 0 3px #a7482a}
+#stage[data-view="2"] #hotspots .hot,#stage[data-family="3"] #hotspots .hot{width:21px;height:21px;min-width:21px;font-size:8px}
+@media(max-width:500px){#hotspots .hot{width:22px;height:22px;min-width:22px;font-size:8px}}
+
+/* UI 17: desktop chrome and unboxed settings. */
+.windowbar{height:38px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--rule);padding-left:16px;background:var(--paper);user-select:none}
+.window-title,.window-actions{display:flex;align-items:center;gap:8px}.window-title{font:500 12px var(--ui)}
+.appicon{display:inline-grid;place-items:center;position:relative;background:#25251f;color:#faf7f2;border-radius:4px;width:19px;height:19px;font:700 13px/1 var(--ui);letter-spacing:-.08em;padding-right:2px}.appicon i{position:absolute;right:2px;bottom:2px;color:#dc8054;font-style:normal}
+.window-actions{gap:0;height:100%}.window-actions button{width:45px;height:100%;display:grid;place-items:center;padding:0;border:0;color:var(--ink)}.window-actions svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.2}.window-actions button:hover{background:var(--panel)}#closeWindow:hover{background:#c42b1c;color:white}
+.shell{padding-top:23px}.shell.expanded{max-width:none}.other{min-height:60vh}.other h1{font-size:clamp(34px,4.1vw,60px);margin-bottom:20px}.setting{min-height:58px;padding:12px 0}.setting button{border:0;background:transparent}.setting .setting-value{display:flex;align-items:center;gap:10px;padding:4px 0;color:var(--sub);font-weight:500}.text-chevron{font-size:20px;line-height:1}.setting .toggle{width:36px;height:22px;padding:0;display:grid;place-items:center}.toggle-track{position:relative;width:32px;height:17px;border-radius:20px;background:var(--rule);transition:background .15s}.toggle-track:after{content:"";position:absolute;left:2px;top:2px;width:13px;height:13px;border-radius:50%;background:#faf7f2;box-shadow:0 1px 2px #0002;transition:transform .15s}.toggle[aria-checked=true] .toggle-track{background:var(--ink)}.toggle[aria-checked=true] .toggle-track:after{transform:translateX(15px)}.dark .toggle[aria-checked=true] .toggle-track{background:var(--accent)}
+.connection-note{font:11px var(--mono);margin-top:16px;color:var(--sub)}.views button,.views button[aria-selected=true]{border:0;border-bottom:1px solid transparent;background:transparent}.views button[aria-selected=true]{border-bottom-color:var(--ink)}.controls h2{font-size:clamp(23px,2.4vw,32px)}
+#restoreArea{min-height:60vh;display:grid;place-items:center}#restoreWindow{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--rule)}#restoreText{color:var(--sub);font-size:12px}
+@media(max-width:500px){.window-actions button{width:36px}.top{gap:10px}nav button{padding-inline:6px}.shell{padding-top:18px}}
+/* UI 18: applications as optional overrides of the global mapping. */
+.profiles-help{max-width:620px;margin:0 0 30px}.profile-group-label{margin-top:24px;padding-bottom:7px;border-bottom:1px solid var(--rule)}.profile-row{gap:15px}.profile-name,.profile-detail{display:block}.profile-name{font-weight:500}.profile-detail{color:var(--sub);font-size:12px;margin-top:3px}.profile-row-actions{display:flex;align-items:center;gap:12px;flex-shrink:0}.profile-row-actions button{color:var(--sub);padding:4px 0}.profile-row-actions button:hover{color:var(--accent)}.remove-app{font-size:20px;line-height:1}.add{display:block;margin:27px 0}.add label{display:block;color:var(--sub);font-size:12px;margin-bottom:8px}.add-line{display:flex;gap:16px;align-items:center}.add input{border:0;border-bottom:1px solid var(--rule);border-radius:0;background:transparent;padding:9px 0}.add button{background:transparent;color:var(--ink);padding:8px 0;white-space:nowrap}.add button:hover{color:var(--accent)}#appError{font-size:12px;color:var(--accent)}.finish-name{min-width:0}.device-head h1{font-size:clamp(32px,3.8vw,60px);overflow-wrap:anywhere}
+@media(max-width:500px){.add-line{flex-wrap:wrap}.profile-row-actions{gap:8px}.finish-name{font-size:9px}}
+/* UI 19: shared horizontal baseline for the action editor and view controls. */
+@media(min-width:851px){.controls{align-self:start}.controls .edit{margin-top:var(--action-gap,44px)}}
+/* UI 20: restrained scrollbars in the existing accent palette. */
+:root{--scroll-thumb:#a76c51;--scroll-hover:#a7482a}
+body.dark{--scroll-thumb:#bd896e;--scroll-hover:#e5a181}
+.control-scroll,.picker-menu,#families.picker-menu{scrollbar-width:thin;scrollbar-color:var(--scroll-thumb) transparent;scrollbar-gutter:stable}
+.control-scroll::-webkit-scrollbar,.picker-menu::-webkit-scrollbar{width:7px;height:7px}
+.control-scroll::-webkit-scrollbar-track,.picker-menu::-webkit-scrollbar-track{background:transparent}
+.control-scroll::-webkit-scrollbar-thumb,.picker-menu::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border:2px solid transparent;background-clip:padding-box;border-radius:20px}
+.control-scroll::-webkit-scrollbar-thumb:hover,.picker-menu::-webkit-scrollbar-thumb:hover{background-color:var(--scroll-hover)}
+.control-scroll::-webkit-scrollbar-button,.picker-menu::-webkit-scrollbar-button{display:none}
+html{scrollbar-width:thin;scrollbar-color:#a76c51 transparent}
+html:has(body.dark){scrollbar-color:#bd896e transparent}
+/* UI 21: align the lower action-selector rule with the left view rule, not the editor header. */
+@media(min-width:851px){.studio .viewbar{margin-top:var(--view-line-extra,0px)}.controls .edit{margin-top:var(--action-gap,44px)}}
+/* UI 22: restore the original editorial title scale. */
+.device-head h1{font-size:clamp(35px,4.2vw,64px);overflow-wrap:normal;word-break:normal;hyphens:auto}
+.other h1{font-size:clamp(43px,5.6vw,82px);line-height:1.04}
+.controls h2{font-size:31px}
+@media(max-width:850px){.device-head h1{font-size:42px}.controls h2{font-size:28px}}
+@media(max-width:500px){.device-head h1{font-size:clamp(30px,8vw,42px);overflow-wrap:anywhere}.other h1{font-size:43px}}
+</style></head>
+<body><div class="windowbar"><div class="window-title"><span class="appicon">m<i>.</i></span><span>Mouser</span></div><div class="window-actions"><button id="minimize" aria-label="Свернуть" title="Свернуть"><svg viewBox="0 0 16 16"><path d="M3 8h10"/></svg></button><button id="maximize" aria-label="Развернуть" title="Развернуть"><svg viewBox="0 0 16 16"><rect x="3.5" y="3.5" width="9" height="9"/></svg></button><button id="closeWindow" aria-label="Закрыть" title="Закрыть"><svg viewBox="0 0 16 16"><path d="m3.5 3.5 9 9m0-9-9 9"/></svg></button></div></div><div id="restoreArea" hidden><button id="restoreWindow"><span class="appicon">m<i>.</i></span> Mouser <span id="restoreText">Открыть</span></button></div><div class="shell" id="appShell"><header class="top"><div class="brand">mouser<i>.</i></div><nav aria-label="Разделы"><button data-page="device" aria-selected="true">Назначения клавиш</button><button data-page="profiles" aria-selected="false">Профили</button><button data-page="settings" aria-selected="false">Настройки</button></nav><button id="theme" aria-label="Переключить тему">◐</button></header>
+<section id="device"><div class="strip"><span class="small" id="scopeLabel">Назначения для</span><div class="plain-picker" id="profilePicker"><button class="picker-trigger" type="button" aria-expanded="false" aria-haspopup="listbox" aria-controls="profileOptions"><span class="picker-value">Все приложения</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button><div class="picker-menu" id="profileOptions" role="listbox" aria-label="Профиль" hidden></div></div></div><main><section class="studio"><div class="device-head"><div><div class="small" id="deviceLabel">01 / УСТРОЙСТВО</div><h1 id="familyTitle">Symmetric</h1></div><div class="model-control"><div class="plain-picker" id="familyPicker"><button class="picker-trigger" type="button" aria-expanded="false" aria-haspopup="listbox" aria-controls="families"><span class="picker-icon"></span><span class="picker-value">Symmetric</span><svg viewBox="0 0 16 16" class="chevron" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button><div class="picker-menu" id="families" role="listbox" aria-label="Компоновка мыши" hidden></div></div></div></div><div class="canvas-wrap" id="stage"><div id="renderFrame"><canvas id="mouse" role="img" aria-label="Изображение мыши"></canvas><div id="hotspots"></div></div><div id="fallback" class="warning" hidden>Не удалось загрузить модель.</div></div><div class="model-caption"><span id="familyCode">SYM / 01</span><span id="quality" aria-live="polite"></span></div><div class="viewbar"><span class="small" id="viewLabel">РАКУРС</span><div class="views"><button data-view="0" aria-selected="true">ISO</button><button data-view="1" aria-selected="false">TOP</button><button data-view="2" aria-selected="false">SIDE</button></div><div class="finishes" id="finishes" role="group" aria-label="Цвет корпуса"></div></div></section><section class="controls"><div class="small" id="mapLabel">02 / КНОПКИ</div><h2>Назначения клавиш</h2><div id="maps" class="control-scroll"></div><div class="edit"><div class="edit-top"><span class="small" id="actionLabel">03 / ДЕЙСТВИЕ</span><span class="small" id="number"></span></div><h3 id="selected"></h3><div class="plain-picker action-picker" id="actionPicker"><button class="picker-trigger" type="button" aria-expanded="false" aria-haspopup="listbox" aria-controls="actionOptions"><span class="picker-value">Без изменений</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button><div class="picker-menu" id="actionOptions" role="listbox" aria-label="Действие" hidden></div></div><input id="custom" placeholder="Ctrl + Shift + A" aria-label="Своя комбинация" hidden><div class="keys" id="keys"></div><button id="reset">Сбросить назначение</button></div></section></main></section>
+<section class="other" id="profiles" hidden><div class="small" id="profilesLabel">03 / ПРИЛОЖЕНИЯ</div><h1>Приложения</h1><p id="profilesHelp" class="profiles-help">Общие назначения действуют везде. Для отдельных программ можно переопределить нужные кнопки.</p><div class="small profile-group-label" id="globalLabel">ПО УМОЛЧАНИЮ</div><div id="globalProfile"></div><div class="small profile-group-label" id="appsLabel">ОТДЕЛЬНЫЕ ПРИЛОЖЕНИЯ</div><div id="profileList"></div><form class="add" id="appForm"><label for="newProfile" id="appFileLabel">Имя файла приложения</label><div class="add-line"><input id="newProfile" placeholder="Например, photoshop.exe" required><button id="add" type="submit">Добавить приложение <span aria-hidden="true">+</span></button></div><p id="appError" role="status" hidden></p></form></section>
+<section class="other" id="settings" hidden><div class="small" id="settingsLabel">04 / НАСТРОЙКИ</div><h1>Настройки</h1><div class="setting"><span id="labelEnabled">Переназначение</span><button class="toggle" id="enabled" role="switch" aria-checked="true" aria-label="Переназначение"><span class="toggle-track"></span></button></div><div class="setting"><span id="labelStartup">Запуск с Windows</span><button class="toggle" id="startup" role="switch" aria-checked="true" aria-label="Запуск с Windows"><span class="toggle-track"></span></button></div><div class="setting"><span id="labelTheme">Оформление</span><button id="theme2" class="setting-value">Светлое <span class="text-chevron">›</span></button></div><div class="setting"><span id="labelLanguage">Язык</span><div class="plain-picker" id="languagePicker"><button class="picker-trigger" type="button" aria-expanded="false" aria-haspopup="listbox" aria-controls="languageOptions"><span class="picker-value">Русский</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button><div class="picker-menu" id="languageOptions" role="listbox" aria-label="Язык" hidden></div></div></div><p class="connection-note" id="connectionNote">Windows: не подключено</p></section>
+<footer class="foot"><span class="small" id="versionLabel">MOUSER / UI 22</span><span class="small" id="footerStatus">WINDOWS / OFFLINE</span></footer></div>
+<script>
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const names=["Левая кнопка","Правая кнопка","Нажатие колеса","Задняя боковая","Передняя боковая","Прокрутка вверх","Прокрутка вниз","Прокрутка влево","Прокрутка вправо","Кнопка DPI",...Array.from({length:5},(_,i)=>"Доп. кнопка "+(i+1))];
+const actions=[["Без изменений",""],["Отключить",""],["Предыдущий рабочий стол","Ctrl + Win + ←"],["Следующий рабочий стол","Ctrl + Win + →"],["Обзор задач","Win + Tab"],["Копировать","Ctrl + C"],["Вставить","Ctrl + V"],["Назад","Alt + ←"],["Вперёд","Alt + →"],["Переключить окно","Alt + Tab"],["Громче","Volume +"],["Тише","Volume −"],["Снимок экрана","Win + Shift + S"],["Своя комбинация…",""],["Как в общих назначениях",""]];
+const ruNames=[...names],ruActions=actions.map(x=>x[0]);const enNames=["Left button","Right button","Middle click","Rear side button","Front side button","Scroll up","Scroll down","Scroll left","Scroll right","DPI button",...Array.from({length:5},(_,i)=>"Extra button "+(i+1))];const enActions=["No change","Disable","Previous desktop","Next desktop","Task view","Copy","Paste","Back","Forward","Switch window","Volume up","Volume down","Screenshot","Custom shortcut…","Use default mapping"];let lang="ru";try{lang=localStorage.getItem("mouser.language")==="en"?"en":"ru"}catch{};const tr=(ru,en)=>lang==="ru"?ru:en;const initial=()=>[0,0,0,2,3,0,0,0,0,0,0,0,0,0,0];let profiles=[{name:"Все приложения",builtin:0,map:initial(),custom:{}},{name:"Microsoft Edge",exe:"msedge.exe",map:Array(15).fill(14),custom:{}},{name:"Проводник",builtin:2,exe:"explorer.exe",map:Array(15).fill(14),custom:{}}],p=0,k=3,view=0,finish=0,dark=false;
+const pad=i=>String(i+1).padStart(2,"0");const inputCodes=["LMB","RMB","MMB","X1","X2","W+","W−","H−","H+","DPI","G1","G2","G3","G4","G5"],enCodes=[...inputCodes],ruCodes=["ЛКМ","ПКМ","СКМ","Б1","Б2","↑","↓","←","→","DPI","Д1","Д2","Д3","Д4","Д5"];
+const families=[{"title":"Symmetric","name":"Симметричная","code":"SYM / 01","asset":"symmetric","ids":[0,1,2,3,4,5,6,9],"view":0},{"title":"Ergonomic","name":"Эргономичная","code":"ERGO / 02","asset":"ergonomic","ids":[0,1,2,3,4,5,6,9],"view":0},{"title":"Compact","name":"Компактная","code":"CMP / 03","asset":"compact","ids":[0,1,2,5,6],"view":0},{"title":"Gaming","name":"Игровая","code":"GAME / 04","asset":"gaming","ids":[0,1,2,3,4,5,6,9,10,11,12],"view":0},{"title":"Vertical","name":"Вертикальная","code":"VERT / 05","asset":"vertical","ids":[0,1,2,3,4,5,6,9],"view":0},{"title":"Trackball","name":"Трекбол","code":"BALL / 06","asset":"trackball","ids":[0,1,2,3,4,5,6,9],"view":0}];const renderMeta={"symmetric":{"iso":{"file":"symmetric-iso.webp","w":658,"h":447,"pins":{"0":[0.251028,0.51041],"1":[0.374499,0.692165],"2":[0.352618,0.554123],"3":[0.666767,0.535718],"4":[0.591747,0.625445],"9":[0.483904,0.337858]},"sha256":"62850c4a6f2d917a586b529297e776ce63d00e94260a6e64fa4c5aeeef9ca927"},"top":{"file":"symmetric-top.webp","w":581,"h":751,"pins":{"0":[0.355011,0.280701],"1":[0.627601,0.280701],"2":[0.496616,0.287548],"3":[0.767437,0.579228],"4":[0.765667,0.466938],"9":[0.496616,0.495695]},"sha256":"47dfb1f7110b41ca7a1ec30ad0291dc6b904b3552c3005a35ed03bbc7d521709"},"side":{"file":"symmetric-side.webp","w":648,"h":250,"pins":{"2":[0.291404,0.403932],"3":[0.519939,0.576705],"4":[0.424716,0.601386]},"sha256":"6629ba649126509b543dc5600a8316ad94fe3c5787b96ace5218b23478335760"}},"ergonomic":{"iso":{"file":"ergonomic-iso.webp","w":679,"h":463,"pins":{"0":[0.227457,0.555272],"1":[0.378916,0.73963],"2":[0.333478,0.575263],"3":[0.678806,0.43977],"4":[0.597018,0.537502],"9":[0.454646,0.355365]},"sha256":"29401c0ac05733233140d198c6de0f04c4ca9701a4024430fdc4d96ce7341a07"},"top":{"file":"ergonomic-top.webp","w":591,"h":712,"pins":{"0":[0.349735,0.28038],"1":[0.588131,0.277491],"2":[0.469803,0.307824],"3":[0.248808,0.585147],"4":[0.229667,0.455152],"9":[0.469803,0.48404]},"sha256":"9a11ca0fa76ec69a0a6b0f501c9b138fdfe7ed2b2cd3151bd489a96a55efaa61"},"side":{"file":"ergonomic-side.webp","w":694,"h":273,"pins":{"2":[0.294742,0.375333],"3":[0.525912,0.382867],"4":[0.431073,0.431839]},"sha256":"cbb387a5022f23a23a144b4172772df256825aa5b810ca9fabdbd2dd289f8eb5"}},"compact":{"iso":{"file":"compact-iso.webp","w":664,"h":457,"pins":{"0":[0.235684,0.535247],"1":[0.387467,0.717525],"2":[0.339454,0.544249]},"sha256":"d29d1e5d3983c597ec0efba004ef9c96617c10eec58805209d2c2f423f33a8d0"},"top":{"file":"compact-top.webp","w":565,"h":755,"pins":{"0":[0.355963,0.283489],"1":[0.612611,0.283489],"2":[0.485197,0.301197]},"sha256":"b89cdd697026d696809c11b6fed0b1c8dc1940abb2d6fd3a6e9988fee5f441a2"},"side":{"file":"compact-side.webp","w":663,"h":251,"pins":{"2":[0.282146,0.400715]},"sha256":"bfd0610a08063bee5e82f98df26f647f543a9900e4432175d30e09ece76002cc"}},"gaming":{"iso":{"file":"gaming-iso.webp","w":679,"h":440,"pins":{"0":[0.242385,0.548257],"1":[0.363553,0.765625],"2":[0.3166,0.590328],"3":[0.681617,0.457102],"4":[0.595286,0.557606],"9":[0.436253,0.377634],"10":[0.546819,0.690832],"11":[0.578625,0.651098],"12":[0.613461,0.611364]},"sha256":"1f142e4fe449a7a4671ea1bffe725a452352e29b1d4d7c049165097b0cbdef29"},"top":{"file":"gaming-top.webp","w":581,"h":785,"pins":{"0":[0.345623,0.249146],"1":[0.648304,0.250456],"2":[0.497849,0.267487],"3":[0.251809,0.534742],"4":[0.248269,0.48627],"9":[0.497849,0.433867],"10":[0.2642,0.583215],"11":[0.27305,0.618587],"12":[0.287211,0.653959]},"sha256":"7b6fdcf46c360ea5591da2515d3d6bad2b0ec123d3dfdda9cf80f2e81eae31cd"},"side":{"file":"gaming-side.webp","w":679,"h":261,"pins":{"2":[0.28025,0.42126],"3":[0.564994,0.444902],"4":[0.454428,0.476424],"10":[0.390815,0.665556],"11":[0.439282,0.637975],"12":[0.487749,0.610393]},"sha256":"4f303d3a41ee8402681709f48a7adb8b0239ff260cadcf892801cfd6931ac551"}},"vertical":{"iso":{"file":"vertical-iso.webp","w":627,"h":418,"pins":{"0":[0.309818,0.561127],"1":[0.362304,0.693984],"2":[0.378706,0.450413],"3":[0.642779,0.310176],"4":[0.578811,0.383985],"9":[0.459076,0.238827]},"sha256":"3d7c98b7804bf46535848fcd7e9b0040ed11069aa4bd9335f231370d774d553d"},"top":{"file":"vertical-top.webp","w":638,"h":805,"pins":{"0":[0.360101,0.257686],"1":[0.590606,0.262796],"2":[0.477771,0.284514],"9":[0.47616,0.468478]},"sha256":"6208729dd18c7fbbfcdc1300c95bfa8539600ef58c3a8dd2abe0177be0349af2"},"side":{"file":"vertical-side.webp","w":638,"h":352,"pins":{"2":[0.370565,0.448202],"3":[0.588175,0.404378],"4":[0.497907,0.454045]},"sha256":"1afa9c1f88b0a3e3fa857543d6df069a1d346d1b00aa83e75c538acb5c52c4e9"}},"trackball":{"iso":{"file":"trackball-iso.webp","w":627,"h":452,"pins":{"0":[0.247037,0.524927],"1":[0.389735,0.693295],"2":[0.335608,0.486248],"3":[0.729257,0.45667],"4":[0.704654,0.55223],"9":[0.442221,0.299678]},"sha256":"460f7b510ad7147ff27355fa59727129282537b9239f69f54f27b3dc83251b22"},"top":{"file":"trackball-top.webp","w":606,"h":727,"pins":{"0":[0.318538,0.276838],"1":[0.540851,0.278253],"2":[0.433937,0.281082],"3":[0.727526,0.684241],"4":[0.763164,0.592292],"9":[0.433937,0.452248]},"sha256":"8711e29ceaa7f71ff71d5de87d7e6d0ba2cea90ac3ca18f988fa776ef20a41a2"},"side":{"file":"trackball-side.webp","w":663,"h":280,"pins":{"2":[0.299208,0.387378],"3":[0.662176,0.585714],"4":[0.597028,0.611425]},"sha256":"9a2a9f48cc4ddce3870b121a3482d3c075196b26cf9a6361e25e206ccfccee49"}}};let family=0;
+
+
+function button(text,click){let b=document.createElement("button");b.textContent=text;b.onclick=click;return b}
+function page(id){closePickers();["device","profiles","settings"].forEach(x=>$("#"+x).hidden=x!==id);$$("[data-page]").forEach(b=>b.setAttribute("aria-selected",b.dataset.page===id));if(id==="device")draw()}
+function mapping(i){const pr=profiles[p],a=pr.map[i];return a===14?{a:profiles[0].map[i],custom:profiles[0].custom[i]}:{a,custom:pr.custom[i]}}
+function renderProfiles(){
+ function rowFor(x,i){const row=document.createElement("div");row.className="setting profile-row";const detail=document.createElement("div"),name=document.createElement("span");name.className="profile-name";name.textContent=profileName(x);detail.append(name);const sub=document.createElement("span");sub.className="profile-detail";const count=i===0?0:x.map.filter(a=>a!==14).length;sub.textContent=i===0?tr("Действуют во всех приложениях","Applies to all applications"):x.exe+" · "+(count?tr("Своих назначений: ","Overrides: ")+count:tr("Общие назначения","Default mappings"));detail.append(sub);row.append(detail);const ctl=document.createElement("div");ctl.className="profile-row-actions";ctl.append(button(tr("Настроить ›","Configure ›"),()=>{p=i;page("device");refresh()}));if(i!==0){let remove=button("×",()=>{profiles.splice(i,1);p=p===i?0:p>i?p-1:p;refresh()});remove.className="remove-app";remove.title=tr("Удалить приложение","Remove application");remove.setAttribute("aria-label",remove.title+" "+profileName(x));ctl.append(remove)}row.append(ctl);return row}
+ $("#globalProfile").replaceChildren(rowFor(profiles[0],0));$("#profileList").replaceChildren(...profiles.slice(1).map((x,i)=>rowFor(x,i+1)));
+}
+function refresh(){let pr=profiles[p],a=pr.map[k],effective=mapping(k);renderPicker("profilePicker",profiles.map(x=>profileName(x)),p,i=>{p=i;refresh()});$("#maps").replaceChildren(...families[family].ids.map(i=>{let n=names[i],b=button("",()=>{k=i;refresh()});b.className="map";b.setAttribute("aria-pressed",i===k);let label=actions[mapping(i).a][0];[inputCodes[i],n,label,"›"].forEach((v,j)=>{let el=document.createElement("span");el.textContent=v;el.className=j===0?"num":j===2?"action":"";if(j===2&&pr.map[i]===14)el.title=tr("Из общих назначений","Inherited from defaults");b.append(el)});return b}));$("#number").textContent=inputCodes[k];$("#selected").textContent=names[k];renderPicker("actionPicker",actions.slice(0,p===0?14:15).map(x=>x[0]),a,i=>{profiles[p].map[k]=i;refresh()});$("#custom").hidden=a!==13;$("#custom").value=pr.custom[k]||"";$("#keys").replaceChildren(...(effective.a===13?effective.custom||"":actions[effective.a][1]).split(" + ").filter(Boolean).map(t=>{let e=document.createElement("kbd");e.textContent=t;return e}));$("#reset").textContent=p===0?tr("Сбросить назначение","Reset mapping"):tr("Вернуть общее назначение","Use default mapping");renderProfiles();hotspots()}
+const icons=[
+'<path d="M22 4C10 4 7 15 7 24v7c0 12 7 17 15 17s15-5 15-17v-7C37 15 34 4 22 4Z"/><path d="M22 4v17M7 25h30"/><rect x="19.5" y="12" width="5" height="10" rx="2.5"/>',
+'<path d="M25 4C13 3 8 11 8 24L3 36Q1 44 12 46l12 2c14 0 17-11 17-22S37 5 25 4Z"/><path d="M25 4v18M9 25l32 3M5 32l7-1"/><rect x="22" y="12" width="5" height="9" rx="2"/>',
+'<rect x="7" y="9" width="30" height="32" rx="10"/><path d="M22 9v16M7 25h30"/><rect x="19.5" y="13" width="5" height="10" rx="2.5"/>',
+'<path d="M10 5 20 8l12-3 7 10-2 15 4 12-10 5H13L5 40l4-13-3-12Z"/><path d="M22 8v17M10 25h27"/><rect x="19" y="12" width="6" height="9" rx="2"/><path d="M7 29h8v9H7m4-9v9m-4-4.5h8"/>',
+'<path d="M4 42Q3 36 7 30L15 9Q18 2 25 6L34 16Q40 26 41 42Z"/><path d="M17 11 27 15 33 32 15 30Z"/><path d="M22 13l5 18M12 35h8"/>',
+'<path d="M5 37Q0 24 11 13 22 5 37 10l5 17q2 15-12 17H15Q7 44 5 37Z"/><circle cx="13" cy="27" r="9"/><path d="M24 13v13l14 2M29 12v13"/><rect x="26" y="15" width="4" height="8" rx="2"/>'];
+function closePickers(except){$$(".plain-picker").forEach(root=>{if(root===except)return;root.querySelector(".picker-menu").hidden=true;root.querySelector(".picker-trigger").setAttribute("aria-expanded","false")})}
+let keyboardMode=false;document.addEventListener("keydown",()=>{keyboardMode=true;document.documentElement.classList.add("keyboard-mode")},true);document.addEventListener("pointerdown",()=>{keyboardMode=false;document.documentElement.classList.remove("keyboard-mode")},true);
+function openPicker(root,focusIndex){closePickers(root);const menu=root.querySelector(".picker-menu"),trigger=root.querySelector(".picker-trigger");menu.hidden=false;trigger.setAttribute("aria-expanded","true");const opts=[...menu.querySelectorAll("button")];if(opts.length&&keyboardMode)opts[focusIndex===-1?opts.length-1:Math.max(0,opts.findIndex(x=>x.getAttribute("aria-selected")==="true"))].focus()}
+function renderPicker(id,items,selected,change,withIcons=false){const root=$("#"+id),trigger=root.querySelector(".picker-trigger"),menu=root.querySelector(".picker-menu");root.querySelector(".picker-value").textContent=items[selected];if(withIcons)root.querySelector(".picker-icon").innerHTML='<svg viewBox="0 0 44 52" aria-hidden="true">'+icons[selected]+'</svg>';menu.replaceChildren(...items.map((name,i)=>{const b=button("",()=>{closePickers();change(i);if(keyboardMode)trigger.focus();else trigger.blur()});b.className="picker-option";b.setAttribute("role","option");b.setAttribute("aria-selected",i===selected);if(withIcons){const icon=document.createElement("span");icon.className="picker-option-icon";icon.innerHTML='<svg viewBox="0 0 44 52" aria-hidden="true">'+icons[i]+'</svg>';b.append(icon)}const label=document.createElement("span");label.textContent=name;b.append(label);const mark=document.createElement("span");mark.className="picker-check";mark.textContent=i===selected?"✓":"";b.append(mark);return b}));}
+$$(".plain-picker").forEach(root=>{const trigger=root.querySelector(".picker-trigger"),menu=root.querySelector(".picker-menu");trigger.onclick=()=>{if(menu.hidden)openPicker(root);else closePickers()};trigger.onkeydown=e=>{if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();openPicker(root,e.key==="ArrowUp"?-1:0)}};menu.onkeydown=e=>{const opts=[...menu.querySelectorAll("button")],idx=opts.indexOf(document.activeElement);if(["ArrowDown","ArrowUp","Home","End"].includes(e.key)){e.preventDefault();let next=e.key==="Home"?0:e.key==="End"?opts.length-1:(idx+(e.key==="ArrowDown"?1:-1)+opts.length)%opts.length;opts[next].focus()}if(e.key==="Escape"){e.preventDefault();closePickers();trigger.focus()}if(e.key==="Tab")closePickers()};});
+document.addEventListener("pointerdown",e=>{if(!e.target.closest(".plain-picker"))closePickers()});
+function familyRail(){renderPicker("familyPicker",families.map(f=>tr(f.name,f.title)),family,selectFamily,true)}
+function selectFamily(i){family=i;const f=families[family];view=f.view;if(!f.ids.includes(k))k=f.ids[0];$("#familyTitle").textContent=tr(f.name,f.title);$("#familyCode").textContent=familyCode();$$(".views button[data-view]").forEach(b=>b.setAttribute("aria-selected",+b.dataset.view===view));familyRail();refresh();draw()}
+familyRail();$("#custom").onchange=e=>{profiles[p].custom[k]=e.target.value;refresh()};$("#reset").onclick=()=>{profiles[p].map[k]=p===0?initial()[k]:14;refresh()};$("#appForm").onsubmit=e=>{e.preventDefault();let n=$("#newProfile").value.trim(),err=$("#appError");if(!/^[^\\/:*?"<>|]+\.exe$/i.test(n)){err.textContent=tr("Укажите имя файла с расширением .exe.","Enter an executable filename ending in .exe.");err.hidden=false;return}if(profiles.some(x=>x.exe?.toLowerCase()===n.toLowerCase())){err.textContent=tr("Это приложение уже добавлено.","This application already exists.");err.hidden=false;return}profiles.push({name:n.replace(/\.exe$/i,""),exe:n,map:Array(15).fill(14),custom:{}});$("#newProfile").value="";err.hidden=true;p=profiles.length-1;page("device");refresh()};$$("[data-page]").forEach(b=>b.onclick=()=>page(b.dataset.page));$$(".views button[data-view]").forEach(b=>b.onclick=()=>{view=+b.dataset.view;$$(".views button[data-view]").forEach(x=>x.setAttribute("aria-selected",x===b));draw()});function profileName(x){return x.builtin===0?tr("Все приложения","All applications"):x.builtin===2?tr("Проводник","File Explorer"):x.name}function familyCode(){return tr("ТИП / "+String(family+1).padStart(2,"0"),families[family].code)}
+function settingTheme(){ $("#theme2").innerHTML=tr(dark?"Тёмное":"Светлое",dark?"Dark":"Light")+' <span class="text-chevron">›</span>' }
+function theme(){dark=!dark;document.body.classList.toggle("dark",dark);settingTheme();draw()}
+$("#theme").onclick=$("#theme2").onclick=theme;
+for(const id of ["enabled","startup"]){$("#"+id).onclick=e=>{const b=e.currentTarget;b.setAttribute("aria-checked",b.getAttribute("aria-checked")!=="true")}}
+function applyLanguage(next){
+ lang=next;try{localStorage.setItem("mouser.language",lang)}catch{}
+ document.documentElement.lang=lang;inputCodes.splice(0,inputCodes.length,...(lang==="ru"?ruCodes:enCodes));
+ names.splice(0,names.length,...(lang==="ru"?ruNames:enNames));actions.forEach((a,i)=>a[0]=(lang==="ru"?ruActions:enActions)[i]);
+ const labels=[['[data-page="device"]','Назначения клавиш','Button mappings'],['[data-page="profiles"]','Приложения','Applications'],['[data-page="settings"]','Настройки','Settings'],['.controls h2','Назначения клавиш','Button mappings'],['#profiles h1','Приложения','Applications'],['#scopeLabel','Назначения для','Mappings for'],['#deviceLabel','01 / УСТРОЙСТВО','01 / DEVICE'],['#viewLabel','РАКУРС','VIEW'],['#mapLabel','02 / КНОПКИ','02 / INPUT MAP'],['#actionLabel','03 / ДЕЙСТВИЕ','03 / ACTION'],['#profilesLabel','03 / ПРИЛОЖЕНИЯ','03 / APPLICATIONS'],['#settingsLabel','04 / НАСТРОЙКИ','04 / SETTINGS'],['#versionLabel','MOUSER / ВЕРСИЯ 22','MOUSER / UI 22'],['#footerStatus','WINDOWS / НЕ ПОДКЛЮЧЕНО','WINDOWS / OFFLINE'],['#globalLabel','ПО УМОЛЧАНИЮ','DEFAULT'],['#appsLabel','ОТДЕЛЬНЫЕ ПРИЛОЖЕНИЯ','INDIVIDUAL APPLICATIONS'],['#profilesHelp','Общие назначения действуют везде. Для отдельных программ можно переопределить нужные кнопки.','Default mappings apply everywhere. Override individual buttons for specific applications.'],['#appFileLabel','Имя файла приложения','Application filename'],['.views button[data-view="0"]','3/4','ISO'],['.views button[data-view="1"]','СВЕРХУ','TOP'],['.views button[data-view="2"]','СБОКУ','SIDE'],['#settings h1','Настройки','Settings'],['#reset','Сбросить назначение','Reset mapping'],['#add','Добавить приложение +','Add application +'],['#labelEnabled','Переназначение','Remapping'],['#labelStartup','Запуск с Windows','Start with Windows'],['#labelTheme','Оформление','Appearance'],['#labelLanguage','Язык','Language'],['#connectionNote','Windows: не подключено','Windows: not connected'],['#fallback','Не удалось загрузить модель.','Could not load image.'],['#restoreText','Открыть','Open']];
+ labels.forEach(([sel,ru,en])=>$(sel).textContent=tr(ru,en));
+ const arias=[['#theme','Переключить тему','Toggle theme'],['#enabled','Переназначение','Remapping'],['#startup','Запуск с Windows','Start with Windows'],['#minimize','Свернуть','Minimize'],['#maximize','Развернуть / восстановить','Maximize / restore'],['#closeWindow','Закрыть','Close'],['#languageOptions','Язык','Language'],['#profileOptions','Профиль','Profile'],['#families','Компоновка мыши','Mouse layout'],['#actionOptions','Действие','Action'],['#custom','Своя комбинация','Custom shortcut'],['#finishes','Цвет корпуса','Body color'],['nav','Разделы','Sections']];
+ arias.forEach(([sel,ru,en])=>{const el=$(sel);el.setAttribute("aria-label",tr(ru,en));if(el.classList.contains("window-control")||el.closest(".window-actions"))el.title=tr(ru,en)});
+ $("#newProfile").placeholder=tr("Например, photoshop.exe","For example, photoshop.exe");
+ $("#familyTitle").textContent=tr(families[family].name,families[family].title);$("#familyCode").textContent=familyCode();settingTheme();familyRail();updateColors();
+ renderPicker("languagePicker",["Русский","English"],lang==="ru"?0:1,i=>applyLanguage(i?"en":"ru"));refresh();if(loaded)draw();
+}
+function hideWindow(){closePickers();$("#appShell").hidden=true;$("#restoreArea").hidden=false}
+function restoreWindow(){$("#appShell").hidden=false;$("#restoreArea").hidden=true;draw()}
+$("#minimize").onclick=hideWindow;$("#closeWindow").onclick=hideWindow;$("#restoreWindow").onclick=restoreWindow;
+$("#maximize").onclick=()=>{restoreWindow();$("#appShell").classList.toggle("expanded");resizeFrame()};
+const canvas=$("#mouse"),ctx=canvas.getContext("2d",{willReadFrequently:true}),frame=$("#renderFrame"),stage=$("#stage"),viewNames=["iso","top","side"];
+const palette=[{name:"IVORY",hex:"#ded7c9",rgb:null},{name:"SAGE",hex:"#9fa58d",rgb:[159,165,141]},{name:"CLAY",hex:"#b7816c",rgb:[183,129,108]},{name:"SLATE",hex:"#8795a7",rgb:[135,149,167]},{name:"GRAPHITE",hex:"#555655",rgb:[85,86,85]},{name:"SAND",hex:"#c2ad92",rgb:[194,173,146]}];
+const cache=new Map();let currentKey="",loaded=null,requestId=0;
+window.mouserQA={ready:false,family:-1,error:null};
+const selectedRender=()=>renderMeta[families[family].asset][viewNames[view]];
+function status(t){$("#quality").textContent=t}
+const colorNamesRu=["СЛОНОВАЯ КОСТЬ","ШАЛФЕЙ","ТЕРРАКОТА","СЕРО-СИНИЙ","ГРАФИТ","ПЕСОЧНЫЙ"];function colorName(i){return tr(colorNamesRu[i],palette[i].name)}function updateColors(){const root=$("#finishes");root.replaceChildren(...palette.map((c,i)=>{const b=button("",()=>{finish=i;updateColors();draw()});b.className="swatch";b.style.setProperty("--swatch",c.hex);b.title=colorName(i);b.setAttribute("aria-label",colorName(i));b.setAttribute("aria-pressed",i===finish);return b}));const n=document.createElement("span");n.className="finish-name";n.textContent=colorName(finish);root.append(n)}
+function resizeFrame(){const m=selectedRender();if(!stage.clientWidth||!stage.clientHeight)return;const ratio=Math.min(stage.clientWidth*(view===1?.80:.82)/m.w,stage.clientHeight*(view===2?.62:.85)/m.h,1);frame.style.width=Math.round(m.w*ratio)+"px";frame.style.height=Math.round(m.h*ratio)+"px"}
+function hotspots(){if(!loaded||currentKey!==families[family].asset+"-"+viewNames[view])return;const root=$("#hotspots");root.replaceChildren();const m=selectedRender();for(const [id,pos] of Object.entries(m.pins)){const i=+id;if(!families[family].ids.includes(i))continue;let b=button(inputCodes[i],()=>{k=i;refresh()});b.className="hot";b.style.left=(pos[0]*100)+"%";b.style.top=(pos[1]*100)+"%";b.title=names[i];b.setAttribute("aria-label",names[i]);b.setAttribute("aria-pressed",i===k);root.append(b)}}
+function loadImage(key,file){if(!cache.has(key)){cache.set(key,new Promise((resolve,reject)=>{let im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(Error("Image load: "+file));im.src="renders-v16/"+file}))}return cache.get(key)}
+const atlasCache=new WeakMap(),scratch=document.createElement("canvas"),scratchCtx=scratch.getContext("2d",{willReadFrequently:true});
+function paint(){
+ if(!loaded)return;
+ const m=selectedRender(),w=m.w,h=m.h;
+ if(loaded.naturalWidth!==w*2||loaded.naturalHeight!==h)throw Error("Invalid render atlas");
+ if(!atlasCache.has(loaded)){scratch.width=w*2;scratch.height=h;scratchCtx.drawImage(loaded,0,0);atlasCache.set(loaded,scratchCtx.getImageData(0,0,w*2,h).data)}
+ const src=atlasCache.get(loaded),out=ctx.createImageData(w,h),d=out.data,paper=[250,247,242],color=palette[finish].rgb;
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+  const i=(y*w+x)*4,j=(y*w*2+x)*4,k=j+w*4;
+  const matte=Math.min(1,Math.max(0,(src[k]-8)/242)),l=.2126*src[j]+.7152*src[j+1]+.0722*src[j+2],strength=Math.max(0,Math.min(1,(l-65)/85))*matte;
+  const edge=Math.min(1,Math.min(x,y,w-1-x,h-1-y)/5);
+  for(let c=0;c<3;c++){
+   const v=src[j+c],t=color?v+(v*color[c]/220-v)*strength:v;
+   d[i+c]=Math.max(0,Math.min(255,Math.round(t*edge+paper[c]*(1-edge))));
+  }
+  d[i+3]=255;
+ }
+ canvas.width=w;canvas.height=h;ctx.putImageData(out,0,0);
+ stage.dataset.view=view;stage.dataset.family=family;
+ canvas.setAttribute("aria-label",tr(families[family].name,families[family].title)+" "+tr(["3/4","Сверху","Сбоку"][view],viewNames[view])+" "+colorName(finish));resizeFrame();hotspots();status("");
+ window.mouserQA={ready:true,family,view,finish,asset:families[family].asset,pins:$("#hotspots").children.length,w:canvas.width,h:canvas.height,error:null}
+}
+async function draw(){const key=families[family].asset+"-"+viewNames[view];if(currentKey===key&&loaded){paint();return}const id=++requestId;currentKey=key;loaded=null;$("#hotspots").replaceChildren();window.mouserQA={ready:false,family,view,error:null};$("#fallback").hidden=true;try{const im=await loadImage(key,selectedRender().file);if(id!==requestId)return;loaded=im;paint()}catch(e){if(id===requestId){status(tr("ОШИБКА ИЗОБРАЖЕНИЯ","IMAGE / ERROR"));$("#fallback").hidden=false;window.mouserQA.error=String(e)}}}
+function alignAction(){
+ const controls=$(".controls"),edit=$(".edit"),maps=$("#maps"),line=$(".viewbar"),trigger=$("#actionPicker .picker-trigger"),studio=$(".studio");
+ if(!controls.clientWidth||!line.clientWidth)return;
+ function put(el,key,n){const value=n+"px";if(el.style.getPropertyValue(key)!==value)el.style.setProperty(key,value)}
+ if(window.innerWidth<=850){put(controls,"--action-gap",44);put(studio,"--view-line-extra",0);return}
+ const offset=trigger.getBoundingClientRect().bottom-edit.getBoundingClientRect().top-1;
+ const listBottom=maps.getBoundingClientRect().bottom;
+ const baseLine=line.getBoundingClientRect().top-parseFloat(getComputedStyle(line).marginTop);
+ const extra=Math.max(0,Math.ceil(listBottom+24+offset-baseLine));
+ put(studio,"--view-line-extra",extra);
+ put(controls,"--action-gap",Math.max(24,Math.round(baseLine+extra-listBottom-offset)));
+}
+const layoutObserver=new ResizeObserver(()=>{resizeFrame();alignAction()});
+[stage,$(".studio"),$("#maps"),$(".controls h2"),$("#selected"),$("#actionPicker .picker-trigger")].forEach(el=>layoutObserver.observe(el));
+window.addEventListener("resize",alignAction);document.fonts?.ready.then(alignAction);new MutationObserver(alignAction).observe($("#device"),{attributes:true,attributeFilter:["hidden"]});
+new ResizeObserver(resizeFrame).observe(stage);updateColors();applyLanguage(lang);draw();alignAction();
+</script></body></html>
