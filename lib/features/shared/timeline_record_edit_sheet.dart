@@ -800,7 +800,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     );
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     // ACTIVE_STATUS_LAW: running ⇔ end_time null (UI mirrors Brain).
-    final isRunning = widget.record.endTime == null;
+    final isRunning = _isPersistedRecord && widget.record.endTime == null;
     final int catVal = _categoryId != null
         ? resolveEditFieldCategoryId(
             db: DatabaseService.instance,
@@ -828,7 +828,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                EditorV45Collapsible(collapsed: notesEditing || MediaQuery.viewInsetsOf(context).bottom > 0,
+                EditorV45Collapsible(collapsed: (notesEditing && MediaQuery.widthOf(context) < 760) || MediaQuery.viewInsetsOf(context).bottom > 0,
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(editorV45Inset(context), 4, editorV45Inset(context), _notesReading ? 12 : 16),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -846,7 +846,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                       if (_plansLoading) const LinearProgressIndicator(minHeight: 2),
                     ]),
                   )),
-                EditorV45Collapsible(collapsed: notesEditing || MediaQuery.viewInsetsOf(context).bottom > 0, child: Padding(
+                EditorV45Collapsible(collapsed: (notesEditing && MediaQuery.widthOf(context) < 760) || MediaQuery.viewInsetsOf(context).bottom > 0, child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: editorV45Inset(context)),
                   child: SizedBox(
                     height: kAppCompactControlHeight,
