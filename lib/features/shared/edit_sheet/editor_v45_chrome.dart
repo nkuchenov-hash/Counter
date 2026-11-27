@@ -241,7 +241,7 @@ class EditorV45Actions extends StatelessWidget {
           if (onDelete != null || onCancel != null) const SizedBox(width: 8),
           Expanded(flex: 155, child: AppButton.primary(onPressed: onPrimary, label: primaryLabel)),
         ])));
-    return SafeArea(top: false, minimum: EdgeInsets.fromLTRB(24, 4, 24, MediaQuery.widthOf(context) >= 768 ? 14 : 22),
+    return SafeArea(top: false, minimum: EdgeInsets.fromLTRB(24, 4, 24, _v45ActionBottomInset(context)),
       child: Align(alignment: Alignment.bottomCenter, child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 440),
         child: nativePhone ? pill : ClipRRect(borderRadius: BorderRadius.circular(29),
@@ -268,6 +268,9 @@ class EditorV45Collapsible extends StatelessWidget {
   );
 }
 
+double _v45ActionBottomInset(BuildContext context) =>
+  MediaQuery.widthOf(context) >= 768 ? 14 : 22;
+
 /// Overlay actions on the same feathered paper surface as Notes tools.
 class EditorV45ActionOverlay extends StatelessWidget {
   const EditorV45ActionOverlay({super.key, required this.content, required this.actions, required this.visible});
@@ -277,7 +280,9 @@ class EditorV45ActionOverlay extends StatelessWidget {
   Widget build(BuildContext context) => Stack(fit: StackFit.expand, children: [
     Positioned.fill(child: content),
     if (visible) Positioned(left: 0, right: 0, bottom: 0,
-      child: NotesBottomGlassFade(height: 100, toolbarBottomInset: 12,
+      child: NotesBottomGlassFade(height: 100,
+        toolbarBottomInset: _v45ActionBottomInset(context),
+        apertureMaxWidth: 440, apertureSideInset: 24, apertureHeight: 56,
         enableBackdropBlur: false,
         child: Align(alignment: Alignment.bottomCenter, child: actions))),
   ]);
