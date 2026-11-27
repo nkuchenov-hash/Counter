@@ -348,6 +348,7 @@ class CalendarIntegrationService {
   }
 
   Future<bool> syncNow(CalendarIntegrationProvider provider) async {
+    if (state.value.actionProvider != null) return false;
     final headers = _headers(json: true);
     if (headers == null) return false;
     state.value = state.value.copyWith(

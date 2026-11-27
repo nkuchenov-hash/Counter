@@ -177,6 +177,7 @@ class PeopleIntegrationService {
   }
 
   Future<bool> syncNow(PeopleSourceProvider provider) async {
+    if (state.value.actionProvider != null) return false;
     if (!provider.usesServerOAuth) return false;
     final headers = _headers(json: true);
     if (headers == null) return false;
