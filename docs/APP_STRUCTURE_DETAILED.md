@@ -6,7 +6,7 @@ Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1039 — each appears **exactly once** below.
+**Tracked files:** 1040 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 206 |
-| `test` | 149 |
+| `test` | 150 |
 | `Brain/data` | 121 |
 | `platform build` | 84 |
 | `shared foundation` | 73 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 569 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 278 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 279 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 951 |
+| `HIGH` | 952 |
 | `MEDIUM` | 88 |
 
 ---
@@ -38994,6 +38994,44 @@ RU:
 - **Когда открывать:** Обновление кадров capture Notes GLM после UI-правок вокруг `notes_glm_production_library_capture`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** `capture_notes_glm_parity.ps1`, `test/notes/fixtures/`.
+
+
+### `test/integration_sync_budget_test.cjs`
+
+EN:
+
+- **Human purpose:** Protects Calendar and People synchronization from incomplete provider reads and unsafe cleanup.
+- **What this is:** Node.js automated integration test exercising actual PocketBase hook source in a mocked VM.
+- **Why needed:** Detects regressions in request budgets, pagination and token rotation without external provider access.
+- **Contents:** Mock clock, HTTP responder, deadline and pagination checks, incomplete-snapshot write/cleanup checks, and OAuth token persistence checks.
+- **Key code names:** `load`, `__calendarSyncOne`, `__peopleSyncOne`.
+- **Repository role:** test
+- **Evidence of use:** Run `node --test test/integration_sync_budget_test.cjs`; loads actual Calendar and People hooks.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Loses executable coverage for bounded synchronization and incomplete responses.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert time budgets, cursor termination, safe incomplete-snapshot handling and token persistence.
+- **When to open:** Calendar or People sync regressions or provider pagination changes.
+- **Can it be deleted?** No — required for regression coverage.
+- **Connected to:** `pb_hooks/calendar_integrations.pb.js`, `pb_hooks/people_integrations.pb.js`.
+
+RU:
+
+- **Зачем файл человеку:** Защищает синхронизацию календарей и контактов от неполных ответов провайдера и ошибочного удаления данных.
+- **Что это:** Автотест Node.js с выполнением исходных обработчиков PocketBase в тестовом окружении VM.
+- **Зачем:** Обнаруживает регрессии ограничения времени, пагинации и обновления токенов без внешних запросов.
+- **Содержимое:** Поддельные часы и HTTP-ответы; проверки дедлайнов, повторных курсоров, сохранения токенов и запрета очистки неполных данных.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Запуск `node --test test/integration_sync_budget_test.cjs`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Исчезнет автоматическое покрытие ограниченной синхронизации.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Проверяет ограничения времени, завершение пагинации, безопасность неполных ответов и сохранение токенов.
+- **Когда открывать:** Регрессии синхронизации Calendar или People.
+- **Можно удалить?** Нет — необходим для регрессионных тестов.
+- **Связано с:** `pb_hooks/calendar_integrations.pb.js`, `pb_hooks/people_integrations.pb.js`.
 
 
 ### `test/life_semantic_palette_test.dart`
