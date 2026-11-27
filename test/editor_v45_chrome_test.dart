@@ -13,6 +13,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    for (final name in ['xyz.luan/audioplayers.global', 'xyz.luan/audioplayers.global/events', 'xyz.luan/audioplayers']) {
+      messenger.setMockMethodCallHandler(MethodChannel(name), (_) async => null);
+    }
+  });
   setUpAll(() async {
     await initializeDateFormatting();
   });
@@ -102,7 +109,7 @@ void main() {
     await tester.pump();
     expect(changed, 'Work updated');
     expect(tester.state<EditableTextState>(find.byType(EditableText)), same(original));
-    tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
     expect(tester.widget<TextField>(field).readOnly, isTrue);
     expect(tester.takeException(), isNull);
