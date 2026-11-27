@@ -19,11 +19,13 @@ class NotesEditorBody extends StatelessWidget {
     required this.content,
     required this.toolbar,
     this.embedded = false,
+    this.showToolbar = true,
   });
 
   final Widget content;
   final Widget toolbar;
   final bool embedded;
+  final bool showToolbar;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +37,7 @@ class NotesEditorBody extends StatelessWidget {
         // scroll-end inset belongs to the document, not this viewport: a
         // shortened viewport produced the opaque empty strip reported in UX.
         Positioned.fill(child: content),
-        Positioned(
+        if (showToolbar) Positioned(
           left: 0,
           right: 0,
           bottom: 0,
@@ -112,6 +114,7 @@ class NotesEditorScreen extends StatelessWidget {
     this.tags = const <NotesEditorMetadataTag>[],
     this.titleHint,
     this.bodyOnly = false,
+    this.showInlineToolbar = true,
   });
 
   final TextEditingController titleController;
@@ -130,6 +133,7 @@ class NotesEditorScreen extends StatelessWidget {
   final List<NotesEditorMetadataTag> tags;
   final String? titleHint;
   final bool bodyOnly;
+  final bool showInlineToolbar;
 
   @override
   Widget build(BuildContext context) {
@@ -143,6 +147,7 @@ class NotesEditorScreen extends StatelessWidget {
           content: content,
           toolbar: toolbar,
           embedded: true,
+          showToolbar: showInlineToolbar,
         ),
       );
     }
