@@ -50,4 +50,29 @@ void main() {
     expect(created, isTrue);
     expect(cancelled, isTrue);
   });
+
+  testWidgets('approved v45 pill is capped at 440 and stays centered', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: EditorV45Actions(
+      primaryLabel: 'Close', onPrimary: () {}, onDelete: () {},
+    ))));
+    final pill = tester.getRect(find.byKey(const ValueKey('v45-action-pill')));
+    expect(pill.width, 440);
+    expect(pill.center.dx, closeTo(500, 0.1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('read-only title pencil follows short title rather than screen edge', (tester) async {
+    final controller = TextEditingController(text: 'Meeting');
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: EditorV45Title(
+      controller: controller, onChanged: (_) {}, onClose: () {},
+      creating: false, writing: false,
+    ))));
+    final text = tester.getRect(find.text('Meeting'));
+    final pencil = tester.getRect(find.byIcon(Icons.edit_outlined));
+    expect(pencil.left - text.right, lessThan(24));
+    expect(tester.takeException(), isNull);
+  });
 }
