@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `fbcc4fbc` on 2026-11-27.**
+**Generated from input HEAD `bfa21747` on 2026-11-27.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1042 — each appears **exactly once** below.
+**Tracked files:** 1044 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 207 |
-| `test` | 150 |
+| `test` | 151 |
 | `Brain/data` | 121 |
 | `platform build` | 84 |
 | `shared foundation` | 73 |
@@ -35,7 +35,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `governing documentation` | 45 |
 | `platform resource` | 44 |
 | `Desktop Voice runtime` | 36 |
-| `test fixture` | 32 |
+| `test fixture` | 33 |
 | `PocketBase migration` | 27 |
 | `PocketBase backend` | 25 |
 | `CI/deployment` | 20 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 571 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 279 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 281 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 954 |
+| `HIGH` | 956 |
 | `MEDIUM` | 88 |
 
 ---
@@ -25026,7 +25026,7 @@ EN:
 - **What this is:** `editor_v45_chrome.dart` on edit sheets and voice UI on every tab — editor v45 chrome.
 - **Why needed:** Users see `editor_v45_chrome.dart` when using edit sheets and voice UI on every tab.
 - **Contents:** Primary symbols: `EditorV45Title`, `_EditorV45TitleState`, `EditorV45TimeCard`, `_DurationLine`, `_EditorTimePoint`, `EditorV45MetadataRow`.
-- **Key code names:** `EditorV45Title`, `_EditorV45TitleState`, `EditorV45TimeCard`, `_DurationLine`, `_EditorTimePoint`, `EditorV45MetadataRow`, `EditorV45CategoryRow`, `EditorV45Actions`, `EditorV45Collapsible`
+- **Key code names:** `EditorV45Title`, `_EditorV45TitleState`, `EditorV45TimeCard`, `_DurationLine`, `_EditorTimePoint`, `EditorV45MetadataRow`, `EditorV45CategoryRow`, `EditorV45Actions`, `Edit`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -40819,6 +40819,44 @@ RU:
 - **Связано с:** Production files под `lib/` с похожим именем.
 
 
+### `test/protected_session_release_audit_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `protected_session_release_audit_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `protected_session_release_audit_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/protected_session_release_audit_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `protected_session_release_audit_test` scenario.
+- **When to open:** CI failure or changing code near `protected_session_release_audit`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `protected_session_release_audit`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `protected_session_release_audit` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `protected_session_release_audit` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `protected_session_release_audit`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/protected_session_release_audit_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `protected_session_release_audit`.
+- **Когда открывать:** Падение CI или правка кода рядом с `protected_session_release_audit`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
 ### `test/realtime_app_open_contract_test.dart`
 
 EN:
@@ -42669,6 +42707,43 @@ RU:
 - **Когда открывать:** Падение CI или правка кода рядом с `widget`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/xiaomi_route_release_audit_test.py`
+
+EN:
+
+- **Human purpose:** Automated test `xiaomi_route_release_audit_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `xiaomi_route_release_audit_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: test groups).
+- **Repository role:** test fixture
+- **Evidence of use:** Read/referenced by: `.github/workflows/editor-native-validation.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `xiaomi_route_release_audit_test` scenario.
+- **When to open:** CI failure or changing code near `xiaomi_route_release_audit`.
+- **Can it be deleted?** Broken fixture-backed test or missing diagnostic sample.
+- **Connected to:** `test/` suite; production subject near `xiaomi_route_release_audit`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `xiaomi_route_release_audit_test` — проверяет поведение без ручных нажатий. Ловит регрессии при правках связанного production-кода.
+- **Что это:** Автотест `xiaomi_route_release_audit_test` — проверяет поведение без ручных нажатий.
+- **Зачем:** Ловит регрессии при правках связанного production-кода.
+- **Содержимое:** Тест-кейсы (символы: test groups).
+- **Роль в репозитории:** test fixture
+- **Доказательства использования:** Читается/упоминается: `.github/workflows/editor-native-validation.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Проверяет ожидаемое поведение сценария `xiaomi_route_release_audit_test`.
+- **Когда открывать:** Падение CI или правка кода около `xiaomi_route_release_audit`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Набор `test/`; production-субъект около `xiaomi_route_release_audit`.
 
 
 ### `update.ps1`
