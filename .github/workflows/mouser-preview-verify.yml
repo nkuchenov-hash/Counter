@@ -17,7 +17,7 @@ jobs:
         with:
           sparse-checkout: mouser-mvp
           fetch-depth: 1
-      - name: Verify published HTML and six external GLB assets
+      - name: Verify published HTML and 18 approved image assets
         shell: bash
         run: |
           python3 - <<'PY'
@@ -41,14 +41,15 @@ jobs:
               time.sleep(8)
           else:
               raise SystemExit('Published content does not match expected SHA256 ' + sha)
-          import json,struct
-          root='https://nkuchenov-hash.github.io/Counter/mouser-mvp/models-v2/'
-          for name,meta in json.loads(pathlib.Path('mouser-mvp/models-v2/metadata.json').read_text()).items():
-              with urllib.request.urlopen(root+name+'.glb',timeout=25) as r:
-                  body=r.read()
-                  assert r.status==200
-              assert body[:4]==b'glTF' and hashlib.sha256(body).hexdigest()==meta['sha256'],name
-              print('Verified published GLB',name,len(body),flush=True)
+          import json
+          root='https://nkuchenov-hash.github.io/Counter/mouser-mvp/renders/'
+          for name,views in json.loads(pathlib.Path('mouser-mvp/renders/metadata.json').read_text()).items():
+              for view,meta in views.items():
+                  with urllib.request.urlopen(root+meta['file'],timeout=25) as r:
+                      body=r.read()
+                      assert r.status==200
+                  assert body[:4]==b'RIFF' and body[8:12]==b'WEBP' and hashlib.sha256(body).hexdigest()==meta['sha256'],meta['file']
+                  print('Verified published render',name,view,len(body),flush=True)
           PY
       - uses: actions/setup-node@v4
         with:
@@ -76,33 +77,33 @@ jobs:
           ws.addEventListener('message',e=>{let m=JSON.parse(e.data);if(m.id&&pending.has(m.id)){let cb=pending.get(m.id);pending.delete(m.id);cb(m)}});
           function cmd(method,params={}){return new Promise((resolve,reject)=>{let id=++seq;pending.set(id,m=>m.error?reject(new Error(JSON.stringify(m.error))):resolve(m.result));ws.send(JSON.stringify({id,method,params}));setTimeout(()=>{if(pending.delete(id))reject(new Error('CDP timeout '+method))},15000).unref()})}
           await cmd('Page.enable');
-          await cmd('Page.navigate',{url:'https://nkuchenov-hash.github.io/Counter/mouser-mvp/design-12.html?browsercheck=12'});
+          await cmd('Page.navigate',{url:'https://nkuchenov-hash.github.io/Counter/mouser-mvp/design-13.html?browsercheck=13'});
           async function ev(expression){const r=await cmd('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value}
-          async function ready(i){for(let j=0;j<60;j++){await delay(500);let q=await ev('window.mouserQA');if(q?.error)throw Error(JSON.stringify(q));if(q?.ready&&q.family===i)return q;}throw Error('Model timed out '+i)}
+          async function ready(i,v){for(let j=0;j<60;j++){await delay(250);let q=await ev('window.mouserQA');if(q?.error)throw Error(JSON.stringify(q));if(q?.ready&&q.family===i&&q.view===v)return q;}throw Error('Image timed out '+i+' '+v)}
           try{
-            const assets=['symmetric','ergonomic','compact','gaming','vertical','trackball'];
-            await ready(0);
-            assert.equal(await ev('document.querySelectorAll(".picker-menu:not([hidden])").length'),0);
+            await ready(0,0);
             for(let i=0;i<6;i++){
-              if(i!==0)await ev('selectFamily('+i+')');
-              let q=await ready(i);
-              assert.equal(q.asset,assets[i]);
-              assert.ok(q.pins>=2);
-              assert.equal(await ev('document.querySelector("#mouse").loaded'),true);
-              assert.equal(await ev('getComputedStyle(document.querySelector("#mouse .hot")).borderRadius'),'50%');
-              await ev('document.querySelector("#mouse .hot").click()');
-              assert.equal(await ev('document.querySelector("#number").textContent'),await ev('document.querySelector("#mouse .hot").textContent'));
-              console.log('PASS model',q);
+              await ev('selectFamily('+i+')');
+              for(let v=0;v<3;v++){
+                await ev('document.querySelector("[data-view=\\"'+v+'\\"]").click()');
+                let q=await ready(i,v);
+                assert.ok(q.pins>=1);
+                assert.ok(q.w>100&&q.h>100);
+                assert.equal(await ev('getComputedStyle(document.querySelector("#hotspots .hot")).borderRadius'),'50%');
+                await ev('document.querySelector("#hotspots .hot").click()');
+                assert.equal(await ev('document.querySelector("#number").textContent'),await ev('document.querySelector("#hotspots .hot").textContent'));
+                console.log('PASS render',q);
+              }
             }
-            await ev('selectFamily(1)');await ready(1);
-            await ev('document.querySelector("#familyPicker .picker-trigger").click()');
-            assert.equal(await ev('document.querySelectorAll("#families .picker-option").length'),6);
-            await ev('document.querySelectorAll("#families .picker-option")[0].click()');await ready(0);
+            await ev('selectFamily(0)');await ready(0,0);
+            const before=await ev('canvas.toDataURL()');
+            await ev('document.querySelectorAll(".swatch")[1].click()');await ready(0,0);
+            assert.notEqual(await ev('canvas.toDataURL()'),before);
+            for(let i=0;i<6;i++){await ev('document.querySelectorAll(".swatch")['+i+'].click()');assert.equal(await ev('window.mouserQA.finish'),i)}
             await ev('document.querySelector("#profilePicker .picker-trigger").click();document.querySelectorAll("#profileOptions .picker-option")[1].click()');
             assert.equal(await ev('p'),1);
             await ev('document.querySelector("#actionPicker .picker-trigger").click();document.querySelectorAll("#actionOptions .picker-option")[5].click()');
             assert.equal(await ev('profiles[p].map[k]'),5);
-            await ev('document.querySelector("#finish").click();document.querySelector("[data-view=\\"1\\"]").click()');
-            console.log('PASS six externally sourced models, marker selections, model/profile/action menus, finish and view');
+            console.log('PASS 18 approved image views, marker selection, 6 colorways, profile and action selectors');
           } finally {ws.close()}
           JS
