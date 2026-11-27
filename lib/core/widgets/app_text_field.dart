@@ -9,7 +9,7 @@ import 'package:flutter/services.dart';
 /// validation and multi-line editors are variants, not feature-local controls.
 enum AppTextFieldVariant { text, search, email, number, password, multiline }
 
-enum AppTextFieldSurface { standard, glass }
+enum AppTextFieldSurface { standard, glass, inlineTitle }
 
 class AppTextField extends StatelessWidget {
   const AppTextField({
@@ -33,6 +33,7 @@ class AppTextField extends StatelessWidget {
     this.showSearchIcon = false,
     this.variant = AppTextFieldVariant.text,
     this.surface = AppTextFieldSurface.standard,
+    this.inlineTitleStyle,
     this.obscureText,
     this.autofocus = false,
     this.enabled = true,
@@ -67,6 +68,8 @@ class AppTextField extends StatelessWidget {
   final bool showSearchIcon;
   final AppTextFieldVariant variant;
   final AppTextFieldSurface surface;
+  /// Typography for the borderless title surface; normal inputs keep canonical sizing.
+  final TextStyle? inlineTitleStyle;
   final bool? obscureText;
   final bool autofocus;
   final bool enabled;
@@ -103,6 +106,26 @@ class AppTextField extends StatelessWidget {
           AppTextFieldVariant.multiline => TextInputType.multiline,
           _ => TextInputType.text,
         };
+    if (surface == AppTextFieldSurface.inlineTitle) {
+      final titleStyle = inlineTitleStyle ?? theme.textTheme.headlineSmall;
+      return TextField(
+        controller: controller, focusNode: focusNode,
+        readOnly: readOnly, enabled: enabled, autofocus: autofocus,
+        keyboardType: type, textInputAction: action,
+        minLines: minLines ?? 1, maxLines: maxLines ?? 2,
+        textCapitalization: textCapitalization,
+        onChanged: onChanged, onSubmitted: onSubmitted,
+        onEditingComplete: onEditingComplete, onTap: onTap,
+        style: titleStyle,
+        decoration: InputDecoration(
+          hintText: hintText, hintStyle: titleStyle?.copyWith(color: meta),
+          filled: false, isDense: true, constraints: const BoxConstraints(),
+          contentPadding: EdgeInsets.zero, border: InputBorder.none,
+          enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+        ),
+      );
+    }
     // Standard single-line fields own their painted surface OUTSIDE
     // Flutter's InputDecorator. InputDecorator may draw a smaller internal
     // outline inside a 48px TextField box under desktop web scaling; that
