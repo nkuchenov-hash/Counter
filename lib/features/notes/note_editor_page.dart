@@ -131,7 +131,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> with WidgetsBindingObse
     _task = widget.task;
     _sourceDocument =
         widget.initialDocument ?? DatabaseService.instance.parseNoteDocument(_task);
-    _editor = NotesEditorDocumentController(_sourceDocument);
+    _editor = NotesEditorDocumentController(_sourceDocument, initialBlockType: widget.inlineBodyOnly ? NoteBlockType.paragraph : NoteBlockType.heading);
     _titleController = TextEditingController(text: _task.title);
     _gate = EditSheetAutosaveGate(debounce: const Duration(seconds: 15));
     _audioPlayback = NotesAudioPlaybackController()
@@ -1717,7 +1717,7 @@ activeType == NoteBlockType.bulletedList
     },
         onMore: _showActiveBlockOptions,
       ),
-      content: Focus(focusNode: _blockActionsFocus, onFocusChange: (focused) { if (mounted && widget.inlineBodyOnly) setState(() { if (!focused && _blockSelectionMode) { _blockSelectionMode = false; _selectedBlockIds.clear(); } }); }, child: Listener(
+      content: Focus(focusNode: _blockActionsFocus, onFocusChange: (focused) { if (mounted && widget.inlineBodyOnly) setState(() {}); }, child: Listener(
         behavior: HitTestBehavior.translucent,
         onPointerDown: _handleEditorPointerDown,
         onPointerUp: _scheduleSecondarySelectionGuardRelease,
