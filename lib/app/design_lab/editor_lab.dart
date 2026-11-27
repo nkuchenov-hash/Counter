@@ -228,7 +228,12 @@ class _LabEditorSurfaceState extends State<_LabEditorSurface> {
     onTable: _insertTable,
   );
 
-  Widget _document() => ListView.builder(
+  Widget _document() => ReorderableListView.builder(
+    buildDefaultDragHandles: false,
+    onReorder: (oldIndex, newIndex) => setState(() {
+      if (newIndex > oldIndex) newIndex--;
+      _blocks.insert(newIndex, _blocks.removeAt(oldIndex));
+    }),
     padding: const EdgeInsets.only(top: 18, bottom: 112),
     itemCount: _blocks.length,
     itemBuilder: (context, i) {
