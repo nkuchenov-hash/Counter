@@ -732,92 +732,15 @@ item,
         _structuredClipboardExportText(frozen);
   }
   List<NoteBlock> _inferStructuredSelectionBlocks(String plain) {
-    if (plain.isEmpty) return const <NoteBlock>[];
     final textBlocks = <NoteBlock>[
       for (final block in _editor.visibleBlocks)
         if (NotesEditorDocumentController.isEditableText(block.type) &&
             block.effectiveText.isNotEmpty)
           block,
     ];
-    if (textBlocks.isEmpty) return const <NoteBlock>[];
-    final normalizedSelection = _normalizeClipboardStructure(plain);
-    List<NoteBlock>? wholeBlockBest;
-    for (var start = 0; start < textBlocks.length; start++) {
-      for (var end = start; end < textBlocks.length; end++) {
-        final window = textBlocks.sublist(start, end + 1);
-        final candidate = _normalizeClipboardStructure(
-window.map((block) => block.effectiveText).join('\n'),
-        );
-        if (candidate != normalizedSelection) continue;
-        final preservesMeaning =
-  window.length > 1 || window.single.type != NoteBlockType.paragraph;
-        if (!preservesMeaning) continue;
-        if (wholeBlockBest == null || window.length < wholeBlockBest.length) {
-wholeBlockBest = List<NoteBlock>.from(window);
-        }
-      }
-    }
-    if (wholeBlockBest != null) return wholeBlockBest;
-    List<NoteBlock>? best;
-    var bestWindow = 1 << 30;
-    for (var startIndex = 0; startIndex < textBlocks.length; startIndex++) {
-      final buffer = StringBuffer();
-      final offsets = <int>[0];
-      for (
-        var endIndex = startIndex;
-        endIndex < textBlocks.length;
-        endIndex++
-      ) {
-        buffer.write(textBlocks[endIndex].effectiveText);
-        offsets.add(buffer.length);
-        if (buffer.length < plain.length) continue;
-        final joined = buffer.toString();
-        var searchFrom = 0;
-        while (searchFrom <= joined.length - plain.length) {
-          final foundAt = joined.indexOf(plain, searchFrom);
-          if (foundAt < 0) break;
-          final selectedEnd = foundAt + plain.length;
-          final slices = <NoteBlock>[];
-          for (
-            var localIndex = 0;
-            localIndex <= endIndex - startIndex;
-            localIndex++
-          ) {
-            final source = textBlocks[startIndex + localIndex];
-            final blockStart = offsets[localIndex];
-            final blockEnd = offsets[localIndex + 1];
-            final overlapStart = foundAt > blockStart ? foundAt : blockStart;
-            final overlapEnd = selectedEnd < blockEnd ? selectedEnd : blockEnd;
-            if (overlapStart >= overlapEnd) continue;
-            final localStart = overlapStart - blockStart;
-            final localEnd = overlapEnd - blockStart;
-            if (localStart == 0 && localEnd == source.effectiveText.length) {
-              slices.add(source);
-            } else {
-              slices.add(
-                source.copyWith(
-                  text: source.effectiveText.substring(localStart, localEnd),
-                  runs: const <NoteTextRun>[],
-                ),
-              );
-            }
-          }
-          // A single selected text fragment should behave like normal clipboard
-          // text. Structure matters once selection crosses a block boundary.
-          if (slices.length >= 2) {
-            final window = endIndex - startIndex + 1;
-            if (window < bestWindow) {
-              best = slices;
-              bestWindow = window;
-            }
-          }
-          searchFrom = foundAt + 1;
-        }
-        if (bestWindow == 2) break;
-      }
-      if (bestWindow == 2) break;
-    }
-    return best ?? const <NoteBlock>[];
+    return inferNotesClipboardSelection(
+      textBlocks, plain, _normalizeClipboardStructure,
+    );
   }
   double? _captureBlockScrollOffset() {
     if (!_blockScrollController.hasClients) return null;

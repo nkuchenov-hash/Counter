@@ -238,59 +238,6 @@ extension RecordServiceExtension on DatabaseService {
   }
 
 
-  /// Rebuild local create shadows from the durable outbox after a restart or
-  /// full PocketBase refresh. A server snapshot must not hide unflushed input.
-  Future<void> _mergePendingRecordCreatesIntoRows(
-    List<Map<String, dynamic>> rows,
-    SharedPreferences prefs,
-  ) async {
-    final queue = await RecordMutationOutbox.load(prefs);
-    for (final item in queue) {
-      final kind = (item['kind'] ?? '').toString();
-      if (kind != RecordMutationOutbox.kindHighlanderStart &&
-          kind != RecordMutationOutbox.kindRecordCreate) {
-        continue;
-      }
-      final raw = item['payload'];
-      if (raw is! Map) continue;
-      final fields = Map<String, dynamic>.from(raw);
-      final businessId = (fields['record_id'] ?? '').toString().trim();
-      final owner = (fields['user_id'] ?? '').toString().trim();
-      if (businessId.isEmpty || owner != _pidForPbFilter) continue;
-      Map<String, dynamic>? shadow;
-      for (final existing in _cachedFlatRecords) {
-        if ((existing['record_id'] ?? '').toString().trim() == businessId) {
-          shadow = existing;
-          break;
-        }
-      }
-      final index = rows.indexWhere(
-        (r) => (r['record_id'] ?? '').toString().trim() == businessId,
-      );
-      if (index >= 0) {
-        // A later locally accepted start may already have stopped this
-        // record. Do not let an older server snapshot show two actives.
-        if (shadow != null &&
-            shadow['status'] == 'stopped' &&
-            rows[index]['status'] == 'running') {
-          rows[index] = <String, dynamic>{
-            ...rows[index],
-            'status': 'stopped',
-            'end_time': shadow['end_time'],
-          };
-        }
-        continue;
-      }
-      rows.add(<String, dynamic>{
-        ...fields,
-        if (shadow != null) ...shadow,
-        'id': shadow?['id'] ?? businessId,
-        '_pb_record_id': '',
-        '_highlanderPendingPost': true,
-      });
-    }
-  }
-
   /// PocketBase: **records** for the current user with category + tags expands (@POCKETBASE_MANIFEST).
   /// Updates [_cachedFlatRecords] for timeline filtering without repeated GETs.
   ///
@@ -313,6 +260,17 @@ extension RecordServiceExtension on DatabaseService {
         _cachedFlatRecords.isNotEmpty) {
       return List<Map<String, dynamic>>.from(_cachedFlatRecords);
     }
+    return _recordReadSingleFlight.run(
+      pid,
+      forceNetwork: forceNetwork,
+      request: () => _fetchRecordsSnapshot(pid, forceNetwork: forceNetwork),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchRecordsSnapshot(
+    String pid, {
+    required bool forceNetwork,
+  }) async {
     final requestSequence = ++_recordsNetworkFetchSequence;
     _recordsFullFetchesInFlight++;
     try {
@@ -333,7 +291,11 @@ extension RecordServiceExtension on DatabaseService {
         list = await _pb
             .collection(PbCollections.records)
             .getFullList(filter: filterClause, expand: expandRel);
-      } on ClientException catch (_) {
+      } on ClientException catch (error) {
+        // Only a rejected list/expand request can justify changing its shape.
+        // Auth, rate limits and transport failures need recovery, not another
+        // full-history request to the same unhealthy endpoint.
+        if (error.statusCode != 400) rethrow;
         list = await _pb
             .collection(PbCollections.records)
             .getFullList(filter: filterClause, expand: kPbRecordCategoryExpand);

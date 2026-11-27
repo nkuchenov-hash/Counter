@@ -127,8 +127,30 @@ function __calendarJson(value, fallback) {
     try { return JSON.parse(String(value)); } catch (_) { return fallback; }
 }
 
-function __calendarHttpJson(options) {
+// Bound a whole synchronization attempt, not just each individual HTTP page.
+function __calendarCheckBudget(deadline) {
+    if (deadline && Date.now() >= deadline) throw new Error("provider_sync_deadline_exceeded");
+}
+
+function __calendarVisitPage(seen, cursor, deadline) {
+    __calendarCheckBudget(deadline);
+    // Never return a truncated snapshot as complete: cleanup would remove
+    // records that simply were not fetched. Do not log cursor/token values.
+    if (seen[cursor]) throw new Error("provider_pagination_repeated");
+    seen[cursor] = true;
+}
+
+function __calendarHttpJson(options, deadline, acceptLateResponse) {
+    __calendarCheckBudget(deadline);
+    if (deadline) {
+        var remaining = Math.floor((deadline - Date.now()) / 1000);
+        if (remaining < 1) throw new Error("provider_sync_deadline_exceeded");
+        options.timeout = Math.min(Number(options.timeout || 30), remaining);
+    }
     var response = $http.send(options);
+    // A successful refresh may rotate the refresh token. Persist its response
+    // before stopping the import; otherwise a deadline can break the account.
+    if (!acceptLateResponse) __calendarCheckBudget(deadline);
     if (response.statusCode < 200 || response.statusCode >= 300) {
         throw new Error((options.label || "Provider request") + " failed: HTTP " + response.statusCode);
     }
@@ -228,7 +250,7 @@ function __calendarExchangeCode(app, provider, code) {
     });
 }
 
-function __calendarRefreshAccess(app, connection) {
+function __calendarRefreshAccess(app, connection, deadline) {
     var key = __calendarTokenKey(app);
     var currentEnc = String(connection.get("access_token_enc") || "");
     var expires = __calendarDate(connection.get("access_token_expires_at"));
@@ -253,7 +275,7 @@ function __calendarRefreshAccess(app, connection) {
         body: __calendarFormEncode(body),
         timeout: 30,
         label: provider + " token refresh",
-    });
+    }, deadline, true);
     if (!token.access_token) throw new Error("Calendar access token is missing");
     var expiresIn = Number(token.expires_in || 3600);
     connection.set("access_token_enc", $security.encrypt(String(token.access_token), key));
@@ -262,10 +284,11 @@ function __calendarRefreshAccess(app, connection) {
         connection.set("refresh_token_enc", $security.encrypt(String(token.refresh_token), key));
     }
     app.save(connection);
+    __calendarCheckBudget(deadline);
     return String(token.access_token);
 }
 
-function __calendarProviderIdentity(provider, accessToken) {
+function __calendarProviderIdentity(provider, accessToken, deadline) {
     if (provider === "microsoft") {
         var ms = __calendarHttpJson({
             url: "https://graph.microsoft.com/v1.0/me?$select=id,displayName,mail,userPrincipalName",
@@ -273,7 +296,7 @@ function __calendarProviderIdentity(provider, accessToken) {
             headers: { authorization: "Bearer " + accessToken, accept: "application/json" },
             timeout: 30,
             label: "Microsoft profile",
-        });
+        }, deadline);
         return {
             id: String(ms.id || ""),
             label: String(ms.mail || ms.userPrincipalName || ms.displayName || "Microsoft account"),
@@ -285,24 +308,27 @@ function __calendarProviderIdentity(provider, accessToken) {
         headers: { authorization: "Bearer " + accessToken, accept: "application/json" },
         timeout: 30,
         label: "Google profile",
-    });
+    }, deadline);
     return {
         id: String(google.id || ""),
         label: String(google.email || google.name || "Google account"),
     };
 }
 
-function __calendarMicrosoftCalendars(accessToken) {
+function __calendarMicrosoftCalendars(accessToken, deadline) {
     var rows = [];
+    var seenPages = Object.create(null);
+    deadline = deadline || Date.now() + 75000;
     var next = "https://graph.microsoft.com/v1.0/me/calendars?$top=200&$select=id,name,isDefaultCalendar,canEdit";
     while (next) {
+        __calendarVisitPage(seenPages, next, deadline);
         var page = __calendarHttpJson({
             url: next,
             method: "GET",
             headers: { authorization: "Bearer " + accessToken, accept: "application/json" },
             timeout: 45,
             label: "Microsoft calendars",
-        });
+        }, deadline);
         var values = page.value || [];
         for (var i = 0; i < values.length; i++) {
             rows.push({
@@ -316,10 +342,13 @@ function __calendarMicrosoftCalendars(accessToken) {
     return rows;
 }
 
-function __calendarGoogleCalendars(accessToken) {
+function __calendarGoogleCalendars(accessToken, deadline) {
     var rows = [];
+    var seenPages = Object.create(null);
+    deadline = deadline || Date.now() + 75000;
     var pageToken = "";
     do {
+        __calendarVisitPage(seenPages, pageToken, deadline);
         var url = "https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=250";
         if (pageToken) url += "&pageToken=" + encodeURIComponent(pageToken);
         var page = __calendarHttpJson({
@@ -328,7 +357,7 @@ function __calendarGoogleCalendars(accessToken) {
             headers: { authorization: "Bearer " + accessToken, accept: "application/json" },
             timeout: 45,
             label: "Google calendars",
-        });
+        }, deadline);
         var values = page.items || [];
         for (var i = 0; i < values.length; i++) {
             rows.push({
@@ -361,11 +390,11 @@ function __calendarMergeCalendarSettings(discovered, existing) {
     return out;
 }
 
-function __calendarRefreshCalendars(app, connection, accessToken) {
+function __calendarRefreshCalendars(app, connection, accessToken, deadline) {
     var provider = String(connection.get("provider") || "");
     var discovered = provider === "microsoft"
-        ? __calendarMicrosoftCalendars(accessToken)
-        : __calendarGoogleCalendars(accessToken);
+        ? __calendarMicrosoftCalendars(accessToken, deadline)
+        : __calendarGoogleCalendars(accessToken, deadline);
     var merged = __calendarMergeCalendarSettings(
         discovered,
         __calendarSanitizeCalendars(connection.get("calendars_json"))
@@ -628,7 +657,7 @@ function __calendarUpsertPlan(app, context, event) {
     return { imported: existing ? 0 : 1, updated: existing ? 1 : 0, seenKey: seenKey };
 }
 
-function __calendarCleanupStale(app, context, start, end, seen) {
+function __calendarCleanupStale(app, context, start, end, seen, deadline) {
     var rows = [];
     try {
         rows = app.findRecordsByFilter(
@@ -649,6 +678,7 @@ function __calendarCleanupStale(app, context, start, end, seen) {
     } catch (_) {}
     var removed = 0;
     for (var i = 0; i < rows.length; i++) {
+        __calendarCheckBudget(deadline);
         var key = String(rows[i].get("external_event_id") || "") + "|" +
             String(rows[i].get("external_occurrence_key") || "");
         if (seen[key]) continue;
@@ -658,13 +688,16 @@ function __calendarCleanupStale(app, context, start, end, seen) {
     return removed;
 }
 
-function __calendarMicrosoftEvents(accessToken, calendarId, start, end) {
+function __calendarMicrosoftEvents(accessToken, calendarId, start, end, deadline) {
     var rows = [];
+    var seenPages = Object.create(null);
+    deadline = deadline || Date.now() + 75000;
     var url = "https://graph.microsoft.com/v1.0/me/calendars/" + encodeURIComponent(calendarId) +
         "/calendarView?startDateTime=" + encodeURIComponent(start.toISOString()) +
         "&endDateTime=" + encodeURIComponent(end.toISOString()) +
         "&$top=1000&$select=id,subject,start,end,isCancelled,webLink,onlineMeeting,location,organizer,attendees,lastModifiedDateTime,type,seriesMasterId";
     while (url) {
+        __calendarVisitPage(seenPages, url, deadline);
         var page = __calendarHttpJson({
             url: url,
             method: "GET",
@@ -675,7 +708,7 @@ function __calendarMicrosoftEvents(accessToken, calendarId, start, end) {
             },
             timeout: 60,
             label: "Microsoft events",
-        });
+        }, deadline);
         var values = page.value || [];
         for (var i = 0; i < values.length; i++) {
             var item = values[i] || {};
@@ -704,10 +737,13 @@ function __calendarGoogleEventDate(value, allDay) {
     return __calendarDate(value);
 }
 
-function __calendarGoogleEvents(accessToken, calendarId, start, end) {
+function __calendarGoogleEvents(accessToken, calendarId, start, end, deadline) {
     var rows = [];
+    var seenPages = Object.create(null);
+    deadline = deadline || Date.now() + 75000;
     var pageToken = "";
     do {
+        __calendarVisitPage(seenPages, pageToken, deadline);
         var url = "https://www.googleapis.com/calendar/v3/calendars/" + encodeURIComponent(calendarId) +
             "/events?singleEvents=true&showDeleted=true&maxResults=2500" +
             "&timeMin=" + encodeURIComponent(start.toISOString()) +
@@ -719,7 +755,7 @@ function __calendarGoogleEvents(accessToken, calendarId, start, end) {
             headers: { authorization: "Bearer " + accessToken, accept: "application/json" },
             timeout: 60,
             label: "Google events",
-        });
+        }, deadline);
         var values = page.items || [];
         for (var i = 0; i < values.length; i++) {
             var item = values[i] || {};
@@ -765,21 +801,22 @@ function __calendarGoogleEvents(accessToken, calendarId, start, end) {
 }
 
 function __calendarSyncOne(app, connection) {
+    var deadline = Date.now() + 75000;
     var provider = String(connection.get("provider") || "");
     var userId = String(connection.get("user_id") || "");
     if (!provider || !userId) throw new Error("Calendar connection is invalid");
     var profile = app.findRecordById("profiles", userId);
-    var accessToken = __calendarRefreshAccess(app, connection);
+    var accessToken = __calendarRefreshAccess(app, connection, deadline);
     var accountId = String(connection.get("account_id") || "");
     if (!accountId) {
-        var identity = __calendarProviderIdentity(provider, accessToken);
+        var identity = __calendarProviderIdentity(provider, accessToken, deadline);
         accountId = identity.id;
         connection.set("account_id", identity.id);
         connection.set("account_label", identity.label);
         app.save(connection);
     }
     var calendars = __calendarSanitizeCalendars(connection.get("calendars_json"));
-    if (!calendars.length) calendars = __calendarRefreshCalendars(app, connection, accessToken);
+    if (!calendars.length) calendars = __calendarRefreshCalendars(app, connection, accessToken, deadline);
     var pastDays = Math.max(0, Math.min(3650, Number(connection.get("sync_past_days") || __calendarDefaultPastDays)));
     var futureDays = Math.max(1, Math.min(3650, Number(connection.get("sync_future_days") || __calendarDefaultFutureDays)));
     var now = new Date();
@@ -793,8 +830,8 @@ function __calendarSyncOne(app, connection) {
         var calendar = calendars[i];
         if (!calendar.enabled) continue;
         var events = provider === "microsoft"
-            ? __calendarMicrosoftEvents(accessToken, calendar.id, start, end)
-            : __calendarGoogleEvents(accessToken, calendar.id, start, end);
+            ? __calendarMicrosoftEvents(accessToken, calendar.id, start, end, deadline)
+            : __calendarGoogleEvents(accessToken, calendar.id, start, end, deadline);
         var seen = {};
         var context = {
             userId: userId,
@@ -804,12 +841,14 @@ function __calendarSyncOne(app, connection) {
             calendar: calendar,
         };
         for (var j = 0; j < events.length; j++) {
+            __calendarCheckBudget(deadline);
             var result = __calendarUpsertPlan(app, context, events[j]);
             if (result.seenKey) seen[result.seenKey] = true;
             imported += result.imported;
             updated += result.updated;
         }
-        removed += __calendarCleanupStale(app, context, start, end, seen);
+        __calendarCheckBudget(deadline);
+        removed += __calendarCleanupStale(app, context, start, end, seen, deadline);
         eventCount += events.length;
     }
     connection.set("status", "connected");

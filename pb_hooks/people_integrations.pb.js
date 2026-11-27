@@ -145,8 +145,30 @@ function __peopleDate(value) {
     return isNaN(date.getTime()) ? null : date;
 }
 
-function __peopleHttpJson(options) {
+// Bound a whole synchronization attempt, not just each individual HTTP page.
+function __peopleCheckBudget(deadline) {
+    if (deadline && Date.now() >= deadline) throw new Error("provider_sync_deadline_exceeded");
+}
+
+function __peopleVisitPage(seen, cursor, deadline) {
+    __peopleCheckBudget(deadline);
+    // Never return a truncated snapshot as complete: cleanup would remove
+    // records that simply were not fetched. Do not log cursor/token values.
+    if (seen[cursor]) throw new Error("provider_pagination_repeated");
+    seen[cursor] = true;
+}
+
+function __peopleHttpJson(options, deadline, acceptLateResponse) {
+    __peopleCheckBudget(deadline);
+    if (deadline) {
+        var remaining = Math.floor((deadline - Date.now()) / 1000);
+        if (remaining < 1) throw new Error("provider_sync_deadline_exceeded");
+        options.timeout = Math.min(Number(options.timeout || 30), remaining);
+    }
     var response = $http.send(options);
+    // A successful refresh may rotate the refresh token. Persist its response
+    // before stopping the import; otherwise a deadline can break the account.
+    if (!acceptLateResponse) __peopleCheckBudget(deadline);
     if (response.statusCode < 200 || response.statusCode >= 300) {
         throw new Error((options.label || "Provider request") + " failed: HTTP " + response.statusCode);
     }
@@ -230,7 +252,7 @@ function __peopleExchangeCode(app, provider, code) {
     });
 }
 
-function __peopleRefreshAccess(app, connection) {
+function __peopleRefreshAccess(app, connection, deadline) {
     var key = __peopleTokenKey(app);
     var currentEnc = String(connection.get("access_token_enc") || "");
     var expires = __peopleDate(connection.get("access_token_expires_at"));
@@ -257,16 +279,17 @@ function __peopleRefreshAccess(app, connection) {
         body: __peopleFormEncode(body),
         timeout: 30,
         label: provider + " token refresh",
-    });
+    }, deadline, true);
     if (!token.access_token) throw new Error("People access token is missing");
     connection.set("access_token_enc", $security.encrypt(String(token.access_token), key));
     connection.set("access_token_expires_at", new Date(Date.now() + Number(token.expires_in || 3600) * 1000).toISOString());
     if (token.refresh_token) connection.set("refresh_token_enc", $security.encrypt(String(token.refresh_token), key));
     app.save(connection);
+    __peopleCheckBudget(deadline);
     return String(token.access_token);
 }
 
-function __peopleProviderIdentity(provider, accessToken, cfg) {
+function __peopleProviderIdentity(provider, accessToken, cfg, deadline) {
     if (provider === "google_contacts") {
         var google = __peopleHttpJson({
             url: "https://openidconnect.googleapis.com/v1/userinfo",
@@ -274,7 +297,7 @@ function __peopleProviderIdentity(provider, accessToken, cfg) {
             headers: { authorization: "Bearer " + accessToken, accept: "application/json" },
             timeout: 30,
             label: "Google identity",
-        });
+        }, deadline);
         return { id: String(google.sub || google.email || ""), label: String(google.email || google.name || "Google") };
     }
     if (provider === "microsoft") {
@@ -284,7 +307,7 @@ function __peopleProviderIdentity(provider, accessToken, cfg) {
             headers: { authorization: "Bearer " + accessToken, accept: "application/json" },
             timeout: 30,
             label: "Microsoft identity",
-        });
+        }, deadline);
         return { id: String(ms.id || ""), label: String(ms.mail || ms.userPrincipalName || ms.displayName || "Microsoft") };
     }
     if (provider === "vk") {
@@ -294,7 +317,7 @@ function __peopleProviderIdentity(provider, accessToken, cfg) {
             headers: { accept: "application/json" },
             timeout: 30,
             label: "VK identity",
-        });
+        }, deadline);
         var user = vk.response && vk.response[0] ? vk.response[0] : {};
         return { id: String(user.id || ""), label: String((user.first_name || "") + " " + (user.last_name || "")).trim() || "VK" };
     }
@@ -305,7 +328,7 @@ function __peopleProviderIdentity(provider, accessToken, cfg) {
             headers: { accept: "application/json" },
             timeout: 30,
             label: "Facebook identity",
-        });
+        }, deadline);
         return { id: String(fb.id || ""), label: String(fb.name || "Facebook") };
     }
     return { id: "", label: provider };
@@ -341,10 +364,13 @@ function __peopleFirstArrayValue(values, extractor) {
     return "";
 }
 
-function __peopleGoogleContacts(accessToken) {
+function __peopleGoogleContacts(accessToken, deadline) {
     var rows = [];
+    var seenPages = Object.create(null);
+    deadline = deadline || Date.now() + 100000;
     var pageToken = "";
     do {
+        __peopleVisitPage(seenPages, pageToken, deadline);
         var url = "https://people.googleapis.com/v1/people/me/connections?pageSize=1000&personFields=" +
             encodeURIComponent("names,birthdays,photos,emailAddresses,phoneNumbers,memberships");
         if (pageToken) url += "&pageToken=" + encodeURIComponent(pageToken);
@@ -354,7 +380,7 @@ function __peopleGoogleContacts(accessToken) {
             headers: { authorization: "Bearer " + accessToken, accept: "application/json" },
             timeout: 60,
             label: "Google contacts",
-        });
+        }, deadline);
         var values = page.connections || [];
         for (var i = 0; i < values.length; i++) {
             var item = values[i] || {};
@@ -384,17 +410,20 @@ function __peopleGoogleContacts(accessToken) {
     return rows;
 }
 
-function __peopleMicrosoftContacts(accessToken) {
+function __peopleMicrosoftContacts(accessToken, deadline) {
     var rows = [];
+    var seenPages = Object.create(null);
+    deadline = deadline || Date.now() + 100000;
     var url = "https://graph.microsoft.com/v1.0/me/contacts?$top=999&$select=id,displayName,birthday,emailAddresses,mobilePhone,homePhones,businessPhones,categories";
     while (url) {
+        __peopleVisitPage(seenPages, url, deadline);
         var page = __peopleHttpJson({
             url: url,
             method: "GET",
             headers: { authorization: "Bearer " + accessToken, accept: "application/json" },
             timeout: 60,
             label: "Microsoft contacts",
-        });
+        }, deadline);
         var values = page.value || [];
         for (var i = 0; i < values.length; i++) {
             var item = values[i] || {};
@@ -422,7 +451,7 @@ function __peopleMicrosoftContacts(accessToken) {
     return rows;
 }
 
-function __peopleVkContacts(accessToken) {
+function __peopleVkContacts(accessToken, deadline) {
     var version = __peopleEnv("PEOPLE_VK_API_VERSION") || "5.199";
     var page = __peopleHttpJson({
         url: "https://api.vk.com/method/friends.get?count=5000&fields=bdate,photo_200,lists&access_token=" + encodeURIComponent(accessToken) + "&v=" + encodeURIComponent(version),
@@ -430,7 +459,7 @@ function __peopleVkContacts(accessToken) {
         headers: { accept: "application/json" },
         timeout: 60,
         label: "VK friends",
-    });
+    }, deadline);
     if (page.error) throw new Error("VK API error: " + String(page.error.error_msg || page.error.error_code || "unknown"));
     var values = page.response && page.response.items ? page.response.items : [];
     var rows = [];
@@ -455,17 +484,20 @@ function __peopleVkContacts(accessToken) {
     return rows;
 }
 
-function __peopleFacebookContacts(accessToken, cfg) {
+function __peopleFacebookContacts(accessToken, cfg, deadline) {
     var rows = [];
+    var seenPages = Object.create(null);
+    deadline = deadline || Date.now() + 100000;
     var url = "https://graph.facebook.com/" + cfg.graphVersion + "/me/friends?limit=5000&fields=id,name,picture.type(large)&access_token=" + encodeURIComponent(accessToken);
     while (url) {
+        __peopleVisitPage(seenPages, url, deadline);
         var page = __peopleHttpJson({
             url: url,
             method: "GET",
             headers: { accept: "application/json" },
             timeout: 60,
             label: "Facebook friends",
-        });
+        }, deadline);
         var values = page.data || [];
         for (var i = 0; i < values.length; i++) {
             var item = values[i] || {};
@@ -500,13 +532,14 @@ function __peopleFindSource(app, userId, provider, externalId) {
     }
 }
 
-function __peopleUpsertSourceRows(app, userId, provider, rows) {
+function __peopleUpsertSourceRows(app, userId, provider, rows, deadline) {
     var collection = app.findCollectionByNameOrId(__peopleSourceCollection);
     var seen = {};
     var created = 0;
     var updated = 0;
     var now = new Date().toISOString();
     for (var i = 0; i < rows.length; i++) {
+        __peopleCheckBudget(deadline);
         var item = rows[i] || {};
         var externalId = String(item.external_id || "").trim();
         if (!externalId) continue;
@@ -535,6 +568,7 @@ function __peopleUpsertSourceRows(app, userId, provider, rows) {
         if (isNew) created++; else updated++;
     }
 
+    __peopleCheckBudget(deadline);
     var stale = [];
     try {
         stale = app.findRecordsByFilter(
@@ -548,6 +582,7 @@ function __peopleUpsertSourceRows(app, userId, provider, rows) {
     } catch (_) {}
     var archived = 0;
     for (var j = 0; j < stale.length; j++) {
+        __peopleCheckBudget(deadline);
         var row = stale[j];
         var external = String(row.get("external_id") || "");
         if (seen[external] || String(row.get("import_state") || "") === "linked") continue;
@@ -559,21 +594,22 @@ function __peopleUpsertSourceRows(app, userId, provider, rows) {
 }
 
 function __peopleSyncOne(app, connection) {
+    var deadline = Date.now() + 100000;
     var provider = String(connection.get("provider") || "");
     var userId = String(connection.get("user_id") || "");
     if (!provider || !userId) throw new Error("People connection is invalid");
     var cfg = __peopleProviderConfig(app, provider);
-    var accessToken = __peopleRefreshAccess(app, connection);
-    var identity = __peopleProviderIdentity(provider, accessToken, cfg);
+    var accessToken = __peopleRefreshAccess(app, connection, deadline);
+    var identity = __peopleProviderIdentity(provider, accessToken, cfg, deadline);
     if (identity.id) connection.set("account_id", identity.id);
     if (identity.label) connection.set("account_label", identity.label);
     var rows;
-    if (provider === "google_contacts") rows = __peopleGoogleContacts(accessToken);
-    else if (provider === "microsoft") rows = __peopleMicrosoftContacts(accessToken);
-    else if (provider === "vk") rows = __peopleVkContacts(accessToken);
-    else if (provider === "facebook") rows = __peopleFacebookContacts(accessToken, cfg);
+    if (provider === "google_contacts") rows = __peopleGoogleContacts(accessToken, deadline);
+    else if (provider === "microsoft") rows = __peopleMicrosoftContacts(accessToken, deadline);
+    else if (provider === "vk") rows = __peopleVkContacts(accessToken, deadline);
+    else if (provider === "facebook") rows = __peopleFacebookContacts(accessToken, cfg, deadline);
     else throw new Error("Unsupported People provider");
-    var result = __peopleUpsertSourceRows(app, userId, provider, rows);
+    var result = __peopleUpsertSourceRows(app, userId, provider, rows, deadline);
     connection.set("status", "connected");
     connection.set("last_sync_at", new Date().toISOString());
     connection.set("last_error", "");

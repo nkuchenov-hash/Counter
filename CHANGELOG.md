@@ -2,6 +2,18 @@
 
 - Recognize standalone Russian appointment and booking messages with explicit dates and clocks before provider inference; preserve source details as plan notes and require a preview for the tentative 30-minute duration. Persist single-plan preparation notes as canonical NoteDocument blocks with heading, divider and interactive checklist mirrors. Normalize equivalent provider clock/duration representations before the strict action contract; retain existing Brain conflict, category, deduplication and write verification.
 
+## [2026-11-27] - Notes selection hot path (proposed)
+
+* Keep the existing record and Notes coordinators within the structure-growth budget: relocate record read coalescing and pending-create reconciliation to `record_cache_helpers.dart`, and structured clipboard inference to `note_editor_format_actions.dart`; no algorithm, API, or schema changes in this relocation.
+
+* Share ordinary simultaneous record reads within the same profile while preserving fresh forced reads and existing realtime replay. Clear the shared read on sign-out; do not retry entire Records/Plans lists after transport, auth or rate-limit errors.
+* Prune impossible whole-block clipboard windows; search partial selections against one concatenated document and map offsets back to blocks. Preserve shortest-window and earliest-match ordering, selected text, and original complete blocks. Add randomized legacy-equivalence and large-document work-count regression tests.
+
+## [2026-11-27] - Reliability audit batch 2: bounded integration reads (proposed)
+
+* Calendar and People share a deadline across token refresh, identity discovery, pagination and record upserts (75s / 100s, respectively), preserve per-request limits, and reject repeated cursors rather than treating truncated snapshots as authoritative. Cleanup only follows completed provider reads and upserts. Existing cleanup semantics and provider identity are unchanged. Clients reject duplicate sync actions while one is active.
+* This bounds normal attempts but is not a durable resumable job queue: very large or consistently slow imports still require a separately designed continuation mechanism. No release without critical-content approval and provider verification.
+
 ## [2026-11-27] - Reliability audit batch 1 (proposed)
 
 * Browser companion 0.2.6 uses the canonical production PocketBase origin and matching host/CSP permissions.
