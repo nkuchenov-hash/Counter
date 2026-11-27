@@ -42,8 +42,8 @@ jobs:
           else:
               raise SystemExit('Published content does not match expected SHA256 ' + sha)
           import json
-          root='https://nkuchenov-hash.github.io/Counter/mouser-mvp/renders-v15/'
-          for name,views in json.loads(pathlib.Path('mouser-mvp/renders-v15/metadata.json').read_text()).items():
+          root='https://nkuchenov-hash.github.io/Counter/mouser-mvp/renders-v16/'
+          for name,views in json.loads(pathlib.Path('mouser-mvp/renders-v16/metadata.json').read_text()).items():
               for view,meta in views.items():
                   with urllib.request.urlopen(root+meta['file'],timeout=25) as r:
                       body=r.read()
@@ -77,7 +77,7 @@ jobs:
           ws.addEventListener('message',e=>{let m=JSON.parse(e.data);if(m.id&&pending.has(m.id)){let cb=pending.get(m.id);pending.delete(m.id);cb(m)}});
           function cmd(method,params={}){return new Promise((resolve,reject)=>{let id=++seq;pending.set(id,m=>m.error?reject(new Error(JSON.stringify(m.error))):resolve(m.result));ws.send(JSON.stringify({id,method,params}));setTimeout(()=>{if(pending.delete(id))reject(new Error('CDP timeout '+method))},15000).unref()})}
           await cmd('Page.enable');
-          await cmd('Page.navigate',{url:'https://nkuchenov-hash.github.io/Counter/mouser-mvp/design-15.html?browsercheck=15'});
+          await cmd('Page.navigate',{url:'https://nkuchenov-hash.github.io/Counter/mouser-mvp/design-16.html?browsercheck=16'});
           async function ev(expression){const r=await cmd('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value}
           async function ready(i,v){for(let j=0;j<60;j++){await delay(250);let q=await ev('window.mouserQA');if(q?.error)throw Error(JSON.stringify(q));if(q?.ready&&q.family===i&&q.view===v)return q;}throw Error('Image timed out '+i+' '+v)}
           try{
@@ -90,8 +90,8 @@ jobs:
                 assert.ok(q.pins>=1);
                 assert.ok(q.w>100&&q.h>100);
                 assert.ok(await ev('loaded.naturalWidth===canvas.width*2&&loaded.naturalHeight===canvas.height'));
-                assert.deepEqual(await ev('Array.from(ctx.getImageData(0,0,1,1).data)'),[245,242,231,255]);
-                assert.ok(await ev('frame.clientWidth<=stage.clientWidth*.70+1&&frame.clientHeight<=stage.clientHeight*.74+1'));
+                assert.deepEqual(await ev('Array.from(ctx.getImageData(0,0,1,1).data)'),[250,247,242,255]);
+                assert.ok(await ev('frame.clientWidth<=stage.clientWidth*.83+1&&frame.clientHeight<=stage.clientHeight*.86+1'));
                 assert.ok(await ev('frame.clientWidth<=canvas.width&&frame.clientHeight<=canvas.height'));
                 assert.equal(await ev('getComputedStyle(document.querySelector("#hotspots .hot")).borderRadius'),'50%');
                 await ev('document.querySelector("#hotspots .hot").click()');
