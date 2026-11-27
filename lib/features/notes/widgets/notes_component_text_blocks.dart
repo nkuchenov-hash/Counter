@@ -38,7 +38,7 @@ class NotesTextBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final textStyle = _notesTextStyle(context, style);
+    final textStyle = notesTextStyle(context, style);
     if (controller is NotesTextEditingController) {
       (controller as NotesTextEditingController).linkColor = scheme.primary;
     }
@@ -137,14 +137,12 @@ class NotesListBlock extends StatelessWidget {
         : Text(
             '$ordinal.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              height: 1.45,
-              color: NotesFigmaTokens.textPrimary(context),
-            ),
+            style: notesTextStyle(context, NotesTextBlockStyle.body),
           );
     return _NotesActiveIndicatorFrame(
       state: state,
+      topInset: NotesFigmaTokens.listVerticalPadding +
+          (NotesFigmaTokens.bodyLineHeight - NotesFigmaTokens.bodySize) / 2,
       child: _NotesLeadingTextRow(
         leading: marker,
         controller: controller,
@@ -186,6 +184,8 @@ class NotesChecklistBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return _NotesActiveIndicatorFrame(
       state: state,
+      topInset: NotesFigmaTokens.listVerticalPadding +
+          (NotesFigmaTokens.bodyLineHeight - NotesFigmaTokens.bodySize) / 2,
       child: _NotesLeadingTextRow(
         leading: _NotesCheckbox(
           checked: checked,
@@ -266,7 +266,7 @@ class _NotesLeadingTextRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseStyle = _notesTextStyle(context, NotesTextBlockStyle.body);
+    final baseStyle = notesTextStyle(context, NotesTextBlockStyle.body);
     final verticalPadding = notesTextBlockPadding(context, list: true);
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -280,7 +280,7 @@ class _NotesLeadingTextRow extends StatelessWidget {
         children: [
           SizedBox(
             width: kNotesLeadingSize,
-            height: 24,
+            height: NotesFigmaTokens.bodyLineHeight,
             child: Center(child: leading),
           ),
           const SizedBox(width: kNotesLeadingGap),

@@ -33,14 +33,14 @@ abstract final class NotesFigmaTokens {
   // Typography from Notes/Title Block V2 and Notes/Text Formatting.
   static const double titleSize = 32;
   static const double titleLineHeight = 40;
-  static const double bodySize = 16;
+  static const double bodySize = 17;
   static const double bodyLineHeight = 24;
-  static const double h1Size = 24;
-  static const double h1LineHeight = 30;
-  static const double h2Size = 20;
-  static const double h2LineHeight = 26;
-  static const double h3Size = 18;
-  static const double h3LineHeight = 24;
+  static const double h1Size = 22;
+  static const double h1LineHeight = 28;
+  static const double h2Size = 19;
+  static const double h2LineHeight = 25;
+  static const double h3Size = 17;
+  static const double h3LineHeight = 23;
   static const double badgeSize = 11;
   static const double badgeLineHeight = 13;
 
@@ -62,9 +62,14 @@ abstract final class NotesFigmaTokens {
   static const double nativeToolbarRadius = 29;
   static const double nativeToolbarButtonSize = 48;
   static const double nativeToolbarIconSize = 26;
-  static const double nativeParagraphVerticalPadding = 6;
-  static const double nativeListVerticalPadding = 6;
-  static const double nativeSectionGap = 8;
+  // Shared document rhythm (logical pixels per edge, not per paragraph).
+  static const double paragraphVerticalPadding = 3;
+  static const double listVerticalPadding = 2;
+  static const double headingSectionGap = 12;
+  static const double listSectionGap = 5;
+  static const double nativeParagraphVerticalPadding = paragraphVerticalPadding;
+  static const double nativeListVerticalPadding = listVerticalPadding;
+  static const double nativeSectionGap = listSectionGap;
 
   // Only subscribe to width; Gboard animates the viewport *height* and
   // must not rebuild every paragraph just to recompute fixed layout tokens.
