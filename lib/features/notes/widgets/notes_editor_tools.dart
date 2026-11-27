@@ -110,7 +110,6 @@ class _NotesEditorToolbarHostState extends State<NotesEditorToolbarHost> {
   Widget build(BuildContext context) {
     final type = widget.activeBlock?.type;
     final convertible = type != null && _isConvertibleText(type);
-    final native = NotesFigmaTokens.nativeNotesLayout(context);
     final actions = <NotesToolbarAction>[
         NotesToolbarAction(
           tool: NotesToolbarTool.heading,
@@ -122,9 +121,7 @@ class _NotesEditorToolbarHostState extends State<NotesEditorToolbarHost> {
         ),
         NotesToolbarAction(
           tool: NotesToolbarTool.text,
-          icon: widget.onFormatting == null
-              ? Icons.text_fields_rounded
-              : Icons.format_bold_rounded,
+          icon: Icons.text_fields_rounded,
           tooltip: widget.onFormatting == null
               ? 'Body text'
               : 'Text formatting',
@@ -177,10 +174,9 @@ class _NotesEditorToolbarHostState extends State<NotesEditorToolbarHost> {
             ),
           ],
         ),
-        if (native)
-          NotesToolbarAction(
+        NotesToolbarAction(
             tool: NotesToolbarTool.checklist,
-            icon: Icons.check_circle_outline_rounded,
+            icon: Icons.check_box_outlined,
             tooltip: 'Checklist',
             selected: type == NoteBlockType.checklist,
             enabled: convertible,
@@ -188,7 +184,7 @@ class _NotesEditorToolbarHostState extends State<NotesEditorToolbarHost> {
           ),
         NotesToolbarAction(
           tool: NotesToolbarTool.table,
-          icon: Icons.table_chart_rounded,
+          icon: Icons.table_chart_outlined,
           tooltip: 'Insert table',
           selected: type == NoteBlockType.table,
           onPressed: widget.onTable,
@@ -205,7 +201,7 @@ class _NotesEditorToolbarHostState extends State<NotesEditorToolbarHost> {
         ),
         NotesToolbarAction(
           tool: NotesToolbarTool.image,
-          icon: Icons.image_rounded,
+          icon: Icons.image_outlined,
           tooltip: type == NoteBlockType.image
               ? 'Replace image'
               : 'Insert image',
@@ -215,7 +211,7 @@ class _NotesEditorToolbarHostState extends State<NotesEditorToolbarHost> {
         ),
         NotesToolbarAction(
           tool: NotesToolbarTool.audio,
-          icon: Icons.mic_rounded,
+          icon: Icons.mic_none_rounded,
           tooltip: type == NoteBlockType.audio
               ? 'Record another audio'
               : 'Record audio',
@@ -224,10 +220,8 @@ class _NotesEditorToolbarHostState extends State<NotesEditorToolbarHost> {
           onPressed: widget.onAudio ?? _noop,
         ),
     ];
-    // Camera, pen, checklist, and tables are immediately reachable like the
-    // reference editor. Desktop retains the existing established tool order.
-    if (native) {
-      const order = <NotesToolbarTool>[
+    // The approved v45 tool order is shared across all platforms.
+    const order = <NotesToolbarTool>[
         NotesToolbarTool.text,
         NotesToolbarTool.image,
         NotesToolbarTool.drawing,
@@ -238,9 +232,8 @@ class _NotesEditorToolbarHostState extends State<NotesEditorToolbarHost> {
         NotesToolbarTool.quote,
         NotesToolbarTool.audio,
       ];
-      actions.sort((a, b) =>
-          order.indexOf(a.tool).compareTo(order.indexOf(b.tool)));
-    }
+    actions.sort((a, b) =>
+        order.indexOf(a.tool).compareTo(order.indexOf(b.tool)));
     final toolbar = NotesEditorToolbar(actions: actions);
     final showOptions = widget.onMore;
     if (showOptions == null || widget.activeBlock == null) return toolbar;
