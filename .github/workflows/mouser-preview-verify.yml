@@ -80,7 +80,7 @@ jobs:
           ws.addEventListener('message',e=>{const m=JSON.parse(e.data);if(m.method==='Runtime.exceptionThrown')console.log('BROWSER ERROR',JSON.stringify(m.params.exceptionDetails));});
           await cmd('Page.enable');
           await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
-          await cmd('Page.navigate',{url:'https://nkuchenov-hash.github.io/Counter/mouser-mvp/design-20.html?browsercheck=20'});
+          await cmd('Page.navigate',{url:'https://nkuchenov-hash.github.io/Counter/mouser-mvp/design-21.html?browsercheck=21'});
           async function ev(expression){const r=await cmd('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value}
           async function ready(i,v){for(let j=0;j<60;j++){await delay(250);let q=await ev('window.mouserQA');if(q?.error)throw Error(JSON.stringify(q));if(q?.ready&&q.family===i&&q.view===v)return q;}throw Error('Image timed out '+i+' '+v)}
           try{
@@ -130,9 +130,15 @@ jobs:
             }
             await ev('selectFamily(0)');await ready(0,0);
             await delay(400);
-            assert.ok(await ev('Math.abs(document.querySelector(".edit").getBoundingClientRect().top-document.querySelector(".viewbar").getBoundingClientRect().top)<=2'));
+            assert.ok(await ev('Math.abs(document.querySelector("#actionPicker .picker-trigger").getBoundingClientRect().bottom-1-document.querySelector(".viewbar").getBoundingClientRect().top)<=2'));
             assert.equal(await ev('getComputedStyle(document.querySelector(".control-scroll")).scrollbarWidth'),'thin');
             assert.ok(await ev('getComputedStyle(document.querySelector(".control-scroll")).scrollbarColor.includes("167, 108, 81")'));
+            assert.ok(await ev('document.querySelector(".edit").getBoundingClientRect().top<document.querySelector(".viewbar").getBoundingClientRect().top-50'));
+            for(const width of [1200,1000,1440]){
+              await cmd('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:false});
+              await delay(350);
+              assert.ok(await ev('Math.abs(document.querySelector("#actionPicker .picker-trigger").getBoundingClientRect().bottom-1-document.querySelector(".viewbar").getBoundingClientRect().top)<=2'));
+            }
             const before=await ev('canvas.toDataURL()');
             await ev('document.querySelectorAll(".swatch")[1].click()');await ready(0,0);
             assert.notEqual(await ev('canvas.toDataURL()'),before);
