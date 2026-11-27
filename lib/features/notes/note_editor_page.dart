@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 // Full-screen structured Notes editor.
 //
 // The production surface uses the versioned Life OS note document, stable block
@@ -1672,6 +1673,7 @@ AppButton.destructive(
       showInlineToolbar: widget.inlineKeyboardActive || _blockSelectionMode || _focusNodes.values.any((node) => node.hasFocus),
       titleController: _titleController,
       titleHint: t(loc, 'notes_v3_editor_title_hint'),
+      timestampLabel: (_task.updatedAt ?? _task.createdAt) == null ? null : DateFormat('d MMMM, HH:mm', loc).format((_task.updatedAt ?? _task.createdAt)!.toLocal()),
       onTitleChanged: _scheduleSave,
       onDone: _close,
       pinned: DatabaseService.instance.isNotePinned(_task),
