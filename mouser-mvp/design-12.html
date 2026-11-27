@@ -172,7 +172,7 @@ function hotspots(){
 function restyle(){
  if(!viewer.model)return;
  for(const m of viewer.model.materials){
-   const q=m.pbrMetallicRoughness,n=(m.name||"").toLowerCase();
+   const n=(m.name||"").toLowerCase();if(family===3&&n==="pad_cloth")continue;const q=m.pbrMetallicRoughness;
    if(!originals.has(m))originals.set(m,{c:[...q.baseColorFactor],metal:q.metallicFactor,rough:q.roughnessFactor,emissive:[...(m.emissiveFactor||[0,0,0])]});
    const o=originals.get(m),detail=/wheel|rubber|base|feet|button|steel|charcoal|tracking ball|blue product|mouse_light/.test(n);
    // Preserve the baked atlas detail in the two textured assets. Tint only.
