@@ -17,7 +17,7 @@ jobs:
         with:
           sparse-checkout: mouser-mvp
           fetch-depth: 1
-      - name: Verify published HTML and 18 approved image assets
+      - name: Verify published HTML and 21 original image assets
         shell: bash
         run: |
           python3 - <<'PY'
@@ -80,7 +80,7 @@ jobs:
           ws.addEventListener('message',e=>{const m=JSON.parse(e.data);if(m.method==='Runtime.exceptionThrown')console.log('BROWSER ERROR',JSON.stringify(m.params.exceptionDetails));});
           await cmd('Page.enable');
           await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
-          await cmd('Page.navigate',{url:'https://nkuchenov-hash.github.io/Counter/mouser-mvp/design-25.html?browsercheck=25'});
+          await cmd('Page.navigate',{url:'https://nkuchenov-hash.github.io/Counter/mouser-mvp/design-26.html?browsercheck=26'});
           async function ev(expression){const r=await cmd('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value}
           async function ready(i,v){for(let j=0;j<60;j++){await delay(250);let q=await ev('window.mouserQA');if(q?.error)throw Error(JSON.stringify(q));if(q?.ready&&q.family===i&&q.view===v)return q;}throw Error('Image timed out '+i+' '+v)}
           try{
@@ -153,13 +153,24 @@ jobs:
               assert.deepEqual(await ev('Array.from(document.querySelectorAll(".shortcut-slot,#reset,.foot,.viewbar"),el=>[el.getBoundingClientRect().y,el.getBoundingClientRect().height])'),stable);
             }
             console.log('PASS stable shortcut slot, reset control, viewbar and footer with or without shortcut');
-            assert.equal(await ev('document.querySelectorAll(".swatch").length'),1);
-            assert.equal(await ev('palette.length'),1);
+            assert.equal(await ev('document.querySelectorAll(".swatch").length'),2);
             assert.ok(await ev('!paint.toString().includes("matte")&&!paint.toString().includes("strength")'));
-            const before=await ev('canvas.toDataURL()');
-            await ev('document.querySelector(".swatch").click()');await ready(0,0);
-            assert.equal(await ev('canvas.toDataURL()'),before);
-            assert.deepEqual(await ev('Array.from(document.querySelectorAll(".swatch,.views button"),el=>[el.getBoundingClientRect().x,el.getBoundingClientRect().y])'),swatchPositions);
+            for(let v=0;v<3;v++){
+              await ev('document.querySelectorAll(".views button")['+v+'].click()');await ready(0,v);
+              const before=await ev('canvas.toDataURL()');
+              const positions=await ev('Array.from(document.querySelectorAll(".swatch,.views button"),el=>[el.getBoundingClientRect().x,el.getBoundingClientRect().y])');
+              await ev('document.querySelectorAll(".swatch")[1].click()');await ready(0,v);
+              assert.equal(await ev('window.mouserQA.finish'),1);
+              assert.ok(await ev('loaded.src.includes("symmetric-terracotta-")'));
+              assert.notEqual(await ev('canvas.toDataURL()'),before);
+              assert.deepEqual(await ev('Array.from(document.querySelectorAll(".swatch,.views button"),el=>[el.getBoundingClientRect().x,el.getBoundingClientRect().y])'),positions);
+              await ev('document.querySelectorAll(".swatch")[0].click()');await ready(0,v);
+              assert.equal(await ev('canvas.toDataURL()'),before);
+            }
+            await ev('selectFamily(1)');await ready(1,0);
+            assert.ok(await ev('document.querySelectorAll(".swatch")[1].disabled'));
+            await ev('selectFamily(0)');await ready(0,0);
+            console.log('PASS three independent Terracotta artworks, no recolor, stable palette');
             await ev('document.querySelector("#profilePicker .picker-trigger").click();document.querySelectorAll("#profileOptions .picker-option")[1].click()');
             assert.equal(await ev('p'),1);
             await ev('document.querySelector("#actionPicker .picker-trigger").click();document.querySelectorAll("#actionOptions .picker-option")[5].click()');
