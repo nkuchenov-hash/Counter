@@ -56,6 +56,8 @@ Future<DateTime?> showAppDateTimePicker(
   DateTime? initial,
   DateTime? firstDate,
   DateTime? lastDate,
+  Rect? sourceRect,
+  String? heading,
 }) async {
   final defaultInitial = DatabaseService.instance.applyUserOffset(
     DatabaseService.getPlanetaryNow(),
@@ -78,6 +80,8 @@ Future<DateTime?> showAppDateTimePicker(
       initial: initialCombined,
       firstDate: DateTime(fd.year, fd.month, fd.day),
       lastDate: DateTime(ld.year, ld.month, ld.day),
+      sourceRect: sourceRect,
+      heading: heading,
     );
   }
 
@@ -89,6 +93,10 @@ Future<DateTime?> showAppDateTimePicker(
     lastDate: lastDate ?? DateTime.utc(2030),
     is24HourMode: true,
     theme: theme,
+    title: heading == null ? null : omniPickerHeading(context, heading),
+    transitionDuration: sourceRect == null ? null : const Duration(milliseconds: 280),
+    transitionBuilder: sourceRect == null ? null : (ctx, animation, _, child) =>
+        omniPickerOriginTransition(ctx, animation, sourceRect, child),
   );
 }
 
