@@ -1560,7 +1560,7 @@ block.type == NoteBlockType.image ||
         : item;
     final content = Padding(
       key: ValueKey<String>(block.id),
-      padding: const EdgeInsets.only(right: 36),
+      padding: EdgeInsets.zero,
       child: blockContent,
     );
     return Stack(
@@ -1602,7 +1602,7 @@ Positioned(
         if (active)
 Positioned(
 top: 2,
-right: 2,
+right: -2,
 child: _NotesBlockMoreButton(
   onPressed: (anchorCenter) =>
       _showBlockActionMenu(anchorCenter, block),
