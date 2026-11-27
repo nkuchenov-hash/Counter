@@ -1,5 +1,8 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
+import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:intl/intl.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -32,17 +35,16 @@ class _EditorV45TitleState extends State<EditorV45Title> {
       padding: const EdgeInsets.fromLTRB(24, 10, 24, 8),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
-          Expanded(child: TextField(
+          Expanded(child: AppTextField(
+            surface: AppTextFieldSurface.inlineTitle,
+            hintText: t(currentLocale.value, 'title_label'),
+            textInputAction: TextInputAction.done,
             controller: widget.controller, focusNode: _focus,
             readOnly: !editing || widget.writing,
             minLines: 1, maxLines: 2,
             textCapitalization: TextCapitalization.sentences,
-            style: TextStyle(fontSize: widget.writing ? 22 : 28, height: 1.22,
+            inlineTitleStyle: TextStyle(fontSize: widget.writing ? 22 : 28, height: 1.22,
               fontWeight: FontWeight.w700, letterSpacing: -.65, color: scheme.onSurface),
-            decoration: InputDecoration(hintText: t(currentLocale.value, 'title_label'),
-              filled: false, isDense: true, constraints: const BoxConstraints(),
-              contentPadding: EdgeInsets.zero, border: InputBorder.none,
-              enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
             onChanged: widget.onChanged,
             onSubmitted: (_) { if (!widget.creating) setState(() => _editing = false); _focus.unfocus(); },
             onTap: () { if (!widget.creating && !widget.writing && !_editing) {
@@ -50,14 +52,14 @@ class _EditorV45TitleState extends State<EditorV45Title> {
             }},
           )),
           if (!widget.creating && !widget.writing)
-            IconButton(tooltip: _editing ? t(currentLocale.value, 'save') : t(currentLocale.value, 'title_label'),
+            AppIconButton(tooltip: _editing ? t(currentLocale.value, 'save') : t(currentLocale.value, 'title_label'),
               onPressed: () { setState(() => _editing = !_editing);
                 if (_editing) { _focus.requestFocus(); } else { _focus.unfocus(); }
-              }, icon: Icon(_editing ? Icons.check_rounded : Icons.edit_outlined, size: 20)),
+              }, icon: _editing ? Icons.check_rounded : Icons.edit_outlined),
           if (widget.writing)
-            TextButton(onPressed: () => FocusManager.instance.primaryFocus?.unfocus(),
-              child: Text(currentLocale.value == 'ru' ? 'Готово' : 'Done'))
-          else IconButton(onPressed: widget.onClose, icon: const Icon(Icons.close_rounded)),
+            AppButton.ghost(onPressed: () => FocusManager.instance.primaryFocus?.unfocus(),
+              label: currentLocale.value == 'ru' ? 'Готово' : 'Done')
+          else AppIconButton(onPressed: widget.onClose, tooltip: currentLocale.value == 'ru' ? 'Закрыть' : 'Close', icon: Icons.close_rounded),
         ]),
         if (widget.writing) Padding(
           padding: const EdgeInsets.only(top: 5, bottom: 4),
@@ -209,14 +211,12 @@ class EditorV45Actions extends StatelessWidget {
         borderRadius: BorderRadius.circular(29), border: Border.all(color: s.outlineVariant),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .06), blurRadius: 12, offset: const Offset(0, 3))]),
         child: Padding(padding: const EdgeInsets.all(5), child: Row(children: [
-          if (onStop != null) IconButton(onPressed: onStop, tooltip: t(loc, 'stop'), icon: const Icon(Icons.stop_rounded)),
+          if (onStop != null) AppIconButton(onPressed: onStop, tooltip: t(loc, 'stop'), icon: Icons.stop_rounded),
           if (onDelete != null) Expanded(child: TextButton.icon(
             style: TextButton.styleFrom(foregroundColor: s.error, minimumSize: const Size(0, 44)),
             onPressed: onDelete, icon: const Icon(Icons.delete_outline, size: 18), label: Text(t(loc, 'delete'))))
-          else if (onCancel != null) Expanded(child: TextButton(onPressed: onCancel, child: Text(t(loc, 'cancel')))),
-          Expanded(flex: 2, child: FilledButton(onPressed: onPrimary,
-            style: FilledButton.styleFrom(minimumSize: const Size(0, 44), shape: const StadiumBorder()),
-            child: Text(primaryLabel, textAlign: TextAlign.center))),
+          else if (onCancel != null) Expanded(child: AppButton.ghost(onPressed: onCancel, label: t(loc, 'cancel'))),
+          Expanded(flex: 2, child: AppButton.primary(onPressed: onPrimary, label: primaryLabel)),
         ]))))),
     );
   }
