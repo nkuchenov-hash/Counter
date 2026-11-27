@@ -2,12 +2,6 @@ name: Regenerate Viktor structure map
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    paths:
-      - 'lib/data/ai/**'
-      - 'lib/features/viktor/**'
-      - 'test/viktor_*'
-      - 'docs/VIKTOR_AI_ACTION_ENGINE.md'
-      - 'docs/APP_STRUCTURE.md'
   workflow_dispatch:
 
 concurrency:
@@ -15,40 +9,40 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   update-detailed-map:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
       - name: Regenerate canonical detailed map
         run: python scripts/manual/generate_app_structure_detailed.py
-      - name: Ignore commit-SHA-only generated metadata changes
+      - name: Check generated map without changing the PR
+        id: map
         shell: bash
         run: |
           set -euo pipefail
-          if ! git diff --quiet -- docs/APP_STRUCTURE_DETAILED.md; then
-            # The generator records HEAD SHA in its header. Committing that
-            # header on every PR synchronization creates a bot-commit loop
-            # whose new checks require manual action. Preserve real structure
-            # changes, but do not commit an otherwise identical map.
-            changes="$(git diff --unified=0 -- docs/APP_STRUCTURE_DETAILED.md | grep -E '^[+-][^+-]' | grep -Ev '^[+-]\*\*Generated (at git SHA|from input HEAD) ' || true)"
-            if [[ -z "$changes" ]]; then
-              git restore -- docs/APP_STRUCTURE_DETAILED.md
-            fi
+          changes="$(git diff --unified=0 -- docs/APP_STRUCTURE_DETAILED.md | grep -E '^[+-][^+-]' | grep -Ev '^[+-]\*\*Generated (at git SHA|from input HEAD) ' || true)"
+          if [[ -z "$changes" ]]; then
+            echo "drift=false" >> "$GITHUB_OUTPUT"
+            echo "Structure map is current."
+          else
+            echo "drift=true" >> "$GITHUB_OUTPUT"
+            git diff --binary -- docs/APP_STRUCTURE_DETAILED.md > "$RUNNER_TEMP/structure-map.patch"
+            echo "::warning::Structure map changed. Commit the regenerated document with the source changes, not via a workflow bot push."
           fi
-      - name: Save generated parity map in PR branch
-        run: |
-          if ! git diff --quiet -- docs/APP_STRUCTURE_DETAILED.md; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add docs/APP_STRUCTURE_DETAILED.md
-            git commit -m "Regenerate detailed structure map for Viktor"
-            git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
-          fi
+      - name: Upload updated map and patch for author
+        if: steps.map.outputs.drift == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: regenerated-structure-map
+          path: |
+            docs/APP_STRUCTURE_DETAILED.md
+            ${{ runner.temp }}/structure-map.patch
+      - name: Require current tracked-file manifest
+        run: python scripts/audit/documentation_parity.py
