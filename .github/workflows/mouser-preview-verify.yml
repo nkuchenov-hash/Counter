@@ -53,6 +53,7 @@ jobs:
             const stage=document.querySelector("#stage");
             stage.style.width="320px";stage.style.height="230px";
             const result=[];
+            if(!document.querySelector(".device-head #familyPicker")||document.querySelector(".controls #familyPicker"))throw Error("Model selector placement");
             if(document.querySelectorAll(".picker-menu:not([hidden])").length)throw Error("Menus visible by default");
             document.querySelector("#familyPicker .picker-trigger").click();
             if(document.querySelector("#families").hidden||document.querySelectorAll("#families .picker-option").length!==6)throw Error("Family menu");
