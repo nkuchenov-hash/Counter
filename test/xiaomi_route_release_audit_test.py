@@ -32,6 +32,7 @@ class RouteAudit(unittest.IsolatedAsyncioTestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.token = Path(self.temp.name) / "token.json"
+        self.token.write_text("{}", encoding="utf-8")
         self.now = int(time.time())
         self.cutoff = self.now - 3600
         self.primary, self.other, *_ = bridge._route_candidates()
