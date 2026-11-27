@@ -26,6 +26,8 @@ import 'package:counter/features/shared/edit_sheet/plan_repeat_helpers.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_time_helpers.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_time_picker.dart';
+import 'package:counter/features/shared/edit_sheet/editor_v45_chrome.dart';
+import 'package:counter/shared/categories/picker/category_picker_contracts.dart';
 
 class PlanningTaskEditSheet extends StatefulWidget {
   const PlanningTaskEditSheet({
@@ -544,6 +546,17 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: Column(
         children: [
+          if (!_startedAsUndatedBacklog)
+            EditorV45Title(
+              controller: _titleController,
+              onChanged: _onTitleChanged,
+              onClose: () => Navigator.of(context).pop<PlanningTask?>(null),
+              creating: !_isPersistedPlan,
+              writing: notesEditing,
+              contextLabel: currentLocale.value == 'ru' ? 'Заметка плана' : 'Plan note',
+              contextTime: editorV45Range(_scheduledTime, _endTime),
+            )
+          else
           Padding(
             padding: EdgeInsets.fromLTRB(
               16,
@@ -596,7 +609,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             ),
           ),
           const Divider(height: 1),
-          if (!notesEditing)
+          if (!notesEditing && _startedAsUndatedBacklog)
           Padding(
             padding: EdgeInsets.fromLTRB(
               16,
@@ -894,90 +907,51 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                 ] else if (!keyboardOpen) ...[
                         Padding(
                           key: const ValueKey('planning-edit-time-row'),
-                          padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: AppEditSheetTimeButton(
-                                  icon: Icons.calendar_month_rounded,
-                                  label: t(
-                                    currentLocale.value,
-                                    'plan_start_time_full',
-                                  ),
-                                  value: _scheduledTime == null
-                                      ? t(currentLocale.value, 'scheduled')
-                                      : '${_date.day} ${_shortMonth(_date.month)} ${_date.year}, ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
-                                  onPressed: () async {
-                                    final initial = DateTime(
-                                      _date.year,
-                                      _date.month,
-                                      _date.day,
-                                      _scheduledTime?.hour ?? 9,
-                                      _scheduledTime?.minute ?? 0,
-                                    );
-                                    final picked = await showAppDateTimePicker(
-                                      context,
-                                      initial: initial,
-                                    );
-                                    if (picked != null && mounted) {
-                                      setState(() {
-                                        _date = DateTime(
-                                          picked.year,
-                                          picked.month,
-                                          picked.day,
-                                        );
-                                        _scheduledTime = picked;
-                                      });
-                                      _onPlanFieldChanged(immediate: true);
-                                    }
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: AppEditSheetTimeButton(
-                                  icon: Icons.event_available_rounded,
-                                  label: t(
-                                    currentLocale.value,
-                                    'plan_end_time_full',
-                                  ),
-                                  value: _endTime == null
-                                      ? t(currentLocale.value, 'no_end_time')
-                                      : '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}',
-                                  onPressed: () async {
-                                    final initial = DateTime(
-                                      _date.year,
-                                      _date.month,
-                                      _date.day,
-                                      _endTime?.hour ?? 10,
-                                      _endTime?.minute ?? 0,
-                                    );
-                                    final picked = await showAppDateTimePicker(
-                                      context,
-                                      initial: initial,
-                                    );
-                                    if (picked != null && mounted) {
-                                      setState(
-                                        () => _endTime = DateTime(
-                                          _date.year,
-                                          _date.month,
-                                          _date.day,
-                                          picked.hour,
-                                          picked.minute,
-                                        ),
-                                      );
-                                      _onPlanFieldChanged(immediate: true);
-                                    }
-                                  },
-                                ),
-                              ),
-                            ],
+                          padding: const EdgeInsets.fromLTRB(24, 4, 24, 18),
+                          child: EditorV45TimeCard(
+                            start: _scheduledTime,
+                            end: _endTime,
+                            fallbackDate: _date,
+                            onStart: () async {
+                              final initial = DateTime(_date.year, _date.month, _date.day,
+                                _scheduledTime?.hour ?? 9, _scheduledTime?.minute ?? 0);
+                              final picked = await showAppDateTimePicker(context, initial: initial);
+                              if (picked != null && mounted) {
+                                setState(() {
+                                  _date = DateTime(picked.year, picked.month, picked.day);
+                                  _scheduledTime = picked;
+                                });
+                                _onPlanFieldChanged(immediate: true);
+                              }
+                            },
+                            onEnd: () async {
+                              final initial = DateTime(_date.year, _date.month, _date.day,
+                                _endTime?.hour ?? 10, _endTime?.minute ?? 0);
+                              final picked = await showAppDateTimePicker(context, initial: initial);
+                              if (picked != null && mounted) {
+                                setState(() => _endTime = DateTime(_date.year, _date.month, _date.day,
+                                  picked.hour, picked.minute));
+                                _onPlanFieldChanged(immediate: true);
+                              }
+                            },
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: EditorV45CategoryRow(
+                            value: dropdownValue,
+                            display: CategoryTreeSource.exists(dropdownValue)
+                                ? CategoryTreeSource.pathLabel(dropdownValue)
+                                : t(currentLocale.value, 'category_label'),
+                            onChanged: (id) {
+                              setState(() => _categoryId = id);
+                              _onPlanFieldChanged(immediate: true);
+                            },
                           ),
                         ),
                         Padding(
                           key: const ValueKey('planning-edit-tag-strip'),
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                           child: SizedBox(
                             height: 40,
                             child: _tagsLoading
@@ -1020,7 +994,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                         ),
                         Padding(
                           key: const ValueKey('planning-edit-primary-tabs'),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: SizedBox(
                             height: kAppCompactControlHeight,
                             child: TabBar(
@@ -1263,7 +1237,15 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                       ),
                     ),
                   ),
-                if (!notesEditing)
+                if (!notesEditing && !_startedAsUndatedBacklog)
+                  EditorV45Actions(
+                    key: const ValueKey('planning-edit-action-bar'),
+                    primaryLabel: _isPersistedPlan ? (currentLocale.value == 'ru' ? 'Закрыть' : 'Close') : (currentLocale.value == 'ru' ? 'Создать план' : 'Create plan'),
+                    onPrimary: _commitSave,
+                    onCancel: _isPersistedPlan ? null : () => Navigator.of(context).pop<PlanningTask?>(null),
+                    onDelete: !_isPersistedPlan || widget.onDelete == null ? null : () { widget.onDelete!(widget.task); Navigator.of(context).pop<PlanningTask?>(null); },
+                  ),
+                if (!notesEditing && _startedAsUndatedBacklog)
                   SafeArea(
                     key: const ValueKey('planning-edit-action-bar'),
                     top: false,
