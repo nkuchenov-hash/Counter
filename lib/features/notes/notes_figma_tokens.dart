@@ -1,3 +1,4 @@
+import 'package:counter/core/app_colors.dart';
 import 'package:flutter/material.dart';
 
 /// Executable mapping of the Notes variables and geometry from APP-Design.
@@ -48,11 +49,11 @@ abstract final class NotesFigmaTokens {
   static const double toolbarWidth = 350;
   static const double toolbarHeight = 48;
   static const double toolbarRadius = 24;
-  static const double toolbarHorizontalPadding = 16;
-  static const double toolbarVerticalPadding = 8;
-  static const double toolbarButtonSize = 32;
+  static const double toolbarHorizontalPadding = 5;
+  static const double toolbarVerticalPadding = 4;
+  static const double toolbarButtonSize = 36;
   static const double toolbarButtonRadius = 8;
-  static const double toolbarIconSize = 20;
+  static const double toolbarIconSize = 23;
 
   // Android handset Notes reference: readable controls and a stable dock.
   // Desktop/web keep their existing Figma dimensions.
@@ -62,8 +63,8 @@ abstract final class NotesFigmaTokens {
   static const double nativeToolbarRadius = 29;
   static const double nativeToolbarButtonSize = 48;
   static const double nativeToolbarIconSize = 26;
-  static const double nativeParagraphVerticalPadding = 6;
-  static const double nativeListVerticalPadding = 6;
+  static const double nativeParagraphVerticalPadding = 4;
+  static const double nativeListVerticalPadding = 3;
   static const double nativeSectionGap = 8;
 
   // Only subscribe to width; Gboard animates the viewport *height* and
@@ -96,7 +97,7 @@ abstract final class NotesFigmaTokens {
       : colorIconSecondary;
 
   static Color surfaceCard(BuildContext context) => isDark(context)
-      ? Theme.of(context).colorScheme.surface
+      ? AppColors.editorPaperDark
       : colorSurfaceCard;
 
   static Color borderSubtle(BuildContext context) => isDark(context)

@@ -393,7 +393,7 @@ class NotesEditorToolbar extends StatelessWidget {
             // A stationary, opaque Android dock avoids expensive background
             // sampling whenever the IME paints or the document scrolls.
             enabled: !native,
-            filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            filter: ui.ImageFilter.blur(sigmaX: 9, sigmaY: 9),
             child: DecoratedBox(
               key: const ValueKey('notes-floating-glass-pill'),
               decoration: BoxDecoration(
@@ -411,12 +411,12 @@ class NotesEditorToolbar extends StatelessWidget {
                         ]
                       : dark
                           ? [
-                              scheme.surface.withValues(alpha: 0.52),
-                              scheme.surface.withValues(alpha: 0.35),
+                              AppColors.editorGlassDarkTop.withValues(alpha: 0.65),
+                              AppColors.editorGlassDarkBottom.withValues(alpha: 0.53),
                             ]
                           : [
-                              scheme.surfaceContainerHighest.withValues(alpha: 0.48),
-                              scheme.surface.withValues(alpha: 0.32),
+                              AppNeutralTones.white.withValues(alpha: 0.70),
+                              AppNeutralTones.white.withValues(alpha: 0.56),
                             ],
                 ),
                 borderRadius: radius,
@@ -429,7 +429,7 @@ class NotesEditorToolbar extends StatelessWidget {
               ),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final compact = native || constraints.maxWidth < 320;
+                  final compact = native || constraints.maxWidth < actions.length * NotesFigmaTokens.toolbarButtonSize + 2 * NotesFigmaTokens.toolbarHorizontalPadding;
                   final row = Row(
                     mainAxisSize: compact
                         ? MainAxisSize.min

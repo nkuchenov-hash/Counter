@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 // Full-screen structured Notes editor.
 //
 // The production surface uses the versioned Life OS note document, stable block
@@ -140,8 +141,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> with WidgetsBindingObse
       _notesEditorSessionRegistered = true;
     }
     _syncEditorsWithDocument();
-    // Embedded Record Notes remain passive until tapped.
-    if (!widget.inlineBodyOnly) {
+    // Existing documents open in the v45 reading state, without stealing
+    // keyboard focus. A genuinely empty standalone draft can start writing.
+    if (!widget.inlineBodyOnly && _sourceDocument.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         NoteBlock? firstEditable;
@@ -1515,7 +1517,13 @@ block.type == NoteBlockType.image ||
     final content = Padding(
       key: ValueKey<String>(block.id),
       padding: EdgeInsets.zero,
-      child: blockContent,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onSecondaryTapDown: (details) => _showBlockActionMenu(details.globalPosition, block),
+        onLongPressStart: editable && (block.effectiveText.isEmpty || _editingBlockId == block.id)
+          ? null : (details) => _showBlockActionMenu(details.globalPosition, block),
+        child: blockContent,
+      ),
     );
     return Stack(
       key: _blockItemKeyFor(block.id),
@@ -1553,15 +1561,7 @@ Positioned(
     ),
   ),
 ),
-        if (active)
-Positioned(
-top: 2,
-right: -2,
-child: _NotesBlockMoreButton(
-  onPressed: (anchorCenter) =>
-      _showBlockActionMenu(anchorCenter, block),
-),
-        ),
+
       ],
     );
   }
@@ -1624,7 +1624,10 @@ AppButton.destructive(
       return ListView.builder(
         key: const ValueKey('notes-editor-content'),
         controller: _blockScrollController,
-        padding: const EdgeInsets.only(bottom: 100),
+        padding: EdgeInsets.only(
+          top: widget.inlineBodyOnly ? (widget.inlineKeyboardActive ? 16 : 18) : 0,
+          bottom: widget.inlineBodyOnly ? 110 : 100,
+        ),
         itemCount: _editor.visibleBlocks.length,
         itemBuilder: _buildBlock,
       );
@@ -1632,7 +1635,10 @@ AppButton.destructive(
     return ReorderableListView.builder(
       key: const ValueKey('notes-editor-content'),
       scrollController: _blockScrollController,
-      padding: const EdgeInsets.only(bottom: 100),
+      padding: EdgeInsets.only(
+          top: widget.inlineBodyOnly ? (widget.inlineKeyboardActive ? 16 : 18) : 0,
+          bottom: widget.inlineBodyOnly ? 110 : 100,
+        ),
       buildDefaultDragHandles: false,
       proxyDecorator: (child, _, __) => child,
       itemCount: _editor.visibleBlocks.length,
@@ -1668,6 +1674,7 @@ AppButton.destructive(
       showInlineToolbar: widget.inlineKeyboardActive || _blockSelectionMode || _focusNodes.values.any((node) => node.hasFocus),
       titleController: _titleController,
       titleHint: t(loc, 'notes_v3_editor_title_hint'),
+      timestampLabel: (_task.updatedAt ?? _task.createdAt) == null ? null : DateFormat('d MMMM, HH:mm', loc).format((_task.updatedAt ?? _task.createdAt)!.toLocal()),
       onTitleChanged: _scheduleSave,
       onDone: _close,
       pinned: DatabaseService.instance.isNotePinned(_task),
@@ -1745,49 +1752,6 @@ activeType == NoteBlockType.bulletedList
         ),
       ),
     ),
-      ),
-    );
-  }
-}
-
-class _NotesBlockMoreButton extends StatefulWidget {
-  const _NotesBlockMoreButton({required this.onPressed});
-
-  final ValueChanged<Offset> onPressed;
-
-  @override
-  State<_NotesBlockMoreButton> createState() => _NotesBlockMoreButtonState();
-}
-
-class _NotesBlockMoreButtonState extends State<_NotesBlockMoreButton> {
-  final GlobalKey _anchorKey = GlobalKey();
-
-  void _open() {
-    final box = _anchorKey.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return;
-    final rect = box.localToGlobal(Offset.zero) & box.size;
-    widget.onPressed(rect.center);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: 'More',
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-onTap: _open,
-borderRadius: BorderRadius.circular(15),
-child: SizedBox.square(
-  key: _anchorKey,
-  dimension: 30,
-  child: Icon(
-    Icons.more_horiz_rounded,
-    size: 18,
-    color: Theme.of(context).colorScheme.onSurfaceVariant,
-  ),
-),
-        ),
       ),
     );
   }

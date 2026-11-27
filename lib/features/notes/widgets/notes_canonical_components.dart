@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
+import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:flutter/material.dart';

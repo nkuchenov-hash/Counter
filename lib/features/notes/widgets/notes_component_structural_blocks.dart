@@ -203,77 +203,53 @@ class _NotesTableBlockState extends State<NotesTableBlock> {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final cellWidth = math.max(96.0, constraints.maxWidth / columnCount);
+          // HTML v45 uses intrinsic column proportions, 13px text, 19px
+          // line-height and compact cells. A Flutter Table also keeps every
+          // cell border aligned when one cell wraps to additional lines.
+          final style = Theme.of(context).textTheme.bodyMedium!.copyWith(fontSize: 13, height: 19 / 13);
+          final preferred = List<double>.generate(columnCount, (column) {
+            var width = 56.0;
+            for (var row = 0; row < cells.length; row++) {
+              final painter = TextPainter(text: TextSpan(text: cells[row][column],
+                style: style.copyWith(fontWeight: widget.data.hasHeader && row == 0 ? FontWeight.w600 : FontWeight.w400)),
+                textDirection: Directionality.of(context))..layout();
+              width = math.max(width, painter.width + 16);
+              painter.dispose();
+            }
+            return width;
+          });
+          final sum = preferred.fold(0.0, (a, b) => a + b);
+          final width = math.max(constraints.maxWidth, sum);
+          final rule = scheme.outlineVariant;
           return DecoratedBox(
             key: const ValueKey('notes-table-surface'),
-            decoration: BoxDecoration(
-              color: scheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: active ? scheme.outline : scheme.outlineVariant,
-                width: active ? 1.5 : 1,
-              ),
-            ),
+            decoration: BoxDecoration(color: NotesFigmaTokens.surfaceCard(context),
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: active ? scheme.outline : rule, width: active ? 1.5 : 1)),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(11),
+              borderRadius: BorderRadius.circular(8),
               child: GestureDetector(
                 onLongPress: widget.onOptionsRequested,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (var row = 0; row < cells.length; row++)
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            for (var column = 0;
-                                column < columnCount;
-                                column++)
-                              SizedBox(
-                                width: cellWidth,
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: widget.data.hasHeader && row == 0
-                                        ? scheme.surfaceContainerHighest
-                                        : scheme.surface,
-                                    border: Border(
-                                      right: column == columnCount - 1
-                                          ? BorderSide.none
-                                          : BorderSide(
-                                              color: scheme.outlineVariant,
-                                            ),
-                                      bottom: row == cells.length - 1
-                                          ? BorderSide.none
-                                          : BorderSide(
-                                              color: scheme.outlineVariant,
-                                            ),
-                                    ),
-                                  ),
-                                  child: TextField(
-                                    controller: _controllers[row][column],
-                                    minLines: 1,
-                                    maxLines: null,
-                                    onChanged: (value) =>
-                                        _updateCell(row, column, value),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(fontSize: 16, height: 1.35),
-                                    decoration: const InputDecoration(
-                                      border: InputBorder.none,
-                                      enabledBorder: InputBorder.none,
-                                      focusedBorder: InputBorder.none,
-                                      isDense: true,
-                                      contentPadding: EdgeInsets.all(10),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
+                child: SingleChildScrollView(scrollDirection: Axis.horizontal,
+                  child: SizedBox(width: width, child: Table(
+                    columnWidths: {for (var column = 0; column < columnCount; column++)
+                      column: FixedColumnWidth(preferred[column] * width / sum)},
+                    border: TableBorder(horizontalInside: BorderSide(color: rule), verticalInside: BorderSide(color: rule)),
+                    children: [for (var row = 0; row < cells.length; row++) TableRow(
+                      decoration: BoxDecoration(color: widget.data.hasHeader && row == 0
+                        ? (NotesFigmaTokens.isDark(context) ? AppColors.editorTimeCardDark : AppColors.editorTimeCardLight)
+                        : NotesFigmaTokens.surfaceCard(context)),
+                      children: [for (var column = 0; column < columnCount; column++) Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+                        child: AppTextField(controller: _controllers[row][column],
+                          variant: AppTextFieldVariant.multiline, surface: AppTextFieldSurface.inlineTitle,
+                          minLines: 1, maxLines: null,
+                          onChanged: (value) => _updateCell(row, column, value),
+                          inlineTitleStyle: style.copyWith(fontWeight: widget.data.hasHeader && row == 0 ? FontWeight.w600 : FontWeight.w400),
                         ),
-                    ],
-                  ),
+                      )],
+                    )],
+                  )),
                 ),
               ),
             ),

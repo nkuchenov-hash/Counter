@@ -29,8 +29,53 @@ jobs:
       - run: node --check pb_hooks/xiaomi_sleep_runtime.js
       - run: flutter pub get
       - run: flutter test test/protected_session_release_audit_test.dart
-      - run: flutter test test/editor_v45_chrome_test.dart
+      - name: Test editor geometry and capture actual Flutter screens
+        env:
+          V45_CAPTURE_DIR: visual-v45/flutter
+        run: flutter test test/editor_v45_chrome_test.dart
       - run: flutter test test/app_control_consistency_test.dart
       - run: flutter test test/notes_mobile_keyboard_regression_test.dart
       - run: flutter test test/planning_edit_sheet_layout_test.dart test/notes_canonical_components_test.dart
+      - name: Capture the preserved v45 HTML at the same viewport sizes
+        run: |
+          set -euo pipefail
+          mkdir -p visual-v45/reference/design-ideas visual-v45/reference/assets/assets/fonts visual-v45/html
+          git fetch --depth=1 origin cfdd8e3a2ccd469cd82c236e497460ccbd30670d
+          git show cfdd8e3a2ccd469cd82c236e497460ccbd30670d:design-ideas/notes-editors.html > visual-v45/reference/design-ideas/notes-editors.html
+          cp assets/fonts/Onest-Variable.ttf visual-v45/reference/assets/assets/fonts/
+          npm install --prefix "$RUNNER_TEMP/v45-browser" --no-save playwright
+          "$RUNNER_TEMP/v45-browser/node_modules/.bin/playwright" install chromium
+          node <<'JS'
+          const {chromium} = require(process.env.RUNNER_TEMP + '/v45-browser/node_modules/playwright');
+          const {pathToFileURL} = require('node:url');
+          const path = require('node:path');
+          (async () => {
+            const browser = await chromium.launch({headless: true, args: ['--allow-file-access-from-files']});
+            const page = await browser.newPage({viewport: {width: 1100, height: 1100}, deviceScaleFactor: 1});
+            const url = pathToFileURL(path.resolve('visual-v45/reference/design-ideas/notes-editors.html')).href;
+            for (const [width, height] of [[390,844],[760,850]]) {
+              for (const dark of [false,true]) {
+                for (const kind of ['plan','record','note']) {
+                  await page.goto(url);
+                  await page.locator('[data-view="'+kind+'"]').click();
+                  await page.locator('[data-mode="existing"]').click();
+                  if (width > 390) await page.locator('[data-device="wide"]').click();
+                  if (dark) await page.locator('#theme').click();
+                  await page.addStyleTag({content: '.screen{width:'+width+'px!important;height:'+height+'px!important;max-height:none!important;min-height:0!important;border:0!important;border-radius:0!important;box-shadow:none!important}.screen>.status,.screen>.homebar{display:none!important}'});
+                  await page.evaluate(() => document.fonts.ready);
+                  await page.locator('.screen').screenshot({path:'visual-v45/html/'+kind+'-'+width+'-'+(dark?'dark':'light')+'.png', animations:'disabled'});
+                }
+              }
+            }
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          printf '%s\n' 'Original v45 source is preserved unmodified in reference/.' 'HTML screenshots normalize only frame size and simulated OS status/home bars. Flutter screenshots use offline fixture data, real application widgets and themes. Dynamic metadata and rich text marks may differ; compare layout, not raw global pixel equality.' > visual-v45/README.txt
+      - name: Upload visual review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v45-editor-visual-review
+          path: visual-v45/
+          if-no-files-found: warn
       - run: flutter build web --release --base-href=/Counter/ --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none --no-web-resources-cdn

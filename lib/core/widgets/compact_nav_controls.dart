@@ -67,16 +67,18 @@ class AppCompactSegmentLabel extends StatelessWidget {
 }
 
 class AppCompactTextTab extends StatelessWidget {
-  const AppCompactTextTab({super.key, required this.text});
+  const AppCompactTextTab({super.key, required this.text, this.fontSize = kAppCompactControlFontSize, this.inheritWeight = false});
 
   final String text;
+  final double fontSize;
+  final bool inheritWeight;
 
   @override
   Widget build(BuildContext context) {
     final inherited = DefaultTextStyle.of(context).style;
     final style = inherited.copyWith(
-      fontSize: kAppCompactControlFontSize,
-      fontWeight: FontWeight.w600,
+      fontSize: fontSize,
+      fontWeight: inheritWeight ? inherited.fontWeight : FontWeight.w600,
       height: 1.1,
     );
     return SizedBox(

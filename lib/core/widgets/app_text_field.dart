@@ -112,7 +112,7 @@ class AppTextField extends StatelessWidget {
         controller: controller, focusNode: focusNode,
         readOnly: readOnly, enabled: enabled, autofocus: autofocus,
         keyboardType: type, textInputAction: action,
-        minLines: minLines ?? 1, maxLines: maxLines ?? 2,
+        minLines: minLines ?? 1, maxLines: multiline ? maxLines : maxLines ?? 2,
         textCapitalization: textCapitalization,
         onChanged: onChanged, onSubmitted: onSubmitted,
         onEditingComplete: onEditingComplete, onTap: onTap,

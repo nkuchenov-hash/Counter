@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+import 'package:counter/core/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/app_button.dart';
@@ -31,11 +32,16 @@ class _EditorV45TitleState extends State<EditorV45Title> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final editing = widget.creating || _editing;
+    final titleStyle = TextStyle(fontSize: widget.writing ? 22 : 28, height: 1.22,
+      fontWeight: FontWeight.w700, letterSpacing: -.65, color: scheme.onSurface);
+    // The title and pencil are one group, not two opposite-edge actions.
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 10, 24, 8),
+      padding: EdgeInsets.fromLTRB(24, widget.writing ? 8 : 10, 24, widget.writing ? 4 : 12),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(children: [
-          Expanded(child: AppTextField(
+        ConstrainedBox(constraints: BoxConstraints(minHeight: widget.writing ? 42 : 40), child: Row(children: [
+          Expanded(child: Row(children: [
+          Flexible(fit: FlexFit.loose, child: editing || widget.writing
+            ? AppTextField(
             surface: AppTextFieldSurface.inlineTitle,
             hintText: t(currentLocale.value, 'title_label'),
             textInputAction: TextInputAction.done,
@@ -43,24 +49,30 @@ class _EditorV45TitleState extends State<EditorV45Title> {
             readOnly: !editing || widget.writing,
             minLines: 1, maxLines: 2,
             textCapitalization: TextCapitalization.sentences,
-            inlineTitleStyle: TextStyle(fontSize: widget.writing ? 22 : 28, height: 1.22,
-              fontWeight: FontWeight.w700, letterSpacing: -.65, color: scheme.onSurface),
+            inlineTitleStyle: titleStyle,
             onChanged: widget.onChanged,
             onSubmitted: (_) { if (!widget.creating) setState(() => _editing = false); _focus.unfocus(); },
             onTap: () { if (!widget.creating && !widget.writing && !_editing) {
               setState(() => _editing = true); _focus.requestFocus();
             }},
+          ) : GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () { setState(() => _editing = true); WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _focus.requestFocus(); }); },
+            child: ValueListenableBuilder<TextEditingValue>(valueListenable: widget.controller,
+              builder: (context, value, _) => Text(value.text.isEmpty ? t(currentLocale.value, 'title_label') : value.text,
+                style: titleStyle, maxLines: 2, overflow: TextOverflow.ellipsis)),
           )),
           if (!widget.creating && !widget.writing)
             AppIconButton(tooltip: _editing ? t(currentLocale.value, 'save') : t(currentLocale.value, 'title_label'),
-              onPressed: () { setState(() => _editing = !_editing);
-                if (_editing) { _focus.requestFocus(); } else { _focus.unfocus(); }
+              size: AppIconButtonSize.s, onPressed: () { setState(() => _editing = !_editing);
+                if (_editing) { WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _focus.requestFocus(); }); } else { _focus.unfocus(); }
               }, icon: _editing ? Icons.check_rounded : Icons.edit_outlined),
+          ])),
           if (widget.writing)
             AppButton.ghost(onPressed: () => FocusManager.instance.primaryFocus?.unfocus(),
               label: currentLocale.value == 'ru' ? 'Готово' : 'Done')
-          else AppIconButton(onPressed: widget.onClose, tooltip: currentLocale.value == 'ru' ? 'Закрыть' : 'Close', icon: Icons.close_rounded),
-        ]),
+          else AppIconButton(size: AppIconButtonSize.s, shape: AppIconButtonShape.circular, variant: AppIconButtonVariant.filled, onPressed: widget.onClose, tooltip: currentLocale.value == 'ru' ? 'Закрыть' : 'Close', icon: Icons.close_rounded),
+        ])),
         if (widget.writing) Padding(
           padding: const EdgeInsets.only(top: 5, bottom: 4),
           child: Row(children: [
@@ -77,7 +89,7 @@ class _EditorV45TitleState extends State<EditorV45Title> {
 /// the international date-symbol tables have finished initializing.
 String editorV45Date(BuildContext context, DateTime date) {
   try {
-    return DateFormat('d MMM, E', currentLocale.value).format(date);
+    return DateFormat('d MMMM, E', currentLocale.value).format(date);
   } catch (_) {
     return MaterialLocalizations.of(context).formatShortDate(date);
   }
@@ -99,6 +111,7 @@ class EditorV45TimeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
     final ru = currentLocale.value == 'ru';
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final duration = start != null && end != null && !running ? end!.difference(start!) : null;
     final mins = duration?.inMinutes ?? -1;
     final label = mins < 0 ? '' : [
@@ -108,8 +121,8 @@ class EditorV45TimeCard extends StatelessWidget {
     ].join(' ');
     return Container(
       padding: EdgeInsets.fromLTRB(14, compact ? 9 : 14, 14, compact ? 8 : 12),
-      decoration: BoxDecoration(color: s.surfaceContainerHighest, borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: s.outlineVariant)),
+      decoration: BoxDecoration(color: dark ? AppColors.editorTimeCardDark : AppColors.editorTimeCardLight, borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: dark ? AppColors.editorRuleDark : AppColors.editorRuleLight)),
       child: Column(children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(child: _EditorTimePoint(label: ru ? 'Начало' : 'Start', value: start,
@@ -121,7 +134,7 @@ class EditorV45TimeCard extends StatelessWidget {
         if (label.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12),
           child: Row(children: [
             const _DurationLine(), Padding(padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Text(label, style: TextStyle(fontSize: 14, color: s.onSurfaceVariant))),
+              child: Text(label, style: TextStyle(fontSize: 13, color: s.onSurfaceVariant))),
             const _DurationLine(reverse: true),
           ])),
       ]),
@@ -151,7 +164,7 @@ class _EditorTimePoint extends StatelessWidget {
     final date = value ?? fallbackDate;
     final timeKey = GlobalKey();
     final time = Text(running ? t(currentLocale.value, 'running_label') : editorV45Time(value), key: timeKey,
-      maxLines: 1, style: TextStyle(fontSize: running ? 16 : compact ? 27 : 32, fontWeight: FontWeight.w700, color: s.onSurface));
+      maxLines: 1, style: TextStyle(fontSize: running ? 16 : compact ? 29 : 32, height: 1.13, fontWeight: FontWeight.w700, color: s.onSurface));
     final chevron = Icon(Icons.expand_more_rounded, size: 17, color: s.onSurfaceVariant);
     return InkWell(onTap: onTap == null ? null : () {
         final render = timeKey.currentContext?.findRenderObject();
@@ -214,22 +227,29 @@ class EditorV45Actions extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final nativePhone = Theme.of(context).platform == TargetPlatform.android && MediaQuery.widthOf(context) < 600;
-    final pill = DecoratedBox(decoration: BoxDecoration(
-        color: s.surface.withValues(alpha: .76),
+    final pill = DecoratedBox(key: const ValueKey('v45-action-pill'), decoration: BoxDecoration(
+        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: dark
+          ? [AppColors.editorGlassDarkTop.withValues(alpha: .65), AppColors.editorGlassDarkBottom.withValues(alpha: .53)]
+          : [AppNeutralTones.white.withValues(alpha: .70), AppNeutralTones.white.withValues(alpha: .56)]),
         borderRadius: BorderRadius.circular(29), border: Border.all(color: s.outlineVariant),
-        boxShadow: [BoxShadow(color: s.shadow.withValues(alpha: .06), blurRadius: 12, offset: const Offset(0, 3))]),
+        boxShadow: [BoxShadow(color: s.shadow.withValues(alpha: .06), blurRadius: 14, offset: const Offset(0, 3))]),
         child: Padding(padding: const EdgeInsets.all(5), child: Row(children: [
           if (onStop != null) AppIconButton(onPressed: onStop, tooltip: t(loc, 'stop'), icon: Icons.stop_rounded),
-          if (onDelete != null) Expanded(child: TextButton.icon(
+          if (onDelete != null) Expanded(flex: 100, child: TextButton.icon(
             style: TextButton.styleFrom(foregroundColor: s.error, minimumSize: const Size(0, 44)),
             onPressed: onDelete, icon: const Icon(Icons.delete_outline, size: 18), label: Text(t(loc, 'delete'))))
-          else if (onCancel != null) Expanded(child: AppButton.ghost(onPressed: onCancel, label: t(loc, 'cancel'))),
-          Expanded(flex: 2, child: AppButton.primary(onPressed: onPrimary, label: primaryLabel)),
+          else if (onCancel != null) Expanded(flex: 100, child: AppButton.ghost(onPressed: onCancel, label: t(loc, 'cancel'))),
+          if (onDelete != null || onCancel != null) const SizedBox(width: 8),
+          Expanded(flex: 155, child: AppButton.primary(onPressed: onPrimary, label: primaryLabel)),
         ])));
-    return SafeArea(top: false, minimum: const EdgeInsets.fromLTRB(24, 4, 24, 12),
-      child: nativePhone ? pill : ClipRRect(borderRadius: BorderRadius.circular(29),
-        child: BackdropFilter(filter: ui.ImageFilter.blur(sigmaX: 9, sigmaY: 9), child: pill)),
+    return SafeArea(top: false, minimum: EdgeInsets.fromLTRB(24, 4, 24, _v45ActionBottomInset(context)),
+      child: Align(alignment: Alignment.bottomCenter, child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 440),
+        child: nativePhone ? pill : ClipRRect(borderRadius: BorderRadius.circular(29),
+          child: BackdropFilter(filter: ui.ImageFilter.blur(sigmaX: 9, sigmaY: 9), child: pill)),
+      )),
     );
   }
 }
@@ -251,6 +271,9 @@ class EditorV45Collapsible extends StatelessWidget {
   );
 }
 
+double _v45ActionBottomInset(BuildContext context) =>
+  MediaQuery.widthOf(context) >= 768 ? 14 : 22;
+
 /// Overlay actions on the same feathered paper surface as Notes tools.
 class EditorV45ActionOverlay extends StatelessWidget {
   const EditorV45ActionOverlay({super.key, required this.content, required this.actions, required this.visible});
@@ -260,7 +283,9 @@ class EditorV45ActionOverlay extends StatelessWidget {
   Widget build(BuildContext context) => Stack(fit: StackFit.expand, children: [
     Positioned.fill(child: content),
     if (visible) Positioned(left: 0, right: 0, bottom: 0,
-      child: NotesBottomGlassFade(height: 100, toolbarBottomInset: 12,
+      child: NotesBottomGlassFade(height: 100,
+        toolbarBottomInset: _v45ActionBottomInset(context),
+        apertureMaxWidth: 440, apertureSideInset: 24, apertureHeight: 56,
         enableBackdropBlur: false,
         child: Align(alignment: Alignment.bottomCenter, child: actions))),
   ]);
