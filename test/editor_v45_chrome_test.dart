@@ -175,7 +175,8 @@ void main() {
       categoryId: 1, startTime: DateTime.utc(2026, 11, 27, 18, 34),
       endTime: DateTime.utc(2026, 11, 27, 19, 42), notesDeltaJson: workout(true).encode());
     final note = PlanningTask(id: 2, title: 'Поездка в Петербург', categoryId: 1,
-      dateKey: '', notesDeltaJson: doc.encode());
+      dateKey: '', notesDeltaJson: doc.encode(), updatedAt: DateTime(2026, 11, 27, 10, 24),
+      tags: const [Tag(tagId: 1, name: '#поездка'), Tag(tagId: 2, name: '#выходные')]);
     for (final size in [const Size(390, 844), const Size(760, 850)]) {
       tester.view.physicalSize = size;
       for (final dark in [false, true]) {
