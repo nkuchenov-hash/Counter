@@ -1,6 +1,6 @@
 const LIFE_OS_BASE = 'https://nkuchenov-hash.github.io/Counter/';
 const LIFE_OS_MATCH = 'https://nkuchenov-hash.github.io/Counter/*';
-const POCKETBASE_BASE = 'https://217-114-0-201.sslip.io';
+const POCKETBASE_BASE = 'https://137-22-146-109.sslip.io';
 const MAX_TEXT_LENGTH = 1600;
 const BRIDGE_TIMEOUT_MS = 12000;
 const BRIDGE_SETTLE_TIMEOUT_MS = 90000;

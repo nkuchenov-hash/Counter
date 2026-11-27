@@ -151,7 +151,7 @@ extension DbCoreExtension on DatabaseService {
   bool _isPbCircuitWorthyFailure(Object e) {
     if (e is ClientException) {
       final c = e.statusCode;
-      if (c == 404) return true;
+      if (c == 404 || c == 408 || c == 425 || c == 429) return true;
       if (c >= 500) return true;
       if (c <= 0) return true;
       final blob = '${e.originalError} $e'.toLowerCase();
@@ -165,7 +165,8 @@ extension DbCoreExtension on DatabaseService {
       }
     }
     final s = e.toString().toLowerCase();
-    return s.contains('socketexception') ||
+    return e is TimeoutException ||
+        s.contains('socketexception') ||
         s.contains('connection refused') ||
         s.contains('failed host lookup') ||
         s.contains('connection reset') ||
@@ -690,7 +691,7 @@ extension DbCoreExtension on DatabaseService {
 .authRefresh()
 .timeout(const Duration(seconds: 3));
     } on ClientException catch (e) {
-      if (e.statusCode >= 400 && e.statusCode < 500) {
+      if (isPocketBaseSessionRejected(e.statusCode)) {
         final handler = onSessionInvalid;
         if (handler != null) {
           await handler();

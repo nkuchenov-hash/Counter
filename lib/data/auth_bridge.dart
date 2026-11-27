@@ -102,7 +102,7 @@ class AuthBridge {
               .authRefresh()
               .timeout(const Duration(seconds: 3));
         } on ClientException catch (e) {
-          if (e.statusCode >= 400 && e.statusCode < 500) {
+          if (isPocketBaseSessionRejected(e.statusCode)) {
             try {
               pb.authStore.clear();
               await _storage.delete(key: _profileIdKey);
