@@ -44,5 +44,7 @@ jobs:
           path: |
             docs/APP_STRUCTURE_DETAILED.md
             ${{ runner.temp }}/structure-map.patch
-      - name: Require current tracked-file manifest
-        run: python scripts/audit/documentation_parity.py
+      - name: Require current committed tracked-file manifest
+        run: |
+          git restore -- docs/APP_STRUCTURE_DETAILED.md
+          python scripts/audit/documentation_parity.py
