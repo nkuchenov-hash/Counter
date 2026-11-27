@@ -156,7 +156,7 @@ class _EditorTimePoint extends StatelessWidget {
             if (end && onTap != null) chevron, time, if (!end && onTap != null) chevron,
           ])),
         const SizedBox(height: 4),
-        Text(date == null ? '—' : DateFormat('d MMM, E', currentLocale.value).format(date),
+        Text(date == null ? '—' : DateFormat('d MMM, E', DateFormat.localeExists(currentLocale.value) ? currentLocale.value : 'en').format(date),
           maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, color: s.onSurfaceVariant)),
       ]),
     );
