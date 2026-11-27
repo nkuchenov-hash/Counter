@@ -138,17 +138,12 @@ class NotesEditorBlockItem extends StatelessWidget {
     // Add section spacing inside the existing keyed block; never replace
     // the Android EditableText just because its layout or focus changes.
     final previous = previousBlockType;
-    if (previous != null && NotesFigmaTokens.nativeNotesLayout(context)) {
+    if (previous != null) {
       final wasList = _isCompactNotesList(previous);
       final isList = _isCompactNotesList(block.type);
-      if (wasList != isList || (isList && previous != block.type)) {
-        interactive = Padding(
-          padding: const EdgeInsets.only(
-            top: NotesFigmaTokens.nativeSectionGap,
-          ),
-          child: interactive,
-        );
-      }
+      final gap = block.type == NoteBlockType.heading ? 12.0
+          : (wasList && !isList || isList && !wasList && previous != NoteBlockType.heading) ? 5.0 : 0.0;
+      if (gap > 0) interactive = Padding(padding: EdgeInsets.only(top: gap), child: interactive);
     }
     return interactive;
   }
