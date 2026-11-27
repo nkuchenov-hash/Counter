@@ -46,13 +46,15 @@ class _EditorV45TitleState extends State<EditorV45Title> {
   final FocusNode _focus = FocusNode();
   bool _editing = false;
   @override
+  void initState() { super.initState(); _focus.addListener(() { if (mounted && !_focus.hasFocus && _editing) setState(() => _editing = false); }); }
+  @override
   void dispose() { _focus.dispose(); super.dispose(); }
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final editing = widget.creating || _editing;
     final inset = editorV45Inset(context);
-    final style = TextStyle(fontSize: widget.writing && MediaQuery.widthOf(context) < 760 ? 22 : 28, height: 1.22,
+    final style = (Theme.of(context).textTheme.titleMedium ?? const TextStyle()).copyWith(fontSize: widget.writing && MediaQuery.widthOf(context) < 760 ? 22 : 28, height: 1.22,
       fontWeight: FontWeight.w700, letterSpacing: -.65, color: scheme.onSurface);
     void beginEdit() {
       if (widget.writing || widget.creating) return;
@@ -76,7 +78,7 @@ class _EditorV45TitleState extends State<EditorV45Title> {
                     textScaler: MediaQuery.textScalerOf(context),
                     maxLines: 2,
                   )..layout();
-                  final width = (painter.width + 3).clamp(0.0, bounds.maxWidth).toDouble();
+                  final width = (painter.width + 5).clamp(0.0, bounds.maxWidth).toDouble();
                   painter.dispose();
                   return SizedBox(width: widget.creating || widget.writing ? bounds.maxWidth : width,
                     child: AppTextField(
