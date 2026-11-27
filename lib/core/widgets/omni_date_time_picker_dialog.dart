@@ -18,27 +18,82 @@ Future<DateTime?> showOmniDateTimePickerDialog(
   required DateTime initial,
   required DateTime firstDate,
   required DateTime lastDate,
+  Rect? sourceRect,
+  String? heading,
 }) {
-  return showDialog<DateTime>(
+  final picker = _OmniDateTimePickerDialog(
+    initial: initial,
+    firstDate: DateTime(firstDate.year, firstDate.month, firstDate.day),
+    lastDate: DateTime(lastDate.year, lastDate.month, lastDate.day),
+    heading: heading,
+  );
+  if (sourceRect == null || MediaQuery.disableAnimationsOf(context)) {
+    return showDialog<DateTime>(context: context, builder: (_) => picker);
+  }
+  final themes = InheritedTheme.capture(from: context,
+    to: Navigator.of(context, rootNavigator: true).context);
+  return showGeneralDialog<DateTime>(
     context: context,
-    builder: (ctx) => _OmniDateTimePickerDialog(
-      initial: initial,
-      firstDate: DateTime(firstDate.year, firstDate.month, firstDate.day),
-      lastDate: DateTime(lastDate.year, lastDate.month, lastDate.day),
-    ),
+    barrierDismissible: true,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Colors.black45,
+    transitionDuration: const Duration(milliseconds: 280),
+    pageBuilder: (ctx, _, _) => SafeArea(child: themes.wrap(picker)),
+    transitionBuilder: (ctx, animation, _, child) =>
+        omniPickerOriginTransition(ctx, animation, sourceRect, child),
   );
 }
+
+/// Route transition shared with the mobile Omni picker; no new date logic.
+Widget omniPickerOriginTransition(BuildContext context,
+    Animation<double> animation, Rect source, Widget child) {
+  if (MediaQuery.disableAnimationsOf(context)) return child;
+  final size = MediaQuery.sizeOf(context);
+  final anchor = Alignment(
+    (source.center.dx / size.width * 2 - 1).clamp(-1.0, 1.0).toDouble(),
+    (source.center.dy / size.height * 2 - 1).clamp(-1.0, 1.0).toDouble(),
+  );
+  return AnimatedBuilder(
+    animation: animation,
+    child: child,
+    builder: (context, child) {
+      final progress = Curves.easeOutCubic.transform(animation.value);
+      return Opacity(
+        opacity: progress,
+        child: Transform.scale(
+          scale: .06 + .94 * progress,
+          alignment: anchor,
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+Widget omniPickerHeading(BuildContext context, String heading) => Column(
+  mainAxisSize: MainAxisSize.min,
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Text(heading, style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+      fontSize: 23, fontWeight: FontWeight.w700)),
+    const SizedBox(height: 3),
+    Text(currentLocale.value == 'ru' ? 'Дата и время' : 'Date and time',
+      style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+  ],
+);
 
 class _OmniDateTimePickerDialog extends StatefulWidget {
   const _OmniDateTimePickerDialog({
     required this.initial,
     required this.firstDate,
     required this.lastDate,
+    this.heading,
   });
 
   final DateTime initial;
   final DateTime firstDate;
   final DateTime lastDate;
+  final String? heading;
 
   @override
   State<_OmniDateTimePickerDialog> createState() =>
@@ -550,7 +605,7 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
           );
 
     return AlertDialog(
-      title: Text(t(loc, 'omni_picker_dialog_title')),
+      title: widget.heading == null ? Text(t(loc, 'omni_picker_dialog_title')) : omniPickerHeading(context, widget.heading!),
       content: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: dialogW),
         child: Form(
