@@ -25,7 +25,10 @@ jobs:
         run: |
           mkdir -p lib/core/env
           printf '%s\n' 'abstract final class Env {' "  static const String placeholder = '';" '}' > lib/core/env/env.dart
+      - run: python3 test/xiaomi_route_release_audit_test.py
+      - run: node --check pb_hooks/xiaomi_sleep_runtime.js
       - run: flutter pub get
+      - run: flutter test test/protected_session_release_audit_test.dart
       - run: flutter test test/editor_v45_chrome_test.dart
       - run: flutter test test/app_control_consistency_test.dart
       - run: flutter test test/notes_mobile_keyboard_regression_test.dart
