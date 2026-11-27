@@ -36,7 +36,7 @@ Future<DateTime?> showOmniDateTimePickerDialog(
     context: context,
     barrierDismissible: true,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.black45,
+    barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: .45),
     transitionDuration: const Duration(milliseconds: 280),
     pageBuilder: (ctx, _, _) => SafeArea(child: themes.wrap(picker)),
     transitionBuilder: (ctx, animation, _, child) =>
