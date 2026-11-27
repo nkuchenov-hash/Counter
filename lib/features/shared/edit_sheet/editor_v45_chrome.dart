@@ -36,9 +36,9 @@ class _EditorV45TitleState extends State<EditorV45Title> {
       fontWeight: FontWeight.w700, letterSpacing: -.65, color: scheme.onSurface);
     // The title and pencil are one group, not two opposite-edge actions.
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 10, 24, 8),
+      padding: EdgeInsets.fromLTRB(24, widget.writing ? 8 : 10, 24, widget.writing ? 4 : 12),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(children: [
+        ConstrainedBox(constraints: BoxConstraints(minHeight: widget.writing ? 42 : 40), child: Row(children: [
           Expanded(child: Row(children: [
           Flexible(fit: FlexFit.loose, child: editing || widget.writing
             ? AppTextField(
@@ -58,8 +58,9 @@ class _EditorV45TitleState extends State<EditorV45Title> {
           ) : GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () { setState(() => _editing = true); WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _focus.requestFocus(); }); },
-            child: Text(widget.controller.text.isEmpty ? t(currentLocale.value, 'title_label') : widget.controller.text,
-              style: titleStyle, maxLines: 2, overflow: TextOverflow.ellipsis),
+            child: ValueListenableBuilder<TextEditingValue>(valueListenable: widget.controller,
+              builder: (context, value, _) => Text(value.text.isEmpty ? t(currentLocale.value, 'title_label') : value.text,
+                style: titleStyle, maxLines: 2, overflow: TextOverflow.ellipsis)),
           )),
           if (!widget.creating && !widget.writing)
             AppIconButton(tooltip: _editing ? t(currentLocale.value, 'save') : t(currentLocale.value, 'title_label'),
@@ -71,7 +72,7 @@ class _EditorV45TitleState extends State<EditorV45Title> {
             AppButton.ghost(onPressed: () => FocusManager.instance.primaryFocus?.unfocus(),
               label: currentLocale.value == 'ru' ? 'Готово' : 'Done')
           else AppIconButton(size: AppIconButtonSize.s, shape: AppIconButtonShape.circular, variant: AppIconButtonVariant.filled, onPressed: widget.onClose, tooltip: currentLocale.value == 'ru' ? 'Закрыть' : 'Close', icon: Icons.close_rounded),
-        ]),
+        ])),
         if (widget.writing) Padding(
           padding: const EdgeInsets.only(top: 5, bottom: 4),
           child: Row(children: [
@@ -88,7 +89,7 @@ class _EditorV45TitleState extends State<EditorV45Title> {
 /// the international date-symbol tables have finished initializing.
 String editorV45Date(BuildContext context, DateTime date) {
   try {
-    return DateFormat('d MMM, E', currentLocale.value).format(date);
+    return DateFormat('d MMMM, E', currentLocale.value).format(date);
   } catch (_) {
     return MaterialLocalizations.of(context).formatShortDate(date);
   }
