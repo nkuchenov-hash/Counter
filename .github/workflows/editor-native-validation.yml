@@ -28,4 +28,4 @@ jobs:
       - run: flutter pub get
       - run: flutter test test/editor_v45_chrome_test.dart
       - run: flutter test test/app_control_consistency_test.dart
-      - run: flutter build web --release --no-web-resources-cdn
+      - run: flutter build web --release --base-href=/Counter/ --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none --no-web-resources-cdn
