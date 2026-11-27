@@ -27,20 +27,20 @@ abstract final class NotesFigmaTokens {
   static const double editorContentMaxWidth = 880;
   static const double editorDesktopOuterInset = 20;
   static const double editorSurfaceRadius = 28;
-  static const double editorContentInset = 20;
-  static const double editorDesktopContentInset = 40;
+  static const double editorContentInset = 24;
+  static const double editorDesktopContentInset = 28;
 
   // Typography from Notes/Title Block V2 and Notes/Text Formatting.
-  static const double titleSize = 32;
-  static const double titleLineHeight = 40;
-  static const double bodySize = 16;
-  static const double bodyLineHeight = 24;
-  static const double h1Size = 24;
-  static const double h1LineHeight = 30;
-  static const double h2Size = 20;
-  static const double h2LineHeight = 26;
-  static const double h3Size = 18;
-  static const double h3LineHeight = 24;
+  static const double titleSize = 28;
+  static const double titleLineHeight = 36;
+  static const double bodySize = 17;
+  static const double bodyLineHeight = 26;
+  static const double h1Size = 22;
+  static const double h1LineHeight = 28;
+  static const double h2Size = 19;
+  static const double h2LineHeight = 25;
+  static const double h3Size = 17;
+  static const double h3LineHeight = 23;
   static const double badgeSize = 11;
   static const double badgeLineHeight = 13;
 
