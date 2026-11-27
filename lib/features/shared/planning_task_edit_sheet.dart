@@ -65,6 +65,15 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   /// True until [DatabaseService.fetchTagsForCurrentUser] completes (strip stays visible).
   bool _tagsLoading = true;
   bool _notesEditorFocused = false;
+  bool _notesReading = false;
+  bool _readingScroll(ScrollNotification n) {
+    if (n.depth != 0 || n.metrics.axis != Axis.vertical) return false;
+    final next = n.metrics.pixels > 24;
+    if (next != _notesReading) WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _notesReading != next) setState(() => _notesReading = next);
+    });
+    return false;
+  }
   late List<Tag> _selectedTags;
   int? _reminderMinutes;
   late PlanRepeatUi _repeatUi;
@@ -517,6 +526,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
       if (!mounted || _notesEditorFocused == focused) return;
       setState(() => _notesEditorFocused = focused);
     },
+    child: NotificationListener<ScrollNotification>(onNotification: _readingScroll,
     child: NoteEditorPage(
       task: widget.task,
       inlineKeyboardActive: notesEditing,
@@ -526,7 +536,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
         _noteDocument = document;
         _onPlanFieldChanged(fromNotes: true);
       },
-    ),
+    )),
   );
 
   @override
@@ -537,7 +547,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     );
     final kbBottom = MediaQuery.viewInsetsOf(context).bottom;
     final keyboardOpen = kbBottom > 0;
-    final notesEditing = keyboardOpen && _notesEditorFocused;
+    final notesEditing = _startedAsUndatedBacklog ? keyboardOpen && _notesEditorFocused : _notesEditorFocused;
     final compactChrome = notesEditing;
     final mobileDated =
         !_startedAsUndatedBacklog && MediaQuery.sizeOf(context).width <= 600;
@@ -635,7 +645,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
           Expanded(
             child: Column(
               children: [
-                if (_startedAsUndatedBacklog || keyboardOpen)
+                if (_startedAsUndatedBacklog)
                   Expanded(
                     key: const ValueKey('planning-edit-notes-pane'),
                     child: _buildPlanNotes(notesEditing),
@@ -904,11 +914,14 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                       ],
                     ),
                   ),
-                ] else if (!keyboardOpen) ...[
+                ] else if (!_startedAsUndatedBacklog) ...[
+                        EditorV45Collapsible(collapsed: notesEditing || (keyboardOpen && _titleController.text.isNotEmpty),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                         Padding(
                           key: const ValueKey('planning-edit-time-row'),
-                          padding: const EdgeInsets.fromLTRB(24, 4, 24, 18),
+                          padding: EdgeInsets.fromLTRB(24, 4, 24, _notesReading ? 12 : 18),
                           child: EditorV45TimeCard(
+                            compact: _notesReading,
                             start: _scheduledTime,
                             end: _endTime,
                             fallbackDate: _date,
@@ -955,7 +968,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                           key: const ValueKey('planning-edit-tag-strip'),
                           padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                           child: SizedBox(
-                            height: 40,
+                            height: 50,
                             child: _tagsLoading
                                 ? Center(
                                     child: SizedBox(
@@ -991,6 +1004,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                                     selected: _selectedTags,
                                     onToggle: _toggleTag,
                                     variant: CategoryChipVariant.largePicker,
+                                    editorInteraction: true,
                                   ),
                           ),
                         ),
@@ -1028,9 +1042,18 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                             ),
                           ),
                         ),
+                        ])),
                         Expanded(
                           key: const ValueKey('planning-edit-tab-content'),
-                          child: TabBarView(
+                          child: EditorV45ActionOverlay(visible: !notesEditing && !keyboardOpen,
+                            actions: EditorV45Actions(
+                              key: const ValueKey('planning-edit-action-bar'),
+                              primaryLabel: _isPersistedPlan ? (currentLocale.value == 'ru' ? 'Закрыть' : 'Close') : (currentLocale.value == 'ru' ? 'Создать план' : 'Create plan'),
+                              onPrimary: _commitSave,
+                              onCancel: _isPersistedPlan ? null : () => Navigator.of(context).pop<PlanningTask?>(null),
+                              onDelete: !_isPersistedPlan || widget.onDelete == null ? null : () { widget.onDelete!(widget.task); Navigator.of(context).pop<PlanningTask?>(null); },
+                            ),
+                            content: TabBarView(
                             controller: _planTabController!,
                             children: [
                               KeyedSubtree(
@@ -1042,7 +1065,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                                   16,
                                   12,
                                   16,
-                                  24,
+                                  110,
                                 ),
                                 children: [
                                   DropdownButtonFormField<int?>(
@@ -1212,12 +1235,12 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                                   ],
                                 ],
                               ),
-                              BacklogSubItemsPanel(
+                              Padding(padding: const EdgeInsets.only(bottom: 100), child: BacklogSubItemsPanel(
                                 parentTask: widget.task,
                                 categoryId: _categoryId,
-                              ),
+                              )),
                             ],
-                          ),
+                          )),
                         ),
                 ],
                 if (_shouldShowGraduateUi)
@@ -1238,14 +1261,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                         ),
                       ),
                     ),
-                  ),
-                if (!notesEditing && !_startedAsUndatedBacklog)
-                  EditorV45Actions(
-                    key: const ValueKey('planning-edit-action-bar'),
-                    primaryLabel: _isPersistedPlan ? (currentLocale.value == 'ru' ? 'Закрыть' : 'Close') : (currentLocale.value == 'ru' ? 'Создать план' : 'Create plan'),
-                    onPrimary: _commitSave,
-                    onCancel: _isPersistedPlan ? null : () => Navigator.of(context).pop<PlanningTask?>(null),
-                    onDelete: !_isPersistedPlan || widget.onDelete == null ? null : () { widget.onDelete!(widget.task); Navigator.of(context).pop<PlanningTask?>(null); },
                   ),
                 if (!notesEditing && _startedAsUndatedBacklog)
                   SafeArea(
