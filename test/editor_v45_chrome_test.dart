@@ -1,3 +1,14 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:counter/core/theme.dart';
+import 'package:counter/data/database_service.dart';
+import 'package:counter/data/models.dart';
+import 'package:counter/features/notes/note_editor_page.dart';
+import 'package:counter/features/shared/planning_task_edit_sheet.dart';
+import 'package:counter/features/shared/timeline_record_edit_sheet.dart';
+import 'package:counter/shared/categories/picker/category_picker_contracts.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:counter/features/shared/edit_sheet/editor_v45_chrome.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -74,5 +85,89 @@ void main() {
     final pencil = tester.getRect(find.byIcon(Icons.edit_outlined));
     expect(pencil.left - text.right, lessThan(24));
     expect(tester.takeException(), isNull);
+  });
+
+  // Opt-in screenshot evidence: actual production widgets, offline fixture
+  // data, bundled Onest and application themes. Never contacts real accounts.
+  testWidgets('capture v45 mobile and desktop editor review screenshots', (tester) async {
+    final output = Platform.environment['V45_CAPTURE_DIR'];
+    if (output == null) return;
+    await tester.runAsync(() async {
+      final font = FontLoader('Onest')
+        ..addFont(rootBundle.load('assets/fonts/Onest-Variable.ttf'));
+      await font.load();
+    });
+    final previousLocale = currentLocale.value;
+    currentLocale.value = 'ru';
+    addTearDown(() => currentLocale.value = previousLocale);
+    final db = DatabaseService.instance;
+    db.debugActivateRecordBrainTestHarness(userId: 'v45visualfixture',
+      categories: [CategoryRule(id: 1, name: 'Тренировки')]);
+    addTearDown(db.debugResetRecordBrainTestHarness);
+    CategoryTreeSource.categoryExists = (id) => db.getCategoryRuleById(id) != null;
+    CategoryTreeSource.getCategoryPath = (_) => 'Спорт / Тренировки';
+    addTearDown(() {
+      CategoryTreeSource.categoryExists = null;
+      CategoryTreeSource.getCategoryPath = null;
+    });
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    const doc = NoteDocument(blocks: [
+      NoteBlock(id: 'a', type: NoteBlockType.heading, level: 1, text: 'Подготовка'),
+      NoteBlock(id: 'b', type: NoteBlockType.paragraph, text: 'В первую очередь нужно купить билеты и забронировать жильё. Это будет наша первая поездка в этом году.'),
+      NoteBlock(id: 'c', type: NoteBlockType.paragraph, text: 'Проверить срок действия паспорта, распечатать билеты и сохранить всё в телефоне. Подробнее на сайте РЖД.'),
+      NoteBlock(id: 'd', type: NoteBlockType.heading, level: 2, text: 'Что взять с собой'),
+      NoteBlock(id: 'e', type: NoteBlockType.bulletedList, text: 'Удобную обувь для прогулок'),
+      NoteBlock(id: 'f', type: NoteBlockType.bulletedList, text: 'Тёплую одежду и зонт на случай дождя'),
+      NoteBlock(id: 'g', type: NoteBlockType.bulletedList, text: 'Зарядку и пауэрбанк'),
+      NoteBlock(id: 'h', type: NoteBlockType.heading, level: 3, text: 'Документы'),
+      NoteBlock(id: 'i', type: NoteBlockType.numberedList, text: 'Паспорт'),
+      NoteBlock(id: 'j', type: NoteBlockType.numberedList, text: 'Билеты туда и обратно'),
+    ]);
+    final task = PlanningTask(id: 1, title: 'Тренировка в зале', categoryId: 1,
+      dateKey: '2026-11-27', startTime: DateTime(2026, 11, 27, 18, 30),
+      endDateTime: DateTime(2026, 11, 27, 19, 45), notesDeltaJson: doc.encode());
+    final record = TimelineRecord(id: 'v45record000001', title: 'Тренировка в зале',
+      categoryId: 1, startTime: DateTime.utc(2026, 11, 27, 18, 34),
+      endTime: DateTime.utc(2026, 11, 27, 19, 42), notesDeltaJson: doc.encode());
+    final note = PlanningTask(id: 2, title: 'Поездка в Петербург', categoryId: 1,
+      dateKey: '', notesDeltaJson: doc.encode());
+    for (final size in [const Size(390, 844), const Size(760, 850)]) {
+      tester.view.physicalSize = size;
+      for (final dark in [false, true]) {
+        for (final kind in ['plan', 'record', 'note']) {
+          final scroll = ScrollController();
+          final boundary = GlobalKey();
+          final Widget screen = switch (kind) {
+            'plan' => PlanningTaskEditSheet(task: task, dateKey: task.dateKey,
+              scrollController: scroll),
+            'record' => TimelineRecordSheetContent(record: record,
+              scrollController: scroll, onSaved: (_) {}, onDelete: () {}, onStop: () {}),
+            _ => NoteEditorPage(task: note, initialDocument: doc, onDocumentChanged: (_) {}),
+          };
+          await tester.pumpWidget(MaterialApp(
+            theme: dark ? appDarkTheme : appLightTheme,
+            home: RepaintBoundary(key: boundary, child: Scaffold(body: screen)),
+          ));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(tester.takeException(), isNull);
+          final render = boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+          final filename = '${kind}-${size.width.toInt()}-${dark ? 'dark' : 'light'}.png';
+          await tester.runAsync(() async {
+            final image = await render.toImage(pixelRatio: 1);
+            final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+            image.dispose();
+            final file = File('$output/$filename');
+            await file.parent.create(recursive: true);
+            await file.writeAsBytes(bytes!.buffer.asUint8List());
+          });
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump();
+          scroll.dispose();
+        }
+      }
+    }
   });
 }
