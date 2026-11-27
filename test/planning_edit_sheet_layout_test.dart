@@ -9,6 +9,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    for (final name in ['xyz.luan/audioplayers.global', 'xyz.luan/audioplayers.global/events', 'xyz.luan/audioplayers']) {
+      messenger.setMockMethodCallHandler(MethodChannel(name), (_) async => null);
+    }
+  });
+  TestWidgetsFlutterBinding.ensureInitialized();
 
   for (final size in [const Size(1050, 1000), const Size(390, 844)]) {
     testWidgets(
