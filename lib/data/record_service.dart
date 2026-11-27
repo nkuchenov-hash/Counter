@@ -17,38 +17,6 @@ bool _recordMutationRetriableHttpCode(int code) {
   return true;
 }
 
-/// Shares ordinary concurrent reads for one signed-in profile. A forced
-/// reconciliation always begins a fresh snapshot so a missed realtime event
-/// cannot be hidden behind a request that predates the gap.
-class RecordReadSingleFlight<T> {
-  Future<T>? _pending;
-  String? _owner;
-
-  Future<T> run(String owner, {
-    required bool forceNetwork,
-    required Future<T> Function() request,
-  }) {
-    final pending = _pending;
-    if (!forceNetwork && pending != null && _owner == owner) return pending;
-    final next = Future<T>.sync(request);
-    _pending = next;
-    _owner = owner;
-    void clearIfCurrent() {
-      if (identical(_pending, next)) clear();
-    }
-    unawaited(next.then<void>((_) => clearIfCurrent(),
-      onError: (Object _, StackTrace __) => clearIfCurrent()));
-    return next;
-  }
-
-  void clear() {
-    _pending = null;
-    _owner = null;
-  }
-}
-
-final _recordReadSingleFlight = RecordReadSingleFlight<List<Map<String, dynamic>>>();
-
 extension RecordServiceExtension on DatabaseService {
   Map<String, dynamic> _recordMapFromPb(RecordModel r) {
     final d = Map<String, dynamic>.from(r.data);
@@ -269,59 +237,6 @@ extension RecordServiceExtension on DatabaseService {
     }
   }
 
-
-  /// Rebuild local create shadows from the durable outbox after a restart or
-  /// full PocketBase refresh. A server snapshot must not hide unflushed input.
-  Future<void> _mergePendingRecordCreatesIntoRows(
-    List<Map<String, dynamic>> rows,
-    SharedPreferences prefs,
-  ) async {
-    final queue = await RecordMutationOutbox.load(prefs);
-    for (final item in queue) {
-      final kind = (item['kind'] ?? '').toString();
-      if (kind != RecordMutationOutbox.kindHighlanderStart &&
-          kind != RecordMutationOutbox.kindRecordCreate) {
-        continue;
-      }
-      final raw = item['payload'];
-      if (raw is! Map) continue;
-      final fields = Map<String, dynamic>.from(raw);
-      final businessId = (fields['record_id'] ?? '').toString().trim();
-      final owner = (fields['user_id'] ?? '').toString().trim();
-      if (businessId.isEmpty || owner != _pidForPbFilter) continue;
-      Map<String, dynamic>? shadow;
-      for (final existing in _cachedFlatRecords) {
-        if ((existing['record_id'] ?? '').toString().trim() == businessId) {
-          shadow = existing;
-          break;
-        }
-      }
-      final index = rows.indexWhere(
-        (r) => (r['record_id'] ?? '').toString().trim() == businessId,
-      );
-      if (index >= 0) {
-        // A later locally accepted start may already have stopped this
-        // record. Do not let an older server snapshot show two actives.
-        if (shadow != null &&
-            shadow['status'] == 'stopped' &&
-            rows[index]['status'] == 'running') {
-          rows[index] = <String, dynamic>{
-            ...rows[index],
-            'status': 'stopped',
-            'end_time': shadow['end_time'],
-          };
-        }
-        continue;
-      }
-      rows.add(<String, dynamic>{
-        ...fields,
-        if (shadow != null) ...shadow,
-        'id': shadow?['id'] ?? businessId,
-        '_pb_record_id': '',
-        '_highlanderPendingPost': true,
-      });
-    }
-  }
 
   /// PocketBase: **records** for the current user with category + tags expands (@POCKETBASE_MANIFEST).
   /// Updates [_cachedFlatRecords] for timeline filtering without repeated GETs.
