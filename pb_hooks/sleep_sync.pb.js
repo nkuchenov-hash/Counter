@@ -140,7 +140,7 @@ cronAdd("lifeos_xiaomi_sleep_sync", "*/15 * * * *", function() {
         try {
             sleepRows = app.findRecordsByFilter(
                 "records",
-                "user_id = {:uid} && (sleep_source = 'xiaomi' || external_source = 'xiaomi')",
+                "user_id = {:uid} && parent_id = '' && (sleep_source = 'xiaomi' || external_source = 'xiaomi')",
                 "-start_time",
                 1,
                 0,
@@ -149,34 +149,12 @@ cronAdd("lifeos_xiaomi_sleep_sync", "*/15 * * * *", function() {
         } catch (_) { continue; }
         if (!sleepRows.length) continue;
         var sleep = sleepRows[0];
-        var sleepStart = new Date(String(sleep.get("start_time") || ""));
-        if (isNaN(sleepStart.getTime())) continue;
-        var prior = [];
         try {
-            prior = app.findRecordsByFilter(
-                "records",
-                "user_id = {:uid} && start_time < {:sleepStart}",
-                "-start_time",
-                30,
-                0,
-                { uid: reconcileUserId, sleepStart: sleepStart.toISOString() }
-            );
-        } catch (_) { continue; }
-        for (var p = 0; p < prior.length; p++) {
-            var previous = prior[p];
-            var previousTitle = String(previous.get("title") || "").trim().toLowerCase();
-            var previousKind = String(previous.get("external_kind") || "").trim().toLowerCase();
-            var previousSleepSource = String(previous.get("sleep_source") || "").trim().toLowerCase();
-            if (previousTitle === "sleep" || previousTitle === "сон" || previousKind === "sleep" || previousSleepSource) continue;
-            var previousStart = new Date(String(previous.get("start_time") || ""));
-            if (isNaN(previousStart.getTime()) || previousStart.getTime() >= sleepStart.getTime()) continue;
-            var previousEndRaw = String(previous.get("end_time") || "").trim();
-            var previousEnd = previousEndRaw ? new Date(previousEndRaw) : null;
-            if (previousEnd && !isNaN(previousEnd.getTime()) && previousEnd.getTime() <= sleepStart.getTime()) break;
-            previous.set("end_time", sleepStart.toISOString());
-            previous.set("status", "completed");
-            try { app.save(previous); } catch (_) {}
-            break;
+            require(__hooks + "/records.interval_sanitize_helpers.js")
+                .repairSleepPredecessors(app, sleep);
+        } catch (err) {
+            app.logger().error("sleep boundary reconciliation failed",
+                "user_id", reconcileUserId, "error", err);
         }
     }
 });
@@ -272,7 +250,7 @@ onBootstrap(function(e) {
         try {
             startupSleepRows = app.findRecordsByFilter(
                 "records",
-                "user_id = {:uid} && (sleep_source = 'xiaomi' || external_source = 'xiaomi')",
+                "user_id = {:uid} && parent_id = '' && (sleep_source = 'xiaomi' || external_source = 'xiaomi')",
                 "-start_time",
                 1,
                 0,
@@ -281,32 +259,12 @@ onBootstrap(function(e) {
         } catch (_) { continue; }
         if (!startupSleepRows.length) continue;
         var startupSleep = startupSleepRows[0];
-        var startupSleepStart = new Date(String(startupSleep.get("start_time") || ""));
-        if (isNaN(startupSleepStart.getTime())) continue;
-        var startupPrior = [];
         try {
-            startupPrior = app.findRecordsByFilter(
-                "records",
-                "user_id = {:uid} && start_time < {:sleepStart}",
-                "-start_time",
-                30,
-                0,
-                { uid: startupUserId, sleepStart: startupSleepStart.toISOString() }
-            );
-        } catch (_) { continue; }
-        for (var sp = 0; sp < startupPrior.length; sp++) {
-            var startupPrevious = startupPrior[sp];
-            var startupTitle = String(startupPrevious.get("title") || "").trim().toLowerCase();
-            var startupKind = String(startupPrevious.get("external_kind") || "").trim().toLowerCase();
-            var startupSleepSource = String(startupPrevious.get("sleep_source") || "").trim().toLowerCase();
-            if (startupTitle === "sleep" || startupTitle === "сон" || startupKind === "sleep" || startupSleepSource) continue;
-            var startupEndRaw = String(startupPrevious.get("end_time") || "").trim();
-            var startupEnd = startupEndRaw ? new Date(startupEndRaw) : null;
-            if (startupEnd && !isNaN(startupEnd.getTime()) && startupEnd.getTime() <= startupSleepStart.getTime()) break;
-            startupPrevious.set("end_time", startupSleepStart.toISOString());
-            startupPrevious.set("status", "completed");
-            try { app.save(startupPrevious); } catch (_) {}
-            break;
+            require(__hooks + "/records.interval_sanitize_helpers.js")
+                .repairSleepPredecessors(app, startupSleep);
+        } catch (err) {
+            app.logger().error("startup sleep boundary reconciliation failed",
+                "user_id", startupUserId, "error", err);
         }
     }
 
