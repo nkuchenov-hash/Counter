@@ -800,7 +800,8 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     );
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     // ACTIVE_STATUS_LAW: running ⇔ end_time null (UI mirrors Brain).
-    final isRunning = _isPersistedRecord && widget.record.endTime == null;
+    final mode = classifyRecordEditSaveMode(hasPersistedOrClientRecordId: _isPersistedRecord, endTimeIsNull: widget.record.endTime == null, status: widget.record.status);
+    final isRunning = mode == RecordEditSaveMode.runningMetadata, creating = mode == RecordEditSaveMode.createCompletedInterval;
     final int catVal = _categoryId != null
         ? resolveEditFieldCategoryId(
             db: DatabaseService.instance,
@@ -818,8 +819,8 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
           EditorV45Title(
             controller: _titleController,
             onChanged: (raw) => _handleRecordTitleInput(this, raw),
-            onClose: _isPersistedRecord ? _save : () => Navigator.of(context).pop(),
-            creating: !_isPersistedRecord,
+            onClose: creating ? () => Navigator.of(context).pop() : _save,
+            creating: creating,
             writing: notesEditing,
             contextLabel: currentLocale.value == 'ru' ? 'Заметка записи' : 'Record note',
             contextTime: editorV45Range(_startDisplay, _endDisplay),
@@ -874,9 +875,9 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                 Expanded(
                   child: EditorV45ActionOverlay(visible: !notesEditing && MediaQuery.viewInsetsOf(context).bottom == 0,
                     actions: EditorV45Actions(
-                      primaryLabel: _isPersistedRecord ? (currentLocale.value == 'ru' ? 'Закрыть' : 'Close') : (currentLocale.value == 'ru' ? 'Создать запись' : 'Create record'),
+                      primaryLabel: !creating ? (currentLocale.value == 'ru' ? 'Закрыть' : 'Close') : (currentLocale.value == 'ru' ? 'Создать запись' : 'Create record'),
                       onPrimary: _save,
-                      onCancel: _isPersistedRecord ? null : () => Navigator.of(context).pop(),
+                      onCancel: !creating ? null : () => Navigator.of(context).pop(),
                       onDelete: _isPersistedRecord ? widget.onDelete : null,
                       onStop: isRunning ? widget.onStop : null,
                     ),
