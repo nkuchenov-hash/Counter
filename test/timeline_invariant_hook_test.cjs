@@ -209,3 +209,61 @@ test('scheduled repair uses atomic predecessor correction and preserves sleep', 
   assert.equal(stored.get('sleep').end_time, iso(at('09:17')));
   assertNoOverlap(stored);
 });
+
+test('provider revision keeps its original identity and adjusts predecessor', () => {
+  const rows = screenshotRows();
+  rows[0].end_time = iso(at('02:05'));
+  rows[1].start_time = iso(at('02:05'));
+  const {app, stored} = fixture(rows);
+  write(app, {...rows[1], start_time:iso(at('01:57'))});
+  assert.equal(stored.size, 3);
+  assert.equal(stored.get('preparation').end_time, iso(at('01:57')));
+  assert.equal(stored.get('sleep').start_time, iso(at('01:57')));
+  assert.equal(stored.get('sleep').end_time, iso(at('09:17')));
+  assertNoOverlap(stored);
+});
+test('sleep is not shortened to hide a conflicting later activity', () => {
+  const rows = screenshotRows();
+  const conflict = record('conflict', at('08:00'), at('08:30'));
+  const {app, stored} = fixture([rows[0], conflict]);
+  assert.throws(() => write(app, rows[1]), /authoritative sleep/);
+  assert.deepEqual([...stored.values()], [rows[0], conflict]);
+});
+test('historical repair preflights ambiguous conflicts before changing any rows', () => {
+  const rows = screenshotRows();
+  const conflict = record('conflict', at('08:00'), at('08:30'));
+  const {app, stored} = fixture([...rows, conflict]);
+  assert.throws(() => h.sanitizeAllPrimaryIntervalsForUser(app, owner),
+    /Ambiguous historical interval/);
+  assert.deepEqual([...stored.values()], [...rows, conflict]);
+});
+test('production hooks cover model create and update, not merely HTTP requests', () => {
+  const fs = require('node:fs');
+  const vm = require('node:vm');
+  const path = require('node:path');
+  let create, update;
+  const hooks = path.resolve(__dirname, '../pb_hooks');
+  vm.runInNewContext(fs.readFileSync(path.join(hooks, 'records.interval_sanitize.pb.js'), 'utf8'), {
+    __hooks: hooks,
+    require: (filename) => {
+      assert.equal(filename, path.join(hooks, 'records.interval_sanitize_helpers.js'));
+      return h;
+    },
+    onRecordCreate(handler, collection) { assert.equal(collection, 'records'); create = handler; },
+    onRecordUpdate(handler, collection) { assert.equal(collection, 'records'); update = handler; },
+  });
+  assert.equal(typeof create, 'function');
+  assert.equal(typeof update, 'function');
+  const rows = screenshotRows();
+  const {app, stored} = fixture([rows[0]]);
+  const run = (handler, row) => {
+    const event = {app, record:model({...row}), next() {
+      event.app._persist(event.record);
+    }};
+    handler(event);
+  };
+  run(create, rows[1]);
+  run(update, rows[0]);
+  assert.equal(stored.get('preparation').end_time, iso(at('01:57')));
+  assertNoOverlap(stored);
+});
