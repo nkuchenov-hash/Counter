@@ -120,22 +120,32 @@ function reconcileRecordWrite(event) {
 // making any changes. Fail closed on ambiguous same-start/sleep conflicts.
 function sanitizeAllPrimaryIntervalsForUser(app, userId) {
     if (!userId) return;
-    const rows = [];
-    for (let offset = 0;; offset += PAGE) {
-        const page = primaryPage(app, "", "+start_time,+id", PAGE, offset, {uid: userId});
-        rows.push(...page);
-        if (page.length < PAGE) break;
-    }
-    for (let i = 1; i < rows.length; i++) {
-        const previous = rows[i-1], current = rows[i];
-        const start = parseTimeMs(current, "start_time");
-        if (start == null || effectiveEndMs(previous) <= start) continue;
-        if (isImportedSleep(previous) || parseTimeMs(previous, "start_time") === start) {
-            throw new BadRequestError("Ambiguous historical interval conflict requires review");
+    app.runInTransaction((tx) => {
+        const rows = [];
+        for (let offset = 0;; offset += PAGE) {
+            const page = primaryPage(tx, "", "+start_time,+id", PAGE, offset, {uid: userId});
+            rows.push(...page);
+            if (page.length < PAGE) break;
         }
-        closeAt(previous, start, isImportedSleep(current));
-        app.saveNoValidate(previous);
-    }
+        // Preflight every proposed boundary before any historical write.
+        const corrections = [];
+        for (let i = 1; i < rows.length; i++) {
+            const previous = rows[i-1], current = rows[i];
+            const start = parseTimeMs(current, "start_time");
+            if (start == null || effectiveEndMs(previous) <= start) continue;
+            if (isImportedSleep(previous) || parseTimeMs(previous, "start_time") === start) {
+                throw new BadRequestError("Ambiguous historical interval conflict requires review");
+            }
+            corrections.push({id: rowId(previous), start: start, sleep: isImportedSleep(current)});
+        }
+        for (let i = corrections.length - 1; i >= 0; i--) {
+            const correction = corrections[i];
+            const previous = tx.findRecordById("records", correction.id);
+            if (effectiveEndMs(previous) <= correction.start) continue;
+            closeAt(previous, correction.start, correction.sleep);
+            tx.saveNoValidate(previous);
+        }
+    });
 }
 // Repair a previously imported completed sleep without rewriting its bounds.
 // Existing scheduled/startup recovery calls this in a transaction.
