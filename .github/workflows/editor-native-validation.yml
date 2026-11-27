@@ -1,0 +1,31 @@
+name: Validate native editor design PR
+
+on:
+  pull_request:
+    paths:
+      - 'lib/features/shared/**'
+      - 'lib/features/notes/**'
+      - 'test/editor_v45_chrome_test.dart'
+      - '.github/workflows/editor-native-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  editor-native-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' "  static const String placeholder = '';" '}' > lib/core/env/env.dart
+      - run: flutter pub get
+      - run: flutter test test/editor_v45_chrome_test.dart
+      - run: flutter test test/app_control_consistency_test.dart
+      - run: flutter build web --release --no-web-resources-cdn
