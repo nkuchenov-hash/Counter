@@ -116,6 +116,7 @@ class CategoryChip extends StatelessWidget {
     /// Synthetic “No Tags” strip id ([Tag.tagId] == -1): solid B/W + inverted text.
     /// All other tags (even #000000) use translucent letter-chip styling.
     this.syntheticNoTagsMonochrome = false,
+    this.editorInteraction = false,
   });
 
   final CategoryDisplayMode mode;
@@ -128,6 +129,7 @@ class CategoryChip extends StatelessWidget {
   final CategoryChipVariant variant;
   final bool prominentVisuals;
   final bool syntheticNoTagsMonochrome;
+  final bool editorInteraction;
 
   /// Square tap target for dot / raw icon / icon-in-circle only.
   static const double _glyphTapExtent = 44;
@@ -214,6 +216,10 @@ class CategoryChip extends StatelessWidget {
       );
     }
 
+    if (editorInteraction) {
+      return _EditorTagInteraction(selected: selected, pill: isPillMode,
+        onTap: onTap!, child: inner);
+    }
     final tapRadius = isPillMode ? 100.0 : glyphSide / 2;
     final selectedPill = isPillMode && selected
         ? _TagSelectionRing(selected: true, child: inner)
@@ -430,6 +436,7 @@ class TagQuickPickStrip extends StatefulWidget {
     this.variant = CategoryChipVariant.compactCard,
     this.prominentVisuals = false,
     this.externalSelectionRing = false,
+    this.editorInteraction = false,
 
     /// When set, the strip uses a horizontal [ReorderableListView]; indices match [tags].
     this.onReorder,
@@ -445,6 +452,7 @@ class TagQuickPickStrip extends StatefulWidget {
   final CategoryChipVariant variant;
   final bool prominentVisuals;
   final bool externalSelectionRing;
+  final bool editorInteraction;
   final void Function(int oldIndex, int newIndex)? onReorder;
   final void Function(Tag tag)? onTagLongPress;
 
@@ -504,6 +512,7 @@ class _TagQuickPickStripState extends State<TagQuickPickStrip> {
       variant: widget.variant,
       prominentVisuals: widget.prominentVisuals,
       syntheticNoTagsMonochrome: tag.tagId == -1,
+      editorInteraction: widget.editorInteraction,
       onTap: () => widget.onToggle(tag),
     );
     Widget chip = widget.externalSelectionRing
@@ -631,6 +640,55 @@ class _TagSelectionRing extends StatelessWidget {
           child: Padding(padding: const EdgeInsets.all(4), child: child),
         ),
       ],
+    );
+  }
+}
+
+/// Fixed hit target; only its pointer-transparent contents change scale.
+class _EditorTagInteraction extends StatefulWidget {
+  const _EditorTagInteraction({required this.selected, required this.pill, required this.onTap, required this.child});
+  final bool selected, pill;
+  final VoidCallback onTap;
+  final Widget child;
+  @override
+  State<_EditorTagInteraction> createState() => _EditorTagInteractionState();
+}
+class _EditorTagInteractionState extends State<_EditorTagInteraction> {
+  bool _hover = false, _pressed = false, _focused = false;
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final ring = widget.selected || _focused;
+    return Semantics(
+      button: true, selected: widget.selected,
+      child: Material(type: MaterialType.transparency,
+        child: InkWell(
+          onTap: widget.onTap,
+          onHover: (v) => setState(() => _hover = v),
+          onHighlightChanged: (v) => setState(() => _pressed = v),
+          onFocusChange: (v) => setState(() => _focused = v),
+          overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+          splashFactory: NoSplash.splashFactory,
+          borderRadius: BorderRadius.circular(100),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+            child: Align(alignment: Alignment.center, widthFactor: 1, heightFactor: 1,
+              child: IgnorePointer(
+                child: AnimatedScale(
+                  scale: MediaQuery.disableAnimationsOf(context) ? 1 : _pressed ? .92 : _hover ? .96 : 1,
+                  duration: const Duration(milliseconds: 130),
+                  curve: Curves.easeOut,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(100),
+                      border: Border.all(width: 1.5, color: ring ? scheme.primary : Colors.transparent)),
+                    child: Padding(padding: const EdgeInsets.all(3), child: widget.child),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
