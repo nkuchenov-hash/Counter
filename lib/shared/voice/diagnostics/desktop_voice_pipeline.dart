@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kIsWeb;
 /// One-line desktop voice pipeline markers (installed-app acceptance tracing).
 abstract final class DesktopVoicePipeline {
   static File? _pipelineLogFile;
+  static Future<void> _fileTail = Future<void>.value();
 
   static File get pipelineLogFile {
     _pipelineLogFile ??= File(
@@ -27,9 +28,16 @@ abstract final class DesktopVoicePipeline {
         print('[DesktopVoice] $line');
       }
       if (!kIsWeb && Platform.isWindows) {
-        try {
-          pipelineLogFile.writeAsStringSync('$stamped\n', mode: FileMode.append);
-        } catch (_) {}
+        // Keep ordering for acceptance traces, but never block the voice
+        // interaction isolate on filesystem I/O (antivirus, slow disk, etc.).
+        _fileTail = _fileTail.then((_) async {
+          try {
+            await pipelineLogFile.writeAsString(
+              '$stamped\n',
+              mode: FileMode.append,
+            );
+          } catch (_) {}
+        });
       }
     }
   }

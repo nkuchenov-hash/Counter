@@ -7,7 +7,9 @@
 * Browser companion 0.2.6 uses the canonical production PocketBase origin and matching host/CSP permissions.
 * Preserve valid sessions on transient HTTP failures; route timeout and rate-limit failures through existing connectivity backoff.
 * Align Viktor client wait with existing server authorization/generation budget; keep Wear active-record subscription stable across UI ticks.
-* Add focused origin, auth classification and latency contracts. No changes to the working Xiaomi importer or Timeline/editor data paths. Critical release approval and native build verification required.
+* Android contacts read phone, email and birthday data in bulk on the existing worker thread; reject concurrent imports. Windows diagnostic file writes are ordered and asynchronous.
+* Sleep foreground catch-up reads the cached snapshot and lightweight status first, with a five-minute fallback pull; canonical Xiaomi server import, manual sync, realtime and Timeline/editor data paths are unchanged.
+* Add focused origin, auth classification and latency contracts. Critical release approval and native build verification required.
 
 ## [2026-11-25] - Xiaomi endpoint failover and verified-route memory (proposed)
 

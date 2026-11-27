@@ -46,6 +46,29 @@ void main() {
     expect(source, isNot(contains('stream: DatabaseService.instance.activeRecordStream,')));
   });
 
+  test('sleep catch-up does not force full history every thirty seconds', () {
+    final source = File('lib/data/health/sleep_foreground_reconcile_service.dart')
+        .readAsStringSync();
+    final periodic = source.split('Future<void> _catchUpFromPocketBase()')[1]
+        .split('Future<void> _syncDeviceSleep()')[0];
+    expect(periodic, isNot(contains('forceNetwork: true')));
+    expect(periodic, contains('service.loadStatus()'));
+    expect(periodic, contains('_missingSleepPullInterval'));
+    expect(source, contains('db.contextAwarenessCachedRecords()'));
+  });
+
+  test('Android contacts use bulk reads and Windows voice log uses async IO', () {
+    final contacts = File('android/app/src/main/kotlin/com/example/counter/MainActivity.kt')
+        .readAsStringSync();
+    expect(contacts, isNot(contains('firstContactValue(')));
+    expect(contacts, contains('readContactValues('));
+    expect(contacts, contains('peopleContactsReadInProgress'));
+    final voice = File('lib/shared/voice/diagnostics/desktop_voice_pipeline.dart')
+        .readAsStringSync();
+    expect(voice, isNot(contains('writeAsStringSync(')));
+    expect(voice, contains('_fileTail.then('));
+  });
+
   test('Viktor client budget covers server authentication and generation', () {
     final source = File('lib/data/ai/viktor_gateway.dart').readAsStringSync();
     final start = source.indexOf('/api/viktor/propose');
