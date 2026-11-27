@@ -63,14 +63,14 @@ class _EditorV45TitleState extends State<EditorV45Title> {
           )),
           if (!widget.creating && !widget.writing)
             AppIconButton(tooltip: _editing ? t(currentLocale.value, 'save') : t(currentLocale.value, 'title_label'),
-              onPressed: () { setState(() => _editing = !_editing);
+              size: AppIconButtonSize.s, onPressed: () { setState(() => _editing = !_editing);
                 if (_editing) { WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _focus.requestFocus(); }); } else { _focus.unfocus(); }
               }, icon: _editing ? Icons.check_rounded : Icons.edit_outlined),
           ])),
           if (widget.writing)
             AppButton.ghost(onPressed: () => FocusManager.instance.primaryFocus?.unfocus(),
               label: currentLocale.value == 'ru' ? 'Готово' : 'Done')
-          else AppIconButton(onPressed: widget.onClose, tooltip: currentLocale.value == 'ru' ? 'Закрыть' : 'Close', icon: Icons.close_rounded),
+          else AppIconButton(size: AppIconButtonSize.s, shape: AppIconButtonShape.circular, variant: AppIconButtonVariant.filled, onPressed: widget.onClose, tooltip: currentLocale.value == 'ru' ? 'Закрыть' : 'Close', icon: Icons.close_rounded),
         ]),
         if (widget.writing) Padding(
           padding: const EdgeInsets.only(top: 5, bottom: 4),
@@ -110,6 +110,7 @@ class EditorV45TimeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
     final ru = currentLocale.value == 'ru';
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final duration = start != null && end != null && !running ? end!.difference(start!) : null;
     final mins = duration?.inMinutes ?? -1;
     final label = mins < 0 ? '' : [
@@ -119,8 +120,8 @@ class EditorV45TimeCard extends StatelessWidget {
     ].join(' ');
     return Container(
       padding: EdgeInsets.fromLTRB(14, compact ? 9 : 14, 14, compact ? 8 : 12),
-      decoration: BoxDecoration(color: s.surfaceContainerHighest, borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: s.outlineVariant)),
+      decoration: BoxDecoration(color: dark ? AppColors.editorTimeCardDark : AppColors.editorTimeCardLight, borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: dark ? AppColors.editorRuleDark : AppColors.editorRuleLight)),
       child: Column(children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(child: _EditorTimePoint(label: ru ? 'Начало' : 'Start', value: start,
@@ -132,7 +133,7 @@ class EditorV45TimeCard extends StatelessWidget {
         if (label.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12),
           child: Row(children: [
             const _DurationLine(), Padding(padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Text(label, style: TextStyle(fontSize: 14, color: s.onSurfaceVariant))),
+              child: Text(label, style: TextStyle(fontSize: 13, color: s.onSurfaceVariant))),
             const _DurationLine(reverse: true),
           ])),
       ]),
@@ -162,7 +163,7 @@ class _EditorTimePoint extends StatelessWidget {
     final date = value ?? fallbackDate;
     final timeKey = GlobalKey();
     final time = Text(running ? t(currentLocale.value, 'running_label') : editorV45Time(value), key: timeKey,
-      maxLines: 1, style: TextStyle(fontSize: running ? 16 : compact ? 27 : 32, fontWeight: FontWeight.w700, color: s.onSurface));
+      maxLines: 1, style: TextStyle(fontSize: running ? 16 : compact ? 29 : 32, height: 1.13, fontWeight: FontWeight.w700, color: s.onSurface));
     final chevron = Icon(Icons.expand_more_rounded, size: 17, color: s.onSurfaceVariant);
     return InkWell(onTap: onTap == null ? null : () {
         final render = timeKey.currentContext?.findRenderObject();
