@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mouser — Design studio</title>
+<style>
+:root{color-scheme:light;--paper:#f5f2e7;--ink:#25251f;--sub:#66645a;--rule:#d3d0c3;--accent:#a7482a;--panel:#eae6d9}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 "Segoe UI",Arial,sans-serif}body.dark{color-scheme:dark;--paper:#24251f;--ink:#eeeade;--sub:#b9b6aa;--rule:#47483e;--accent:#e5a181;--panel:#33342c}button,input,select{font:inherit;color:inherit}button{cursor:pointer;background:none;border:0;padding:9px 10px}button:hover,button:focus-visible{color:var(--accent)}button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}button[aria-selected=true]{font-weight:600;color:var(--ink);border-bottom:2px solid var(--ink)}.shell{max-width:1450px;margin:auto;padding:28px 44px 20px}.top{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--rule);padding-bottom:22px;gap:24px}.brand{font-size:35px;font-weight:850;letter-spacing:-.085em;line-height:1}.brand i{font-style:normal;color:var(--accent)}nav{display:flex;gap:18px}.small{font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:var(--sub);font-weight:600}.strip{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--rule);padding:10px 0;gap:14px}.strip select{max-width:250px}select,input{border:1px solid var(--rule);border-radius:3px;padding:9px 12px;background:var(--paper);min-width:0}main{display:grid;grid-template-columns:minmax(0,1.52fr) minmax(325px,1fr);gap:35px}.studio{min-width:0;padding:28px 30px 28px 0;border-right:1px solid var(--rule)}h1{font-size:clamp(42px,5.5vw,82px);font-weight:740;letter-spacing:-.075em;line-height:.98;margin:12px 0 8px}h2{font-size:33px;letter-spacing:-.045em;line-height:1.1;margin:10px 0 20px}p{color:var(--sub)}.canvas-wrap{position:relative;margin:15px 0 0;aspect-ratio:1.35;overflow:hidden;background:var(--paper)}canvas{display:block;width:100%;height:100%}.hot{position:absolute;transform:translate(-50%,-50%);width:29px;height:29px;padding:0;border:1px solid #fff9;border-radius:50%;background:#272722dc;color:white;font-size:11px;box-shadow:0 0 0 4px #ffffff42;display:grid;place-items:center}.hot[aria-pressed=true]{background:#a7482a;box-shadow:0 0 0 5px #a7482a38}.viewbar{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--rule);padding-top:12px;gap:12px;flex-wrap:wrap}.views{display:flex;gap:7px}.views button{border:1px solid transparent}.views button[aria-selected=true]{border:1px solid var(--rule);background:var(--panel)}.controls{padding:28px 0}.map{width:100%;display:grid;grid-template-columns:24px minmax(0,1fr) minmax(0,1.1fr) 12px;align-items:center;gap:8px;text-align:left;border-top:1px solid var(--rule);padding:12px 4px}.map .num{font-size:11px;color:var(--sub)}.map .action{text-align:right;font-size:12px;color:var(--sub)}.map[aria-pressed=true]{background:var(--panel);box-shadow:inset 2px 0 var(--accent);padding-left:9px}.map[aria-pressed=true] .action{color:var(--accent)}.edit{border-top:1px solid var(--rule);padding-top:18px;margin-top:3px}.edit h3{margin:8px 0;font-size:21px;letter-spacing:-.035em}.edit select,.edit input{width:100%}.keys{display:flex;gap:6px;min-height:38px;align-items:center;margin-top:8px}kbd{border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:4px 8px;font:12px inherit}.foot{border-top:1px solid var(--rule);display:flex;justify-content:space-between;gap:16px;padding-top:13px}.other{padding:32px 0;max-width:760px;min-height:65vh}.setting{display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid var(--rule);padding:15px 0}.setting button{border:1px solid var(--rule)}[hidden]{display:none!important}.warning{position:absolute;inset:0;display:grid;place-items:center;color:var(--sub);padding:30px;text-align:center}.model-caption{display:flex;justify-content:space-between;gap:12px;color:var(--sub);font-size:11px;margin:6px 0 13px}.add{display:flex;gap:10px;margin:20px 0}.add input{flex:1}.add button{background:var(--ink);color:var(--paper)}@media(max-width:850px){.shell{padding:20px}main{grid-template-columns:1fr;gap:0}.studio{border-right:0;border-bottom:1px solid var(--rule);padding-right:0}.top{flex-wrap:wrap}nav{gap:4px}.controls{padding-top:22px}.strip{flex-wrap:wrap}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style></head>
+<body><div class="shell"><header class="top"><div class="brand">mouser<i>.</i></div><nav aria-label="Разделы"><button data-page="device" aria-selected="true">Мышь</button><button data-page="profiles" aria-selected="false">Профили</button><button data-page="settings" aria-selected="false">Настройки</button></nav><button id="theme" aria-label="Переключить тему">◐</button></header>
+<section id="device"><div class="strip"><span class="small">Текущий профиль</span><select id="profile" aria-label="Профиль"></select></div><main><section class="studio"><div class="small">01 / Управление устройством</div><h1>Universal<br>Mouse.</h1><p>Пять кнопок · четыре направления прокрутки</p><div class="canvas-wrap" id="stage"><canvas id="mouse" aria-label="Объёмная визуализация универсальной мыши"></canvas><div id="fallback" class="warning" hidden>WebGL недоступен. Назначения кнопок доступны справа.</div><div id="hotspots"></div></div><div class="model-caption"><span>Концептуальная модель / Studio render</span><span id="quality"></span></div><div class="viewbar"><span class="small">Ракурс</span><div class="views"><button data-view="0" aria-selected="true">¾</button><button data-view="1" aria-selected="false">Сверху</button><button data-view="2" aria-selected="false">Сбоку</button></div><button id="finish" title="Изменить цвет корпуса">Ivory / сменить цвет</button></div></section><section class="controls"><div class="small">02 / Назначения</div><h2>Кнопки.</h2><div id="maps"></div><div class="edit"><div class="small" id="number"></div><h3 id="selected"></h3><select id="action" aria-label="Действие"></select><input id="custom" placeholder="Ctrl + Shift + A" aria-label="Своя комбинация" hidden><div class="keys" id="keys"></div><button id="reset">Сбросить назначение</button></div></section></main></section>
+<section class="other" id="profiles" hidden><div class="small">03 / Профили</div><h1>Приложения.</h1><div id="profileList"></div><div class="add"><input id="newProfile" placeholder="Например, photoshop.exe"><button id="add">Добавить</button></div></section>
+<section class="other" id="settings" hidden><div class="small">04 / Настройки</div><h1>Настройки.</h1><div class="setting">Переназначение<button id="enabled" aria-pressed="true">Включено</button></div><div class="setting">Запуск с Windows<button id="startup" aria-pressed="true">Включён</button></div><div class="setting">Оформление<button id="theme2">Светлое</button></div><p>В этом MVP настройки не изменяют Windows.</p></section>
+<footer class="foot"><span class="small">Mouser / Design study 04</span><span class="small">Prototype · без системного движка</span></footer></div>
+<script>
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const names=["Левая кнопка","Правая кнопка","Нажатие колеса","Задняя боковая","Передняя боковая","Прокрутка вверх","Прокрутка вниз","Прокрутка влево","Прокрутка вправо"];
+const actions=[["Без изменений",""],["Отключить",""],["Предыдущий рабочий стол","Ctrl + Win + ←"],["Следующий рабочий стол","Ctrl + Win + →"],["Обзор задач","Win + Tab"],["Копировать","Ctrl + C"],["Вставить","Ctrl + V"],["Назад","Alt + ←"],["Вперёд","Alt + →"],["Переключить окно","Alt + Tab"],["Громче","Volume +"],["Тише","Volume −"],["Снимок экрана","Win + Shift + S"],["Своя комбинация…",""]];
+const initial=()=>[0,0,0,2,3,0,0,0,0];let profiles=["Все приложения","Браузер","Проводник"].map(name=>({name,map:initial(),custom:{}})),p=0,k=3,view=0,finish=0,dark=false;
+const pad=i=>String(i+1).padStart(2,"0");
+actions.forEach((a,i)=>$("#action").add(new Option(a[0],i)));
+function button(text,click){let b=document.createElement("button");b.textContent=text;b.onclick=click;return b}
+function page(id){["device","profiles","settings"].forEach(x=>$("#"+x).hidden=x!==id);$$("[data-page]").forEach(b=>b.setAttribute("aria-selected",b.dataset.page===id));if(id==="device")draw()}
+function refresh(){let pr=profiles[p],a=pr.map[k];$("#profile").replaceChildren(...profiles.map((x,i)=>new Option(x.name,i)));$("#profile").value=p;$("#maps").replaceChildren(...names.map((n,i)=>{let b=button("",()=>{k=i;refresh()});b.className="map";b.setAttribute("aria-pressed",i===k);[pad(i),n,actions[pr.map[i]][0],"›"].forEach((v,j)=>{let s=document.createElement("span");s.textContent=v;s.className=j===0?"num":j===2?"action":"";b.append(s)});return b}));$("#number").textContent=pad(k)+" / Действие";$("#selected").textContent=names[k];$("#action").value=a;$("#custom").hidden=a!==13;$("#custom").value=pr.custom[k]||"";$("#keys").replaceChildren(...(a===13?pr.custom[k]||"":actions[a][1]).split(" + ").filter(Boolean).map(t=>{let e=document.createElement("kbd");e.textContent=t;return e}));$("#profileList").replaceChildren(...profiles.map((x,i)=>{let row=document.createElement("div");row.className="setting";let t=document.createElement("span");t.textContent=x.name;row.append(t,button("Настроить ›",()=>{p=i;page("device");refresh()}));return row}));hotspots()}
+$("#profile").onchange=e=>{p=+e.target.value;refresh()};$("#action").onchange=e=>{profiles[p].map[k]=+e.target.value;refresh()};$("#custom").onchange=e=>{profiles[p].custom[k]=e.target.value;refresh()};$("#reset").onclick=()=>{profiles[p].map[k]=initial()[k];refresh()};$("#add").onclick=()=>{let n=$("#newProfile").value.trim();if(n&&!profiles.some(x=>x.name===n)){profiles.push({name:n,map:initial(),custom:{}});$("#newProfile").value="";refresh()}};$$("[data-page]").forEach(b=>b.onclick=()=>page(b.dataset.page));$$("[data-view]").forEach(b=>b.onclick=()=>{view=+b.dataset.view;$$("[data-view]").forEach(x=>x.setAttribute("aria-selected",x===b));draw()});function theme(){dark=!dark;document.body.classList.toggle("dark",dark);$("#theme2").textContent=dark?"Тёмное":"Светлое";draw()}$("#theme").onclick=$("#theme2").onclick=theme;$("#finish").onclick=()=>{finish=1-finish;$("#finish").textContent=(finish?"Graphite":"Ivory")+" / сменить цвет";draw()};for(const id of ["enabled","startup"]){$("#"+id).onclick=e=>{const b=e.currentTarget,on=b.getAttribute("aria-pressed")!=="true";b.setAttribute("aria-pressed",on);b.textContent=on?"Включено":"Выключено"}}
+const canvas=$("#mouse"),gl=canvas.getContext("webgl",{antialias:false,preserveDrawingBuffer:false});
+const vertex="attribute vec2 pos;void main(){gl_Position=vec4(pos,0.,1.);}";
+const frag=`precision highp float;
+uniform vec2 res; uniform vec3 eye; uniform vec3 paper;uniform float finish;
+float ell(vec3 p,vec3 r){float k0=length(p/r),k1=length(p/(r*r));return k0*(k0-1.)/max(k1,.0001);}
+float box(vec3 p,vec3 b,float r){vec3 q=abs(p)-b;return length(max(q,0.))+min(max(q.x,max(q.y,q.z)),0.)-r;}
+float smoothMax(float a,float b,float k){return -log(exp(-a*k)+exp(-b*k))/k;}
+vec2 scene(vec3 p){
+ float w=.78+.10*smoothstep(-1.3,1.3,p.z);
+ vec3 q=p-vec3(0.,.49,.03);
+ float body=ell(q,vec3(w,.64,1.40));
+ body=max(body,.055-p.y);
+ float base=ell(p-vec3(0.,.21,.02),vec3(w+.015,.25,1.415));
+ base=max(base,.055-p.y);
+ float gap=box(p-vec3(0.,.85,-.83),vec3(.084,.38,.38),.045);
+ body=max(body,-gap);
+ float shell=max(body,.22-p.y);
+ float wheel=length(vec2((p.y-.89),p.z+.78))-.225;
+ wheel=max(wheel,abs(p.x)-.068);
+ float rib=abs(sin(atan(p.y-.89,p.z+.78)*37.));
+ wheel+=.005*rib;
+ vec2 result=vec2(base,2.);
+ if(shell<result.x)result=vec2(shell,1.);
+ if(wheel<result.x)result=vec2(wheel,3.);
+ // Separate, rounded side buttons fitted into the left flank.
+ for(int i=0;i<2;i++){
+ float z=i==0?.04:-.39;
+ float side=box(p-vec3(-.797,.46,z),vec3(.022,.055,.171),.033);
+ if(side<result.x)result=vec2(side,4.);
+ }
+ if(p.y<result.x)result=vec2(p.y,0.);
+ return result;
+}
+vec3 normal(vec3 p){vec2 e=vec2(.0018,0.);return normalize(vec3(scene(p+e.xyy).x-scene(p-e.xyy).x,scene(p+e.yxy).x-scene(p-e.yxy).x,scene(p+e.yyx).x-scene(p-e.yyx).x));}
+float shadow(vec3 ro,vec3 rd){float r=1.,t=.04;for(int i=0;i<26;i++){float h=scene(ro+rd*t).x;r=min(r,12.*h/t);t+=clamp(h,.025,.27);if(t>5.||r<.015)break;}return clamp(r,0.,1.);}
+float ao(vec3 p,vec3 n){float occ=0.,scale=1.;for(int i=1;i<=5;i++){float h=.035*float(i);occ+=(h-scene(p+n*h).x)*scale;scale*=.68;}return clamp(1.-occ*2.7,.35,1.);}
+void main(){
+ vec2 uv=(gl_FragCoord.xy*2.-res)/res.y;
+ vec3 target=vec3(0.,.42,0.);vec3 f=normalize(target-eye),r=normalize(cross(f,vec3(0.,1.,0.))),u=cross(r,f);
+ vec3 rd=normalize(f*2.65+r*uv.x+u*uv.y),ro=eye;
+ float t=0.;vec2 hit=vec2(0.);for(int i=0;i<110;i++){hit=scene(ro+rd*t);if(abs(hit.x)<.0017||t>22.)break;t+=max(hit.x*.75,.001);}
+ vec3 col=paper;
+ if(t<22.&&abs(hit.x)<.005){vec3 p=ro+rd*t,n=normal(p),light=normalize(vec3(-3.5,6.,-4.)),fill=normalize(vec3(3.,3.,1.5));float sh=shadow(p+n*.013,light);
+ if(hit.y<.5){float contact=shadow(p+vec3(0.,.018,0.),light);col=paper*(.72+.28*contact);float fade=exp(-dot(p.xz,p.xz)*.12);col=mix(paper,col,fade);}
+ else{vec3 mat=mix(vec3(.79,.77,.70),vec3(.27,.29,.28),finish);
+ if(hit.y>1.5&&hit.y<2.5)mat*=.56;
+ if(hit.y>2.5&&hit.y<3.5)mat=vec3(.18,.18,.16);
+ if(hit.y>3.5)mat*=.77;
+ if(hit.y<1.5&&p.z<-.34&&p.y>.51){float seam=min(abs(p.x)-.008,abs(p.z+.33+.12*p.x*p.x)-.007);float edge=1.-smoothstep(.0,.012,seam);if(p.z<-.36&&abs(p.x)<.018)mat*=.24;else if(abs(p.z+.33+.12*p.x*p.x)<.012&&abs(p.x)>.12)mat*=mix(1.,.32,edge);}
+ float diff=max(dot(n,light),0.),bounce=max(dot(n,fill),0.);float spec=pow(max(dot(n,normalize(light-rd)),0.),36.);float rim=pow(1.-max(dot(n,-rd),0.),3.);
+ col=mat*(.43+.64*diff*sh+.12*bounce)*ao(p,n)+vec3(.24)*spec*sh+vec3(.06)*rim;
+ }}
+ gl_FragColor=vec4(clamp(col,0.,1.),1.);
+}`;
+let program,valid=false,loc={};function compile(type,src){let s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s}
+try{if(!gl)throw Error("WebGL");program=gl.createProgram();gl.attachShader(program,compile(gl.VERTEX_SHADER,vertex));gl.attachShader(program,compile(gl.FRAGMENT_SHADER,frag));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));gl.useProgram(program);let buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);let attr=gl.getAttribLocation(program,"pos");gl.enableVertexAttribArray(attr);gl.vertexAttribPointer(attr,2,gl.FLOAT,false,0,0);for(let n of ["res","eye","paper","finish"])loc[n]=gl.getUniformLocation(program,n);valid=true}catch(e){console.error(e);$("#fallback").hidden=false}
+const eyes=[[-3.4,3.8,-4.5],[0,6.6,-.015],[-5.7,1.8,-.4]],points=[[ -.40,.84,-1.02],[.40,.84,-1.02],[0,1.10,-.78],[-.83,.47,.04],[-.83,.47,-.39]];
+const sub=(a,b)=>a.map((v,i)=>v-b[i]),dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),unit=a=>a.map(v=>v/Math.hypot(...a)),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+function hotspots(){let root=$("#hotspots");root.replaceChildren();if(!valid||!canvas.clientHeight)return;let eye=eyes[view],f=unit(sub([0,.42,0],eye)),r=unit(cross(f,[0,1,0])),u=cross(r,f);points.forEach((v,i)=>{if(view===2&&i===1)return;if(view===0&&i===1)return;let d=sub(v,eye),z=dot(d,f),x=dot(d,r)*2.65/z*canvas.clientHeight/canvas.clientWidth,y=dot(d,u)*2.65/z;let b=button(pad(i),()=>{k=i;refresh()});b.className="hot";b.title=names[i];b.setAttribute("aria-label",names[i]);b.setAttribute("aria-pressed",i===k);b.style.left=(50+x*50)+"%";b.style.top=(50-y*50)+"%";root.append(b)})}
+function draw(){if(!valid||!canvas.clientWidth)return;let w=canvas.clientWidth,h=canvas.clientHeight,dpr=Math.min(devicePixelRatio||1,2.5),scale=Math.min(dpr,1600/w);canvas.width=Math.round(w*scale);canvas.height=Math.round(h*scale);gl.viewport(0,0,canvas.width,canvas.height);gl.uniform2f(loc.res,canvas.width,canvas.height);gl.uniform3fv(loc.eye,eyes[view]);gl.uniform3fv(loc.paper,dark?[.141,.145,.122]:[.961,.949,.906]);gl.uniform1f(loc.finish,finish);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);$("#quality").textContent=canvas.width+" × "+canvas.height+" px";hotspots()}
+let timer;new ResizeObserver(()=>{clearTimeout(timer);timer=setTimeout(draw,80)}).observe(canvas);refresh();draw();
+</script></body></html>
