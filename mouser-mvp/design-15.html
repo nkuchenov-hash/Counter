@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mouser — Device control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"><style>
+:root{color-scheme:light;--paper:#f5f2e7;--ink:#25251f;--sub:#66645a;--rule:#d3d0c3;--accent:#a7482a;--panel:#eae6d9}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 "Segoe UI",Arial,sans-serif}body.dark{color-scheme:dark;--paper:#24251f;--ink:#eeeade;--sub:#b9b6aa;--rule:#47483e;--accent:#e5a181;--panel:#33342c}button,input,select{font:inherit;color:inherit}button{cursor:pointer;background:none;border:0;padding:9px 10px}button:hover,button:focus-visible{color:var(--accent)}button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}button[aria-selected=true]{font-weight:600;color:var(--ink);border-bottom:2px solid var(--ink)}.shell{max-width:1450px;margin:auto;padding:28px 44px 20px}.top{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--rule);padding-bottom:22px;gap:24px}.brand{font-size:35px;font-weight:850;letter-spacing:-.085em;line-height:1}.brand i{font-style:normal;color:var(--accent)}nav{display:flex;gap:18px}.small{font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:var(--sub);font-weight:600}.strip{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--rule);padding:10px 0;gap:14px}.strip select{max-width:250px}select,input{border:1px solid var(--rule);border-radius:3px;padding:9px 12px;background:var(--paper);min-width:0}main{display:grid;grid-template-columns:minmax(0,1.52fr) minmax(325px,1fr);gap:35px}.studio{min-width:0;padding:28px 30px 28px 0;border-right:1px solid var(--rule)}h1{font-size:clamp(42px,5.5vw,82px);font-weight:740;letter-spacing:-.075em;line-height:.98;margin:12px 0 8px}h2{font-size:33px;letter-spacing:-.045em;line-height:1.1;margin:10px 0 20px}p{color:var(--sub)}.canvas-wrap{position:relative;margin:15px 0 0;aspect-ratio:1.35;overflow:hidden;background:var(--paper)}canvas{display:block;width:100%;height:100%}.hot{position:absolute;transform:translate(-50%,-50%);width:29px;height:29px;padding:0;border:1px solid #fff9;border-radius:50%;background:#272722dc;color:white;font-size:11px;box-shadow:0 0 0 4px #ffffff42;display:grid;place-items:center}.hot[aria-pressed=true]{background:#a7482a;box-shadow:0 0 0 5px #a7482a38}.viewbar{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--rule);padding-top:12px;gap:12px;flex-wrap:wrap}.views{display:flex;gap:7px}.views button{border:1px solid transparent}.views button[aria-selected=true]{border:1px solid var(--rule);background:var(--panel)}.controls{padding:28px 0}.map{width:100%;display:grid;grid-template-columns:24px minmax(0,1fr) minmax(0,1.1fr) 12px;align-items:center;gap:8px;text-align:left;border-top:1px solid var(--rule);padding:12px 4px}.map .num{font-size:11px;color:var(--sub)}.map .action{text-align:right;font-size:12px;color:var(--sub)}.map[aria-pressed=true]{background:var(--panel);box-shadow:inset 2px 0 var(--accent);padding-left:9px}.map[aria-pressed=true] .action{color:var(--accent)}.edit{border-top:1px solid var(--rule);padding-top:18px;margin-top:3px}.edit h3{margin:8px 0;font-size:21px;letter-spacing:-.035em}.edit select,.edit input{width:100%}.keys{display:flex;gap:6px;min-height:38px;align-items:center;margin-top:8px}kbd{border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;padding:4px 8px;font:12px inherit}.foot{border-top:1px solid var(--rule);display:flex;justify-content:space-between;gap:16px;padding-top:13px}.other{padding:32px 0;max-width:760px;min-height:65vh}.setting{display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid var(--rule);padding:15px 0}.setting button{border:1px solid var(--rule)}[hidden]{display:none!important}.warning{position:absolute;inset:0;display:grid;place-items:center;color:var(--sub);padding:30px;text-align:center}.model-caption{display:flex;justify-content:space-between;gap:12px;color:var(--sub);font-size:11px;margin:6px 0 13px}.add{display:flex;gap:10px;margin:20px 0}.add input{flex:1}.add button{background:var(--ink);color:var(--paper)}@media(max-width:850px){.shell{padding:20px}main{grid-template-columns:1fr;gap:0}.studio{border-right:0;border-bottom:1px solid var(--rule);padding-right:0}.top{flex-wrap:wrap}nav{gap:4px}.controls{padding-top:22px}.strip{flex-wrap:wrap}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+/* Technical typography: separate UI and machine-readable identifiers. */
+:root{--ui:"IBM Plex Sans","Segoe UI Variable","Segoe UI",sans-serif;--mono:"IBM Plex Mono",Consolas,monospace}
+body{font-family:var(--ui);font-size:14px;line-height:1.45}
+.brand{font-family:var(--ui);font-size:34px;font-weight:700;letter-spacing:-.075em}
+h1,h2,.edit h3{font-family:var(--ui);font-weight:600;letter-spacing:-.045em}
+h1{font-size:clamp(43px,5.6vw,82px);line-height:.96;margin:16px 0 0}
+h2{font-size:31px;letter-spacing:-.035em;margin:10px 0 20px}
+.small,.model-caption,.map .num,.hot,.views,#finish,kbd,#custom,.foot{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.small{font-size:11px;letter-spacing:.065em;font-weight:500}
+.map{grid-template-columns:37px minmax(0,1fr) minmax(0,1.1fr) 12px;gap:10px;padding-block:12px}
+.map .num{font-size:11px;letter-spacing:-.03em}.map .action{font-size:13px}
+.hot{font-size:10px;font-weight:600;width:32px;height:32px}
+.views button,#finish{font-size:11px;letter-spacing:.035em}
+kbd{font:500 12px/1.35 var(--mono);text-transform:uppercase}
+#custom{font-size:13px}
+.canvas-wrap{margin-top:24px}
+.model-caption{font-size:10px;letter-spacing:.025em}
+.foot .small{font-size:10px}
+nav button{font-weight:500}
+.device-head{display:flex;align-items:end;justify-content:space-between;gap:14px;flex-wrap:wrap}.device-head h1{font-size:clamp(35px,4.2vw,64px);line-height:1.04;margin:8px 0 0;letter-spacing:-.055em}.family-picker{display:grid;gap:5px;min-width:145px}.family-picker select{font-size:13px;width:100%;border-radius:0}.canvas-wrap{margin:8px 0 0;aspect-ratio:1.40}.studio{padding-top:25px}.model-caption{margin-top:0}.hot{border-radius:3px;width:auto;min-width:28px;height:24px;padding:0 5px;box-shadow:none;background:#24251fd9;font-size:10px}.hot[aria-pressed=true]{box-shadow:0 0 0 2px #f5f2e7,0 0 0 3px #a7482a}.map{padding-block:10px}.controls h2{margin-bottom:14px}.map .num{font-size:10px}.control-scroll{max-height:450px;overflow:auto;scrollbar-width:thin}.foot{margin-top:5px}@media(max-width:850px){.device-head h1{font-size:42px}.control-scroll{max-height:none}}
+
+
+/* Design 07: accessible round input markers and visible device family rail. */
+.hot{width:34px;height:34px;min-width:34px;padding:0;border-radius:50%;font-size:10px;font-weight:600;box-shadow:0 0 0 3px #f4f1e655;line-height:1}
+.hot[aria-pressed=true]{background:#a7482a;box-shadow:0 0 0 3px #f5f2e7,0 0 0 4px #a7482a}
+.family-picker{margin-top:15px;display:block;min-width:0}
+#families{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-block:1px solid var(--rule)}
+.family-tab{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;padding:9px 2px;color:var(--sub);font:500 10px/1.2 var(--mono);border-right:1px solid var(--rule);border-bottom:2px solid transparent;text-transform:uppercase}
+.family-tab:last-child{border-right:0}
+.family-tab[aria-pressed=true]{border-bottom-color:var(--accent);color:var(--ink);background:var(--panel)}
+.family-tab svg{width:42px;height:42px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.device-head h1{font-size:clamp(35px,4.2vw,64px)}
+.canvas-wrap{margin:4px 0 0;aspect-ratio:1.4}
+@media(max-width:500px){#families{grid-template-columns:repeat(3,minmax(0,1fr))}.family-tab:nth-child(-n+3){border-bottom:1px solid var(--rule)}.family-tab[aria-pressed=true]{box-shadow:inset 0 -2px var(--accent)}}
+
+/* UI 08: optically balanced model framing and separate mapping editor. */
+.edit{margin-top:32px;padding:20px 20px 18px;border:1px solid var(--rule);background:var(--panel)}
+.edit-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--rule)}
+.edit h3{margin:15px 0 11px;font-size:23px}
+.edit select,.edit input{background:var(--paper)}
+.edit .keys:empty{display:none}
+.edit #reset{display:block;margin-top:12px;padding:7px 0;text-align:left;color:var(--sub);font-size:12px}
+.edit #reset:hover{color:var(--accent)}
+.canvas-wrap{aspect-ratio:1.55}
+@media(max-width:850px){.edit{margin-top:26px;padding:17px}}
+
+/* UI 09: unboxed, open editorial composition. */
+#families{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;border:0}
+.family-picker{margin-top:19px}
+.family-tab{flex:1;min-width:0;background:transparent!important;border:0;border-bottom:1px solid transparent;padding:8px 0 11px;gap:5px;color:var(--sub)}
+.family-tab:last-child{border-right:0}
+.family-tab[aria-pressed=true]{border-bottom-color:var(--ink);box-shadow:none;background:transparent;color:var(--ink)}
+.family-tab svg{width:37px;height:40px;stroke-width:1.35}
+.family-tab span{font-size:10px;letter-spacing:.025em}
+.edit{margin-top:44px;padding:20px 0 0;background:transparent;border:0;border-top:1px solid var(--rule)}
+.edit-top{padding:0;border:0;justify-content:space-between}
+.edit h3{margin:12px 0;font-size:23px}
+.edit select,.edit input{background:transparent}
+.edit #reset{margin-top:15px}
+.map[aria-pressed=true]{background:transparent;box-shadow:none;color:var(--accent);padding-left:4px}
+.map[aria-pressed=true] .num{color:var(--accent)}
+.model-link{font:500 11px var(--mono);color:var(--sub);text-decoration:none}
+.model-link:hover{color:var(--accent);text-decoration:underline}
+@media(max-width:500px){#families{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.family-tab:nth-child(-n+3){border-bottom:1px solid transparent}.family-tab[aria-pressed=true]{border-bottom-color:var(--ink);box-shadow:none}}
+
+/* UI 10 — single-current-value controls, no boxed selects. */
+.strip{padding:9px 0;min-height:43px}
+.model-control{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 0 13px;margin:0 0 25px;border-bottom:1px solid var(--rule)}
+.plain-picker{position:relative;min-width:0}
+.picker-trigger{display:flex;align-items:center;justify-content:flex-end;gap:9px;width:100%;padding:5px 0;border:0;background:transparent;line-height:1.45;font-weight:500;white-space:nowrap}
+.picker-trigger>svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.4;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none;color:var(--sub)}
+.picker-trigger[aria-expanded=true]>svg{transform:rotate(180deg)}
+.picker-trigger:hover{color:var(--accent)}
+.picker-icon,.picker-option-icon{width:24px;height:27px;display:grid;place-items:center;flex:none}
+.picker-icon svg,.picker-option-icon svg{width:22px;height:25px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.picker-menu,#families.picker-menu{position:absolute;top:calc(100% + 6px);right:0;display:block;width:max-content;min-width:210px;max-width:min(330px,90vw);z-index:20;background:var(--paper);border:1px solid var(--rule);box-shadow:0 9px 23px #17171114;padding:5px 10px;max-height:320px;overflow:auto}
+.picker-option{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:8px 3px;color:var(--ink);border:0;background:transparent;white-space:normal;font-size:13px}
+.picker-option+.picker-option{border-top:1px solid var(--rule)}
+.picker-option:hover,.picker-option:focus-visible{color:var(--accent);background:var(--panel)}
+.picker-option[aria-selected=true]{font-weight:600}
+.picker-check{margin-left:auto;min-width:15px;color:var(--accent)}
+.action-picker .picker-trigger{justify-content:space-between;text-align:left;padding:9px 0;border-bottom:1px solid var(--rule);white-space:normal}
+.action-picker .picker-menu{left:0;right:0;width:100%;max-width:none}
+.canvas-wrap{margin-top:8px}
+.controls{padding-top:25px}
+@media(max-width:850px){.model-control{margin-bottom:20px}.picker-menu,#families.picker-menu{max-width:90vw}}
+
+/* UI 11 — model selection belongs to the device header. */
+.device-head{align-items:flex-start;position:relative;gap:12px}
+.device-head>div:first-child{min-width:0;flex:1}
+.device-head .model-control{flex:none;padding:0;margin:0;border:0;align-self:flex-start;display:block}
+.device-head #familyPicker .picker-trigger{padding:0 0 3px;gap:7px;min-height:26px}
+.device-head #familyPicker .picker-value{font-size:13px;font-weight:500}
+.device-head #familyPicker .picker-icon{width:20px;height:24px}
+.device-head #familyPicker .picker-icon svg{width:18px;height:22px}
+.device-head .picker-menu{z-index:30}
+html:not(.keyboard-mode) .picker-trigger:focus-visible,html:not(.keyboard-mode) .picker-option:focus-visible{outline:none}
+@media(max-width:500px){.device-head{flex-wrap:wrap}.device-head>div:first-child{flex-basis:100%}.device-head .model-control{margin-left:auto}}
+
+/* UI 12: real sourced GLB meshes in the main mapping surface. */
+.canvas-wrap{aspect-ratio:1.55;overflow:visible;margin-top:8px}
+#mouse{width:100%;height:100%;display:block;background:transparent;--poster-color:transparent;--progress-bar-color:var(--accent);--progress-bar-height:2px}
+#mouse .hot{position:relative;transform:none;width:34px;height:34px;min-width:34px;border-radius:50%;border:1px solid #fff9;background:#25251fe8;color:#fff;box-shadow:0 0 0 3px #f4f1e655;display:grid;place-items:center}
+#mouse .hot[aria-pressed=true]{background:#a7482a;box-shadow:0 0 0 3px #f5f2e7,0 0 0 4px #a7482a}
+#mouse .hot[data-visible=false]{opacity:.25}
+#mouse .hot:hover{opacity:1}
+#mouse .hot:focus-visible{outline:2px solid var(--accent)}
+
+/* UI 13: isolated product photography; no live 3D dependency. */
+.canvas-wrap{aspect-ratio:1.55;position:relative;overflow:visible;margin-top:8px}
+#renderFrame{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:0;height:0}
+#mouse{width:100%;height:100%;display:block;background:transparent}
+#hotspots{position:absolute;inset:0;pointer-events:none}
+#hotspots .hot{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;border-radius:50%;width:32px;height:32px;min-width:32px;padding:0;display:grid;place-items:center;line-height:1;font-size:10px;border:1px solid #fff9;background:#25251fe8;color:white;box-shadow:0 0 0 3px #f4f1e655;z-index:2}
+#hotspots .hot[aria-pressed=true]{background:#a7482a;box-shadow:0 0 0 2px var(--paper),0 0 0 3px #a7482a;z-index:3}
+#hotspots .hot:hover{z-index:4}
+.finishes{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.swatch{width:15px;height:15px;padding:0;border:1px solid #7775;border-radius:50%;background:var(--swatch);position:relative}
+.swatch[aria-pressed=true]{outline:1px solid var(--ink);outline-offset:3px}
+.swatch:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.finish-name{font:500 10px var(--mono);letter-spacing:.03em;min-width:72px;text-align:right}
+@media(max-width:500px){#hotspots .hot{width:27px;height:27px;min-width:27px;font-size:9px}.finishes{gap:7px}.finish-name{min-width:0}}
+</style></head>
+<body><div class="shell"><header class="top"><div class="brand">mouser<i>.</i></div><nav aria-label="Разделы"><button data-page="device" aria-selected="true">Мышь</button><button data-page="profiles" aria-selected="false">Профили</button><button data-page="settings" aria-selected="false">Настройки</button></nav><button id="theme" aria-label="Переключить тему">◐</button></header>
+<section id="device"><div class="strip"><span class="small">PROFILE</span><div class="plain-picker" id="profilePicker"><button class="picker-trigger" type="button" aria-expanded="false" aria-haspopup="listbox" aria-controls="profileOptions"><span class="picker-value">Все приложения</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button><div class="picker-menu" id="profileOptions" role="listbox" aria-label="Профиль" hidden></div></div></div><main><section class="studio"><div class="device-head"><div><div class="small">01 / DEVICE</div><h1 id="familyTitle">Symmetric</h1></div><div class="model-control"><div class="plain-picker" id="familyPicker"><button class="picker-trigger" type="button" aria-expanded="false" aria-haspopup="listbox" aria-controls="families"><span class="picker-icon"></span><span class="picker-value">Symmetric</span><svg viewBox="0 0 16 16" class="chevron" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button><div class="picker-menu" id="families" role="listbox" aria-label="Компоновка мыши" hidden></div></div></div></div><div class="canvas-wrap" id="stage"><div id="renderFrame"><canvas id="mouse" role="img" aria-label="Изображение мыши"></canvas><div id="hotspots"></div></div><div id="fallback" class="warning" hidden>Не удалось загрузить модель.</div></div><div class="model-caption"><span id="familyCode">SYM / 01</span><span id="quality" aria-live="polite"></span></div><div class="viewbar"><span class="small">VIEW</span><div class="views"><button data-view="0" aria-selected="true">ISO</button><button data-view="1" aria-selected="false">TOP</button><button data-view="2" aria-selected="false">SIDE</button></div><div class="finishes" id="finishes" role="group" aria-label="Цвет корпуса"></div></div></section><section class="controls"><div class="small">02 / INPUT MAP</div><h2>Назначения</h2><div id="maps" class="control-scroll"></div><div class="edit"><div class="edit-top"><span class="small">03 / ACTION</span><span class="small" id="number"></span></div><h3 id="selected"></h3><div class="plain-picker action-picker" id="actionPicker"><button class="picker-trigger" type="button" aria-expanded="false" aria-haspopup="listbox" aria-controls="actionOptions"><span class="picker-value">Без изменений</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button><div class="picker-menu" id="actionOptions" role="listbox" aria-label="Действие" hidden></div></div><input id="custom" placeholder="Ctrl + Shift + A" aria-label="Своя комбинация" hidden><div class="keys" id="keys"></div><button id="reset">Сбросить назначение</button></div></section></main></section>
+<section class="other" id="profiles" hidden><div class="small">03 / PROFILES</div><h1>Приложения</h1><div id="profileList"></div><div class="add"><input id="newProfile" placeholder="Например, photoshop.exe"><button id="add">Добавить</button></div></section>
+<section class="other" id="settings" hidden><div class="small">04 / SETTINGS</div><h1>Настройки</h1><div class="setting">Переназначение<button id="enabled" aria-pressed="true">Включено</button></div><div class="setting">Запуск с Windows<button id="startup" aria-pressed="true">Включён</button></div><div class="setting">Оформление<button id="theme2">Светлое</button></div><p>Режим предпросмотра: без подключения к Windows.</p></section>
+<footer class="foot"><span class="small">MOUSER / UI 15</span><span class="small">DESIGN PREVIEW</span></footer></div>
+<script>
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const names=["Левая кнопка","Правая кнопка","Нажатие колеса","Задняя боковая","Передняя боковая","Прокрутка вверх","Прокрутка вниз","Прокрутка влево","Прокрутка вправо","Кнопка DPI",...Array.from({length:5},(_,i)=>"Доп. кнопка "+(i+1))];
+const actions=[["Без изменений",""],["Отключить",""],["Предыдущий рабочий стол","Ctrl + Win + ←"],["Следующий рабочий стол","Ctrl + Win + →"],["Обзор задач","Win + Tab"],["Копировать","Ctrl + C"],["Вставить","Ctrl + V"],["Назад","Alt + ←"],["Вперёд","Alt + →"],["Переключить окно","Alt + Tab"],["Громче","Volume +"],["Тише","Volume −"],["Снимок экрана","Win + Shift + S"],["Своя комбинация…",""]];
+const initial=()=>[0,0,0,2,3,0,0,0,0,0,0,0,0,0,0];let profiles=["Все приложения","Браузер","Проводник"].map(name=>({name,map:initial(),custom:{}})),p=0,k=3,view=0,finish=0,dark=false;
+const pad=i=>String(i+1).padStart(2,"0");const inputCodes=["LMB","RMB","MMB","X1","X2","W+","W−","H−","H+","DPI","G1","G2","G3","G4","G5"];
+const families=[{"title":"Symmetric","name":"Симметричная","code":"SYM / 01","asset":"symmetric","ids":[0,1,2,3,4,5,6,9],"view":0},{"title":"Ergonomic","name":"Эргономичная","code":"ERGO / 02","asset":"ergonomic","ids":[0,1,2,3,4,5,6,9],"view":0},{"title":"Compact","name":"Компактная","code":"CMP / 03","asset":"compact","ids":[0,1,2,5,6],"view":0},{"title":"Gaming","name":"Игровая","code":"GAME / 04","asset":"gaming","ids":[0,1,2,3,4,5,6,9,10,11,12],"view":0},{"title":"Vertical","name":"Вертикальная","code":"VERT / 05","asset":"vertical","ids":[0,1,2,3,4,5,6,9],"view":0},{"title":"Trackball","name":"Трекбол","code":"BALL / 06","asset":"trackball","ids":[0,1,2,3,4,5,6,9],"view":0}];const renderMeta={"symmetric":{"iso":{"file":"symmetric-iso.webp","w":845,"h":679,"bg":[245,239,233],"pins":{"0":[0.20675,0.50986],"1":[0.41608,0.64617],"2":[0.33089,0.49926],"3":[0.75686,0.49623],"4":[0.67166,0.58104],"9":[0.50249,0.26904]},"sha256":"446933cd7d94b8d407c2c2984731b60a3bedcb7e542ccb03e0acad1d6b6aa56c"},"top":{"file":"symmetric-top.webp","w":302,"h":540,"bg":[244,239,232],"pins":{"0":[0.33225,0.23047],"1":[0.69322,0.23238],"2":[0.50593,0.23999],"9":[0.50593,0.45329]},"sha256":"50b7d42c4d6bd005c43e635dc4fd8fbf33e9ae1625195ca349ce637f8e8baf11"},"side":{"file":"symmetric-side.webp","w":563,"h":247,"bg":[245,240,233],"pins":{"2":[0.25047,0.26868],"3":[0.56649,0.46853],"4":[0.44045,0.50184]},"sha256":"d37266980e73689173e58b8ca63fa1baaccb3ec880f4f91dc1abee2eceb929ef"}},"ergonomic":{"iso":{"file":"ergonomic-iso.webp","w":837,"h":706,"bg":[245,238,233],"pins":{"0":[0.19036,0.55564],"1":[0.41153,0.67363],"2":[0.32061,0.51922],"3":[0.78259,0.36481],"4":[0.67078,0.45804],"9":[0.48279,0.29052]},"sha256":"8ebc14c2cb933db961b179cbe6df062b7a435a0ae867d8d7c0bc7b37d6979404"},"top":{"file":"ergonomic-top.webp","w":311,"h":544,"bg":[245,238,232],"pins":{"0":[0.32871,0.22626],"1":[0.66269,0.22626],"2":[0.50066,0.24138],"9":[0.50396,0.42098]},"sha256":"acc5c4381fc2b79421ac474fd3efae47c821e4408db68fc191f4052251433e33"},"side":{"file":"ergonomic-side.webp","w":580,"h":285,"bg":[245,239,233],"pins":{"2":[0.27584,0.27578],"3":[0.58082,0.31186],"4":[0.46202,0.37321]},"sha256":"7824436876343b4849226b6ab260a62c969566984bd4ab3a49812fe5324192b0"}},"compact":{"iso":{"file":"compact-iso.webp","w":827,"h":663,"bg":[244,237,232],"pins":{"0":[0.20171,0.51785],"1":[0.39944,0.66521],"2":[0.33353,0.48217]},"sha256":"3a24bd89c24a9b98faa23532244fff2a42ef2e98f090ae9426ee0ac50bb85e1d"},"top":{"file":"compact-top.webp","w":297,"h":534,"bg":[244,237,231],"pins":{"0":[0.33111,0.25259],"1":[0.69816,0.25259],"2":[0.51117,0.25644]},"sha256":"7a6c9ec3d079764df332308180036b0e48e2a0d57e1a4f1b6b298de5d2f6b70e"},"side":{"file":"compact-side.webp","w":564,"h":246,"bg":[245,238,233],"pins":{"2":[0.26269,0.26153]},"sha256":"5a3e3a7fc34b2700c74bd84c2b3bbab805e94286e922610eb98163b4bde33851"}},"gaming":{"iso":{"file":"gaming-iso.webp","w":852,"h":645,"bg":[243,237,233],"pins":{"0":[0.18822,0.53727],"1":[0.44653,0.54684],"2":[0.3222,0.5006],"3":[0.77485,0.36348],"4":[0.65294,0.46871],"9":[0.46343,0.29013],"10":[0.59138,0.63772],"11":[0.64087,0.57873],"12":[0.68794,0.53727]},"sha256":"e263f408e496a67b4c4ae627476c39c8fcb2f451e9f6b2d1bd0067ecb7f48da1"},"top":{"file":"gaming-top.webp","w":304,"h":529,"bg":[242,236,232],"pins":{"0":[0.33336,0.24644],"1":[0.6818,0.24644],"2":[0.51942,0.22312],"9":[0.5228,0.38447]},"sha256":"c967a982baec572684775784ff4b843bc3e2a6ac5e83663575d70c4a559f6f62"},"side":{"file":"gaming-side.webp","w":558,"h":260,"bg":[244,237,233],"pins":{"2":[0.23475,0.2847],"3":[0.6052,0.32426],"4":[0.46513,0.37568],"10":[0.38403,0.56158],"11":[0.44854,0.52994],"12":[0.5112,0.50621]},"sha256":"181fe374b413718a059677d4d458110e946f716b1a07b4770e861f9db1528d32"}},"vertical":{"iso":{"file":"vertical-iso.webp","w":779,"h":835,"bg":[244,236,230],"pins":{"0":[0.25815,0.4081],"1":[0.25947,0.71477],"2":[0.3466,0.43766],"3":[0.76113,0.30341],"4":[0.66344,0.38839],"9":[0.49842,0.22951]},"sha256":"00ab2032e09bb59e83c1435ae90fc5e6e97e0330934ad007182055b6957fbbeb"},"top":{"file":"vertical-top.webp","w":318,"h":524,"bg":[243,235,229],"pins":{"0":[0.31743,0.2367],"1":[0.63436,0.24455],"2":[0.46296,0.2367],"9":[0.46296,0.41922]},"sha256":"4a81af7e02b9dcb710aa766525533c04f0e6c6c7e6f6f2ea4a4b1a680f5796f6"},"side":{"file":"vertical-side.webp","w":513,"h":406,"bg":[244,236,230],"pins":{"2":[0.31169,0.34638],"3":[0.6585,0.32358],"4":[0.51818,0.37424]},"sha256":"8515cd0e8ac680d5b12ac395eb4c8b7eb44901b3cebe09c2368f7b8275c3d267"}},"trackball":{"iso":{"file":"trackball-iso.webp","w":834,"h":684,"bg":[243,236,232],"pins":{"0":[0.18132,0.47126],"1":[0.35026,0.64867],"2":[0.31203,0.43367],"3":[0.84966,0.43968],"4":[0.81267,0.5314],"9":[0.47233,0.20814]},"sha256":"6f36979cb5b9c52272898a9fd46ba128f78ca8e7274c9a35f4302b84f6723c9a"},"top":{"file":"trackball-top.webp","w":338,"h":527,"bg":[243,236,232],"pins":{"0":[0.25377,0.22808],"1":[0.53064,0.23198],"2":[0.40894,0.22028],"3":[0.87446,0.5286],"4":[0.80752,0.62422],"9":[0.40894,0.38029]},"sha256":"b8dd95f9df3f35fe9769bc7bf2e650bea5d9b933b7b035291b84730d934d8ddd"},"side":{"file":"trackball-side.webp","w":554,"h":280,"bg":[243,236,232],"pins":{"2":[0.2565,0.29213],"3":[0.75957,0.5125],"4":[0.66861,0.55657]},"sha256":"591e1abcd8c762de3329a47cce5fbd40c33dda37edc28ea2eed740d073525284"}}};let family=0;
+
+
+function button(text,click){let b=document.createElement("button");b.textContent=text;b.onclick=click;return b}
+function page(id){closePickers();["device","profiles","settings"].forEach(x=>$("#"+x).hidden=x!==id);$$("[data-page]").forEach(b=>b.setAttribute("aria-selected",b.dataset.page===id));if(id==="device")draw()}
+function refresh(){let pr=profiles[p],a=pr.map[k];renderPicker("profilePicker",profiles.map(x=>x.name),p,i=>{p=i;refresh()});$("#maps").replaceChildren(...families[family].ids.map(i=>{let n=names[i],b=button("",()=>{k=i;refresh()});b.className="map";b.setAttribute("aria-pressed",i===k);[inputCodes[i],n,actions[pr.map[i]][0],"›"].forEach((v,j)=>{let s=document.createElement("span");s.textContent=v;s.className=j===0?"num":j===2?"action":"";b.append(s)});return b}));$("#number").textContent=inputCodes[k];$("#selected").textContent=names[k];renderPicker("actionPicker",actions.map(x=>x[0]),a,i=>{profiles[p].map[k]=i;refresh()});$("#custom").hidden=a!==13;$("#custom").value=pr.custom[k]||"";$("#keys").replaceChildren(...(a===13?pr.custom[k]||"":actions[a][1]).split(" + ").filter(Boolean).map(t=>{let e=document.createElement("kbd");e.textContent=t;return e}));$("#profileList").replaceChildren(...profiles.map((x,i)=>{let row=document.createElement("div");row.className="setting";let t=document.createElement("span");t.textContent=x.name;row.append(t,button("Настроить ›",()=>{p=i;page("device");refresh()}));return row}));hotspots()}
+const icons=[
+'<path d="M22 4C10 4 7 15 7 24v7c0 12 7 17 15 17s15-5 15-17v-7C37 15 34 4 22 4Z"/><path d="M22 4v17M7 25h30"/><rect x="19.5" y="12" width="5" height="10" rx="2.5"/>',
+'<path d="M25 4C13 3 8 11 8 24L3 36Q1 44 12 46l12 2c14 0 17-11 17-22S37 5 25 4Z"/><path d="M25 4v18M9 25l32 3M5 32l7-1"/><rect x="22" y="12" width="5" height="9" rx="2"/>',
+'<rect x="7" y="9" width="30" height="32" rx="10"/><path d="M22 9v16M7 25h30"/><rect x="19.5" y="13" width="5" height="10" rx="2.5"/>',
+'<path d="M10 5 20 8l12-3 7 10-2 15 4 12-10 5H13L5 40l4-13-3-12Z"/><path d="M22 8v17M10 25h27"/><rect x="19" y="12" width="6" height="9" rx="2"/><path d="M7 29h8v9H7m4-9v9m-4-4.5h8"/>',
+'<path d="M4 42Q3 36 7 30L15 9Q18 2 25 6L34 16Q40 26 41 42Z"/><path d="M17 11 27 15 33 32 15 30Z"/><path d="M22 13l5 18M12 35h8"/>',
+'<path d="M5 37Q0 24 11 13 22 5 37 10l5 17q2 15-12 17H15Q7 44 5 37Z"/><circle cx="13" cy="27" r="9"/><path d="M24 13v13l14 2M29 12v13"/><rect x="26" y="15" width="4" height="8" rx="2"/>'];
+function closePickers(except){$$(".plain-picker").forEach(root=>{if(root===except)return;root.querySelector(".picker-menu").hidden=true;root.querySelector(".picker-trigger").setAttribute("aria-expanded","false")})}
+let keyboardMode=false;document.addEventListener("keydown",()=>{keyboardMode=true;document.documentElement.classList.add("keyboard-mode")},true);document.addEventListener("pointerdown",()=>{keyboardMode=false;document.documentElement.classList.remove("keyboard-mode")},true);
+function openPicker(root,focusIndex){closePickers(root);const menu=root.querySelector(".picker-menu"),trigger=root.querySelector(".picker-trigger");menu.hidden=false;trigger.setAttribute("aria-expanded","true");const opts=[...menu.querySelectorAll("button")];if(opts.length&&keyboardMode)opts[focusIndex===-1?opts.length-1:Math.max(0,opts.findIndex(x=>x.getAttribute("aria-selected")==="true"))].focus()}
+function renderPicker(id,items,selected,change,withIcons=false){const root=$("#"+id),trigger=root.querySelector(".picker-trigger"),menu=root.querySelector(".picker-menu");root.querySelector(".picker-value").textContent=items[selected];if(withIcons)root.querySelector(".picker-icon").innerHTML='<svg viewBox="0 0 44 52" aria-hidden="true">'+icons[selected]+'</svg>';menu.replaceChildren(...items.map((name,i)=>{const b=button("",()=>{closePickers();change(i);if(keyboardMode)trigger.focus();else trigger.blur()});b.className="picker-option";b.setAttribute("role","option");b.setAttribute("aria-selected",i===selected);if(withIcons){const icon=document.createElement("span");icon.className="picker-option-icon";icon.innerHTML='<svg viewBox="0 0 44 52" aria-hidden="true">'+icons[i]+'</svg>';b.append(icon)}const label=document.createElement("span");label.textContent=name;b.append(label);const mark=document.createElement("span");mark.className="picker-check";mark.textContent=i===selected?"✓":"";b.append(mark);return b}));}
+$$(".plain-picker").forEach(root=>{const trigger=root.querySelector(".picker-trigger"),menu=root.querySelector(".picker-menu");trigger.onclick=()=>{if(menu.hidden)openPicker(root);else closePickers()};trigger.onkeydown=e=>{if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();openPicker(root,e.key==="ArrowUp"?-1:0)}};menu.onkeydown=e=>{const opts=[...menu.querySelectorAll("button")],idx=opts.indexOf(document.activeElement);if(["ArrowDown","ArrowUp","Home","End"].includes(e.key)){e.preventDefault();let next=e.key==="Home"?0:e.key==="End"?opts.length-1:(idx+(e.key==="ArrowDown"?1:-1)+opts.length)%opts.length;opts[next].focus()}if(e.key==="Escape"){e.preventDefault();closePickers();trigger.focus()}if(e.key==="Tab")closePickers()};});
+document.addEventListener("pointerdown",e=>{if(!e.target.closest(".plain-picker"))closePickers()});
+function familyRail(){renderPicker("familyPicker",families.map(f=>f.title),family,selectFamily,true)}
+function selectFamily(i){family=i;const f=families[family];view=f.view;if(!f.ids.includes(k))k=f.ids[0];$("#familyTitle").textContent=f.title;$("#familyCode").textContent=f.code;$$("[data-view]").forEach(b=>b.setAttribute("aria-selected",+b.dataset.view===view));familyRail();refresh();draw()}
+familyRail();$("#custom").onchange=e=>{profiles[p].custom[k]=e.target.value;refresh()};$("#reset").onclick=()=>{profiles[p].map[k]=initial()[k];refresh()};$("#add").onclick=()=>{let n=$("#newProfile").value.trim();if(n&&!profiles.some(x=>x.name===n)){profiles.push({name:n,map:initial(),custom:{}});$("#newProfile").value="";refresh()}};$$("[data-page]").forEach(b=>b.onclick=()=>page(b.dataset.page));$$("[data-view]").forEach(b=>b.onclick=()=>{view=+b.dataset.view;$$("[data-view]").forEach(x=>x.setAttribute("aria-selected",x===b));draw()});function theme(){dark=!dark;document.body.classList.toggle("dark",dark);$("#theme2").textContent=dark?"Тёмное":"Светлое";draw()}$("#theme").onclick=$("#theme2").onclick=theme;for(const id of ["enabled","startup"]){$("#"+id).onclick=e=>{const b=e.currentTarget,on=b.getAttribute("aria-pressed")!=="true";b.setAttribute("aria-pressed",on);b.textContent=on?"Включено":"Выключено"}}
+const canvas=$("#mouse"),ctx=canvas.getContext("2d",{willReadFrequently:true}),frame=$("#renderFrame"),stage=$("#stage"),viewNames=["iso","top","side"];
+const palette=[{name:"IVORY",hex:"#ded7c9",rgb:null},{name:"SAGE",hex:"#9fa58d",rgb:[159,165,141]},{name:"CLAY",hex:"#b7816c",rgb:[183,129,108]},{name:"SLATE",hex:"#8795a7",rgb:[135,149,167]},{name:"GRAPHITE",hex:"#555655",rgb:[85,86,85]},{name:"SAND",hex:"#c2ad92",rgb:[194,173,146]}];
+const cache=new Map();let currentKey="",loaded=null,requestId=0;
+window.mouserQA={ready:false,family:-1,error:null};
+const selectedRender=()=>renderMeta[families[family].asset][viewNames[view]];
+function status(t){$("#quality").textContent=t}
+function updateColors(){const root=$("#finishes");root.replaceChildren(...palette.map((c,i)=>{const b=button("",()=>{finish=i;updateColors();draw()});b.className="swatch";b.style.setProperty("--swatch",c.hex);b.title=c.name;b.setAttribute("aria-label",c.name);b.setAttribute("aria-pressed",i===finish);return b}));const n=document.createElement("span");n.className="finish-name";n.textContent=palette[finish].name;root.append(n)}
+function resizeFrame(){const m=selectedRender();if(!stage.clientWidth||!stage.clientHeight)return;const ratio=Math.min(stage.clientWidth*(view===1?.68:.69)/m.w,stage.clientHeight*(view===2?.58:.73)/m.h,1);frame.style.width=Math.round(m.w*ratio)+"px";frame.style.height=Math.round(m.h*ratio)+"px"}
+function hotspots(){if(!loaded||currentKey!==families[family].asset+"-"+viewNames[view])return;const root=$("#hotspots");root.replaceChildren();const m=selectedRender();for(const [id,pos] of Object.entries(m.pins)){const i=+id;if(!families[family].ids.includes(i))continue;let b=button(inputCodes[i],()=>{k=i;refresh()});b.className="hot";b.style.left=(pos[0]*100)+"%";b.style.top=(pos[1]*100)+"%";b.title=names[i];b.setAttribute("aria-label",names[i]);b.setAttribute("aria-pressed",i===k);root.append(b)}}
+function loadImage(key,file){if(!cache.has(key)){cache.set(key,new Promise((resolve,reject)=>{let im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(Error("Image load: "+file));im.src="renders-v15/"+file}))}return cache.get(key)}
+const atlasCache=new WeakMap(),scratch=document.createElement("canvas"),scratchCtx=scratch.getContext("2d",{willReadFrequently:true});
+function paint(){
+ if(!loaded)return;
+ const m=selectedRender(),w=m.w,h=m.h;
+ if(loaded.naturalWidth!==w*2||loaded.naturalHeight!==h)throw Error("Invalid render atlas");
+ if(!atlasCache.has(loaded)){scratch.width=w*2;scratch.height=h;scratchCtx.drawImage(loaded,0,0);atlasCache.set(loaded,scratchCtx.getImageData(0,0,w*2,h).data)}
+ const src=atlasCache.get(loaded),out=ctx.createImageData(w,h),d=out.data,paper=dark?[36,37,31]:[245,242,231],color=palette[finish].rgb,bg=m.bg;
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+  const i=(y*w+x)*4,j=(y*w*2+x)*4,k=j+w*4;
+  const matte=Math.min(1,Math.max(0,(src[k]-3)/249)),fade=Math.min(1,Math.max(0,(src[k+1]-3)/249)),shadow=src[k+2]/255,l=.2126*src[j]+.7152*src[j+1]+.0722*src[j+2],strength=Math.max(0,Math.min(1,(l-65)/85))*matte;
+  for(let c=0;c<3;c++){
+   const v=src[j+c],t=color?v+(v*color[c]/220-v)*strength:v;
+   let value;
+   if(dark){value=t*matte+paper[c]*(1-matte)*(1-shadow)}
+   else{value=t+(paper[c]-bg[c])*(1-matte);value=value*fade+paper[c]*(1-fade)}
+   d[i+c]=Math.max(0,Math.min(255,Math.round(value)));
+  }
+  d[i+3]=255;
+ }
+ canvas.width=w;canvas.height=h;ctx.putImageData(out,0,0);
+ canvas.setAttribute("aria-label",families[family].title+" "+viewNames[view]+" "+palette[finish].name);resizeFrame();hotspots();status("");
+ window.mouserQA={ready:true,family,view,finish,asset:families[family].asset,pins:$("#hotspots").children.length,w:canvas.width,h:canvas.height,error:null}
+}
+async function draw(){const key=families[family].asset+"-"+viewNames[view];if(currentKey===key&&loaded){paint();return}const id=++requestId;currentKey=key;loaded=null;$("#hotspots").replaceChildren();window.mouserQA={ready:false,family,view,error:null};$("#fallback").hidden=true;try{const im=await loadImage(key,selectedRender().file);if(id!==requestId)return;loaded=im;paint()}catch(e){if(id===requestId){status("IMAGE / ERROR");$("#fallback").hidden=false;window.mouserQA.error=String(e)}}}
+new ResizeObserver(resizeFrame).observe(stage);updateColors();refresh();draw();
+</script></body></html>
