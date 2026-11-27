@@ -46,11 +46,11 @@ const double kNotesBlockVerticalPadding = 12;
 const double kNotesLeadingSize = 20;
 const double kNotesLeadingGap = 10;
 double notesContentHorizontalInset(BuildContext context) =>
-    NotesFigmaTokens.nativeNotesLayout(context) ? 26 : kNotesContentInset;
+    kNotesContentInset;
 
 double notesTextBlockPadding(BuildContext context, {bool list = false}) {
   if (!NotesFigmaTokens.nativeNotesLayout(context)) {
-    return list ? 10 : kNotesBlockVerticalPadding;
+    return list ? 2.5 : 4;
   }
   return list
       ? NotesFigmaTokens.nativeListVerticalPadding
