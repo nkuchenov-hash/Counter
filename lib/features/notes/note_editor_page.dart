@@ -288,7 +288,11 @@ class _NoteEditorPageState extends State<NoteEditorPage> with WidgetsBindingObse
       final node = FocusNode(debugLabel: 'notes-block-${block.id}');
       node.canRequestFocus = !_secondarySelectionGuardActive;
       node.addListener(() {
-        if (!mounted || !node.hasFocus) return;
+        if (!mounted) return;
+        if (!node.hasFocus) {
+          if (widget.inlineBodyOnly) setState(() {});
+          return;
+        }
         if (_blockSelectionMode) {
           node.unfocus();
           return;
@@ -1707,6 +1711,7 @@ AppButton.destructive(
 
     return NotesEditorScreen(
       bodyOnly: widget.inlineBodyOnly,
+      showInlineToolbar: widget.inlineKeyboardActive || _blockSelectionMode || _focusNodes.values.any((node) => node.hasFocus),
       titleController: _titleController,
       titleHint: t(loc, 'notes_v3_editor_title_hint'),
       onTitleChanged: _scheduleSave,
