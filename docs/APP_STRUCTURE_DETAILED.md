@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `bfa21747` on 2026-11-27.**
+**Generated from input HEAD `fa94c883` on 2026-11-27.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -5364,7 +5364,7 @@ EN:
 - **Why needed:** The CI system loads `.github/workflows/viktor-structure-regen.yml` to run its declared triggers, permissions, jobs, and checks.
 - **Contents:** YAML workflow definition specific to `viktor-structure-regen.yml`.
 - **Repository role:** CI/deployment
-- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `docs/DEPLOY.md`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
 - **Confidence:** HIGH
@@ -7066,7 +7066,7 @@ EN:
 - **Why needed:** Quick answer to ‘where does X live?’ without reading the full encyclopedia.
 - **Contents:** Tables of `lib/data`, features, scripts; architecture guard entry points.
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `.cursor/rules/flutter_expert.mdc`, `.github/copilot-instructions.md`, `.github/workflows/menu-structure-parity.yml`, `.github/workflows/viktor-structure-regen.yml`.
+- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `.cursor/rules/flutter_expert.mdc`, `.github/copilot-instructions.md`, `.github/workflows/menu-structure-parity.yml`, `AGENTS.md`.
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -7732,7 +7732,7 @@ EN:
 - **Why needed:** Tracked because `docs` needs `VIKTOR_AI_ACTION_ENGINE.md` for build, CI, or maintenance.
 - **Contents:** Open `VIKTOR_AI_ACTION_ENGINE.md` when working on `docs` (see folder section above).
 - **Repository role:** governing documentation
-- **Evidence of use:** (1) Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing). (2) Referenced by: `.github/workflows/viktor-structure-regen.yml`.
+- **Evidence of use:** Governing/ops/product documentation read by humans and agents (see `docs/PROJECT_KNOWLEDGE_PACK.md` / AGENTS routing).
 - **Necessity status:** GOVERNING_DOCUMENTATION
 - **Deletion consequence:** Lost architecture/ops rule or agent routing instruction.
 - **Confidence:** HIGH
@@ -20668,7 +20668,8 @@ EN:
 - **Human purpose:** `note_editor_format_actions.dart` on notes area — Editor formatting/heading focus helpers. Users see `note_editor_format_actions.dart` when using notes area.
 - **What this is:** `note_editor_format_actions.dart` on notes area — Editor formatting/heading focus helpers.
 - **Why needed:** Users see `note_editor_format_actions.dart` when using notes area.
-- **Contents:** Dart module `note_editor_format_actions.dart` — open file for classes and helpers.
+- **Contents:** Primary symbols: `_NotesFormattingMenus`.
+- **Key code names:** `_NotesFormattingMenus`
 - **Repository role:** production UI
 - **Evidence of use:** Included by `lib/features/notes/note_editor_page.dart` through a `part` directive (not imported directly).
 - **Necessity status:** PROVEN_REQUIRED
@@ -25026,7 +25027,7 @@ EN:
 - **What this is:** `editor_v45_chrome.dart` on edit sheets and voice UI on every tab — editor v45 chrome.
 - **Why needed:** Users see `editor_v45_chrome.dart` when using edit sheets and voice UI on every tab.
 - **Contents:** Primary symbols: `EditorV45Title`, `_EditorV45TitleState`, `EditorV45TimeCard`, `_DurationLine`, `_EditorTimePoint`, `EditorV45MetadataRow`.
-- **Key code names:** `EditorV45Title`, `_EditorV45TitleState`, `EditorV45TimeCard`, `_DurationLine`, `_EditorTimePoint`, `EditorV45MetadataRow`, `EditorV45CategoryRow`, `EditorV45Actions`, `Edit`
+- **Key code names:** `EditorV45Title`, `_EditorV45TitleState`, `EditorV45TimeCard`, `_DurationLine`, `_EditorTimePoint`, `EditorV45MetadataRow`, `EditorV45CategoryRow`, `EditorV45Actions`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -34203,7 +34204,7 @@ EN:
 - **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
 - **Contents:** PowerShell, Python, or Dart commands for `documentation_parity.py`.
 - **Repository role:** audit tool
-- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/menu-structure-parity.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/menu-structure-parity.yml`, `.github/workflows/viktor-structure-regen.yml`, `AGENTS.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -34220,7 +34221,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `documentation_parity.py`.
 - **Роль в репозитории:** audit tool
-- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/menu-structure-parity.yml`, `AGENTS.md`, `AGENT_NAVIGATION.md`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/menu-structure-parity.yml`, `.github/workflows/viktor-structure-regen.yml`, `AGENTS.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
