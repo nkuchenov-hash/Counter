@@ -437,6 +437,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
       ),
     );
     final newDateKey = _dateKeyFromDate(_date);
+    final end = _startedAsUndatedBacklog && _endTime != null ? DateTime(_date.year, _date.month, _date.day, _endTime!.hour, _endTime!.minute) : _endTime;
     final List<Map<String, dynamic>> checklist = _noteDocument.blocks
         .where((block) => block.type == NoteBlockType.checklist)
         .map(
@@ -471,8 +472,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             startTime: _scheduledTime,
             date: _date,
             dateKey: newDateKey,
-            endDateTime: _endTime,
-            endDateKey: _endTime != null ? _dateKeyFromDate(_endTime!) : null,
+            endDateTime: end,
+            endDateKey: end != null ? _dateKeyFromDate(end) : null,
             checklist: checklist,
             clearNotes: true,
             tags: List<Tag>.from(_selectedTags),
@@ -490,8 +491,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             startTime: _scheduledTime,
             date: _date,
             dateKey: newDateKey,
-            endDateTime: _endTime,
-            endDateKey: _endTime != null ? _dateKeyFromDate(_endTime!) : null,
+            endDateTime: end,
+            endDateKey: end != null ? _dateKeyFromDate(end) : null,
             checklist: checklist,
             notesPlain: notesPlainOut,
             notesDeltaJson: notesDeltaJsonOut,
@@ -915,9 +916,9 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                               final picked = await showAppDateTimePicker(context, initial: initial, sourceRect: anchor,
                                 heading: currentLocale.value == 'ru' ? 'Начало' : 'Start');
                               if (picked != null && mounted) {
+                                if (_endTime != null && !picked.isBefore(_endTime!)) { AppSnack.warning(t(currentLocale.value, 'end_time_after_start')); return; }
                                 setState(() {
                                   _date = DateTime(picked.year, picked.month, picked.day);
-                                  if (_endTime != null && !_endTime!.isAfter(picked)) _endTime = picked.add(_endTime!.difference(_scheduledTime ?? _endTime!).inMinutes > 0 ? _endTime!.difference(_scheduledTime!) : const Duration(hours: 1));
                                   _scheduledTime = picked;
                                 });
                                 _onPlanFieldChanged(immediate: true);
