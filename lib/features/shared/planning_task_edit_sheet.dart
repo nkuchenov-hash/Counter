@@ -471,16 +471,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             startTime: _scheduledTime,
             date: _date,
             dateKey: newDateKey,
-            endDateTime: _endTime != null
-                ? DateTime(
-                    _date.year,
-                    _date.month,
-                    _date.day,
-                    _endTime!.hour,
-                    _endTime!.minute,
-                  )
-                : null,
-            endDateKey: _endTime != null ? newDateKey : null,
+            endDateTime: _endTime,
+            endDateKey: _endTime != null ? _dateKeyFromDate(_endTime!) : null,
             checklist: checklist,
             clearNotes: true,
             tags: List<Tag>.from(_selectedTags),
@@ -498,16 +490,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             startTime: _scheduledTime,
             date: _date,
             dateKey: newDateKey,
-            endDateTime: _endTime != null
-                ? DateTime(
-                    _date.year,
-                    _date.month,
-                    _date.day,
-                    _endTime!.hour,
-                    _endTime!.minute,
-                  )
-                : null,
-            endDateKey: _endTime != null ? newDateKey : null,
+            endDateTime: _endTime,
+            endDateKey: _endTime != null ? _dateKeyFromDate(_endTime!) : null,
             checklist: checklist,
             notesPlain: notesPlainOut,
             notesDeltaJson: notesDeltaJsonOut,
@@ -915,7 +899,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                     ),
                   ),
                 ] else if (!_startedAsUndatedBacklog) ...[
-                        EditorV45Collapsible(collapsed: notesEditing || keyboardOpen,
+                        EditorV45Collapsible(collapsed: (notesEditing && MediaQuery.widthOf(context) < 760) || keyboardOpen,
                         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                         Padding(
                           key: const ValueKey('planning-edit-time-row'),
@@ -933,19 +917,19 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                               if (picked != null && mounted) {
                                 setState(() {
                                   _date = DateTime(picked.year, picked.month, picked.day);
+                                  if (_endTime != null && !_endTime!.isAfter(picked)) _endTime = picked.add(_endTime!.difference(_scheduledTime ?? _endTime!).inMinutes > 0 ? _endTime!.difference(_scheduledTime!) : const Duration(hours: 1));
                                   _scheduledTime = picked;
                                 });
                                 _onPlanFieldChanged(immediate: true);
                               }
                             },
                             onEnd: (anchor) async {
-                              final initial = DateTime(_date.year, _date.month, _date.day,
-                                _endTime?.hour ?? 10, _endTime?.minute ?? 0);
+                              final initial = _endTime ?? DateTime(_date.year, _date.month, _date.day, 10);
                               final picked = await showAppDateTimePicker(context, initial: initial, sourceRect: anchor,
                                 heading: currentLocale.value == 'ru' ? 'Окончание' : 'End');
                               if (picked != null && mounted) {
-                                setState(() => _endTime = DateTime(_date.year, _date.month, _date.day,
-                                  picked.hour, picked.minute));
+                                if (_scheduledTime != null && !picked.isAfter(_scheduledTime!)) { AppSnack.warning(t(currentLocale.value, 'end_time_after_start')); return; }
+                                setState(() => _endTime = picked);
                                 _onPlanFieldChanged(immediate: true);
                               }
                             },
@@ -966,7 +950,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                         ),
                         Padding(
                           key: const ValueKey('planning-edit-tag-strip'),
-                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                          padding: EdgeInsets.fromLTRB(editorV45Inset(context), 0, editorV45Inset(context), _notesReading ? 12 : 16),
                           child: SizedBox(
                             height: 50,
                             child: _tagsLoading
