@@ -142,9 +142,23 @@ void main() {
     final listHeight = tester.getSize(find.byType(NotesListBlock)).height;
     // A new Body line after Enter must not inherit oversized paragraph margins.
     expect(paragraphHeight, lessThanOrEqualTo(listHeight + 8));
-    expect(paragraphHeight, greaterThanOrEqualTo(32));
-    expect(listHeight, greaterThanOrEqualTo(32));
+    expect(paragraphHeight, inInclusiveRange(29, 32));
+    expect(listHeight, inInclusiveRange(27, 30));
+    expect(listHeight, lessThan(paragraphHeight));
     expect(tester.takeException(), isNull);
+  });
+
+  test('Notes spacing follows document groups on every platform', () {
+    expect(notesSectionGap(null, NoteBlockType.heading), 0);
+    expect(notesSectionGap(NoteBlockType.paragraph, NoteBlockType.heading),
+        NotesFigmaTokens.headingSectionGap);
+    expect(notesSectionGap(NoteBlockType.heading, NoteBlockType.paragraph), 0);
+    expect(notesSectionGap(NoteBlockType.heading, NoteBlockType.bulletedList), 0);
+    expect(notesSectionGap(NoteBlockType.bulletedList, NoteBlockType.bulletedList), 0);
+    expect(notesSectionGap(NoteBlockType.paragraph, NoteBlockType.bulletedList),
+        NotesFigmaTokens.listSectionGap);
+    expect(notesSectionGap(NoteBlockType.checklist, NoteBlockType.paragraph),
+        NotesFigmaTokens.listSectionGap);
   });
 
   testWidgets('Android standalone Notes header has working capsule and Done action', (tester) async {

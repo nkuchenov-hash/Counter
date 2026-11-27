@@ -35,11 +35,6 @@ class _NotesBlockHoldDragStartListener extends ReorderableDragStartListener {
 /// Only the block that currently owns keyboard focus is an EditableText. Other
 /// text blocks render as normal RichText inside the page SelectionArea, so a
 /// desktop mouse drag can select continuously across paragraphs/list items.
-bool _isCompactNotesList(NoteBlockType type) =>
-    type == NoteBlockType.bulletedList ||
-    type == NoteBlockType.numberedList ||
-    type == NoteBlockType.checklist;
-
 class NotesEditorBlockItem extends StatelessWidget {
   NotesEditorBlockItem({
     Key? key,
@@ -137,20 +132,12 @@ class NotesEditorBlockItem extends StatelessWidget {
 
     // Add section spacing inside the existing keyed block; never replace
     // the Android EditableText just because its layout or focus changes.
-    final previous = previousBlockType;
-    if (previous != null && NotesFigmaTokens.nativeNotesLayout(context)) {
-      final wasList = _isCompactNotesList(previous);
-      final isList = _isCompactNotesList(block.type);
-      if (wasList != isList || (isList && previous != block.type)) {
-        interactive = Padding(
-          padding: const EdgeInsets.only(
-            top: NotesFigmaTokens.nativeSectionGap,
-          ),
-          child: interactive,
-        );
-      }
-    }
-    return interactive;
+    return Padding(
+      padding: EdgeInsets.only(
+        top: notesSectionGap(previousBlockType, block.type),
+      ),
+      child: interactive,
+    );
   }
 
   Widget _buildSelectableTextBlock(BuildContext context) {
@@ -241,11 +228,7 @@ class NotesEditorBlockItem extends StatelessWidget {
             ? Text(
                 '$numberedOrdinal.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  height: 1.45,
-                  color: NotesFigmaTokens.textPrimary(context),
-                ),
+                style: notesTextStyle(context, NotesTextBlockStyle.body),
               )
             : Container(
                 width: 6,
@@ -267,7 +250,7 @@ class NotesEditorBlockItem extends StatelessWidget {
             children: [
               SizedBox(
                 width: kNotesLeadingSize,
-                height: 24,
+                height: NotesFigmaTokens.bodyLineHeight,
                 child: Center(
                   child: SelectionContainer.disabled(child: marker),
                 ),
@@ -296,7 +279,7 @@ class NotesEditorBlockItem extends StatelessWidget {
             children: [
               SizedBox(
                 width: kNotesLeadingSize,
-                height: 24,
+                height: NotesFigmaTokens.bodyLineHeight,
                 child: Center(
                   child: InkWell(
                     onTap: onCheckedChanged == null
@@ -340,7 +323,7 @@ class NotesEditorBlockItem extends StatelessWidget {
         return Padding(
           padding: EdgeInsets.symmetric(
             horizontal: notesContentHorizontalInset(context),
-            vertical: notesTextBlockPadding(context),
+            vertical: kNotesBlockVerticalPadding,
           ),
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -699,40 +682,8 @@ NotesTextBlockStyle _textStyleFor(NoteBlock block) {
   return NotesTextBlockStyle.h2;
 }
 
-TextStyle _selectableTextStyle(BuildContext context, NoteBlock block) {
-  final color = NotesFigmaTokens.textPrimary(context);
-  final style = _textStyleFor(block);
-  return switch (style) {
-    NotesTextBlockStyle.body => TextStyle(
-        fontSize: NotesFigmaTokens.bodySize,
-        height: NotesFigmaTokens.bodyLineHeight / NotesFigmaTokens.bodySize,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0,
-        color: color,
-      ),
-    NotesTextBlockStyle.h1 => TextStyle(
-        fontSize: NotesFigmaTokens.h1Size,
-        height: NotesFigmaTokens.h1LineHeight / NotesFigmaTokens.h1Size,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.25,
-        color: color,
-      ),
-    NotesTextBlockStyle.h2 => TextStyle(
-        fontSize: NotesFigmaTokens.h2Size,
-        height: NotesFigmaTokens.h2LineHeight / NotesFigmaTokens.h2Size,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.15,
-        color: color,
-      ),
-    NotesTextBlockStyle.h3 => TextStyle(
-        fontSize: NotesFigmaTokens.h3Size,
-        height: NotesFigmaTokens.h3LineHeight / NotesFigmaTokens.h3Size,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0,
-        color: color,
-      ),
-  };
-}
+TextStyle _selectableTextStyle(BuildContext context, NoteBlock block) =>
+    notesTextStyle(context, _textStyleFor(block));
 
 bool _isEditableText(NoteBlockType type) {
   return type == NoteBlockType.paragraph ||

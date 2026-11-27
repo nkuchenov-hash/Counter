@@ -48,13 +48,32 @@ const double kNotesLeadingGap = 10;
 double notesContentHorizontalInset(BuildContext context) =>
     NotesFigmaTokens.nativeNotesLayout(context) ? 26 : kNotesContentInset;
 
-double notesTextBlockPadding(BuildContext context, {bool list = false}) {
-  if (!NotesFigmaTokens.nativeNotesLayout(context)) {
-    return list ? 10 : kNotesBlockVerticalPadding;
+double notesTextBlockPadding(BuildContext context, {bool list = false}) =>
+    list
+        ? NotesFigmaTokens.listVerticalPadding
+        : NotesFigmaTokens.paragraphVerticalPadding;
+
+bool _notesIsList(NoteBlockType type) =>
+    type == NoteBlockType.bulletedList ||
+    type == NoteBlockType.numberedList ||
+    type == NoteBlockType.checklist;
+
+/// Extra space before a semantic group, independent of focus or platform.
+/// Base row padding is already included by each canonical text component.
+double notesSectionGap(NoteBlockType? previous, NoteBlockType current) {
+  if (previous == null) return 0;
+  if (current == NoteBlockType.heading) {
+    return previous == NoteBlockType.heading
+        ? NotesFigmaTokens.listSectionGap
+        : NotesFigmaTokens.headingSectionGap;
   }
-  return list
-      ? NotesFigmaTokens.nativeListVerticalPadding
-      : NotesFigmaTokens.nativeParagraphVerticalPadding;
+  if (previous == NoteBlockType.heading) return 0;
+  final wasList = _notesIsList(previous);
+  final isList = _notesIsList(current);
+  if (wasList != isList || (isList && previous != current)) {
+    return NotesFigmaTokens.listSectionGap;
+  }
+  return 0;
 }
 
 const double kNotesToolbarButtonSize = NotesFigmaTokens.toolbarButtonSize;
@@ -186,7 +205,7 @@ class _NotesActiveIndicatorFrame extends StatelessWidget {
   }
 }
 
-TextStyle _notesTextStyle(
+TextStyle notesTextStyle(
   BuildContext context,
   NotesTextBlockStyle style,
 ) {
@@ -223,6 +242,9 @@ TextStyle _notesTextStyle(
       ),
   };
 }
+
+TextStyle _notesTextStyle(BuildContext context, NotesTextBlockStyle style) =>
+    notesTextStyle(context, style);
 
 Color? _notesColor(String? raw) {
   final value = raw?.trim().replaceFirst('#', '') ?? '';
