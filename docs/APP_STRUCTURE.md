@@ -869,3 +869,7 @@ One-off Pass 3/Pass 2 extraction scripts (`scripts/pass3_*`, `scripts/extract_*`
 | `lib/features/profile/settings/context_awareness_settings_section.dart` | Android opt-in, permission state, home anchor and Stop settings UI. |
 
 Native entry: `android/app/src/main/kotlin/com/example/counter/ContextAwarenessBridge.kt` plus MainActivity MethodChannel; no new PocketBase schema. Off unless the user explicitly enables it.
+
+### Shared record and plan editor chrome
+
+`lib/features/shared/edit_sheet/editor_v45_chrome.dart` — shared B1 time card, inline title using canonical `AppTextField`, category metadata, contextual note chrome and feathered actions; host sheets retain domain mutations.

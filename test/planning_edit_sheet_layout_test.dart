@@ -70,7 +70,14 @@ void main() {
         expect(tester.getTopLeft(tags).dy, greaterThan(tester.getBottomLeft(times).dy - 1));
         expect(tester.getTopLeft(tabs).dy, greaterThan(tester.getBottomLeft(tags).dy - 1));
         expect(tester.getTopLeft(content).dy, greaterThanOrEqualTo(tester.getBottomLeft(tabs).dy - 1));
-        expect(tester.getBottomLeft(content).dy, lessThanOrEqualTo(tester.getTopLeft(actions).dy + 1));
+        // Approved floating footer overlays the scrollable notes viewport.
+        final contentRect = tester.getRect(content);
+        final actionRect = tester.getRect(actions);
+        expect(actionRect.top, greaterThan(contentRect.top));
+        expect(actionRect.bottom, lessThanOrEqualTo(contentRect.bottom + 1));
+        final noteList = tester.widget(find.byKey(const ValueKey('notes-editor-content')));
+        final listPadding = noteList is ReorderableListView ? noteList.padding : (noteList as ListView).padding;
+        expect(listPadding!.resolve(TextDirection.ltr).bottom, greaterThanOrEqualTo(contentRect.bottom - actionRect.top));
         expect(tester.getSize(notes).height, greaterThan(100));
 
         final tab = tester.widget<TabBar>(

@@ -6,7 +6,7 @@ import 'package:counter/core/widgets/omni_date_time_picker_dialog.dart';
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/theme.dart';
 import 'package:counter/features/shared/edit_sheet/category_edit_draft.dart';
-import 'package:counter/shared/categories/picker/category_tree_picker.dart';
+import 'package:counter/shared/categories/picker/category_picker_contracts.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/recurrence_edit_scope.dart';
@@ -25,6 +25,7 @@ import 'package:counter/features/shared/edit_sheet/record_edit_save_policy.dart'
 import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_time_helpers.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_time_picker.dart';
+import 'package:counter/features/shared/edit_sheet/editor_v45_chrome.dart';
 
 part 'edit_sheet/record_title_assist.dart';
 
@@ -60,6 +61,15 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   bool _plansLoading = false;
   bool _plansLoaded = false;
   bool _notesEditorFocused = false;
+  bool _notesReading = false;
+  bool _readingScroll(ScrollNotification n) {
+    if (n.depth != 0 || n.metrics.axis != Axis.vertical) return false;
+    final next = n.metrics.pixels > 24;
+    if (next != _notesReading) WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _notesReading != next) setState(() => _notesReading = next);
+    });
+    return false;
+  }
   // Keep Record chrome stable across temporary IME focus changes.
   bool _notesImeSessionActive = false;
   final FocusNode _notesScopeFocusNode =
@@ -486,37 +496,11 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
         break;
       }
     }
-    final theme = Theme.of(context);
-    return InputDecorator(
-      decoration: InputDecoration(
-        isDense: true,
-        labelText: t(loc, 'record_link_plan_label'),
-        helperText: _plansLoading ? t(loc, 'record_link_plan_loading') : null,
-        suffixIcon: Icon(
-          Icons.arrow_drop_down_rounded,
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
-      child: InkWell(
-        onTap: _plansLoading
-            ? null
-            : () => unawaited(_openPlanLinkPicker(context)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  displayLabel,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyLarge,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return EditorV45MetadataRow(
+      icon: Icons.link_rounded,
+      label: t(loc, 'record_link_plan_label'),
+      value: _plansLoading ? t(loc, 'record_link_plan_loading') : displayLabel,
+      onTap: _plansLoading ? null : () => unawaited(_openPlanLinkPicker(context)),
     );
   }
 
@@ -551,9 +535,10 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     super.dispose();
   }
 
-  Future<void> _pickStart() async {
+  Future<void> _pickStart([Rect? anchor]) async {
     final initial = _startDisplay ?? displayNow();
-    final picked = await showAppDateTimePicker(context, initial: initial);
+    final picked = await showAppDateTimePicker(context, initial: initial, sourceRect: anchor,
+      heading: currentLocale.value == 'ru' ? 'Начало' : 'Start');
     if (picked != null && mounted) {
       setState(() {
         _startDisplay = picked;
@@ -564,9 +549,10 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     }
   }
 
-  Future<void> _pickEnd() async {
+  Future<void> _pickEnd([Rect? anchor]) async {
     final initial = _endDisplay ?? displayNow();
-    final picked = await showAppDateTimePicker(context, initial: initial);
+    final picked = await showAppDateTimePicker(context, initial: initial, sourceRect: anchor,
+      heading: currentLocale.value == 'ru' ? 'Окончание' : 'End');
     if (picked != null && mounted) {
       setState(() => _endDisplay = picked);
       _onRecordFieldChanged(immediate: true);
@@ -829,140 +815,39 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: Column(
         children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              notesEditing ? 4 : 12,
-              16,
-              notesEditing ? 0 : 4,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    t(currentLocale.value, 'edit_record'),
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
+          EditorV45Title(
+            controller: _titleController,
+            onChanged: (raw) => _handleRecordTitleInput(this, raw),
+            onClose: () => Navigator.of(context).pop(),
+            creating: !_isPersistedRecord,
+            writing: notesEditing,
+            contextLabel: currentLocale.value == 'ru' ? 'Заметка записи' : 'Record note',
+            contextTime: editorV45Range(_startDisplay, _endDisplay),
           ),
-          const Divider(height: 1),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          AppTextField(
-                            controller: _titleController,
-                            labelText: t(currentLocale.value, 'title_label'),
-                            hintText: t(
-                              currentLocale.value,
-                              'hint_record_example',
-                            ),
-                            textCapitalization: TextCapitalization.sentences,
-                            onChanged: (raw) => _handleRecordTitleInput(this, raw),
-                          ),
-                          if (!notesEditing) ...[
-                            const SizedBox(height: 8),
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: CategoryTreeFormField(
-                              value: catVal,
-                              enabled: true,
-                              decoration: InputDecoration(
-                                isDense: true,
-                                labelText: t(
-                                  currentLocale.value,
-                                  'category_label'),
-                              ),
-                              onChanged: (id) {
-                                if (id == null) return;
-                                setState(() => _categoryId = id);
-                                _onRecordFieldChanged(immediate: true);
-                              },
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: _buildPlanLinkDropdown(context),
-                          ),
-                            if (_plansLoading)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 6),
-                                child: LinearProgressIndicator(
-                                  minHeight: 2,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                          ],
-                        ],
+                EditorV45Collapsible(collapsed: notesEditing,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(24, 4, 24, _notesReading ? 12 : 16),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                      EditorV45TimeCard(
+                        start: _startDisplay, end: _endDisplay, fallbackDate: _startDisplay ?? displayNow(),
+                        onStart: (anchor) => _pickStart(anchor), onEnd: isRunning ? null : (anchor) => _pickEnd(anchor), running: isRunning, compact: _notesReading,
                       ),
-                    ),
-                    if (!notesEditing)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-                        child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: AppEditSheetTimeButton(
-                              icon: Icons.calendar_month_rounded,
-                              label: t(
-                                currentLocale.value,
-                                'plan_start_time_full',
-                              ),
-                              value: () {
-                                final dt = _startDisplay;
-                                if (dt == null) return '–';
-                                return '${formatDate(dt)} ${formatTimeOfDay(dt)}';
-                              }(),
-                              onPressed: _pickStart,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: AppEditSheetTimeButton(
-                              icon: Icons.event_available_rounded,
-                              label: t(
-                                currentLocale.value,
-                                'plan_end_time_full',
-                              ),
-                              value: isRunning
-                                  ? t(currentLocale.value, 'running_label')
-                                  : () {
-                                      final dt = _endDisplay;
-                                      if (dt == null) {
-                                        return t(
-                                          currentLocale.value,
-                                          'no_end_time',
-                                        );
-                                      }
-                                      return '${formatDate(dt)} ${formatTimeOfDay(dt)}';
-                                    }(),
-                              onPressed: isRunning ? null : _pickEnd,
-                            ),
-                          ),
-                        ],
+                      SizedBox(height: _notesReading ? 12 : 18),
+                      EditorV45CategoryRow(
+                        value: catVal,
+                        display: CategoryTreeSource.exists(catVal) ? CategoryTreeSource.pathLabel(catVal) : t(currentLocale.value, 'category_label'),
+                        onChanged: (id) { setState(() => _categoryId = id); _onRecordFieldChanged(immediate: true); },
                       ),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                      _buildPlanLinkDropdown(context),
+                      if (_plansLoading) const LinearProgressIndicator(minHeight: 2),
+                    ]),
+                  )),
+                EditorV45Collapsible(collapsed: notesEditing, child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: SizedBox(
                     height: kAppCompactControlHeight,
                     child: TabBar(
@@ -985,14 +870,23 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                       ],
                     ),
                   ),
-                ),
+                )),
                 Expanded(
-                  child: TabBarView(
+                  child: EditorV45ActionOverlay(visible: !notesEditing,
+                    actions: EditorV45Actions(
+                      primaryLabel: _isPersistedRecord ? (currentLocale.value == 'ru' ? 'Закрыть' : 'Close') : (currentLocale.value == 'ru' ? 'Создать запись' : 'Create record'),
+                      onPrimary: _save,
+                      onCancel: _isPersistedRecord ? null : () => Navigator.of(context).pop(),
+                      onDelete: _isPersistedRecord ? widget.onDelete : null,
+                      onStop: isRunning ? widget.onStop : null,
+                    ),
+                    content: TabBarView(
                     controller: _tabController,
                     children: [
                       Focus(
                         focusNode: _notesScopeFocusNode,
                         onFocusChange: _handleNotesEditorFocusChanged,
+                        child: NotificationListener<ScrollNotification>(onNotification: _readingScroll,
                         child: NoteEditorPage(
                           inlineKeyboardActive: notesEditing,
                           task: PlanningTask(
@@ -1014,44 +908,17 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                             _recordNoteDocument = document;
                             _recordAutosaveGate.schedule(_commitRecordAutosave, delay: const Duration(seconds: 15));
                           },
-                        ),
+                        )),
                       ),
-                      ParallelActivitiesTab(
+                      Padding(padding: EdgeInsets.only(bottom: notesEditing ? 0 : 100), child: ParallelActivitiesTab(
                         parentRecord: widget.record,
                         scrollController: widget.scrollController,
                         categoryId: catVal,
-                      ),
+                      )),
                     ],
-                  ),
+                  )),
                 ),
-                if (!notesEditing)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                    child: Row(
-                      children: [
-                        if (isRunning)
-                          TextButton.icon(
-                            onPressed: widget.onStop,
-                            icon: const Icon(Icons.stop_rounded),
-                            label: Text(t(currentLocale.value, 'stop')),
-                          ),
-                        TextButton(
-                          onPressed: widget.onDelete,
-                          child: Text(
-                            t(currentLocale.value, 'delete'),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        FilledButton(
-                          onPressed: _save,
-                          child: Text(t(currentLocale.value, 'save')),
-                        ),
-                      ],
-                    ),
-                  ),
+
               ],
             ),
           ),
