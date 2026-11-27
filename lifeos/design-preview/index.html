@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#000000" />
-<title>Life OS Glass V84 — Хронологический таймлайн</title>
+<title>Life OS Glass V85 — Шкала выбранного дня</title>
 <style>
 :root{color-scheme:dark;--accent:#aebacb;--accent-soft:color-mix(in srgb,var(--accent) 22%,transparent);--accent-line:color-mix(in srgb,var(--accent) 52%,transparent);--glass-alpha:.31;--glass-blur:23px;--text:#f2f2f6;--muted:#b2b4be;--edge:rgba(255,255,255,.16);--bg:#07090d;--card-radius:20px}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#000000;color:var(--text)}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}body{overflow-x:hidden}
@@ -2267,10 +2267,10 @@ html .segment.v79-modes button[data-mode] svg,html.theme-light .segment.v79-mode
  html .segment.v79-modes button[data-mode] svg,html.theme-light .segment.v79-modes button[data-mode] svg{width:13px!important;height:13px!important;flex-basis:13px!important}
 }
 /* V83 — one continuous linear axis, edge-aligned compact labels, original card material. */
-.v79-timeline{position:relative;display:block;margin-left:calc(4px - var(--timeline-content-gutter));padding-left:31px;isolation:isolate;min-width:0;box-sizing:border-box}
-.v83-axis{position:absolute;top:0;bottom:0;left:0;width:28px;color:var(--muted);font-size:10px;font-weight:450;font-variant-numeric:tabular-nums;pointer-events:none}
+.v79-timeline{position:relative;display:block;margin-left:calc(6px - var(--timeline-content-gutter));padding-left:38px;isolation:isolate;min-width:0;box-sizing:border-box}
+.v83-axis{position:absolute;top:0;bottom:0;left:0;width:35px;color:var(--muted);font-size:10px;font-weight:450;font-variant-numeric:tabular-nums;pointer-events:none}
 .v83-axis::before{content:"";position:absolute;right:0;top:0;bottom:0;width:1px;background:currentColor;opacity:.16}
-.v83-hour{position:absolute;top:var(--y);left:0;right:0;display:flex;align-items:center;justify-content:flex-end;gap:2px;white-space:nowrap;line-height:12px;transform:translateY(-50%)}
+.v83-hour{position:absolute;top:var(--y);left:0;right:0;display:flex;align-items:center;justify-content:flex-end;gap:2px;white-space:nowrap;line-height:12px;transform:translateY(-50%);padding-left:1px}
 .v83-hour::after{content:"";width:3px;height:1px;background:currentColor;opacity:.6;flex:none}
 .v83-hour.now{font-weight:600;color:var(--text);top:auto;bottom:0;transform:none}
 .v83-hour.first{top:3px;transform:none}
@@ -2296,7 +2296,7 @@ html .v79-timeline .record.v83-tiny .record-inner{display:none!important}
 .v83-gap{position:absolute;top:var(--top);height:var(--span);left:0;right:0;display:flex;align-items:center;gap:6px;justify-content:center;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
 .v83-gap::before,.v83-gap::after{content:"";flex:1;border-top:1px dashed currentColor;opacity:.22}
 .v83-gap:empty::after{display:none}
-.v83-detail{position:absolute;z-index:20;top:10px;left:33px;right:0;border-radius:12px;padding:12px;background:#262a31;color:#f5f5f5;box-shadow:0 6px 24px #0005;font-size:12px;line-height:1.55}
+.v83-detail{position:absolute;z-index:20;top:10px;left:40px;right:0;border-radius:12px;padding:12px;background:#262a31;color:#f5f5f5;box-shadow:0 6px 24px #0005;font-size:12px;line-height:1.55}
 html.theme-light .v83-detail{background:#fff;color:#202b39;box-shadow:0 6px 24px #0002}
 .v83-detail button{border:0;background:transparent;color:inherit;text-decoration:underline;padding:4px 8px 0 0}
 .v79-log{--log-text:#f2f2f6;--log-muted:#a5acb9;--log-line:rgba(255,255,255,.085);color:var(--log-text)}
@@ -2519,6 +2519,7 @@ function v79Fmt(minutes){const n=Math.floor(minutes),h=Math.floor(n/60),m=n%60;r
 const v83Scale=1.7;
 function v81Clock(t){const m=String(t).match(/^(\d{1,2}):(\d{2})$/);return m?Number(m[1])*60+Number(m[2]):null}
 function v82ClockLabel(n){
+ if(Math.round(n)===1440)return '24:00';
  const minute=((Math.round(n)%1440)+1440)%1440;
  return String(Math.floor(minute/60)).padStart(2,'0')+':'+String(minute%60).padStart(2,'0');
 }
@@ -2530,9 +2531,9 @@ function v82Interval(x){
  return {a,b};
 }
 function v83Geometry(items){
- const entries=items.map(x=>({x,...v82Interval(x)})).filter(t=>Number.isFinite(t.a)&&Number.isFinite(t.b)&&t.b>=t.a).sort((a,b)=>a.a-b.a||a.b-b.b);
+ const entries=items.map(x=>({x,...v82Interval(x)})).filter(t=>Number.isFinite(t.a)&&Number.isFinite(t.b)&&t.b>=0&&t.a<1440&&t.b>=t.a).map(t=>({...t,originalA:t.a,originalB:t.b,a:Math.max(0,t.a),b:Math.min(1440,t.b)})).filter(t=>t.b>=t.a).sort((a,b)=>a.a-b.a||a.b-b.b);
  if(!entries.length)return {entries,top:0,bottom:0,extent:0,gaps:[]};
- const top=Math.max(...entries.map(t=>t.b)),bottom=Math.min(...entries.map(t=>t.a));
+ const top=Math.max(...entries.map(t=>t.b)),bottom=0;
  const gaps=[];let cursor=bottom;
  entries.forEach(t=>{
   if(t.a>cursor)gaps.push({top:(cursor-bottom)*v83Scale,span:(t.a-cursor)*v83Scale,minutes:t.a-cursor});
@@ -2579,7 +2580,7 @@ setInterval(()=>{if(mode==='timeline'&&day===20){const scroll=el('scroll'),runni
 function render(){const scroll=el('scroll');scroll.scrollTop=0;if(mode==='stats'){scroll.innerHTML=`<div class="stats"><div class="stats-title">Время по категориям</div>${[['Работа', '4 ч 25 мин',68,'#9f83e0'],['Личное', '2 ч 17 мин',38,'#df945c'],['Сон','6 ч 52 мин',91,'#9b9cba']].map(i=>`<div class="statbar"><div class="stathead"><span>${i[0]}</span><span>${i[1]}</span></div><div class="statrail"><span style="width:${i[2]}%;background:${i[3]}"></span></div></div>`).join('')}</div>`;return}
 if(day!==20){scroll.innerHTML='<div class="empty">Для этой даты нет записей в прототипе.<br>Выберите 20 ноября.</div>';return}
 if(mode==='today'){v79RenderLog(scroll);return}
-const renderCard=(x,t)=>{const span=t?t.span-2*t.inset:0;const variant=t?(span<35?' v83-tiny':span<59?' v83-compact v83-short':span<110?' v83-compact':''):'';const parts=x.path.split(' › ');const main=parts[0]||x.path;const sub=parts.slice(1).join(' · ');return `<article class="record ${x.running?'running':''}${variant}" style="--category:${x.cat}${t?';--top:'+t.top+'px;--span:'+Math.max(t.span,1)+'px;--inset:'+t.inset+'px':''}" data-id="${x.id}"><span class="record-watermark-clip" aria-hidden="true"><svg class="record-watermark"><use href="#wm-${x.wm||'work'}"/></svg></span><div class="record-inner"><div class="record-info"><div class="record-title">${escapeHtml(x.title)}</div><div class="breadcrumb"><span class="category-label">${escapeHtml(main)}</span>${sub?`<span class="chev">·</span><span class="category-label">${escapeHtml(sub)}</span>`:''}</div></div><div class="record-tools">${x.running?`<button class="stop" data-stop="${x.id}" title="Остановить запись" aria-label="Стоп">${icon('stop')}</button>`:''}<button class="more" data-more="${x.id}" aria-label="Ещё">${icon('more')}</button><div class="menu" id="menu-${x.id}"><button data-delete="${x.id}">Удалить запись</button></div></div><div class="record-time">${intervalMarkup(x)}${t&&!x.running?'<span class="record-duration">'+escapeHtml(v79Fmt(t.b-t.a))+'</span>':durationMarkup(x)}</div></div>${t&&span<35?'<button class="v83-tiny-trigger" type="button" data-v83-tiny="'+x.id+'" aria-label="'+escapeHtml(x.title)+'"><span>'+escapeHtml(x.title)+'</span></button>':''}</article>`};
+const renderCard=(x,t)=>{const span=t?t.span-2*t.inset:0;const variant=t?(span<35?' v83-tiny':span<59?' v83-compact v83-short':span<110?' v83-compact':''):'';const parts=x.path.split(' › ');const main=parts[0]||x.path;const sub=parts.slice(1).join(' · ');return `<article class="record ${x.running?'running':''}${variant}" style="--category:${x.cat}${t?';--top:'+t.top+'px;--span:'+Math.max(t.span,1)+'px;--inset:'+t.inset+'px':''}" data-id="${x.id}"><span class="record-watermark-clip" aria-hidden="true"><svg class="record-watermark"><use href="#wm-${x.wm||'work'}"/></svg></span><div class="record-inner"><div class="record-info"><div class="record-title">${escapeHtml(x.title)}</div><div class="breadcrumb"><span class="category-label">${escapeHtml(main)}</span>${sub?`<span class="chev">·</span><span class="category-label">${escapeHtml(sub)}</span>`:''}</div></div><div class="record-tools">${x.running?`<button class="stop" data-stop="${x.id}" title="Остановить запись" aria-label="Стоп">${icon('stop')}</button>`:''}<button class="more" data-more="${x.id}" aria-label="Ещё">${icon('more')}</button><div class="menu" id="menu-${x.id}"><button data-delete="${x.id}">Удалить запись</button></div></div><div class="record-time">${t&&(t.originalA!==t.a||t.originalB!==t.b)?'<span class="record-interval" title="'+escapeHtml(timeParts(x)[0])+'">'+v82ClockLabel(t.a)+' — '+v82ClockLabel(t.b)+'</span>':intervalMarkup(x)}${t&&!x.running?'<span class="record-duration">'+escapeHtml(v79Fmt(t.b-t.a))+'</span>':durationMarkup(x)}</div></div>${t&&span<35?'<button class="v83-tiny-trigger" type="button" data-v83-tiny="'+x.id+'" aria-label="'+escapeHtml(x.title)+'"><span>'+escapeHtml(x.title)+'</span></button>':''}</article>`};
 scroll.innerHTML=mode==='timeline'?'<div class="v79-timeline">'+v81Timeline(renderCard)+'</div>':records.map(renderCard).join('')+`<div class="demo-divider"><span>Дополнительные записи · демонстрация прокрутки</span></div>`+demoRecords.map(renderCard).join('');
 if(mode==='timeline')v83BindTiny(scroll);
 const closeMenus=(except)=>{scroll.querySelectorAll('.menu').forEach(m=>{if(m!==except){m.classList.remove('open');m.closest('.record')?.classList.remove('menu-open')}})};
