@@ -526,9 +526,10 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     super.dispose();
   }
 
-  Future<void> _pickStart() async {
+  Future<void> _pickStart([Rect? anchor]) async {
     final initial = _startDisplay ?? displayNow();
-    final picked = await showAppDateTimePicker(context, initial: initial);
+    final picked = await showAppDateTimePicker(context, initial: initial, sourceRect: anchor,
+      heading: currentLocale.value == 'ru' ? 'Начало' : 'Start');
     if (picked != null && mounted) {
       setState(() {
         _startDisplay = picked;
@@ -539,9 +540,10 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     }
   }
 
-  Future<void> _pickEnd() async {
+  Future<void> _pickEnd([Rect? anchor]) async {
     final initial = _endDisplay ?? displayNow();
-    final picked = await showAppDateTimePicker(context, initial: initial);
+    final picked = await showAppDateTimePicker(context, initial: initial, sourceRect: anchor,
+      heading: currentLocale.value == 'ru' ? 'Окончание' : 'End');
     if (picked != null && mounted) {
       setState(() => _endDisplay = picked);
       _onRecordFieldChanged(immediate: true);
@@ -823,7 +825,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                     child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                       EditorV45TimeCard(
                         start: _startDisplay, end: _endDisplay, fallbackDate: _startDisplay ?? displayNow(),
-                        onStart: _pickStart, onEnd: isRunning ? null : _pickEnd, running: isRunning,
+                        onStart: (anchor) => _pickStart(anchor), onEnd: isRunning ? null : (anchor) => _pickEnd(anchor), running: isRunning,
                       ),
                       const SizedBox(height: 18),
                       EditorV45CategoryRow(
