@@ -5,6 +5,14 @@
 - Match revised Xiaomi nights before insertion within one transaction; preserve the longer revised night for different provider identities and separate naps.
 - Add executable deployment-audit regressions and CODEOWNERS review for the law documentation/test. 17 Node tests passed against matching GitHub blobs; expanded 21 scenarios passed in an isolated JS test harness against the exact repository sources. Real PocketBase and live production verification remain required. No publication or production record edits performed.
 
+## [2026-11-26] — P0 record editor hot-path reductions [verification pending]
+
+- Remove redundant category-tree/path traversals; preserve explicit category and fallback. Skip numbered-list ordinals for non-numbered Notes blocks.
+- In a ready Timeline index, publish metadata-only edits to the affected day without globally invalidating unrelated projections. For structural/dirty-index fallback, invalidate the old and new day snapshots/body entries lazily rather than rebuilding snapshots before invalidating the global index again.
+- Route record-edit PATCH acknowledgements through the existing realtime merge equivalence guard, including structured note/checklist, link and owner data. Preserve actual remote changes, outbox, overlap and timer behavior.
+- Initialize Notes text/caption/focus controllers on demand; initialize playback only on play; rebuild audio blocks instead of the entire editor on playback changes. Reuse serialized note text for an unchanged document revision and dispatch only note fields for note-only autosave.
+- Add focused category, indexed metadata, date-move and network-equivalence regression coverage. Android/Web runtime before/after profiling and Flutter verification remain pending. Protected Brain implementation is isolated in a PR; no release guard, schema, or backend hooks changed. Owner release approval required.
+
 ## [2026-11-25] — Viktor forwarded appointment reliability [pending verification]
 
 - Recognize standalone Russian appointment and booking messages with explicit dates and clocks before provider inference; preserve source details as plan notes and require a preview for the tentative 30-minute duration. Persist single-plan preparation notes as canonical NoteDocument blocks with heading, divider and interactive checklist mirrors. Normalize equivalent provider clock/duration representations before the strict action contract; retain existing Brain conflict, category, deduplication and write verification.
