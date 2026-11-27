@@ -1,3 +1,4 @@
+import 'package:counter/core/app_colors.dart';
 import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:flutter/material.dart';
@@ -142,7 +143,7 @@ class NotesEditorScreen extends StatelessWidget {
       // Adding viewInsets here would subtract the keyboard height a second
       // time and collapse both the Notes canvas and its toolbar.
       return Material(
-        color: Colors.transparent,
+        color: AppNeutralTones.transparent,
         child: NotesEditorBody(
           content: content,
           toolbar: toolbar,
