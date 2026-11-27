@@ -63,3 +63,86 @@ jobs:
           name: latency-audit-inventory
           path: audit-inventory.json
           retention-days: 7
+
+  live-readonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Measure public health endpoint from this runner
+        run: |
+          for i in 1 2 3; do
+            curl -sS --connect-timeout 4 --max-time 8 -o /dev/null -w 'http=%{http_code} dns=%{time_namelookup} tcp=%{time_connect} tls=%{time_appconnect} total=%{time_total}\n' https://137-22-146-109.sslip.io/api/health || true
+          done
+      - name: Inspect process resources and sleep freshness without writing production
+        env:
+          LIFEOS_SSH_PRIVATE_KEY: ${{ secrets.POCKETBASE_SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY || secrets.SSH_PRIVATE_KEY }}
+          LIFEOS_SSH_USER: ${{ secrets.POCKETBASE_SSH_USER || secrets.VPS_SSH_USER || secrets.SSH_USER }}
+          LIFEOS_SSH_PORT: ${{ secrets.POCKETBASE_SSH_PORT || secrets.VPS_SSH_PORT || '22' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          host=137.22.146.109
+          port="${LIFEOS_SSH_PORT:-22}"
+          user="${LIFEOS_SSH_USER:-root}"
+          test -n "$LIFEOS_SSH_PRIVATE_KEY"
+          install -d -m 700 "$HOME/.ssh"
+          key="$RUNNER_TEMP/lifeos_audit_key"
+          trap 'rm -f "$key"' EXIT
+          printf '%s\n' "$LIFEOS_SSH_PRIVATE_KEY" > "$key"
+          chmod 600 "$key"
+          ssh-keyscan -T 8 -p "$port" -H "$host" >> "$HOME/.ssh/known_hosts" 2>/dev/null
+          ssh -i "$key" -p "$port" -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=yes "$user@$host" 'if [ "$(id -u)" = 0 ]; then exec python3 -; else exec sudo -n python3 -; fi' <<'PY'
+          import datetime, json, os, sqlite3, subprocess, time
+          from pathlib import Path
+          unit="lifeos-recovery-live.service"
+          if subprocess.run(["systemctl","is-active","--quiet",unit]).returncode:
+              raise SystemExit("active service not found")
+          pid=subprocess.check_output(["systemctl","show",unit,"-p","MainPID","--value"],text=True).strip()
+          files=set()
+          for fd in Path("/proc",pid,"fd").iterdir():
+              try:
+                  p=Path(os.readlink(fd))
+                  if p.name=="data.db" and p.is_file(): files.add(p.resolve())
+              except OSError: pass
+          if len(files)!=1: raise SystemExit("live database not identified")
+          p=files.pop()
+          print("active_db_verified=true")
+          for line in Path("/proc",pid,"status").read_text().splitlines():
+              if line.startswith(("VmRSS:","Threads:")): print(line)
+          print("logical_cpus="+str(os.cpu_count()))
+          print("load_1_5_15="+str(os.getloadavg()))
+          for line in Path("/proc/meminfo").read_text().splitlines():
+              if line.startswith(("MemTotal:","MemAvailable:","SwapTotal:","SwapFree:")): print(line)
+          print("database_mib="+str(round(p.stat().st_size/1048576,2)))
+          db=sqlite3.connect(f"file:{p}?mode=ro",uri=True,timeout=2)
+          db.row_factory=sqlite3.Row
+          row=db.execute("SELECT user_id,status,last_error,last_session_count,last_imported_count,last_sync_local_day FROM sleep_sync_connections WHERE provider='xiaomi' AND enabled=1 LIMIT 1").fetchone()
+          if row:
+              print("xiaomi_status="+str(row["status"]))
+              err=row["last_error"] or ""
+              print("xiaomi_error="+("missing_expected_sleep" if "xiaomi_sleep_not_available_today" in err else "auth" if "auth" in err.lower() else "network" if "timeout" in err.lower() or "unavailable" in err.lower() else "other" if err else "none"))
+              print("xiaomi_sessions="+str(row["last_session_count"]))
+              print("xiaomi_imported="+str(row["last_imported_count"]))
+              uid=row["user_id"]
+              pr=db.execute("SELECT timezone_offset FROM profiles WHERE id=?",(uid,)).fetchone()
+              offset=float(pr[0] or 0) if pr else 0
+              now=datetime.datetime.now(datetime.timezone.utc)
+              day=(now+datetime.timedelta(hours=offset)).date()
+              start=datetime.datetime.combine(day,datetime.time(),tzinfo=datetime.timezone.utc)-datetime.timedelta(hours=offset)
+              end=start+datetime.timedelta(days=1)
+              iso=lambda t:t.isoformat(timespec="milliseconds").replace("+00:00","Z")
+              q="SELECT count(*) FROM records WHERE user_id=? AND (sleep_source='xiaomi' OR external_source='xiaomi') AND "
+              iso_count=db.execute(q+"end_time>=? AND end_time<?",(uid,iso(start),iso(end))).fetchone()[0]
+              norm_count=db.execute(q+"end_time>=? AND end_time<?",(uid,iso(start).replace("T"," "),iso(end).replace("T"," "))).fetchone()[0]
+              julian_count=db.execute(q+"julianday(end_time)>=julianday(?) AND julianday(end_time)<julianday(?)",(uid,iso(start),iso(end))).fetchone()[0]
+              print("profile_day="+day.isoformat())
+              print("current_day_raw_iso_count="+str(iso_count))
+              print("current_day_normalized_count="+str(norm_count))
+              print("current_day_calendar_count="+str(julian_count))
+              latest=db.execute("SELECT date(max(end_time)) FROM records WHERE user_id=? AND (sleep_source='xiaomi' OR external_source='xiaomi')",(uid,)).fetchone()[0]
+              print("latest_sleep_utc_day="+str(latest))
+              for date,n in db.execute("SELECT date(end_time),count(*) FROM records WHERE user_id=? AND (sleep_source='xiaomi' OR external_source='xiaomi') AND date(end_time)>='2026-11-25' GROUP BY date(end_time)",(uid,)):
+                  print("sleep_day="+str(date)+" count="+str(n))
+          PY
