@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
