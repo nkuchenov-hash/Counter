@@ -36,6 +36,8 @@ This ordering is deliberate: a schema-dependent Web client must never become liv
 
 **Live URL:** https://nkuchenov-hash.github.io/Counter/
 
+**Publication evidence:** the live `/Counter/lifeos-build.txt` must identify the validated revision (or an explicitly permitted documentation-only descendant). A successful pull-request build or merge alone is not proof of production publication.
+
 The deploy scripts do **not** push to `gh-pages` directly; Actions owns that step.
 
 ## Architecture Guard (structure CI)
