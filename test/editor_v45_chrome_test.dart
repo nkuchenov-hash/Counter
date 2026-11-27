@@ -1,4 +1,4 @@
-import 'package:counter/core/app_colors.dart';
+import 'package:counter/core/theme.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_editor_document_controller.dart';
@@ -169,12 +169,10 @@ void main() {
         });
       }
       Widget screen(TimelineRecord record) => MaterialApp(
-        theme: ThemeData(colorScheme: AppColors.lightColorScheme(), useMaterial3: true,
-          fontFamily: capture ? 'Onest' : null,
-          platform: size.width >= 760 ? TargetPlatform.windows : TargetPlatform.android),
+        theme: appLightTheme.copyWith(platform: size.width >= 760 ? TargetPlatform.windows : TargetPlatform.android),
         home: Scaffold(body: RepaintBoundary(key: const ValueKey('v45-capture'), child:
-          TimelineRecordSheetContent(key: ValueKey(record.id), record: record,
-            scrollController: scroll, onSaved: (_) {}, onDelete: () {}, onStop: () {}))),
+          KeyedSubtree(key: ValueKey(record.id), child: TimelineRecordSheetContent(record: record,
+            scrollController: scroll, onSaved: (_) {}, onDelete: () {}, onStop: () {})))),
       );
       final notes = NoteDocument(blocks: const [
         NoteBlock(id: 'h', type: NoteBlockType.heading, level: 1, text: 'Итоги работы'),
