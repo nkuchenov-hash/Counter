@@ -943,52 +943,6 @@ _deleteBlockFromMenu(block.id);
       _editor.insertAfter(anchorId, type, level: level, table: table),
     );
   }
-  NotesTextBlockStyle? _activeHeadingStyle() =>
-      _notesHeadingStyleFor(this);
-  Set<NotesInlineFormat> _selectionFormats() {
-    final block = _editor.activeBlock;
-    if (block == null ||
-        !NotesEditorDocumentController.isEditableText(block.type)) {
-      return const <NotesInlineFormat>{};
-    }
-    final selection = _textControllers[block.id]?.selection;
-    if (selection == null) return const <NotesInlineFormat>{};
-    return _editor.formatsForSelection(block.id, selection);
-  }
-  Future<void> _showHeadingMenu() {
-    return showNotesHeadingStylesMenu(
-      context: context,
-      selected: _activeHeadingStyle(),
-      onSelected: (style) {
-        final conversion = switch (style) {
-          NotesTextBlockStyle.body => NotesBlockConversion.body,
-          NotesTextBlockStyle.h1 => NotesBlockConversion.h1,
-          NotesTextBlockStyle.h2 => NotesBlockConversion.h2,
-          NotesTextBlockStyle.h3 => NotesBlockConversion.h3,
-        };
-        _convertActive(conversion);
-      },
-    );
-  }
-  Future<void> _showFormattingMenu() {
-    final block = _editor.activeBlock;
-    if (block == null ||
-        !NotesEditorDocumentController.isEditableText(block.type)) {
-      return Future<void>.value();
-    }
-    final selection = _textControllerFor(block).selection;
-    return showNotesTextFormattingMenu(
-      context: context,
-      selected: _editor.formatsForSelection(block.id, selection),
-      onSelected: (format) {
-        if (format == NotesInlineFormat.link) {
-          _editLink(block.id, selection);
-          return;
-        }
-        _applyInlineFormat(block.id, selection, format);
-      },
-    );
-  }
   Future<void> _editLink(String blockId, TextSelection selection) async {
     final result = await showNotesLinkDialog(
       context: context,
