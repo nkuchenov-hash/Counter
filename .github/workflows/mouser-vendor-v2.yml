@@ -1,0 +1,54 @@
+name: Vendor Mouser second model collection
+on:
+  push:
+    branches: [gh-pages]
+    paths: [.github/workflows/mouser-vendor-v2.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 1
+      - name: Fetch public CC0 meshes and inspect geometry
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import urllib.request,pathlib,struct,hashlib,json
+          root=pathlib.Path('mouser-mvp/models-v2')
+          root.mkdir(parents=True,exist_ok=True)
+          sources={
+            'symmetric':('https://files.innerscene.com/library/wireless-mouse-office-technology-7e0e880d/3baa3dd11b04688d7940/wireless_mouse.glb','Innerscene'),
+            'ergonomic':('https://grab3d.com/dl/computer-mouse/computer-mouse.glb','Grab3D'),
+            'compact':('https://files.innerscene.com/library/palm-mouse-wireless-mouse-a9f5ed66/8d0cb0245e2049626877/compact-wireless-mouse.glb','Innerscene'),
+            'gaming':('https://tevy.dev/models/gaming-mouse/v1/lod0.glb','tevy'),
+            'vertical':('https://files.innerscene.com/library/upright-mouse-vertical-mouse-24250e61/101d554718f1cd2d3a73/vertical-ergonomic-mouse.glb','Innerscene'),
+            'trackball':('https://files.innerscene.com/library/roll-point-trackball-fea1b66a/dbf5f2e32b9244107a6c/trackball-pointer.glb','Innerscene')
+          }
+          report={}
+          for name,(url,author) in sources.items():
+              with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0 Mouser asset retrieval'}),timeout=30) as r:
+                  data=r.read()
+              assert data[:4]==b'glTF' and struct.unpack_from('<I',data,4)[0]==2 and struct.unpack_from('<I',data,8)[0]==len(data), name
+              size,typ=struct.unpack_from('<II',data,12)
+              assert typ==0x4E4F534A
+              m=json.loads(data[20:20+size])
+              (root/(name+'.glb')).write_bytes(data)
+              report[name]={'source':url,'author':author,'license':'CC0','sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data),'asset':m.get('asset'),'extensions':m.get('extensionsUsed',[]),'nodes':m.get('nodes',[]),'meshes':[{'name':x.get('name'),'primitives':[{'material':p.get('material'),'position':m['accessors'][p['attributes']['POSITION']].get('min'),'max':m['accessors'][p['attributes']['POSITION']].get('max'),'count':m['accessors'][p['attributes']['POSITION']]['count']} for p in x['primitives']]} for x in m.get('meshes',[])],'materials':[x.get('name') for x in m.get('materials',[])],'scenes':m.get('scenes')}
+              print(name,len(data),'nodes',len(m.get('nodes',[])),'meshes',len(m.get('meshes',[])),flush=True)
+          (root/'metadata.json').write_text(json.dumps(report,indent=2,ensure_ascii=False))
+          (root/'LICENSE.md').write_text('# CC0 model sources\n\nInnerscene original models: symmetric wireless, Palm Mouse, Upright Mouse, Roll Point. Grab3D Computer Mouse. tevy Gaming Mouse and Pad. All CC0 1.0; https://creativecommons.org/publicdomain/zero/1.0/. Source URLs and original hashes in metadata.json. No paid assets. Gaming scene may need isolation from pad/cable before production use.\n')
+          PY
+      - name: Commit only Mouser assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- mouser-mvp/models-v2
+          git diff --cached --quiet && exit 0
+          git commit -m "Vendor six CC0 mouse assets from public sources"
+          git push origin HEAD:gh-pages
