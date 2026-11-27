@@ -206,7 +206,7 @@ class _EditorTimePointState extends State<_EditorTimePoint> {
     final main = hot ? s.primary : s.onSurface;
     final time = Text(widget.running ? t(currentLocale.value, 'running_label') : editorV45Time(widget.value), key: _timeKey,
       maxLines: 1, style: TextStyle(fontSize: widget.running ? 16 : widget.compact ? 29 : 32, height: 1.13,
-        fontWeight: FontWeight.w650, letterSpacing: -.8, fontFeatures: const [ui.FontFeature.tabularFigures()], color: main));
+        fontWeight: FontWeight.w600, letterSpacing: -.8, fontFeatures: const [ui.FontFeature.tabularFigures()], color: main));
     final chevron = Icon(Icons.expand_more_rounded, size: 17, color: dim);
     return InkWell(
       onHover: enabled ? (v) => setState(() => _hover = v) : null,
