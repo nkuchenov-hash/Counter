@@ -413,7 +413,7 @@ class _NotesNavigationHeader extends StatelessWidget {
     if (!embedded && !showCompactTitle && !bulkSelectionMode) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Row(children: [
+        child: SizedBox(height: 46, child: Row(children: [
           Row(key: const ValueKey('notes-header-action-capsule'), mainAxisSize: MainAxisSize.min, children: [
             _NotesHeaderAction(icon: pinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
               tooltip: pinned ? 'Unpin' : 'Pin', onPressed: onTogglePinned, compact: true),
@@ -423,7 +423,7 @@ class _NotesNavigationHeader extends StatelessWidget {
           const Spacer(),
           AppIconButton(icon: Icons.close_rounded, tooltip: 'Done', onPressed: onDone,
             size: AppIconButtonSize.s, shape: AppIconButtonShape.circular, variant: AppIconButtonVariant.filled),
-        ]),
+        ])),
       );
     }
     return Padding(
@@ -819,7 +819,7 @@ class _NotesTitleBlockState extends State<_NotesTitleBlock> {
         24,
         10,
         24,
-        8,
+        widget.timestampLabel == null ? 8 : 16,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
