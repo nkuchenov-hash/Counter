@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#000000" />
-<title>Life OS Glass V83 — Равномерная шкала</title>
+<title>Life OS Glass V84 — Хронологический таймлайн</title>
 <style>
 :root{color-scheme:dark;--accent:#aebacb;--accent-soft:color-mix(in srgb,var(--accent) 22%,transparent);--accent-line:color-mix(in srgb,var(--accent) 52%,transparent);--glass-alpha:.31;--glass-blur:23px;--text:#f2f2f6;--muted:#b2b4be;--edge:rgba(255,255,255,.16);--bg:#07090d;--card-radius:20px}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#000000;color:var(--text)}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}body{overflow-x:hidden}
@@ -2272,7 +2272,8 @@ html .segment.v79-modes button[data-mode] svg,html.theme-light .segment.v79-mode
 .v83-axis::before{content:"";position:absolute;right:0;top:0;bottom:0;width:1px;background:currentColor;opacity:.16}
 .v83-hour{position:absolute;top:var(--y);left:0;right:0;display:flex;align-items:center;justify-content:flex-end;gap:2px;white-space:nowrap;line-height:12px;transform:translateY(-50%)}
 .v83-hour::after{content:"";width:3px;height:1px;background:currentColor;opacity:.6;flex:none}
-.v83-hour.now{font-weight:600;color:var(--text);top:3px;transform:none}
+.v83-hour.now{font-weight:600;color:var(--text);top:auto;bottom:0;transform:none}
+.v83-hour.first{top:3px;transform:none}
 .v83-items{position:relative;height:var(--extent)}
 .v79-timeline .record{position:absolute!important;top:calc(var(--top) + var(--inset));left:0;right:0;margin:0!important;min-height:0!important;height:calc(var(--span) - 2 * var(--inset))!important;max-height:none!important;min-width:0;box-sizing:border-box}
 html .v79-timeline .record .record-inner{height:100%!important;min-height:0!important;box-sizing:border-box;align-content:space-between!important;grid-template-rows:auto minmax(0,1fr) auto!important}
@@ -2529,25 +2530,25 @@ function v82Interval(x){
  return {a,b};
 }
 function v83Geometry(items){
- const entries=items.map(x=>({x,...v82Interval(x)})).filter(t=>Number.isFinite(t.a)&&Number.isFinite(t.b)&&t.b>=t.a).sort((a,b)=>b.b-a.b||b.a-a.a);
+ const entries=items.map(x=>({x,...v82Interval(x)})).filter(t=>Number.isFinite(t.a)&&Number.isFinite(t.b)&&t.b>=t.a).sort((a,b)=>a.a-b.a||a.b-b.b);
  if(!entries.length)return {entries,top:0,bottom:0,extent:0,gaps:[]};
  const top=Math.max(...entries.map(t=>t.b)),bottom=Math.min(...entries.map(t=>t.a));
- const gaps=[];let cursor=top;
+ const gaps=[];let cursor=bottom;
  entries.forEach(t=>{
-  if(cursor>t.b)gaps.push({top:(top-cursor)*v83Scale,span:(cursor-t.b)*v83Scale,minutes:cursor-t.b});
-  t.top=(top-t.b)*v83Scale;t.span=(t.b-t.a)*v83Scale;t.inset=Math.min(3,t.span*.16);cursor=Math.min(cursor,t.a);
+  if(t.a>cursor)gaps.push({top:(cursor-bottom)*v83Scale,span:(t.a-cursor)*v83Scale,minutes:t.a-cursor});
+  t.top=(t.a-bottom)*v83Scale;t.span=(t.b-t.a)*v83Scale;t.inset=Math.min(3,t.span*.16);cursor=Math.max(cursor,t.b);
  });
  return {entries,top,bottom,extent:Math.max(1,(top-bottom)*v83Scale),gaps};
 }
 function v83Ticks(g){
  if(!g.entries.length)return '';
- let out='<span class="v83-hour now">'+v82ClockLabel(g.top)+'</span>';
- for(let h=Math.floor(g.top/60)*60;h>=g.bottom;h-=60){
-  const y=(g.top-h)*v83Scale;
-  if(y<16||g.extent-y<6)continue;
+ let out='<span class="v83-hour first">'+v82ClockLabel(g.bottom)+'</span>';
+ for(let h=Math.ceil(g.bottom/60)*60;h<=g.top;h+=60){
+  const y=(h-g.bottom)*v83Scale;
+  if(y<16||g.extent-y<16)continue;
   out+='<span class="v83-hour" style="--y:'+y.toFixed(2)+'px">'+v82ClockLabel(h)+'</span>';
  }
- return out;
+ return out+'<span class="v83-hour now">'+v82ClockLabel(g.top)+'</span>';
 }
 function v81Timeline(renderCard){
  const g=v83Geometry(records);
