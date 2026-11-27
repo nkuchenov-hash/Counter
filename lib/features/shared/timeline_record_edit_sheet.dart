@@ -61,6 +61,15 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   bool _plansLoading = false;
   bool _plansLoaded = false;
   bool _notesEditorFocused = false;
+  bool _notesReading = false;
+  bool _readingScroll(ScrollNotification n) {
+    if (n.depth != 0 || n.metrics.axis != Axis.vertical) return false;
+    final next = n.metrics.pixels > 24;
+    if (next != _notesReading) WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _notesReading != next) setState(() => _notesReading = next);
+    });
+    return false;
+  }
   // Keep Record chrome stable across temporary IME focus changes.
   bool _notesImeSessionActive = false;
   final FocusNode _notesScopeFocusNode =
@@ -819,15 +828,15 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (!notesEditing)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 4, 24, 16),
+                EditorV45Collapsible(collapsed: notesEditing,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(24, 4, 24, _notesReading ? 12 : 16),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                       EditorV45TimeCard(
                         start: _startDisplay, end: _endDisplay, fallbackDate: _startDisplay ?? displayNow(),
-                        onStart: (anchor) => _pickStart(anchor), onEnd: isRunning ? null : (anchor) => _pickEnd(anchor), running: isRunning,
+                        onStart: (anchor) => _pickStart(anchor), onEnd: isRunning ? null : (anchor) => _pickEnd(anchor), running: isRunning, compact: _notesReading,
                       ),
-                      const SizedBox(height: 18),
+                      SizedBox(height: _notesReading ? 12 : 18),
                       EditorV45CategoryRow(
                         value: catVal,
                         display: CategoryTreeSource.exists(catVal) ? CategoryTreeSource.pathLabel(catVal) : t(currentLocale.value, 'category_label'),
@@ -836,9 +845,8 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                       _buildPlanLinkDropdown(context),
                       if (_plansLoading) const LinearProgressIndicator(minHeight: 2),
                     ]),
-                  ),
-                if (!notesEditing)
-                Padding(
+                  )),
+                EditorV45Collapsible(collapsed: notesEditing, child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: SizedBox(
                     height: kAppCompactControlHeight,
@@ -862,14 +870,23 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                       ],
                     ),
                   ),
-                ),
+                )),
                 Expanded(
-                  child: TabBarView(
+                  child: EditorV45ActionOverlay(visible: !notesEditing,
+                    actions: EditorV45Actions(
+                      primaryLabel: _isPersistedRecord ? (currentLocale.value == 'ru' ? 'Закрыть' : 'Close') : (currentLocale.value == 'ru' ? 'Создать запись' : 'Create record'),
+                      onPrimary: _save,
+                      onCancel: _isPersistedRecord ? null : () => Navigator.of(context).pop(),
+                      onDelete: _isPersistedRecord ? widget.onDelete : null,
+                      onStop: isRunning ? widget.onStop : null,
+                    ),
+                    content: TabBarView(
                     controller: _tabController,
                     children: [
                       Focus(
                         focusNode: _notesScopeFocusNode,
                         onFocusChange: _handleNotesEditorFocusChanged,
+                        child: NotificationListener<ScrollNotification>(onNotification: _readingScroll,
                         child: NoteEditorPage(
                           inlineKeyboardActive: notesEditing,
                           task: PlanningTask(
@@ -891,26 +908,17 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                             _recordNoteDocument = document;
                             _recordAutosaveGate.schedule(_commitRecordAutosave, delay: const Duration(seconds: 15));
                           },
-                        ),
+                        )),
                       ),
-                      ParallelActivitiesTab(
+                      Padding(padding: EdgeInsets.only(bottom: notesEditing ? 0 : 100), child: ParallelActivitiesTab(
                         parentRecord: widget.record,
                         scrollController: widget.scrollController,
                         categoryId: catVal,
-                      ),
+                      )),
                     ],
-                  ),
+                  )),
                 ),
-                if (!notesEditing)
-                  EditorV45Actions(
-                    primaryLabel: _isPersistedRecord
-                        ? (currentLocale.value == 'ru' ? 'Закрыть' : 'Close')
-                        : (currentLocale.value == 'ru' ? 'Создать запись' : 'Create record'),
-                    onPrimary: _save,
-                    onCancel: _isPersistedRecord ? null : () => Navigator.of(context).pop(),
-                    onDelete: _isPersistedRecord ? widget.onDelete : null,
-                    onStop: isRunning ? widget.onStop : null,
-                  ),
+
               ],
             ),
           ),
