@@ -115,6 +115,7 @@ class NotesEditorScreen extends StatelessWidget {
     this.categoryColor,
     this.tags = const <NotesEditorMetadataTag>[],
     this.titleHint,
+    this.timestampLabel,
     this.bodyOnly = false,
     this.showInlineToolbar = true,
   });
@@ -133,7 +134,7 @@ class NotesEditorScreen extends StatelessWidget {
   final String? categoryLabel;
   final Color? categoryColor;
   final List<NotesEditorMetadataTag> tags;
-  final String? titleHint;
+  final String? titleHint, timestampLabel;
   final bool bodyOnly;
   final bool showInlineToolbar;
 
@@ -196,6 +197,7 @@ class NotesEditorScreen extends StatelessWidget {
               categoryColor: categoryColor,
               tags: tags,
               titleHint: titleHint,
+              timestampLabel: timestampLabel,
               content: content,
               toolbar: toolbar,
             ),
@@ -238,6 +240,7 @@ class _NotesEditorRail extends StatelessWidget {
     required this.categoryColor,
     required this.tags,
     required this.titleHint,
+    this.timestampLabel,
     required this.content,
     required this.toolbar,
   });
@@ -255,7 +258,7 @@ class _NotesEditorRail extends StatelessWidget {
   final String? categoryLabel;
   final Color? categoryColor;
   final List<NotesEditorMetadataTag> tags;
-  final String? titleHint;
+  final String? titleHint, timestampLabel;
   final Widget content;
   final Widget toolbar;
 
@@ -304,6 +307,7 @@ class _NotesEditorRail extends StatelessWidget {
                   categoryColor: categoryColor,
                   tags: tags,
                   hintText: titleHint,
+                  timestampLabel: timestampLabel,
                   collapseForKeyboard: collapseTitleForKeyboard,
                 ),
                 Expanded(
@@ -763,6 +767,7 @@ class _NotesTitleBlock extends StatefulWidget {
     required this.tags,
     required this.collapseForKeyboard,
     this.hintText,
+    this.timestampLabel,
   });
 
   final TextEditingController controller;
@@ -771,7 +776,7 @@ class _NotesTitleBlock extends StatefulWidget {
   final Color? categoryColor;
   final List<NotesEditorMetadataTag> tags;
   final bool collapseForKeyboard;
-  final String? hintText;
+  final String? hintText, timestampLabel;
 
   @override
   State<_NotesTitleBlock> createState() => _NotesTitleBlockState();
@@ -885,6 +890,11 @@ class _NotesTitleBlockState extends State<_NotesTitleBlock> {
             categoryColor: widget.categoryColor,
             tags: widget.tags,
           ),
+          if (widget.timestampLabel != null) ...[
+            const SizedBox(height: 8),
+            Text(widget.timestampLabel!, style: TextStyle(fontSize: 13, height: 19 / 13,
+              color: NotesFigmaTokens.textSecondary(context))),
+          ],
         ],
       ),
     );
