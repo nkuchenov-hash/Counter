@@ -552,7 +552,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     final mobileDated =
         !_startedAsUndatedBacklog && MediaQuery.sizeOf(context).width <= 600;
     return Material(
-      color: Theme.of(context).colorScheme.surface,
+      color: _startedAsUndatedBacklog ? Theme.of(context).colorScheme.surface : editorV45Paper(context),
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: Column(
         children: [
@@ -560,7 +560,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             EditorV45Title(
               controller: _titleController,
               onChanged: _onTitleChanged,
-              onClose: () => Navigator.of(context).pop<PlanningTask?>(null),
+              onClose: _isPersistedPlan ? _commitSave : () => Navigator.of(context).pop<PlanningTask?>(null),
               creating: !_isPersistedPlan,
               writing: notesEditing,
               contextLabel: currentLocale.value == 'ru' ? 'Заметка плана' : 'Plan note',
@@ -618,7 +618,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
               ],
             ),
           ),
-          const Divider(height: 1),
+          if (_startedAsUndatedBacklog || notesEditing) const Divider(height: 1),
           if (!notesEditing && _startedAsUndatedBacklog)
           Padding(
             padding: EdgeInsets.fromLTRB(
@@ -915,11 +915,11 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                     ),
                   ),
                 ] else if (!_startedAsUndatedBacklog) ...[
-                        EditorV45Collapsible(collapsed: notesEditing || (keyboardOpen && _titleController.text.isNotEmpty),
+                        EditorV45Collapsible(collapsed: notesEditing || keyboardOpen,
                         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                         Padding(
                           key: const ValueKey('planning-edit-time-row'),
-                          padding: EdgeInsets.fromLTRB(24, 4, 24, _notesReading ? 12 : 18),
+                          padding: EdgeInsets.fromLTRB(editorV45Inset(context), 4, editorV45Inset(context), _notesReading ? 12 : 18),
                           child: EditorV45TimeCard(
                             compact: _notesReading,
                             start: _scheduledTime,
@@ -952,7 +952,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          padding: EdgeInsets.symmetric(horizontal: editorV45Inset(context)),
                           child: EditorV45CategoryRow(
                             value: dropdownValue,
                             display: CategoryTreeSource.exists(dropdownValue)
@@ -1010,7 +1010,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                         ),
                         Padding(
                           key: const ValueKey('planning-edit-primary-tabs'),
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          padding: EdgeInsets.symmetric(horizontal: editorV45Inset(context)),
                           child: SizedBox(
                             height: kAppCompactControlHeight,
                             child: TabBar(
