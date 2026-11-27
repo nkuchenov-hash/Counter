@@ -912,10 +912,11 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                             start: _scheduledTime,
                             end: _endTime,
                             fallbackDate: _date,
-                            onStart: () async {
+                            onStart: (anchor) async {
                               final initial = DateTime(_date.year, _date.month, _date.day,
                                 _scheduledTime?.hour ?? 9, _scheduledTime?.minute ?? 0);
-                              final picked = await showAppDateTimePicker(context, initial: initial);
+                              final picked = await showAppDateTimePicker(context, initial: initial, sourceRect: anchor,
+                                heading: currentLocale.value == 'ru' ? 'Начало' : 'Start');
                               if (picked != null && mounted) {
                                 setState(() {
                                   _date = DateTime(picked.year, picked.month, picked.day);
@@ -924,10 +925,11 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                                 _onPlanFieldChanged(immediate: true);
                               }
                             },
-                            onEnd: () async {
+                            onEnd: (anchor) async {
                               final initial = DateTime(_date.year, _date.month, _date.day,
                                 _endTime?.hour ?? 10, _endTime?.minute ?? 0);
-                              final picked = await showAppDateTimePicker(context, initial: initial);
+                              final picked = await showAppDateTimePicker(context, initial: initial, sourceRect: anchor,
+                                heading: currentLocale.value == 'ru' ? 'Окончание' : 'End');
                               if (picked != null && mounted) {
                                 setState(() => _endTime = DateTime(_date.year, _date.month, _date.day,
                                   picked.hour, picked.minute));
