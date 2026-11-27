@@ -92,6 +92,29 @@ void main() {
   testWidgets('capture v45 mobile and desktop editor review screenshots', (tester) async {
     final output = Platform.environment['V45_CAPTURE_DIR'];
     if (output == null) return;
+    // The widget-test engine has no native audio plugin. Stub only the
+    // platform transport; production NoteEditorPage and its UI stay real.
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    const globalAudio = MethodChannel('xyz.luan/audioplayers.global');
+    const globalAudioEvents = MethodChannel('xyz.luan/audioplayers.global/events');
+    const playerAudio = MethodChannel('xyz.luan/audioplayers');
+    final playerEvents = <MethodChannel>[];
+    messenger.setMockMethodCallHandler(globalAudio, (_) async => null);
+    messenger.setMockMethodCallHandler(globalAudioEvents, (_) async => null);
+    messenger.setMockMethodCallHandler(playerAudio, (call) async {
+      if (call.method == 'create') {
+        final id = (call.arguments as Map)['playerId'];
+        final events = MethodChannel('xyz.luan/audioplayers/events/$id');
+        playerEvents.add(events);
+        messenger.setMockMethodCallHandler(events, (_) async => null);
+      }
+      return null;
+    });
+    addTearDown(() {
+      for (final channel in [globalAudio, globalAudioEvents, playerAudio, ...playerEvents]) {
+        messenger.setMockMethodCallHandler(channel, null);
+      }
+    });
     await tester.runAsync(() async {
       final font = FontLoader('Onest')
         ..addFont(rootBundle.load('assets/fonts/Onest-Variable.ttf'));
