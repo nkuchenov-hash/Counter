@@ -305,8 +305,9 @@ void main() {
     expect(surface.borderRadius, BorderRadius.circular(24));
     expect(surface.color, isNull);
     final glassColors = (surface.gradient! as LinearGradient).colors;
-    expect(glassColors.first.a, inInclusiveRange(0.45, 0.51));
-    expect(glassColors.last.a, inInclusiveRange(0.29, 0.36));
+    // Approved v45 HTML --glass-top / --glass-bottom; strict material contract.
+    expect(glassColors.first.a, closeTo(0.70, 0.005));
+    expect(glassColors.last.a, closeTo(0.56, 0.005));
     expect(glassColors.first.a, greaterThan(glassColors.last.a));
     expect(surface.border, isNotNull);
     expect(
@@ -352,8 +353,9 @@ void main() {
     );
     final decoration = pill.decoration as BoxDecoration;
     final glassColors = (decoration.gradient! as LinearGradient).colors;
-    expect(glassColors.first.a, inInclusiveRange(0.49, 0.55));
-    expect(glassColors.last.a, inInclusiveRange(0.32, 0.39));
+    expect(glassColors.first.a, closeTo(0.65, 0.005));
+    expect(glassColors.last.a, closeTo(0.53, 0.005));
+    expect(glassColors.first.a, greaterThan(glassColors.last.a));
     expect(find.byType(BackdropFilter), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
