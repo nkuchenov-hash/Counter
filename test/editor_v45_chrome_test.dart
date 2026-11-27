@@ -119,6 +119,9 @@ void main() {
       final font = FontLoader('Onest')
         ..addFont(rootBundle.load('assets/fonts/Onest-Variable.ttf'));
       await font.load();
+      final icons = FontLoader('MaterialIcons')
+        ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
+      await icons.load();
     });
     final previousLocale = currentLocale.value;
     currentLocale.value = 'ru';
@@ -148,12 +151,29 @@ void main() {
       NoteBlock(id: 'i', type: NoteBlockType.numberedList, text: 'Паспорт'),
       NoteBlock(id: 'j', type: NoteBlockType.numberedList, text: 'Билеты туда и обратно'),
     ]);
+    NoteDocument workout(bool record) => NoteDocument(blocks: [
+      NoteBlock(id: 'a', type: NoteBlockType.heading, level: 1, text: record ? 'Итоги тренировки' : 'Программа тренировки'),
+      NoteBlock(id: 'b', type: NoteBlockType.paragraph, runs: [
+        NoteTextRun(text: record ? 'Хорошая тренировка. Все основные подходы выполнены, нагрузка умеренная. ' : 'Силовая тренировка на верх тела. Основная цель — техника и постепенное увеличение рабочих весов. '),
+        const NoteTextRun(text: 'Не работать до отказа.', marks: NoteInlineMarks(bold: true)),
+      ]),
+      const NoteBlock(id: 'c', type: NoteBlockType.heading, level: 2, text: 'Разминка'),
+      const NoteBlock(id: 'd', type: NoteBlockType.bulletedList, text: 'Дорожка — 7 минут'),
+      const NoteBlock(id: 'e', type: NoteBlockType.bulletedList, text: 'Разминка плеч и локтей'),
+      const NoteBlock(id: 'f', type: NoteBlockType.bulletedList, text: 'Два лёгких подхода жима'),
+      const NoteBlock(id: 'g', type: NoteBlockType.heading, level: 2, text: 'Основная часть'),
+      const NoteBlock(id: 'h', type: NoteBlockType.table, table: NoteTableData(hasHeader: true, cells: [
+        ['Упражнение', 'Подходы', 'Вес'], ['Жим лёжа', '3 × 10', '50 кг'], ['Тяга блока', '3 × 12', '45 кг'], ['Жим гантелей', '3 × 10', '12 кг'], ['Планка', '3 × 45 с', '—'],
+      ])),
+      const NoteBlock(id: 'i', type: NoteBlockType.heading, level: 3, text: 'Техника'),
+      const NoteBlock(id: 'j', type: NoteBlockType.numberedList, text: 'Контролировать движение вниз.'),
+    ]);
     final task = PlanningTask(id: 1, title: 'Тренировка в зале', categoryId: 1,
       dateKey: '2026-11-27', startTime: DateTime(2026, 11, 27, 18, 30),
-      endDateTime: DateTime(2026, 11, 27, 19, 45), notesDeltaJson: doc.encode());
+      endDateTime: DateTime(2026, 11, 27, 19, 45), notesDeltaJson: workout(false).encode());
     final record = TimelineRecord(id: 'v45record000001', title: 'Тренировка в зале',
       categoryId: 1, startTime: DateTime.utc(2026, 11, 27, 18, 34),
-      endTime: DateTime.utc(2026, 11, 27, 19, 42), notesDeltaJson: doc.encode());
+      endTime: DateTime.utc(2026, 11, 27, 19, 42), notesDeltaJson: workout(true).encode());
     final note = PlanningTask(id: 2, title: 'Поездка в Петербург', categoryId: 1,
       dateKey: '', notesDeltaJson: doc.encode());
     for (final size in [const Size(390, 844), const Size(760, 850)]) {
@@ -164,13 +184,13 @@ void main() {
           final boundary = GlobalKey();
           final Widget screen = switch (kind) {
             'plan' => PlanningTaskEditSheet(task: task, dateKey: task.dateKey,
-              scrollController: scroll),
+              scrollController: scroll, onDelete: (_) {}),
             'record' => TimelineRecordSheetContent(record: record,
               scrollController: scroll, onSaved: (_) {}, onDelete: () {}, onStop: () {}),
             _ => NoteEditorPage(task: note, initialDocument: doc, onDocumentChanged: (_) {}),
           };
           await tester.pumpWidget(MaterialApp(
-            theme: dark ? appDarkTheme : appLightTheme,
+            theme: (dark ? appDarkTheme : appLightTheme).copyWith(platform: size.width < 600 ? TargetPlatform.iOS : TargetPlatform.windows),
             home: RepaintBoundary(key: boundary, child: Scaffold(body: screen)),
           ));
           await tester.pump();
