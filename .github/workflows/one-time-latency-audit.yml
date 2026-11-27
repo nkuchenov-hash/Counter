@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 532af3c546e2d62ea95a3b05edd31144ce093b23
+          ref: f63fd14f70df25576f419721aae6cca9c5aa2728
           fetch-depth: 0
           persist-credentials: false
       - name: Verify provider timeout and partial read behavior
