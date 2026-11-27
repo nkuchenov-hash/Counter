@@ -667,7 +667,7 @@ class _EditorTagInteractionState extends State<_EditorTagInteraction> {
           onHover: (v) => setState(() => _hover = v),
           onHighlightChanged: (v) => setState(() => _pressed = v),
           onFocusChange: (v) => setState(() => _focused = v),
-          overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+          overlayColor: WidgetStatePropertyAll(scheme.primary.withValues(alpha: 0)),
           splashFactory: NoSplash.splashFactory,
           borderRadius: BorderRadius.circular(100),
           child: ConstrainedBox(
@@ -680,7 +680,7 @@ class _EditorTagInteractionState extends State<_EditorTagInteraction> {
                   curve: Curves.easeOut,
                   child: DecoratedBox(
                     decoration: BoxDecoration(borderRadius: BorderRadius.circular(100),
-                      border: Border.all(width: 1.5, color: ring ? scheme.primary : Colors.transparent)),
+                      border: Border.all(width: 1.5, color: ring ? scheme.primary : scheme.primary.withValues(alpha: 0))),
                     child: Padding(padding: const EdgeInsets.all(3), child: widget.child),
                   ),
                 ),
