@@ -1,0 +1,65 @@
+name: LIFE OS one-time latency audit
+on:
+  push:
+    branches: ['audit/lifeos-latency-20261127']
+    paths: ['.github/workflows/one-time-latency-audit.yml']
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: b0eb935d5a93d2f52e463cf4665748c2732c0e9a
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Inventory latency and failure-handling call sites
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, re, subprocess, collections
+          from pathlib import Path
+          patterns = {
+              "network_call": r"\b(?:http\.(?:get|post|put|delete|patch)|fetch\(|\$http\.send\(|\.send\(|\.getFullList\(|\.getList\(|\.getOne\(|\.subscribe\(|\.create\(|\.update\(|\.delete\()",
+              "timeout": r"\.timeout\(|\btimeout\s*[:=]|AbortSignal\.timeout|setTimeout\(|wait_for\(",
+              "polling": r"Timer\.periodic\(|setInterval\(|cronAdd\(|while\s*\(",
+              "blocking": r"\$os\.cmd\(|\.output\(\)|Process\.runSync\(|readAs(?:String|Bytes)Sync\(|writeAs(?:String|Bytes)Sync\(|sleep\(",
+              "delay": r"Future(?:<[^>]+>)?\.delayed\(|setTimeout\(|asyncio\.sleep\(",
+              "serial_wait": r"\bawait\b",
+              "retry": r"\bretry\b|backoff|Retry-After|retryCount|attempts",
+              "uncaught_future": r"unawaited\(|\.then\(",
+              "silent_catch": r"catch\s*\([^)]*\)\s*\{\s*\}|except[^:]*:\s*pass\b",
+              "full_list": r"getFullList\(|findRecordsByFilter\(|ListView\.builder\(|shrinkWrap:\s*true",
+              "heavy": r"jsonDecode\(|jsonEncode\(|\.sort\(|\.where\(|compute\(|Isolate\.",
+              "timeout_native": r"withTimeout\(|Thread\.sleep\(|WaitForSingleObject\(|WaitForMultipleObjects\(|dispatch_sync\(|synchronous\b",
+              "network_native": r"HttpURLConnection|URLSession|OkHttp|WinHttp|InternetOpen|HttpClient|WebSocket",
+          }
+          regex={k: re.compile(v,re.I) for k,v in patterns.items()}
+          files=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          source_roots=('lib/','pb_hooks/','pb_migrations/','browser_extension/','web/','android/','windows/','ios/','macos/','linux/','installer/')
+          extensions={'.dart','.js','.py','.kt','.java','.swift','.cpp','.cc','.h','.c','.cs','.ps1','.html'}
+          result={}; counts=collections.Counter(); scopes=collections.Counter()
+          for f in files:
+              if not f.startswith(source_roots) or Path(f).suffix.lower() not in extensions: continue
+              if '/generated/' in f or '/node_modules/' in f: continue
+              try: content=Path(f).read_text(encoding='utf-8')
+              except (OSError,UnicodeError): continue
+              lines=content.splitlines(); hits={}
+              for kind,rx in regex.items():
+                  matched=[{"line":i,"text":line.strip()[:360]} for i,line in enumerate(lines,1) if rx.search(line) and not line.lstrip().startswith(('//','#','*'))]
+                  if matched:
+                      hits[kind]=matched
+                      counts[kind]+=len(matched)
+              result[f]={"lines":len(lines),"hits":hits}
+              scopes[f.split('/')[0]]+=1
+          report={"sha":subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),"files":len(result),"scopes":dict(scopes),"counts":dict(counts),"results":result}
+          Path('audit-inventory.json').write_text(json.dumps(report,ensure_ascii=False),encoding='utf-8')
+          print(json.dumps({k:v for k,v in report.items() if k!='results'},ensure_ascii=False,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: latency-audit-inventory
+          path: audit-inventory.json
+          retention-days: 7
