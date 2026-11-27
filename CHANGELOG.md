@@ -2,6 +2,10 @@
 
 - Recognize standalone Russian appointment and booking messages with explicit dates and clocks before provider inference; preserve source details as plan notes and require a preview for the tentative 30-minute duration. Persist single-plan preparation notes as canonical NoteDocument blocks with heading, divider and interactive checklist mirrors. Normalize equivalent provider clock/duration representations before the strict action contract; retain existing Brain conflict, category, deduplication and write verification.
 
+## [2026-11-27] - Notes selection hot path (proposed)
+
+* Prune impossible whole-block clipboard windows; search partial selections against one concatenated document and map offsets back to blocks. Preserve shortest-window and earliest-match ordering, selected text, and original complete blocks. Add randomized legacy-equivalence and large-document work-count regression tests.
+
 ## [2026-11-27] - Reliability audit batch 2: bounded integration reads (proposed)
 
 * Calendar and People share a deadline across token refresh, identity discovery, pagination and record upserts (75s / 100s, respectively), preserve per-request limits, and reject repeated cursors rather than treating truncated snapshots as authoritative. Cleanup only follows completed provider reads and upserts. Existing cleanup semantics and provider identity are unchanged. Clients reject duplicate sync actions while one is active.

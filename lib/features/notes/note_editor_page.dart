@@ -36,6 +36,98 @@ class _NotesStructuredClipboard {
   static List<NoteBlock> blocks = const <NoteBlock>[];
 }
 
+/// Resolve a plain SelectionArea selection without rebuilding every possible
+/// contiguous document window. Keep shortest-window / earliest-match semantics.
+List<NoteBlock> inferNotesClipboardSelection(
+  List<NoteBlock> textBlocks,
+  String plain,
+  String Function(String) normalize,
+) {
+  if (plain.isEmpty || textBlocks.isEmpty) return const <NoteBlock>[];
+  final normalizedSelection = normalize(plain);
+  List<NoteBlock>? wholeBlockBest;
+  for (var start = 0; start < textBlocks.length; start++) {
+    final buffer = StringBuffer();
+    for (var end = start; end < textBlocks.length; end++) {
+      final count = end - start + 1;
+      if (wholeBlockBest != null && count >= wholeBlockBest.length) break;
+      if (end > start) buffer.write('\n');
+      buffer.write(textBlocks[end].effectiveText);
+      final candidate = normalize(buffer.toString());
+      // Extending the raw window cannot remove any existing normalized
+      // non-trailing text. A non-prefix can never become an exact match.
+      if (!normalizedSelection.startsWith(candidate)) break;
+      if (candidate != normalizedSelection) continue;
+      if (count > 1 || textBlocks[start].type != NoteBlockType.paragraph) {
+        wholeBlockBest = textBlocks.sublist(start, end + 1);
+        break;
+      }
+    }
+  }
+  if (wholeBlockBest != null) return wholeBlockBest;
+
+  final buffer = StringBuffer();
+  final offsets = <int>[0];
+  for (final block in textBlocks) {
+    buffer.write(block.effectiveText);
+    offsets.add(buffer.length);
+  }
+  final joined = buffer.toString();
+  int blockAt(int offset) {
+    var lo = 0;
+    var hi = textBlocks.length;
+    while (lo < hi) {
+      final mid = (lo + hi) ~/ 2;
+      if (offsets[mid + 1] <= offset) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    return lo;
+  }
+
+  var bestStart = -1;
+  var bestEnd = -1;
+  var bestOffset = -1;
+  var bestWindow = textBlocks.length + 1;
+  var searchFrom = 0;
+  while (searchFrom <= joined.length - plain.length) {
+    final found = joined.indexOf(plain, searchFrom);
+    if (found < 0) break;
+    final start = blockAt(found);
+    final end = blockAt(found + plain.length - 1);
+    final count = end - start + 1;
+    if (count >= 2 && count < bestWindow) {
+      bestStart = start;
+      bestEnd = end;
+      bestOffset = found;
+      bestWindow = count;
+      if (count == 2) break;
+    }
+    searchFrom = found + 1;
+  }
+  if (bestStart < 0) return const <NoteBlock>[];
+  final selectedEnd = bestOffset + plain.length;
+  final slices = <NoteBlock>[];
+  for (var i = bestStart; i <= bestEnd; i++) {
+    final source = textBlocks[i];
+    final localStart = bestOffset > offsets[i] ? bestOffset - offsets[i] : 0;
+    final localEnd = selectedEnd < offsets[i + 1]
+        ? selectedEnd - offsets[i]
+        : source.effectiveText.length;
+    if (localStart == 0 && localEnd == source.effectiveText.length) {
+      slices.add(source);
+    } else {
+      slices.add(source.copyWith(
+        text: source.effectiveText.substring(localStart, localEnd),
+        runs: const <NoteTextRun>[],
+      ));
+    }
+  }
+  return slices;
+}
+
 class _NotesStructuredCopyAction extends Action<CopySelectionTextIntent> {
   _NotesStructuredCopyAction({required this.onCopy});
 
@@ -732,92 +824,15 @@ item,
         _structuredClipboardExportText(frozen);
   }
   List<NoteBlock> _inferStructuredSelectionBlocks(String plain) {
-    if (plain.isEmpty) return const <NoteBlock>[];
     final textBlocks = <NoteBlock>[
       for (final block in _editor.visibleBlocks)
         if (NotesEditorDocumentController.isEditableText(block.type) &&
             block.effectiveText.isNotEmpty)
           block,
     ];
-    if (textBlocks.isEmpty) return const <NoteBlock>[];
-    final normalizedSelection = _normalizeClipboardStructure(plain);
-    List<NoteBlock>? wholeBlockBest;
-    for (var start = 0; start < textBlocks.length; start++) {
-      for (var end = start; end < textBlocks.length; end++) {
-        final window = textBlocks.sublist(start, end + 1);
-        final candidate = _normalizeClipboardStructure(
-window.map((block) => block.effectiveText).join('\n'),
-        );
-        if (candidate != normalizedSelection) continue;
-        final preservesMeaning =
-  window.length > 1 || window.single.type != NoteBlockType.paragraph;
-        if (!preservesMeaning) continue;
-        if (wholeBlockBest == null || window.length < wholeBlockBest.length) {
-wholeBlockBest = List<NoteBlock>.from(window);
-        }
-      }
-    }
-    if (wholeBlockBest != null) return wholeBlockBest;
-    List<NoteBlock>? best;
-    var bestWindow = 1 << 30;
-    for (var startIndex = 0; startIndex < textBlocks.length; startIndex++) {
-      final buffer = StringBuffer();
-      final offsets = <int>[0];
-      for (
-        var endIndex = startIndex;
-        endIndex < textBlocks.length;
-        endIndex++
-      ) {
-        buffer.write(textBlocks[endIndex].effectiveText);
-        offsets.add(buffer.length);
-        if (buffer.length < plain.length) continue;
-        final joined = buffer.toString();
-        var searchFrom = 0;
-        while (searchFrom <= joined.length - plain.length) {
-          final foundAt = joined.indexOf(plain, searchFrom);
-          if (foundAt < 0) break;
-          final selectedEnd = foundAt + plain.length;
-          final slices = <NoteBlock>[];
-          for (
-            var localIndex = 0;
-            localIndex <= endIndex - startIndex;
-            localIndex++
-          ) {
-            final source = textBlocks[startIndex + localIndex];
-            final blockStart = offsets[localIndex];
-            final blockEnd = offsets[localIndex + 1];
-            final overlapStart = foundAt > blockStart ? foundAt : blockStart;
-            final overlapEnd = selectedEnd < blockEnd ? selectedEnd : blockEnd;
-            if (overlapStart >= overlapEnd) continue;
-            final localStart = overlapStart - blockStart;
-            final localEnd = overlapEnd - blockStart;
-            if (localStart == 0 && localEnd == source.effectiveText.length) {
-              slices.add(source);
-            } else {
-              slices.add(
-                source.copyWith(
-                  text: source.effectiveText.substring(localStart, localEnd),
-                  runs: const <NoteTextRun>[],
-                ),
-              );
-            }
-          }
-          // A single selected text fragment should behave like normal clipboard
-          // text. Structure matters once selection crosses a block boundary.
-          if (slices.length >= 2) {
-            final window = endIndex - startIndex + 1;
-            if (window < bestWindow) {
-              best = slices;
-              bestWindow = window;
-            }
-          }
-          searchFrom = foundAt + 1;
-        }
-        if (bestWindow == 2) break;
-      }
-      if (bestWindow == 2) break;
-    }
-    return best ?? const <NoteBlock>[];
+    return inferNotesClipboardSelection(
+      textBlocks, plain, _normalizeClipboardStructure,
+    );
   }
   double? _captureBlockScrollOffset() {
     if (!_blockScrollController.hasClients) return null;
