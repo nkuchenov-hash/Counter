@@ -17,6 +17,38 @@ bool _recordMutationRetriableHttpCode(int code) {
   return true;
 }
 
+/// Shares ordinary concurrent reads for one signed-in profile. A forced
+/// reconciliation always begins a fresh snapshot so a missed realtime event
+/// cannot be hidden behind a request that predates the gap.
+class RecordReadSingleFlight<T> {
+  Future<T>? _pending;
+  String? _owner;
+
+  Future<T> run(String owner, {
+    required bool forceNetwork,
+    required Future<T> Function() request,
+  }) {
+    final pending = _pending;
+    if (!forceNetwork && pending != null && _owner == owner) return pending;
+    final next = Future<T>.sync(request);
+    _pending = next;
+    _owner = owner;
+    void clearIfCurrent() {
+      if (identical(_pending, next)) clear();
+    }
+    unawaited(next.then<void>((_) => clearIfCurrent(),
+      onError: (Object _, StackTrace __) => clearIfCurrent()));
+    return next;
+  }
+
+  void clear() {
+    _pending = null;
+    _owner = null;
+  }
+}
+
+final _recordReadSingleFlight = RecordReadSingleFlight<List<Map<String, dynamic>>>();
+
 extension RecordServiceExtension on DatabaseService {
   Map<String, dynamic> _recordMapFromPb(RecordModel r) {
     final d = Map<String, dynamic>.from(r.data);
@@ -313,6 +345,17 @@ extension RecordServiceExtension on DatabaseService {
         _cachedFlatRecords.isNotEmpty) {
       return List<Map<String, dynamic>>.from(_cachedFlatRecords);
     }
+    return _recordReadSingleFlight.run(
+      pid,
+      forceNetwork: forceNetwork,
+      request: () => _fetchRecordsSnapshot(pid, forceNetwork: forceNetwork),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchRecordsSnapshot(
+    String pid, {
+    required bool forceNetwork,
+  }) async {
     final requestSequence = ++_recordsNetworkFetchSequence;
     _recordsFullFetchesInFlight++;
     try {
@@ -333,7 +376,11 @@ extension RecordServiceExtension on DatabaseService {
         list = await _pb
             .collection(PbCollections.records)
             .getFullList(filter: filterClause, expand: expandRel);
-      } on ClientException catch (_) {
+      } on ClientException catch (error) {
+        // Only a rejected list/expand request can justify changing its shape.
+        // Auth, rate limits and transport failures need recovery, not another
+        // full-history request to the same unhealthy endpoint.
+        if (error.statusCode != 400) rethrow;
         list = await _pb
             .collection(PbCollections.records)
             .getFullList(filter: filterClause, expand: kPbRecordCategoryExpand);

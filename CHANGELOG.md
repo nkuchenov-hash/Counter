@@ -4,6 +4,7 @@
 
 ## [2026-11-27] - Notes selection hot path (proposed)
 
+* Share ordinary simultaneous record reads within the same profile while preserving fresh forced reads and existing realtime replay. Clear the shared read on sign-out; do not retry entire Records/Plans lists after transport, auth or rate-limit errors.
 * Prune impossible whole-block clipboard windows; search partial selections against one concatenated document and map offsets back to blocks. Preserve shortest-window and earliest-match ordering, selected text, and original complete blocks. Add randomized legacy-equivalence and large-document work-count regression tests.
 
 ## [2026-11-27] - Reliability audit batch 2: bounded integration reads (proposed)

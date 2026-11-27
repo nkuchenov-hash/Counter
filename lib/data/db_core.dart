@@ -341,6 +341,7 @@ extension DbCoreExtension on DatabaseService {
     } catch (_) {}
     _clearPocketBaseConnectivityBackoff();
     _lastSuccessfulRecordsNetworkFetchAt = null;
+    _recordReadSingleFlight.clear();
     _pbLastHealthProbeAt = null;
     _pbLastHealthOk = null;
     try {

@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'dart:io';
+
+import 'package:counter/data/database_service.dart';
 
 import 'package:counter/data/local_sync/plan_mutation_outbox.dart';
 import 'package:counter/data/pb_config.dart';
@@ -303,6 +306,54 @@ void main() {
         contains('_markTimelineDayIndexDirty();'));
     expect(brain.substring(emitStart, emitEnd),
         contains('_timeUpdateController.add(null);'));
+  });
+
+  test('ordinary record reads share a request, forced reconciliation stays fresh', () async {
+    final flight = RecordReadSingleFlight<int>();
+    final first = Completer<int>();
+    final forced = Completer<int>();
+    var requests = 0;
+    final a = flight.run('owner', forceNetwork: false, request: () {
+      requests++;
+      return first.future;
+    });
+    final b = flight.run('owner', forceNetwork: false, request: () async {
+      requests++;
+      return -1;
+    });
+    expect(identical(a, b), isTrue);
+    final c = flight.run('owner', forceNetwork: true, request: () {
+      requests++;
+      return forced.future;
+    });
+    expect(identical(a, c), isFalse);
+    first.complete(1);
+    expect(await a, 1);
+    final d = flight.run('owner', forceNetwork: false, request: () async {
+      requests++;
+      return -1;
+    });
+    expect(identical(c, d), isTrue);
+    forced.complete(2);
+    expect(await d, 2);
+    expect(requests, 2);
+  });
+
+  test('record read isolation and error recovery', () async {
+    final flight = RecordReadSingleFlight<int>();
+    final old = Completer<int>();
+    final a = flight.run('old', forceNetwork: false, request: () => old.future);
+    final b = flight.run('new', forceNetwork: false, request: () async => 2);
+    expect(identical(a, b), isFalse);
+    expect(await b, 2);
+    final broken = flight.run('new', forceNetwork: false, request: () async {
+      throw StateError('offline');
+    });
+    await expectLater(broken, throwsStateError);
+    expect(await flight.run('new', forceNetwork: false, request: () async => 3), 3);
+    flight.clear();
+    old.complete(1);
+    expect(await a, 1);
   });
 
   test('late records full-list response preserves newer SSE changes', () {

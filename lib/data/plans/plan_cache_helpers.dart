@@ -204,6 +204,10 @@ extension PlanCacheProjectionExtension on DatabaseService {
           batch: 200,
         );
       } on ClientException catch (e) {
+        if (e.statusCode != 400) {
+          _maybeOpenPbCircuitFromListFailure(e, 'fetchAllPlanningTasks');
+          rethrow;
+        }
         DatabaseService._log('PLANS_FULL_EXPAND_RETRY: $e');
         // A broken tags expansion must not make all dated plans disappear.
         list = await _pb.collection(PbCollections.plans).getFullList(
