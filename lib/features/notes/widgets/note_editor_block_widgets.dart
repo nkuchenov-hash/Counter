@@ -323,7 +323,7 @@ class NotesEditorBlockItem extends StatelessWidget {
         return Padding(
           padding: EdgeInsets.symmetric(
             horizontal: notesContentHorizontalInset(context),
-            vertical: notesTextBlockPadding(context),
+            vertical: kNotesBlockVerticalPadding,
           ),
           child: DecoratedBox(
             decoration: BoxDecoration(
