@@ -73,6 +73,16 @@ class _EditorV45TitleState extends State<EditorV45Title> {
   }
 }
 
+/// Use the current app locale when available; the widget remains safe before
+/// the international date-symbol tables have finished initializing.
+String editorV45Date(BuildContext context, DateTime date) {
+  try {
+    return DateFormat('d MMM, E', currentLocale.value).format(date);
+  } catch (_) {
+    return MaterialLocalizations.of(context).formatShortDate(date);
+  }
+}
+
 String editorV45Time(DateTime? date) => date == null ? '—:—' :
   '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
 String editorV45Range(DateTime? start, DateTime? end) =>
@@ -156,7 +166,7 @@ class _EditorTimePoint extends StatelessWidget {
             if (end && onTap != null) chevron, time, if (!end && onTap != null) chevron,
           ])),
         const SizedBox(height: 4),
-        Text(date == null ? '—' : DateFormat('d MMM, E', DateFormat.localeExists(currentLocale.value) ? currentLocale.value : 'en').format(date),
+        Text(date == null ? '—' : editorV45Date(context, date),
           maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, color: s.onSurfaceVariant)),
       ]),
     );
