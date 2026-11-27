@@ -31,15 +31,15 @@ class NotesEditorMutation {
 }
 
 class NotesEditorDocumentController {
-  NotesEditorDocumentController(NoteDocument source) : _document = source {
+  NotesEditorDocumentController(NoteDocument source, {NoteBlockType initialBlockType = NoteBlockType.heading}) : _document = source {
     final visible = source.blocks.where(
       (block) => isSupportedProductionBlock(block.type),
     );
     if (visible.isEmpty) {
       final first = NoteBlock(
         id: generateNoteBlockId(),
-        type: NoteBlockType.heading,
-        level: 1,
+        type: initialBlockType,
+        level: initialBlockType == NoteBlockType.heading ? 1 : 2,
       );
       _document = source.copyWith(blocks: [first, ...source.blocks]);
       activeBlockId = first.id;
