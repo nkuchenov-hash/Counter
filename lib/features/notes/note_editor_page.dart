@@ -117,6 +117,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> with WidgetsBindingObse
   bool _blockSelectionMode = false;
   final Set<String> _selectedBlockIds = <String>{};
   final ScrollController _blockScrollController = ScrollController();
+  final FocusNode _blockActionsFocus = FocusNode(debugLabel: 'Notes block actions', skipTraversal: true);
   final Map<String, GlobalKey> _blockItemKeys = <String, GlobalKey>{};
   Timer? _secondarySelectionGuardTimer;
   bool _secondarySelectionGuardActive = false;
@@ -183,6 +184,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> with WidgetsBindingObse
     }
     _gate.dispose();
     _blockScrollController.dispose();
+    _blockActionsFocus.dispose();
     _audioPlayback
       ..removeListener(_onAudioPlaybackChanged)
       ..dispose();
@@ -859,6 +861,7 @@ wholeBlockBest = List<NoteBlock>.from(window);
       }
       if (_selectedBlockIds.isEmpty) _blockSelectionMode = false;
     });
+    if (_blockSelectionMode) _blockActionsFocus.requestFocus(); else _blockActionsFocus.unfocus();
     _restoreBlockScrollOffset(scrollOffset);
   }
   void _exitBlockSelectionMode() {
@@ -927,8 +930,9 @@ _deleteBlockFromMenu(block.id);
     final changed = _editor.selectBlock(blockId, selection);
     if (NotesEditorDocumentController.isEditableText(block.type)) {
       _requestFocus(block.id, safeSelection);
-    } else if (changed && mounted) {
-      setState(() {});
+    } else if (mounted) {
+      _blockActionsFocus.requestFocus();
+      if (changed) setState(() {});
     }
   }
   void _convertActive(NotesBlockConversion conversion) =>
@@ -1515,7 +1519,7 @@ block.type == NoteBlockType.image ||
       key: ValueKey<String>(block.id),
       padding: EdgeInsets.zero,
       child: GestureDetector(behavior: HitTestBehavior.translucent,
-        onSecondaryTapUp: (details) => _showBlockActionMenu(details.globalPosition, block),
+        onSecondaryTapUp: (details) { if (!_secondarySelectionGuardActive) _showBlockActionMenu(details.globalPosition, block); },
         onLongPressStart: editable ? null : (details) => _showBlockActionMenu(details.globalPosition, block),
         child: blockContent),
     );
@@ -1658,7 +1662,7 @@ AppButton.destructive(
 
     return NotesEditorScreen(
       bodyOnly: widget.inlineBodyOnly,
-      showInlineToolbar: widget.inlineKeyboardActive || _blockSelectionMode || _focusNodes.values.any((node) => node.hasFocus) || (_editor.activeBlock != null && !NotesEditorDocumentController.isEditableText(_editor.activeBlock!.type)),
+      showInlineToolbar: widget.inlineKeyboardActive || _blockActionsFocus.hasFocus || _focusNodes.values.any((node) => node.hasFocus),
       titleController: _titleController,
       titleHint: t(loc, 'notes_v3_editor_title_hint'),
       onTitleChanged: _scheduleSave,
@@ -1713,7 +1717,7 @@ activeType == NoteBlockType.bulletedList
     },
         onMore: _showActiveBlockOptions,
       ),
-      content: Listener(
+      content: Focus(focusNode: _blockActionsFocus, onFocusChange: (focused) { if (mounted && widget.inlineBodyOnly) setState(() { if (!focused && _blockSelectionMode) { _blockSelectionMode = false; _selectedBlockIds.clear(); } }); }, child: Listener(
         behavior: HitTestBehavior.translucent,
         onPointerDown: _handleEditorPointerDown,
         onPointerUp: _scheduleSecondarySelectionGuardRelease,
@@ -1738,7 +1742,7 @@ activeType == NoteBlockType.bulletedList
         ),
       ),
     ),
-      ),
+      )),
     );
   }
 }
