@@ -171,7 +171,7 @@ Wear shell/layout remains under `lib/features/wear/` (entered from `main.dart`);
 | `records/record_outbox_helpers.dart` | Record mutation outbox enqueue/flush/replay, Highlander server phase *(part)* |
 | `records/record_overlap_helpers.dart` | Highlander local apply, singleton reconcile, overlap probes *(part)* |
 | `records/record_ghost_cleanup.dart` | 404 deadletter prune against live cache *(part)* |
-| `records/record_cache_helpers.dart` | Per-day filter, `recordsStream`, display-time helpers *(part)* |
+| `records/record_cache_helpers.dart` | Per-day filter, `recordsStream`, display-time helpers, profile-scoped record read coalescing and pending-create snapshot reconciliation *(part)* |
 | `records/unfilled_time_gap_policy.dart` | Pure Timeline-gap detection policy over record intervals |
 | `records/unfilled_time_gap_service.dart` | Gap settings/state, periodic/resume refresh, fill-gap action and notification eligibility orchestration |
 | `health/health_sleep_policy.dart` | Pure imported-sleep matching and overlap conflict policy |
@@ -548,7 +548,7 @@ Parser, live category/domain resolution, normalization, command execution (`writ
 | `notes/notes_visual_tokens.dart` | GLM Notes spacing/typography/glass token helpers |
 | `notes/notes_figma_tokens.dart` | Executable Figma Notes colors, typography, editor geometry, glass, and exact 350×48 toolbar tokens |
 | `notes/note_editor_page.dart` | Full-screen block editor (primary Notes editing experience) |
-| `notes/note_editor_format_actions.dart` | Editor formatting/heading focus helpers; stable Android keyboard ownership *(part)* |
+| `notes/note_editor_format_actions.dart` | Editor formatting/heading focus helpers, structured clipboard selection inference; stable Android keyboard ownership *(part)* |
 | `notes/widgets/note_editor_block_widgets.dart` | Editor block rows + add-block chrome; callbacks only; no Brain ownership |
 | `notes/widgets/notes_editor_tools.dart` | Contextual primary toolbar, Aa formatting panel, Insert panel, table/link dialogs |
 | `notes/widgets/notes_editor_screen.dart` | Shared responsive Figma production screen shell for mobile/web/desktop: header, title/meta, visible document viewport, desktop glass surface, pinned finite toolbar |
