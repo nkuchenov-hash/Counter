@@ -52,7 +52,7 @@ class _EditorV45TitleState extends State<EditorV45Title> {
     final scheme = Theme.of(context).colorScheme;
     final editing = widget.creating || _editing;
     final inset = editorV45Inset(context);
-    final style = TextStyle(fontSize: widget.writing ? 22 : 28, height: 1.22,
+    final style = TextStyle(fontSize: widget.writing && MediaQuery.widthOf(context) < 760 ? 22 : 28, height: 1.22,
       fontWeight: FontWeight.w700, letterSpacing: -.65, color: scheme.onSurface);
     void beginEdit() {
       if (widget.writing || widget.creating) return;
@@ -106,7 +106,7 @@ class _EditorV45TitleState extends State<EditorV45Title> {
           else AppIconButton(onPressed: widget.creating ? () => editorV45ConfirmDiscard(context, widget.onClose) : widget.onClose,
             tooltip: currentLocale.value == 'ru' ? 'Закрыть' : 'Close', icon: Icons.close_rounded),
         ]),
-        if (widget.writing) Padding(
+        if (widget.writing && MediaQuery.widthOf(context) < 760) Padding(
           padding: const EdgeInsets.only(top: 5, bottom: 4),
           child: Row(children: [
             Expanded(child: Text(widget.contextLabel ?? '', style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant))),
@@ -122,7 +122,7 @@ class _EditorV45TitleState extends State<EditorV45Title> {
 /// the international date-symbol tables have finished initializing.
 String editorV45Date(BuildContext context, DateTime date) {
   try {
-    return DateFormat('d MMM, E', currentLocale.value).format(date);
+    return DateFormat('d MMMM, E', currentLocale.value).format(date);
   } catch (_) {
     return MaterialLocalizations.of(context).formatShortDate(date);
   }
@@ -289,8 +289,8 @@ class EditorV45Actions extends StatelessWidget {
         child: Padding(padding: const EdgeInsets.all(5), child: Row(children: [
           if (onStop != null) AppIconButton(onPressed: onStop, tooltip: t(loc, 'stop'), icon: Icons.stop_rounded),
           if (onDelete != null) Expanded(flex: 100, child: TextButton.icon(
-            style: TextButton.styleFrom(foregroundColor: s.error, minimumSize: const Size(0, 44)),
-            onPressed: onDelete, icon: const Icon(Icons.delete_outline, size: 18), label: Text(t(loc, 'delete'))))
+            style: TextButton.styleFrom(foregroundColor: s.error, minimumSize: const Size(0, 44), maximumSize: const Size(double.infinity, 44), tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+            onPressed: () async { final ru = loc == 'ru'; final yes = await showDialog<bool>(context: context, builder: (dialog) => AlertDialog(title: Text(ru ? 'Удалить?' : 'Delete?'), content: Text(ru ? 'Подтвердите удаление.' : 'Confirm deletion.'), actions: [AppButton.ghost(label: t(loc, 'cancel'), onPressed: () => Navigator.pop(dialog, false)), AppButton.destructive(label: t(loc, 'delete'), onPressed: () => Navigator.pop(dialog, true))])); if (yes == true && context.mounted) onDelete!(); }, icon: const Icon(Icons.delete_outline, size: 18), label: Text(t(loc, 'delete'))))
           else if (onCancel != null) Expanded(flex: 100, child: AppButton.ghost(onPressed: () => editorV45ConfirmDiscard(context, onCancel!), label: t(loc, 'cancel'))),
           const SizedBox(width: 8),
           Expanded(flex: 155, child: AppButton.primary(onPressed: onPrimary, label: primaryLabel)),
@@ -329,7 +329,7 @@ class EditorV45ActionOverlay extends StatelessWidget {
   Widget build(BuildContext context) => Stack(fit: StackFit.expand, children: [
     Positioned.fill(child: content),
     if (visible) Positioned(left: 0, right: 0, bottom: 0,
-      child: NotesBottomGlassFade(height: 100, toolbarBottomInset: 14, apertureWidth: 440, apertureHeight: 56, apertureHorizontalInset: editorV45Inset(context),
+      child: NotesBottomGlassFade(height: 100, toolbarBottomInset: 14, apertureWidth: 440, apertureHeight: 54, apertureHorizontalInset: editorV45Inset(context),
         enableBackdropBlur: false,
         child: Align(alignment: Alignment.bottomCenter, child: actions))),
   ]);
