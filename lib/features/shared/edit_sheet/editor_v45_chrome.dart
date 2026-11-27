@@ -77,8 +77,8 @@ class EditorV45TimeCard extends StatelessWidget {
   const EditorV45TimeCard({super.key, this.start, this.end, this.fallbackDate,
     required this.onStart, this.onEnd, this.running = false});
   final DateTime? start, end, fallbackDate;
-  final VoidCallback onStart;
-  final VoidCallback? onEnd;
+  final ValueChanged<Rect?> onStart;
+  final ValueChanged<Rect?>? onEnd;
   final bool running;
   @override
   Widget build(BuildContext context) {
@@ -128,16 +128,21 @@ class _EditorTimePoint extends StatelessWidget {
   const _EditorTimePoint({required this.label, this.value, this.fallbackDate, this.onTap, this.end = false, this.running = false});
   final String label;
   final DateTime? value, fallbackDate;
-  final VoidCallback? onTap;
+  final ValueChanged<Rect?>? onTap;
   final bool end, running;
   @override
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
     final date = value ?? fallbackDate;
-    final time = Text(running ? t(currentLocale.value, 'running_label') : editorV45Time(value),
+    final timeKey = GlobalKey();
+    final time = Text(running ? t(currentLocale.value, 'running_label') : editorV45Time(value), key: timeKey,
       maxLines: 1, style: TextStyle(fontSize: running ? 16 : 30, fontWeight: FontWeight.w700, color: s.onSurface));
     final chevron = Icon(Icons.expand_more_rounded, size: 17, color: s.onSurfaceVariant);
-    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(8),
+    return InkWell(onTap: onTap == null ? null : () {
+        final render = timeKey.currentContext?.findRenderObject();
+        final rect = render is RenderBox && render.hasSize ? render.localToGlobal(Offset.zero) & render.size : null;
+        onTap!(rect);
+      }, borderRadius: BorderRadius.circular(8),
       child: Column(crossAxisAlignment: end ? CrossAxisAlignment.end : CrossAxisAlignment.start, children: [
         Text(label, style: TextStyle(fontSize: 14, color: s.onSurfaceVariant)),
         const SizedBox(height: 4),
