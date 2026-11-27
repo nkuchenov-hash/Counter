@@ -30,12 +30,23 @@ function fixture(records, fail = false) {
         let rows = [...data.values()].filter(row => row.user_id === params.uid);
         if (filter.includes("parent_id = ''")) rows = rows.filter(row => !row.parent_id);
         if (filter.includes('id != {:id}')) rows = rows.filter(row => row.id !== params.id);
+        if (params.external) rows = rows.filter(row =>
+          (row.external_source === 'xiaomi' && row.external_id === params.external) ||
+          (row.sleep_source === 'xiaomi' && row.sleep_external_id === params.external));
+        if (params.end) rows = rows.filter(row =>
+          row.sleep_source === 'xiaomi' || row.external_source === 'xiaomi' ||
+          row.title === 'Sleep' || row.title === 'Сон');
         // Emulate PocketBase's string comparison rather than Date.parse, which
         // would hide a production bug caused by using T instead of a space.
         const dbDate = value => value.replace('T', ' ');
         if (params.start) assert.match(params.start, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}Z$/);
         if (filter.includes('start_time >= {:start}')) rows = rows.filter(row =>
           dbDate(row.start_time) >= params.start);
+        if (params.end) {
+          assert.match(params.end, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+          rows = rows.filter(row => dbDate(row.start_time) < params.end &&
+            !!row.end_time && dbDate(row.end_time) > params.start);
+        }
         if (filter.includes('start_time < {:start}')) rows = rows.filter(row =>
           dbDate(row.start_time) < params.start);
         if (filter.includes("end_time = '' || end_time > {:start}")) rows = rows.filter(row =>
@@ -50,6 +61,16 @@ function fixture(records, fail = false) {
         assert.equal(collection, 'records');
         assert.ok(data.has(id), 'Missing row ' + id);
         return model({...data.get(id)});
+      },
+      findCollectionByNameOrId(name) {
+        assert.equal(name, 'records');
+        return {name};
+      },
+      save(row) {
+        const event = {app:this, record:row, next() {
+          event.app._persist(row);
+        }};
+        h.reconcileRecordWrite(event);
       },
       saveNoValidate(row) {
         if (fail) throw new Error('injected save failure');
@@ -266,4 +287,69 @@ test('production hooks cover model create and update, not merely HTTP requests',
   run(update, rows[0]);
   assert.equal(stored.get('preparation').end_time, iso(at('01:57')));
   assertNoOverlap(stored);
+});
+
+function loadXiaomiUpsert() {
+  const fs = require('node:fs');
+  const vm = require('node:vm');
+  const path = require('node:path');
+  const hooks = path.resolve(__dirname, '../pb_hooks');
+  const context = {
+    Date, module:{exports:{}}, __hooks:hooks,
+    require: filename => {
+      assert.equal(filename, path.join(hooks, 'records.interval_sanitize_helpers.js'));
+      return h;
+    },
+    Record: function() { return model({id:'new-import', parent_id:''}); },
+    $security: {randomStringWithAlphabet: () => 'a'.repeat(32)},
+  };
+  vm.runInNewContext(fs.readFileSync(path.join(hooks, 'xiaomi_sleep_runtime.js'), 'utf8'), context);
+  return context.__xiaomiUpsert;
+}
+const providerSession = (start, end, externalId) => ({
+  start:new Date(at(start)), end:new Date(at(end)), externalId,
+});
+const xiaomiRow = (id, start, end, externalId) => record(id, at(start), at(end), {
+  title:'Сон', external_kind:'sleep', sleep_source:'xiaomi', external_source:'xiaomi',
+  external_id:externalId, sleep_external_id:externalId, record_id:id,
+});
+function importSleep(app, session) {
+  return loadXiaomiUpsert()(app, owner, {get: () => 'ru'}, {id:'sleep-category'}, session);
+}
+test('real Xiaomi upsert matches a revised night at 60–80% overlap before writing', () => {
+  const previous = record('prep', at('00:40'), at('02:05'));
+  const existing = xiaomiRow('night', '02:05', '07:05', 'original-night');
+  const {app, stored} = fixture([previous, existing]);
+  assert.equal(importSleep(app, providerSession('00:55','05:55','revised-night')), 0);
+  assert.equal(stored.size, 2);
+  assert.equal(stored.get('night').start_time, iso(at('00:55')));
+  assert.equal(stored.get('night').end_time, iso(at('05:55')));
+  assert.equal(stored.get('prep').end_time, iso(at('00:55')));
+  assertNoOverlap(stored);
+});
+test('real Xiaomi upsert preserves the longer version of a revised night', () => {
+  const previous = record('prep', at('00:40'), at('09:23'));
+  const existing = xiaomiRow('night', '01:57', '09:17', 'original-night');
+  const {app, stored} = fixture([previous, existing]);
+  assert.equal(importSleep(app, providerSession('02:05','06:55','shorter-night')), 0);
+  assert.equal(stored.size, 2);
+  assert.equal(stored.get('night').end_time, iso(at('09:17')));
+  assert.equal(stored.get('prep').end_time, iso(at('01:57')));
+  assertNoOverlap(stored);
+});
+test('real Xiaomi upsert imports a separate nap without merging it with the night', () => {
+  const existing = xiaomiRow('night', '01:57', '09:17', 'original-night');
+  const {app, stored} = fixture([existing]);
+  assert.equal(importSleep(app, providerSession('13:00','13:30','nap')), 1);
+  assert.equal(stored.size, 2);
+  assert.equal(stored.get('night').end_time, iso(at('09:17')));
+  assert.equal(stored.get('new-import').end_time, iso(at('13:30')));
+  assertNoOverlap(stored);
+});
+test('real Xiaomi import rolls back on a failed predecessor correction', () => {
+  const previous = record('prep', at('00:40'), at('09:23'));
+  const {app, stored} = fixture([previous], true);
+  assert.throws(() => importSleep(app, providerSession('01:57','09:17','night')),
+    /injected save failure/);
+  assert.deepEqual([...stored.values()], [previous]);
 });
