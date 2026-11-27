@@ -112,7 +112,7 @@ jobs:
             for(let i=0;i<6;i++){
               await ev('selectFamily('+i+')');
               for(let v=0;v<3;v++){
-                await ev('document.querySelector("[data-view=\\"'+v+'\\"]").click()');
+                await ev('document.querySelector(".views button[data-view=\\"'+v+'\\"]").click()');
                 let q=await ready(i,v);
                 assert.ok(q.pins>=1);
                 assert.ok(q.w>100&&q.h>100);
