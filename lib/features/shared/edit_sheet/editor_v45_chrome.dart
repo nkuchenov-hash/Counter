@@ -4,9 +4,29 @@ import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
+import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:intl/intl.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/shared/categories/picker/category_tree_picker.dart';
+
+double editorV45Inset(BuildContext context) => MediaQuery.widthOf(context) >= 760 ? 28 : 24;
+Color editorV45Paper(BuildContext context) => NotesFigmaTokens.surfaceCard(context);
+
+Future<void> editorV45ConfirmDiscard(BuildContext context, VoidCallback action) async {
+  final ru = currentLocale.value == 'ru';
+  final approved = await showDialog<bool>(
+    context: context,
+    builder: (dialog) => AlertDialog(
+      title: Text(ru ? 'Отменить создание?' : 'Discard new item?'),
+      content: Text(ru ? 'Введённые данные не будут сохранены.' : 'The entered data will not be saved.'),
+      actions: [
+        AppButton.ghost(label: ru ? 'Продолжить' : 'Keep editing', onPressed: () => Navigator.pop(dialog, false)),
+        AppButton.destructive(label: ru ? 'Отменить создание' : 'Discard', onPressed: () => Navigator.pop(dialog, true)),
+      ],
+    ),
+  );
+  if (approved == true && context.mounted) action();
+}
 
 /// Shared native editor chrome derived from the approved B1 prototype.
 /// Domain mutations and persistence remain in the host edit sheets.
@@ -31,35 +51,60 @@ class _EditorV45TitleState extends State<EditorV45Title> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final editing = widget.creating || _editing;
+    final inset = editorV45Inset(context);
+    final style = TextStyle(fontSize: widget.writing ? 22 : 28, height: 1.22,
+      fontWeight: FontWeight.w700, letterSpacing: -.65, color: scheme.onSurface);
+    void beginEdit() {
+      if (widget.writing || widget.creating) return;
+      setState(() => _editing = true);
+      _focus.requestFocus();
+      widget.controller.selection = TextSelection.collapsed(offset: widget.controller.text.length);
+    }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 10, 24, 8),
+      padding: EdgeInsets.fromLTRB(inset, 10, inset, widget.writing ? 4 : 12),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
-          Expanded(child: AppTextField(
-            surface: AppTextFieldSurface.inlineTitle,
-            hintText: t(currentLocale.value, 'title_label'),
-            textInputAction: TextInputAction.done,
-            controller: widget.controller, focusNode: _focus,
-            readOnly: !editing || widget.writing,
-            minLines: 1, maxLines: 2,
-            textCapitalization: TextCapitalization.sentences,
-            inlineTitleStyle: TextStyle(fontSize: widget.writing ? 22 : 28, height: 1.22,
-              fontWeight: FontWeight.w700, letterSpacing: -.65, color: scheme.onSurface),
-            onChanged: widget.onChanged,
-            onSubmitted: (_) { if (!widget.creating) setState(() => _editing = false); _focus.unfocus(); },
-            onTap: () { if (!widget.creating && !widget.writing && !_editing) {
-              setState(() => _editing = true); _focus.requestFocus();
-            }},
-          )),
-          if (!widget.creating && !widget.writing)
-            AppIconButton(tooltip: _editing ? t(currentLocale.value, 'save') : t(currentLocale.value, 'title_label'),
-              onPressed: () { setState(() => _editing = !_editing);
-                if (_editing) { _focus.requestFocus(); } else { _focus.unfocus(); }
-              }, icon: _editing ? Icons.check_rounded : Icons.edit_outlined),
+          Expanded(child: LayoutBuilder(builder: (context, bounds) {
+            final rename = !widget.creating && !widget.writing;
+            return Row(children: [
+              Flexible(child: ValueListenableBuilder<TextEditingValue>(
+                valueListenable: widget.controller,
+                builder: (context, value, _) {
+                  final painter = TextPainter(
+                    text: TextSpan(text: value.text.isEmpty ? t(currentLocale.value, 'title_label') : value.text, style: style),
+                    textDirection: Directionality.of(context),
+                    textScaler: MediaQuery.textScalerOf(context),
+                    maxLines: 2,
+                  )..layout();
+                  final width = (painter.width + 3).clamp(0.0, bounds.maxWidth).toDouble();
+                  painter.dispose();
+                  return SizedBox(width: widget.creating || widget.writing ? bounds.maxWidth : width,
+                    child: AppTextField(
+                      surface: AppTextFieldSurface.inlineTitle,
+                      hintText: t(currentLocale.value, 'title_label'),
+                      textInputAction: TextInputAction.done,
+                      controller: widget.controller, focusNode: _focus,
+                      readOnly: !editing || widget.writing,
+                      minLines: 1, maxLines: 2,
+                      textCapitalization: TextCapitalization.sentences,
+                      inlineTitleStyle: style,
+                      onChanged: widget.onChanged,
+                      onSubmitted: (_) { if (!widget.creating) setState(() => _editing = false); _focus.unfocus(); },
+                      onTap: () { if (!_editing) beginEdit(); },
+                    ));
+                },
+              )),
+              if (rename) AppIconButton(
+                tooltip: _editing ? t(currentLocale.value, 'save') : t(currentLocale.value, 'title_label'),
+                onPressed: () { if (_editing) { setState(() => _editing = false); _focus.unfocus(); } else { beginEdit(); } },
+                icon: _editing ? Icons.check_rounded : Icons.edit_outlined),
+            ]);
+          })),
           if (widget.writing)
             AppButton.ghost(onPressed: () => FocusManager.instance.primaryFocus?.unfocus(),
               label: currentLocale.value == 'ru' ? 'Готово' : 'Done')
-          else AppIconButton(onPressed: widget.onClose, tooltip: currentLocale.value == 'ru' ? 'Закрыть' : 'Close', icon: Icons.close_rounded),
+          else AppIconButton(onPressed: widget.creating ? () => editorV45ConfirmDiscard(context, widget.onClose) : widget.onClose,
+            tooltip: currentLocale.value == 'ru' ? 'Закрыть' : 'Close', icon: Icons.close_rounded),
         ]),
         if (widget.writing) Padding(
           padding: const EdgeInsets.only(top: 5, bottom: 4),
@@ -108,13 +153,13 @@ class EditorV45TimeCard extends StatelessWidget {
     ].join(' ');
     return Container(
       padding: EdgeInsets.fromLTRB(14, compact ? 9 : 14, 14, compact ? 8 : 12),
-      decoration: BoxDecoration(color: s.surfaceContainerHighest, borderRadius: BorderRadius.circular(18),
+      decoration: BoxDecoration(color: Color.alphaBlend(s.onSurface.withValues(alpha: .035), editorV45Paper(context)), borderRadius: BorderRadius.circular(18),
         border: Border.all(color: s.outlineVariant)),
       child: Column(children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(child: _EditorTimePoint(label: ru ? 'Начало' : 'Start', value: start,
             fallbackDate: fallbackDate, onTap: onStart, compact: compact)),
-          const SizedBox(width: 14),
+          const SizedBox(width: 20),
           Expanded(child: _EditorTimePoint(label: ru ? 'Окончание' : 'End', value: end,
             fallbackDate: fallbackDate, onTap: onEnd, end: true, running: running, compact: compact)),
         ]),
@@ -139,36 +184,57 @@ class _DurationLine extends StatelessWidget {
     return Expanded(child: Row(children: reverse ? [line, dot] : [dot, line]));
   }
 }
-class _EditorTimePoint extends StatelessWidget {
+class _EditorTimePoint extends StatefulWidget {
   const _EditorTimePoint({required this.label, this.value, this.fallbackDate, this.onTap, this.end = false, this.running = false, this.compact = false});
   final String label;
   final DateTime? value, fallbackDate;
   final ValueChanged<Rect?>? onTap;
   final bool end, running, compact;
   @override
+  State<_EditorTimePoint> createState() => _EditorTimePointState();
+}
+class _EditorTimePointState extends State<_EditorTimePoint> {
+  final _timeKey = GlobalKey();
+  bool _hover = false, _pressed = false;
+  @override
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
-    final date = value ?? fallbackDate;
-    final timeKey = GlobalKey();
-    final time = Text(running ? t(currentLocale.value, 'running_label') : editorV45Time(value), key: timeKey,
-      maxLines: 1, style: TextStyle(fontSize: running ? 16 : compact ? 27 : 32, fontWeight: FontWeight.w700, color: s.onSurface));
-    final chevron = Icon(Icons.expand_more_rounded, size: 17, color: s.onSurfaceVariant);
-    return InkWell(onTap: onTap == null ? null : () {
-        final render = timeKey.currentContext?.findRenderObject();
-        final rect = render is RenderBox && render.hasSize ? render.localToGlobal(Offset.zero) & render.size : null;
-        onTap!(rect);
-      }, borderRadius: BorderRadius.circular(8),
-      child: Column(crossAxisAlignment: end ? CrossAxisAlignment.end : CrossAxisAlignment.start, children: [
-        Text(label, style: TextStyle(fontSize: 14, color: s.onSurfaceVariant)),
-        const SizedBox(height: 4),
-        FittedBox(fit: BoxFit.scaleDown, alignment: end ? Alignment.centerRight : Alignment.centerLeft,
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            if (end && onTap != null) chevron, time, if (!end && onTap != null) chevron,
-          ])),
-        const SizedBox(height: 4),
-        Text(date == null ? '—' : editorV45Date(context, date),
-          maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, color: s.onSurfaceVariant)),
-      ]),
+    final date = widget.value ?? widget.fallbackDate;
+    final enabled = widget.onTap != null;
+    final hot = enabled && (_hover || _pressed);
+    final dim = hot ? s.primary : s.onSurfaceVariant;
+    final main = hot ? s.primary : s.onSurface;
+    final time = Text(widget.running ? t(currentLocale.value, 'running_label') : editorV45Time(widget.value), key: _timeKey,
+      maxLines: 1, style: TextStyle(fontSize: widget.running ? 16 : widget.compact ? 29 : 32, height: 1.13,
+        fontWeight: FontWeight.w650, letterSpacing: -.8, fontFeatures: const [ui.FontFeature.tabularFigures()], color: main));
+    final chevron = Icon(Icons.expand_more_rounded, size: 17, color: dim);
+    return InkWell(
+      onHover: enabled ? (v) => setState(() => _hover = v) : null,
+      onHighlightChanged: enabled ? (v) => setState(() => _pressed = v) : null,
+      overlayColor: WidgetStatePropertyAll(s.primary.withValues(alpha: 0)),
+      onTap: !enabled ? null : () {
+        final render = _timeKey.currentContext?.findRenderObject();
+        final rect = render is RenderBox && render.hasSize
+          ? MatrixUtils.transformRect(render.getTransformTo(null), Offset.zero & render.size) : null;
+        widget.onTap!(rect);
+      },
+      child: AnimatedScale(scale: _pressed ? .97 : 1,
+        duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 120),
+        alignment: widget.end ? Alignment.centerRight : Alignment.centerLeft,
+        child: Column(crossAxisAlignment: widget.end ? CrossAxisAlignment.end : CrossAxisAlignment.start, children: [
+          Text(widget.label, style: TextStyle(fontSize: 14, color: dim)),
+          SizedBox(height: widget.compact ? 2 : 4),
+          SizedBox(height: widget.compact ? 33 : 37,
+            child: Align(alignment: widget.end ? Alignment.centerRight : Alignment.centerLeft,
+              child: FittedBox(fit: BoxFit.scaleDown,
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  if (widget.end && enabled) chevron, time, if (!widget.end && enabled) chevron,
+                ])))),
+          SizedBox(height: widget.compact ? 2 : 4),
+          Text(date == null ? '—' : editorV45Date(context, date),
+            maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, color: dim)),
+        ]),
+      ),
     );
   }
 }
@@ -181,7 +247,7 @@ class EditorV45MetadataRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
-    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(8),
+    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(8), overlayColor: WidgetStatePropertyAll(s.primary.withValues(alpha: 0)),
       child: ConstrainedBox(constraints: const BoxConstraints(minHeight: 48),
         child: Row(children: [
           Icon(icon, size: 20, color: s.onSurfaceVariant), const SizedBox(width: 8),
@@ -215,21 +281,24 @@ class EditorV45Actions extends StatelessWidget {
     final s = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
     final nativePhone = Theme.of(context).platform == TargetPlatform.android && MediaQuery.widthOf(context) < 600;
-    final pill = DecoratedBox(decoration: BoxDecoration(
-        color: s.surface.withValues(alpha: .76),
+    final paper = editorV45Paper(context);
+    final pill = DecoratedBox(key: const ValueKey('editor-v45-action-pill'), decoration: BoxDecoration(
+        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [paper.withValues(alpha: .52), paper.withValues(alpha: .35)]),
         borderRadius: BorderRadius.circular(29), border: Border.all(color: s.outlineVariant),
         boxShadow: [BoxShadow(color: s.shadow.withValues(alpha: .06), blurRadius: 12, offset: const Offset(0, 3))]),
         child: Padding(padding: const EdgeInsets.all(5), child: Row(children: [
           if (onStop != null) AppIconButton(onPressed: onStop, tooltip: t(loc, 'stop'), icon: Icons.stop_rounded),
-          if (onDelete != null) Expanded(child: TextButton.icon(
+          if (onDelete != null) Expanded(flex: 100, child: TextButton.icon(
             style: TextButton.styleFrom(foregroundColor: s.error, minimumSize: const Size(0, 44)),
             onPressed: onDelete, icon: const Icon(Icons.delete_outline, size: 18), label: Text(t(loc, 'delete'))))
-          else if (onCancel != null) Expanded(child: AppButton.ghost(onPressed: onCancel, label: t(loc, 'cancel'))),
-          Expanded(flex: 2, child: AppButton.primary(onPressed: onPrimary, label: primaryLabel)),
+          else if (onCancel != null) Expanded(flex: 100, child: AppButton.ghost(onPressed: () => editorV45ConfirmDiscard(context, onCancel!), label: t(loc, 'cancel'))),
+          const SizedBox(width: 8),
+          Expanded(flex: 155, child: AppButton.primary(onPressed: onPrimary, label: primaryLabel)),
         ])));
-    return SafeArea(top: false, minimum: const EdgeInsets.fromLTRB(24, 4, 24, 12),
-      child: nativePhone ? pill : ClipRRect(borderRadius: BorderRadius.circular(29),
-        child: BackdropFilter(filter: ui.ImageFilter.blur(sigmaX: 9, sigmaY: 9), child: pill)),
+    return Padding(padding: EdgeInsets.fromLTRB(editorV45Inset(context), 0, editorV45Inset(context), 14),
+      child: Center(heightFactor: 1, child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 440),
+        child: nativePhone ? pill : ClipRRect(borderRadius: BorderRadius.circular(29),
+          child: BackdropFilter(filter: ui.ImageFilter.blur(sigmaX: 9, sigmaY: 9), child: pill)))),
     );
   }
 }
@@ -260,7 +329,7 @@ class EditorV45ActionOverlay extends StatelessWidget {
   Widget build(BuildContext context) => Stack(fit: StackFit.expand, children: [
     Positioned.fill(child: content),
     if (visible) Positioned(left: 0, right: 0, bottom: 0,
-      child: NotesBottomGlassFade(height: 100, toolbarBottomInset: 12,
+      child: NotesBottomGlassFade(height: 100, toolbarBottomInset: 14, apertureWidth: 440, apertureHeight: 56, apertureHorizontalInset: editorV45Inset(context),
         enableBackdropBlur: false,
         child: Align(alignment: Alignment.bottomCenter, child: actions))),
   ]);
