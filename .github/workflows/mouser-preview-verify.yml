@@ -53,6 +53,17 @@ jobs:
             const stage=document.querySelector("#stage");
             stage.style.width="320px";stage.style.height="230px";
             const result=[];
+            if(document.querySelectorAll(".picker-menu:not([hidden])").length)throw Error("Menus visible by default");
+            document.querySelector("#familyPicker .picker-trigger").click();
+            if(document.querySelector("#families").hidden||document.querySelectorAll("#families .picker-option").length!==6)throw Error("Family menu");
+            document.querySelectorAll("#families .picker-option")[2].click();
+            if(family!==2||!document.querySelector("#families").hidden)throw Error("Family select");
+            document.querySelector("#profilePicker .picker-trigger").click();
+            document.querySelectorAll("#profileOptions .picker-option")[1].click();
+            if(p!==1||!document.querySelector("#profileOptions").hidden)throw Error("Profile select");
+            document.querySelector("#actionPicker .picker-trigger").click();
+            document.querySelectorAll("#actionOptions .picker-option")[5].click();
+            if(profiles[p].map[k]!==5||!document.querySelector("#actionOptions").hidden)throw Error("Action select");
             for(let i=0;i<families.length;i++){
               selectFamily(i);gl.finish();
               const w=canvas.width,h=canvas.height,buf=new Uint8Array(w*h*4);
