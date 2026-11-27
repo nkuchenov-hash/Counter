@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `4600edbe` on 2026-11-25; reconciled two protection files from `da5a664c`.**
+**Generated from input HEAD `c451f899` on 2026-11-27.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 568 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 277 |
+| `PROVEN_REQUIRED` | 569 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 278 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 949 |
+| `HIGH` | 951 |
 | `MEDIUM` | 88 |
 
 ---
@@ -4693,39 +4693,38 @@ RU:
 
 EN:
 
-- **Human purpose:** Declares code owners for critical runtime and governance paths; requires GitHub review settings for enforcement.
-- **What this is:** Declares code owners for critical runtime and governance paths; requires GitHub review settings for enforcement.
-- **Why needed:** Prevents unauthorized changes to release-critical functionality.
-- **Contents:** GitHub code-owner path patterns.
+- **Human purpose:** .github build file `CODEOWNERS` in `.github` — required by Flutter/native toolchain. Without `CODEOWNERS`, .github compile or packaging step for this folder may fail.
+- **What this is:** .github build file `CODEOWNERS` in `.github` — required by Flutter/native toolchain.
+- **Why needed:** Without `CODEOWNERS`, .github compile or packaging step for this folder may fail.
+- **Contents:** Native/config source for `.github` (open file only when build errors cite it).
 - **Repository role:** CI/deployment
-- **Evidence of use:** GitHub CODEOWNERS; `AGENTS.md`, `docs/DEPLOY.md`.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Removes a layer of critical release protection.
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
 - **Confidence:** HIGH
-- **Owner / layer:** Repository governance
-- **Responsibilities:** Owner-approved changes only.
-- **When to open:** When reviewing a critical change or release approval.
-- **Can it be deleted?** No, without explicit owner approval.
-- **Connected to:** `AGENTS.md`, `docs/DEPLOY.md`.
+- **Owner / layer:** CI
+- **Responsibilities:** Support .github embedder build for `.github` — not Dart business logic.
+- **When to open:** Build log mentions `CODEOWNERS` or `.github`.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** `.github/` platform folder, Flutter embedder.
 
 RU:
 
-- **Зачем файл человеку:** Назначает владельца критических файлов и правил; принудительное ревью требует настроек GitHub.
-- **Что это:** Назначает владельца критических файлов и правил; принудительное ревью требует настроек GitHub.
-- **Зачем:** Блокирует неутверждённые изменения критического кода при выпуске.
-- **Содержимое:** Правила владельцев файлов GitHub.
+- **Зачем файл человеку:** Platform file `codeowners` в `.github` — читает Flutter platform tool при сборке .github build. Без этого файла Flutter platform tool может не собрать или упаковать .github build.
+- **Что это:** Platform file `codeowners` в `.github` — читает Flutter platform tool при сборке .github build.
+- **Зачем:** Без этого файла Flutter platform tool может не собрать или упаковать .github build.
+- **Содержимое:** Содержимое native/config слоя `.github` (смотреть файл при build errors).
 - **Роль в репозитории:** CI/deployment
-- **Доказательства использования:** GitHub CODEOWNERS; `AGENTS.md`, `docs/DEPLOY.md`.
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Утрата слоя защиты критического выпуска.
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
 - **Уверенность:** HIGH
-- **Владелец / слой:** Управление репозиторием
-- **Обязанности:** Изменения только с одобрения владельца.
-- **Когда открывать:** При проверке критического изменения.
-- **Можно удалить?** Нет, без отдельного согласования.
-- **Связано с:** `AGENTS.md`, `docs/DEPLOY.md`.
+- **Владелец / слой:** CI
+- **Обязанности:** Участвует в Flutter platform tool pipeline для .github build — не Dart business logic.
+- **Когда открывать:** Build log .github ссылается на `codeowners` или `.github`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter embedder.
 
----
 
 ### `.github/copilot-instructions.md`
 
@@ -5920,7 +5919,7 @@ EN:
 - **Why needed:** Android reads XML at install/run to grant mic, notifications, and launch the app.
 - **Contents:** `<uses-permission>`, application name, intent filters.
 - **Repository role:** platform build
-- **Evidence of use:** (1) Flutter/native project file `AndroidManifest.xml` under `android/app/src/main/`; required by platform build convention for this runner. (2) Also referenced by: `scripts/manual/structure_file_ru_curated.py`, `scripts/manual/structure_folder_ru_curated.py`, `scripts/manual/structure_guide_data.py`.
+- **Evidence of use:** (1) Flutter/native project file `AndroidManifest.xml` under `android/app/src/main/`; required by platform build convention for this runner. (2) Also referenced by: `scripts/audit/critical_release_guard.py`, `scripts/manual/structure_file_ru_curated.py`, `scripts/manual/structure_folder_ru_curated.py`.
 - **Necessity status:** REQUIRED_BY_PLATFORM_CONVENTION
 - **Deletion consequence:** Unavailable or broken platform build for that OS target.
 - **Confidence:** HIGH
@@ -6993,7 +6992,7 @@ EN:
 - **Why needed:** Tracked because `browser_extension` needs `service_worker.js` for build, CI, or maintenance.
 - **Contents:** Open `service_worker.js` when working on `browser_extension` (see folder section above).
 - **Repository role:** developer tool
-- **Evidence of use:** Referenced by: `browser_extension/manifest.json`, `docs/DEPLOY.md`, `test/live_sync_contract_test.dart`.
+- **Evidence of use:** Referenced by: `browser_extension/manifest.json`, `docs/DEPLOY.md`, `test/live_sync_contract_test.dart`, `test/pocketbase_production_origin_test.dart`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** May break tooling or configuration; verify before delete.
 - **Confidence:** MEDIUM
@@ -7010,7 +7009,7 @@ RU:
 - **Зачем:** Обеспечивает автоматизацию или web-логику области `browser_extension` для сценария `service_worker.js`.
 - **Содержимое:** JavaScript-код и настройки, относящиеся к задаче `service_worker.js`.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Упоминается в: `browser_extension/manifest.json`, `docs/DEPLOY.md`, `test/live_sync_contract_test.dart`.
+- **Доказательства использования:** Упоминается в: `browser_extension/manifest.json`, `docs/DEPLOY.md`, `test/live_sync_contract_test.dart`, `test/pocketbase_production_origin_test.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
 - **Уверенность:** MEDIUM
@@ -11360,7 +11359,7 @@ EN:
 - **Why needed:** Without `Runner.entitlements`, ios compile or packaging step for this folder may fail.
 - **Contents:** Native/config source for `ios/Runner` (open file only when build errors cite it).
 - **Repository role:** platform build
-- **Evidence of use:** Tracked Flutter platform file under `ios/Runner/` (individual role: `Runner.entitlements` for that platform project).
+- **Evidence of use:** (1) Tracked Flutter platform file under `ios/Runner/` (individual role: `Runner.entitlements` for that platform project). (2) Also referenced by: `scripts/audit/critical_release_guard.py`.
 - **Necessity status:** REQUIRED_BY_PLATFORM_CONVENTION
 - **Deletion consequence:** Unavailable or broken platform build for that OS target.
 - **Confidence:** HIGH
@@ -16313,7 +16312,7 @@ EN:
 - **Contents:** Coordinator extensions plus links to `part` files under `health_sleep_syncs/` or `health_sleep_sync/`.
 - **Key code names:** `SleepSyncSourceTransport`, `HealthSleepSyncPhase`, `HealthSleepSyncState`, `HealthSleepSyncService`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`, `lib/features/settings/health/health_connect_settings_section.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -16330,7 +16329,7 @@ RU:
 - **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
 - **Содержимое:** Extensions + `part` файлы для health_sleep_sync.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`, `lib/features/settings/health/health_connect_settings_section.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -34050,39 +34049,38 @@ RU:
 
 EN:
 
-- **Human purpose:** Compares protected Git tree fingerprints with the approved baseline and fails release checks on unapproved changes.
-- **What this is:** Compares protected Git tree fingerprints with the approved baseline and fails release checks on unapproved changes.
-- **Why needed:** Prevents unauthorized changes to release-critical functionality.
-- **Contents:** Python fingerprint check and isolated regression self-test.
+- **Human purpose:** Developer script `critical_release_guard.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `critical_release_guard.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `critical_release_guard.py`.
 - **Repository role:** audit tool
-- **Evidence of use:** `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/android-apk-build.yml`, `.github/workflows/windows-desktop-build.yml`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/android-apk-build.yml`, `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/windows-desktop-build.yml`, `AGENTS.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Removes a layer of critical release protection.
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
-- **Owner / layer:** Repository governance
-- **Responsibilities:** Owner-approved changes only.
-- **When to open:** When reviewing a critical change or release approval.
-- **Can it be deleted?** No, without explicit owner approval.
-- **Connected to:** `AGENTS.md`, `docs/DEPLOY.md`.
+- **Owner / layer:** audit tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `critical_release_guard.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
 
 RU:
 
-- **Зачем файл человеку:** Сравнивает отпечаток защищённого дерева Git с утверждённой версией и блокирует выпуск при расхождении.
-- **Что это:** Сравнивает отпечаток защищённого дерева Git с утверждённой версией и блокирует выпуск при расхождении.
-- **Зачем:** Блокирует неутверждённые изменения критического кода при выпуске.
-- **Содержимое:** Python-проверка отпечатка и изолированные тесты.
+- **Зачем файл человеку:** Dev/CI скрипт `critical_release_guard.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `critical_release_guard.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `critical_release_guard.py`.
 - **Роль в репозитории:** audit tool
-- **Доказательства использования:** `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/android-apk-build.yml`, `.github/workflows/windows-desktop-build.yml`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/android-apk-build.yml`, `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/windows-desktop-build.yml`, `AGENTS.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Утрата слоя защиты критического выпуска.
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
-- **Владелец / слой:** Управление репозиторием
-- **Обязанности:** Изменения только с одобрения владельца.
-- **Когда открывать:** При проверке критического изменения.
-- **Можно удалить?** Нет, без отдельного согласования.
-- **Связано с:** `AGENTS.md`, `docs/DEPLOY.md`.
+- **Владелец / слой:** аудит
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `critical_release_guard.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
----
 
 ### `scripts/audit/deployment_contract.py`
 

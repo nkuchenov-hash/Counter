@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:counter/data/local_sync/plan_mutation_outbox.dart';
+import 'package:counter/data/pb_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -383,11 +384,10 @@ void main() {
 
     expect(worker, contains("type === 'getLifeOsRealtimeConfig'"));
     expect(worker, contains("auth: readBySuffix('pb_auth')"));
-    expect(worker, contains("const POCKETBASE_BASE = 'https://217-114-0-201.sslip.io';"));
+    expect(worker, contains("const POCKETBASE_BASE = '$kPocketBaseProductionUrl';"));
 
-    expect(manifest, contains('"version": "0.2.5"'));
-    expect(manifest, contains('"https://217-114-0-201.sslip.io/*"'));
-    expect(manifest, contains('connect-src \'self\' https://217-114-0-201.sslip.io'));
+    expect(manifest, contains('"$kPocketBaseProductionUrl/*"'));
+    expect(manifest, contains('connect-src \'self\' $kPocketBaseProductionUrl'));
   });
 
   test('Plan create cannot POST without a durable recovery receipt', () {

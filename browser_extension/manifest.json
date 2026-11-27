@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LIFE OS",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "See the current LIFE OS record, start a new record immediately, stop it, or open the web app.",
   "permissions": [
     "contextMenus",
@@ -11,10 +11,10 @@
   ],
   "host_permissions": [
     "https://nkuchenov-hash.github.io/Counter/*",
-    "https://217-114-0-201.sslip.io/*"
+    "https://137-22-146-109.sslip.io/*"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://217-114-0-201.sslip.io"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://137-22-146-109.sslip.io"
   },
   "action": {
     "default_popup": "popup.html",

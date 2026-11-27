@@ -38,6 +38,10 @@ String resolvePocketBaseUrl() {
 /// Effective API root — use this everywhere instead of a hard-coded host.
 String get kPocketBaseUrl => resolvePocketBaseUrl();
 
+/// Only an explicit authentication rejection invalidates the locally valid
+/// session. Rate limiting, timeout, forbidden routes and server errors do not.
+bool isPocketBaseSessionRejected(int statusCode) => statusCode == 401;
+
 /// Non-collection HTTP routes served by the same app backend (reverse proxy / edge).
 /// Client code must stay **vendor-neutral** — no LLM provider names in Flutter.
 abstract class PbAppApiRoutes {

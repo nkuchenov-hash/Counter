@@ -20,6 +20,9 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
   bool _started = false;
   bool _reconcileRunning = false;
   bool _catchUpRunning = false;
+  String? _catchUpOwner;
+  DateTime? _lastMissingSleepPull;
+  static const _missingSleepPullInterval = Duration(minutes: 5);
   Timer? _foregroundCatchUpTimer;
 
   void start() {
@@ -35,6 +38,8 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
     _started = false;
     _foregroundCatchUpTimer?.cancel();
     _foregroundCatchUpTimer = null;
+    _catchUpOwner = null;
+    _lastMissingSleepPull = null;
     WidgetsBinding.instance.removeObserver(this);
   }
 
@@ -66,7 +71,7 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
           await db.getRecords(forceNetwork: true);
 
           final localNow = db.applyUserOffset(DatabaseService.getPlanetaryNow());
-          if (!await _hasTodayXiaomiSleep(db, localNow)) {
+          if (!_hasTodayXiaomiSleep(db, localNow)) {
             // A missing current Xiaomi night can trigger a server sync now;
             // syncNow itself refreshes PocketBase records on success.
             await _syncCloudSleepNow();
@@ -93,14 +98,35 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
   }
 
   Future<void> _catchUpFromPocketBase() async {
-    if (_catchUpRunning) return;
+    if (_catchUpRunning || _reconcileRunning) return;
     _catchUpRunning = true;
     try {
       final db = DatabaseService.instance;
       if (!db.isInitialized || (db.currentProfileId?.isNotEmpty != true)) return;
+      final owner = db.currentProfileId;
+      if (_catchUpOwner != owner) {
+        _catchUpOwner = owner;
+        _lastMissingSleepPull = null;
+      }
       final localNow = db.applyUserOffset(DatabaseService.getPlanetaryNow());
-      if (await _hasTodayXiaomiSleep(db, localNow)) return;
-      await db.getRecords(forceNetwork: true);
+      // The timer is a missed-realtime recovery path, not a second full
+      // history synchronizer. Inspect the already hydrated snapshot first.
+      if (_hasTodayXiaomiSleep(db, localNow)) return;
+      final service = CloudSleepSyncService.instance;
+      await service.loadStatus();
+      if (!_started || db.currentProfileId != owner) return;
+      if (!service.state.value.configured || !service.state.value.enabled) return;
+      if (_hasTodayXiaomiSleep(db, localNow)) return;
+      // loadStatus already triggers a refresh for a new server sync timestamp.
+      // Keep a bounded fallback for missed events without polling the full
+      // record history every 30 seconds; ordinary reads honor the DB throttle.
+      final now = DateTime.now();
+      final last = _lastMissingSleepPull;
+      if (last != null && now.difference(last) < _missingSleepPullInterval) return;
+      _lastMissingSleepPull = now;
+      await db.getRecords();
+    } catch (error) {
+      if (kDebugMode) debugPrint('Sleep catch-up failed: $error');
     } finally {
       _catchUpRunning = false;
     }
@@ -114,11 +140,11 @@ class SleepForegroundReconcileService with WidgetsBindingObserver {
     await service.sync();
   }
 
-  Future<bool> _hasTodayXiaomiSleep(
+  bool _hasTodayXiaomiSleep(
     DatabaseService db,
     DateTime localNow,
-  ) async {
-    final rows = await db.getRecords();
+  ) {
+    final rows = db.contextAwarenessCachedRecords();
     for (final row in rows) {
       final source = (row['sleep_source'] ?? row['external_source'] ?? '')
           .toString()

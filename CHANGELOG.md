@@ -2,6 +2,15 @@
 
 - Recognize standalone Russian appointment and booking messages with explicit dates and clocks before provider inference; preserve source details as plan notes and require a preview for the tentative 30-minute duration. Persist single-plan preparation notes as canonical NoteDocument blocks with heading, divider and interactive checklist mirrors. Normalize equivalent provider clock/duration representations before the strict action contract; retain existing Brain conflict, category, deduplication and write verification.
 
+## [2026-11-27] - Reliability audit batch 1 (proposed)
+
+* Browser companion 0.2.6 uses the canonical production PocketBase origin and matching host/CSP permissions.
+* Preserve valid sessions on transient HTTP failures; route timeout and rate-limit failures through existing connectivity backoff.
+* Align Viktor client wait with existing server authorization/generation budget; keep Wear active-record subscription stable across UI ticks.
+* Android contacts read phone, email and birthday data in bulk on the existing worker thread; reject concurrent imports. Windows diagnostic file writes are ordered and asynchronous.
+* Sleep foreground catch-up reads the cached snapshot and lightweight status first, with a five-minute fallback pull; canonical Xiaomi server import, manual sync, realtime and Timeline/editor data paths are unchanged.
+* Add focused origin, auth classification and latency contracts. Critical release approval and native build verification required.
+
 ## [2026-11-25] - Xiaomi endpoint failover and verified-route memory (proposed)
 
 * Add the live-verified Russian alternative to the built-in routing candidates; remember a verified route, temporarily defer unreachable routes, preserve historical gaps from queried regions, and distinguish transport/auth failures from empty sleep responses. Add isolated credential-free regression tests. Critical release approval and production verification required.

@@ -84,11 +84,13 @@ class WearTimerScreen extends StatefulWidget {
 
 class _WearTimerScreenState extends State<WearTimerScreen> {
   Timer? _tick;
+  late final Stream<Map<String, dynamic>?> _activeRecordStream;
   bool _busy = false;
 
   @override
   void initState() {
     super.initState();
+    _activeRecordStream = DatabaseService.instance.activeRecordStream;
     _tick = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
@@ -214,7 +216,7 @@ class _WearTimerScreenState extends State<WearTimerScreen> {
     return Scaffold(
       body: SafeArea(
         child: StreamBuilder<Map<String, dynamic>?>(
-          stream: DatabaseService.instance.activeRecordStream,
+          stream: _activeRecordStream,
           builder: (context, snap) {
             final data = snap.data;
             final title = (data?['title'] ?? '').toString().trim();

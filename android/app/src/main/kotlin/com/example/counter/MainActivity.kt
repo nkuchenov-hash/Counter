@@ -15,6 +15,7 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     private var pendingPeopleContactsResult: MethodChannel.Result? = null
+    private var peopleContactsReadInProgress = false
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -80,15 +81,15 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     private fun requestAndReadPeopleContacts(result: MethodChannel.Result) {
+        if (peopleContactsReadInProgress || pendingPeopleContactsResult != null) {
+            result.error("contacts_request_in_progress", "Contacts request is already active", null)
+            return
+        }
         if (
             ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) ==
                 PackageManager.PERMISSION_GRANTED
         ) {
             readPeopleContactsAsync(result)
-            return
-        }
-        if (pendingPeopleContactsResult != null) {
-            result.error("contacts_request_in_progress", "Contacts request is already active", null)
             return
         }
         pendingPeopleContactsResult = result
@@ -117,12 +118,17 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     private fun readPeopleContactsAsync(result: MethodChannel.Result) {
+        peopleContactsReadInProgress = true
         Thread {
             try {
                 val rows = readPeopleContacts()
-                runOnUiThread { result.success(rows) }
+                runOnUiThread {
+                    peopleContactsReadInProgress = false
+                    result.success(rows)
+                }
             } catch (error: Throwable) {
                 runOnUiThread {
+                    peopleContactsReadInProgress = false
                     result.error("contacts_read_failed", error.message, null)
                 }
             }
@@ -130,6 +136,30 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     private fun readPeopleContacts(): List<Map<String, Any?>> {
+        // Read contact details in three bulk cursor queries, rather than
+        // issuing three ContentResolver queries per contact. Prefer explicitly
+        // marked primary values, then deterministic row order.
+        val phones = readContactValues(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+            ContactsContract.CommonDataKinds.Phone.NUMBER,
+        )
+        val emails = readContactValues(
+            ContactsContract.CommonDataKinds.Email.CONTENT_URI,
+            ContactsContract.CommonDataKinds.Email.CONTACT_ID,
+            ContactsContract.CommonDataKinds.Email.ADDRESS,
+        )
+        val birthdays = readContactValues(
+            ContactsContract.Data.CONTENT_URI,
+            ContactsContract.Data.CONTACT_ID,
+            ContactsContract.CommonDataKinds.Event.START_DATE,
+            ContactsContract.Data.MIMETYPE + " = ? AND " +
+                ContactsContract.CommonDataKinds.Event.TYPE + " = ?",
+            arrayOf(
+                ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE,
+                ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY.toString(),
+            ),
+        )
         val out = mutableListOf<Map<String, Any?>>()
         val projection = arrayOf(
             ContactsContract.Contacts._ID,
@@ -154,19 +184,9 @@ class MainActivity : FlutterFragmentActivity() {
                 val contactId = cursor.getString(idIndex) ?: continue
                 val displayName = cursor.getString(nameIndex)?.trim().orEmpty()
                 val photoUri = cursor.getString(photoIndex)?.trim().orEmpty()
-                val phone = firstContactValue(
-                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-                    contactId,
-                    ContactsContract.CommonDataKinds.Phone.NUMBER,
-                )
-                val email = firstContactValue(
-                    ContactsContract.CommonDataKinds.Email.CONTENT_URI,
-                    ContactsContract.CommonDataKinds.Email.CONTACT_ID,
-                    contactId,
-                    ContactsContract.CommonDataKinds.Email.ADDRESS,
-                )
-                val birthday = birthdayForContact(contactId)
+                val phone = phones[contactId].orEmpty()
+                val email = emails[contactId].orEmpty()
+                val birthday = parseContactBirthday(birthdays[contactId].orEmpty())
                 val avatar = photoDataUri(photoUri)
                 out.add(
                     mapOf(
@@ -186,51 +206,42 @@ class MainActivity : FlutterFragmentActivity() {
         return out
     }
 
-    private fun firstContactValue(
+    private fun readContactValues(
         uri: android.net.Uri,
         idColumn: String,
-        contactId: String,
         valueColumn: String,
-    ): String {
+        selection: String? = null,
+        selectionArgs: Array<String>? = null,
+    ): Map<String, String> {
+        val values = mutableMapOf<String, String>()
         contentResolver.query(
             uri,
-            arrayOf(valueColumn),
-            "$idColumn = ?",
-            arrayOf(contactId),
-            null,
+            arrayOf(idColumn, valueColumn),
+            selection,
+            selectionArgs,
+            idColumn + " ASC, " + ContactsContract.Data.IS_SUPER_PRIMARY +
+                " DESC, " + ContactsContract.Data.IS_PRIMARY + " DESC, " +
+                ContactsContract.Data._ID + " ASC",
         )?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                return cursor.getString(0)?.trim().orEmpty()
+            while (cursor.moveToNext()) {
+                val id = cursor.getString(0) ?: continue
+                val value = cursor.getString(1)?.trim().orEmpty()
+                if (value.isNotEmpty() && !values.containsKey(id)) {
+                    values[id] = value
+                }
             }
         }
-        return ""
+        return values
     }
 
-    private fun birthdayForContact(contactId: String): Triple<Int, Int, Int?>? {
-        contentResolver.query(
-            ContactsContract.Data.CONTENT_URI,
-            arrayOf(ContactsContract.CommonDataKinds.Event.START_DATE),
-            ContactsContract.Data.CONTACT_ID + " = ? AND " +
-                ContactsContract.Data.MIMETYPE + " = ? AND " +
-                ContactsContract.CommonDataKinds.Event.TYPE + " = ?",
-            arrayOf(
-                contactId,
-                ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE,
-                ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY.toString(),
-            ),
-            null,
-        )?.use { cursor ->
-            if (!cursor.moveToFirst()) return null
-            val raw = cursor.getString(0)?.trim().orEmpty()
-            val match = Regex("^(?:(\\d{4})-)?-?(\\d{1,2})-(\\d{1,2})$").find(raw)
-                ?: return null
-            val year = match.groupValues[1].toIntOrNull()
-            val month = match.groupValues[2].toIntOrNull() ?: return null
-            val day = match.groupValues[3].toIntOrNull() ?: return null
-            if (month !in 1..12 || day !in 1..31) return null
-            return Triple(month, day, year)
-        }
-        return null
+    private fun parseContactBirthday(raw: String): Triple<Int, Int, Int?>? {
+        val match = Regex("^(?:(\\d{4})-)?-?(\\d{1,2})-(\\d{1,2})$").find(raw)
+            ?: return null
+        val year = match.groupValues[1].toIntOrNull()
+        val month = match.groupValues[2].toIntOrNull() ?: return null
+        val day = match.groupValues[3].toIntOrNull() ?: return null
+        if (month !in 1..12 || day !in 1..31) return null
+        return Triple(month, day, year)
     }
 
     private fun photoDataUri(uriText: String): String {

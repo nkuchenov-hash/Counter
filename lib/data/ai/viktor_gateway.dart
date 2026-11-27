@@ -591,7 +591,9 @@ class ViktorGateway {
       headers: {'Content-Type': 'application/json',
         'Authorization': 'Bearer $token'},
       body: jsonEncode(data),
-    ).timeout(const Duration(seconds: 45));
+    // Server GigaChat can spend 15s on authorization and 35s on
+    // generation; allow both stages and transport/decoding headroom.
+    ).timeout(const Duration(seconds: 65));
     final decoded = jsonDecode(utf8.decode(reply.bodyBytes));
     if (decoded is! Map) throw const FormatException('Invalid server reply.');
     final map = Map<String, dynamic>.from(decoded);
