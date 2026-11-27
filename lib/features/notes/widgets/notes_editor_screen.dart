@@ -1,3 +1,4 @@
+import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/app_colors.dart';
 import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
@@ -405,6 +406,22 @@ class _NotesNavigationHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final native = NotesFigmaTokens.nativeNotesLayout(context);
     final scheme = Theme.of(context).colorScheme;
+    if (!embedded && !showCompactTitle && !bulkSelectionMode) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Row(children: [
+          Row(key: const ValueKey('notes-header-action-capsule'), mainAxisSize: MainAxisSize.min, children: [
+            _NotesHeaderAction(icon: pinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+              tooltip: pinned ? 'Unpin' : 'Pin', onPressed: onTogglePinned, compact: true),
+            _NotesHeaderMoreMenu(pinned: pinned, onTogglePinned: onTogglePinned,
+              onDelete: onDelete, onUndo: onUndo, compact: true),
+          ]),
+          const Spacer(),
+          AppIconButton(icon: Icons.close_rounded, tooltip: 'Done', onPressed: onDone,
+            size: AppIconButtonSize.s, shape: AppIconButtonShape.circular, variant: AppIconButtonVariant.filled),
+        ]),
+      );
+    }
     return Padding(
       padding: EdgeInsets.fromLTRB(
         native ? 18 : 8,
@@ -573,18 +590,21 @@ class _NotesBulkDoneAction extends StatelessWidget {
   }
 }
 
-enum _NotesHeaderMenuAction { pin, delete }
+enum _NotesHeaderMenuAction { pin, delete, undo }
 
 class _NotesHeaderMoreMenu extends StatelessWidget {
   const _NotesHeaderMoreMenu({
     required this.pinned,
     required this.onTogglePinned,
     required this.onDelete,
+    this.onUndo,
+    this.compact = false,
   });
 
   final bool pinned;
   final VoidCallback onTogglePinned;
-  final VoidCallback? onDelete;
+  final VoidCallback? onDelete, onUndo;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -597,9 +617,15 @@ class _NotesHeaderMoreMenu extends StatelessWidget {
             onTogglePinned();
           case _NotesHeaderMenuAction.delete:
             onDelete?.call();
+          case _NotesHeaderMenuAction.undo:
+            onUndo?.call();
         }
       },
       itemBuilder: (context) => [
+        if (onUndo != null) const PopupMenuItem<_NotesHeaderMenuAction>(
+          value: _NotesHeaderMenuAction.undo,
+          child: Row(children: [Icon(Icons.undo_rounded), SizedBox(width: 10), Text('Undo')]),
+        ),
         PopupMenuItem<_NotesHeaderMenuAction>(
           value: _NotesHeaderMenuAction.pin,
           child: Row(
@@ -633,7 +659,7 @@ class _NotesHeaderMoreMenu extends StatelessWidget {
         shape: const CircleBorder(),
         clipBehavior: Clip.antiAlias,
         child: SizedBox.square(
-          dimension: NotesFigmaTokens.nativeNotesLayout(context) ? 48 : 40,
+          dimension: compact ? 32 : NotesFigmaTokens.nativeNotesLayout(context) ? 48 : 40,
           child: Icon(
             Icons.more_horiz_rounded,
             size: NotesFigmaTokens.nativeNotesLayout(context) ? 26 : 19,
@@ -690,13 +716,14 @@ class _NotesHeaderAction extends StatelessWidget {
     required this.onPressed,
     this.selected = false,
     this.subtle = false,
+    this.compact = false,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback onPressed;
   final bool selected;
-  final bool subtle;
+  final bool subtle, compact;
 
   @override
   Widget build(BuildContext context) {
@@ -714,10 +741,10 @@ class _NotesHeaderAction extends StatelessWidget {
           customBorder: const CircleBorder(),
           hoverColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07),
           child: SizedBox.square(
-            dimension: NotesFigmaTokens.nativeNotesLayout(context) ? 48 : 40,
+            dimension: compact ? 32 : NotesFigmaTokens.nativeNotesLayout(context) ? 48 : 40,
             child: Icon(
               icon,
-              size: NotesFigmaTokens.nativeNotesLayout(context) ? 26 : 17,
+              size: compact ? 18 : NotesFigmaTokens.nativeNotesLayout(context) ? 26 : 17,
               color: foreground,
             ),
           ),
@@ -784,10 +811,10 @@ class _NotesTitleBlockState extends State<_NotesTitleBlock> {
     final native = NotesFigmaTokens.nativeNotesLayout(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        native ? 26 : 20,
-        native ? 18 : 4,
-        native ? 26 : 20,
-        native ? 14 : 8,
+        24,
+        10,
+        24,
+        8,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -848,6 +875,7 @@ class _NotesTitleBlockState extends State<_NotesTitleBlock> {
               focusedBorder: InputBorder.none,
               disabledBorder: InputBorder.none,
               isDense: true,
+              constraints: const BoxConstraints(),
               contentPadding: EdgeInsets.zero,
             ),
           ),
