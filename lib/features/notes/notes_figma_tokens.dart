@@ -49,11 +49,11 @@ abstract final class NotesFigmaTokens {
   static const double toolbarWidth = 350;
   static const double toolbarHeight = 48;
   static const double toolbarRadius = 24;
-  static const double toolbarHorizontalPadding = 16;
-  static const double toolbarVerticalPadding = 8;
-  static const double toolbarButtonSize = 32;
+  static const double toolbarHorizontalPadding = 5;
+  static const double toolbarVerticalPadding = 4;
+  static const double toolbarButtonSize = 36;
   static const double toolbarButtonRadius = 8;
-  static const double toolbarIconSize = 20;
+  static const double toolbarIconSize = 23;
 
   // Android handset Notes reference: readable controls and a stable dock.
   // Desktop/web keep their existing Figma dimensions.
