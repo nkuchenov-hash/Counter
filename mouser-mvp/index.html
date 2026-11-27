@@ -24,12 +24,25 @@ kbd{font:500 12px/1.35 var(--mono);text-transform:uppercase}
 nav button{font-weight:500}
 .device-head{display:flex;align-items:end;justify-content:space-between;gap:14px;flex-wrap:wrap}.device-head h1{font-size:clamp(35px,4.2vw,64px);line-height:1.04;margin:8px 0 0;letter-spacing:-.055em}.family-picker{display:grid;gap:5px;min-width:145px}.family-picker select{font-size:13px;width:100%;border-radius:0}.canvas-wrap{margin:8px 0 0;aspect-ratio:1.40}.studio{padding-top:25px}.model-caption{margin-top:0}.hot{border-radius:3px;width:auto;min-width:28px;height:24px;padding:0 5px;box-shadow:none;background:#24251fd9;font-size:10px}.hot[aria-pressed=true]{box-shadow:0 0 0 2px #f5f2e7,0 0 0 3px #a7482a}.map{padding-block:10px}.controls h2{margin-bottom:14px}.map .num{font-size:10px}.control-scroll{max-height:450px;overflow:auto;scrollbar-width:thin}.foot{margin-top:5px}@media(max-width:850px){.device-head h1{font-size:42px}.control-scroll{max-height:none}}
 
+
+/* Design 07: accessible round input markers and visible device family rail. */
+.hot{width:34px;height:34px;min-width:34px;padding:0;border-radius:50%;font-size:10px;font-weight:600;box-shadow:0 0 0 3px #f4f1e655;line-height:1}
+.hot[aria-pressed=true]{background:#a7482a;box-shadow:0 0 0 3px #f5f2e7,0 0 0 4px #a7482a}
+.family-picker{margin-top:15px;display:block;min-width:0}
+#families{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-block:1px solid var(--rule)}
+.family-tab{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;padding:9px 2px;color:var(--sub);font:500 10px/1.2 var(--mono);border-right:1px solid var(--rule);border-bottom:2px solid transparent;text-transform:uppercase}
+.family-tab:last-child{border-right:0}
+.family-tab[aria-pressed=true]{border-bottom-color:var(--accent);color:var(--ink);background:var(--panel)}
+.family-tab svg{width:42px;height:42px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.device-head h1{font-size:clamp(35px,4.2vw,64px)}
+.canvas-wrap{margin:4px 0 0;aspect-ratio:1.4}
+@media(max-width:500px){#families{grid-template-columns:repeat(3,minmax(0,1fr))}.family-tab:nth-child(-n+3){border-bottom:1px solid var(--rule)}.family-tab[aria-pressed=true]{box-shadow:inset 0 -2px var(--accent)}}
 </style></head>
 <body><div class="shell"><header class="top"><div class="brand">mouser<i>.</i></div><nav aria-label="Разделы"><button data-page="device" aria-selected="true">Мышь</button><button data-page="profiles" aria-selected="false">Профили</button><button data-page="settings" aria-selected="false">Настройки</button></nav><button id="theme" aria-label="Переключить тему">◐</button></header>
-<section id="device"><div class="strip"><span class="small">PROFILE</span><select id="profile" aria-label="Профиль"></select></div><main><section class="studio"><div class="device-head"><div><div class="small">01 / DEVICE</div><h1 id="familyTitle">Symmetric</h1></div><div class="family-picker"><label class="small" for="family">LAYOUT</label><select id="family" aria-label="Компоновка мыши"></select></div></div><div class="canvas-wrap" id="stage"><canvas id="mouse" aria-label="Объёмная визуализация универсальной мыши"></canvas><div id="fallback" class="warning" hidden>WebGL недоступен. Назначения кнопок доступны справа.</div><div id="hotspots"></div></div><div class="model-caption"><span id="familyCode">SYM / 01</span><span id="quality"></span></div><div class="viewbar"><span class="small">VIEW</span><div class="views"><button data-view="0" aria-selected="true">ISO</button><button data-view="1" aria-selected="false">TOP</button><button data-view="2" aria-selected="false">SIDE</button></div><button id="finish" title="Изменить цвет корпуса">IVORY</button></div></section><section class="controls"><div class="small">02 / INPUT MAP</div><h2>Назначения</h2><div id="maps" class="control-scroll"></div><div class="edit"><div class="small" id="number"></div><h3 id="selected"></h3><select id="action" aria-label="Действие"></select><input id="custom" placeholder="Ctrl + Shift + A" aria-label="Своя комбинация" hidden><div class="keys" id="keys"></div><button id="reset">Сбросить назначение</button></div></section></main></section>
+<section id="device"><div class="strip"><span class="small">PROFILE</span><select id="profile" aria-label="Профиль"></select></div><main><section class="studio"><div class="device-head"><div><div class="small">01 / DEVICE</div><h1 id="familyTitle">Symmetric</h1></div></div><div class="family-picker"><div id="families" role="group" aria-label="Компоновка мыши"></div></div><div class="canvas-wrap" id="stage"><canvas id="mouse" aria-label="Объёмная визуализация универсальной мыши"></canvas><div id="fallback" class="warning" hidden>WebGL недоступен. Назначения кнопок доступны справа.</div><div id="hotspots"></div></div><div class="model-caption"><span id="familyCode">SYM / 01</span><span id="quality"></span></div><div class="viewbar"><span class="small">VIEW</span><div class="views"><button data-view="0" aria-selected="true">ISO</button><button data-view="1" aria-selected="false">TOP</button><button data-view="2" aria-selected="false">SIDE</button></div><button id="finish" title="Изменить цвет корпуса">IVORY</button></div></section><section class="controls"><div class="small">02 / INPUT MAP</div><h2>Назначения</h2><div id="maps" class="control-scroll"></div><div class="edit"><div class="small" id="number"></div><h3 id="selected"></h3><select id="action" aria-label="Действие"></select><input id="custom" placeholder="Ctrl + Shift + A" aria-label="Своя комбинация" hidden><div class="keys" id="keys"></div><button id="reset">Сбросить назначение</button></div></section></main></section>
 <section class="other" id="profiles" hidden><div class="small">03 / PROFILES</div><h1>Приложения</h1><div id="profileList"></div><div class="add"><input id="newProfile" placeholder="Например, photoshop.exe"><button id="add">Добавить</button></div></section>
 <section class="other" id="settings" hidden><div class="small">04 / SETTINGS</div><h1>Настройки</h1><div class="setting">Переназначение<button id="enabled" aria-pressed="true">Включено</button></div><div class="setting">Запуск с Windows<button id="startup" aria-pressed="true">Включён</button></div><div class="setting">Оформление<button id="theme2">Светлое</button></div><p>Режим предпросмотра: без подключения к Windows.</p></section>
-<footer class="foot"><span class="small">MOUSER / UI 06</span><span class="small">DESIGN PREVIEW</span></footer></div>
+<footer class="foot"><span class="small">MOUSER / UI 07</span><span class="small">DESIGN PREVIEW</span></footer></div>
 <script>
 "use strict";
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -38,12 +51,22 @@ const actions=[["Без изменений",""],["Отключить",""],["Пр
 const initial=()=>[0,0,0,2,3,0,0,0,0,0,0,0,0,0,0];let profiles=["Все приложения","Браузер","Проводник"].map(name=>({name,map:initial(),custom:{}})),p=0,k=3,view=0,finish=0,dark=false;
 const pad=i=>String(i+1).padStart(2,"0");const inputCodes=["LMB","RMB","MMB","X1","X2","W+","W−","H−","H+",...Array.from({length:6},(_,i)=>"G"+(i+1))];
 const families=[{title:"Symmetric",name:"Симметричная",code:"SYM / 01",ids:[0,1,2,3,4,5,6,7,8],view:0,scale:[1,1,1],shift:0},{title:"Ergonomic",name:"Эргономичная",code:"ERGO / 02",ids:[0,1,2,3,4,5,6,7,8],view:0,scale:[1.14,1.22,1.02],shift:.13},{title:"Compact",name:"Компактная",code:"CMP / 03",ids:[0,1,2,5,6],view:1,scale:[.85,.67,.85],shift:0},{title:"Gaming",name:"Игровая / MMO",code:"MMO / 04",ids:Array.from({length:15},(_,i)=>i),view:0,scale:[1.08,1.08,1.06],shift:0},{title:"Vertical",name:"Вертикальная",code:"VERT / 05",ids:[0,1,2,3,4,5,6],view:0,scale:[.88,1.12,1.02],shift:0},{title:"Trackball",name:"Трекбол",code:"BALL / 06",ids:[0,1,2,3,4,5,6],view:1,scale:[1,1,1],shift:0}];let family=0;
-$("#family").replaceChildren(...families.map((x,i)=>new Option(x.name,i)));
+
 actions.forEach((a,i)=>$("#action").add(new Option(a[0],i)));
 function button(text,click){let b=document.createElement("button");b.textContent=text;b.onclick=click;return b}
 function page(id){["device","profiles","settings"].forEach(x=>$("#"+x).hidden=x!==id);$$("[data-page]").forEach(b=>b.setAttribute("aria-selected",b.dataset.page===id));if(id==="device")draw()}
 function refresh(){let pr=profiles[p],a=pr.map[k];$("#profile").replaceChildren(...profiles.map((x,i)=>new Option(x.name,i)));$("#profile").value=p;$("#maps").replaceChildren(...families[family].ids.map(i=>{let n=names[i],b=button("",()=>{k=i;refresh()});b.className="map";b.setAttribute("aria-pressed",i===k);[inputCodes[i],n,actions[pr.map[i]][0],"›"].forEach((v,j)=>{let s=document.createElement("span");s.textContent=v;s.className=j===0?"num":j===2?"action":"";b.append(s)});return b}));$("#number").textContent="INPUT / "+inputCodes[k];$("#selected").textContent=names[k];$("#action").value=a;$("#custom").hidden=a!==13;$("#custom").value=pr.custom[k]||"";$("#keys").replaceChildren(...(a===13?pr.custom[k]||"":actions[a][1]).split(" + ").filter(Boolean).map(t=>{let e=document.createElement("kbd");e.textContent=t;return e}));$("#profileList").replaceChildren(...profiles.map((x,i)=>{let row=document.createElement("div");row.className="setting";let t=document.createElement("span");t.textContent=x.name;row.append(t,button("Настроить ›",()=>{p=i;page("device");refresh()}));return row}));hotspots()}
-$("#family").onchange=e=>{family=+e.target.value;const f=families[family];view=f.view;if(!f.ids.includes(k))k=f.ids[0];$("#familyTitle").textContent=f.title;$("#familyCode").textContent=f.code;$("[data-view]").forEach(b=>b.setAttribute("aria-selected",+b.dataset.view===view));refresh();draw()};$("#profile").onchange=e=>{p=+e.target.value;refresh()};$("#action").onchange=e=>{profiles[p].map[k]=+e.target.value;refresh()};$("#custom").onchange=e=>{profiles[p].custom[k]=e.target.value;refresh()};$("#reset").onclick=()=>{profiles[p].map[k]=initial()[k];refresh()};$("#add").onclick=()=>{let n=$("#newProfile").value.trim();if(n&&!profiles.some(x=>x.name===n)){profiles.push({name:n,map:initial(),custom:{}});$("#newProfile").value="";refresh()}};$$("[data-page]").forEach(b=>b.onclick=()=>page(b.dataset.page));$$("[data-view]").forEach(b=>b.onclick=()=>{view=+b.dataset.view;$$("[data-view]").forEach(x=>x.setAttribute("aria-selected",x===b));draw()});function theme(){dark=!dark;document.body.classList.toggle("dark",dark);$("#theme2").textContent=dark?"Тёмное":"Светлое";draw()}$("#theme").onclick=$("#theme2").onclick=theme;$("#finish").onclick=()=>{finish=1-finish;$("#finish").textContent=(finish?"GRAPHITE":"IVORY");draw()};for(const id of ["enabled","startup"]){$("#"+id).onclick=e=>{const b=e.currentTarget,on=b.getAttribute("aria-pressed")!=="true";b.setAttribute("aria-pressed",on);b.textContent=on?"Включено":"Выключено"}}
+const icons=[
+'<path d="M22 4C10 4 7 15 7 24v7c0 12 7 17 15 17s15-5 15-17v-7C37 15 34 4 22 4Z"/><path d="M22 4v17M7 25h30"/><rect x="19.5" y="12" width="5" height="10" rx="2.5"/>',
+'<path d="M25 4C13 3 8 11 8 24L3 36Q1 44 12 46l12 2c14 0 17-11 17-22S37 5 25 4Z"/><path d="M25 4v18M9 25l32 3M5 32l7-1"/><rect x="22" y="12" width="5" height="9" rx="2"/>',
+'<rect x="7" y="9" width="30" height="32" rx="10"/><path d="M22 9v16M7 25h30"/><rect x="19.5" y="13" width="5" height="10" rx="2.5"/>',
+'<path d="M10 5 20 8l12-3 7 10-2 15 4 12-10 5H13L5 40l4-13-3-12Z"/><path d="M22 8v17M10 25h27"/><rect x="19" y="12" width="6" height="9" rx="2"/><path d="M7 29h8v9H7m4-9v9m-4-4.5h8"/>',
+'<path d="M4 42Q3 36 7 30L15 9Q18 2 25 6L34 16Q40 26 41 42Z"/><path d="M17 11 27 15 33 32 15 30Z"/><path d="M22 13l5 18M12 35h8"/>',
+'<path d="M5 37Q0 24 11 13 22 5 37 10l5 17q2 15-12 17H15Q7 44 5 37Z"/><circle cx="13" cy="27" r="9"/><path d="M24 13v13l14 2M29 12v13"/><rect x="26" y="15" width="4" height="8" rx="2"/>'];
+const short=["SYM","ERGO","CMP","MMO","VERT","BALL"];
+function familyRail(){const root=$("#families");root.replaceChildren(...families.map((f,i)=>{const b=button("",()=>selectFamily(i));b.className="family-tab";b.title=f.name;b.setAttribute("aria-label",f.name);b.setAttribute("aria-pressed",i===family);b.innerHTML='<svg viewBox="0 0 44 52" aria-hidden="true">'+icons[i]+'</svg><span>'+short[i]+'</span>';return b}))}
+function selectFamily(i){family=i;const f=families[family];view=f.view;if(!f.ids.includes(k))k=f.ids[0];$("#familyTitle").textContent=f.title;$("#familyCode").textContent=f.code;$$("[data-view]").forEach(b=>b.setAttribute("aria-selected",+b.dataset.view===view));familyRail();refresh();draw()}
+familyRail();$("#profile").onchange=e=>{p=+e.target.value;refresh()};$("#action").onchange=e=>{profiles[p].map[k]=+e.target.value;refresh()};$("#custom").onchange=e=>{profiles[p].custom[k]=e.target.value;refresh()};$("#reset").onclick=()=>{profiles[p].map[k]=initial()[k];refresh()};$("#add").onclick=()=>{let n=$("#newProfile").value.trim();if(n&&!profiles.some(x=>x.name===n)){profiles.push({name:n,map:initial(),custom:{}});$("#newProfile").value="";refresh()}};$$("[data-page]").forEach(b=>b.onclick=()=>page(b.dataset.page));$$("[data-view]").forEach(b=>b.onclick=()=>{view=+b.dataset.view;$$("[data-view]").forEach(x=>x.setAttribute("aria-selected",x===b));draw()});function theme(){dark=!dark;document.body.classList.toggle("dark",dark);$("#theme2").textContent=dark?"Тёмное":"Светлое";draw()}$("#theme").onclick=$("#theme2").onclick=theme;$("#finish").onclick=()=>{finish=1-finish;$("#finish").textContent=(finish?"GRAPHITE":"IVORY");draw()};for(const id of ["enabled","startup"]){$("#"+id).onclick=e=>{const b=e.currentTarget,on=b.getAttribute("aria-pressed")!=="true";b.setAttribute("aria-pressed",on);b.textContent=on?"Включено":"Выключено"}}
 const canvas=$("#mouse"),gl=canvas.getContext("webgl",{antialias:false,preserveDrawingBuffer:false});
 const vertex="attribute vec2 pos;void main(){gl_Position=vec4(pos,0.,1.);}";
 const frag=`precision highp float;
@@ -51,58 +74,89 @@ uniform vec2 res; uniform vec3 eye; uniform vec3 paper;uniform float finish;unif
 float ell(vec3 p,vec3 r){float k0=length(p/r),k1=length(p/(r*r));return k0*(k0-1.)/max(k1,.0001);}
 float box(vec3 p,vec3 b,float r){vec3 q=abs(p)-b;return length(max(q,0.))+min(max(q.x,max(q.y,q.z)),0.)-r;}
 float smoothMax(float a,float b,float k){return -log(exp(-a*k)+exp(-b*k))/k;}
-vec2 scene(vec3 world){
- vec3 p=world;
- // Vertical family: rotate the canonical shell around the longitudinal axis.
- if(family>3.5&&family<4.5){p.y-=.91; p.xy=mat2(.57,.822,-.822,.57)*p.xy; p.y+=.49;}
- p/=modelScale;
- p.x-=shift*smoothstep(-1.3,1.3,p.z);
- float w=.78+.10*smoothstep(-1.3,1.3,p.z);
- vec3 q=p-vec3(0.,.49,.03);
- float body=ell(q,vec3(w,.64,1.40));
- body=max(body,.055-p.y);
- float base=ell(p-vec3(0.,.21,.02),vec3(w+.015,.25,1.415));
+// Each family has its own body, click surface, wheel and auxiliary controls.
+float blend(float a,float b,float k){float h=clamp(.5+.5*(b-a)/k,0.,1.);return mix(b,a,h)-k*h*(1.-h);}
+float cylWheel(vec3 p,vec3 c,float rad,float halfWidth){
+ vec3 q=p-c;float rim=length(q.yz)-rad;float tread=.0035*abs(sin(atan(q.y,q.z)*46.));
+ return max(rim+tread,abs(q.x)-halfWidth);
+}
+vec2 addPart(vec2 a,float d,float m){return d<a.x?vec2(d,m):a;}
+vec2 scene(vec3 p){
+ float shell=100.,base=100.,gap=100.,wheel=100.;
+ vec2 r=vec2(100.,1.);
+ if(family<.5){
+   // Symmetric: sculpted narrow waist, rounded rear and split click surfaces.
+   float w=.78+.10*smoothstep(-1.3,1.3,p.z)-.07*exp(-p.z*p.z*5.);
+   shell=ell(p-vec3(0.,.49,.07),vec3(w,.64,1.40));
+   base=ell(p-vec3(0.,.22,.03),vec3(.79,.24,1.40));
+   gap=box(p-vec3(0.,.86,-.80),vec3(.087,.38,.30),.03);
+   wheel=cylWheel(p,vec3(0.,.89,-.78),.22,.068);
+   r=addPart(r,box(p-vec3(-.76,.46,.04),vec3(.025,.055,.17),.035),4.);
+   r=addPart(r,box(p-vec3(-.76,.46,-.38),vec3(.025,.055,.17),.035),4.);
+ }else if(family<1.5){
+   // Ergo: broad offset palm arch, low front, separate sculpted thumb ledge.
+   vec3 q=p; q.x-=.17*smoothstep(-.8,1.1,p.z); q.y+=.16*q.x;
+   float palm=ell(q-vec3(.08,.57,.34),vec3(.83,.82,1.13));
+   float nose=ell(q-vec3(.03,.46,-.66),vec3(.76,.49,.79));
+   shell=blend(palm,nose,.28);
+   base=blend(ell(p-vec3(.05,.20,.02),vec3(.91,.22,1.48)),ell(p-vec3(-.89,.16,.40),vec3(.43,.16,.90)),.24);
+   shell=blend(shell,ell(p-vec3(-.71,.32,.45),vec3(.38,.29,.80)),.18);
+   gap=box(p-vec3(.06,.91,-.76),vec3(.095,.38,.27),.035);
+   wheel=cylWheel(p,vec3(.06,.95,-.74),.23,.08);
+   r=addPart(r,box(p-vec3(-.81,.66,-.08),vec3(.035,.056,.17),.032),4.);
+   r=addPart(r,box(p-vec3(-.84,.62,-.48),vec3(.035,.056,.16),.032),4.);
+ }else if(family<2.5){
+   // Travel: shallow capsule with a planar soft rectangular top.
+   shell=box(p-vec3(0.,.29,.0),vec3(.50,.18,.84),.20);
+   base=box(p-vec3(0.,.15,0.),vec3(.53,.07,.87),.19);
+   gap=box(p-vec3(0.,.51,-.59),vec3(.073,.22,.21),.025);
+   wheel=cylWheel(p,vec3(0.,.49,-.58),.16,.057);
+ }else if(family<3.5){
+   // MMO: sculpted waist, pronounced separate click surfaces and 8-key thumb array.
+   float back=ell(p-vec3(.05,.60,.48),vec3(.85,.65,1.03));
+   float front=ell(p-vec3(.03,.43,-.65),vec3(.83,.44,.91));
+   shell=blend(back,front,.21);
+   shell=max(shell,-ell(p-vec3(.98,.48,-.04),vec3(.30,.39,.61)));
+   base=blend(ell(p-vec3(0.,.18,.06),vec3(.92,.24,1.49)),box(p-vec3(-.69,.29,-.10),vec3(.25,.19,.70),.15),.17);
+   gap=box(p-vec3(0.,.84,-.83),vec3(.10,.36,.33),.03);
+   wheel=cylWheel(p,vec3(0.,.86,-.80),.24,.09);
+   float shelf=box(p-vec3(-.83,.48,-.09),vec3(.12,.25,.69),.09);
+   base=min(base,shelf);
+   for(int i=0;i<8;i++){float col=mod(float(i),4.);float row=floor(float(i)/4.);float z=.39-col*.32;float y=.62-row*.24;float key=box(p-vec3(-.98,y,z),vec3(.035,.076,.113),.026);r=addPart(r,key,4.);}
+ }else if(family<4.5){
+   // Vertical: upright palm wedge and inclined finger surface, not a rotated mouse.
+   vec3 q=p-vec3(-.10,.88,.18);q.x+=.30*q.y;
+   float palm=ell(q,vec3(.60,1.03,1.26));
+   float front=ell(p-vec3(.26,.86,-.58),vec3(.53,.83,.76));
+   shell=blend(palm,front,.22);
+   base=ell(p-vec3(.03,.22,.06),vec3(.83,.25,1.33));
+   // Longitudinal wheel axis on the right-facing finger surface.
+   vec3 w=p-vec3(.55,1.08,-.64);
+   gap=box(w,vec3(.24,.12,.27),.05);
+   wheel=max(length(w.xz)-.205,abs(w.y)-.070);
+   wheel+=.003*abs(sin(atan(w.x,w.z)*44.));
+   r=addPart(r,box(p-vec3(-.64,.75,-.10),vec3(.025,.06,.16),.035),4.);
+   r=addPart(r,box(p-vec3(-.64,.69,-.47),vec3(.025,.06,.15),.035),4.);
+ }else{
+   // Trackball: wide asymmetrical stationary base and separate thumb ball.
+   shell=blend(ell(p-vec3(.20,.43,.09),vec3(.97,.57,1.35)),ell(p-vec3(-.65,.43,.13),vec3(.70,.56,1.00)),.24);
+   base=ell(p-vec3(-.05,.17,.03),vec3(1.34,.23,1.37));
+   float socket=length(p-vec3(-.79,.72,.03))-.57;
+   shell=max(shell,-socket);base=max(base,-socket);
+   float ball=length(p-vec3(-.79,.76,.03))-.49;
+   r=addPart(r,ball,5.);
+   gap=box(p-vec3(.48,.83,-.69),vec3(.09,.30,.23),.03);
+   wheel=cylWheel(p,vec3(.48,.81,-.68),.18,.062);
+   r=addPart(r,box(p-vec3(-.45,.84,-.72),vec3(.10,.035,.15),.03),4.);
+   r=addPart(r,box(p-vec3(-.20,.85,-.83),vec3(.09,.035,.14),.03),4.);
+ }
+ shell=max(max(shell,-gap),.16-p.y);
  base=max(base,.055-p.y);
- if(family>4.5){
-   // Thumb-operated trackball with a separate ball socket and right-hand click surfaces.
-   float housing=ell(p-vec3(.04,.44,0.),vec3(1.11,.60,1.33));
-   housing=max(housing,.075-p.y);
-   float socket=length(p-vec3(-.69,.75,.03))-.57;
-   housing=max(housing,-socket);
-   float ball=length(p-vec3(-.69,.79,.03))-.48;
-   float wheel=length(vec2(p.y-.91,p.z+.73))-.18;
-   wheel=max(wheel,abs(p.x-.41)-.068);
-   vec2 r=vec2(housing,1.);
-   if(ball<r.x)r=vec2(ball,5.);
-   if(wheel<r.x)r=vec2(wheel,3.);
-   for(int i=0;i<2;i++){float z=i==0?-.44:-.77;float b=box(p-vec3(.97,.47,z),vec3(.025,.055,.12),.03);if(b<r.x)r=vec2(b,4.);}
-   if(world.y<r.x)r=vec2(world.y,0.);
-   return r;
- }
- float gap=box(p-vec3(0.,.85,-.83),vec3(.084,.38,.38),.045);
- body=max(body,-gap);
- float shell=max(body,.22-p.y);
- float wheel=length(vec2((p.y-.89),p.z+.78))-.225;
- wheel=max(wheel,abs(p.x)-.068);
- float rib=abs(sin(atan(p.y-.89,p.z+.78)*37.));
- wheel+=.005*rib;
- vec2 result=vec2(base,2.);
- if(shell<result.x)result=vec2(shell,1.);
- if(wheel<result.x)result=vec2(wheel,3.);
- if(family<1.5||family>2.5){
-   if(family>2.5&&family<3.5){
-     // Two rows of four independently modelled side keys.
-     float shelf=box(p-vec3(-.70,.47,-.15),vec3(.115,.23,.69),.10);
-     if(shelf<result.x)result=vec2(shelf,2.);
-     for(int i=0;i<8;i++){float col=mod(float(i),4.);float row=floor(float(i)/4.);float z=.34-col*.32;float y=.59-row*.23;float side=box(p-vec3(-.86,y,z),vec3(.032,.077,.115),.025);if(side<result.x)result=vec2(side,4.);}
-   }else{
-     for(int i=0;i<2;i++){float z=i==0?.04:-.39;float side=box(p-vec3(-.797,.46,z),vec3(.022,.055,.171),.033);if(side<result.x)result=vec2(side,4.);}
-   }
- }
- if(family>.5&&family<1.5){float rest=ell(p-vec3(-.70,.20,.35),vec3(.40,.16,.77));if(rest<result.x)result=vec2(rest,2.);}
- result.x*=min(modelScale.x,min(modelScale.y,modelScale.z));
- if(world.y<result.x)result=vec2(world.y,0.);
- return result;
+ r=addPart(r,base,2.);
+ r=addPart(r,shell,1.);
+ r=addPart(r,wheel,3.);
+ if(p.y<r.x)r=vec2(p.y,0.);
+ return r;
 }
 vec3 normal(vec3 p){vec2 e=vec2(.0018,0.);return normalize(vec3(scene(p+e.xyy).x-scene(p-e.xyy).x,scene(p+e.yxy).x-scene(p-e.yxy).x,scene(p+e.yyx).x-scene(p-e.yyx).x));}
 float shadow(vec3 ro,vec3 rd){float r=1.,t=.04;for(int i=0;i<26;i++){float h=scene(ro+rd*t).x;r=min(r,12.*h/t);t+=clamp(h,.025,.27);if(t>5.||r<.015)break;}return clamp(r,0.,1.);}
@@ -119,8 +173,17 @@ void main(){
  if(hit.y>1.5&&hit.y<2.5)mat*=.56;
  if(hit.y>2.5&&hit.y<3.5)mat=vec3(.18,.18,.16);
  if(hit.y>3.5)mat*=.77;
- if(hit.y>4.5)mat=vec3(.28,.29,.26);
- if(hit.y<1.5&&p.z<-.34&&p.y>.51){float seam=min(abs(p.x)-.008,abs(p.z+.33+.12*p.x*p.x)-.007);float edge=1.-smoothstep(.0,.012,seam);if(p.z<-.36&&abs(p.x)<.018)mat*=.24;else if(abs(p.z+.33+.12*p.x*p.x)<.012&&abs(p.x)>.12)mat*=mix(1.,.32,edge);}
+ if(hit.y>4.5)mat=vec3(.32,.35,.34);
+ if(hit.y<1.5){
+ float seam=100.;
+ if(family<.5&&p.y>.51){if(p.z<-.33)seam=abs(p.x);if(abs(p.x)>.11)seam=min(seam,abs(p.z+.33+.12*p.x*p.x));}
+ if(family>.5&&family<1.5&&p.y>.60){if(p.z<-.35)seam=abs(p.x-.06);if(abs(p.x-.06)>.12)seam=min(seam,abs(p.z+.30+.13*p.x));}
+ if(family>1.5&&family<2.5&&p.y>.40){if(p.z<-.20)seam=abs(p.x);seam=min(seam,abs(p.z+.20));}
+ if(family>2.5&&family<3.5&&p.y>.50){if(p.z<-.28)seam=abs(p.x);if(abs(p.x)>.12)seam=min(seam,abs(p.z+.28+.22*abs(p.x)));}
+ if(family>3.5&&family<4.5&&p.x>.20&&p.z<-.30)seam=abs(p.y-1.08);
+ if(family>4.5&&p.y>.57&&p.z<-.25&&p.x>-.04){seam=abs(p.x-.48);seam=min(seam,abs(p.z+.25));}
+ mat*=mix(.36,1.,smoothstep(.006,.017,seam));
+ }
  float diff=max(dot(n,light),0.),bounce=max(dot(n,fill),0.);float spec=pow(max(dot(n,normalize(light-rd)),0.),36.);float rim=pow(1.-max(dot(n,-rd),0.),3.);
  col=mat*(.43+.64*diff*sh+.12*bounce)*ao(p,n)+vec3(.24)*spec*sh+vec3(.06)*rim;
  }}
@@ -128,12 +191,18 @@ void main(){
 }`;
 let program,valid=false,loc={};function compile(type,src){let s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s}
 try{if(!gl)throw Error("WebGL");program=gl.createProgram();gl.attachShader(program,compile(gl.VERTEX_SHADER,vertex));gl.attachShader(program,compile(gl.FRAGMENT_SHADER,frag));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));gl.useProgram(program);let buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);let attr=gl.getAttribLocation(program,"pos");gl.enableVertexAttribArray(attr);gl.vertexAttribPointer(attr,2,gl.FLOAT,false,0,0);for(let n of ["res","eye","paper","finish","family","modelScale","shift","focal","target"])loc[n]=gl.getUniformLocation(program,n);valid=true}catch(e){console.error(e);$("#fallback").hidden=false}
-const standardPoints=[[ -.40,.84,-1.02],[.40,.84,-1.02],[0,1.10,-.78],[-.83,.47,.04],[-.83,.47,-.39]];
+const familyPoints=[
+ [[-.40,.83,-1.02],[.40,.83,-1.02],[0,1.11,-.78],[-.82,.46,.04],[-.82,.46,-.38]],
+ [[-.34,.92,-.98],[.44,.85,-.98],[.06,1.18,-.74],[-.88,.66,-.08],[-.90,.62,-.48]],
+ [[-.35,.65,-.66],[.35,.65,-.66],[0,.66,-.58]],
+ [[-.43,.80,-1.04],[.43,.80,-1.04],[0,1.10,-.80]],
+ [[.71,1.36,-.75],[.69,.77,-.80],[.76,1.08,-.64],[-.71,.75,-.10],[-.71,.69,-.47]],
+ [[.20,.89,-.90],[.83,.82,-.86],[.48,.99,-.68],[-.45,.91,-.72],[-.20,.92,-.83]]
+];
 const sub=(a,b)=>a.map((v,i)=>v-b[i]),dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),unit=a=>a.map(v=>v/Math.hypot(...a)),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
-function camera(){let target=family===4?[0,.87,0]:[0,.43,0],eyes=family===5?[[3.4,4.2,-4.5],[0,6.6,-.015],[5.7,2.4,-.4]]:family===4?[[3.8,3.8,-4.6],[0,6.6,-.015],[5.7,2.3,-.4]]:[[-3.4,3.8,-4.5],[0,6.6,-.015],[-5.7,1.8,-.4]];let zoom=[4.65,3.65,4.7][view];if(family===2)zoom*=1.14;if(family===4||family===5)zoom*=.90;return {eye:eyes[view],target,zoom}}
-function worldPoint(v){const f=families[family];let t=Math.max(0,Math.min(1,(v[2]+1.3)/2.6));let q=[(v[0]+f.shift*t*t*(3-2*t))*f.scale[0],v[1]*f.scale[1],v[2]*f.scale[2]];if(family===4){let x=q[0],y=q[1]-.49;q[0]=.57*x+.822*y;q[1]=-.822*x+.57*y+.91}return q}
-function modelPoints(){if(family===5)return [[.39,.94,-1.03],[.77,.82,-.82],[.41,1.07,-.73],[1.00,.47,-.44],[1.00,.47,-.77]];let p=standardPoints.map(v=>v.slice());if(family===3){for(let i=0;i<8;i++){let id=i<2?i+3:i+7;p[id]=[-.91,.59-Math.floor(i/4)*.23,.34-(i%4)*.32]}}return p}
-function hotspots(){let root=$("#hotspots");root.replaceChildren();if(!valid||!canvas.clientHeight)return;let {eye,target,zoom}=camera(),f=unit(sub(target,eye)),r=unit(cross(f,[0,1,0])),u=cross(r,f),pts=modelPoints(),positions=[];families[family].ids.forEach(i=>{let v=pts[i];if(!v)return;if(view===2&&i===1&&family!==4&&family!==5)return;if(view===0&&i===1&&family!==4&&family!==5)return;if(view===1&&family===3&&i>=9)return;let d=sub(worldPoint(v),eye),z=dot(d,f),x=dot(d,r)*zoom/z*canvas.clientHeight/canvas.clientWidth,y=dot(d,u)*zoom/z;let left=50+x*50,top=50-y*50;if(left<3||left>97||top<3||top>97)return;for(let prev of positions){if(Math.abs(prev[0]-left)<5&&Math.abs(prev[1]-top)<5)top=prev[1]+5;}positions.push([left,top]);let b=button(inputCodes[i],()=>{k=i;refresh()});b.className="hot";b.title=names[i];b.setAttribute("aria-label",names[i]);b.setAttribute("aria-pressed",i===k);b.style.left=left+"%";b.style.top=top+"%";root.append(b)})}
+function camera(){let target=family===4?[0,.87,0]:[0,.43,0],eyes=family===5?[[-3.4,4.4,-4.5],[0,6.6,-.015],[-5.7,2.4,-.4]]:family===4?[[3.8,3.8,-4.6],[0,6.6,-.015],[5.7,2.3,-.4]]:[[-3.4,3.8,-4.5],[0,6.6,-.015],[-5.7,1.8,-.4]];let zoom=[4.65,3.65,4.7][view];if(family===2)zoom*=1.24;if(family===4||family===5)zoom*=.92;return {eye:eyes[view],target,zoom}}
+function modelPoints(){let p=familyPoints[family].map(v=>v.slice());if(family===3){for(let i=0;i<8;i++){let id=i<2?i+3:i+7;p[id]=[-1.045,.62-Math.floor(i/4)*.24,.39-(i%4)*.32]}}return p}
+function hotspots(){let root=$("#hotspots");root.replaceChildren();if(!valid||!canvas.clientHeight)return;let {eye,target,zoom}=camera(),f=unit(sub(target,eye)),r=unit(cross(f,[0,1,0])),u=cross(r,f),pts=modelPoints(),positions=[];families[family].ids.forEach(i=>{let v=pts[i];if(!v)return;if(view!==1&&i===1&&family<4)return;if(family===4&&view!==1&&(i===3||i===4))return;if(view===1&&family===3&&i>=9)return;let d=sub(v,eye),z=dot(d,f),x=dot(d,r)*zoom/z*canvas.clientHeight/canvas.clientWidth,y=dot(d,u)*zoom/z;let left=50+x*50,top=50-y*50;if(left<3||left>97||top<3||top>97)return;for(let prev of positions){if(Math.abs(prev[0]-left)<5&&Math.abs(prev[1]-top)<5)top=prev[1]+5;}positions.push([left,top]);let b=button(inputCodes[i],()=>{k=i;refresh()});b.className="hot";b.title=names[i];b.setAttribute("aria-label",names[i]);b.setAttribute("aria-pressed",i===k);b.style.left=left+"%";b.style.top=top+"%";root.append(b)})}
 function draw(){if(!valid||!canvas.clientWidth)return;let w=canvas.clientWidth,h=canvas.clientHeight,dpr=Math.min(devicePixelRatio||1,2.5),scale=Math.min(dpr,1600/w),{eye,target,zoom}=camera(),f=families[family];canvas.width=Math.round(w*scale);canvas.height=Math.round(h*scale);gl.viewport(0,0,canvas.width,canvas.height);gl.uniform2f(loc.res,canvas.width,canvas.height);gl.uniform3fv(loc.eye,eye);gl.uniform3fv(loc.target,target);gl.uniform1f(loc.focal,zoom);gl.uniform1f(loc.family,family);gl.uniform3fv(loc.modelScale,f.scale);gl.uniform1f(loc.shift,f.shift);gl.uniform3fv(loc.paper,dark?[.141,.145,.122]:[.961,.949,.906]);gl.uniform1f(loc.finish,finish);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);$("#quality").textContent=canvas.width+" × "+canvas.height+" px";hotspots()}
 let timer;new ResizeObserver(()=>{clearTimeout(timer);timer=setTimeout(draw,80)}).observe(canvas);refresh();draw();
 </script></body></html>
