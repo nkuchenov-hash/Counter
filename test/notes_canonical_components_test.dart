@@ -598,7 +598,7 @@ void main() {
       final checklistOrigin = tester.getTopLeft(
         find.byKey(const ValueKey('checklist-text-field')),
       );
-      expect(listOrigin.dx, closeTo(56, 0.1));
+      expect(listOrigin.dx, closeTo(NotesFigmaTokens.editorContentInset + kNotesLeadingSize + kNotesLeadingGap, 0.1));
       expect((listOrigin.dx - checklistOrigin.dx).abs(), lessThan(0.1));
       expect(
         tester
