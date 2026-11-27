@@ -28,6 +28,7 @@ jobs:
       - run: flutter test test/editor_design_lab_test.dart
       - name: Build isolated Flutter Web lab
         run: |
+          cp lib/app/design_lab/index.html web/index.html
           flutter build web --release --target=lib/app/design_lab/main.dart --base-href=/ --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none --no-web-resources-cdn
       - name: Browser smoke test
         run: |
