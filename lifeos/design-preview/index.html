@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#000000" />
-<title>Life OS Glass V85 — Шкала выбранного дня</title>
+<title>Life OS Glass V86 — Компактная шкала</title>
 <style>
 :root{color-scheme:dark;--accent:#aebacb;--accent-soft:color-mix(in srgb,var(--accent) 22%,transparent);--accent-line:color-mix(in srgb,var(--accent) 52%,transparent);--glass-alpha:.31;--glass-blur:23px;--text:#f2f2f6;--muted:#b2b4be;--edge:rgba(255,255,255,.16);--bg:#07090d;--card-radius:20px}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#000000;color:var(--text)}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}body{overflow-x:hidden}
@@ -2267,8 +2267,8 @@ html .segment.v79-modes button[data-mode] svg,html.theme-light .segment.v79-mode
  html .segment.v79-modes button[data-mode] svg,html.theme-light .segment.v79-modes button[data-mode] svg{width:13px!important;height:13px!important;flex-basis:13px!important}
 }
 /* V83 — one continuous linear axis, edge-aligned compact labels, original card material. */
-.v79-timeline{position:relative;display:block;margin-left:calc(6px - var(--timeline-content-gutter));padding-left:38px;isolation:isolate;min-width:0;box-sizing:border-box}
-.v83-axis{position:absolute;top:0;bottom:0;left:0;width:35px;color:var(--muted);font-size:10px;font-weight:450;font-variant-numeric:tabular-nums;pointer-events:none}
+.v79-timeline{position:relative;display:block;margin-left:calc(5px - var(--timeline-content-gutter));padding-left:22px;isolation:isolate;min-width:0;box-sizing:border-box}
+.v83-axis{position:absolute;top:0;bottom:0;left:0;width:19px;color:var(--muted);font-size:10px;font-weight:450;font-variant-numeric:tabular-nums;pointer-events:none}
 .v83-axis::before{content:"";position:absolute;right:0;top:0;bottom:0;width:1px;background:currentColor;opacity:.16}
 .v83-hour{position:absolute;top:var(--y);left:0;right:0;display:flex;align-items:center;justify-content:flex-end;gap:2px;white-space:nowrap;line-height:12px;transform:translateY(-50%);padding-left:1px}
 .v83-hour::after{content:"";width:3px;height:1px;background:currentColor;opacity:.6;flex:none}
@@ -2296,7 +2296,7 @@ html .v79-timeline .record.v83-tiny .record-inner{display:none!important}
 .v83-gap{position:absolute;top:var(--top);height:var(--span);left:0;right:0;display:flex;align-items:center;gap:6px;justify-content:center;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
 .v83-gap::before,.v83-gap::after{content:"";flex:1;border-top:1px dashed currentColor;opacity:.22}
 .v83-gap:empty::after{display:none}
-.v83-detail{position:absolute;z-index:20;top:10px;left:40px;right:0;border-radius:12px;padding:12px;background:#262a31;color:#f5f5f5;box-shadow:0 6px 24px #0005;font-size:12px;line-height:1.55}
+.v83-detail{position:absolute;z-index:20;top:10px;left:24px;right:0;border-radius:12px;padding:12px;background:#262a31;color:#f5f5f5;box-shadow:0 6px 24px #0005;font-size:12px;line-height:1.55}
 html.theme-light .v83-detail{background:#fff;color:#202b39;box-shadow:0 6px 24px #0002}
 .v83-detail button{border:0;background:transparent;color:inherit;text-decoration:underline;padding:4px 8px 0 0}
 .v79-log{--log-text:#f2f2f6;--log-muted:#a5acb9;--log-line:rgba(255,255,255,.085);color:var(--log-text)}
@@ -2543,13 +2543,14 @@ function v83Geometry(items){
 }
 function v83Ticks(g){
  if(!g.entries.length)return '';
- let out='<span class="v83-hour first">'+v82ClockLabel(g.bottom)+'</span>';
- for(let h=Math.ceil(g.bottom/60)*60;h<=g.top;h+=60){
-  const y=(h-g.bottom)*v83Scale;
-  if(y<16||g.extent-y<16)continue;
-  out+='<span class="v83-hour" style="--y:'+y.toFixed(2)+'px">'+v82ClockLabel(h)+'</span>';
+ let out='<span class="v83-hour first" title="00:00">00</span>';
+ for(let h=60;h<=g.top;h+=60){
+  const y=h*v83Scale;
+  if(g.extent-y<7)continue;
+  const label=String(Math.floor(h/60)).padStart(2,'0');
+  out+='<span class="v83-hour" style="--y:'+y.toFixed(2)+'px" title="'+label+':00">'+label+'</span>';
  }
- return out+'<span class="v83-hour now">'+v82ClockLabel(g.top)+'</span>';
+ return out;
 }
 function v81Timeline(renderCard){
  const g=v83Geometry(records);
