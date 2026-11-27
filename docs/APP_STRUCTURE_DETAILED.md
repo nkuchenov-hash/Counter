@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `c3f1748a` on 2026-11-27.**
+**Generated from input HEAD `7c9b37d5` on 2026-11-27.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1040 — each appears **exactly once** below.
+**Tracked files:** 1042 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 206 |
-| `test` | 149 |
+| `test` | 151 |
 | `Brain/data` | 121 |
 | `platform build` | 84 |
 | `shared foundation` | 73 |
@@ -58,7 +58,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Necessity | Count |
 | :--- | ---: |
 | `PROVEN_REQUIRED` | 569 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 279 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 281 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 952 |
+| `HIGH` | 954 |
 | `MEDIUM` | 88 |
 
 ---
@@ -39524,6 +39524,82 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `outbox_coalesce_regression`.
 - **Когда открывать:** Падение CI или правка кода рядом с `outbox_coalesce_regression`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/p0_edit_category_hotpath_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `p0_edit_category_hotpath_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `p0_edit_category_hotpath_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: _NoBrainAccess, main).
+- **Key code names:** `_NoBrainAccess`, `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/p0_edit_category_hotpath_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `p0_edit_category_hotpath_test` scenario.
+- **When to open:** CI failure or changing code near `p0_edit_category_hotpath`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `p0_edit_category_hotpath`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `p0_edit_category_hotpath` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `p0_edit_category_hotpath` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `p0_edit_category_hotpath`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/p0_edit_category_hotpath_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `p0_edit_category_hotpath`.
+- **Когда открывать:** Падение CI или правка кода рядом с `p0_edit_category_hotpath`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/p0_record_editor_index_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `p0_record_editor_index_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `p0_record_editor_index_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/p0_record_editor_index_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `p0_record_editor_index_test` scenario.
+- **When to open:** CI failure or changing code near `p0_record_editor_index`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `p0_record_editor_index`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `p0_record_editor_index` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `p0_record_editor_index` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `p0_record_editor_index`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/p0_record_editor_index_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `p0_record_editor_index`.
+- **Когда открывать:** Падение CI или правка кода рядом с `p0_record_editor_index`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
