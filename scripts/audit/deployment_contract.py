@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import sys
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -230,6 +231,21 @@ def main() -> int:
     ):
         if token not in sleep_doc:
             violations.append(f"SLEEP_SYNC_DOC_CONTRACT_MISSING {token}")
+
+    # Execute the Timeline integrity scenarios, not only source-text checks.
+    try:
+        timeline = subprocess.run(
+            ["node", "--test", "test/timeline_invariant_hook_test.cjs"],
+            cwd=ROOT, capture_output=True, text=True, timeout=60, check=False,
+        )
+        if timeline.stdout:
+            print(timeline.stdout, end="")
+        if timeline.stderr:
+            print(timeline.stderr, file=sys.stderr, end="")
+        if timeline.returncode:
+            violations.append("TIMELINE_INVARIANT_BEHAVIOR_FAILED")
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        violations.append(f"TIMELINE_INVARIANT_TEST_UNAVAILABLE {exc}")
 
     if violations:
         print("deployment_contract: FAIL", file=sys.stderr)
