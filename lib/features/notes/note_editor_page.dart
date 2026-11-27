@@ -1492,8 +1492,7 @@ block.type == NoteBlockType.image ||
 
     if (widget.parityPreview) return item;
 
-    // Fixed right action rail: activation and selection never change width,
-    // wrapping, or vertical metrics of the block.
+    // Block actions are contextual; no permanently visible action rail.
     final selectedForBulk = _selectedBlockIds.contains(block.id);
     final blockContent = !editable && !_blockSelectionMode
         ? Column(
@@ -1515,7 +1514,10 @@ block.type == NoteBlockType.image ||
     final content = Padding(
       key: ValueKey<String>(block.id),
       padding: EdgeInsets.zero,
-      child: blockContent,
+      child: GestureDetector(behavior: HitTestBehavior.translucent,
+        onSecondaryTapUp: (details) => _showBlockActionMenu(details.globalPosition, block),
+        onLongPressStart: editable ? null : (details) => _showBlockActionMenu(details.globalPosition, block),
+        child: blockContent),
     );
     return Stack(
       key: _blockItemKeyFor(block.id),
@@ -1553,15 +1555,6 @@ Positioned(
     ),
   ),
 ),
-        if (active)
-Positioned(
-top: 2,
-right: -2,
-child: _NotesBlockMoreButton(
-  onPressed: (anchorCenter) =>
-      _showBlockActionMenu(anchorCenter, block),
-),
-        ),
       ],
     );
   }
@@ -1624,7 +1617,7 @@ AppButton.destructive(
       return ListView.builder(
         key: const ValueKey('notes-editor-content'),
         controller: _blockScrollController,
-        padding: const EdgeInsets.only(bottom: 100),
+        padding: EdgeInsets.only(top: widget.inlineBodyOnly ? 18 : 0, bottom: 110),
         itemCount: _editor.visibleBlocks.length,
         itemBuilder: _buildBlock,
       );
@@ -1632,7 +1625,7 @@ AppButton.destructive(
     return ReorderableListView.builder(
       key: const ValueKey('notes-editor-content'),
       scrollController: _blockScrollController,
-      padding: const EdgeInsets.only(bottom: 100),
+      padding: EdgeInsets.only(top: widget.inlineBodyOnly ? 18 : 0, bottom: 110),
       buildDefaultDragHandles: false,
       proxyDecorator: (child, _, __) => child,
       itemCount: _editor.visibleBlocks.length,
@@ -1665,7 +1658,7 @@ AppButton.destructive(
 
     return NotesEditorScreen(
       bodyOnly: widget.inlineBodyOnly,
-      showInlineToolbar: widget.inlineKeyboardActive || _blockSelectionMode || _focusNodes.values.any((node) => node.hasFocus),
+      showInlineToolbar: widget.inlineKeyboardActive || _blockSelectionMode || _focusNodes.values.any((node) => node.hasFocus) || (_editor.activeBlock != null && !NotesEditorDocumentController.isEditableText(_editor.activeBlock!.type)),
       titleController: _titleController,
       titleHint: t(loc, 'notes_v3_editor_title_hint'),
       onTitleChanged: _scheduleSave,
@@ -1745,49 +1738,6 @@ activeType == NoteBlockType.bulletedList
         ),
       ),
     ),
-      ),
-    );
-  }
-}
-
-class _NotesBlockMoreButton extends StatefulWidget {
-  const _NotesBlockMoreButton({required this.onPressed});
-
-  final ValueChanged<Offset> onPressed;
-
-  @override
-  State<_NotesBlockMoreButton> createState() => _NotesBlockMoreButtonState();
-}
-
-class _NotesBlockMoreButtonState extends State<_NotesBlockMoreButton> {
-  final GlobalKey _anchorKey = GlobalKey();
-
-  void _open() {
-    final box = _anchorKey.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return;
-    final rect = box.localToGlobal(Offset.zero) & box.size;
-    widget.onPressed(rect.center);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: 'More',
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-onTap: _open,
-borderRadius: BorderRadius.circular(15),
-child: SizedBox.square(
-  key: _anchorKey,
-  dimension: 30,
-  child: Icon(
-    Icons.more_horiz_rounded,
-    size: 18,
-    color: Theme.of(context).colorScheme.onSurfaceVariant,
-  ),
-),
-        ),
       ),
     );
   }
