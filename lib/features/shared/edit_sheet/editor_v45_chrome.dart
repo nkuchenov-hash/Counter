@@ -204,12 +204,11 @@ class EditorV45Actions extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
-    return SafeArea(top: false, minimum: const EdgeInsets.fromLTRB(24, 4, 24, 12),
-      child: ClipRRect(borderRadius: BorderRadius.circular(29), child: BackdropFilter(filter: ui.ImageFilter.blur(sigmaX: 9, sigmaY: 9),
-      child: DecoratedBox(decoration: BoxDecoration(
+    final nativePhone = Theme.of(context).platform == TargetPlatform.android && MediaQuery.widthOf(context) < 600;
+    final pill = DecoratedBox(decoration: BoxDecoration(
         color: s.surface.withValues(alpha: .76),
         borderRadius: BorderRadius.circular(29), border: Border.all(color: s.outlineVariant),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .06), blurRadius: 12, offset: const Offset(0, 3))]),
+        boxShadow: [BoxShadow(color: s.shadow.withValues(alpha: .06), blurRadius: 12, offset: const Offset(0, 3))]),
         child: Padding(padding: const EdgeInsets.all(5), child: Row(children: [
           if (onStop != null) AppIconButton(onPressed: onStop, tooltip: t(loc, 'stop'), icon: Icons.stop_rounded),
           if (onDelete != null) Expanded(child: TextButton.icon(
@@ -217,7 +216,10 @@ class EditorV45Actions extends StatelessWidget {
             onPressed: onDelete, icon: const Icon(Icons.delete_outline, size: 18), label: Text(t(loc, 'delete'))))
           else if (onCancel != null) Expanded(child: AppButton.ghost(onPressed: onCancel, label: t(loc, 'cancel'))),
           Expanded(flex: 2, child: AppButton.primary(onPressed: onPrimary, label: primaryLabel)),
-        ]))))),
+        ])));
+    return SafeArea(top: false, minimum: const EdgeInsets.fromLTRB(24, 4, 24, 12),
+      child: nativePhone ? pill : ClipRRect(borderRadius: BorderRadius.circular(29),
+        child: BackdropFilter(filter: ui.ImageFilter.blur(sigmaX: 9, sigmaY: 9), child: pill)),
     );
   }
 }
