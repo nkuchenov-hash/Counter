@@ -13,6 +13,7 @@ import 'package:counter/data/recurrence_edit_scope.dart';
 import 'package:counter/data/smart_input_parser.dart';
 import 'package:counter/features/planning/recurrence_scope_dialog.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
+import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/core/widgets/chip_component.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -811,7 +812,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
               : CategoryRule.uncategorizedSyntheticId);
     return Material(
       clipBehavior: Clip.none,
-      color: Theme.of(context).colorScheme.surface,
+      color: NotesFigmaTokens.surfaceCard(context),
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: Column(
         children: [
