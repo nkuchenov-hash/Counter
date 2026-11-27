@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+import 'package:counter/core/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/core/widgets/app_button.dart';
@@ -228,8 +229,8 @@ class EditorV45Actions extends StatelessWidget {
     final nativePhone = Theme.of(context).platform == TargetPlatform.android && MediaQuery.widthOf(context) < 600;
     final pill = DecoratedBox(key: const ValueKey('v45-action-pill'), decoration: BoxDecoration(
         gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: dark
-          ? const [Color(0xA630333B), Color(0x87181A1F)]
-          : const [Color(0xB3FFFFFF), Color(0x8FFFFFFF)]),
+          ? [AppColors.editorGlassDarkTop.withValues(alpha: .65), AppColors.editorGlassDarkBottom.withValues(alpha: .53)]
+          : [AppNeutralTones.white.withValues(alpha: .70), AppNeutralTones.white.withValues(alpha: .56)]),
         borderRadius: BorderRadius.circular(29), border: Border.all(color: s.outlineVariant),
         boxShadow: [BoxShadow(color: s.shadow.withValues(alpha: .06), blurRadius: 14, offset: const Offset(0, 3))]),
         child: Padding(padding: const EdgeInsets.all(5), child: Row(children: [
