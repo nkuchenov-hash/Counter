@@ -62,8 +62,8 @@ abstract final class NotesFigmaTokens {
   static const double nativeToolbarRadius = 29;
   static const double nativeToolbarButtonSize = 48;
   static const double nativeToolbarIconSize = 26;
-  static const double nativeParagraphVerticalPadding = 6;
-  static const double nativeListVerticalPadding = 6;
+  static const double nativeParagraphVerticalPadding = 4;
+  static const double nativeListVerticalPadding = 2.5;
   static const double nativeSectionGap = 8;
 
   // Only subscribe to width; Gboard animates the viewport *height* and

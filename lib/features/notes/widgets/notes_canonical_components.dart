@@ -46,7 +46,7 @@ const double kNotesBlockVerticalPadding = 12;
 const double kNotesLeadingSize = 20;
 const double kNotesLeadingGap = 10;
 double notesContentHorizontalInset(BuildContext context) =>
-    kNotesContentInset;
+    MediaQuery.widthOf(context) >= 760 ? NotesFigmaTokens.editorDesktopContentInset : kNotesContentInset;
 
 double notesTextBlockPadding(BuildContext context, {bool list = false}) {
   if (!NotesFigmaTokens.nativeNotesLayout(context)) {

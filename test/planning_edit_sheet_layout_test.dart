@@ -1,3 +1,5 @@
+import 'package:counter/core/theme.dart';
+import 'package:flutter/services.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/shared/planning_task_edit_sheet.dart';
@@ -6,6 +8,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    for (final name in ['xyz.luan/audioplayers.global', 'xyz.luan/audioplayers.global/events', 'xyz.luan/audioplayers']) {
+      messenger.setMockMethodCallHandler(MethodChannel(name), (_) async => null);
+    }
+  });
   TestWidgetsFlutterBinding.ensureInitialized();
 
   for (final size in [const Size(1050, 1000), const Size(390, 844)]) {
@@ -45,14 +54,17 @@ void main() {
           endDateTime: DateTime(2026, 10, 15, 22, 5),
         );
 
+        const capture = bool.fromEnvironment('LIFEOS_CAPTURE_V45');
+        if (capture) await tester.runAsync(() async { await (FontLoader('Onest')..addFont(rootBundle.load('assets/fonts/Onest-Variable.ttf'))).load(); });
         await tester.pumpWidget(
           MaterialApp(
+            theme: capture ? appLightTheme : null,
             home: Scaffold(
-              body: PlanningTaskEditSheet(
+              body: RepaintBoundary(key: const ValueKey('v45-plan-capture'), child: PlanningTaskEditSheet(
                 task: task,
                 dateKey: task.dateKey,
                 scrollController: scrollController,
-              ),
+              )),
             ),
           ),
         );
@@ -79,6 +91,7 @@ void main() {
         final listPadding = noteList is ReorderableListView ? noteList.padding : (noteList as ListView).padding;
         expect(listPadding!.resolve(TextDirection.ltr).bottom, greaterThanOrEqualTo(contentRect.bottom - actionRect.top));
         expect(tester.getSize(notes).height, greaterThan(100));
+        if (capture) await expectLater(find.byKey(const ValueKey('v45-plan-capture')), matchesGoldenFile('../build/editor-v45-captures/plan-${size.width.toInt()}.png'));
 
         final tab = tester.widget<TabBar>(
           find.descendant(of: tabs, matching: find.byType(TabBar)),

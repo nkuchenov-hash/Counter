@@ -315,6 +315,9 @@ class NotesBottomGlassFade extends StatelessWidget {
     this.verticalPadding = 0,
     this.toolbarBottomInset = 8,
     this.enableBackdropBlur = true,
+    this.apertureWidth = 350,
+    this.apertureHeight = 48,
+    this.apertureHorizontalInset = 20,
   });
 
   final Widget child;
@@ -323,6 +326,7 @@ class NotesBottomGlassFade extends StatelessWidget {
   final double verticalPadding;
   final double toolbarBottomInset;
   final bool enableBackdropBlur;
+  final double apertureWidth, apertureHeight, apertureHorizontalInset;
 
   @override
   Widget build(BuildContext context) {
@@ -342,6 +346,7 @@ class NotesBottomGlassFade extends StatelessWidget {
                 key: const ValueKey('notes-bottom-glass-aperture'),
                 clipper: _NotesPaperFadeApertureClipper(
                   toolbarBottomInset: toolbarBottomInset,
+                  width: apertureWidth, height: apertureHeight, horizontalInset: apertureHorizontalInset,
                 ),
                 child: ShaderMask(
                   key: const ValueKey('notes-feathered-bottom-fade'),
@@ -407,17 +412,18 @@ class NotesBottomGlassFade extends StatelessWidget {
 class _NotesPaperFadeApertureClipper extends CustomClipper<Path> {
   const _NotesPaperFadeApertureClipper({
     required this.toolbarBottomInset,
+    required this.width, required this.height, required this.horizontalInset,
   });
 
-  final double toolbarBottomInset;
+  final double toolbarBottomInset, width, height, horizontalInset;
 
   @override
   Path getClip(Size size) {
-    final width = (size.width - 40).clamp(0.0, 350.0).toDouble();
-    final top = size.height - toolbarBottomInset - 48;
+    final actualWidth = (size.width - horizontalInset * 2).clamp(0.0, width).toDouble();
+    final top = size.height - toolbarBottomInset - height;
     final capsule = RRect.fromRectAndRadius(
-      Rect.fromLTWH((size.width - width) / 2, top, width, 48),
-      const Radius.circular(24),
+      Rect.fromLTWH((size.width - actualWidth) / 2, top, actualWidth, height),
+      Radius.circular(height / 2),
     );
     return Path()
       ..fillType = PathFillType.evenOdd
@@ -427,7 +433,7 @@ class _NotesPaperFadeApertureClipper extends CustomClipper<Path> {
 
   @override
   bool shouldReclip(covariant _NotesPaperFadeApertureClipper oldClipper) =>
-      oldClipper.toolbarBottomInset != toolbarBottomInset;
+      oldClipper.toolbarBottomInset != toolbarBottomInset || oldClipper.width != width || oldClipper.height != height || oldClipper.horizontalInset != horizontalInset;
 }
 
 /// Card surface from the supplied Notes mockup: quiet paper, 14px corners,

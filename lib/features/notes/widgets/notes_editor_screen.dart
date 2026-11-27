@@ -44,6 +44,7 @@ class NotesEditorBody extends StatelessWidget {
           child: NotesBottomGlassFade(
             height: native ? 90 : embedded ? 78 : 86,
             toolbarBottomInset: native ? 14 : embedded ? 14 : 8,
+            apertureHeight: native ? NotesFigmaTokens.nativeToolbarHeight : NotesFigmaTokens.toolbarHeight,
             // Preserve the feather gradient, but avoid a GPU blur behind
             // the moving text on every Android keystroke (both note modes).
             enableBackdropBlur: !native,

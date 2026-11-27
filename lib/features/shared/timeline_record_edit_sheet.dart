@@ -800,7 +800,8 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     );
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     // ACTIVE_STATUS_LAW: running ⇔ end_time null (UI mirrors Brain).
-    final isRunning = widget.record.endTime == null;
+    final mode = classifyRecordEditSaveMode(hasPersistedOrClientRecordId: _isPersistedRecord, endTimeIsNull: widget.record.endTime == null, status: widget.record.status);
+    final isRunning = mode == RecordEditSaveMode.runningMetadata, creating = mode == RecordEditSaveMode.createCompletedInterval;
     final int catVal = _categoryId != null
         ? resolveEditFieldCategoryId(
             db: DatabaseService.instance,
@@ -811,15 +812,15 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
               : CategoryRule.uncategorizedSyntheticId);
     return Material(
       clipBehavior: Clip.none,
-      color: Theme.of(context).colorScheme.surface,
+      color: editorV45Paper(context),
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: Column(
         children: [
           EditorV45Title(
             controller: _titleController,
             onChanged: (raw) => _handleRecordTitleInput(this, raw),
-            onClose: () => Navigator.of(context).pop(),
-            creating: !_isPersistedRecord,
+            onClose: creating ? () => Navigator.of(context).pop() : _save,
+            creating: creating,
             writing: notesEditing,
             contextLabel: currentLocale.value == 'ru' ? 'Заметка записи' : 'Record note',
             contextTime: editorV45Range(_startDisplay, _endDisplay),
@@ -828,9 +829,9 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                EditorV45Collapsible(collapsed: notesEditing,
+                EditorV45Collapsible(collapsed: (notesEditing && MediaQuery.widthOf(context) < 760) || MediaQuery.viewInsetsOf(context).bottom > 0,
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(24, 4, 24, _notesReading ? 12 : 16),
+                    padding: EdgeInsets.fromLTRB(editorV45Inset(context), 4, editorV45Inset(context), _notesReading ? 12 : 16),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                       EditorV45TimeCard(
                         start: _startDisplay, end: _endDisplay, fallbackDate: _startDisplay ?? displayNow(),
@@ -846,8 +847,8 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                       if (_plansLoading) const LinearProgressIndicator(minHeight: 2),
                     ]),
                   )),
-                EditorV45Collapsible(collapsed: notesEditing, child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                EditorV45Collapsible(collapsed: (notesEditing && MediaQuery.widthOf(context) < 760) || MediaQuery.viewInsetsOf(context).bottom > 0, child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: editorV45Inset(context)),
                   child: SizedBox(
                     height: kAppCompactControlHeight,
                     child: TabBar(
@@ -872,11 +873,11 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                   ),
                 )),
                 Expanded(
-                  child: EditorV45ActionOverlay(visible: !notesEditing,
+                  child: EditorV45ActionOverlay(visible: !notesEditing && MediaQuery.viewInsetsOf(context).bottom == 0,
                     actions: EditorV45Actions(
-                      primaryLabel: _isPersistedRecord ? (currentLocale.value == 'ru' ? 'Закрыть' : 'Close') : (currentLocale.value == 'ru' ? 'Создать запись' : 'Create record'),
+                      primaryLabel: !creating ? (currentLocale.value == 'ru' ? 'Закрыть' : 'Close') : (currentLocale.value == 'ru' ? 'Создать запись' : 'Create record'),
                       onPrimary: _save,
-                      onCancel: _isPersistedRecord ? null : () => Navigator.of(context).pop(),
+                      onCancel: !creating ? null : () => Navigator.of(context).pop(),
                       onDelete: _isPersistedRecord ? widget.onDelete : null,
                       onStop: isRunning ? widget.onStop : null,
                     ),

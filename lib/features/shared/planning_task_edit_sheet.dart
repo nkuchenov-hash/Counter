@@ -437,6 +437,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
       ),
     );
     final newDateKey = _dateKeyFromDate(_date);
+    final end = _startedAsUndatedBacklog && _endTime != null ? DateTime(_date.year, _date.month, _date.day, _endTime!.hour, _endTime!.minute) : _endTime;
     final List<Map<String, dynamic>> checklist = _noteDocument.blocks
         .where((block) => block.type == NoteBlockType.checklist)
         .map(
@@ -471,16 +472,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             startTime: _scheduledTime,
             date: _date,
             dateKey: newDateKey,
-            endDateTime: _endTime != null
-                ? DateTime(
-                    _date.year,
-                    _date.month,
-                    _date.day,
-                    _endTime!.hour,
-                    _endTime!.minute,
-                  )
-                : null,
-            endDateKey: _endTime != null ? newDateKey : null,
+            endDateTime: end,
+            endDateKey: end != null ? _dateKeyFromDate(end) : null,
             checklist: checklist,
             clearNotes: true,
             tags: List<Tag>.from(_selectedTags),
@@ -498,16 +491,8 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             startTime: _scheduledTime,
             date: _date,
             dateKey: newDateKey,
-            endDateTime: _endTime != null
-                ? DateTime(
-                    _date.year,
-                    _date.month,
-                    _date.day,
-                    _endTime!.hour,
-                    _endTime!.minute,
-                  )
-                : null,
-            endDateKey: _endTime != null ? newDateKey : null,
+            endDateTime: end,
+            endDateKey: end != null ? _dateKeyFromDate(end) : null,
             checklist: checklist,
             notesPlain: notesPlainOut,
             notesDeltaJson: notesDeltaJsonOut,
@@ -552,7 +537,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
     final mobileDated =
         !_startedAsUndatedBacklog && MediaQuery.sizeOf(context).width <= 600;
     return Material(
-      color: Theme.of(context).colorScheme.surface,
+      color: _startedAsUndatedBacklog ? Theme.of(context).colorScheme.surface : editorV45Paper(context),
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: Column(
         children: [
@@ -560,7 +545,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
             EditorV45Title(
               controller: _titleController,
               onChanged: _onTitleChanged,
-              onClose: () => Navigator.of(context).pop<PlanningTask?>(null),
+              onClose: _isPersistedPlan ? _commitSave : () => Navigator.of(context).pop<PlanningTask?>(null),
               creating: !_isPersistedPlan,
               writing: notesEditing,
               contextLabel: currentLocale.value == 'ru' ? 'Заметка плана' : 'Plan note',
@@ -618,7 +603,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
               ],
             ),
           ),
-          const Divider(height: 1),
+          if (_startedAsUndatedBacklog || notesEditing) const Divider(height: 1),
           if (!notesEditing && _startedAsUndatedBacklog)
           Padding(
             padding: EdgeInsets.fromLTRB(
@@ -915,11 +900,11 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                     ),
                   ),
                 ] else if (!_startedAsUndatedBacklog) ...[
-                        EditorV45Collapsible(collapsed: notesEditing || (keyboardOpen && _titleController.text.isNotEmpty),
+                        EditorV45Collapsible(collapsed: (notesEditing && MediaQuery.widthOf(context) < 760) || keyboardOpen,
                         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                         Padding(
                           key: const ValueKey('planning-edit-time-row'),
-                          padding: EdgeInsets.fromLTRB(24, 4, 24, _notesReading ? 12 : 18),
+                          padding: EdgeInsets.fromLTRB(editorV45Inset(context), 4, editorV45Inset(context), _notesReading ? 12 : 18),
                           child: EditorV45TimeCard(
                             compact: _notesReading,
                             start: _scheduledTime,
@@ -931,6 +916,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                               final picked = await showAppDateTimePicker(context, initial: initial, sourceRect: anchor,
                                 heading: currentLocale.value == 'ru' ? 'Начало' : 'Start');
                               if (picked != null && mounted) {
+                                if (_endTime != null && !picked.isBefore(_endTime!)) { AppSnack.warning(t(currentLocale.value, 'end_time_after_start')); return; }
                                 setState(() {
                                   _date = DateTime(picked.year, picked.month, picked.day);
                                   _scheduledTime = picked;
@@ -939,20 +925,19 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                               }
                             },
                             onEnd: (anchor) async {
-                              final initial = DateTime(_date.year, _date.month, _date.day,
-                                _endTime?.hour ?? 10, _endTime?.minute ?? 0);
+                              final initial = _endTime ?? DateTime(_date.year, _date.month, _date.day, 10);
                               final picked = await showAppDateTimePicker(context, initial: initial, sourceRect: anchor,
                                 heading: currentLocale.value == 'ru' ? 'Окончание' : 'End');
                               if (picked != null && mounted) {
-                                setState(() => _endTime = DateTime(_date.year, _date.month, _date.day,
-                                  picked.hour, picked.minute));
+                                if (_scheduledTime != null && !picked.isAfter(_scheduledTime!)) { AppSnack.warning(t(currentLocale.value, 'end_time_after_start')); return; }
+                                setState(() => _endTime = picked);
                                 _onPlanFieldChanged(immediate: true);
                               }
                             },
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          padding: EdgeInsets.symmetric(horizontal: editorV45Inset(context)),
                           child: EditorV45CategoryRow(
                             value: dropdownValue,
                             display: CategoryTreeSource.exists(dropdownValue)
@@ -966,7 +951,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                         ),
                         Padding(
                           key: const ValueKey('planning-edit-tag-strip'),
-                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                          padding: EdgeInsets.fromLTRB(editorV45Inset(context), 0, editorV45Inset(context), _notesReading ? 12 : 16),
                           child: SizedBox(
                             height: 50,
                             child: _tagsLoading
@@ -1010,7 +995,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                         ),
                         Padding(
                           key: const ValueKey('planning-edit-primary-tabs'),
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          padding: EdgeInsets.symmetric(horizontal: editorV45Inset(context)),
                           child: SizedBox(
                             height: kAppCompactControlHeight,
                             child: TabBar(
