@@ -232,72 +232,92 @@ function __xiaomiOverlapMs(aStart, aEnd, bStart, bEnd) {
 }
 
 function __xiaomiFindExisting(app, userId, session) {
-    try {
-        return app.findFirstRecordByFilter(
-            "records",
-            "user_id = {:uid} && external_source = 'xiaomi' && external_id = {:external}",
-            { uid: userId, external: session.externalId }
-        );
-    } catch (_) {}
-    try {
-        return app.findFirstRecordByFilter(
-            "records",
-            "user_id = {:uid} && sleep_source = 'xiaomi' && sleep_external_id = {:external}",
-            { uid: userId, external: session.externalId }
-        );
-    } catch (_) {}
+    var exact = app.findRecordsByFilter(
+        "records",
+        "user_id = {:uid} && parent_id = '' && ((external_source = 'xiaomi' && external_id = {:external}) || (sleep_source = 'xiaomi' && sleep_external_id = {:external}))",
+        "+id", 2, 0, { uid: userId, external: session.externalId }
+    );
+    if (exact.length > 1) throw new Error("duplicate_xiaomi_sleep_identity");
+    if (exact.length) return exact[0];
 
-    try {
+    // Match revised night boundaries before attempting a new insert. A T in
+    // these parameters would not compare correctly with PocketBase date fields.
+    var duration = session.end.getTime() - session.start.getTime();
+    var best = null;
+    var bestRatio = 0;
+    var bestDuration = 0;
+    for (var offset = 0;; offset += 256) {
         var rows = app.findRecordsByFilter(
             "records",
-            "user_id = {:uid} && (title = 'Sleep' || title = 'Сон') && start_time < {:end} && end_time > {:start}",
-            "",
-            30,
-            0,
-            { uid: userId, start: session.start.toISOString(), end: session.end.toISOString() }
+            "user_id = {:uid} && parent_id = '' && (sleep_source = 'xiaomi' || external_source = 'xiaomi' || title = 'Sleep' || title = 'Сон') && start_time < {:end} && end_time > {:start}",
+            "+start_time,+id", 256, offset,
+            { uid: userId, start: session.start.toISOString().replace("T", " "), end: session.end.toISOString().replace("T", " ") }
         );
-        var duration = session.end.getTime() - session.start.getTime();
-        var best = null;
-        var bestRatio = 0;
         for (var i = 0; i < rows.length; i++) {
             var rs = __xiaomiDate(rows[i].get("start_time"));
             var re = __xiaomiDate(rows[i].get("end_time"));
             if (!rs || !re || re.getTime() <= rs.getTime()) continue;
             var overlap = __xiaomiOverlapMs(session.start, session.end, rs, re);
-            var shorter = Math.min(duration, re.getTime() - rs.getTime());
+            var priorDuration = re.getTime() - rs.getTime();
+            var shorter = Math.min(duration, priorDuration);
             var ratio = shorter > 0 ? overlap / shorter : 0;
-            if (ratio >= 0.80 && ratio > bestRatio) {
+            var imported = rows[i].get("sleep_source") === "xiaomi" || rows[i].get("external_source") === "xiaomi";
+            // Preserve the old stricter threshold for manually named sleep,
+            // but enforce the documented 60% Xiaomi revised-night identity.
+            if (ratio >= (imported ? 0.60 : 0.80) &&
+                (ratio > bestRatio || (ratio === bestRatio && priorDuration > bestDuration))) {
                 best = rows[i];
                 bestRatio = ratio;
+                bestDuration = priorDuration;
             }
         }
-        if (best) return best;
-    } catch (_) {}
-    return null;
+        if (rows.length < 256) break;
+    }
+    return best;
 }
 
 function __xiaomiUpsert(app, userId, profile, category, session) {
-    var existing = __xiaomiFindExisting(app, userId, session);
-    var record = existing || new Record(app.findCollectionByNameOrId("records"));
-    var ru = String(profile.get("primary_language") || "").toLowerCase() === "ru";
-    record.set("user_id", userId);
-    record.set("record_id", existing ? record.get("record_id") : __xiaomiUuid());
-    record.set("status", "completed");
-    record.set("title", ru ? "Сон" : "Sleep");
-    record.set("start_time", session.start.toISOString());
-    record.set("end_time", session.end.toISOString());
-    record.set("category_id", category.id);
-    record.set("category_link", category.id);
-    record.set("type", "record");
-    if (!existing) record.set("checklist", "[]");
-    record.set("external_source", "xiaomi");
-    record.set("external_id", session.externalId);
-    record.set("external_kind", "sleep");
-    record.set("external_updated_at", new Date().toISOString());
-    record.set("sleep_source", "xiaomi");
-    record.set("sleep_external_id", session.externalId);
-    app.save(record);
-    return existing ? 0 : 1;
+    var imported = 0;
+    app.runInTransaction(function(tx) {
+        var existing = __xiaomiFindExisting(tx, userId, session);
+        var record = existing || new Record(tx.findCollectionByNameOrId("records"));
+        if (existing) {
+            var knownXiaomi = existing.get("sleep_source") === "xiaomi" || existing.get("external_source") === "xiaomi";
+            var sameIdentity = String(existing.get("external_id") || "") === session.externalId ||
+                String(existing.get("sleep_external_id") || "") === session.externalId;
+            var oldStart = __xiaomiDate(existing.get("start_time"));
+            var oldEnd = __xiaomiDate(existing.get("end_time"));
+            // Different interval-derived ids for the same night are deduped
+            // by retaining the longer completed version, as documented.
+            if (knownXiaomi && !sameIdentity && oldStart && oldEnd &&
+                oldEnd.getTime() - oldStart.getTime() > session.end.getTime() - session.start.getTime()) {
+                require(__hooks + "/records.interval_sanitize_helpers.js").repairSleepPredecessors(tx, existing);
+                return;
+            }
+        }
+        var ru = String(profile.get("primary_language") || "").toLowerCase() === "ru";
+        record.set("user_id", userId);
+        record.set("record_id", existing ? record.get("record_id") : __xiaomiUuid());
+        record.set("status", "completed");
+        record.set("title", ru ? "Сон" : "Sleep");
+        record.set("start_time", session.start.toISOString());
+        record.set("end_time", session.end.toISOString());
+        record.set("category_id", category.id);
+        record.set("category_link", category.id);
+        record.set("type", "record");
+        if (!existing) record.set("checklist", "[]");
+        record.set("external_source", "xiaomi");
+        record.set("external_id", session.externalId);
+        record.set("external_kind", "sleep");
+        record.set("external_updated_at", new Date().toISOString());
+        record.set("sleep_source", "xiaomi");
+        record.set("sleep_external_id", session.externalId);
+        // Model hook reconciles all affected primary boundaries in this same
+        // transaction. The internal import cannot bypass the Timeline law.
+        tx.save(record);
+        imported = existing ? 0 : 1;
+    });
+    return imported;
 }
 
 function __xiaomiNormalizeSessions(payload) {
