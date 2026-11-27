@@ -23,8 +23,8 @@ void main() {
       child: SizedBox(width: 350, child: EditorV45TimeCard(
         start: DateTime(2026, 11, 27, 18, 30),
         end: DateTime(2026, 11, 27, 19, 45),
-        onStart: () => startTapped = true,
-        onEnd: () => endTapped = true,
+        onStart: (_) => startTapped = true,
+        onEnd: (_) => endTapped = true,
       )),
     ))));
     expect(find.text('18:30'), findsOneWidget);
