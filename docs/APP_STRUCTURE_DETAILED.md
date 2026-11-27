@@ -2,7 +2,7 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `c451f899` on 2026-11-27.**
+**Generated from input HEAD `2e0794bd` on 2026-11-27.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 206 |
-| `test` | 150 |
+| `test` | 149 |
 | `Brain/data` | 121 |
 | `platform build` | 84 |
 | `shared foundation` | 73 |
@@ -35,7 +35,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `governing documentation` | 45 |
 | `platform resource` | 44 |
 | `Desktop Voice runtime` | 36 |
-| `test fixture` | 32 |
+| `test fixture` | 33 |
 | `PocketBase migration` | 27 |
 | `PocketBase backend` | 25 |
 | `shared Voice system` | 20 |
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 952 |
-| `MEDIUM` | 88 |
+| `HIGH` | 951 |
+| `MEDIUM` | 89 |
 
 ---
 
@@ -18547,24 +18547,24 @@ EN:
 - **What this is:** Filters and streams the in-memory record list for Timeline display.
 - **Why needed:** Every Timeline day reads from this cache instead of hitting the network each swipe.
 - **Contents:** `recordsStream`, per-day filter, display-time helpers.
-- **Key code names:** `RecordCacheProjectionExtension`, `RecordBrainTestBridge`
+- **Key code names:** `RecordReadSingleFlight`, `RecordCacheProjectionExtension`, `RecordBrainTestBridge`
 - **Repository role:** Brain/data
 - **Evidence of use:** Included by `lib/data/database_service.dart` through a `part` directive (not imported directly).
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Brain/library compile failure in `lib/data/database_service.dart` and broken related UI/data ops.
 - **Confidence:** HIGH
 - **Owner / layer:** Brain Records
-- **Responsibilities:** Per-day filter, `recordsStream`, display-time helpers
+- **Responsibilities:** Per-day filter, `recordsStream`, display-time helpers, profile-scoped record read coalescing and pending-create snapshot reconciliation
 - **When to open:** Timeline timer, record edit, offline start/stop, duplicate running record.
 - **Can it be deleted?** Brain/library compile failure in `lib/data/database_service.dart` and broken related UI/data ops.
-- **Connected to:** UI calls via `DatabaseService.instance`; Timeline tab, edit sheet, Wear; APP_STRUCTURE role: Per-day filter, `recordsStream`, display-time helpers
+- **Connected to:** UI calls via `DatabaseService.instance`; Timeline tab, edit sheet, Wear; APP_STRUCTURE role: Per-day filter, `recordsStream`, display-time helpers, profile-scoped record read coalescing and pending-create snapshot
 
 RU:
 
 - **Зачем файл человеку:** Сфокусированный модуль данных для timeline records — файл `record_cache_helpers`. Держит timeline records согласованным с PocketBase и экранами.
 - **Что это:** Сфокусированный модуль данных для timeline records — файл `record_cache_helpers`.
 - **Зачем:** Держит timeline records согласованным с PocketBase и экранами.
-- **Содержимое:** Dart-код (`RecordCacheProjectionExtension`, `RecordBrainTestBridge`).
+- **Содержимое:** Dart-код (`RecordReadSingleFlight`, `RecordCacheProjectionExtension`, `RecordBrainTestBridge`).
 - **Роль в репозитории:** Brain/data
 - **Доказательства использования:** Подключён из `lib/data/database_service.dart` через `part` (не импортируется напрямую).
 - **Статус необходимости:** PROVEN_REQUIRED
@@ -20628,8 +20628,8 @@ RU:
 
 EN:
 
-- **Human purpose:** `note_editor_format_actions.dart` on notes area — Editor formatting/heading focus helpers. Users see `note_editor_format_actions.dart` when using notes area.
-- **What this is:** `note_editor_format_actions.dart` on notes area — Editor formatting/heading focus helpers.
+- **Human purpose:** `note_editor_format_actions.dart` on notes area — Editor formatting/heading focus helpers, structured clipboard selection inference. Users see `note_editor_format_actions.dart` when using notes area.
+- **What this is:** `note_editor_format_actions.dart` on notes area — Editor formatting/heading focus helpers, structured clipboard selection inference.
 - **Why needed:** Users see `note_editor_format_actions.dart` when using notes area.
 - **Contents:** Dart module `note_editor_format_actions.dart` — open file for classes and helpers.
 - **Repository role:** production UI
@@ -20638,10 +20638,10 @@ EN:
 - **Deletion consequence:** Brain/library compile failure in `lib/features/notes/note_editor_page.dart` and broken related UI/data ops.
 - **Confidence:** HIGH
 - **Owner / layer:** Notes UI
-- **Responsibilities:** Editor formatting/heading focus helpers
+- **Responsibilities:** Editor formatting/heading focus helpers, structured clipboard selection inference
 - **When to open:** When behavior tied to `note_editor_format_actions.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** Brain/library compile failure in `lib/features/notes/note_editor_page.dart` and broken related UI/data ops.
-- **Connected to:** APP_STRUCTURE role: Editor formatting/heading focus helpers
+- **Connected to:** APP_STRUCTURE role: Editor formatting/heading focus helpers, structured clipboard selection inference
 
 RU:
 
@@ -39000,38 +39000,37 @@ RU:
 
 EN:
 
-- **Human purpose:** Protects Calendar and People synchronization from incomplete provider reads and unsafe cleanup.
-- **What this is:** Node.js automated integration test exercising actual PocketBase hook source in a mocked VM.
-- **Why needed:** Detects regressions in request budgets, pagination and token rotation without external provider access.
-- **Contents:** Mock clock, HTTP responder, deadline and pagination checks, incomplete-snapshot write/cleanup checks, and OAuth token persistence checks.
-- **Key code names:** `load`, `__calendarSyncOne`, `__peopleSyncOne`.
-- **Repository role:** test
-- **Evidence of use:** Run `node --test test/integration_sync_budget_test.cjs`; loads actual Calendar and People hooks.
+- **Human purpose:** Automated test `integration_sync_budget_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `integration_sync_budget_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: test groups).
+- **Repository role:** test fixture
+- **Evidence of use:** Tracked under `test/fixtures/`; retained as STT/Notes diagnostic or golden sample (see neighboring test files).
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Loses executable coverage for bounded synchronization and incomplete responses.
-- **Confidence:** HIGH
+- **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
+- **Confidence:** MEDIUM
 - **Owner / layer:** tests
-- **Responsibilities:** Assert time budgets, cursor termination, safe incomplete-snapshot handling and token persistence.
-- **When to open:** Calendar or People sync regressions or provider pagination changes.
-- **Can it be deleted?** No — required for regression coverage.
-- **Connected to:** `pb_hooks/calendar_integrations.pb.js`, `pb_hooks/people_integrations.pb.js`.
+- **Responsibilities:** Assert expected behavior for `integration_sync_budget_test` scenario.
+- **When to open:** CI failure or changing code near `integration_sync_budget`.
+- **Can it be deleted?** Broken fixture-backed test or missing diagnostic sample.
+- **Connected to:** `test/` suite; production subject near `integration_sync_budget`.
 
 RU:
 
-- **Зачем файл человеку:** Защищает синхронизацию календарей и контактов от неполных ответов провайдера и ошибочного удаления данных.
-- **Что это:** Автотест Node.js с выполнением исходных обработчиков PocketBase в тестовом окружении VM.
-- **Зачем:** Обнаруживает регрессии ограничения времени, пагинации и обновления токенов без внешних запросов.
-- **Содержимое:** Поддельные часы и HTTP-ответы; проверки дедлайнов, повторных курсоров, сохранения токенов и запрета очистки неполных данных.
-- **Роль в репозитории:** test
-- **Доказательства использования:** Запуск `node --test test/integration_sync_budget_test.cjs`.
+- **Зачем файл человеку:** Автотест `integration_sync_budget_test` — проверяет поведение без ручных нажатий. Ловит регрессии при правках связанного production-кода.
+- **Что это:** Автотест `integration_sync_budget_test` — проверяет поведение без ручных нажатий.
+- **Зачем:** Ловит регрессии при правках связанного production-кода.
+- **Содержимое:** Тест-кейсы (символы: test groups).
+- **Роль в репозитории:** test fixture
+- **Доказательства использования:** Файл в `test/fixtures/`; образец для STT/Notes тестов (см. соседние test-файлы).
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Исчезнет автоматическое покрытие ограниченной синхронизации.
-- **Уверенность:** HIGH
+- **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
+- **Уверенность:** MEDIUM
 - **Владелец / слой:** тесты
-- **Обязанности:** Проверяет ограничения времени, завершение пагинации, безопасность неполных ответов и сохранение токенов.
-- **Когда открывать:** Регрессии синхронизации Calendar или People.
-- **Можно удалить?** Нет — необходим для регрессионных тестов.
-- **Связано с:** `pb_hooks/calendar_integrations.pb.js`, `pb_hooks/people_integrations.pb.js`.
+- **Обязанности:** Проверяет ожидаемое поведение сценария `integration_sync_budget_test`.
+- **Когда открывать:** Падение CI или правка кода около `integration_sync_budget`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Набор `test/`; production-субъект около `integration_sync_budget`.
 
 
 ### `test/life_semantic_palette_test.dart`
