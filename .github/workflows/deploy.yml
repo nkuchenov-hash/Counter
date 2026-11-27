@@ -307,6 +307,13 @@ jobs:
             cp -R /tmp/counter-gh-pages/igropoisk build/web/igropoisk
           fi
 
+          # Design review prototypes are published independently of the app.
+          # Preserve the current catalogue exactly, including intentional deletions.
+          if [ -d /tmp/counter-gh-pages/design-ideas ]; then
+            rm -rf build/web/design-ideas
+            cp -R /tmp/counter-gh-pages/design-ideas build/web/design-ideas
+          fi
+
           if [ -d /tmp/counter-gh-pages/.github/workflows ]; then
             mkdir -p build/web/.github
             cp -R /tmp/counter-gh-pages/.github/workflows build/web/.github/workflows
