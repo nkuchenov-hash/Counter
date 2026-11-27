@@ -1,4 +1,4 @@
-name: LIFE OS one-time reliability verification
+name: LIFE OS one-time integration reliability verification
 on:
   push:
     branches: ['audit/lifeos-latency-20261127']
@@ -8,47 +8,22 @@ permissions:
 jobs:
   verify-candidate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: e024b1bd5a6a2dcc90941906bb1bf909fdf9208a
+          ref: 532af3c546e2d62ea95a3b05edd31144ce093b23
           fetch-depth: 0
           persist-credentials: false
-      - name: Validate browser package and approval fingerprint (no publication)
-        shell: bash
+      - name: Verify provider timeout and partial read behavior
         run: |
-          set -euo pipefail
-          node --check browser_extension/service_worker.js
-          node --check browser_extension/popup.js
-          git grep -l '217-114-0-201.sslip.io' -- lib browser_extension web test || true
-          python3 - <<'PY'
-          import json, re, zipfile
-          from pathlib import Path
-          config=Path("lib/data/pb_config.dart").read_text()
-          origin=re.search(r"kPocketBaseProductionUrl = '([^']+)'",config).group(1)
-          manifest=json.loads(Path("browser_extension/manifest.json").read_text())
-          assert manifest["version"]=="0.2.6"
-          assert origin+"/*" in manifest["host_permissions"]
-          assert origin in manifest["content_security_policy"]["extension_pages"]
-          assert "const POCKETBASE_BASE = '"+origin+"';" in Path("browser_extension/service_worker.js").read_text()
-          with zipfile.ZipFile("life-os-browser-extension-v0.2.6.zip","w",zipfile.ZIP_DEFLATED) as z:
-              for p in Path("browser_extension").rglob("*"):
-                  if p.is_file(): z.write(p,p.relative_to("browser_extension"))
-          with zipfile.ZipFile("life-os-browser-extension-v0.2.6.zip") as z:
-              assert z.testzip() is None
-              assert json.loads(z.read("manifest.json"))["version"]=="0.2.6"
-          print("browser_origin_and_package=OK")
-          PY
+          node --check pb_hooks/calendar_integrations.pb.js
+          node --check pb_hooks/people_integrations.pb.js
+          node --test test/integration_sync_budget_test.cjs
           python3 - <<'PY'
           import scripts.audit.critical_release_guard as guard
           print("critical_tree_sha256="+guard.fingerprint(guard.snapshot("HEAD")))
           PY
-      - uses: actions/upload-artifact@v4
-        with:
-          name: browser-extension-v0.2.6-candidate
-          path: life-os-browser-extension-v0.2.6.zip
-          retention-days: 7
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.6'
@@ -58,8 +33,7 @@ jobs:
           mkdir -p lib/core/env
           printf '%s\n' 'abstract final class Env {' "  static const String placeholder = '';" '}' > lib/core/env/env.dart
           flutter pub get
-      - name: Test targeted reliability contracts
-        run: flutter test test/pocketbase_production_origin_test.dart test/live_sync_contract_test.dart test/desktop_voice_latency_trace_test.dart
-      - name: Analyze modified Dart sources
+      - name: Verify existing integration contracts
         run: |
-          flutter analyze --no-fatal-infos --no-fatal-warnings lib/data/pb_config.dart lib/data/db_core.dart lib/data/auth_bridge.dart lib/data/ai/viktor_gateway.dart lib/features/wear/wear_timer_screen.dart lib/data/health/sleep_foreground_reconcile_service.dart lib/shared/voice/diagnostics/desktop_voice_pipeline.dart test/pocketbase_production_origin_test.dart
+          flutter test test/calendar_integrations_contract_test.dart test/pocketbase_production_origin_test.dart test/live_sync_contract_test.dart
+          flutter analyze --no-fatal-infos --no-fatal-warnings lib/data/calendar_integrations/calendar_integration_service.dart lib/data/people/people_integration_service.dart
