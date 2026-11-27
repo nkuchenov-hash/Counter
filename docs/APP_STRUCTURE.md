@@ -641,7 +641,8 @@ People is an on-demand Settings feature. External address books stay in a hidden
 
 | File | Role |
 | :--- | :--- |
-| `records.interval_sanitize.pb.js` | Enforces non-overlapping primary `records` intervals per `user_id` |
+| `records.interval_sanitize.pb.js` | Registers model create/update hooks for atomic, non-overlapping primary `records` intervals per `user_id` (REST and internal saves) |
+| `records.interval_sanitize_helpers.js` | Targeted owner/root queries, transactional reconciliation, explicit historical repair and sleep boundary enforcement; `test/timeline_invariant_hook_test.cjs` verifies behavior |
 | `auth.request_password_reset.pb.js` | Password-reset request hook |
 | `viktor.transcribe_yandex.pb.js` | Authenticated Yandex SpeechKit v3 async recognition start/status (BYOK) |
 | `viktor_yandex_speech_helpers.js` | Pure auth and adjacent JSON stream parsing loaded through `require` inside isolated Yandex SpeechKit route callbacks |
