@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 645a4379a90ba5766274b7b695299399ffe218b7
+          ref: d2825140349097dd204a065a1be638afe4358b9b
           fetch-depth: 0
           persist-credentials: false
       - name: Verify provider timeout and partial read behavior
@@ -36,4 +36,4 @@ jobs:
       - name: Verify existing integration contracts
         run: |
           flutter test test/notes_clipboard_selection_contract_test.dart test/calendar_integrations_contract_test.dart test/pocketbase_production_origin_test.dart test/live_sync_contract_test.dart
-          flutter analyze --no-fatal-infos --no-fatal-warnings lib/features/notes/note_editor_page.dart test/notes_clipboard_selection_contract_test.dart lib/data/calendar_integrations/calendar_integration_service.dart lib/data/people/people_integration_service.dart
+          flutter analyze --no-fatal-infos --no-fatal-warnings lib/data/record_service.dart lib/data/db_core.dart lib/data/plans/plan_cache_helpers.dart lib/features/notes/note_editor_page.dart test/notes_clipboard_selection_contract_test.dart lib/data/calendar_integrations/calendar_integration_service.dart lib/data/people/people_integration_service.dart
