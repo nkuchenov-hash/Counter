@@ -3,6 +3,7 @@
 const PAGE = 256;
 const INFINITY = 8640000000000000;
 function fieldStr(rec, field) {
+    if (typeof rec.getString === "function") return rec.getString(field).trim();
     const v = rec.get(field);
     return v == null ? "" : String(v).trim();
 }
@@ -10,7 +11,9 @@ function rowId(rec) { return String(rec.id || fieldStr(rec, "id")); }
 function isPrimaryRecord(rec) { return fieldStr(rec, "parent_id") === ""; }
 function isImportedSleep(rec) {
     return fieldStr(rec, "external_kind").toLowerCase() === "sleep" ||
-        fieldStr(rec, "sleep_source") !== "";
+        fieldStr(rec, "sleep_source") !== "" ||
+        (fieldStr(rec, "external_source") === "xiaomi" &&
+         /^(sleep|сон)$/i.test(fieldStr(rec, "title")));
 }
 function parseTimeMs(rec, field) {
     const raw = fieldStr(rec, field);
@@ -34,10 +37,13 @@ function validateStartEndOrder(rec) {
     }
 }
 function iso(ms) { return new Date(ms).toISOString(); }
-function closeAt(rec, time) {
+// PocketBase date filters compare stored strings (space, not ISO T).
+function pbDate(ms) { return iso(ms).replace("T", " "); }
+function closeAt(rec, time, sleepBoundary = false) {
     rec.set("end_time", iso(time));
     const status = fieldStr(rec, "status").toLowerCase();
-    if (status === "running" || !status) rec.set("status", "stopped");
+    if (sleepBoundary) rec.set("status", "completed");
+    else if (status === "running" || !status) rec.set("status", "stopped");
 }
 function primaryPage(app, filter, order, limit, offset, params) {
     return app.findRecordsByFilter("records",
@@ -54,21 +60,21 @@ function clampSubjectEndAgainstLaterStarts(app, subject, subjectId) {
     const later = primaryPage(app,
         "id != {:id} && start_time >= {:start}",
         "+start_time,+id", 1, 0,
-        {uid: uid, id: subjectId || rowId(subject), start: iso(start)});
+        {uid: uid, id: subjectId || rowId(subject), start: pbDate(start)});
     if (!later.length) return;
     const nextStart = parseTimeMs(later[0], "start_time");
     if (nextStart == null || end <= nextStart) return;
     if (nextStart === start || isImportedSleep(subject)) {
         throw new BadRequestError("Conflicting primary record or authoritative sleep interval");
     }
-    closeAt(subject, nextStart);
+    closeAt(subject, nextStart, isImportedSleep(later[0]));
 }
 // Collect before writing: shortening rows changes the query predicate, so
 // updating while paginating by offset would skip matches.
 function overlappingPredecessors(app, subject) {
     const uid = fieldStr(subject, "user_id");
     const start = parseTimeMs(subject, "start_time");
-    const params = {uid: uid, id: rowId(subject), start: iso(start)};
+    const params = {uid: uid, id: rowId(subject), start: pbDate(start)};
     const matches = [];
     for (let offset = 0;; offset += PAGE) {
         const rows = primaryPage(app,
@@ -104,7 +110,7 @@ function reconcileRecordWrite(event) {
             for (let i = predecessors.length - 1; i >= 0; i--) {
                 const previous = tx.findRecordById("records", rowId(predecessors[i]));
                 if (effectiveEndMs(previous) <= start) continue;
-                closeAt(previous, start);
+                closeAt(previous, start, isImportedSleep(subject));
                 tx.saveNoValidate(previous);
             }
         });
@@ -127,7 +133,7 @@ function sanitizeAllPrimaryIntervalsForUser(app, userId) {
         if (isImportedSleep(previous) || parseTimeMs(previous, "start_time") === start) {
             throw new BadRequestError("Ambiguous historical interval conflict requires review");
         }
-        closeAt(previous, start);
+        closeAt(previous, start, isImportedSleep(current));
         app.saveNoValidate(previous);
     }
 }
@@ -143,7 +149,7 @@ function repairSleepPredecessors(app, sleep) {
         for (let i = rows.length - 1; i >= 0; i--) {
             const previous = tx.findRecordById("records", rowId(rows[i]));
             if (effectiveEndMs(previous) <= start) continue;
-            closeAt(previous, start);
+            closeAt(previous, start, true);
             tx.saveNoValidate(previous);
         }
     });
