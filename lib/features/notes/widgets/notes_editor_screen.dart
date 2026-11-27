@@ -142,7 +142,7 @@ class NotesEditorScreen extends StatelessWidget {
       // Adding viewInsets here would subtract the keyboard height a second
       // time and collapse both the Notes canvas and its toolbar.
       return Material(
-        color: NotesFigmaTokens.surfaceCard(context),
+        color: Colors.transparent,
         child: NotesEditorBody(
           content: content,
           toolbar: toolbar,
