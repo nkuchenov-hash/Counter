@@ -30,12 +30,16 @@ function fixture(records, fail = false) {
         let rows = [...data.values()].filter(row => row.user_id === params.uid);
         if (filter.includes("parent_id = ''")) rows = rows.filter(row => !row.parent_id);
         if (filter.includes('id != {:id}')) rows = rows.filter(row => row.id !== params.id);
+        // Emulate PocketBase's string comparison rather than Date.parse, which
+        // would hide a production bug caused by using T instead of a space.
+        const dbDate = value => value.replace('T', ' ');
+        if (params.start) assert.match(params.start, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}Z$/);
         if (filter.includes('start_time >= {:start}')) rows = rows.filter(row =>
-          Date.parse(row.start_time) >= Date.parse(params.start));
+          dbDate(row.start_time) >= params.start);
         if (filter.includes('start_time < {:start}')) rows = rows.filter(row =>
-          Date.parse(row.start_time) < Date.parse(params.start));
+          dbDate(row.start_time) < params.start);
         if (filter.includes("end_time = '' || end_time > {:start}")) rows = rows.filter(row =>
-          !row.end_time || Date.parse(row.end_time) > Date.parse(params.start));
+          !row.end_time || dbDate(row.end_time) > params.start);
         rows.sort((a,b) => Date.parse(a.start_time) - Date.parse(b.start_time) ||
           a.id.localeCompare(b.id));
         if (order.startsWith('-')) rows.reverse();
@@ -132,7 +136,7 @@ test('open predecessor closes at sleep start; child and another owner are untouc
   const {app, stored} = fixture(rows);
   h.sanitizeAllPrimaryIntervalsForUser(app, owner);
   assert.equal(stored.get('preparation').end_time, iso(at('01:57')));
-  assert.notEqual(stored.get('preparation').status, 'running');
+  assert.equal(stored.get('preparation').status, 'completed');
   assert.equal(stored.get('child').end_time, iso(at('09:00')));
   assert.equal(stored.get('other-owner').end_time, iso(at('10:00')));
   assertNoOverlap(stored);
