@@ -1,4 +1,6 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:intl/intl.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/shared/categories/picker/category_tree_picker.dart';
@@ -42,6 +44,7 @@ class _EditorV45TitleState extends State<EditorV45Title> {
               contentPadding: EdgeInsets.zero, border: InputBorder.none,
               enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
             onChanged: widget.onChanged,
+            onSubmitted: (_) { if (!widget.creating) setState(() => _editing = false); _focus.unfocus(); },
             onTap: () { if (!widget.creating && !widget.writing && !_editing) {
               setState(() => _editing = true); _focus.requestFocus();
             }},
@@ -75,11 +78,11 @@ String editorV45Range(DateTime? start, DateTime? end) =>
 
 class EditorV45TimeCard extends StatelessWidget {
   const EditorV45TimeCard({super.key, this.start, this.end, this.fallbackDate,
-    required this.onStart, this.onEnd, this.running = false});
+    required this.onStart, this.onEnd, this.running = false, this.compact = false});
   final DateTime? start, end, fallbackDate;
   final ValueChanged<Rect?> onStart;
   final ValueChanged<Rect?>? onEnd;
-  final bool running;
+  final bool running, compact;
   @override
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
@@ -92,16 +95,16 @@ class EditorV45TimeCard extends StatelessWidget {
       if (mins % 60 > 0 || mins == 0) '${mins % 60} ${ru ? 'мин' : 'min'}',
     ].join(' ');
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+      padding: EdgeInsets.fromLTRB(14, compact ? 9 : 14, 14, compact ? 8 : 12),
       decoration: BoxDecoration(color: s.surfaceContainerHighest, borderRadius: BorderRadius.circular(18),
         border: Border.all(color: s.outlineVariant)),
       child: Column(children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(child: _EditorTimePoint(label: ru ? 'Начало' : 'Start', value: start,
-            fallbackDate: fallbackDate, onTap: onStart)),
+            fallbackDate: fallbackDate, onTap: onStart, compact: compact)),
           const SizedBox(width: 14),
           Expanded(child: _EditorTimePoint(label: ru ? 'Окончание' : 'End', value: end,
-            fallbackDate: fallbackDate, onTap: onEnd, end: true, running: running)),
+            fallbackDate: fallbackDate, onTap: onEnd, end: true, running: running, compact: compact)),
         ]),
         if (label.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12),
           child: Row(children: [
@@ -125,18 +128,18 @@ class _DurationLine extends StatelessWidget {
   }
 }
 class _EditorTimePoint extends StatelessWidget {
-  const _EditorTimePoint({required this.label, this.value, this.fallbackDate, this.onTap, this.end = false, this.running = false});
+  const _EditorTimePoint({required this.label, this.value, this.fallbackDate, this.onTap, this.end = false, this.running = false, this.compact = false});
   final String label;
   final DateTime? value, fallbackDate;
   final ValueChanged<Rect?>? onTap;
-  final bool end, running;
+  final bool end, running, compact;
   @override
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
     final date = value ?? fallbackDate;
     final timeKey = GlobalKey();
     final time = Text(running ? t(currentLocale.value, 'running_label') : editorV45Time(value), key: timeKey,
-      maxLines: 1, style: TextStyle(fontSize: running ? 16 : 30, fontWeight: FontWeight.w700, color: s.onSurface));
+      maxLines: 1, style: TextStyle(fontSize: running ? 16 : compact ? 27 : 32, fontWeight: FontWeight.w700, color: s.onSurface));
     final chevron = Icon(Icons.expand_more_rounded, size: 17, color: s.onSurfaceVariant);
     return InkWell(onTap: onTap == null ? null : () {
         final render = timeKey.currentContext?.findRenderObject();
@@ -200,8 +203,9 @@ class EditorV45Actions extends StatelessWidget {
     final s = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
     return SafeArea(top: false, minimum: const EdgeInsets.fromLTRB(24, 4, 24, 12),
+      child: ClipRRect(borderRadius: BorderRadius.circular(29), child: BackdropFilter(filter: ui.ImageFilter.blur(sigmaX: 9, sigmaY: 9),
       child: DecoratedBox(decoration: BoxDecoration(
-        color: s.surfaceContainerHighest.withValues(alpha: .75),
+        color: s.surface.withValues(alpha: .76),
         borderRadius: BorderRadius.circular(29), border: Border.all(color: s.outlineVariant),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .06), blurRadius: 12, offset: const Offset(0, 3))]),
         child: Padding(padding: const EdgeInsets.all(5), child: Row(children: [
@@ -213,7 +217,39 @@ class EditorV45Actions extends StatelessWidget {
           Expanded(flex: 2, child: FilledButton(onPressed: onPrimary,
             style: FilledButton.styleFrom(minimumSize: const Size(0, 44), shape: const StadiumBorder()),
             child: Text(primaryLabel, textAlign: TextAlign.center))),
-        ]))),
+        ]))))),
     );
   }
+}
+
+/// Keep the editor subtree mounted while chrome slides out of the way.
+class EditorV45Collapsible extends StatelessWidget {
+  const EditorV45Collapsible({super.key, required this.collapsed, required this.child});
+  final bool collapsed;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => AnimatedSize(
+    duration: MediaQuery.disableAnimationsOf(context) ||
+      MediaQuery.viewInsetsOf(context).bottom > 0
+      ? Duration.zero : const Duration(milliseconds: 240),
+    curve: Curves.easeOutCubic,
+    alignment: Alignment.topCenter,
+    clipBehavior: Clip.hardEdge,
+    child: collapsed ? const SizedBox(width: double.infinity) : child,
+  );
+}
+
+/// Overlay actions on the same feathered paper surface as Notes tools.
+class EditorV45ActionOverlay extends StatelessWidget {
+  const EditorV45ActionOverlay({super.key, required this.content, required this.actions, required this.visible});
+  final Widget content, actions;
+  final bool visible;
+  @override
+  Widget build(BuildContext context) => Stack(fit: StackFit.expand, children: [
+    Positioned.fill(child: content),
+    if (visible) Positioned(left: 0, right: 0, bottom: 0,
+      child: NotesBottomGlassFade(height: 100, toolbarBottomInset: 12,
+        enableBackdropBlur: false,
+        child: Align(alignment: Alignment.bottomCenter, child: actions))),
+  ]);
 }
