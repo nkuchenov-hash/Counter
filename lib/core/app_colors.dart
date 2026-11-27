@@ -60,6 +60,11 @@ abstract final class AppColors {
   static const Color borderMuted = AppNeutralTones.gray200;
   static const Color surfaceMuted = AppNeutralTones.gray100;
 
+  // Approved v45 editor glass material. Scoped to floating editor docks;
+  // these translucent stops do not redefine the neutral app canvas.
+  static const Color editorGlassDarkTop = Color(0xFF30333B);
+  static const Color editorGlassDarkBottom = Color(0xFF181A1F);
+
   // Navigation rows, shared across Settings and nested Settings pages.
   // Chevrons must be less prominent than labels; dividers must remain
   // visible on white cards even while neighboring rows are hovered.
