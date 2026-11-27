@@ -76,6 +76,8 @@ jobs:
           const pending=new Map();
           ws.addEventListener('message',e=>{let m=JSON.parse(e.data);if(m.id&&pending.has(m.id)){let cb=pending.get(m.id);pending.delete(m.id);cb(m)}});
           function cmd(method,params={}){return new Promise((resolve,reject)=>{let id=++seq;pending.set(id,m=>m.error?reject(new Error(JSON.stringify(m.error))):resolve(m.result));ws.send(JSON.stringify({id,method,params}));setTimeout(()=>{if(pending.delete(id))reject(new Error('CDP timeout '+method))},15000).unref()})}
+          await cmd('Runtime.enable');
+          ws.addEventListener('message',e=>{const m=JSON.parse(e.data);if(m.method==='Runtime.exceptionThrown')console.log('BROWSER ERROR',JSON.stringify(m.params.exceptionDetails));});
           await cmd('Page.enable');
           await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
           await cmd('Page.navigate',{url:'https://nkuchenov-hash.github.io/Counter/mouser-mvp/design-20.html?browsercheck=20'});
