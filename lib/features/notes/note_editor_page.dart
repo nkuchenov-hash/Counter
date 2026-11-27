@@ -141,8 +141,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> with WidgetsBindingObse
       _notesEditorSessionRegistered = true;
     }
     _syncEditorsWithDocument();
-    // Embedded Record Notes remain passive until tapped.
-    if (!widget.inlineBodyOnly) {
+    // Existing documents open in the v45 reading state, without stealing
+    // keyboard focus. A genuinely empty standalone draft can start writing.
+    if (!widget.inlineBodyOnly && _sourceDocument.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         NoteBlock? firstEditable;
