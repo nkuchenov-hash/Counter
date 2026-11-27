@@ -239,13 +239,14 @@ class _NotesTableBlockState extends State<NotesTableBlock> {
                       decoration: BoxDecoration(color: widget.data.hasHeader && row == 0
                         ? (NotesFigmaTokens.isDark(context) ? AppColors.editorTimeCardDark : AppColors.editorTimeCardLight)
                         : NotesFigmaTokens.surfaceCard(context)),
-                      children: [for (var column = 0; column < columnCount; column++) TextField(
-                        controller: _controllers[row][column], minLines: 1, maxLines: null,
-                        onChanged: (value) => _updateCell(row, column, value),
-                        style: style.copyWith(fontWeight: widget.data.hasHeader && row == 0 ? FontWeight.w600 : FontWeight.w400),
-                        decoration: const InputDecoration(filled: false, border: InputBorder.none,
-                          enabledBorder: InputBorder.none, focusedBorder: InputBorder.none, isDense: true,
-                          constraints: BoxConstraints(), contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 7)),
+                      children: [for (var column = 0; column < columnCount; column++) Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+                        child: AppTextField(controller: _controllers[row][column],
+                          variant: AppTextFieldVariant.multiline, surface: AppTextFieldSurface.inlineTitle,
+                          minLines: 1, maxLines: null,
+                          onChanged: (value) => _updateCell(row, column, value),
+                          inlineTitleStyle: style.copyWith(fontWeight: widget.data.hasHeader && row == 0 ? FontWeight.w600 : FontWeight.w400),
+                        ),
                       )],
                     )],
                   )),
