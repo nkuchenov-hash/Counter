@@ -80,6 +80,10 @@ Completed imported sleep is authoritative for the primary Timeline interval.
 
 If the immediately preceding root non-sleep record has no end or extends through the imported sleep start, the server closes it exactly at `sleep.start_time` and marks it completed. Child/subrecords and other imported sleep records are not rewritten by this repair.
 
+The canonical `records.interval_sanitize.pb.js` model create/update hooks run for ordinary REST writes, server `app.save` imports, and replayed writes. `records.interval_sanitize_helpers.js` executes the affected row and its predecessor corrections in one transaction. Lookups are owner/root-scoped and use PocketBase's canonical UTC date string format; normal writes never fetch the oldest 2,000 records. A late Stop is clamped at the already-imported sleep boundary. If sleep overlaps an activity beginning within it, or a conflicting primary has the same start, fail closed for explicit reconciliation rather than silently shortening sleep or deleting activity. Scheduler/startup boundary repair uses the same helper and logs failures. Historical full repair is explicit, transactional, and preflights ambiguous conflicts; do not run it blindly on production data.
+
+Xiaomi matches exact provider identity first, then the documented 60% shorter-interval threshold for revised Xiaomi nights, retaining the longer interval when identities differ; separate naps remain separate. Provider matching and save occur in one transaction. `node --test test/timeline_invariant_hook_test.cjs` covers these laws and is required by `scripts/audit/deployment_contract.py`. Mock tests do not replace a real PocketBase integration test or a live import/read-back.
+
 ## History reconciliation
 
 - Normal Xiaomi reads cover recent history on every pass.
