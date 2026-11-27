@@ -140,7 +140,7 @@ function __calendarVisitPage(seen, cursor, deadline) {
     seen[cursor] = true;
 }
 
-function __calendarHttpJson(options, deadline) {
+function __calendarHttpJson(options, deadline, acceptLateResponse) {
     __calendarCheckBudget(deadline);
     if (deadline) {
         var remaining = Math.floor((deadline - Date.now()) / 1000);
@@ -148,7 +148,9 @@ function __calendarHttpJson(options, deadline) {
         options.timeout = Math.min(Number(options.timeout || 30), remaining);
     }
     var response = $http.send(options);
-    __calendarCheckBudget(deadline);
+    // A successful refresh may rotate the refresh token. Persist its response
+    // before stopping the import; otherwise a deadline can break the account.
+    if (!acceptLateResponse) __calendarCheckBudget(deadline);
     if (response.statusCode < 200 || response.statusCode >= 300) {
         throw new Error((options.label || "Provider request") + " failed: HTTP " + response.statusCode);
     }
@@ -273,7 +275,7 @@ function __calendarRefreshAccess(app, connection, deadline) {
         body: __calendarFormEncode(body),
         timeout: 30,
         label: provider + " token refresh",
-    }, deadline);
+    }, deadline, true);
     if (!token.access_token) throw new Error("Calendar access token is missing");
     var expiresIn = Number(token.expires_in || 3600);
     connection.set("access_token_enc", $security.encrypt(String(token.access_token), key));
@@ -282,6 +284,7 @@ function __calendarRefreshAccess(app, connection, deadline) {
         connection.set("refresh_token_enc", $security.encrypt(String(token.refresh_token), key));
     }
     app.save(connection);
+    __calendarCheckBudget(deadline);
     return String(token.access_token);
 }
 
@@ -654,7 +657,7 @@ function __calendarUpsertPlan(app, context, event) {
     return { imported: existing ? 0 : 1, updated: existing ? 1 : 0, seenKey: seenKey };
 }
 
-function __calendarCleanupStale(app, context, start, end, seen) {
+function __calendarCleanupStale(app, context, start, end, seen, deadline) {
     var rows = [];
     try {
         rows = app.findRecordsByFilter(
@@ -675,6 +678,7 @@ function __calendarCleanupStale(app, context, start, end, seen) {
     } catch (_) {}
     var removed = 0;
     for (var i = 0; i < rows.length; i++) {
+        __calendarCheckBudget(deadline);
         var key = String(rows[i].get("external_event_id") || "") + "|" +
             String(rows[i].get("external_occurrence_key") || "");
         if (seen[key]) continue;
@@ -844,7 +848,7 @@ function __calendarSyncOne(app, connection) {
             updated += result.updated;
         }
         __calendarCheckBudget(deadline);
-        removed += __calendarCleanupStale(app, context, start, end, seen);
+        removed += __calendarCleanupStale(app, context, start, end, seen, deadline);
         eventCount += events.length;
     }
     connection.set("status", "connected");

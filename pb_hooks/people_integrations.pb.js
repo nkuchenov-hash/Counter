@@ -158,7 +158,7 @@ function __peopleVisitPage(seen, cursor, deadline) {
     seen[cursor] = true;
 }
 
-function __peopleHttpJson(options, deadline) {
+function __peopleHttpJson(options, deadline, acceptLateResponse) {
     __peopleCheckBudget(deadline);
     if (deadline) {
         var remaining = Math.floor((deadline - Date.now()) / 1000);
@@ -166,7 +166,9 @@ function __peopleHttpJson(options, deadline) {
         options.timeout = Math.min(Number(options.timeout || 30), remaining);
     }
     var response = $http.send(options);
-    __peopleCheckBudget(deadline);
+    // A successful refresh may rotate the refresh token. Persist its response
+    // before stopping the import; otherwise a deadline can break the account.
+    if (!acceptLateResponse) __peopleCheckBudget(deadline);
     if (response.statusCode < 200 || response.statusCode >= 300) {
         throw new Error((options.label || "Provider request") + " failed: HTTP " + response.statusCode);
     }
@@ -277,12 +279,13 @@ function __peopleRefreshAccess(app, connection, deadline) {
         body: __peopleFormEncode(body),
         timeout: 30,
         label: provider + " token refresh",
-    }, deadline);
+    }, deadline, true);
     if (!token.access_token) throw new Error("People access token is missing");
     connection.set("access_token_enc", $security.encrypt(String(token.access_token), key));
     connection.set("access_token_expires_at", new Date(Date.now() + Number(token.expires_in || 3600) * 1000).toISOString());
     if (token.refresh_token) connection.set("refresh_token_enc", $security.encrypt(String(token.refresh_token), key));
     app.save(connection);
+    __peopleCheckBudget(deadline);
     return String(token.access_token);
 }
 
@@ -579,6 +582,7 @@ function __peopleUpsertSourceRows(app, userId, provider, rows, deadline) {
     } catch (_) {}
     var archived = 0;
     for (var j = 0; j < stale.length; j++) {
+        __peopleCheckBudget(deadline);
         var row = stale[j];
         var external = String(row.get("external_id") || "");
         if (seen[external] || String(row.get("import_state") || "") === "linked") continue;

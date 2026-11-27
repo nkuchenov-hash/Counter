@@ -74,3 +74,18 @@ test('People sync never archives from incomplete provider read', () => {
   assert.throws(()=>ctx.__peopleSyncOne({},connection), /pagination_repeated/);
   assert.equal(writes,0);
 });
+
+for (const [name, prefix] of [['calendar','__calendar'],['people','__people']]) {
+  test(name + ': late token rotation persists before deadline is raised', () => {
+    const {ctx} = load(name, () => ({json:{access_token:'new-access',refresh_token:'new-refresh',expires_in:3600},elapsed:11000}));
+    const fields={provider:'microsoft',refresh_token_enc:'old-refresh'};
+    const connection={get:k=>fields[k],set:(k,v)=>fields[k]=v};
+    ctx.$security={encrypt:x=>x,decrypt:x=>x};
+    ctx[prefix+'TokenKey']=()=> 'test-key';
+    ctx[prefix+'ProviderConfig']=()=>({refreshable:true,tokenUrl:'https://test.invalid',clientId:'id',clientSecret:'secret'});
+    let persisted;
+    assert.throws(()=>ctx[prefix+'RefreshAccess']({save:()=>{persisted={...fields};}},connection,110000),/deadline_exceeded/);
+    assert.equal(persisted.refresh_token_enc,'new-refresh');
+    assert.equal(persisted.access_token_enc,'new-access');
+  });
+}
