@@ -3,7 +3,7 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'editor_lab.dart';
+import 'package:counter/app/design_lab/editor_lab.dart';
 
 /// Separate entry point. Never calls application bootstrap, auth or storage.
 Future<void> main() async {
