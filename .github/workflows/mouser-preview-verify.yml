@@ -94,7 +94,7 @@ jobs:
             await ev('document.querySelector("#languagePicker .picker-trigger").click();document.querySelectorAll("#languageOptions .picker-option")[0].click()');
             assert.equal(await ev('document.documentElement.lang'),'ru');
             assert.equal(await ev('document.querySelector("#deviceLabel").textContent'),'01 / УСТРОЙСТВО');
-            assert.equal(await ev('document.querySelectorAll("[data-view]")[1].textContent'),'СВЕРХУ');
+            assert.equal(await ev('document.querySelectorAll(".views button")[1].textContent'),'СВЕРХУ');
             await ev('document.querySelector("[data-page=profiles]").click()');
             assert.equal(await ev('document.querySelector("#globalProfile .profile-name").textContent'),'Все приложения');
             assert.equal(await ev('profiles[1].map[3]'),14);
