@@ -79,8 +79,9 @@ extension RecordServiceExtension on DatabaseService {
   /// fields match [before] — skip [timeUpdates] to avoid ID-swap list blink.
   static bool _flatTimelineVisuallyEquivalent(
     Map<String, dynamic> before,
-    Map<String, dynamic> after,
-  ) {
+    Map<String, dynamic> after, {
+    bool categoryEquivalent = false,
+  }) {
     String ns(dynamic v) {
       if (v == null) return '';
       final x = normalizeLinkScalar(v);
@@ -130,20 +131,50 @@ extension RecordServiceExtension on DatabaseService {
     if (ns(before['type']) != ns(after['type'])) return false;
     if (ns(before['parent_id']) != ns(after['parent_id'])) return false;
     if (ns(before['tags']) != ns(after['tags'])) return false;
-    if (ns(before['category_id']) != ns(after['category_id'])) return false;
+    if (!categoryEquivalent &&
+        ns(before['category_id']) != ns(after['category_id'])) return false;
+    if (ns(before['user_id']) != ns(after['user_id'])) return false;
+    if (ns(before['source_plan_id']) != ns(after['source_plan_id'])) return false;
     if (ns(before['note']) != ns(after['note']) ||
         ns(before['notes']) != ns(after['notes'])) {
       return false;
     }
-    try {
-      final ea = jsonEncode(before['checklist'] ?? <dynamic>[]);
-      final eb = jsonEncode(after['checklist'] ?? <dynamic>[]);
-      if (ea != eb) return false;
-    } catch (_) {
-      if (ns(before['checklist']) != ns(after['checklist'])) return false;
+    bool sameJson(dynamic a, dynamic b, dynamic empty) {
+      if (a == b) return true;
+      dynamic normalize(dynamic value) {
+        if (value == null || value == '') return empty;
+        if (value is String) {
+          try {
+            return jsonDecode(value) ?? empty;
+          } catch (_) {
+            return value;
+          }
+        }
+        return value;
+      }
+      try {
+        return jsonEncode(normalize(a)) == jsonEncode(normalize(b));
+      } catch (_) {
+        return false;
+      }
+    }
+    if (!sameJson(before['checklist'], after['checklist'], <dynamic>[])) {
+      return false;
+    }
+    if (!sameJson(before['notes_delta'], after['notes_delta'], null)) {
+      return false;
+    }
+    if (!sameJson(before['tags_link'], after['tags_link'], <dynamic>[])) {
+      return false;
     }
     return true;
   }
+
+  @visibleForTesting
+  static bool debugRecordTimelineEquivalentForTest(
+    Map<String, dynamic> before,
+    Map<String, dynamic> after,
+  ) => _flatTimelineVisuallyEquivalent(before, after);
 
   /// Merge one PocketBase **records** row into [_cachedFlatRecords] without refetching the full list.
   bool _upsertFlatRecordFromPbModel(
@@ -198,14 +229,26 @@ extension RecordServiceExtension on DatabaseService {
               m['categoryId'] = row['categoryId'];
             }
           }
+          final beforeCategory = categoryIdFromRecordRow(row);
+          final afterCategory = categoryIdFromRecordRow(m);
           final silent =
               rbiz.isNotEmpty &&
               biz.isNotEmpty &&
               rbiz == biz &&
-              _flatTimelineVisuallyEquivalent(row, m);
+              _flatTimelineVisuallyEquivalent(
+                row, m,
+                categoryEquivalent:
+                    _planLocalCategoryIdIsConcrete(beforeCategory) &&
+                    beforeCategory == afterCategory,
+              );
           next[i] = m;
           _cachedFlatRecords = next;
-          if (!suppressTimelineNotify && !silent) {
+          if (!suppressTimelineNotify && !silent &&
+              !_tryPublishIndexedRecordMetadataEdit(row, m)) {
+            _invalidateTimelineReadCachesAfterRecordEdit(
+              dayKey: _recordEditCalendarDayKeyFromRow(m),
+              previousDayKey: _recordEditCalendarDayKeyFromRow(row),
+            );
             _notifyTimelineAfterRecordCacheMutation();
           }
           return true;

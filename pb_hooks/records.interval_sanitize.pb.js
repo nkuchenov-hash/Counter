@@ -1,70 +1,11 @@
 /// <reference path="../pb_data/types.d.ts" />
-// PocketBase: enforce non-overlapping primary `records` intervals per `user_id`.
-// PocketBase JSVM serializes each hook handler into an isolated context, so
-// reusable helpers must be required from a local module inside each handler.
-
-onRecordCreateRequest((e) => {
-    const h = require(`${__hooks}/records.interval_sanitize_helpers.js`);
-    const rec = e.record;
-    if (!h.isPrimaryRecord(rec)) {
-        e.next();
-        return;
-    }
-    h.validateStartEndOrder(rec);
-    h.clampSubjectEndAgainstLaterStarts(e.app, rec, "");
-    e.next();
+// All ordinary PocketBase model writes, including internal server imports,
+// offline replays and REST calls, share the same transaction-bound rule.
+// Never repair a conflict in an after-success hook: the write has committed.
+onRecordCreate((e) => {
+    require(`${__hooks}/records.interval_sanitize_helpers.js`).reconcileRecordWrite(e);
 }, "records");
 
-onRecordUpdateRequest((e) => {
-    const h = require(`${__hooks}/records.interval_sanitize_helpers.js`);
-    const rec = e.record;
-    if (!h.isPrimaryRecord(rec)) {
-        e.next();
-        return;
-    }
-    h.validateStartEndOrder(rec);
-    h.clampSubjectEndAgainstLaterStarts(e.app, rec, h.fieldStr(rec, "id"));
-    e.next();
-}, "records");
-
-onRecordAfterCreateSuccess((e) => {
-    const h = require(`${__hooks}/records.interval_sanitize_helpers.js`);
-    const rec = e.record;
-    if (!h.isPrimaryRecord(rec)) {
-        e.next();
-        return;
-    }
-    try {
-        h.sanitizeAllPrimaryIntervalsForUser(e.app, h.fieldStr(rec, "user_id"));
-    } catch (err) {
-        try {
-            e.app.logger().error(
-                "records.interval_sanitize",
-                "afterCreate",
-                err,
-            );
-        } catch (_) {}
-    }
-    e.next();
-}, "records");
-
-onRecordAfterUpdateSuccess((e) => {
-    const h = require(`${__hooks}/records.interval_sanitize_helpers.js`);
-    const rec = e.record;
-    if (!h.isPrimaryRecord(rec)) {
-        e.next();
-        return;
-    }
-    try {
-        h.sanitizeAllPrimaryIntervalsForUser(e.app, h.fieldStr(rec, "user_id"));
-    } catch (err) {
-        try {
-            e.app.logger().error(
-                "records.interval_sanitize",
-                "afterUpdate",
-                err,
-            );
-        } catch (_) {}
-    }
-    e.next();
+onRecordUpdate((e) => {
+    require(`${__hooks}/records.interval_sanitize_helpers.js`).reconcileRecordWrite(e);
 }, "records");

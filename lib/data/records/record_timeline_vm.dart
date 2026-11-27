@@ -18,32 +18,106 @@ extension RecordTimelineVmExtension on DatabaseService {
     if (dayKey != null && dayKey.trim().isNotEmpty) {
       final k = dayKey.trim();
       _timelineDayViewCache.remove(k);
+      _timelineDayVmCache.remove(k);
       _timelineRecordsDayIndex.remove(k);
       _timelineLazyRowVmByDay.remove(k);
     } else {
       _timelineDayViewCache.clear();
+      _timelineDayVmCache.clear();
       _timelineRecordsDayIndex.clear();
     }
   }
 
-  /// After in-place record edit: rebuild warm snapshots even when flat count unchanged.
-  void _refreshTimelineWarmSnapshotsAfterRecordMutation({String? dayKey}) {
-    if (_timelineWarm.center == null) return;
-    if (dayKey != null && dayKey.trim().isNotEmpty) {
-      final k = dayKey.trim();
-      final day = WarmSnapshotWindow.parseDateKey(k);
-      _timelineWarm.put(k, _buildTimelineDaySnapshot(day));
-      return;
+  /// Invalidate derived data, rather than synchronously building snapshots
+  /// that the generic notification would immediately invalidate again.
+  /// Both dates must be evicted when an interval moves across midnight.
+  void _invalidateTimelineReadCachesAfterRecordEdit({
+    String? dayKey,
+    String? previousDayKey,
+  }) {
+    _markTimelineDayIndexDirty();
+    final keys = <String>{
+      if (dayKey != null && dayKey.isNotEmpty) dayKey,
+      if (previousDayKey != null && previousDayKey.isNotEmpty) previousDayKey,
+    };
+    if (keys.isEmpty || dayKey == null || dayKey.isEmpty) {
+      keys.addAll(_timelineWarmWindow?.dateKeys ?? const <String>[]);
+      keys.addAll(_timelineBodyCache?.dateKeys ?? const <String>[]);
     }
-    for (final key in _timelineWarm.dateKeys.toList()) {
-      final day = WarmSnapshotWindow.parseDateKey(key);
-      _timelineWarm.put(key, _buildTimelineDaySnapshot(day));
+    for (final key in keys) {
+      _timelineWarmWindow?.remove(key);
+      _timelineBodyCache?.remove(key);
     }
   }
 
-  void _invalidateTimelineReadCachesAfterRecordEdit({String? dayKey}) {
-    _markTimelineDayIndexDirty(dayKey: dayKey);
-    _refreshTimelineWarmSnapshotsAfterRecordMutation(dayKey: dayKey);
+  /// Patch an already indexed record without reprojecting unrelated days.
+  /// Keep the established full reconciliation path for structural edits,
+  /// pending starts, missing/dirty indexes and ambiguous row identities.
+  bool _tryPublishIndexedRecordMetadataEdit(
+    Map<String, dynamic> before,
+    Map<String, dynamic> after,
+  ) {
+    if (_recordCacheTimelineNotifyBatchDepth > 0 ||
+        _timelineDayIndexDirty ||
+        _timelineDayIndexBuiltAtRecordCount != _cachedFlatRecords.length) {
+      return false;
+    }
+    final biz = (before['record_id'] ?? '').toString().trim();
+    final pk = CategoryServiceExtension.recordsTablePk(before);
+    if (biz.isEmpty || pk.isEmpty ||
+        biz != (after['record_id'] ?? '').toString().trim() ||
+        pk != CategoryServiceExtension.recordsTablePk(after) ||
+        before['user_id'] != after['user_id'] ||
+        before['parent_id'] != after['parent_id'] ||
+        _rowHasNonEmptyParent(after['parent_id']) ||
+        before['type'] != after['type'] ||
+        before['status'] != after['status'] ||
+        before['source_plan_id'] != after['source_plan_id'] ||
+        _optimisticRowDeletedRaw(after)) {
+      return false;
+    }
+    final start = CategoryServiceExtension._parseDateTimeUtc(after['start_time']);
+    final previousStart = CategoryServiceExtension._parseDateTimeUtc(before['start_time']);
+    final end = CategoryServiceExtension._parseDateTimeUtc(after['end_time']);
+    final previousEnd = CategoryServiceExtension._parseDateTimeUtc(before['end_time']);
+    if (start == null || start != previousStart || end != previousEnd) return false;
+    final owner = (after['user_id'] ?? '').toString().trim().toLowerCase();
+    if (!_recordRowOwnerIdMatchSet().contains(owner)) return false;
+    final key = _timelineDeviceLocalDayKeyFromUtc(start);
+    final indexed = _timelineRecordsDayIndex[key];
+    if (indexed == null) return false;
+    final index = indexed.indexWhere((row) =>
+        (row['record_id'] ?? '').toString().trim() == biz &&
+        (row['id'] ?? '').toString().trim() == pk);
+    if (index < 0) return false;
+    try {
+      final projected = _mergeOptimisticIntoRecordMap(_rowToRecordMap(after));
+      indexed[index] = projected;
+      // The interval, owner, identity and parent are unchanged, so ordering,
+      // day membership and canonical running selection remain valid.
+      invalidateTimelineDayCachesForDateKey(key, reason: 'recordMetadataEdit');
+      final hadWarm = _timelineWarmWindow?.peek(key) != null;
+      final hadBody = _timelineBodyCache?.peek(key) != null;
+      if (hadWarm || hadBody) {
+        final snap = _buildTimelineDaySnapshot(WarmSnapshotWindow.parseDateKey(key));
+        if (hadWarm) _timelineWarmWindow!.put(key, snap);
+        if (hadBody) {
+          _timelineBodyCache!.put(key, TimelineDayBodyEntry(
+            dateKey: key,
+            records: List<Map<String, dynamic>>.from(snap.records),
+            knownEmpty: snap.knownEmpty,
+            bodyReady: true,
+            source: 'recordMetadataEdit',
+          ));
+        }
+      }
+      _timeUpdateController.add(null);
+      return true;
+    } catch (_) {
+      // Do not leave a partially updated projection active.
+      _markTimelineDayIndexDirty();
+      return false;
+    }
   }
 
   void _ensureTimelineDayIndex() {

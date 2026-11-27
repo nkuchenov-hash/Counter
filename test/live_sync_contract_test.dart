@@ -4,8 +4,15 @@ import 'package:counter/data/local_sync/plan_mutation_outbox.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// The existing Android/Windows live-sync CI suite must run both P0 regressions.
+import 'p0_edit_category_hotpath_test.dart' as category_hotpath;
+import 'p0_record_editor_index_test.dart' as record_editor_index;
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  group('P0 category editor hot path', category_hotpath.main);
+  group('P0 record editor and Timeline index', record_editor_index.main);
 
   test('stale acknowledgement cannot delete a newer plan edit', () async {
     SharedPreferences.setMockInitialValues(<String, Object>{});

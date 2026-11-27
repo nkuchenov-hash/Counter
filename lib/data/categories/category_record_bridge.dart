@@ -394,6 +394,7 @@ extension CategoryRecordBridgeExtension on DatabaseService {
     required String restId,
     required Map<String, dynamic> fields,
     bool debugPbClientException = false,
+    bool notifyTimelineOnChange = false,
   }) async {
     _lastRecordsPatchSkippedDeadLetter = false;
     final rid = restId.trim();
@@ -429,7 +430,12 @@ extension CategoryRecordBridgeExtension on DatabaseService {
       final updated = await _pb
           .collection(PbCollections.records)
           .update(rid, body: merged);
-      _upsertFlatRecordFromPbModel(updated, suppressTimelineNotify: true);
+      final mergedResponse = _upsertFlatRecordFromPbModel(
+        updated, suppressTimelineNotify: !notifyTimelineOnChange,
+      );
+      if (notifyTimelineOnChange && !mergedResponse) {
+        _notifyTimelineAfterRecordCacheMutation();
+      }
       return 200;
     } on ClientException catch (e) {
       if (debugPbClientException) {

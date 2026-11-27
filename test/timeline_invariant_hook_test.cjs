@@ -1,0 +1,355 @@
+'use strict';
+// Behavioural checks against the actual PocketBase interval helper.
+// No production data, provider credentials or server writes.
+const assert = require('node:assert/strict');
+const h = require('../pb_hooks/records.interval_sanitize_helpers.js');
+const { test } = require('node:test');
+global.BadRequestError = class BadRequestError extends Error {};
+const owner = 'owner1234567890';
+const other = 'other1234567890';
+const iso = (value) => new Date(value).toISOString();
+const at = (time) => '2026-11-27T' + time + ':00.000+03:00';
+const record = (id, start, end, extra = {}) => ({
+  id, user_id: owner, parent_id: '', start_time: iso(start),
+  end_time: end ? iso(end) : '', status: end ? 'completed' : 'running',
+  ...extra,
+});
+const model = (row) => ({
+  id: row.id,
+  get: (field) => row[field],
+  set: (field, value) => { row[field] = value; },
+  data: row,
+});
+function fixture(records, fail = false) {
+  const stored = new Map(records.map(row => [row.id, {...row}]));
+  function makeApp(data, inTx = false) {
+    return {
+      findRecordsByFilter(collection, filter, order, limit, offset, params) {
+        assert.equal(collection, 'records');
+        assert.equal(params.uid, owner);
+        let rows = [...data.values()].filter(row => row.user_id === params.uid);
+        if (filter.includes("parent_id = ''")) rows = rows.filter(row => !row.parent_id);
+        if (filter.includes('id != {:id}')) rows = rows.filter(row => row.id !== params.id);
+        if (params.external) rows = rows.filter(row =>
+          (row.external_source === 'xiaomi' && row.external_id === params.external) ||
+          (row.sleep_source === 'xiaomi' && row.sleep_external_id === params.external));
+        if (params.end) rows = rows.filter(row =>
+          row.sleep_source === 'xiaomi' || row.external_source === 'xiaomi' ||
+          row.title === 'Sleep' || row.title === 'Сон');
+        // Emulate PocketBase's string comparison rather than Date.parse, which
+        // would hide a production bug caused by using T instead of a space.
+        const dbDate = value => value.replace('T', ' ');
+        if (params.start) assert.match(params.start, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+        if (filter.includes('start_time >= {:start}')) rows = rows.filter(row =>
+          dbDate(row.start_time) >= params.start);
+        if (params.end) {
+          assert.match(params.end, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+          rows = rows.filter(row => dbDate(row.start_time) < params.end &&
+            !!row.end_time && dbDate(row.end_time) > params.start);
+        }
+        if (filter.includes('start_time < {:start}')) rows = rows.filter(row =>
+          dbDate(row.start_time) < params.start);
+        if (filter.includes("end_time = '' || end_time > {:start}")) rows = rows.filter(row =>
+          !row.end_time || dbDate(row.end_time) > params.start);
+        rows.sort((a,b) => Date.parse(a.start_time) - Date.parse(b.start_time) ||
+          a.id.localeCompare(b.id));
+        if (order.startsWith('-')) rows.reverse();
+        return rows.slice(offset, limit > 0 ? offset + limit : undefined)
+          .map(row => model({...row}));
+      },
+      findRecordById(collection, id) {
+        assert.equal(collection, 'records');
+        assert.ok(data.has(id), 'Missing row ' + id);
+        return model({...data.get(id)});
+      },
+      findCollectionByNameOrId(name) {
+        assert.equal(name, 'records');
+        return {name};
+      },
+      save(row) {
+        const event = {app:this, record:row, next() {
+          event.app._persist(row);
+        }};
+        h.reconcileRecordWrite(event);
+      },
+      saveNoValidate(row) {
+        if (fail) throw new Error('injected save failure');
+        // Real PB invokes model hooks for corrective writes as well.
+        const event = {app:this, record:row, next() {
+          event.app._persist(row);
+        }};
+        h.reconcileRecordWrite(event);
+      },
+      _persist(row) { data.set(row.id, {...row.data}); },
+      runInTransaction(callback) {
+        if (inTx) { callback(this); return; }
+        const staged = new Map([...data].map(([key,row]) => [key,{...row}]));
+        callback(makeApp(staged, true));
+        data.clear();
+        for (const [id,row] of staged) data.set(id,row);
+      },
+    };
+  }
+  return {app:makeApp(stored), stored};
+}
+function write(app, row) {
+  const subject = model({...row});
+  const event = {app, record:subject, next() {
+    event.app._persist(subject);
+  }};
+  h.reconcileRecordWrite(event);
+  assert.equal(event.app, app, 'Original app restored');
+  return subject.data;
+}
+function assertNoOverlap(stored) {
+  const rows = [...stored.values()].filter(r => r.user_id === owner && !r.parent_id)
+    .sort((a,b) => Date.parse(a.start_time) - Date.parse(b.start_time));
+  for (let i=1;i<rows.length;i++) {
+    const prior=rows[i-1], next=rows[i];
+    assert.ok(prior.end_time && Date.parse(prior.end_time) <= Date.parse(next.start_time),
+      'Overlapping primary records: ' + prior.id + ' / ' + next.id);
+  }
+}
+function screenshotRows() {
+  return [
+    record('preparation', at('00:40'), at('09:23')),
+    record('sleep', at('01:57'), at('09:17'), {
+      title:'Сон', sleep_source:'xiaomi', external_kind:'sleep',
+    }),
+    record('morning', at('09:23'), null),
+  ];
+}
+test('exact reported sleep overlap is reconciled without shortening sleep', () => {
+  const {app, stored} = fixture(screenshotRows());
+  h.sanitizeAllPrimaryIntervalsForUser(app, owner);
+  assert.equal(stored.get('preparation').end_time, iso(at('01:57')));
+  assert.equal(stored.get('sleep').end_time, iso(at('09:17')));
+  assertNoOverlap(stored);
+});
+test('recent sleep overlap is repaired even beyond the first 2000 historical rows', () => {
+  const old = Array.from({length: 2101}, (_,i) => {
+    const start = Date.UTC(2025,0,1) + i * 3600000;
+    return record('history-'+i, start, start + 1800000);
+  });
+  const {app, stored} = fixture([...old, ...screenshotRows()]);
+  h.sanitizeAllPrimaryIntervalsForUser(app, owner);
+  assert.equal(stored.get('preparation').end_time, iso(at('01:57')));
+  assert.equal(stored.get('sleep').end_time, iso(at('09:17')));
+  assertNoOverlap(stored);
+});
+test('a late stop cannot overwrite an existing sleep boundary in a large history', () => {
+  const old = Array.from({length: 2101}, (_,i) => {
+    const start = Date.UTC(2025,0,1) + i * 3600000;
+    return record('history-'+i, start, start + 1800000);
+  });
+  const rows = screenshotRows();
+  const {app} = fixture([...old, ...rows]);
+  const subject = model({...rows[0]});
+  h.clampSubjectEndAgainstLaterStarts(app, subject, subject.id);
+  assert.equal(subject.get('end_time'), iso(at('01:57')));
+});
+test('open predecessor closes at sleep start; child and another owner are untouched', () => {
+  const rows = screenshotRows();
+  rows[0].end_time = '';
+  rows[0].status = 'running';
+  rows.push(record('child', at('01:00'), at('09:00'), {parent_id:'preparation'}));
+  rows.push(record('other-owner', at('00:00'), at('10:00'), {user_id:other}));
+  const {app, stored} = fixture(rows);
+  h.sanitizeAllPrimaryIntervalsForUser(app, owner);
+  assert.equal(stored.get('preparation').end_time, iso(at('01:57')));
+  assert.equal(stored.get('preparation').status, 'completed');
+  assert.equal(stored.get('child').end_time, iso(at('09:00')));
+  assert.equal(stored.get('other-owner').end_time, iso(at('10:00')));
+  assertNoOverlap(stored);
+});
+test('adjacent boundaries are valid and do not alter either record', () => {
+  const rows = screenshotRows();
+  rows[0].end_time = iso(at('01:57'));
+  const {app, stored} = fixture(rows);
+  h.sanitizeAllPrimaryIntervalsForUser(app, owner);
+  assert.deepEqual([...stored.values()], rows);
+  assertNoOverlap(stored);
+});
+test('failed corrective save must not report successful reconciliation', () => {
+  const {app} = fixture(screenshotRows(), true);
+  assert.throws(() => h.sanitizeAllPrimaryIntervalsForUser(app, owner),
+    /injected save failure/);
+});
+
+test('server import atomically repairs an open predecessor and preserves source bounds', () => {
+  const rows = screenshotRows();
+  const {app, stored} = fixture([{...rows[0], end_time:'', status:'running'}]);
+  write(app, rows[1]);
+  assert.equal(stored.get('preparation').end_time, iso(at('01:57')));
+  assert.equal(stored.get('sleep').end_time, iso(at('09:17')));
+  assertNoOverlap(stored);
+});
+test('failed predecessor correction rolls back the sleep insert', () => {
+  const rows = screenshotRows();
+  const {app, stored} = fixture([rows[0]], true);
+  assert.throws(() => write(app, rows[1]), /injected save failure/);
+  assert.equal(stored.has('sleep'), false);
+  assert.deepEqual(stored.get('preparation'), rows[0]);
+});
+test('late Stop cannot expand across authoritative sleep', () => {
+  const rows = screenshotRows();
+  const {app, stored} = fixture(rows);
+  write(app, rows[0]);
+  assert.equal(stored.get('preparation').end_time, iso(at('01:57')));
+  assertNoOverlap(stored);
+});
+test('second running primary closes the old timer without touching child records', () => {
+  const rows = screenshotRows();
+  const child = record('child', at('01:00'), null, {parent_id:'preparation'});
+  const {app, stored} = fixture([{...rows[0], end_time:'', status:'running'}, child]);
+  write(app, rows[2]);
+  assert.equal(stored.get('preparation').end_time, iso(at('09:23')));
+  assert.notEqual(stored.get('preparation').status, 'running');
+  assert.equal(stored.get('child').end_time, '');
+  assertNoOverlap(stored);
+});
+test('ordinary record starting inside sleep is rejected without modifying data', () => {
+  const rows = screenshotRows();
+  const {app, stored} = fixture([rows[1]]);
+  assert.throws(() => write(app, record('conflict', at('03:00'), at('04:00'))),
+    /authoritative sleep/);
+  assert.deepEqual([...stored.values()], [rows[1]]);
+});
+test('same-start conflicting primary cannot silently produce a zero-length replacement', () => {
+  const rows = screenshotRows();
+  const {app, stored} = fixture([rows[1]]);
+  assert.throws(() => write(app, record('conflict', at('01:57'), at('04:00'))),
+    /Conflicting primary/);
+  assert.deepEqual([...stored.values()], [rows[1]]);
+});
+test('scheduled repair uses atomic predecessor correction and preserves sleep', () => {
+  const rows = screenshotRows();
+  const {app, stored} = fixture(rows);
+  h.repairSleepPredecessors(app, model(rows[1]));
+  assert.equal(stored.get('preparation').end_time, iso(at('01:57')));
+  assert.equal(stored.get('sleep').end_time, iso(at('09:17')));
+  assertNoOverlap(stored);
+});
+
+test('provider revision keeps its original identity and adjusts predecessor', () => {
+  const rows = screenshotRows();
+  rows[0].end_time = iso(at('02:05'));
+  rows[1].start_time = iso(at('02:05'));
+  const {app, stored} = fixture(rows);
+  write(app, {...rows[1], start_time:iso(at('01:57'))});
+  assert.equal(stored.size, 3);
+  assert.equal(stored.get('preparation').end_time, iso(at('01:57')));
+  assert.equal(stored.get('sleep').start_time, iso(at('01:57')));
+  assert.equal(stored.get('sleep').end_time, iso(at('09:17')));
+  assertNoOverlap(stored);
+});
+test('sleep is not shortened to hide a conflicting later activity', () => {
+  const rows = screenshotRows();
+  const conflict = record('conflict', at('08:00'), at('08:30'));
+  const {app, stored} = fixture([rows[0], conflict]);
+  assert.throws(() => write(app, rows[1]), /authoritative sleep/);
+  assert.deepEqual([...stored.values()], [rows[0], conflict]);
+});
+test('historical repair preflights ambiguous conflicts before changing any rows', () => {
+  const rows = screenshotRows();
+  const conflict = record('conflict', at('08:00'), at('08:30'));
+  const {app, stored} = fixture([...rows, conflict]);
+  assert.throws(() => h.sanitizeAllPrimaryIntervalsForUser(app, owner),
+    /Ambiguous historical interval/);
+  assert.deepEqual([...stored.values()], [...rows, conflict]);
+});
+test('production hooks cover model create and update, not merely HTTP requests', () => {
+  const fs = require('node:fs');
+  const vm = require('node:vm');
+  const path = require('node:path');
+  let create, update;
+  const hooks = path.resolve(__dirname, '../pb_hooks');
+  vm.runInNewContext(fs.readFileSync(path.join(hooks, 'records.interval_sanitize.pb.js'), 'utf8'), {
+    __hooks: hooks,
+    require: (filename) => {
+      assert.equal(filename, path.join(hooks, 'records.interval_sanitize_helpers.js'));
+      return h;
+    },
+    onRecordCreate(handler, collection) { assert.equal(collection, 'records'); create = handler; },
+    onRecordUpdate(handler, collection) { assert.equal(collection, 'records'); update = handler; },
+  });
+  assert.equal(typeof create, 'function');
+  assert.equal(typeof update, 'function');
+  const rows = screenshotRows();
+  const {app, stored} = fixture([rows[0]]);
+  const run = (handler, row) => {
+    const event = {app, record:model({...row}), next() {
+      event.app._persist(event.record);
+    }};
+    handler(event);
+  };
+  run(create, rows[1]);
+  run(update, rows[0]);
+  assert.equal(stored.get('preparation').end_time, iso(at('01:57')));
+  assertNoOverlap(stored);
+});
+
+function loadXiaomiUpsert() {
+  const fs = require('node:fs');
+  const vm = require('node:vm');
+  const path = require('node:path');
+  const hooks = path.resolve(__dirname, '../pb_hooks');
+  const context = {
+    Date, module:{exports:{}}, __hooks:hooks,
+    require: filename => {
+      assert.equal(filename, path.join(hooks, 'records.interval_sanitize_helpers.js'));
+      return h;
+    },
+    Record: function() { return model({id:'new-import', parent_id:''}); },
+    $security: {randomStringWithAlphabet: () => 'a'.repeat(32)},
+  };
+  vm.runInNewContext(fs.readFileSync(path.join(hooks, 'xiaomi_sleep_runtime.js'), 'utf8'), context);
+  return context.__xiaomiUpsert;
+}
+const providerSession = (start, end, externalId) => ({
+  start:new Date(at(start)), end:new Date(at(end)), externalId,
+});
+const xiaomiRow = (id, start, end, externalId) => record(id, at(start), at(end), {
+  title:'Сон', external_kind:'sleep', sleep_source:'xiaomi', external_source:'xiaomi',
+  external_id:externalId, sleep_external_id:externalId, record_id:id,
+});
+function importSleep(app, session) {
+  return loadXiaomiUpsert()(app, owner, {get: () => 'ru'}, {id:'sleep-category'}, session);
+}
+test('real Xiaomi upsert matches a revised night at 60–80% overlap before writing', () => {
+  const previous = record('prep', at('00:40'), at('02:05'));
+  const existing = xiaomiRow('night', '02:05', '07:05', 'original-night');
+  const {app, stored} = fixture([previous, existing]);
+  assert.equal(importSleep(app, providerSession('00:55','05:55','revised-night')), 0);
+  assert.equal(stored.size, 2);
+  assert.equal(stored.get('night').start_time, iso(at('00:55')));
+  assert.equal(stored.get('night').end_time, iso(at('05:55')));
+  assert.equal(stored.get('prep').end_time, iso(at('00:55')));
+  assertNoOverlap(stored);
+});
+test('real Xiaomi upsert preserves the longer version of a revised night', () => {
+  const previous = record('prep', at('00:40'), at('09:23'));
+  const existing = xiaomiRow('night', '01:57', '09:17', 'original-night');
+  const {app, stored} = fixture([previous, existing]);
+  assert.equal(importSleep(app, providerSession('02:05','06:55','shorter-night')), 0);
+  assert.equal(stored.size, 2);
+  assert.equal(stored.get('night').end_time, iso(at('09:17')));
+  assert.equal(stored.get('prep').end_time, iso(at('01:57')));
+  assertNoOverlap(stored);
+});
+test('real Xiaomi upsert imports a separate nap without merging it with the night', () => {
+  const existing = xiaomiRow('night', '01:57', '09:17', 'original-night');
+  const {app, stored} = fixture([existing]);
+  assert.equal(importSleep(app, providerSession('13:00','13:30','nap')), 1);
+  assert.equal(stored.size, 2);
+  assert.equal(stored.get('night').end_time, iso(at('09:17')));
+  assert.equal(stored.get('new-import').end_time, iso(at('13:30')));
+  assertNoOverlap(stored);
+});
+test('real Xiaomi import rolls back on a failed predecessor correction', () => {
+  const previous = record('prep', at('00:40'), at('09:23'));
+  const {app, stored} = fixture([previous], true);
+  assert.throws(() => importSleep(app, providerSession('01:57','09:17','night')),
+    /injected save failure/);
+  assert.deepEqual([...stored.values()], [previous]);
+});

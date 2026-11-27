@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `4600edbe` on 2026-11-25; reconciled two protection files from `da5a664c`.**
+**Generated from input HEAD `7c9b37d5` on 2026-11-27.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1039 — each appears **exactly once** below.
+**Tracked files:** 1042 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,7 +27,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 206 |
-| `test` | 149 |
+| `test` | 151 |
 | `Brain/data` | 121 |
 | `platform build` | 84 |
 | `shared foundation` | 73 |
@@ -35,7 +35,7 @@ python scripts/manual/generate_app_structure_detailed.py
 | `governing documentation` | 45 |
 | `platform resource` | 44 |
 | `Desktop Voice runtime` | 36 |
-| `test fixture` | 32 |
+| `test fixture` | 33 |
 | `PocketBase migration` | 27 |
 | `PocketBase backend` | 25 |
 | `shared Voice system` | 20 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 568 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 277 |
+| `PROVEN_REQUIRED` | 569 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 281 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 949 |
+| `HIGH` | 954 |
 | `MEDIUM` | 88 |
 
 ---
@@ -4693,39 +4693,38 @@ RU:
 
 EN:
 
-- **Human purpose:** Declares code owners for critical runtime and governance paths; requires GitHub review settings for enforcement.
-- **What this is:** Declares code owners for critical runtime and governance paths; requires GitHub review settings for enforcement.
-- **Why needed:** Prevents unauthorized changes to release-critical functionality.
-- **Contents:** GitHub code-owner path patterns.
+- **Human purpose:** .github build file `CODEOWNERS` in `.github` — required by Flutter/native toolchain. Without `CODEOWNERS`, .github compile or packaging step for this folder may fail.
+- **What this is:** .github build file `CODEOWNERS` in `.github` — required by Flutter/native toolchain.
+- **Why needed:** Without `CODEOWNERS`, .github compile or packaging step for this folder may fail.
+- **Contents:** Native/config source for `.github` (open file only when build errors cite it).
 - **Repository role:** CI/deployment
-- **Evidence of use:** GitHub CODEOWNERS; `AGENTS.md`, `docs/DEPLOY.md`.
-- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Removes a layer of critical release protection.
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
 - **Confidence:** HIGH
-- **Owner / layer:** Repository governance
-- **Responsibilities:** Owner-approved changes only.
-- **When to open:** When reviewing a critical change or release approval.
-- **Can it be deleted?** No, without explicit owner approval.
-- **Connected to:** `AGENTS.md`, `docs/DEPLOY.md`.
+- **Owner / layer:** CI
+- **Responsibilities:** Support .github embedder build for `.github` — not Dart business logic.
+- **When to open:** Build log mentions `CODEOWNERS` or `.github`.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** `.github/` platform folder, Flutter embedder.
 
 RU:
 
-- **Зачем файл человеку:** Назначает владельца критических файлов и правил; принудительное ревью требует настроек GitHub.
-- **Что это:** Назначает владельца критических файлов и правил; принудительное ревью требует настроек GitHub.
-- **Зачем:** Блокирует неутверждённые изменения критического кода при выпуске.
-- **Содержимое:** Правила владельцев файлов GitHub.
+- **Зачем файл человеку:** Platform file `codeowners` в `.github` — читает Flutter platform tool при сборке .github build. Без этого файла Flutter platform tool может не собрать или упаковать .github build.
+- **Что это:** Platform file `codeowners` в `.github` — читает Flutter platform tool при сборке .github build.
+- **Зачем:** Без этого файла Flutter platform tool может не собрать или упаковать .github build.
+- **Содержимое:** Содержимое native/config слоя `.github` (смотреть файл при build errors).
 - **Роль в репозитории:** CI/deployment
-- **Доказательства использования:** GitHub CODEOWNERS; `AGENTS.md`, `docs/DEPLOY.md`.
-- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Утрата слоя защиты критического выпуска.
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
 - **Уверенность:** HIGH
-- **Владелец / слой:** Управление репозиторием
-- **Обязанности:** Изменения только с одобрения владельца.
-- **Когда открывать:** При проверке критического изменения.
-- **Можно удалить?** Нет, без отдельного согласования.
-- **Связано с:** `AGENTS.md`, `docs/DEPLOY.md`.
+- **Владелец / слой:** CI
+- **Обязанности:** Участвует в Flutter platform tool pipeline для .github build — не Dart business logic.
+- **Когда открывать:** Build log .github ссылается на `codeowners` или `.github`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter embedder.
 
----
 
 ### `.github/copilot-instructions.md`
 
@@ -5920,7 +5919,7 @@ EN:
 - **Why needed:** Android reads XML at install/run to grant mic, notifications, and launch the app.
 - **Contents:** `<uses-permission>`, application name, intent filters.
 - **Repository role:** platform build
-- **Evidence of use:** (1) Flutter/native project file `AndroidManifest.xml` under `android/app/src/main/`; required by platform build convention for this runner. (2) Also referenced by: `scripts/manual/structure_file_ru_curated.py`, `scripts/manual/structure_folder_ru_curated.py`, `scripts/manual/structure_guide_data.py`.
+- **Evidence of use:** (1) Flutter/native project file `AndroidManifest.xml` under `android/app/src/main/`; required by platform build convention for this runner. (2) Also referenced by: `scripts/audit/critical_release_guard.py`, `scripts/manual/structure_file_ru_curated.py`, `scripts/manual/structure_folder_ru_curated.py`.
 - **Necessity status:** REQUIRED_BY_PLATFORM_CONVENTION
 - **Deletion consequence:** Unavailable or broken platform build for that OS target.
 - **Confidence:** HIGH
@@ -11360,7 +11359,7 @@ EN:
 - **Why needed:** Without `Runner.entitlements`, ios compile or packaging step for this folder may fail.
 - **Contents:** Native/config source for `ios/Runner` (open file only when build errors cite it).
 - **Repository role:** platform build
-- **Evidence of use:** Tracked Flutter platform file under `ios/Runner/` (individual role: `Runner.entitlements` for that platform project).
+- **Evidence of use:** (1) Tracked Flutter platform file under `ios/Runner/` (individual role: `Runner.entitlements` for that platform project). (2) Also referenced by: `scripts/audit/critical_release_guard.py`.
 - **Necessity status:** REQUIRED_BY_PLATFORM_CONVENTION
 - **Deletion consequence:** Unavailable or broken platform build for that OS target.
 - **Confidence:** HIGH
@@ -16313,7 +16312,7 @@ EN:
 - **Contents:** Coordinator extensions plus links to `part` files under `health_sleep_syncs/` or `health_sleep_sync/`.
 - **Key code names:** `SleepSyncSourceTransport`, `HealthSleepSyncPhase`, `HealthSleepSyncState`, `HealthSleepSyncService`
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`, `lib/features/settings/health/health_connect_settings_section.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -16330,7 +16329,7 @@ RU:
 - **Зачем:** UI вызывает один вход; детали — в модулях subfolder.
 - **Содержимое:** Extensions + `part` файлы для health_sleep_sync.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/data/health/sleep_foreground_reconcile_service.dart`, `lib/features/settings/health/health_connect_settings_section.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -34050,39 +34049,38 @@ RU:
 
 EN:
 
-- **Human purpose:** Compares protected Git tree fingerprints with the approved baseline and fails release checks on unapproved changes.
-- **What this is:** Compares protected Git tree fingerprints with the approved baseline and fails release checks on unapproved changes.
-- **Why needed:** Prevents unauthorized changes to release-critical functionality.
-- **Contents:** Python fingerprint check and isolated regression self-test.
+- **Human purpose:** Developer script `critical_release_guard.py` — run manually for maintenance, smoke test, or deploy helper. Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What this is:** Developer script `critical_release_guard.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Contents:** PowerShell, Python, or Dart commands for `critical_release_guard.py`.
 - **Repository role:** audit tool
-- **Evidence of use:** `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/android-apk-build.yml`, `.github/workflows/windows-desktop-build.yml`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/android-apk-build.yml`, `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/windows-desktop-build.yml`, `AGENTS.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Deletion consequence:** Removes a layer of critical release protection.
+- **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
-- **Owner / layer:** Repository governance
-- **Responsibilities:** Owner-approved changes only.
-- **When to open:** When reviewing a critical change or release approval.
-- **Can it be deleted?** No, without explicit owner approval.
-- **Connected to:** `AGENTS.md`, `docs/DEPLOY.md`.
+- **Owner / layer:** audit tooling
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `critical_release_guard.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
 
 RU:
 
-- **Зачем файл человеку:** Сравнивает отпечаток защищённого дерева Git с утверждённой версией и блокирует выпуск при расхождении.
-- **Что это:** Сравнивает отпечаток защищённого дерева Git с утверждённой версией и блокирует выпуск при расхождении.
-- **Зачем:** Блокирует неутверждённые изменения критического кода при выпуске.
-- **Содержимое:** Python-проверка отпечатка и изолированные тесты.
+- **Зачем файл человеку:** Dev/CI скрипт `critical_release_guard.py` — повторяемая команда из repo docs. Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Что это:** Dev/CI скрипт `critical_release_guard.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `critical_release_guard.py`.
 - **Роль в репозитории:** audit tool
-- **Доказательства использования:** `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/android-apk-build.yml`, `.github/workflows/windows-desktop-build.yml`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/android-apk-build.yml`, `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `.github/workflows/windows-desktop-build.yml`, `AGENTS.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
-- **Что будет, если удалить:** Утрата слоя защиты критического выпуска.
+- **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
-- **Владелец / слой:** Управление репозиторием
-- **Обязанности:** Изменения только с одобрения владельца.
-- **Когда открывать:** При проверке критического изменения.
-- **Можно удалить?** Нет, без отдельного согласования.
-- **Связано с:** `AGENTS.md`, `docs/DEPLOY.md`.
+- **Владелец / слой:** аудит
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `critical_release_guard.py` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 
----
 
 ### `scripts/audit/deployment_contract.py`
 
@@ -34093,7 +34091,7 @@ EN:
 - **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
 - **Contents:** PowerShell, Python, or Dart commands for `deployment_contract.py`.
 - **Repository role:** audit tool
-- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `docs/ARCHITECTURE.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`.
+- **Evidence of use:** Invoked or documented by: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `docs/ARCHITECTURE.md`, `docs/DATA_MAP.md`, `docs/SERVER_SLEEP_SYNC_DEPLOY.md`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** Broken audit/deploy/manual maintenance command.
 - **Confidence:** HIGH
@@ -34110,7 +34108,7 @@ RU:
 - **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
 - **Содержимое:** Команды PowerShell/Python/Dart в `deployment_contract.py`.
 - **Роль в репозитории:** audit tool
-- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `docs/ARCHITECTURE.md`, `docs/reports/DEPLOYMENT_PIPELINE_REPAIR_2026-08-24.md`.
+- **Доказательства использования:** Вызывается или описан в: `.github/workflows/architecture-guard.yml`, `.github/workflows/deploy-pocketbase.yml`, `docs/ARCHITECTURE.md`, `docs/DATA_MAP.md`, `docs/SERVER_SLEEP_SYNC_DEPLOY.md`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Сломается audit/deploy или ручная команда сопровождения.
 - **Уверенность:** HIGH
@@ -39530,6 +39528,82 @@ RU:
 - **Связано с:** Production files под `lib/` с похожим именем.
 
 
+### `test/p0_edit_category_hotpath_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `p0_edit_category_hotpath_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `p0_edit_category_hotpath_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: _NoBrainAccess, main).
+- **Key code names:** `_NoBrainAccess`, `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/p0_edit_category_hotpath_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `p0_edit_category_hotpath_test` scenario.
+- **When to open:** CI failure or changing code near `p0_edit_category_hotpath`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `p0_edit_category_hotpath`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `p0_edit_category_hotpath` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `p0_edit_category_hotpath` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `p0_edit_category_hotpath`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/p0_edit_category_hotpath_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `p0_edit_category_hotpath`.
+- **Когда открывать:** Падение CI или правка кода рядом с `p0_edit_category_hotpath`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/p0_record_editor_index_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `p0_record_editor_index_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `p0_record_editor_index_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/p0_record_editor_index_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `p0_record_editor_index_test` scenario.
+- **When to open:** CI failure or changing code near `p0_record_editor_index`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `p0_record_editor_index`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `p0_record_editor_index` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `p0_record_editor_index` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `p0_record_editor_index`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/p0_record_editor_index_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `p0_record_editor_index`.
+- **Когда открывать:** Падение CI или правка кода рядом с `p0_record_editor_index`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
 ### `test/paths/path_structure_audit_test.dart`
 
 EN:
@@ -41314,6 +41388,43 @@ RU:
 - **Когда открывать:** Падение CI или правка кода рядом с `time_view_snap_minutes`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/timeline_invariant_hook_test.cjs`
+
+EN:
+
+- **Human purpose:** Automated test `timeline_invariant_hook_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `timeline_invariant_hook_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: test groups).
+- **Repository role:** test fixture
+- **Evidence of use:** Read/referenced by: `docs/APP_STRUCTURE.md`, `docs/DATA_MAP.md`, `docs/SERVER_SLEEP_SYNC_DEPLOY.md`, `scripts/audit/deployment_contract.py`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Broken fixture-backed test or missing diagnostic sample.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `timeline_invariant_hook_test` scenario.
+- **When to open:** CI failure or changing code near `timeline_invariant_hook`.
+- **Can it be deleted?** Broken fixture-backed test or missing diagnostic sample.
+- **Connected to:** `test/` suite; production subject near `timeline_invariant_hook`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `timeline_invariant_hook_test` — проверяет поведение без ручных нажатий. Ловит регрессии при правках связанного production-кода.
+- **Что это:** Автотест `timeline_invariant_hook_test` — проверяет поведение без ручных нажатий.
+- **Зачем:** Ловит регрессии при правках связанного production-кода.
+- **Содержимое:** Тест-кейсы (символы: test groups).
+- **Роль в репозитории:** test fixture
+- **Доказательства использования:** Читается/упоминается: `docs/APP_STRUCTURE.md`, `docs/DATA_MAP.md`, `docs/SERVER_SLEEP_SYNC_DEPLOY.md`, `scripts/audit/deployment_contract.py`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Сломается тест на fixture или пропадёт диагностический образец.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Проверяет ожидаемое поведение сценария `timeline_invariant_hook_test`.
+- **Когда открывать:** Падение CI или правка кода около `timeline_invariant_hook`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Набор `test/`; production-субъект около `timeline_invariant_hook`.
 
 
 ### `test/timeline_record_edit_save_test.dart`

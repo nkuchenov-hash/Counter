@@ -50,6 +50,20 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TextEditingController _titleController;
   late NoteDocument _recordNoteDocument;
+  NoteDocument? _noteSnapshotSource;
+  ({String plain, String encoded})? _noteTextSnapshot;
+
+  ({String plain, String encoded}) get _recordNoteTextSnapshot {
+    final document = _recordNoteDocument;
+    if (!identical(_noteSnapshotSource, document)) {
+      _noteTextSnapshot = (
+        plain: document.toPlainText().trim(),
+        encoded: document.isEmpty ? '' : document.encode(),
+      );
+      _noteSnapshotSource = document;
+    }
+    return _noteTextSnapshot!;
+  }
   int? _categoryId;
   DateTime? _startDisplay;
   DateTime? _endDisplay;
@@ -67,6 +81,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   Timer? _notesFocusExitTimer;
   Timer? _titleAssistDebounce;
   final _recordAutosaveGate = EditSheetAutosaveGate(debounce: const Duration(milliseconds: 1500));
+  bool _recordFieldsDirty = false;
   /// Existing/optimistic record key for edits.
   bool get _isPersistedRecord => recordEditHasUpdatableRecordKey(
     systemOrOptimisticId: widget.record.id,
@@ -118,7 +133,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       endTime: endUtc,
       categoryId: _categoryId,
       note: noteText.isEmpty ? null : noteText,
-      notesDeltaJson: _recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode(),
+      notesDeltaJson: _recordNoteTextSnapshot.encoded,
       checklist: checklistPayload.isEmpty ? null : checklistPayload,
       sourcePlanId: planPatch.sync
           ? (planPatch.clear ? null : planPatch.id)
@@ -149,7 +164,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       categoryId: categoryId ?? _categoryId,
       note: noteText,
       notesDeltaJson: notesDeltaSnapshot ??
-          (_recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode()),
+          (_recordNoteTextSnapshot.encoded),
       checklist: checklistPayload,
       syncSourcePlan: planPatch.sync,
       clearSourcePlan: planPatch.clear,
@@ -175,7 +190,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       categoryId: categoryId ?? _categoryId,
       note: noteText,
       notesDeltaJson: notesDeltaSnapshot ??
-          (_recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode()),
+          (_recordNoteTextSnapshot.encoded),
       checklist: checklistPayload,
       syncSourcePlan: planPatch.sync,
       clearSourcePlan: planPatch.clear,
@@ -189,10 +204,31 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     if (!_isPersistedRecord) return;
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
-    final noteText = _recordNoteDocument.toPlainText().trim();
+    final noteText = _recordNoteTextSnapshot.plain;
     final notesDeltaSnapshot =
-        _recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode();
+        _recordNoteTextSnapshot.encoded;
     final checklistPayload = _checklistForApi();
+    // Notes-only edits must not reassert unchanged title, category, plan link
+    // or interval values (including changes received from another device).
+    if (!_recordFieldsDirty) {
+      final db = DatabaseService.instance;
+      db.applyOptimisticRecordRowEdit(
+        recordId: _recordUpdateKey,
+        note: noteText,
+        notesDeltaJson: notesDeltaSnapshot,
+        checklist: checklistPayload,
+      );
+      unawaited(db.updateRecord(
+        recordId: _recordUpdateKey,
+        note: noteText,
+        notesDeltaJson: notesDeltaSnapshot,
+        checklist: checklistPayload,
+        bypassConflictCheck: true,
+        alreadyAppliedOptimistically: true,
+      ).then<void>((_) {}));
+      return;
+    }
+    _recordFieldsDirty = false;
     final planPatch = _sourcePlanPatchArgs();
     final timePatch = _autosaveTimePatch();
     _applyRecordLocalEdit(
@@ -219,6 +255,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   void _onRecordFieldChanged({bool immediate = false}) {
     if (!_isPersistedRecord) return;
     if (_titleController.text.trim().isEmpty) return;
+    _recordFieldsDirty = true;
     // Avoid Timeline rebuilding on every keystroke. Publish once per debounce,
     // and commit synchronously before leaving the sheet.
     _recordAutosaveGate.markDirty();
@@ -575,7 +612,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
 
   Future<void> _save() async {
     final title = _titleController.text.trim();
-    final noteText = _recordNoteDocument.toPlainText().trim();
+    final noteText = _recordNoteTextSnapshot.plain;
     final checklistPayload = _checklistForApi();
     final planPatch = _sourcePlanPatchArgs();
     final validation = validateRecordEditSave(
@@ -622,7 +659,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
         endUtc,
         categoryId: _categoryId,
         note: noteText,
-        notesDeltaJson: _recordNoteDocument.isEmpty ? '' : _recordNoteDocument.encode(),
+        notesDeltaJson: _recordNoteTextSnapshot.encoded,
         checklist: checklistPayload,
       );
       if (!mounted) return;
@@ -804,6 +841,11 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     );
   }
 
+  int _fallbackRecordCategoryId() {
+    final pairs = DatabaseService.instance.allCategoryIdPathPairs;
+    return pairs.isEmpty ? CategoryRule.uncategorizedSyntheticId : pairs.first.id;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Keep geometry stable while Gboard temporarily shifts focus.
@@ -812,17 +854,11 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
       notesImeSessionActive: _notesImeSessionActive,
       keyboardInset: MediaQuery.viewInsetsOf(context).bottom,
     );
-    final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     // ACTIVE_STATUS_LAW: running ⇔ end_time null (UI mirrors Brain).
     final isRunning = widget.record.endTime == null;
-    final int catVal = _categoryId != null
-        ? resolveEditFieldCategoryId(
-            db: DatabaseService.instance,
-            categoryId: _categoryId!,
-          )
-        : (pairs.isNotEmpty
-              ? pairs.first.id
-              : CategoryRule.uncategorizedSyntheticId);
+    // The explicit draft id is authoritative; build the category path list
+    // only for the legacy missing-category fallback.
+    final int catVal = _categoryId ?? _fallbackRecordCategoryId();
     return Material(
       clipBehavior: Clip.none,
       color: Theme.of(context).colorScheme.surface,
