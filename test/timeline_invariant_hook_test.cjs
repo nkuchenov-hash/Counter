@@ -4,6 +4,7 @@
 const assert = require('node:assert/strict');
 const h = require('../pb_hooks/records.interval_sanitize_helpers.js');
 const { test } = require('node:test');
+global.BadRequestError = class BadRequestError extends Error {};
 const owner = 'owner1234567890';
 const other = 'other1234567890';
 const iso = (value) => new Date(value).toISOString();
@@ -21,23 +22,59 @@ const model = (row) => ({
 });
 function fixture(records, fail = false) {
   const stored = new Map(records.map(row => [row.id, {...row}]));
-  const app = {
-    findRecordsByFilter(collection, filter, order, limit, offset, params) {
-      assert.equal(collection, 'records');
-      assert.equal(params.uid, owner);
-      let rows = [...stored.values()].filter(row => row.user_id === params.uid);
-      if (filter.includes("parent_id = ''")) rows = rows.filter(row => !row.parent_id);
-      rows.sort((a,b) => Date.parse(a.start_time) - Date.parse(b.start_time));
-      if (order.startsWith('-')) rows.reverse();
-      return rows.slice(offset, limit > 0 ? offset + limit : undefined)
-        .map(row => model({...row}));
-    },
-    saveNoValidate(row) {
-      if (fail) throw new Error('injected save failure');
-      stored.set(row.id, {...row.data});
-    },
-  };
-  return {app, stored};
+  function makeApp(data, inTx = false) {
+    return {
+      findRecordsByFilter(collection, filter, order, limit, offset, params) {
+        assert.equal(collection, 'records');
+        assert.equal(params.uid, owner);
+        let rows = [...data.values()].filter(row => row.user_id === params.uid);
+        if (filter.includes("parent_id = ''")) rows = rows.filter(row => !row.parent_id);
+        if (filter.includes('id != {:id}')) rows = rows.filter(row => row.id !== params.id);
+        if (filter.includes('start_time >= {:start}')) rows = rows.filter(row =>
+          Date.parse(row.start_time) >= Date.parse(params.start));
+        if (filter.includes('start_time < {:start}')) rows = rows.filter(row =>
+          Date.parse(row.start_time) < Date.parse(params.start));
+        if (filter.includes("end_time = '' || end_time > {:start}")) rows = rows.filter(row =>
+          !row.end_time || Date.parse(row.end_time) > Date.parse(params.start));
+        rows.sort((a,b) => Date.parse(a.start_time) - Date.parse(b.start_time) ||
+          a.id.localeCompare(b.id));
+        if (order.startsWith('-')) rows.reverse();
+        return rows.slice(offset, limit > 0 ? offset + limit : undefined)
+          .map(row => model({...row}));
+      },
+      findRecordById(collection, id) {
+        assert.equal(collection, 'records');
+        assert.ok(data.has(id), 'Missing row ' + id);
+        return model({...data.get(id)});
+      },
+      saveNoValidate(row) {
+        if (fail) throw new Error('injected save failure');
+        // Real PB invokes model hooks for corrective writes as well.
+        const event = {app:this, record:row, next() {
+          event.app._persist(row);
+        }};
+        h.reconcileRecordWrite(event);
+      },
+      _persist(row) { data.set(row.id, {...row.data}); },
+      runInTransaction(callback) {
+        if (inTx) { callback(this); return; }
+        const staged = new Map([...data].map(([key,row]) => [key,{...row}]));
+        callback(makeApp(staged, true));
+        data.clear();
+        for (const [id,row] of staged) data.set(id,row);
+      },
+    };
+  }
+  return {app:makeApp(stored), stored};
+}
+function write(app, row) {
+  const subject = model({...row});
+  const event = {app, record:subject, next() {
+    event.app._persist(subject);
+  }};
+  h.reconcileRecordWrite(event);
+  assert.equal(event.app, app, 'Original app restored');
+  return subject.data;
 }
 function assertNoOverlap(stored) {
   const rows = [...stored.values()].filter(r => r.user_id === owner && !r.parent_id)
@@ -112,4 +149,59 @@ test('failed corrective save must not report successful reconciliation', () => {
   const {app} = fixture(screenshotRows(), true);
   assert.throws(() => h.sanitizeAllPrimaryIntervalsForUser(app, owner),
     /injected save failure/);
+});
+
+test('server import atomically repairs an open predecessor and preserves source bounds', () => {
+  const rows = screenshotRows();
+  const {app, stored} = fixture([{...rows[0], end_time:'', status:'running'}]);
+  write(app, rows[1]);
+  assert.equal(stored.get('preparation').end_time, iso(at('01:57')));
+  assert.equal(stored.get('sleep').end_time, iso(at('09:17')));
+  assertNoOverlap(stored);
+});
+test('failed predecessor correction rolls back the sleep insert', () => {
+  const rows = screenshotRows();
+  const {app, stored} = fixture([rows[0]], true);
+  assert.throws(() => write(app, rows[1]), /injected save failure/);
+  assert.equal(stored.has('sleep'), false);
+  assert.deepEqual(stored.get('preparation'), rows[0]);
+});
+test('late Stop cannot expand across authoritative sleep', () => {
+  const rows = screenshotRows();
+  const {app, stored} = fixture(rows);
+  write(app, rows[0]);
+  assert.equal(stored.get('preparation').end_time, iso(at('01:57')));
+  assertNoOverlap(stored);
+});
+test('second running primary closes the old timer without touching child records', () => {
+  const rows = screenshotRows();
+  const child = record('child', at('01:00'), null, {parent_id:'preparation'});
+  const {app, stored} = fixture([{...rows[0], end_time:'', status:'running'}, child]);
+  write(app, rows[2]);
+  assert.equal(stored.get('preparation').end_time, iso(at('09:23')));
+  assert.notEqual(stored.get('preparation').status, 'running');
+  assert.equal(stored.get('child').end_time, '');
+  assertNoOverlap(stored);
+});
+test('ordinary record starting inside sleep is rejected without modifying data', () => {
+  const rows = screenshotRows();
+  const {app, stored} = fixture([rows[1]]);
+  assert.throws(() => write(app, record('conflict', at('03:00'), at('04:00'))),
+    /authoritative sleep/);
+  assert.deepEqual([...stored.values()], [rows[1]]);
+});
+test('same-start conflicting primary cannot silently produce a zero-length replacement', () => {
+  const rows = screenshotRows();
+  const {app, stored} = fixture([rows[1]]);
+  assert.throws(() => write(app, record('conflict', at('01:57'), at('04:00'))),
+    /Conflicting primary/);
+  assert.deepEqual([...stored.values()], [rows[1]]);
+});
+test('scheduled repair uses atomic predecessor correction and preserves sleep', () => {
+  const rows = screenshotRows();
+  const {app, stored} = fixture(rows);
+  h.repairSleepPredecessors(app, model(rows[1]));
+  assert.equal(stored.get('preparation').end_time, iso(at('01:57')));
+  assert.equal(stored.get('sleep').end_time, iso(at('09:17')));
+  assertNoOverlap(stored);
 });
