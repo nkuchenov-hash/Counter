@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `c451f899` on 2026-11-27.**
+**Generated from input HEAD `fbcc4fbc` on 2026-11-27.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1039 — each appears **exactly once** below.
+**Tracked files:** 1042 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -26,8 +26,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Role | Count |
 | :--- | ---: |
-| `production UI` | 206 |
-| `test` | 149 |
+| `production UI` | 207 |
+| `test` | 150 |
 | `Brain/data` | 121 |
 | `platform build` | 84 |
 | `shared foundation` | 73 |
@@ -38,8 +38,8 @@ python scripts/manual/generate_app_structure_detailed.py
 | `test fixture` | 32 |
 | `PocketBase migration` | 27 |
 | `PocketBase backend` | 25 |
+| `CI/deployment` | 20 |
 | `shared Voice system` | 20 |
-| `CI/deployment` | 19 |
 | `historical engineering record` | 18 |
 | `localization` | 13 |
 | `installer` | 12 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 569 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 278 |
+| `PROVEN_REQUIRED` | 571 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 279 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,7 +68,7 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 951 |
+| `HIGH` | 954 |
 | `MEDIUM` | 88 |
 
 ---
@@ -4944,6 +4944,43 @@ RU:
 - **Владелец / слой:** CI
 - **Обязанности:** Собрать и опубликовать web build при push в main.
 - **Когда открывать:** Сайт не обновился после merge; проверка CI deploy log.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
+### `.github/workflows/editor-native-validation.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/editor-native-validation.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/editor-native-validation.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/editor-native-validation.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/editor-native-validation.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `editor-native-validation.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `editor-native-validation.yml`.
+- **When to open:** When behavior tied to `editor-native-validation.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `editor-native-validation.yml` для CI и операций репозитория. GitHub Actions читает `editor-native-validation.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `editor-native-validation.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `editor-native-validation.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `editor-native-validation.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `editor-native-validation.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `editor-native-validation.yml`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `.github/`, Flutter tooling.
 
@@ -21275,7 +21312,7 @@ EN:
 - **What this is:** `notes_editor_screen.dart` on notes area — Shared responsive Figma production screen shell for mobile/web/desktop: header, title/meta, visible document viewport, desktop glass surface, pinned finite toolbar.
 - **Why needed:** Users see `notes_editor_screen.dart` when using notes area.
 - **Contents:** Primary symbols: `NotesEditorMetadataTag`, `NotesEditorBody`, `NotesEmbeddedEditorScope`, `NotesEditorScreen`, `_NotesEditorRail`, `_NotesEditorSurface`.
-- **Key code names:** `NotesEditorMetadataTag`, `NotesEditorBody`, `NotesEmbeddedEditorScope`, `NotesEditorScreen`, `_NotesEditorRail`, `_NotesEditorSurface`, `_NotesNavigationHeader`
+- **Key code names:** `NotesEditorMetadataTag`, `NotesEditorBody`, `NotesEmbeddedEditorScope`, `NotesEditorScreen`, `_NotesEditorRail`, `_NotesEditorSurface`
 - **Repository role:** production UI
 - **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/note_editor_page.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
 - **Necessity status:** PROVEN_REQUIRED
@@ -24981,6 +25018,44 @@ RU:
 - **Связано с:** Edit sheets и voice UI на всех вкладках
 
 
+### `lib/features/shared/edit_sheet/editor_v45_chrome.dart`
+
+EN:
+
+- **Human purpose:** `editor_v45_chrome.dart` on edit sheets and voice UI on every tab — editor v45 chrome. Users see `editor_v45_chrome.dart` when using edit sheets and voice UI on every tab.
+- **What this is:** `editor_v45_chrome.dart` on edit sheets and voice UI on every tab — editor v45 chrome.
+- **Why needed:** Users see `editor_v45_chrome.dart` when using edit sheets and voice UI on every tab.
+- **Contents:** Primary symbols: `EditorV45Title`, `_EditorV45TitleState`, `EditorV45TimeCard`, `_DurationLine`, `_EditorTimePoint`, `EditorV45MetadataRow`.
+- **Key code names:** `EditorV45Title`, `_EditorV45TitleState`, `EditorV45TimeCard`, `_DurationLine`, `_EditorTimePoint`, `EditorV45MetadataRow`, `EditorV45CategoryRow`, `EditorV45Actions`, `EditorV45Collapsible`
+- **Repository role:** production UI
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
+- **Confidence:** HIGH
+- **Owner / layer:** shared edit sheets
+- **Responsibilities:** Implements `EditorV45Title` and related API in `editor_v45_chrome.dart`.
+- **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
+- **Can it be deleted?** Compile failure or missing UI/data behavior for those callers.
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: editor v45 chrome
+
+RU:
+
+- **Зачем файл человеку:** `editor_v45_chrome.dart` на edit sheets и voice UI на всех вкладках — Поддерживает поведение `editor_v45_chrome` в этой feature-зоне.. Пользователь видит UI из `editor_v45_chrome.dart` на edit sheets и voice UI на всех вкладках.
+- **Что это:** `editor_v45_chrome.dart` на edit sheets и voice UI на всех вкладках — Поддерживает поведение `editor_v45_chrome` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `editor_v45_chrome.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Dart-модуль `editor_v45_chrome.dart` — классы и helpers в исходнике.
+- **Роль в репозитории:** production UI
+- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
+- **Уверенность:** HIGH
+- **Владелец / слой:** общие edit sheets
+- **Обязанности:** Поддерживает поведение `editor_v45_chrome` в этой feature-зоне.
+- **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Edit sheets и voice UI на всех вкладках
+
+
 ### `lib/features/shared/edit_sheet/parallel_record_panels.dart`
 
 EN:
@@ -27437,7 +27512,7 @@ EN:
 - **Contents:** Path-specific code, data, configuration, or documentation for `lib/shared/categories/picker/category_picker_contracts.dart`.
 - **Key code names:** `CategoryTreeSource`, `CategoryPickerActions`
 - **Repository role:** developer tool
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/paths/paths_page.dart`, `lib/features/settings/categories/category_recursive_browse_panel.dart`, `lib/main.dart`, `lib/shared/categories/picker/category_tree_picker.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/paths/paths_page.dart`, `lib/features/settings/categories/category_recursive_browse_panel.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -27454,7 +27529,7 @@ RU:
 - **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `lib/shared/categories/picker` для `category_picker_contracts.dart`.
 - **Содержимое:** Данные или код `category_picker_contracts.dart`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/paths/paths_page.dart`, `lib/features/settings/categories/category_recursive_browse_panel.dart`, `lib/main.dart`, `lib/shared/categories/picker/category_tree_picker.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/paths/paths_page.dart`, `lib/features/settings/categories/category_recursive_browse_panel.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -27513,7 +27588,7 @@ EN:
 - **Contents:** Path-specific code, data, configuration, or documentation for `lib/shared/categories/picker/category_tree_picker.dart`.
 - **Key code names:** `_CategoryTreePickerSheet`, `_CategoryTreePickerSheetState`, `_CategoryTreeMultiPickerSheet`, `_CategoryTreeMultiPickerSheetState`
 - **Repository role:** developer tool
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/notes/widgets/notes_category_plus_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/shared/planning_task_edit_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/notes/widgets/notes_category_plus_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/shared/edit_sheet/editor_v45_chrome.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -27530,7 +27605,7 @@ RU:
 - **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `lib/shared/categories/picker` для `category_tree_picker.dart`.
 - **Содержимое:** Данные или код `category_tree_picker.dart`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** developer tool
-- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/notes/widgets/notes_category_plus_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/shared/planning_task_edit_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/features/lists/category_filter_tree_field.dart`, `lib/features/lists/lists_filters.dart`, `lib/features/notes/widgets/notes_category_plus_sheet.dart`, `lib/features/settings/categories/category_list_view.dart`, `lib/features/shared/edit_sheet/editor_v45_chrome.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -38178,6 +38253,44 @@ RU:
 - **Владелец / слой:** тесты
 - **Обязанности:** Assert ожидаемого поведения `edit_sheet_autosave`.
 - **Когда открывать:** Падение CI или правка кода рядом с `edit_sheet_autosave`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
+### `test/editor_v45_chrome_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `editor_v45_chrome_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `editor_v45_chrome_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** (1) Flutter test file; exercised via `flutter test test/editor_v45_chrome_test.dart` / CI when enabled. (2) Namesake production subject: `lib/features/shared/edit_sheet/editor_v45_chrome.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `editor_v45_chrome_test` scenario.
+- **When to open:** CI failure or changing code near `editor_v45_chrome`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `editor_v45_chrome`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `editor_v45_chrome` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `editor_v45_chrome` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `editor_v45_chrome`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** (1) Файл теста Flutter; запускается через `flutter test test/editor_v45_chrome_test.dart`. (2) Парный production-файл: `lib/features/shared/edit_sheet/editor_v45_chrome.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `editor_v45_chrome`.
+- **Когда открывать:** Падение CI или правка кода рядом с `editor_v45_chrome`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 
