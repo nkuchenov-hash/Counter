@@ -499,8 +499,8 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     }
     return EditorV45MetadataRow(
       icon: Icons.link_rounded,
-      label: t(loc, 'record_link_plan_label'),
-      value: _plansLoading ? t(loc, 'record_link_plan_loading') : displayLabel,
+      label: loc == 'ru' ? 'Связь с планом' : 'Linked plan',
+      value: _plansLoading ? t(loc, 'record_link_plan_loading') : (initial.isEmpty ? (loc == 'ru' ? 'Без связи' : 'Not linked') : displayLabel),
       onTap: _plansLoading ? null : () => unawaited(_openPlanLinkPicker(context)),
     );
   }
@@ -855,14 +855,14 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                       controller: _tabController,
                       isScrollable: true,
                       indicatorSize: TabBarIndicatorSize.tab,
-                      labelPadding: const EdgeInsets.symmetric(horizontal: 10),
+                      labelPadding: const EdgeInsets.only(right: 15), labelStyle: const TextStyle(fontWeight: FontWeight.w600), unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
                       tabAlignment: TabAlignment.start,
                       padding: EdgeInsets.zero,
                       tabs: [
-                        AppCompactTextTab(
+                        AppCompactTextTab(fontSize: 15, inheritWeight: true,
                           text: t(currentLocale.value, 'notes_tab'),
                         ),
-                        AppCompactTextTab(
+                        AppCompactTextTab(fontSize: 15, inheritWeight: true,
                           text: t(
                             currentLocale.value,
                             'parallel_activities_tab',
