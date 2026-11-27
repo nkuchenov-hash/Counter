@@ -2,11 +2,11 @@
 
 Owner-readable, evidence-backed map of every tracked folder and file (EN + RU).
 
-**Generated from input HEAD `fa94c883` on 2026-11-27.**
+**Generated from input HEAD `567c5116` on 2026-11-27.**
 
 The SHA above is the repository HEAD used as **generator input** (via `git ls-files` / `git rev-parse`). Committing this document creates a new SHA; do not treat the input HEAD as the commit that contains this file.
 
-**Tracked files:** 1044 — each appears **exactly once** below.
+**Tracked files:** 1049 — each appears **exactly once** below.
 
 Concise architecture overview: [`APP_STRUCTURE.md`](APP_STRUCTURE.md)
 Hygiene audit (watchlist source): [`REPOSITORY_HYGIENE_AUDIT_2026-07-21.md`](reports/REPOSITORY_HYGIENE_AUDIT_2026-07-21.md)
@@ -27,18 +27,18 @@ python scripts/manual/generate_app_structure_detailed.py
 | Role | Count |
 | :--- | ---: |
 | `production UI` | 207 |
-| `test` | 151 |
+| `test` | 152 |
 | `Brain/data` | 121 |
 | `platform build` | 84 |
-| `shared foundation` | 73 |
-| `developer tool` | 66 |
+| `shared foundation` | 74 |
+| `developer tool` | 68 |
 | `governing documentation` | 45 |
 | `platform resource` | 44 |
 | `Desktop Voice runtime` | 36 |
 | `test fixture` | 33 |
 | `PocketBase migration` | 27 |
 | `PocketBase backend` | 25 |
-| `CI/deployment` | 20 |
+| `CI/deployment` | 21 |
 | `shared Voice system` | 20 |
 | `historical engineering record` | 18 |
 | `localization` | 13 |
@@ -57,8 +57,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Necessity | Count |
 | :--- | ---: |
-| `PROVEN_REQUIRED` | 571 |
-| `REQUIRED_FOR_TEST_OR_TOOLING` | 281 |
+| `PROVEN_REQUIRED` | 572 |
+| `REQUIRED_FOR_TEST_OR_TOOLING` | 285 |
 | `REQUIRED_BY_PLATFORM_CONVENTION` | 128 |
 | `GOVERNING_DOCUMENTATION` | 45 |
 | `HISTORICAL_RECORD` | 18 |
@@ -68,8 +68,8 @@ python scripts/manual/generate_app_structure_detailed.py
 
 | Confidence | Count |
 | :--- | ---: |
-| `HIGH` | 956 |
-| `MEDIUM` | 88 |
+| `HIGH` | 959 |
+| `MEDIUM` | 90 |
 
 ---
 
@@ -106,6 +106,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/l10n/`](#folder-libl10n)
 - [`lib/services/`](#folder-libservices)
 - [`lib/shared/`](#folder-libshared)
+- [`lib/app/design_lab/`](#folder-libappdesign_lab)
 - [`lib/app/shell/`](#folder-libappshell)
 - [`lib/core/env/`](#folder-libcoreenv)
 - [`lib/core/navigation/`](#folder-libcorenavigation)
@@ -177,8 +178,7 @@ Evidence is computed from Dart import/export/`part` graphs, bounded path referen
 - [`lib/shared/voice/recognition/`](#folder-libsharedvoicerecognition)
 - [`lib/shared/voice/routing/`](#folder-libsharedvoicerouting)
 - [`lib/shared/voice/ui/`](#folder-libsharedvoiceui)
-- [`lib/shared/voice/platforms/desktop/`](#folder-libsharedvoiceplatformsdesktop)
-- …and 1 more folders in detailed sections below.
+- …and 2 more folders in detailed sections below.
 
 ### Tests
 
@@ -2018,6 +2018,30 @@ RU:
 - **Когда открывать:** Flash launch screen или неверная orientation на iOS/macOS.
 - **Можно удалить?** Нет — нужен для сборки iOS.
 - **Связанные пути:** `ios/Flutter/`.
+
+---
+
+## Folder: `lib/app/design_lab/`
+
+EN:
+
+- **What this folder is:** Dart source subtree `lib/app/design_lab/` — part of app code for app/design_lab.
+- **Why it exists:** Code under `lib/` ships in every platform build; this folder groups related Dart modules.
+- **What lives here:** Dart modules listed in file entries below.
+- **What part of the app it affects:** App behavior for the feature or layer named in the path.
+- **When to open it:** Bug or feature work in `app/design_lab`.
+- **Can it be deleted?** No — required for app runtime unless explicitly deprecated in ROADMAP.
+- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
+
+RU:
+
+- **Что это за папка:** Каталог исходного Dart-кода `lib/app/design_lab/`, отвечающий за область `app/design_lab`.
+- **Зачем нужна:** Собирает рядом файлы одного владельца, чтобы UI, данные и общая инфраструктура не смешивали обязанности.
+- **Что здесь лежит:** Dart-файлы и дочерние каталоги этого владельца; каждый файл описан ниже.
+- **На что влияет в приложении:** Поведение приложения в области `app/design_lab` и связанные с ней потоки данных или интерфейс.
+- **Когда открывать:** Открывать при изменениях или ошибках в области `app/design_lab`.
+- **Можно удалить?** Нет — нужен для работы приложения unless explicitly deprecated in ROADMAP.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, parent `lib/` folders.
 
 ---
 
@@ -4948,6 +4972,43 @@ RU:
 - **Связано с:** `.github/`, Flutter tooling.
 
 
+### `.github/workflows/design-lab-preview.yml`
+
+EN:
+
+- **Human purpose:** GitHub Actions workflow `.github/workflows/design-lab-preview.yml` defines the repository automation named by this workflow file. The CI system loads `.github/workflows/design-lab-preview.yml` to run its declared triggers, permissions, jobs, and checks.
+- **What this is:** GitHub Actions workflow `.github/workflows/design-lab-preview.yml` defines the repository automation named by this workflow file.
+- **Why needed:** The CI system loads `.github/workflows/design-lab-preview.yml` to run its declared triggers, permissions, jobs, and checks.
+- **Contents:** YAML workflow definition specific to `design-lab-preview.yml`.
+- **Repository role:** CI/deployment
+- **Evidence of use:** (1) GitHub Actions discovers workflows under `.github/workflows/`; see `docs/DEPLOY.md` for publish/build intent. (2) Also referenced by: `docs/APP_STRUCTURE.md`.
+- **Necessity status:** PROVEN_REQUIRED
+- **Deletion consequence:** Broken CI deploy or Windows installer pipeline.
+- **Confidence:** HIGH
+- **Owner / layer:** CI
+- **Responsibilities:** Own the GitHub Actions behavior declared by `design-lab-preview.yml`.
+- **When to open:** When behavior tied to `design-lab-preview.yml` breaks or you need to change its documented role.
+- **Can it be deleted?** Broken CI deploy or Windows installer pipeline.
+- **Connected to:** Flutter `.github` tooling.
+
+RU:
+
+- **Зачем файл человеку:** Автоматизация GitHub Actions `design-lab-preview.yml` для CI и операций репозитория. GitHub Actions читает `design-lab-preview.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Что это:** Автоматизация GitHub Actions `design-lab-preview.yml` для CI и операций репозитория.
+- **Зачем:** GitHub Actions читает `design-lab-preview.yml` и запускает описанные в нём события, проверки и служебные шаги.
+- **Содержимое:** YAML-триггеры, permissions и шаги CI, относящиеся к workflow `design-lab-preview.yml`.
+- **Роль в репозитории:** CI/deployment
+- **Доказательства использования:** GitHub Actions подхватывает workflow из `.github/workflows/`; см. `docs/DEPLOY.md`.
+- **Статус необходимости:** PROVEN_REQUIRED
+- **Что будет, если удалить:** Сломается CI deploy или сборка Windows installer.
+- **Уверенность:** HIGH
+- **Владелец / слой:** CI
+- **Обязанности:** Управляет CI-сценарием `design-lab-preview.yml` и его границами выполнения.
+- **Когда открывать:** Когда ломается поведение, связанное с `design-lab-preview.yml`.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `.github/`, Flutter tooling.
+
+
 ### `.github/workflows/editor-native-validation.yml`
 
 EN:
@@ -6622,7 +6683,7 @@ EN:
 - **Why needed:** Tracked because `assets/fonts` needs `Onest-Variable.ttf` for build, CI, or maintenance.
 - **Contents:** Open `Onest-Variable.ttf` when working on `assets/fonts` (see folder section above).
 - **Repository role:** asset
-- **Evidence of use:** Referenced by: `pubspec.yaml`, `test/app_control_consistency_test.dart`.
+- **Evidence of use:** Referenced by: `.github/workflows/editor-native-validation.yml`, `pubspec.yaml`, `test/app_control_consistency_test.dart`, `test/editor_v45_chrome_test.dart`.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** May break tooling or configuration; verify before delete.
 - **Confidence:** MEDIUM
@@ -6639,7 +6700,7 @@ RU:
 - **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `assets/fonts` для `Onest-Variable.ttf`.
 - **Содержимое:** Данные или код `Onest-Variable.ttf`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** asset
-- **Доказательства использования:** Упоминается в: `pubspec.yaml`, `test/app_control_consistency_test.dart`.
+- **Доказательства использования:** Упоминается в: `.github/workflows/editor-native-validation.yml`, `pubspec.yaml`, `test/app_control_consistency_test.dart`, `test/editor_v45_chrome_test.dart`.
 - **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
 - **Уверенность:** MEDIUM
@@ -9281,25 +9342,25 @@ RU:
 
 EN:
 
-- **Human purpose:** html file `index.html` in `igropoisk` — repo tooling or config. Tracked because `igropoisk` needs `index.html` for build, CI, or maintenance.
-- **What this is:** html file `index.html` in `igropoisk` — repo tooling or config.
-- **Why needed:** Tracked because `igropoisk` needs `index.html` for build, CI, or maintenance.
-- **Contents:** Open `index.html` when working on `igropoisk` (see folder section above).
+- **Human purpose:** Tracked repository item `igropoisk/index.html` with role `developer tool`. `igropoisk/index.html` supports its recorded owner `repository root` according to the evidence index.
+- **What this is:** Tracked repository item `igropoisk/index.html` with role `developer tool`.
+- **Why needed:** `igropoisk/index.html` supports its recorded owner `repository root` according to the evidence index.
+- **Contents:** Path-specific code, data, configuration, or documentation for `igropoisk/index.html`.
 - **Repository role:** developer tool
 - **Evidence of use:** Tracked repository file `igropoisk/index.html` retained for tooling/config.
 - **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
 - **Deletion consequence:** May break tooling or configuration; verify before delete.
 - **Confidence:** MEDIUM
 - **Owner / layer:** repository root
-- **Responsibilities:** Supports `igropoisk` workflow for `index.html`.
-- **When to open:** When build output or maintenance cites `index.html`.
+- **Responsibilities:** Provide the `developer tool` responsibility assigned to `igropoisk/index.html`.
+- **When to open:** When behavior tied to `index.html` breaks or you need to change its documented role.
 - **Can it be deleted?** No — part of repository tooling or config.
-- **Connected to:** `igropoisk/`, `docs/APP_STRUCTURE.md`.
+- **Connected to:** APP_STRUCTURE role: Preview-only static web shell with same-origin network policy
 
 RU:
 
-- **Зачем файл человеку:** `index.html` — отслеживаемый ресурс области `igropoisk` с отдельной ролью. Поддерживает процесс, сборку, данные или runtime-задачу области `igropoisk` для `index.html`.
-- **Что это:** `index.html` — отслеживаемый ресурс области `igropoisk` с отдельной ролью.
+- **Зачем файл человеку:** Исходный файл `index.html` — Preview-only static web shell with same-origin network policy. Поддерживает процесс, сборку, данные или runtime-задачу области `igropoisk` для `index.html`.
+- **Что это:** Исходный файл `index.html` — Preview-only static web shell with same-origin network policy.
 - **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `igropoisk` для `index.html`.
 - **Содержимое:** Данные или код `index.html`, необходимые его подтверждённой роли и указанным ниже связям.
 - **Роль в репозитории:** developer tool
@@ -9309,9 +9370,9 @@ RU:
 - **Уверенность:** MEDIUM
 - **Владелец / слой:** корень репозитория
 - **Обязанности:** Реализует назначение `index.html` для области `igropoisk`.
-- **Когда открывать:** When результат сборки or maintenance cites `index.html`.
+- **Когда открывать:** Когда ломается поведение, связанное с `index.html`.
 - **Можно удалить?** Нет — конфигурация/инструмент репозитория.
-- **Связано с:** `igropoisk/`, `docs/APP_STRUCTURE.md`.
+- **Связано с:** `igropoisk/`, `docs/APP_STRUCTURE.md`
 
 
 ### `igropoisk/package.json`
@@ -11498,6 +11559,119 @@ RU:
 - **Связано с:** `ios/Runner/Info.plist`, Flutter embedder.
 
 
+### `lib/app/design_lab/editor_lab.dart`
+
+EN:
+
+- **Human purpose:** Tracked repository item `lib/app/design_lab/editor_lab.dart` with role `developer tool`. `lib/app/design_lab/editor_lab.dart` supports its recorded owner `repository root` according to the evidence index.
+- **What this is:** Tracked repository item `lib/app/design_lab/editor_lab.dart` with role `developer tool`.
+- **Why needed:** `lib/app/design_lab/editor_lab.dart` supports its recorded owner `repository root` according to the evidence index.
+- **Contents:** Path-specific code, data, configuration, or documentation for `lib/app/design_lab/editor_lab.dart`.
+- **Key code names:** `LabEditor`, `LabMode`, `LabDevice`, `EditorDesignLab`, `_EditorDesignLabState`, `_LabEditorSurface`, `_LabEditorSurfaceState`
+- **Repository role:** developer tool
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/design_lab/main.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Removing it breaks a required repository capability.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Provide the `developer tool` responsibility assigned to `lib/app/design_lab/editor_lab.dart`.
+- **When to open:** When behavior tied to `editor_lab.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Removing it breaks a required repository capability.
+- **Connected to:** APP_STRUCTURE role: In-memory Note/Record/Plan component playground
+
+RU:
+
+- **Зачем файл человеку:** Исходный файл `editor_lab.dart` — In-memory Note/Record/Plan component playground. Поддерживает процесс, сборку, данные или runtime-задачу области `lib/app/design_lab` для `editor_lab.dart`.
+- **Что это:** Исходный файл `editor_lab.dart` — In-memory Note/Record/Plan component playground.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `lib/app/design_lab` для `editor_lab.dart`.
+- **Содержимое:** Данные или код `editor_lab.dart`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Импортируется production Dart: `lib/app/design_lab/main.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Удаление ломает нужную возможность репозитория.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `editor_lab.dart` для области `lib/app/design_lab`.
+- **Когда открывать:** Когда ломается поведение, связанное с `editor_lab.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/app/design_lab/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/app/design_lab/index.html`
+
+EN:
+
+- **Human purpose:** Tracked repository item `lib/app/design_lab/index.html` with role `developer tool`. `lib/app/design_lab/index.html` supports its recorded owner `repository root` according to the evidence index.
+- **What this is:** Tracked repository item `lib/app/design_lab/index.html` with role `developer tool`.
+- **Why needed:** `lib/app/design_lab/index.html` supports its recorded owner `repository root` according to the evidence index.
+- **Contents:** Path-specific code, data, configuration, or documentation for `lib/app/design_lab/index.html`.
+- **Repository role:** developer tool
+- **Evidence of use:** Referenced by: `.github/workflows/design-lab-preview.yml`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** May break tooling or configuration; verify before delete.
+- **Confidence:** MEDIUM
+- **Owner / layer:** repository root
+- **Responsibilities:** Provide the `developer tool` responsibility assigned to `lib/app/design_lab/index.html`.
+- **When to open:** When behavior tied to `index.html` breaks or you need to change its documented role.
+- **Can it be deleted?** May break tooling or configuration; verify before delete.
+- **Connected to:** APP_STRUCTURE role: Preview-only static web shell with same-origin network policy
+
+RU:
+
+- **Зачем файл человеку:** Исходный файл `index.html` — Preview-only static web shell with same-origin network policy. Поддерживает процесс, сборку, данные или runtime-задачу области `lib/app/design_lab` для `index.html`.
+- **Что это:** Исходный файл `index.html` — Preview-only static web shell with same-origin network policy.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `lib/app/design_lab` для `index.html`.
+- **Содержимое:** Данные или код `index.html`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** developer tool
+- **Доказательства использования:** Упоминается в: `.github/workflows/design-lab-preview.yml`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Может сломать tooling; проверять перед удалением.
+- **Уверенность:** MEDIUM
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `index.html` для области `lib/app/design_lab`.
+- **Когда открывать:** Когда ломается поведение, связанное с `index.html`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/app/design_lab/`, `docs/APP_STRUCTURE.md`
+
+
+### `lib/app/design_lab/main.dart`
+
+EN:
+
+- **Human purpose:** Tracked repository item `lib/app/design_lab/main.dart` with role `shared foundation`. `lib/app/design_lab/main.dart` supports its recorded owner `repository root` according to the evidence index.
+- **What this is:** Tracked repository item `lib/app/design_lab/main.dart` with role `shared foundation`.
+- **Why needed:** `lib/app/design_lab/main.dart` supports its recorded owner `repository root` according to the evidence index.
+- **Contents:** Path-specific code, data, configuration, or documentation for `lib/app/design_lab/main.dart`.
+- **Key code names:** `EditorDesignLabApp`
+- **Repository role:** shared foundation
+- **Evidence of use:** Referenced by tests/tooling: `test/editor_design_lab_test.dart`.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Missing test coverage or broken manual benchmark/smoke harness.
+- **Confidence:** HIGH
+- **Owner / layer:** repository root
+- **Responsibilities:** Provide the `shared foundation` responsibility assigned to `lib/app/design_lab/main.dart`.
+- **When to open:** When behavior tied to `main.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** Missing test coverage or broken manual benchmark/smoke harness.
+- **Connected to:** APP_STRUCTURE role: Separate Flutter entry point
+
+RU:
+
+- **Зачем файл человеку:** Исходный файл `main.dart` — Separate Flutter entry point. Поддерживает процесс, сборку, данные или runtime-задачу области `lib/app/design_lab` для `main.dart`.
+- **Что это:** Исходный файл `main.dart` — Separate Flutter entry point.
+- **Зачем:** Поддерживает процесс, сборку, данные или runtime-задачу области `lib/app/design_lab` для `main.dart`.
+- **Содержимое:** Данные или код `main.dart`, необходимые его подтверждённой роли и указанным ниже связям.
+- **Роль в репозитории:** shared foundation
+- **Доказательства использования:** Нужен тестам/инструментам: `test/editor_design_lab_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт покрытие тестами или сломается benchmark/smoke.
+- **Уверенность:** HIGH
+- **Владелец / слой:** корень репозитория
+- **Обязанности:** Реализует назначение `main.dart` для области `lib/app/design_lab`.
+- **Когда открывать:** Когда ломается поведение, связанное с `main.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/app/design_lab/`, `docs/APP_STRUCTURE.md`
+
+
 ### `lib/app/shell/app_shell.dart`
 
 EN:
@@ -13167,7 +13341,7 @@ EN:
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
 - **Contents:** Dart module `theme.dart` — open file for classes and helpers.
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/auth/auth_view.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/edit_sheet/quill_toolbar_config.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/app/design_lab/main.dart`, `lib/features/auth/auth_view.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/edit_sheet/quill_toolbar_config.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13184,7 +13358,7 @@ RU:
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
 - **Содержимое:** Dart-модуль `theme.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/auth/auth_view.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/edit_sheet/quill_toolbar_config.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/app/design_lab/main.dart`, `lib/features/auth/auth_view.dart`, `lib/features/shared/edit_sheet/parallel_record_panels.dart`, `lib/features/shared/edit_sheet/quill_toolbar_config.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -13317,7 +13491,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppButtonVariant`, `AppButtonSize`, `AppButton`, `AppFormDialogField`).
 - **Key code names:** `AppButtonVariant`, `AppButtonSize`, `AppButton`, `AppFormDialogField`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/core/widgets/app_state_views.dart`, `lib/core/widgets/compact_nav_controls.dart`, `lib/core/widgets/confirm_dialog.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/calendar/calendar_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/core/widgets/app_state_views.dart`, `lib/core/widgets/compact_nav_controls.dart`, `lib/core/widgets/confirm_dialog.dart`, `lib/features/calendar/calendar_day_panel.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13334,7 +13508,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `app_button`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/core/widgets/app_state_views.dart`, `lib/core/widgets/compact_nav_controls.dart`, `lib/core/widgets/confirm_dialog.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/calendar/calendar_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/core/widgets/app_state_views.dart`, `lib/core/widgets/compact_nav_controls.dart`, `lib/core/widgets/confirm_dialog.dart`, `lib/features/calendar/calendar_day_panel.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -13735,7 +13909,7 @@ EN:
 - **Contents:** Canonical Flutter widget (`AppCompactSegmentLabel`, `AppCompactTextTab`, `AppDesktopSectionControlRow`, `AppQuickEntryRow`).
 - **Key code names:** `AppCompactSegmentLabel`, `AppCompactTextTab`, `AppDesktopSectionControlRow`, `AppQuickEntryRow`
 - **Repository role:** shared foundation
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -13752,7 +13926,7 @@ RU:
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
 - **Содержимое:** Канонический Flutter-виджет (logic in `compact_nav_controls`).
 - **Роль в репозитории:** shared foundation
-- **Доказательства использования:** Импортируется production Dart: `lib/features/calendar/calendar_day_panel.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`, `lib/features/settings/categories/category_list_view.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/features/calendar/calendar_day_panel.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/paths/paths_page.dart`, `lib/features/planning/widgets/planning_filter_controls.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -16652,7 +16826,7 @@ EN:
 - **Why needed:** Other code imports `models.dart` once to get `TimelineRecord`, `PlanningTask`, etc.
 - **Contents:** `part` directives only — no logic.
 - **Repository role:** Brain/data
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/core/category_icon_system.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_card.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/core/category_icon_system.dart`, `lib/core/widgets/chip_component.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -16669,7 +16843,7 @@ RU:
 - **Зачем:** Один import для всех типов данных.
 - **Содержимое:** Только `part` директивы.
 - **Роль в репозитории:** Brain/data
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/core/category_icon_system.dart`, `lib/core/widgets/chip_component.dart`, `lib/core/widgets/plan_card.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/app/shell/app_shell.dart`, `lib/app/shell/shared/shell_shared.dart`, `lib/core/category_icon_system.dart`, `lib/core/widgets/chip_component.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -20860,7 +21034,7 @@ EN:
 - **Contents:** Primary symbols: `NotesFigmaTokens`.
 - **Key code names:** `NotesFigmaTokens`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/notes_glm_surface.dart`, `lib/features/notes/widgets/note_editor_block_widgets.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`, `lib/features/notes/widgets/notes_editor_screen.dart`, `lib/features/notes/widgets/notes_editor_tools.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/notes/widgets/note_editor_block_widgets.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`, `lib/features/notes/widgets/notes_editor_screen.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -20877,7 +21051,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `notes_figma_tokens.dart` на Notes library/editor (Lists + full-screen editor).
 - **Содержимое:** Dart-модуль `notes_figma_tokens.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/notes_glm_surface.dart`, `lib/features/notes/widgets/note_editor_block_widgets.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`, `lib/features/notes/widgets/notes_editor_screen.dart`, `lib/features/notes/widgets/notes_editor_tools.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/features/notes/notes_glm_surface.dart`, `lib/features/notes/widgets/note_editor_block_widgets.dart`, `lib/features/notes/widgets/notes_canonical_components.dart`, `lib/features/notes/widgets/notes_editor_screen.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21050,7 +21224,7 @@ EN:
 - **Contents:** `NoteEditorBlockPatch`, `NoteEditorBlockRow`, `NoteEditorAddBlockRow`; private image/drawing/control helpers.
 - **Key code names:** `_NotesBlockHoldDragStartListener`, `NotesEditorBlockItem`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/note_editor_page.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/features/notes/note_editor_page.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21067,7 +21241,7 @@ RU:
 - **Зачем:** Отделяет локальный UI блока от оркестрации документа, autosave и записи в Brain.
 - **Содержимое:** `NoteEditorBlockPatch`, `NoteEditorBlockRow`, `NoteEditorAddBlockRow`; приватные helpers image/drawing/control.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/note_editor_page.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/features/notes/note_editor_page.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21088,7 +21262,7 @@ EN:
 - **Contents:** Primary symbols: `NotesBlockState`, `NotesTextBlockStyle`, `NotesListStyle`, `NotesMediaKind`, `NotesAudioState`, `NotesToolbarTool`.
 - **Key code names:** `NotesBlockState`, `NotesTextBlockStyle`, `NotesListStyle`, `NotesMediaKind`, `NotesAudioState`, `NotesToolbarTool`, `NotesInlineFormat`, `NotesTextEditingController`, `_NotesActiveIndicatorFrame`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/dev/component_lab_view.dart`, `lib/features/notes/drawing_canvas_page.dart`, `lib/features/notes/note_editor_page.dart`, `lib/features/notes/notes_audio_controller.dart`, `lib/features/notes/notes_editor_document_controller.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/notes/drawing_canvas_page.dart`, `lib/features/notes/note_editor_page.dart`, `lib/features/notes/notes_audio_controller.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21105,7 +21279,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `notes_canonical_components.dart` на Notes library/editor (Lists + full-screen editor).
 - **Содержимое:** Dart-модуль `notes_canonical_components.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/dev/component_lab_view.dart`, `lib/features/notes/drawing_canvas_page.dart`, `lib/features/notes/note_editor_page.dart`, `lib/features/notes/notes_audio_controller.dart`, `lib/features/notes/notes_editor_document_controller.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/features/dev/component_lab_view.dart`, `lib/features/notes/drawing_canvas_page.dart`, `lib/features/notes/note_editor_page.dart`, `lib/features/notes/notes_audio_controller.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21315,7 +21489,7 @@ EN:
 - **Contents:** Primary symbols: `NotesEditorMetadataTag`, `NotesEditorBody`, `NotesEmbeddedEditorScope`, `NotesEditorScreen`, `_NotesEditorRail`, `_NotesEditorSurface`.
 - **Key code names:** `NotesEditorMetadataTag`, `NotesEditorBody`, `NotesEmbeddedEditorScope`, `NotesEditorScreen`, `_NotesEditorRail`, `_NotesEditorSurface`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/note_editor_page.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/features/notes/note_editor_page.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21332,7 +21506,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `notes_editor_screen.dart` на Notes library/editor (Lists + full-screen editor).
 - **Содержимое:** Dart-модуль `notes_editor_screen.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/note_editor_page.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/features/notes/note_editor_page.dart`, `lib/features/notes/widgets/notes_library_body.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -21353,7 +21527,7 @@ EN:
 - **Contents:** Primary symbols: `NotesTableEditCommand`, `NotesLinkDialogResult`, `NotesEditorToolbarHost`, `_NotesEditorToolbarHostState`.
 - **Key code names:** `NotesTableEditCommand`, `NotesLinkDialogResult`, `NotesEditorToolbarHost`, `_NotesEditorToolbarHostState`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/notes/note_editor_page.dart`, `lib/features/notes/notes_editor_document_controller.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/features/notes/note_editor_page.dart`, `lib/features/notes/notes_editor_document_controller.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -21370,7 +21544,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `notes_editor_tools.dart` на Notes library/editor (Lists + full-screen editor).
 - **Содержимое:** Dart-модуль `notes_editor_tools.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/notes/note_editor_page.dart`, `lib/features/notes/notes_editor_document_controller.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/features/notes/note_editor_page.dart`, `lib/features/notes/notes_editor_document_controller.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -25029,7 +25203,7 @@ EN:
 - **Contents:** Primary symbols: `EditorV45Title`, `_EditorV45TitleState`, `EditorV45TimeCard`, `_DurationLine`, `_EditorTimePoint`, `EditorV45MetadataRow`.
 - **Key code names:** `EditorV45Title`, `_EditorV45TitleState`, `EditorV45TimeCard`, `_DurationLine`, `_EditorTimePoint`, `EditorV45MetadataRow`, `EditorV45CategoryRow`, `EditorV45Actions`
 - **Repository role:** production UI
-- **Evidence of use:** Imported/exported by production Dart: `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -25046,7 +25220,7 @@ RU:
 - **Зачем:** Пользователь видит UI из `editor_v45_chrome.dart` на edit sheets и voice UI на всех вкладках.
 - **Содержимое:** Dart-модуль `editor_v45_chrome.dart` — классы и helpers в исходнике.
 - **Роль в репозитории:** production UI
-- **Доказательства использования:** Импортируется production Dart: `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/design_lab/editor_lab.dart`, `lib/features/shared/planning_task_edit_sheet.dart`, `lib/features/shared/timeline_record_edit_sheet.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -26802,7 +26976,7 @@ EN:
 - **Why needed:** UI labels resolve through l10n maps instead of hard-coded strings in widgets.
 - **Contents:** Dart maps/keys in `dictionary.dart`.
 - **Repository role:** localization
-- **Evidence of use:** Imported/exported by production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/core/app_snackbar.dart`.
+- **Evidence of use:** Imported/exported by production Dart: `lib/app/design_lab/main.dart`, `lib/app/shell/app_shell.dart`, `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`.
 - **Necessity status:** PROVEN_REQUIRED
 - **Deletion consequence:** Compile failure or missing UI/data behavior for those callers.
 - **Confidence:** HIGH
@@ -26819,7 +26993,7 @@ RU:
 - **Зачем:** Подписи UI берутся из l10n maps, а не из hard-coded строк в виджетах.
 - **Содержимое:** Dart-карты ключей в `dictionary.dart`.
 - **Роль в репозитории:** localization
-- **Доказательства использования:** Импортируется production Dart: `lib/app/shell/app_shell.dart`, `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`, `lib/core/app_snackbar.dart`.
+- **Доказательства использования:** Импортируется production Dart: `lib/app/design_lab/main.dart`, `lib/app/shell/app_shell.dart`, `lib/app/shell/desktop/shell_side_navigation.dart`, `lib/app/shell/phone/shell_bottom_navigation.dart`, `lib/app/shell/shared/offline_sync_status_bar.dart`.
 - **Статус необходимости:** PROVEN_REQUIRED
 - **Что будет, если удалить:** Ошибка компиляции или пропажа поведения у вызывающих экранов.
 - **Уверенность:** HIGH
@@ -38258,6 +38432,44 @@ RU:
 - **Связано с:** Production files под `lib/` с похожим именем.
 
 
+### `test/editor_design_lab_test.dart`
+
+EN:
+
+- **Human purpose:** Automated test `editor_design_lab_test` — verifies behavior without manual tapping. Prevents regressions when related production code changes.
+- **What this is:** Automated test `editor_design_lab_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **Contents:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Repository role:** test
+- **Evidence of use:** Flutter test file; exercised via `flutter test test/editor_design_lab_test.dart` / CI when enabled.
+- **Necessity status:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Deletion consequence:** Lost automated coverage for its contract.
+- **Confidence:** HIGH
+- **Owner / layer:** tests
+- **Responsibilities:** Assert expected behavior for `editor_design_lab_test` scenario.
+- **When to open:** CI failure or changing code near `editor_design_lab`.
+- **Can it be deleted?** Lost automated coverage for its contract.
+- **Connected to:** `test/` suite; production subject near `editor_design_lab`.
+
+RU:
+
+- **Зачем файл человеку:** Автотест `editor_design_lab` — проверяет поведение без ручного UI. Ловит регрессии при изменении связанного production-кода.
+- **Что это:** Автотест `editor_design_lab` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `editor_design_lab`.
+- **Роль в репозитории:** test
+- **Доказательства использования:** Файл теста Flutter; запускается через `flutter test test/editor_design_lab_test.dart`.
+- **Статус необходимости:** REQUIRED_FOR_TEST_OR_TOOLING
+- **Что будет, если удалить:** Пропадёт автоматическая проверка своего контракта.
+- **Уверенность:** HIGH
+- **Владелец / слой:** тесты
+- **Обязанности:** Assert ожидаемого поведения `editor_design_lab`.
+- **Когда открывать:** Падение CI или правка кода рядом с `editor_design_lab`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+
+
 ### `test/editor_v45_chrome_test.dart`
 
 EN:
@@ -43015,7 +43227,7 @@ EN:
 - **Why needed:** Browser needs an HTML entry with base href for GitHub Pages `/Counter/`.
 - **Contents:** Script tags bootstrapping `flutter.js`, base href.
 - **Repository role:** platform build
-- **Evidence of use:** (1) Tracked Flutter platform file under `web/` (individual role: `index.html` for that platform project). (2) Also referenced by: `.github/workflows/deploy.yml`, `docs/NOTES_EDITOR_CONTRACT.md`, `docs/website/POSITIONING_V1.md`.
+- **Evidence of use:** (1) Tracked Flutter platform file under `web/` (individual role: `index.html` for that platform project). (2) Also referenced by: `.github/workflows/deploy.yml`, `.github/workflows/design-lab-preview.yml`, `docs/NOTES_EDITOR_CONTRACT.md`.
 - **Necessity status:** REQUIRED_BY_PLATFORM_CONVENTION
 - **Deletion consequence:** Unavailable or broken platform build for that OS target.
 - **Confidence:** HIGH
