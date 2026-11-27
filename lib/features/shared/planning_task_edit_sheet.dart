@@ -1017,22 +1017,20 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
                               controller: _planTabController!,
                               isScrollable: true,
                               indicatorSize: TabBarIndicatorSize.tab,
-                              labelPadding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
+                              labelPadding: const EdgeInsets.only(right: 15), labelStyle: const TextStyle(fontWeight: FontWeight.w600), unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
                               tabAlignment: TabAlignment.start,
                               padding: EdgeInsets.zero,
                               tabs: [
-                                AppCompactTextTab(
+                                AppCompactTextTab(fontSize: 15, inheritWeight: true,
                                   text: t(currentLocale.value, 'notes_tab'),
                                 ),
-                                AppCompactTextTab(
+                                AppCompactTextTab(fontSize: 15, inheritWeight: true,
                                   text: t(
                                     currentLocale.value,
                                     'plan_repeat_label',
                                   ),
                                 ),
-                                AppCompactTextTab(
+                                AppCompactTextTab(fontSize: 15, inheritWeight: true,
                                   text: t(
                                     currentLocale.value,
                                     'plan_parallel_plans_tab',
