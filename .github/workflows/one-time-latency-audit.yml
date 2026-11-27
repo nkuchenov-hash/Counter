@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 7b747de58f3945dc068fbce478c0f635180aa2bc
+          ref: e024b1bd5a6a2dcc90941906bb1bf909fdf9208a
           fetch-depth: 0
           persist-credentials: false
       - name: Validate browser package and approval fingerprint (no publication)
@@ -21,6 +21,7 @@ jobs:
           set -euo pipefail
           node --check browser_extension/service_worker.js
           node --check browser_extension/popup.js
+          git grep -l '217-114-0-201.sslip.io' -- lib browser_extension web test || true
           python3 - <<'PY'
           import json, re, zipfile
           from pathlib import Path
