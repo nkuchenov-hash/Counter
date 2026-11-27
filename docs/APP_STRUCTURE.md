@@ -96,6 +96,16 @@ These abstractions stay free of Brain imports in the UI layer; `main.dart` and c
 
 **Shell destinations:** 0 Timeline · 1 Plans · 2 Calendar · 3 Lists · 4 Categories · 5 Profile · 6 Paths. Phone/tablet bottom navigation keeps four primary tabs + More; More → Paths selects the same shell-owned index 6 used by desktop side navigation.
 
+### 3.1.0 `lib/app/design_lab/` — isolated Flutter Design Lab
+
+| File | Role |
+| :--- | :--- |
+| `app/design_lab/main.dart` | Separate Flutter entry point; no application bootstrap, account, PocketBase or storage initialization |
+| `app/design_lab/editor_lab.dart` | In-memory Note/Record/Plan component playground; actual shared editor widgets, theme/device/mode selectors and fixture interactions |
+| `app/design_lab/index.html` | Preview-only static web shell with same-origin network policy; never installed into the production entrypoint |
+
+Design Lab imports canonical UI and model types, not Brain persistence. An approved component is integrated by reusing the same widget, not copying a screenshot or translating another HTML design. The first gallery is component-level: full domain sheet behavior and production visual acceptance remain separately tested. The `design-lab-preview.yml` workflow builds an independent downloadable Flutter Web preview and verifies it in a browser with external requests blocked.
+
 ### 3.1.1 `lib/app/shell/` — form-factor app shell (Phase 1)
 
 Product sections own section-specific code later; this phase only separates shell chrome by form factor.
