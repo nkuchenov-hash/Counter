@@ -884,6 +884,12 @@ wholeBlockBest = List<NoteBlock>.from(window);
       return;
     }
     _selectBlock(blockId);
+    final block = _editor.blockById(blockId);
+    final image = block?.imageData;
+    if (!widget.parityPreview && block?.type == NoteBlockType.image &&
+        isLocalNotesImage(image)) {
+      unawaited(showNotesImageViewer(context, image!));
+    }
   }
   void _deleteBlockFromMenu(String blockId) {
     if (_selectedBlockIds.contains(blockId)) {
@@ -1144,15 +1150,6 @@ _editor.insertAfter(
 _editor.updateMedia(replaceBlockId, imageData: picked.dataUrl),
         );
       }
-    } on NotesImageTooLargeException {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            t(currentLocale.value, 'notes_v3_editor_image_too_large'),
-          ),
-        ),
-      );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

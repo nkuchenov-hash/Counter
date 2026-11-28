@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_audio_controller.dart';
 import 'package:counter/features/notes/notes_figma_tokens.dart';
+import 'package:counter/features/notes/notes_image_tools.dart';
 import 'package:counter/features/notes/widgets/notes_canonical_components.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/gestures.dart';
@@ -430,7 +431,8 @@ class NotesEditorBlockItem extends StatelessWidget {
         );
       case NoteBlockType.image:
       case NoteBlockType.drawing:
-        if (MediaQuery.sizeOf(context).width >= 768) {
+        if (MediaQuery.sizeOf(context).width >= 768 &&
+            !isLocalNotesImage(block.imageData)) {
           return _desktopMediaBlock(context);
         }
         return NotesMediaBlock(
@@ -608,6 +610,9 @@ class NotesEditorBlockItem extends StatelessWidget {
     final raw = block.type == NoteBlockType.drawing
         ? block.drawingData
         : block.imageData;
+    if (isLocalNotesImage(raw)) {
+      return _LocalNotesImagePreview(key: ValueKey(raw), reference: raw!);
+    }
     final bytes = _decodeImagePayload(raw);
     if (bytes == null) return _mediaPlaceholder(context);
     const previewHeight = 240.0;
@@ -666,6 +671,39 @@ class NotesEditorBlockItem extends StatelessWidget {
       ),
     );
   }
+}
+
+// Keep a single preview future per mounted image rather than reading or
+// decoding the original on every editor rebuild or keystroke.
+class _LocalNotesImagePreview extends StatefulWidget {
+  const _LocalNotesImagePreview({super.key, required this.reference});
+  final String reference;
+  @override
+  State<_LocalNotesImagePreview> createState() => _LocalNotesImagePreviewState();
+}
+class _LocalNotesImagePreviewState extends State<_LocalNotesImagePreview> {
+  late final Future<Uint8List?> _preview = readNotesImagePreview(widget.reference);
+  @override
+  Widget build(BuildContext context) => FutureBuilder<Uint8List?>(
+    future: _preview,
+    builder: (context, snapshot) {
+      final bytes = snapshot.data;
+      if (bytes != null) {
+        return RepaintBoundary(child: SizedBox(height: 240, width: double.infinity, child: Image.memory(
+          bytes, fit: BoxFit.contain, alignment: Alignment.topCenter,
+          gaplessPlayback: true,
+          errorBuilder: (_, __, ___) => Text(t(currentLocale.value, 'state_unavailable')),
+        )));
+      }
+      if (snapshot.connectionState != ConnectionState.done) {
+        return const SizedBox(height: 72, child: Center(child: CircularProgressIndicator()));
+      }
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(t(currentLocale.value, 'state_unavailable')),
+      );
+    },
+  );
 }
 
 int _estimatedAssetBytes(String raw) {

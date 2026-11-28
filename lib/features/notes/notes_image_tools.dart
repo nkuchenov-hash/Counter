@@ -5,14 +5,123 @@ import 'dart:ui' as ui;
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/data/database_service.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:clipboard/clipboard.dart';
+
+// Android originals live in app-private, account-scoped storage. The existing
+// image block stores only an opaque identifier, never a device path or bytes.
+const _localImageChannel = MethodChannel('counter/notes_local_images');
+const _localImagePrefix = 'lifeos-local-image:v1:';
+bool get _useLocalImages => !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+bool isLocalNotesImage(String? value) => value?.startsWith(_localImagePrefix) ?? false;
+String _localImageOwner() {
+  final owner = DatabaseService.instance.currentProfileId?.trim() ?? '';
+  if (owner.isEmpty) throw StateError('image_owner_missing');
+  return owner;
+}
+Future<String> _storeLocalNotesImage({String? path, Uint8List? bytes,
+    required String name}) async {
+  final id = await _localImageChannel.invokeMethod<String>('store', {
+    'owner': _localImageOwner(), 'path': path, 'bytes': bytes, 'name': name,
+  });
+  if (id == null || id.isEmpty) throw StateError('image_store_failed');
+  return '$_localImagePrefix$id';
+}
+Future<Uint8List?> readNotesImagePreview(String? value, {bool detail = false}) async {
+  if (value == null) return null;
+  if (!isLocalNotesImage(value)) return decodeNotesImageDataUrl(value);
+  if (!_useLocalImages) return null;
+  try {
+    return await _localImageChannel.invokeMethod<Uint8List>(detail ? 'detail' : 'preview', {
+      'owner': _localImageOwner(), 'id': value.substring(_localImagePrefix.length),
+    });
+  } on PlatformException {
+    return null;
+  } on StateError {
+    return null;
+  } on MissingPluginException {
+    return null;
+  }
+}
+
+/// Opens the image on demand; the note editor never loads the original bitmap.
+Future<void> showNotesImageViewer(BuildContext context, String reference) {
+  return Navigator.of(context).push<void>(MaterialPageRoute<void>(
+    fullscreenDialog: true,
+    builder: (_) => _NotesImageViewer(reference: reference),
+  ));
+}
+
+class _NotesImageViewer extends StatefulWidget {
+  const _NotesImageViewer({required this.reference});
+  final String reference;
+  @override
+  State<_NotesImageViewer> createState() => _NotesImageViewerState();
+}
+
+class _NotesImageViewerState extends State<_NotesImageViewer> {
+  late final Future<Uint8List?> _thumbnail =
+      readNotesImagePreview(widget.reference);
+  late final Future<Uint8List?> _detail =
+      readNotesImagePreview(widget.reference, detail: true);
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Theme.of(context).colorScheme.surface,
+    appBar: AppBar(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      foregroundColor: Theme.of(context).colorScheme.onSurface,
+      title: Text(t(currentLocale.value, 'notes_v3_image_badge')),
+      actions: [
+        IconButton(
+          tooltip: t(currentLocale.value, 'notes_image_saved'),
+          icon: const Icon(Icons.download_outlined),
+          onPressed: () async {
+            try {
+              await saveNotesImage(widget.reference);
+            } catch (_) {
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(t(currentLocale.value, 'notes_image_save_failed')),
+              ));
+            }
+          },
+        ),
+      ],
+    ),
+    body: FutureBuilder<Uint8List?>(
+      future: _thumbnail,
+      builder: (context, thumbnail) => FutureBuilder<Uint8List?>(
+        future: _detail,
+        builder: (context, detail) {
+          final bytes = detail.data ?? thumbnail.data;
+          if (bytes == null) {
+            if (detail.connectionState != ConnectionState.done ||
+                thumbnail.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            return Center(child: Text(
+              t(currentLocale.value, 'state_unavailable'),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            ));
+          }
+          return InteractiveViewer(
+            minScale: 1, maxScale: 5,
+            child: Center(child: Image.memory(bytes,
+              fit: BoxFit.contain, gaplessPlayback: true)),
+          );
+        },
+      ),
+    ),
+  );
+}
 
 enum NotesImageSourceChoice { files, gallery, camera }
 
@@ -42,28 +151,33 @@ Future<NotesPickedImage?> pickNotesImage({
         acceptedTypeGroups: const [
           XTypeGroup(
             label: 'Images',
-            extensions: ['png', 'jpg', 'jpeg', 'webp'],
-            mimeTypes: ['image/png', 'image/jpeg', 'image/webp'],
+            extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'heic', 'heif', 'avif', 'tif', 'tiff'],
+            mimeTypes: ['image/*'],
+            uniformTypeIdentifiers: ['public.image'],
           ),
         ],
       );
     case NotesImageSourceChoice.gallery:
       file = await ImagePicker().pickImage(
         source: ImageSource.gallery,
-        maxWidth: 1600,
-        maxHeight: 1600,
-        imageQuality: 85,
+        maxWidth: _useLocalImages ? null : 1600,
+        maxHeight: _useLocalImages ? null : 1600,
+        imageQuality: _useLocalImages ? null : 85,
       );
     case NotesImageSourceChoice.camera:
       file = await ImagePicker().pickImage(
         source: ImageSource.camera,
         preferredCameraDevice: CameraDevice.rear,
-        maxWidth: 1600,
-        maxHeight: 1600,
-        imageQuality: 85,
+        maxWidth: _useLocalImages ? null : 1600,
+        maxHeight: _useLocalImages ? null : 1600,
+        imageQuality: _useLocalImages ? null : 85,
       );
   }
   if (file == null) return null;
+  if (_useLocalImages) {
+    final ref = await _storeLocalNotesImage(path: file.path, name: file.name);
+    return NotesPickedImage(dataUrl: ref, fileName: file.name);
+  }
   return prepareNotesImage(
     await file.readAsBytes(),
     fileName: file.name,
@@ -71,18 +185,22 @@ Future<NotesPickedImage?> pickNotesImage({
   );
 }
 
-/// Preserve small originals. Resize oversized files instead of rejecting an
-/// ordinary camera photo. Keep the existing per-asset storage ceiling.
+/// Store supported small originals. For any decodable oversized image,
+/// progressively normalize/rescale until the inline asset budget is met.
+/// File size alone is never a reason to reject the user's selection.
 Future<NotesPickedImage> prepareNotesImage(
   Uint8List bytes, {
   required String fileName,
   String? mimeType,
+  int maxAssetBytes = kLifeOsNotesMaxAssetBytes,
 }) async {
   if (bytes.isEmpty) throw StateError('image_empty');
+  if (maxAssetBytes < 1024) throw ArgumentError.value(maxAssetBytes);
   var data = bytes;
-  var type = notesImageMimeType(fileName, mimeType);
-  if (data.lengthInBytes > kLifeOsNotesMaxAssetBytes) {
-    data = await _resizeNotesImageToFit(data);
+  final originalType = _knownNotesImageType(bytes);
+  var type = originalType ?? notesImageMimeType(fileName, mimeType);
+  if (data.lengthInBytes > maxAssetBytes || originalType == null) {
+    data = await _resizeNotesImageToFit(data, maxAssetBytes);
     type = 'image/png';
   }
   return NotesPickedImage(
@@ -91,7 +209,34 @@ Future<NotesPickedImage> prepareNotesImage(
   );
 }
 
-Future<Uint8List> _resizeNotesImageToFit(Uint8List bytes) async {
+// Sniff the actual encoding instead of trusting an Android provider's
+// extension/MIME metadata. Unknown but decodable formats are normalized.
+String? _knownNotesImageType(Uint8List data) {
+  if (data.length >= 8 &&
+      data[0] == 137 && data[1] == 80 && data[2] == 78 && data[3] == 71 &&
+      data[4] == 13 && data[5] == 10 && data[6] == 26 && data[7] == 10) {
+    return 'image/png';
+  }
+  if (data.length >= 3 && data[0] == 255 && data[1] == 216 && data[2] == 255) {
+    return 'image/jpeg';
+  }
+  if (data.length >= 12 &&
+      String.fromCharCodes(data.take(4)) == 'RIFF' &&
+      String.fromCharCodes(data.skip(8).take(4)) == 'WEBP') {
+    return 'image/webp';
+  }
+  if (data.length >= 6 &&
+      (String.fromCharCodes(data.take(6)) == 'GIF87a' ||
+       String.fromCharCodes(data.take(6)) == 'GIF89a')) {
+    return 'image/gif';
+  }
+  if (data.length >= 2 && data[0] == 66 && data[1] == 77) {
+    return 'image/bmp';
+  }
+  return null;
+}
+
+Future<Uint8List> _resizeNotesImageToFit(Uint8List bytes, int budget) async {
   final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
   try {
     final descriptor = await ui.ImageDescriptor.encoded(buffer);
@@ -99,8 +244,11 @@ Future<Uint8List> _resizeNotesImageToFit(Uint8List bytes) async {
       final longest = descriptor.width > descriptor.height
           ? descriptor.width
           : descriptor.height;
-      for (final limit in [1600, 1200, 900, 640, 480]) {
-        if (longest <= limit) continue;
+      // Try the original dimensions when already small, stripping excessive
+      // metadata, then keep reducing. A valid 480px (or smaller) image must
+      // never fall through the loop without even attempting to encode it.
+      var limit = longest > 1600 ? 1600 : longest;
+      while (limit >= 1) {
         final scale = limit / longest;
         final width = (descriptor.width * scale).round().clamp(1, limit).toInt();
         final height = (descriptor.height * scale).round().clamp(1, limit).toInt();
@@ -114,7 +262,7 @@ Future<Uint8List> _resizeNotesImageToFit(Uint8List bytes) async {
             final data = await frame.image.toByteData(
               format: ui.ImageByteFormat.png,
             );
-            if (data != null && data.lengthInBytes <= kLifeOsNotesMaxAssetBytes) {
+            if (data != null && data.lengthInBytes <= budget) {
               return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
             }
           } finally {
@@ -123,6 +271,8 @@ Future<Uint8List> _resizeNotesImageToFit(Uint8List bytes) async {
         } finally {
           codec.dispose();
         }
+        if (limit == 1) break;
+        limit = (limit * 0.75).floor().clamp(1, limit - 1).toInt();
       }
     } finally {
       descriptor.dispose();
@@ -130,7 +280,7 @@ Future<Uint8List> _resizeNotesImageToFit(Uint8List bytes) async {
   } finally {
     buffer.dispose();
   }
-  throw const NotesImageTooLargeException();
+  throw StateError('image_encode_failed');
 }
 
 Future<NotesImageSourceChoice?> showNotesImageSourcePicker({
@@ -201,11 +351,13 @@ Widget _sourceTile(
 Future<String?> showNotesImageCropper({
   required BuildContext context,
   required String dataUrl,
-}) {
+}) async {
+  final bytes = await readNotesImagePreview(dataUrl, detail: true);
+  if (!context.mounted || bytes == null) return null;
   return Navigator.of(context).push<String>(
     MaterialPageRoute<String>(
       fullscreenDialog: true,
-      builder: (_) => NotesImageCropPage(dataUrl: dataUrl),
+      builder: (_) => NotesImageCropPage(dataUrl: 'data:image/png;base64,${base64Encode(bytes)}'),
     ),
   );
 }
@@ -241,24 +393,19 @@ class _NotesImageCropPageState extends State<NotesImageCropPage> {
               as RenderRepaintBoundary?;
       if (boundary == null) throw StateError('crop_not_ready');
       final image = await boundary.toImage(pixelRatio: 2);
-      final data = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (data == null) throw StateError('crop_encode_failed');
-      final bytes = data.buffer.asUint8List();
-      if (bytes.lengthInBytes > kLifeOsNotesMaxAssetBytes) {
-        throw const NotesImageTooLargeException();
+      final ByteData? data;
+      try {
+        data = await image.toByteData(format: ui.ImageByteFormat.png);
+      } finally {
+        image.dispose();
       }
+      if (data == null) throw StateError('crop_encode_failed');
+      final bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+      final result = _useLocalImages
+          ? await _storeLocalNotesImage(bytes: bytes, name: 'crop.png')
+          : (await prepareNotesImage(bytes, fileName: 'crop.png')).dataUrl;
       if (!mounted) return;
-      Navigator.of(context).pop('data:image/png;base64,${base64Encode(bytes)}');
-    } on NotesImageTooLargeException {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            t(currentLocale.value, 'notes_v3_editor_image_too_large'),
-          ),
-        ),
-      );
-      setState(() => _saving = false);
+      Navigator.of(context).pop(result);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -395,6 +542,18 @@ Future<void> copyNotesImage(String dataUrl) async {
 }
 
 Future<String?> saveNotesImage(String dataUrl) async {
+  if (isLocalNotesImage(dataUrl)) {
+    if (!_useLocalImages) throw StateError('image_local_only');
+    final path = await _localImageChannel.invokeMethod<String>('original', {
+      'owner': _localImageOwner(), 'id': dataUrl.substring(_localImagePrefix.length),
+    });
+    if (path == null) throw StateError('image_local_missing');
+    final extension = path.split('.').last;
+    return FileSaver.instance.saveAs(
+      name: 'life_os_note_${DateTime.now().millisecondsSinceEpoch}',
+      filePath: path, fileExtension: extension, mimeType: MimeType.other,
+    );
+  }
   final bytes = await notesImagePngBytes(dataUrl);
   return FileSaver.instance.saveAs(
     name: 'life_os_note_${DateTime.now().millisecondsSinceEpoch}',
@@ -405,7 +564,7 @@ Future<String?> saveNotesImage(String dataUrl) async {
 }
 
 Future<Uint8List> notesImagePngBytes(String dataUrl) async {
-  final bytes = decodeNotesImageDataUrl(dataUrl);
+  final bytes = await readNotesImagePreview(dataUrl, detail: true);
   if (bytes == null || bytes.isEmpty) throw StateError('image_decode_failed');
   final codec = await ui.instantiateImageCodec(bytes);
   final frame = await codec.getNextFrame();
@@ -438,8 +597,4 @@ String notesImageMimeType(String name, [String? declared]) {
   if (lower.endsWith('.png')) return 'image/png';
   if (lower.endsWith('.webp')) return 'image/webp';
   return 'image/jpeg';
-}
-
-class NotesImageTooLargeException implements Exception {
-  const NotesImageTooLargeException();
 }
