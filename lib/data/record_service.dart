@@ -135,6 +135,26 @@ extension RecordServiceExtension on DatabaseService {
         ns(before['notes']) != ns(after['notes'])) {
       return false;
     }
+    // Formatting, media placement and block order can change without
+    // changing the plain-text note. Compare the complete document payload.
+    String noteDelta(dynamic value) {
+      if (value == null) return '';
+      try {
+        if (value is String) {
+          final raw = value.trim();
+          if (raw.isEmpty) return '';
+          final decoded = jsonDecode(raw);
+          return decoded == null ? '' : jsonEncode(decoded);
+        }
+        return jsonEncode(value);
+      } catch (_) {
+        return value.toString();
+      }
+    }
+
+    if (noteDelta(before['notes_delta']) != noteDelta(after['notes_delta'])) {
+      return false;
+    }
     try {
       final ea = jsonEncode(before['checklist'] ?? <dynamic>[]);
       final eb = jsonEncode(after['checklist'] ?? <dynamic>[]);
@@ -144,6 +164,12 @@ extension RecordServiceExtension on DatabaseService {
     }
     return true;
   }
+
+  @visibleForTesting
+  static bool debugFlatTimelineVisuallyEquivalent(
+    Map<String, dynamic> before,
+    Map<String, dynamic> after,
+  ) => _flatTimelineVisuallyEquivalent(before, after);
 
   /// Merge one PocketBase **records** row into [_cachedFlatRecords] without refetching the full list.
   bool _upsertFlatRecordFromPbModel(
@@ -638,6 +664,10 @@ extension RecordServiceExtension on DatabaseService {
       'calendarDayStr': calendarDayStr,
       'tags': row['tags'] is List ? row['tags'] : null,
       'note': mergeRecordNoteFields(row['note'], row['notes']),
+      // TimelineRecord parses both PocketBase JSON objects and locally
+      // encoded JSON strings. Do not flatten the rich document to plain text.
+      'notes_delta': row['notes_delta'],
+      if (row['updated'] != null) 'updated': row['updated'],
       'checklist': _parseRecordChecklistField(row['checklist']),
       if (row['_expanded_category'] != null)
         '_expanded_category': row['_expanded_category'],
