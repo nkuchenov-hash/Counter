@@ -346,7 +346,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons --no-pub
+          flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk LIFE-OS-Android-arm64.apk
 
       - name: Verify canonical package ID and signing
