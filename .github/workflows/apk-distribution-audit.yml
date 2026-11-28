@@ -23,6 +23,7 @@ jobs:
           - life-os-android-2608-08d7ee8396e69c2b683d6cd0008051846bc82523
           - life-os-android-2612-4dfd1b6131d92cf3a9f9e34a7c43aefdfad454fa
           - life-os-android-2614-1936eb739a767123cab7fadbf568fc9f65cd3287
+          - life-os-android-2616-b9218d0b93df22354025444f5bfc7768b4406a21
     steps:
       - name: Download exact public release and inspect installer
         env:
@@ -52,3 +53,43 @@ jobs:
           "$align" -c 4 "$name"
           unzip -Z1 "$name" | grep -E '^lib/arm64-v8a/.*\.so$'
           echo "Public file passed integrity, package, ABI, certificate and ZIP alignment checks. Physical installation has not been tested."
+
+  android-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    permissions:
+      contents: read
+    steps:
+      - name: Fetch previous and new signed APKs for installation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for pair in 'previous life-os-android-2608-08d7ee8396e69c2b683d6cd0008051846bc82523' 'latest life-os-android-2616-b9218d0b93df22354025444f5bfc7768b4406a21'; do
+            read -r name tag <<< "$pair"
+            mkdir -p "$name"
+            gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern LIFE-OS-Android-arm64.apk --dir "$name"
+            expected="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq '.assets[] | select(.name=="LIFE-OS-Android-arm64.apk") | .digest')"
+            echo "${expected#sha256:}  $name/LIFE-OS-Android-arm64.apk" | sha256sum --check
+          done
+      - name: Enable hardware acceleration for emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Check Android 16 clean install and in-place update
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            adb shell getprop ro.product.cpu.abilist
+            adb shell getprop ro.dalvik.vm.native.bridge
+            adb shell getprop ro.build.version.sdk
+            adb logcat -c
+            adb install previous/LIFE-OS-Android-arm64.apk && adb install -r latest/LIFE-OS-Android-arm64.apk || { adb logcat -d -s PackageManager PackageInstaller PackageInstallerSession; exit 1; }
+            adb shell pm path com.example.counter
+            adb shell dumpsys package com.example.counter | grep -E 'versionCode=|versionName=|primaryCpuAbi='
