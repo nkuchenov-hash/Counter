@@ -1144,15 +1144,6 @@ _editor.insertAfter(
 _editor.updateMedia(replaceBlockId, imageData: picked.dataUrl),
         );
       }
-    } on NotesImageTooLargeException {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            t(currentLocale.value, 'notes_v3_editor_image_too_large'),
-          ),
-        ),
-      );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

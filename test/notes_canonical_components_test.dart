@@ -68,6 +68,46 @@ void main() {
     });
   });
 
+  testWidgets('small-dimension image is processed even when it exceeds its byte budget', (tester) async {
+    await tester.runAsync(() async {
+      const side = 96;
+      final random = math.Random(19);
+      final pixels = Uint8List(side * side * 4);
+      for (var i = 0; i < pixels.length; i += 4) {
+        pixels[i] = random.nextInt(256);
+        pixels[i + 1] = random.nextInt(256);
+        pixels[i + 2] = random.nextInt(256);
+        pixels[i + 3] = 255;
+      }
+      final buffer = await ui.ImmutableBuffer.fromUint8List(pixels);
+      final descriptor = ui.ImageDescriptor.raw(buffer, width: side, height: side,
+          pixelFormat: ui.PixelFormat.rgba8888);
+      final codec = await descriptor.instantiateCodec();
+      final frame = await codec.getNextFrame();
+      final data = (await frame.image.toByteData(format: ui.ImageByteFormat.png))!;
+      final bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+      frame.image.dispose();
+      codec.dispose();
+      descriptor.dispose();
+      buffer.dispose();
+      expect(bytes.lengthInBytes, greaterThan(1024));
+      final photo = await prepareNotesImage(bytes, fileName: 'wrong.jpg',
+          mimeType: 'image/jpeg', maxAssetBytes: 1024);
+      expect(photo.dataUrl, startsWith('data:image/png;base64,'));
+      final resized = decodeNotesImageDataUrl(photo.dataUrl)!;
+      expect(resized.lengthInBytes, lessThanOrEqualTo(1024));
+      final decoded = await ui.instantiateImageCodec(resized);
+      final image = await decoded.getNextFrame();
+      expect(image.image.width, greaterThan(0));
+      expect(image.image.width, image.image.height);
+      image.image.dispose();
+      decoded.dispose();
+      final unchanged = await prepareNotesImage(bytes, fileName: 'wrong.jpg');
+      expect(unchanged.dataUrl, startsWith('data:image/png;base64,'));
+      expect(decodeNotesImageDataUrl(unchanged.dataUrl), orderedEquals(bytes));
+    });
+  });
+
   testWidgets('embedded Android Notes feather avoids live GPU backdrop blur', (tester) async {
     // A 390px child inside a desktop-sized MediaQuery is NOT a phone.
     tester.view.physicalSize = const Size(390, 844);

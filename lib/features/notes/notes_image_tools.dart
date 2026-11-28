@@ -42,8 +42,9 @@ Future<NotesPickedImage?> pickNotesImage({
         acceptedTypeGroups: const [
           XTypeGroup(
             label: 'Images',
-            extensions: ['png', 'jpg', 'jpeg', 'webp'],
-            mimeTypes: ['image/png', 'image/jpeg', 'image/webp'],
+            extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'heic', 'heif', 'avif', 'tif', 'tiff'],
+            mimeTypes: ['image/*'],
+            uniformTypeIdentifiers: ['public.image'],
           ),
         ],
       );
@@ -71,18 +72,22 @@ Future<NotesPickedImage?> pickNotesImage({
   );
 }
 
-/// Preserve small originals. Resize oversized files instead of rejecting an
-/// ordinary camera photo. Keep the existing per-asset storage ceiling.
+/// Store supported small originals. For any decodable oversized image,
+/// progressively normalize/rescale until the inline asset budget is met.
+/// File size alone is never a reason to reject the user's selection.
 Future<NotesPickedImage> prepareNotesImage(
   Uint8List bytes, {
   required String fileName,
   String? mimeType,
+  int maxAssetBytes = kLifeOsNotesMaxAssetBytes,
 }) async {
   if (bytes.isEmpty) throw StateError('image_empty');
+  if (maxAssetBytes < 1024) throw ArgumentError.value(maxAssetBytes);
   var data = bytes;
-  var type = notesImageMimeType(fileName, mimeType);
-  if (data.lengthInBytes > kLifeOsNotesMaxAssetBytes) {
-    data = await _resizeNotesImageToFit(data);
+  final originalType = _knownNotesImageType(bytes);
+  var type = originalType ?? notesImageMimeType(fileName, mimeType);
+  if (data.lengthInBytes > maxAssetBytes || originalType == null) {
+    data = await _resizeNotesImageToFit(data, maxAssetBytes);
     type = 'image/png';
   }
   return NotesPickedImage(
@@ -91,7 +96,34 @@ Future<NotesPickedImage> prepareNotesImage(
   );
 }
 
-Future<Uint8List> _resizeNotesImageToFit(Uint8List bytes) async {
+// Sniff the actual encoding instead of trusting an Android provider's
+// extension/MIME metadata. Unknown but decodable formats are normalized.
+String? _knownNotesImageType(Uint8List data) {
+  if (data.length >= 8 &&
+      data[0] == 137 && data[1] == 80 && data[2] == 78 && data[3] == 71 &&
+      data[4] == 13 && data[5] == 10 && data[6] == 26 && data[7] == 10) {
+    return 'image/png';
+  }
+  if (data.length >= 3 && data[0] == 255 && data[1] == 216 && data[2] == 255) {
+    return 'image/jpeg';
+  }
+  if (data.length >= 12 &&
+      String.fromCharCodes(data.take(4)) == 'RIFF' &&
+      String.fromCharCodes(data.skip(8).take(4)) == 'WEBP') {
+    return 'image/webp';
+  }
+  if (data.length >= 6 &&
+      (String.fromCharCodes(data.take(6)) == 'GIF87a' ||
+       String.fromCharCodes(data.take(6)) == 'GIF89a')) {
+    return 'image/gif';
+  }
+  if (data.length >= 2 && data[0] == 66 && data[1] == 77) {
+    return 'image/bmp';
+  }
+  return null;
+}
+
+Future<Uint8List> _resizeNotesImageToFit(Uint8List bytes, int budget) async {
   final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
   try {
     final descriptor = await ui.ImageDescriptor.encoded(buffer);
@@ -99,8 +131,11 @@ Future<Uint8List> _resizeNotesImageToFit(Uint8List bytes) async {
       final longest = descriptor.width > descriptor.height
           ? descriptor.width
           : descriptor.height;
-      for (final limit in [1600, 1200, 900, 640, 480]) {
-        if (longest <= limit) continue;
+      // Try the original dimensions when already small, stripping excessive
+      // metadata, then keep reducing. A valid 480px (or smaller) image must
+      // never fall through the loop without even attempting to encode it.
+      var limit = longest > 1600 ? 1600 : longest;
+      while (limit >= 1) {
         final scale = limit / longest;
         final width = (descriptor.width * scale).round().clamp(1, limit).toInt();
         final height = (descriptor.height * scale).round().clamp(1, limit).toInt();
@@ -114,7 +149,7 @@ Future<Uint8List> _resizeNotesImageToFit(Uint8List bytes) async {
             final data = await frame.image.toByteData(
               format: ui.ImageByteFormat.png,
             );
-            if (data != null && data.lengthInBytes <= kLifeOsNotesMaxAssetBytes) {
+            if (data != null && data.lengthInBytes <= budget) {
               return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
             }
           } finally {
@@ -123,6 +158,8 @@ Future<Uint8List> _resizeNotesImageToFit(Uint8List bytes) async {
         } finally {
           codec.dispose();
         }
+        if (limit == 1) break;
+        limit = (limit * 0.75).floor().clamp(1, limit - 1).toInt();
       }
     } finally {
       descriptor.dispose();
@@ -130,7 +167,7 @@ Future<Uint8List> _resizeNotesImageToFit(Uint8List bytes) async {
   } finally {
     buffer.dispose();
   }
-  throw const NotesImageTooLargeException();
+  throw StateError('image_encode_failed');
 }
 
 Future<NotesImageSourceChoice?> showNotesImageSourcePicker({
@@ -241,24 +278,19 @@ class _NotesImageCropPageState extends State<NotesImageCropPage> {
               as RenderRepaintBoundary?;
       if (boundary == null) throw StateError('crop_not_ready');
       final image = await boundary.toImage(pixelRatio: 2);
-      final data = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (data == null) throw StateError('crop_encode_failed');
-      final bytes = data.buffer.asUint8List();
-      if (bytes.lengthInBytes > kLifeOsNotesMaxAssetBytes) {
-        throw const NotesImageTooLargeException();
+      final ByteData? data;
+      try {
+        data = await image.toByteData(format: ui.ImageByteFormat.png);
+      } finally {
+        image.dispose();
       }
-      if (!mounted) return;
-      Navigator.of(context).pop('data:image/png;base64,${base64Encode(bytes)}');
-    } on NotesImageTooLargeException {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            t(currentLocale.value, 'notes_v3_editor_image_too_large'),
-          ),
-        ),
+      if (data == null) throw StateError('crop_encode_failed');
+      final picked = await prepareNotesImage(
+        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+        fileName: 'crop.png',
       );
-      setState(() => _saving = false);
+      if (!mounted) return;
+      Navigator.of(context).pop(picked.dataUrl);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -440,6 +472,3 @@ String notesImageMimeType(String name, [String? declared]) {
   return 'image/jpeg';
 }
 
-class NotesImageTooLargeException implements Exception {
-  const NotesImageTooLargeException();
-}
