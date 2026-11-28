@@ -598,4 +598,3 @@ String notesImageMimeType(String name, [String? declared]) {
   if (lower.endsWith('.webp')) return 'image/webp';
   return 'image/jpeg';
 }
-
