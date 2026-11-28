@@ -1,0 +1,51 @@
+name: Audit published Android installer
+
+on:
+  push:
+    branches: ['ci/apk-distribution-audit']
+    paths: ['.github/workflows/apk-distribution-audit.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        tag:
+          - life-os-android-2608-08d7ee8396e69c2b683d6cd0008051846bc82523
+          - life-os-android-2612-4dfd1b6131d92cf3a9f9e34a7c43aefdfad454fa
+          - life-os-android-2614-1936eb739a767123cab7fadbf568fc9f65cd3287
+    steps:
+      - name: Download exact public release and inspect installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ matrix.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          name=LIFE-OS-Android-arm64.apk
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" > release.json
+          url="$(jq -er --arg name "$name" '.assets[] | select(.name==$name) | .browser_download_url' release.json)"
+          expected="$(jq -er --arg name "$name" '.assets[] | select(.name==$name) | .digest' release.json)"
+          size="$(jq -er --arg name "$name" '.assets[] | select(.name==$name) | .size' release.json)"
+          curl --fail --location --retry 2 --max-time 90 "$url" -o "$name"
+          test "$(stat -c %s "$name")" = "$size"
+          echo "${expected#sha256:}  $name" | sha256sum --check
+          unzip -tq "$name"
+          sdk="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          aapt="$(find "$sdk/build-tools" -type f -name aapt | sort -V | tail -1)"
+          signer="$(find "$sdk/build-tools" -type f -name apksigner | sort -V | tail -1)"
+          align="$(find "$sdk/build-tools" -type f -name zipalign | sort -V | tail -1)"
+          "$aapt" dump badging "$name" | tee badging.txt
+          grep -q "^package: name='com.example.counter'" badging.txt
+          grep -q "^native-code:.*'arm64-v8a'" badging.txt
+          "$signer" verify --verbose --print-certs "$name" | tee signature.txt
+          grep -qi 'DEE60EF3E1863491DB0CB2738C1D61C0BC3EBE896ADB09EB8D1C2436367D2A3D' signature.txt
+          "$align" -c 4 "$name"
+          unzip -Z1 "$name" | grep -E '^lib/arm64-v8a/.*\.so$'
+          echo "Public file passed integrity, package, ABI, certificate and ZIP alignment checks. Physical installation has not been tested."
