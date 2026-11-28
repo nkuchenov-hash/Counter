@@ -135,7 +135,38 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+
+      # The release guard compares two exact trees, not their commit history.
+      # Fetch its unchanged protected baseline directly instead of every branch.
+      - name: Fetch exact protected baseline and select cache policy
+        id: cache-policy
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          baseline="$(python -c 'import ast; from pathlib import Path; print(next(ast.literal_eval(n.value) for n in ast.parse(Path("scripts/audit/critical_release_guard.py").read_text()).body if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "BASELINE" for t in n.targets)))')"
+          [[ "$baseline" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags --depth=1 origin "$baseline"
+          git cat-file -e "$baseline^{commit}"
+          write=false
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            write=true
+          elif [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            # Rebuild the dependency cache after any toolchain change. If
+            # the prior tree is unavailable, fall back to refreshing the cache.
+            if [[ "$BEFORE_SHA" =~ ^[0-9a-f]{40}$ && "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]] &&
+               git fetch --no-tags --depth=1 origin "$BEFORE_SHA"; then
+              if ! git diff --quiet "$BEFORE_SHA" HEAD -- android pubspec.yaml pubspec.lock .github/workflows/android-apk-build.yml; then
+                write=true
+              fi
+            else
+              write=true
+            fi
+          fi
+          echo "write=$write" >> "$GITHUB_OUTPUT"
+          echo "Gradle cache refresh: $write"
 
       - name: Require owner approval for critical runtime content
         env:
@@ -187,11 +218,12 @@ jobs:
           cache: true
 
       # Cached Gradle distributions, dependencies and compiled build state.
-      # Read the shared main-branch cache from PRs; only main writes it.
+      # Normal source-only changes reuse the existing dependency cache without
+      # a costly post-build upload. Toolchain changes and manual main runs refresh it.
       - name: Restore Gradle build cache
         uses: gradle/actions/setup-gradle@v4
         with:
-          cache-read-only: ${{ github.event_name == 'pull_request' }}
+          cache-read-only: ${{ steps.cache-policy.outputs.write != 'true' }}
 
       - name: Create env.dart
         run: |
@@ -314,7 +346,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons
+          flutter build apk --release --target-platform android-arm64 --split-per-abi --no-tree-shake-icons --no-pub
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk LIFE-OS-Android-arm64.apk
 
       - name: Verify canonical package ID and signing
