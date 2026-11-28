@@ -60,11 +60,16 @@ concurrency:
 permissions:
   contents: write
   statuses: write
+  actions: read
 
 jobs:
   verify-apk:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [native, browser-focus, browser-storage, analyzer, regression]
     permissions:
       contents: read
     steps:
@@ -86,42 +91,55 @@ jobs:
         run: flutter pub get
 
       - name: Verify shared LIFE OS semantic palette
+        if: matrix.lane == 'native'
         run: flutter test test/life_semantic_palette_test.dart
 
       - name: Verify persistent People/Menu shell and styling contracts
+        if: matrix.lane == 'native'
         run: flutter test test/shell_form_factor_test.dart
 
       - name: Verify single canonical input and painted field-button alignment
+        if: matrix.lane == 'native'
         run: flutter test test/app_control_consistency_test.dart
 
       - name: Verify Chrome quick-entry focus and painted text alignment
+        if: matrix.lane == 'browser-focus'
         run: flutter test --platform chrome test/app_control_consistency_test.dart
 
       - name: Verify Android and Web production backend parity
+        if: matrix.lane == 'native'
         run: flutter test test/pocketbase_production_origin_test.dart
 
       - name: Verify mobile Notes input hot path and keyboard stability
+        if: matrix.lane == 'native'
         run: flutter test test/record_notes_ime_stability_test.dart test/notes_mobile_keyboard_regression_test.dart
 
       - name: Verify cloud-first sleep synchronization contract
+        if: matrix.lane == 'native'
         run: flutter test test/sleep_cloud_settings_contract_test.dart test/data/health_sleep_policy_test.dart
 
       - name: Verify timezone settings regression
+        if: matrix.lane == 'native'
         run: flutter test test/timezone_quick_preferences_test.dart
 
       - name: Verify browser timezone IndexedDB persistence
+        if: matrix.lane == 'browser-storage'
         run: flutter test --platform chrome test/timezone_quick_preferences_test.dart
 
       - name: Analyze runtime app
+        if: matrix.lane == 'analyzer'
         run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 
       - name: Run live-sync and recurrence regression tests
+        if: matrix.lane == 'regression'
         run: flutter test test/viktor_read_answer_test.dart test/viktor_date_scope_test.dart test/viktor_existing_plan_voice_timezone_test.dart test/viktor_plan_category_test.dart test/viktor_priority_insertion_test.dart test/viktor_multiday_agent_test.dart test/viktor_general_agent_contract_test.dart test/viktor_conversation_store_test.dart test/viktor_action_contract_test.dart test/viktor_historical_records_test.dart test/viktor_thread_context_test.dart test/viktor_record_tools_test.dart test/viktor_schedule_planner_test.dart test/viktor_tag_duration_reflow_test.dart test/viktor_chat_layout_test.dart test/live_sync_contract_test.dart test/plan_recurrence_scope_test.dart test/record_write_durability_test.dart test/planning_edit_sheet_layout_test.dart test/auto_plan_nearest_free_slot_test.dart test/calendar_week_grouping_test.dart test/calendar_drag_and_reschedule_test.dart test/calendar_week_timeview_drag_test.dart test/plan_time_bulk_drag_test.dart test/notes_canonical_components_test.dart test/notes_category_plus_sheet_test.dart test/notes_folder_tabs_contract_test.dart test/category_mutation_outbox_test.dart test/category_order_sync_test.dart test/profile_timezone_catalog_test.dart test/plan_time_sequential_cascade_test.dart test/plan_time_fixed_time_policy_test.dart test/planning_snapshot_cache_test.dart test/plan_time_timezone_projection_test.dart
 
       - name: Time View overlap-lane regression
+        if: matrix.lane == 'regression'
         run: flutter test test/plan_time_view_layout_test.dart --plain-name "Time View overlap lanes preserve every card"
 
       - name: Browser IndexedDB persistence regression
+        if: matrix.lane == 'browser-storage'
         run: flutter test --platform chrome test/web_record_journal_test.dart
 
 
@@ -448,6 +466,32 @@ jobs:
           immutableCreate: true
           makeLatest: true
           prerelease: false
+
+      - name: Measure published release latency against 120-second target
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          started="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq '.created_at')"
+          published="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/life-os-android-$GITHUB_RUN_NUMBER-$GITHUB_SHA" --jq '.published_at')"
+          elapsed=$(( $(date -u -d "$published" +%s) - $(date -u -d "$started" +%s) ))
+          [[ "$elapsed" -ge 0 ]]
+          {
+            echo '### Android release latency'
+            echo "- Trigger to published installer: ${elapsed}s"
+            echo '- Target: 120s'
+            if (( elapsed > 120 )); then
+              echo '- Result: OVER BUDGET'
+            else
+              echo '- Result: within budget'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          if (( elapsed > 120 )); then
+            echo "::warning::Android signed release exceeded 120s: ${elapsed}s"
+          fi
 
       - name: Report canonical signed Android build outcome
         if: ${{ github.event_name != 'pull_request' && always() }}
