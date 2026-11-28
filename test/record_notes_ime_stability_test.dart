@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:counter/data/models.dart';
+import 'package:counter/data/database_service.dart';
 import 'package:counter/features/notes/notes_editor_document_controller.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/notes_image_tools.dart';
@@ -14,6 +15,71 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('record rich note survives timeline projection, reopen and format-only changes', () {
+    final db = DatabaseService.instance;
+    const owner = 'testuserbrain01';
+    const recordId = '11111111-2222-4333-8444-555555555555';
+    const photo = 'lifeos-local-image:v1:12345678-1234-1234-1234-123456789abc.jpg';
+    const document = NoteDocument(blocks: [
+      NoteBlock(id: 'head', type: NoteBlockType.heading, text: 'Heading', level: 2),
+      NoteBlock(id: 'before', type: NoteBlockType.paragraph, text: 'Bold', bold: true),
+      NoteBlock(id: 'photo', type: NoteBlockType.image, imageData: photo),
+      NoteBlock(id: 'after', type: NoteBlockType.paragraph, text: 'Italic', italic: true),
+      NoteBlock(id: 'list', type: NoteBlockType.bulletedList, text: 'Item'),
+    ]);
+    final raw = <String, dynamic>{
+      'id': 'recpbrow0000001',
+      'record_id': recordId,
+      'user_id': owner,
+      'title': 'Rich note',
+      'status': 'completed',
+      'start_time': '2026-07-08T13:00:00.000Z',
+      'end_time': '2026-07-08T14:00:00.000Z',
+      'note': document.toPlainText(),
+      'notes_delta': document.toJson(),
+      'updated': '2026-07-08 14:01:00.000Z',
+    };
+    db.debugActivateRecordBrainTestHarness(userId: owner, categories: []);
+    addTearDown(db.debugResetRecordBrainTestHarness);
+    db.debugSeedFlatRecordRowForTest(raw);
+    final day = DateTime.utc(2026, 7, 8);
+    final projected = db.peekTimelineRecordsForDate(day)
+        .singleWhere((r) => r['record_id'] == recordId);
+    final reopened = TimelineRecord.fromMap(projected);
+    expect(projected['updated'], raw['updated']);
+    final restored = NoteDocument.tryParse(
+      notesDeltaJson: reopened.notesDeltaJson,
+      notesPlain: reopened.note,
+    );
+    expect(restored.toJson(), document.toJson());
+    expect(restored.blocks.map((b) => b.id), ['head', 'before', 'photo', 'after', 'list']);
+    expect(restored.blocks[1].effectiveRuns.first.marks.bold, isTrue);
+    expect(restored.blocks[3].effectiveRuns.first.marks.italic, isTrue);
+    expect(restored.blocks[2].imageData, photo);
+
+    // Optimistic cache strings and PocketBase JSON objects are equivalent.
+    expect(RecordServiceExtension.debugFlatTimelineVisuallyEquivalent(
+      raw, {...raw, 'notes_delta': document.encode()}), isTrue);
+    final changed = document.copyWith(blocks: [
+      document.blocks[0],
+      document.blocks[1].copyWith(bold: false),
+      document.blocks[2],
+      document.blocks[3],
+      document.blocks[4],
+    ]);
+    expect(changed.toPlainText(), document.toPlainText());
+    expect(RecordServiceExtension.debugFlatTimelineVisuallyEquivalent(
+      raw, {...raw, 'notes_delta': changed.toJson()}), isFalse);
+    final moved = document.copyWith(blocks: [
+      document.blocks[0], document.blocks[1], document.blocks[3],
+      document.blocks[4], document.blocks[2],
+    ]);
+    expect(RecordServiceExtension.debugFlatTimelineVisuallyEquivalent(
+      raw, {...raw, 'notes_delta': moved.toJson()}), isFalse);
+    expect(RecordServiceExtension.debugFlatTimelineVisuallyEquivalent(
+      raw, {...raw, 'notes_delta': null}), isFalse);
+  });
+
   test('record local photo association survives stale remote reopen and deletion', () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
