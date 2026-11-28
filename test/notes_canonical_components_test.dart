@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_editor_document_controller.dart';
@@ -16,6 +18,56 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('oversized Notes photo is resized and survives document round-trip', (tester) async {
+    await tester.runAsync(() async {
+      const side = 1100;
+      final random = math.Random(42);
+      final pixels = Uint8List(side * side * 4);
+      for (var i = 0; i < pixels.length; i += 4) {
+        pixels[i] = random.nextInt(256);
+        pixels[i + 1] = random.nextInt(256);
+        pixels[i + 2] = random.nextInt(256);
+        pixels[i + 3] = 255;
+      }
+      final buffer = await ui.ImmutableBuffer.fromUint8List(pixels);
+      final descriptor = ui.ImageDescriptor.raw(
+        buffer,
+        width: side,
+        height: side,
+        pixelFormat: ui.PixelFormat.rgba8888,
+      );
+      final codec = await descriptor.instantiateCodec();
+      final frame = await codec.getNextFrame();
+      final png = (await frame.image.toByteData(format: ui.ImageByteFormat.png))!;
+      final bytes = png.buffer.asUint8List(png.offsetInBytes, png.lengthInBytes);
+      frame.image.dispose();
+      codec.dispose();
+      descriptor.dispose();
+      buffer.dispose();
+      expect(bytes.lengthInBytes, greaterThan(kLifeOsNotesMaxAssetBytes));
+
+      final photo = await prepareNotesImage(bytes, fileName: 'camera.png');
+      final resized = decodeNotesImageDataUrl(photo.dataUrl)!;
+      expect(resized.lengthInBytes, lessThanOrEqualTo(kLifeOsNotesMaxAssetBytes));
+      final resizedCodec = await ui.instantiateImageCodec(resized);
+      final resizedFrame = await resizedCodec.getNextFrame();
+      expect(resizedFrame.image.width, lessThan(side));
+      expect(resizedFrame.image.width, resizedFrame.image.height);
+      resizedFrame.image.dispose();
+      resizedCodec.dispose();
+
+      final original = await prepareNotesImage(resized, fileName: 'small.png');
+      expect(decodeNotesImageDataUrl(original.dataUrl), orderedEquals(resized));
+
+      final document = NoteDocument(blocks: [
+        NoteBlock(id: 'photo', type: NoteBlockType.image, imageData: photo.dataUrl),
+      ]);
+      final restored = NoteDocument.tryParse(notesDeltaJson: document.encode());
+      expect(restored.isEmpty, isFalse);
+      expect(restored.blocks.single.imageData, photo.dataUrl);
+    });
+  });
+
   testWidgets('embedded Android Notes feather avoids live GPU backdrop blur', (tester) async {
     // A 390px child inside a desktop-sized MediaQuery is NOT a phone.
     tester.view.physicalSize = const Size(390, 844);
