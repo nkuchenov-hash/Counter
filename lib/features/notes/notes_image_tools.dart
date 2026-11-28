@@ -48,24 +48,89 @@ Future<NotesPickedImage?> pickNotesImage({
         ],
       );
     case NotesImageSourceChoice.gallery:
-      file = await ImagePicker().pickImage(source: ImageSource.gallery);
+      file = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 85,
+      );
     case NotesImageSourceChoice.camera:
       file = await ImagePicker().pickImage(
         source: ImageSource.camera,
         preferredCameraDevice: CameraDevice.rear,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 85,
       );
   }
   if (file == null) return null;
-  final bytes = await file.readAsBytes();
-  if (bytes.isEmpty) throw StateError('image_empty');
-  if (bytes.lengthInBytes > kLifeOsNotesMaxAssetBytes) {
-    throw const NotesImageTooLargeException();
-  }
-  final mimeType = notesImageMimeType(file.name, file.mimeType);
-  return NotesPickedImage(
-    dataUrl: 'data:$mimeType;base64,${base64Encode(bytes)}',
+  return prepareNotesImage(
+    await file.readAsBytes(),
     fileName: file.name,
+    mimeType: file.mimeType,
   );
+}
+
+/// Preserve small originals. Resize oversized files instead of rejecting an
+/// ordinary camera photo. Keep the existing per-asset storage ceiling.
+Future<NotesPickedImage> prepareNotesImage(
+  Uint8List bytes, {
+  required String fileName,
+  String? mimeType,
+}) async {
+  if (bytes.isEmpty) throw StateError('image_empty');
+  var data = bytes;
+  var type = notesImageMimeType(fileName, mimeType);
+  if (data.lengthInBytes > kLifeOsNotesMaxAssetBytes) {
+    data = await _resizeNotesImageToFit(data);
+    type = 'image/png';
+  }
+  return NotesPickedImage(
+    dataUrl: 'data:$type;base64,${base64Encode(data)}',
+    fileName: fileName,
+  );
+}
+
+Future<Uint8List> _resizeNotesImageToFit(Uint8List bytes) async {
+  final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+  try {
+    final descriptor = await ui.ImageDescriptor.encoded(buffer);
+    try {
+      final longest = descriptor.width > descriptor.height
+          ? descriptor.width
+          : descriptor.height;
+      for (final limit in [1600, 1200, 900, 640, 480]) {
+        if (longest <= limit) continue;
+        final scale = limit / longest;
+        final width = (descriptor.width * scale).round().clamp(1, limit).toInt();
+        final height = (descriptor.height * scale).round().clamp(1, limit).toInt();
+        final codec = await descriptor.instantiateCodec(
+          targetWidth: width,
+          targetHeight: height,
+        );
+        try {
+          final frame = await codec.getNextFrame();
+          try {
+            final data = await frame.image.toByteData(
+              format: ui.ImageByteFormat.png,
+            );
+            if (data != null && data.lengthInBytes <= kLifeOsNotesMaxAssetBytes) {
+              return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+            }
+          } finally {
+            frame.image.dispose();
+          }
+        } finally {
+          codec.dispose();
+        }
+      }
+    } finally {
+      descriptor.dispose();
+    }
+  } finally {
+    buffer.dispose();
+  }
+  throw const NotesImageTooLargeException();
 }
 
 Future<NotesImageSourceChoice?> showNotesImageSourcePicker({
