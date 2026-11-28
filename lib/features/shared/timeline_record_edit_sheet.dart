@@ -289,6 +289,10 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
           journal.save(_recordNoteDocument);
         }
       }
+    } catch (error) {
+      // Preview/test hosts may lack the platform preferences plugin.
+      // Do not crash the editor; actual local journal failures remain visible.
+      if (mounted) AppSnack.failed();
     } finally {
       if (mounted) setState(() => _photosRestored = true);
     }
