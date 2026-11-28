@@ -1,0 +1,51 @@
+name: Audit published Android APK bytes
+on:
+  push:
+    branches: [fix/android-release-download-validation]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - tag: life-os-android-2612-4dfd1b6131d92cf3a9f9e34a7c43aefdfad454fa
+            sha256: 40ea9df14993e22df9d8f8124a7be83e26c98ce6a8620e9e1b98d3fa54ecf33c
+          - tag: life-os-android-2614-1936eb739a767123cab7fadbf568fc9f65cd3287
+            sha256: 63902d11943be29c092f0249e10f6b46481eeb92e4fca7003e6593078fd381d7
+    steps:
+      - name: Download anonymously from public release and inspect APK
+        env:
+          TAG: ${{ matrix.tag }}
+          SHA256: ${{ matrix.sha256 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 120 "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/LIFE-OS-Android-arm64.apk" -o release.apk
+          echo "$SHA256  release.apk" | sha256sum --check
+          unzip -tq release.apk
+          sdk="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          tools="$(find "$sdk/build-tools" -name apksigner -type f | sort -V | tail -n1 | xargs dirname)"
+          "$tools/apksigner" verify --verbose --print-certs release.apk
+          "$tools/apksigner" verify --print-certs release.apk | grep -i 'DEE60EF3E1863491DB0CB2738C1D61C0BC3EBE896ADB09EB8D1C2436367D2A3D'
+          "$tools/aapt" dump badging release.apk
+          "$tools/zipalign" -c -P 16 4 release.apk || echo "::warning::16KB ZIP alignment check failed; inspect native libraries and Android 16 compatibility"
+          python3 - <<'PY'
+          import zipfile, struct
+          with zipfile.ZipFile("release.apk") as z:
+              for n in z.namelist():
+                  if n.startswith("lib/") and n.endswith(".so"):
+                      b=z.read(n)
+                      if b[:5]!=b'\x7fELF\x02': continue
+                      endian="<" if b[5]==1 else ">"
+                      off=struct.unpack_from(endian+"Q",b,32)[0]
+                      size,count=struct.unpack_from(endian+"HH",b,54)
+                      aligns=[]
+                      for i in range(count):
+                          fields=struct.unpack_from(endian+"IIQQQQQQ",b,off+i*size)
+                          if fields[0]==1: aligns.append(fields[-1])
+                      print(n, "PT_LOAD alignment",aligns)
+          PY
