@@ -18,6 +18,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('local image reference survives note serialization without file contents', () {
+    const reference = 'lifeos-local-image:v1:12345678-1234-1234-1234-123456789abc.jpg';
+    final doc = NoteDocument(blocks: [
+      NoteBlock(id: 'image', type: NoteBlockType.image, imageData: reference),
+    ]);
+    final restored = NoteDocument.tryParse(notesDeltaJson: doc.encode());
+    expect(restored.blocks.single.imageData, reference);
+    expect(isLocalNotesImage(restored.blocks.single.imageData), isTrue);
+    expect(isLocalNotesImage('data:image/png;base64,AQID'), isFalse);
+    expect(doc.encode().length, lessThan(1024));
+  });
   testWidgets('oversized Notes photo is resized and survives document round-trip', (tester) async {
     await tester.runAsync(() async {
       const side = 1100;

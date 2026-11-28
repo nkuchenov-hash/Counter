@@ -5,14 +5,50 @@ import 'dart:ui' as ui;
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_text_field.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/data/database_service.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:clipboard/clipboard.dart';
+
+// Android originals live in app-private, account-scoped storage. The existing
+// image block stores only an opaque identifier, never a device path or bytes.
+const _localImageChannel = MethodChannel('counter/notes_local_images');
+const _localImagePrefix = 'lifeos-local-image:v1:';
+bool get _useLocalImages => !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+bool isLocalNotesImage(String? value) => value?.startsWith(_localImagePrefix) ?? false;
+String _localImageOwner() {
+  final owner = DatabaseService.instance.currentProfileId?.trim() ?? '';
+  if (owner.isEmpty) throw StateError('image_owner_missing');
+  return owner;
+}
+Future<String> _storeLocalNotesImage({String? path, Uint8List? bytes,
+    required String name}) async {
+  final id = await _localImageChannel.invokeMethod<String>('store', {
+    'owner': _localImageOwner(), 'path': path, 'bytes': bytes, 'name': name,
+  });
+  if (id == null || id.isEmpty) throw StateError('image_store_failed');
+  return '$_localImagePrefix$id';
+}
+Future<Uint8List?> readNotesImagePreview(String? value) async {
+  if (value == null) return null;
+  if (!isLocalNotesImage(value)) return decodeNotesImageDataUrl(value);
+  if (!_useLocalImages) return null;
+  try {
+    return await _localImageChannel.invokeMethod<Uint8List>('preview', {
+      'owner': _localImageOwner(), 'id': value.substring(_localImagePrefix.length),
+    });
+  } on PlatformException {
+    return null;
+  } on StateError {
+    return null;
+  }
+}
 
 enum NotesImageSourceChoice { files, gallery, camera }
 
@@ -51,20 +87,24 @@ Future<NotesPickedImage?> pickNotesImage({
     case NotesImageSourceChoice.gallery:
       file = await ImagePicker().pickImage(
         source: ImageSource.gallery,
-        maxWidth: 1600,
-        maxHeight: 1600,
-        imageQuality: 85,
+        maxWidth: _useLocalImages ? null : 1600,
+        maxHeight: _useLocalImages ? null : 1600,
+        imageQuality: _useLocalImages ? null : 85,
       );
     case NotesImageSourceChoice.camera:
       file = await ImagePicker().pickImage(
         source: ImageSource.camera,
         preferredCameraDevice: CameraDevice.rear,
-        maxWidth: 1600,
-        maxHeight: 1600,
-        imageQuality: 85,
+        maxWidth: _useLocalImages ? null : 1600,
+        maxHeight: _useLocalImages ? null : 1600,
+        imageQuality: _useLocalImages ? null : 85,
       );
   }
   if (file == null) return null;
+  if (_useLocalImages) {
+    final ref = await _storeLocalNotesImage(path: file.path, name: file.name);
+    return NotesPickedImage(dataUrl: ref, fileName: file.name);
+  }
   return prepareNotesImage(
     await file.readAsBytes(),
     fileName: file.name,
@@ -238,11 +278,13 @@ Widget _sourceTile(
 Future<String?> showNotesImageCropper({
   required BuildContext context,
   required String dataUrl,
-}) {
+}) async {
+  final bytes = await readNotesImagePreview(dataUrl);
+  if (!context.mounted || bytes == null) return null;
   return Navigator.of(context).push<String>(
     MaterialPageRoute<String>(
       fullscreenDialog: true,
-      builder: (_) => NotesImageCropPage(dataUrl: dataUrl),
+      builder: (_) => NotesImageCropPage(dataUrl: 'data:image/png;base64,${base64Encode(bytes)}'),
     ),
   );
 }
@@ -285,12 +327,12 @@ class _NotesImageCropPageState extends State<NotesImageCropPage> {
         image.dispose();
       }
       if (data == null) throw StateError('crop_encode_failed');
-      final picked = await prepareNotesImage(
-        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
-        fileName: 'crop.png',
-      );
+      final bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+      final result = _useLocalImages
+          ? await _storeLocalNotesImage(bytes: bytes, name: 'crop.png')
+          : (await prepareNotesImage(bytes, fileName: 'crop.png')).dataUrl;
       if (!mounted) return;
-      Navigator.of(context).pop(picked.dataUrl);
+      Navigator.of(context).pop(result);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -427,6 +469,18 @@ Future<void> copyNotesImage(String dataUrl) async {
 }
 
 Future<String?> saveNotesImage(String dataUrl) async {
+  if (isLocalNotesImage(dataUrl)) {
+    if (!_useLocalImages) throw StateError('image_local_only');
+    final path = await _localImageChannel.invokeMethod<String>('original', {
+      'owner': _localImageOwner(), 'id': dataUrl.substring(_localImagePrefix.length),
+    });
+    if (path == null) throw StateError('image_local_missing');
+    final extension = path.split('.').last;
+    return FileSaver.instance.saveAs(
+      name: 'life_os_note_${DateTime.now().millisecondsSinceEpoch}',
+      filePath: path, fileExtension: extension, mimeType: MimeType.other,
+    );
+  }
   final bytes = await notesImagePngBytes(dataUrl);
   return FileSaver.instance.saveAs(
     name: 'life_os_note_${DateTime.now().millisecondsSinceEpoch}',
@@ -437,7 +491,7 @@ Future<String?> saveNotesImage(String dataUrl) async {
 }
 
 Future<Uint8List> notesImagePngBytes(String dataUrl) async {
-  final bytes = decodeNotesImageDataUrl(dataUrl);
+  final bytes = await readNotesImagePreview(dataUrl);
   if (bytes == null || bytes.isEmpty) throw StateError('image_decode_failed');
   final codec = await ui.instantiateImageCodec(bytes);
   final frame = await codec.getNextFrame();

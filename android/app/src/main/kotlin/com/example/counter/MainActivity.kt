@@ -71,12 +71,107 @@ class MainActivity : FlutterFragmentActivity() {
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
+            "counter/notes_local_images",
+        ).setMethodCallHandler { call, result ->
+            if (call.method !in listOf("store", "preview", "original")) {
+                result.notImplemented()
+            } else {
+                val owner = call.argument<String>("owner").orEmpty()
+                val id = call.argument<String>("id").orEmpty()
+                val path = call.argument<String>("path")
+                val bytes = call.argument<ByteArray>("bytes")
+                val name = call.argument<String>("name").orEmpty()
+                Thread {
+                    try {
+                        require(owner.matches(Regex("[A-Za-z0-9_-]{1,128}")))
+                        val dir = java.io.File(noBackupFilesDir, "notes-images-v1/$owner")
+                        check(dir.isDirectory || dir.mkdirs() || dir.isDirectory)
+                        val value: Any? = when (call.method) {
+                            "store" -> storeNoteImage(dir, path, bytes, name)
+                            "preview", "original" -> {
+                                require(id.matches(Regex("[a-f0-9-]{36}\\.[a-z0-9]{1,12}")))
+                                val original = java.io.File(dir, id)
+                                if (call.method == "preview") {
+                                    java.io.File(dir, "$id.preview.png").takeIf { it.isFile }?.readBytes()
+                                } else original.takeIf { it.isFile }?.absolutePath
+                            }
+                            else -> null
+                        }
+                        runOnUiThread { result.success(value) }
+                    } catch (_: Exception) {
+                        runOnUiThread { result.error("note_image_failed", "Unable to access local image", null) }
+                    }
+                }.start()
+            }
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
             "counter/people_contacts",
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "requestAndReadContacts" -> requestAndReadPeopleContacts(result)
                 else -> result.notImplemented()
             }
+        }
+    }
+
+    // Copy the original byte-for-byte before acknowledging the attachment.
+    // Preview decoding is bounded and occurs off the Flutter/UI thread.
+    private fun storeNoteImage(dir: java.io.File, path: String?, bytes: ByteArray?, name: String): String {
+        val extension = name.substringAfterLast('.', "img").lowercase()
+            .takeIf { it.matches(Regex("[a-z0-9]{1,12}")) } ?: "img"
+        val id = "${java.util.UUID.randomUUID()}.$extension"
+        val original = java.io.File(dir, id)
+        val preview = java.io.File(dir, "$id.preview.png")
+        try {
+            java.io.FileOutputStream(original).use { output ->
+                if (bytes != null) {
+                    output.write(bytes)
+                } else {
+                    require(!path.isNullOrEmpty())
+                    val input = if (path.startsWith("content://") || path.startsWith("file://")) {
+                        contentResolver.openInputStream(android.net.Uri.parse(path))
+                    } else java.io.FileInputStream(path)
+                    checkNotNull(input).use { it.copyTo(output) }
+                }
+                output.fd.sync()
+            }
+            check(original.length() > 0)
+            val bitmap = if (android.os.Build.VERSION.SDK_INT >= 28) {
+                android.graphics.ImageDecoder.decodeBitmap(
+                    android.graphics.ImageDecoder.createSource(original)
+                ) { decoder, info, _ ->
+                    val longest = maxOf(info.size.width, info.size.height)
+                    if (longest > 1600) {
+                        val scale = 1600.0 / longest
+                        decoder.setTargetSize(maxOf(1, (info.size.width * scale).toInt()),
+                            maxOf(1, (info.size.height * scale).toInt()))
+                    }
+                    decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                }
+            } else {
+                val options = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                android.graphics.BitmapFactory.decodeFile(original.absolutePath, options)
+                var sample = 1
+                while (maxOf(options.outWidth, options.outHeight) / sample > 1600) sample *= 2
+                options.inJustDecodeBounds = false
+                options.inSampleSize = sample
+                checkNotNull(android.graphics.BitmapFactory.decodeFile(original.absolutePath, options))
+            }
+            try {
+                java.io.FileOutputStream(preview).use { output ->
+                    check(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output))
+                    output.fd.sync()
+                }
+            } finally {
+                bitmap.recycle()
+            }
+            return id
+        } catch (error: Exception) {
+            original.delete()
+            preview.delete()
+            throw error
         }
     }
 

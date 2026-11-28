@@ -949,6 +949,7 @@ const Map<String, String> kRuL10n = {
   'notes_v3_checklist_badge': 'Список',
   'notes_v3_draw_badge': 'Рисунок',
   'notes_v3_image_badge': 'Картинка',
+  'notes_local_image_unavailable': 'Фото хранится на другом устройстве или недоступно.',
   'notes_v3_more_count': '+{n} ещё',
   'notes_v3_just_now': 'только что',
   'notes_v3_min_ago': '{n} мин назад',

@@ -938,6 +938,7 @@ const Map<String, String> kEnL10n = {
   'notes_v3_checklist_badge': 'Checklist',
   'notes_v3_draw_badge': 'Draw',
   'notes_v3_image_badge': 'Image',
+  'notes_local_image_unavailable': 'Image is stored on another device or is unavailable.',
   'notes_v3_more_count': '+{n} more',
   'notes_v3_just_now': 'just now',
   'notes_v3_min_ago': '{n}m ago',
