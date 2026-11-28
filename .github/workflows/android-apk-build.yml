@@ -62,10 +62,75 @@ permissions:
   statuses: write
 
 jobs:
-  build-apk:
+  verify-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' '  static const String placeholder = '\'''\'';' '}' > lib/core/env/env.dart
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify shared LIFE OS semantic palette
+        run: flutter test test/life_semantic_palette_test.dart
+
+      - name: Verify persistent People/Menu shell and styling contracts
+        run: flutter test test/shell_form_factor_test.dart
+
+      - name: Verify single canonical input and painted field-button alignment
+        run: flutter test test/app_control_consistency_test.dart
+
+      - name: Verify Chrome quick-entry focus and painted text alignment
+        run: flutter test --platform chrome test/app_control_consistency_test.dart
+
+      - name: Verify Android and Web production backend parity
+        run: flutter test test/pocketbase_production_origin_test.dart
+
+      - name: Verify mobile Notes input hot path and keyboard stability
+        run: flutter test test/record_notes_ime_stability_test.dart test/notes_mobile_keyboard_regression_test.dart
+
+      - name: Verify cloud-first sleep synchronization contract
+        run: flutter test test/sleep_cloud_settings_contract_test.dart test/data/health_sleep_policy_test.dart
+
+      - name: Verify timezone settings regression
+        run: flutter test test/timezone_quick_preferences_test.dart
+
+      - name: Verify browser timezone IndexedDB persistence
+        run: flutter test --platform chrome test/timezone_quick_preferences_test.dart
+
+      - name: Analyze runtime app
+        run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
+
+      - name: Run live-sync and recurrence regression tests
+        run: flutter test test/viktor_read_answer_test.dart test/viktor_date_scope_test.dart test/viktor_existing_plan_voice_timezone_test.dart test/viktor_plan_category_test.dart test/viktor_priority_insertion_test.dart test/viktor_multiday_agent_test.dart test/viktor_general_agent_contract_test.dart test/viktor_conversation_store_test.dart test/viktor_action_contract_test.dart test/viktor_historical_records_test.dart test/viktor_thread_context_test.dart test/viktor_record_tools_test.dart test/viktor_schedule_planner_test.dart test/viktor_tag_duration_reflow_test.dart test/viktor_chat_layout_test.dart test/live_sync_contract_test.dart test/plan_recurrence_scope_test.dart test/record_write_durability_test.dart test/planning_edit_sheet_layout_test.dart test/auto_plan_nearest_free_slot_test.dart test/calendar_week_grouping_test.dart test/calendar_drag_and_reschedule_test.dart test/calendar_week_timeview_drag_test.dart test/plan_time_bulk_drag_test.dart test/notes_canonical_components_test.dart test/notes_category_plus_sheet_test.dart test/notes_folder_tabs_contract_test.dart test/category_mutation_outbox_test.dart test/category_order_sync_test.dart test/profile_timezone_catalog_test.dart test/plan_time_sequential_cascade_test.dart test/plan_time_fixed_time_policy_test.dart test/planning_snapshot_cache_test.dart test/plan_time_timezone_projection_test.dart
+
+      - name: Time View overlap-lane regression
+        run: flutter test test/plan_time_view_layout_test.dart --plain-name "Time View overlap lanes preserve every card"
+
+      - name: Browser IndexedDB persistence regression
+        run: flutter test --platform chrome test/web_record_journal_test.dart
+
+
+  compile-apk:
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 45
+    outputs:
+      apk-sha256: ${{ steps.apk-digest.outputs.sha256 }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -119,6 +184,7 @@ jobs:
         with:
           flutter-version: '3.41.6'
           channel: stable
+          cache: true
 
       # Cached Gradle distributions, dependencies and compiled build state.
       # Read the shared main-branch cache from PRs; only main writes it.
@@ -134,46 +200,6 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
-
-      - name: Verify shared LIFE OS semantic palette
-        run: flutter test test/life_semantic_palette_test.dart
-
-      - name: Verify persistent People/Menu shell and styling contracts
-        run: flutter test test/shell_form_factor_test.dart
-
-      - name: Verify single canonical input and painted field-button alignment
-        run: flutter test test/app_control_consistency_test.dart
-
-      - name: Verify Chrome quick-entry focus and painted text alignment
-        run: flutter test --platform chrome test/app_control_consistency_test.dart
-
-      - name: Verify Android and Web production backend parity
-        run: flutter test test/pocketbase_production_origin_test.dart
-
-      - name: Verify mobile Notes input hot path and keyboard stability
-        run: flutter test test/record_notes_ime_stability_test.dart test/notes_mobile_keyboard_regression_test.dart
-
-      - name: Verify cloud-first sleep synchronization contract
-        run: flutter test test/sleep_cloud_settings_contract_test.dart test/data/health_sleep_policy_test.dart
-
-      - name: Verify timezone settings regression
-        run: flutter test test/timezone_quick_preferences_test.dart
-
-      - name: Verify browser timezone IndexedDB persistence
-        run: flutter test --platform chrome test/timezone_quick_preferences_test.dart
-
-      - name: Analyze runtime app
-        run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
-
-      - name: Run live-sync and recurrence regression tests
-        run: flutter test test/viktor_read_answer_test.dart test/viktor_date_scope_test.dart test/viktor_existing_plan_voice_timezone_test.dart test/viktor_plan_category_test.dart test/viktor_priority_insertion_test.dart test/viktor_multiday_agent_test.dart test/viktor_general_agent_contract_test.dart test/viktor_conversation_store_test.dart test/viktor_action_contract_test.dart test/viktor_historical_records_test.dart test/viktor_thread_context_test.dart test/viktor_record_tools_test.dart test/viktor_schedule_planner_test.dart test/viktor_tag_duration_reflow_test.dart test/viktor_chat_layout_test.dart test/live_sync_contract_test.dart test/plan_recurrence_scope_test.dart test/record_write_durability_test.dart test/planning_edit_sheet_layout_test.dart test/auto_plan_nearest_free_slot_test.dart test/calendar_week_grouping_test.dart test/calendar_drag_and_reschedule_test.dart test/calendar_week_timeview_drag_test.dart test/plan_time_bulk_drag_test.dart test/notes_canonical_components_test.dart test/notes_category_plus_sheet_test.dart test/notes_folder_tabs_contract_test.dart test/category_mutation_outbox_test.dart test/category_order_sync_test.dart test/profile_timezone_catalog_test.dart test/plan_time_sequential_cascade_test.dart test/plan_time_fixed_time_policy_test.dart test/planning_snapshot_cache_test.dart test/plan_time_timezone_projection_test.dart
-
-      - name: Time View overlap-lane regression
-        run: flutter test test/plan_time_view_layout_test.dart --plain-name "Time View overlap lanes preserve every card"
-
-      - name: Browser IndexedDB persistence regression
-        run: flutter test --platform chrome test/web_record_journal_test.dart
-
 
       # Single production signing identity, kept in a private encrypted draft
       # release. Missing backup must fail the release: never rotate keys again.
@@ -325,10 +351,16 @@ jobs:
           fi
           echo "Verified canonical package $actual and permanent signing identity SHA-256 $actual_fp."
 
-      # PR builds deliberately use the Android debug key because release
-      # secrets are unavailable to pull_request jobs. Do not distribute these
-      # builds as installable updates: Android rejects the certificate mismatch.
-      # Only main builds which passed permanent-signing verification may publish.
+      # The signed artifact is staging only; the release job below is the
+      # only publisher, and requires both verification and compilation.
+      - name: Record verified APK digest
+        id: apk-digest
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "sha256=$(sha256sum LIFE-OS-Android-arm64.apk | cut -d ' ' -f1)" >> "$GITHUB_OUTPUT"
+
       - name: Upload APK artifact
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
@@ -337,6 +369,41 @@ jobs:
           path: LIFE-OS-Android-arm64.apk
           if-no-files-found: error
           retention-days: 14
+          compression-level: 0
+
+  # Preserve the existing build-apk check name. A successful result now means
+  # both parallel jobs passed and (on main) the exact signed APK was published.
+  build-apk:
+    runs-on: ubuntu-latest
+    needs: [verify-apk, compile-apk]
+    if: ${{ always() }}
+    environment: production
+    timeout-minutes: 10
+    steps:
+      - name: Require successful verification and compilation
+        env:
+          VERIFY_RESULT: ${{ needs.verify-apk.result }}
+          COMPILE_RESULT: ${{ needs.compile-apk.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$VERIFY_RESULT" == "success" && "$COMPILE_RESULT" == "success" ]]
+
+      - name: Download exact signed staging APK
+        if: github.event_name != 'pull_request'
+        uses: actions/download-artifact@v4
+        with:
+          name: counter-android-arm64-release
+
+      - name: Verify staged APK digest before publication
+        if: github.event_name != 'pull_request'
+        env:
+          EXPECTED_SHA256: ${{ needs.compile-apk.outputs.apk-sha256 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          echo "$EXPECTED_SHA256  LIFE-OS-Android-arm64.apk" | sha256sum --check
 
       - name: Publish immutable LIFE OS Android release
         if: github.event_name != 'pull_request'
