@@ -74,10 +74,10 @@ class _NotesImageViewerState extends State<_NotesImageViewer> {
       readNotesImagePreview(widget.reference, detail: true);
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.black,
+    backgroundColor: Theme.of(context).colorScheme.surface,
     appBar: AppBar(
-      backgroundColor: Colors.black,
-      foregroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      foregroundColor: Theme.of(context).colorScheme.onSurface,
       title: Text(t(currentLocale.value, 'notes_v3_image_badge')),
       actions: [
         IconButton(
@@ -109,7 +109,7 @@ class _NotesImageViewerState extends State<_NotesImageViewer> {
             }
             return Center(child: Text(
               t(currentLocale.value, 'notes_local_image_unavailable'),
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             ));
           }
           return InteractiveViewer(
