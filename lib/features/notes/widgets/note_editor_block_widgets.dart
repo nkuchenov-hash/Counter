@@ -52,6 +52,7 @@ class NotesEditorBlockItem extends StatelessWidget {
     required this.editing,
     this.directEditOnTap = false,
     required this.onTap,
+    this.onOpenImage,
     required this.onKeyEvent,
     this.textController,
     this.focusNode,
@@ -77,6 +78,7 @@ class NotesEditorBlockItem extends StatelessWidget {
   /// native IME take focus on that first interaction.
   final bool directEditOnTap;
   final VoidCallback onTap;
+  final VoidCallback? onOpenImage;
   final KeyEventResult Function(KeyEvent event) onKeyEvent;
   final TextEditingController? textController;
   final FocusNode? focusNode;
@@ -109,6 +111,11 @@ class NotesEditorBlockItem extends StatelessWidget {
         onKeyEvent: (_, event) => onKeyEvent(event),
         child: child,
       );
+    } else if (block.type == NoteBlockType.image ||
+        block.type == NoteBlockType.drawing) {
+      // Media already has a gesture recognizer. Pointer-down must never
+      // activate an image while the user is trying to scroll or reorder.
+      interactive = child;
     } else {
       interactive = Listener(
         behavior: HitTestBehavior.translucent,
@@ -611,7 +618,7 @@ class NotesEditorBlockItem extends StatelessWidget {
         ? block.drawingData
         : block.imageData;
     if (isLocalNotesImage(raw)) {
-      return _LocalNotesImagePreview(key: ValueKey(raw), reference: raw!);
+      return _LocalNotesImagePreview(key: ValueKey(raw), reference: raw!, onOpen: onOpenImage);
     }
     final bytes = _decodeImagePayload(raw);
     if (bytes == null) return _mediaPlaceholder(context);
@@ -676,33 +683,45 @@ class NotesEditorBlockItem extends StatelessWidget {
 // Keep a single preview future per mounted image rather than reading or
 // decoding the original on every editor rebuild or keystroke.
 class _LocalNotesImagePreview extends StatefulWidget {
-  const _LocalNotesImagePreview({super.key, required this.reference});
+  const _LocalNotesImagePreview({super.key, required this.reference, this.onOpen});
   final String reference;
+  final VoidCallback? onOpen;
   @override
   State<_LocalNotesImagePreview> createState() => _LocalNotesImagePreviewState();
 }
 class _LocalNotesImagePreviewState extends State<_LocalNotesImagePreview> {
   late final Future<Uint8List?> _preview = readNotesImagePreview(widget.reference);
   @override
-  Widget build(BuildContext context) => FutureBuilder<Uint8List?>(
-    future: _preview,
-    builder: (context, snapshot) {
-      final bytes = snapshot.data;
-      if (bytes != null) {
-        return RepaintBoundary(child: SizedBox(height: 240, width: double.infinity, child: Image.memory(
-          bytes, fit: BoxFit.contain, alignment: Alignment.topCenter,
-          gaplessPlayback: true,
-          errorBuilder: (_, __, ___) => Text(t(currentLocale.value, 'state_unavailable')),
-        )));
-      }
-      if (snapshot.connectionState != ConnectionState.done) {
-        return const SizedBox(height: 72, child: Center(child: CircularProgressIndicator()));
-      }
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(t(currentLocale.value, 'state_unavailable')),
-      );
-    },
+  Widget build(BuildContext context) => RepaintBoundary(
+    child: AspectRatio(
+      aspectRatio: 1.6,
+      child: FutureBuilder<Uint8List?>(
+        future: _preview,
+        builder: (context, snapshot) {
+          final bytes = snapshot.data;
+          if (bytes != null) {
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.memory(bytes, fit: BoxFit.cover, gaplessPlayback: true,
+                  filterQuality: FilterQuality.medium,
+                  errorBuilder: (_, __, ___) => Center(child: Text(t(currentLocale.value, 'state_unavailable')))),
+                if (widget.onOpen != null)
+                  Positioned(top: 8, right: 8, child: IconButton.filledTonal(
+                    key: const ValueKey('notes-photo-open'),
+                    tooltip: t(currentLocale.value, 'notes_v3_image_badge'),
+                    icon: const Icon(Icons.open_in_full_rounded),
+                    onPressed: widget.onOpen,
+                  )),
+              ],
+            );
+          }
+          return Center(child: snapshot.connectionState != ConnectionState.done
+            ? const CircularProgressIndicator()
+            : Text(t(currentLocale.value, 'state_unavailable')));
+        },
+      ),
+    ),
   );
 }
 

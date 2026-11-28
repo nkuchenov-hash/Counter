@@ -15,6 +15,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:clipboard/clipboard.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Android originals live in app-private, account-scoped storage. The existing
 // image block stores only an opaque identifier, never a device path or bytes.
@@ -49,6 +50,83 @@ Future<Uint8List?> readNotesImagePreview(String? value, {bool detail = false}) a
     return null;
   } on MissingPluginException {
     return null;
+  }
+}
+
+/// Local photo membership is stored independently of the remote record draft.
+/// A failed/stale network refresh cannot detach a successfully imported file.
+/// No text or remote attachment contents are duplicated in this journal.
+class RecordLocalPhotoJournal {
+  RecordLocalPhotoJournal(this._prefs, this.key);
+  final SharedPreferences _prefs;
+  final String key;
+  final Set<String> _knownIds = {};
+  String? _last;
+  Future<void> _pending = Future<void>.value();
+
+  static Future<RecordLocalPhotoJournal?> open(String recordKey) async {
+    if (!_useLocalImages || recordKey.isEmpty) return null;
+    final owner = DatabaseService.instance.currentProfileId?.trim() ?? '';
+    if (owner.isEmpty) return null;
+    final prefs = await SharedPreferences.getInstance();
+    return RecordLocalPhotoJournal(prefs, 'notes_local_photos_v1:$owner:$recordKey');
+  }
+
+  Future<void> get pending => _pending;
+
+  NoteDocument restore(NoteDocument source) {
+    final saved = _prefs.getString(key);
+    if (saved == null) return source;
+    try {
+      final data = jsonDecode(saved) as Map<String, dynamic>;
+      final known = (data['known'] as List).cast<String>();
+      final order = (data['order'] as List).cast<String>();
+      final photos = (data['photos'] as List).map(
+        (raw) => NoteBlock.fromJson(Map<String, dynamic>.from(raw as Map)),
+      ).where((block) => block.type == NoteBlockType.image &&
+          isLocalNotesImage(block.imageData)).toList();
+      _knownIds.addAll(known);
+      _last = saved;
+      final blocks = source.blocks.where((block) => !_knownIds.contains(block.id)).toList();
+      for (final photo in photos) {
+        final pos = order.indexOf(photo.id);
+        var insertAt = -1;
+        for (var i = pos - 1; i >= 0; i--) {
+          final at = blocks.indexWhere((b) => b.id == order[i]);
+          if (at >= 0) { insertAt = at + 1; break; }
+        }
+        if (insertAt < 0) {
+          for (var i = pos + 1; i < order.length; i++) {
+            final at = blocks.indexWhere((b) => b.id == order[i]);
+            if (at >= 0) { insertAt = at; break; }
+          }
+        }
+        blocks.insert(insertAt < 0 ? blocks.length : insertAt, photo);
+      }
+      return source.copyWith(blocks: blocks);
+    } catch (_) {
+      return source;
+    }
+  }
+
+  void save(NoteDocument document) {
+    final photos = document.blocks.where((b) =>
+        b.type == NoteBlockType.image && isLocalNotesImage(b.imageData)).toList();
+    if (photos.isEmpty && _knownIds.isEmpty) return;
+    _knownIds.addAll(photos.map((b) => b.id));
+    final next = jsonEncode({
+      'known': _knownIds.toList(),
+      'order': document.blocks.map((b) => b.id).toList(),
+      'photos': photos.map((b) => b.toJson()).toList(),
+    });
+    if (next == _last) return;
+    _last = next;
+    _pending = _pending.catchError((Object _) {}).then((_) async {
+      if (!await _prefs.setString(key, next)) {
+        _last = null;
+        throw StateError('local_photo_journal_write_failed');
+      }
+    });
   }
 }
 

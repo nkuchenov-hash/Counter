@@ -13,6 +13,7 @@ import 'package:counter/data/recurrence_edit_scope.dart';
 import 'package:counter/data/smart_input_parser.dart';
 import 'package:counter/features/planning/recurrence_scope_dialog.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
+import 'package:counter/features/notes/notes_image_tools.dart';
 import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/core/widgets/chip_component.dart';
@@ -52,6 +53,9 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TextEditingController _titleController;
   late NoteDocument _recordNoteDocument;
+  RecordLocalPhotoJournal? _photoJournal;
+  late final Future<void> _photosReady;
+  bool _photosRestored = false;
   int? _categoryId;
   DateTime? _startDisplay;
   DateTime? _endDisplay;
@@ -258,6 +262,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
           )
           .toList(),
     );
+    _photosReady = _restoreLocalPhotos();
     _categoryId = widget.record.categoryId;
     _startDisplay = widget.record.startTime != null
         ? utcToDisplay(widget.record.startTime!)
@@ -268,6 +273,48 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
     _sourcePlanPbId =
         DatabaseService.pocketRelationIdOrNull(widget.record.sourcePlanId) ??
         '';
+  }
+
+  Future<void> _restoreLocalPhotos() async {
+    try {
+      if (_isPersistedRecord) {
+        final businessId = widget.record.recordId?.trim() ?? '';
+        _photoJournal = await RecordLocalPhotoJournal.open(
+          businessId.isNotEmpty ? businessId : _recordUpdateKey,
+        );
+        if (!mounted) return;
+        final journal = _photoJournal;
+        if (journal != null) {
+          _recordNoteDocument = journal.restore(_recordNoteDocument);
+          journal.save(_recordNoteDocument);
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _photosRestored = true);
+    }
+  }
+
+  void _onRecordNoteChanged(NoteDocument document) {
+    _recordNoteDocument = document;
+    final journal = _photoJournal;
+    journal?.save(document);
+    if (journal != null) unawaited(journal.pending.catchError((Object _) {
+      if (mounted) AppSnack.failed();
+    }));
+    _recordAutosaveGate.schedule(_commitRecordAutosave, delay: const Duration(seconds: 15));
+  }
+
+  Future<void> _closeRecordEditor() async {
+    await _photosReady;
+    try {
+      await _photoJournal?.pending;
+    } catch (_) {
+      if (mounted) AppSnack.failed();
+      return;
+    }
+    if (!mounted) return;
+    _recordAutosaveGate.flush(_commitRecordAutosave);
+    Navigator.of(context).pop();
   }
 
   void _handleRecordTabChanged() {
@@ -561,6 +608,12 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
   }
 
   Future<void> _save() async {
+    await _photosReady;
+    try { await _photoJournal?.pending; } catch (_) {
+      if (mounted) AppSnack.failed();
+      return;
+    }
+    if (!mounted) return;
     final title = _titleController.text.trim();
     final noteText = _recordNoteDocument.toPlainText().trim();
     final checklistPayload = _checklistForApi();
@@ -819,7 +872,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
           EditorV45Title(
             controller: _titleController,
             onChanged: (raw) => _handleRecordTitleInput(this, raw),
-            onClose: () => Navigator.of(context).pop(),
+            onClose: _closeRecordEditor,
             creating: !_isPersistedRecord,
             writing: notesEditing,
             contextLabel: currentLocale.value == 'ru' ? 'Заметка записи' : 'Record note',
@@ -888,7 +941,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                         focusNode: _notesScopeFocusNode,
                         onFocusChange: _handleNotesEditorFocusChanged,
                         child: NotificationListener<ScrollNotification>(onNotification: _readingScroll,
-                        child: NoteEditorPage(
+                        child: !_photosRestored ? const SizedBox.expand() : NoteEditorPage(
                           inlineKeyboardActive: notesEditing,
                           task: PlanningTask(
                             id: 0,
@@ -905,10 +958,7 @@ class TimelineRecordSheetContentState extends State<TimelineRecordSheetContent>
                           ),
                           inlineBodyOnly: true,
                           initialDocument: _recordNoteDocument,
-                          onDocumentChanged: (document) {
-                            _recordNoteDocument = document;
-                            _recordAutosaveGate.schedule(_commitRecordAutosave, delay: const Duration(seconds: 15));
-                          },
+                          onDocumentChanged: _onRecordNoteChanged,
                         )),
                       ),
                       Padding(padding: EdgeInsets.only(bottom: notesEditing ? 0 : 100), child: ParallelActivitiesTab(
