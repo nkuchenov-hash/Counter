@@ -108,7 +108,7 @@ class _NotesImageViewerState extends State<_NotesImageViewer> {
               return const Center(child: CircularProgressIndicator());
             }
             return Center(child: Text(
-              t(currentLocale.value, 'notes_local_image_unavailable'),
+              t(currentLocale.value, 'state_unavailable'),
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             ));
           }

@@ -692,7 +692,7 @@ class _LocalNotesImagePreviewState extends State<_LocalNotesImagePreview> {
         return RepaintBoundary(child: SizedBox(height: 240, width: double.infinity, child: Image.memory(
           bytes, fit: BoxFit.contain, alignment: Alignment.topCenter,
           gaplessPlayback: true,
-          errorBuilder: (_, __, ___) => Text(t(currentLocale.value, 'notes_local_image_unavailable')),
+          errorBuilder: (_, __, ___) => Text(t(currentLocale.value, 'state_unavailable')),
         )));
       }
       if (snapshot.connectionState != ConnectionState.done) {
@@ -700,7 +700,7 @@ class _LocalNotesImagePreviewState extends State<_LocalNotesImagePreview> {
       }
       return Padding(
         padding: const EdgeInsets.all(16),
-        child: Text(t(currentLocale.value, 'notes_local_image_unavailable')),
+        child: Text(t(currentLocale.value, 'state_unavailable')),
       );
     },
   );
