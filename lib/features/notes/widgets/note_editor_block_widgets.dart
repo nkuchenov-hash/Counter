@@ -689,10 +689,11 @@ class _LocalNotesImagePreviewState extends State<_LocalNotesImagePreview> {
     builder: (context, snapshot) {
       final bytes = snapshot.data;
       if (bytes != null) {
-        return SizedBox(height: 240, width: double.infinity, child: Image.memory(
+        return RepaintBoundary(child: SizedBox(height: 240, width: double.infinity, child: Image.memory(
           bytes, fit: BoxFit.contain, alignment: Alignment.topCenter,
           gaplessPlayback: true,
-        ));
+          errorBuilder: (_, __, ___) => Text(t(currentLocale.value, 'notes_local_image_unavailable')),
+        )));
       }
       if (snapshot.connectionState != ConnectionState.done) {
         return const SizedBox(height: 72, child: Center(child: CircularProgressIndicator()));

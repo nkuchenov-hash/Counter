@@ -73,7 +73,7 @@ class MainActivity : FlutterFragmentActivity() {
             flutterEngine.dartExecutor.binaryMessenger,
             "counter/notes_local_images",
         ).setMethodCallHandler { call, result ->
-            if (call.method !in listOf("store", "preview", "original")) {
+            if (call.method !in listOf("store", "preview", "detail", "original")) {
                 result.notImplemented()
             } else {
                 val owner = call.argument<String>("owner").orEmpty()
@@ -88,12 +88,24 @@ class MainActivity : FlutterFragmentActivity() {
                         check(dir.isDirectory || dir.mkdirs() || dir.isDirectory)
                         val value: Any? = when (call.method) {
                             "store" -> storeNoteImage(dir, path, bytes, name)
-                            "preview", "original" -> {
+                            "preview", "detail", "original" -> {
                                 require(id.matches(Regex("[a-f0-9-]{36}\\.[a-z0-9]{1,12}")))
                                 val original = java.io.File(dir, id)
-                                if (call.method == "preview") {
-                                    java.io.File(dir, "$id.preview.png").takeIf { it.isFile }?.readBytes()
-                                } else original.takeIf { it.isFile }?.absolutePath
+                                when (call.method) {
+                                    "preview" -> java.io.File(dir, "$id.preview.png").takeIf { it.isFile }?.readBytes()
+                                    "detail" -> if (original.isFile) {
+                                        val bitmap = decodeNoteBitmap(original, 2048)
+                                        try {
+                                            java.io.ByteArrayOutputStream().use { output ->
+                                                check(bitmap.compress(
+                                                    if (bitmap.hasAlpha()) android.graphics.Bitmap.CompressFormat.PNG
+                                                    else android.graphics.Bitmap.CompressFormat.JPEG, 90, output))
+                                                output.toByteArray()
+                                            }
+                                        } finally { bitmap.recycle() }
+                                    } else null
+                                    else -> original.takeIf { it.isFile }?.absolutePath
+                                }
                             }
                             else -> null
                         }
@@ -138,30 +150,12 @@ class MainActivity : FlutterFragmentActivity() {
                 output.fd.sync()
             }
             check(original.length() > 0)
-            val bitmap = if (android.os.Build.VERSION.SDK_INT >= 28) {
-                android.graphics.ImageDecoder.decodeBitmap(
-                    android.graphics.ImageDecoder.createSource(original)
-                ) { decoder, info, _ ->
-                    val longest = maxOf(info.size.width, info.size.height)
-                    if (longest > 1600) {
-                        val scale = 1600.0 / longest
-                        decoder.setTargetSize(maxOf(1, (info.size.width * scale).toInt()),
-                            maxOf(1, (info.size.height * scale).toInt()))
-                    }
-                    decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
-                }
-            } else {
-                val options = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                android.graphics.BitmapFactory.decodeFile(original.absolutePath, options)
-                var sample = 1
-                while (maxOf(options.outWidth, options.outHeight) / sample > 1600) sample *= 2
-                options.inJustDecodeBounds = false
-                options.inSampleSize = sample
-                checkNotNull(android.graphics.BitmapFactory.decodeFile(original.absolutePath, options))
-            }
+            val bitmap = decodeNoteBitmap(original, 720)
             try {
                 java.io.FileOutputStream(preview).use { output ->
-                    check(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output))
+                    check(bitmap.compress(
+                        if (bitmap.hasAlpha()) android.graphics.Bitmap.CompressFormat.PNG
+                        else android.graphics.Bitmap.CompressFormat.JPEG, 82, output))
                     output.fd.sync()
                 }
             } finally {
@@ -173,6 +167,30 @@ class MainActivity : FlutterFragmentActivity() {
             preview.delete()
             throw error
         }
+    }
+
+    private fun decodeNoteBitmap(original: java.io.File, limit: Int): android.graphics.Bitmap {
+        return if (android.os.Build.VERSION.SDK_INT >= 28) {
+                android.graphics.ImageDecoder.decodeBitmap(
+                    android.graphics.ImageDecoder.createSource(original)
+                ) { decoder, info, _ ->
+                    val longest = maxOf(info.size.width, info.size.height)
+                    if (longest > limit) {
+                        val scale = limit.0 / longest
+                        decoder.setTargetSize(maxOf(1, (info.size.width * scale).toInt()),
+                            maxOf(1, (info.size.height * scale).toInt()))
+                    }
+                    decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                }
+            } else {
+                val options = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                android.graphics.BitmapFactory.decodeFile(original.absolutePath, options)
+                var sample = 1
+                while (maxOf(options.outWidth, options.outHeight) / sample > limit) sample *= 2
+                options.inJustDecodeBounds = false
+                options.inSampleSize = sample
+                checkNotNull(android.graphics.BitmapFactory.decodeFile(original.absolutePath, options))
+            }
     }
 
     private fun requestAndReadPeopleContacts(result: MethodChannel.Result) {

@@ -884,6 +884,12 @@ wholeBlockBest = List<NoteBlock>.from(window);
       return;
     }
     _selectBlock(blockId);
+    final block = _editor.blockById(blockId);
+    final image = block?.imageData;
+    if (!widget.parityPreview && block?.type == NoteBlockType.image &&
+        isLocalNotesImage(image)) {
+      unawaited(showNotesImageViewer(context, image!));
+    }
   }
   void _deleteBlockFromMenu(String blockId) {
     if (_selectedBlockIds.contains(blockId)) {

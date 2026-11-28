@@ -35,19 +35,92 @@ Future<String> _storeLocalNotesImage({String? path, Uint8List? bytes,
   if (id == null || id.isEmpty) throw StateError('image_store_failed');
   return '$_localImagePrefix$id';
 }
-Future<Uint8List?> readNotesImagePreview(String? value) async {
+Future<Uint8List?> readNotesImagePreview(String? value, {bool detail = false}) async {
   if (value == null) return null;
   if (!isLocalNotesImage(value)) return decodeNotesImageDataUrl(value);
   if (!_useLocalImages) return null;
   try {
-    return await _localImageChannel.invokeMethod<Uint8List>('preview', {
+    return await _localImageChannel.invokeMethod<Uint8List>(detail ? 'detail' : 'preview', {
       'owner': _localImageOwner(), 'id': value.substring(_localImagePrefix.length),
     });
   } on PlatformException {
     return null;
   } on StateError {
     return null;
+  } on MissingPluginException {
+    return null;
   }
+}
+
+/// Opens the image on demand; the note editor never loads the original bitmap.
+Future<void> showNotesImageViewer(BuildContext context, String reference) {
+  return Navigator.of(context).push<void>(MaterialPageRoute<void>(
+    fullscreenDialog: true,
+    builder: (_) => _NotesImageViewer(reference: reference),
+  ));
+}
+
+class _NotesImageViewer extends StatefulWidget {
+  const _NotesImageViewer({required this.reference});
+  final String reference;
+  @override
+  State<_NotesImageViewer> createState() => _NotesImageViewerState();
+}
+
+class _NotesImageViewerState extends State<_NotesImageViewer> {
+  late final Future<Uint8List?> _thumbnail =
+      readNotesImagePreview(widget.reference);
+  late final Future<Uint8List?> _detail =
+      readNotesImagePreview(widget.reference, detail: true);
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.black,
+    appBar: AppBar(
+      backgroundColor: Colors.black,
+      foregroundColor: Colors.white,
+      title: Text(t(currentLocale.value, 'notes_v3_image_badge')),
+      actions: [
+        IconButton(
+          tooltip: t(currentLocale.value, 'notes_image_saved'),
+          icon: const Icon(Icons.download_outlined),
+          onPressed: () async {
+            try {
+              await saveNotesImage(widget.reference);
+            } catch (_) {
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(t(currentLocale.value, 'notes_image_save_failed')),
+              ));
+            }
+          },
+        ),
+      ],
+    ),
+    body: FutureBuilder<Uint8List?>(
+      future: _thumbnail,
+      builder: (context, thumbnail) => FutureBuilder<Uint8List?>(
+        future: _detail,
+        builder: (context, detail) {
+          final bytes = detail.data ?? thumbnail.data;
+          if (bytes == null) {
+            if (detail.connectionState != ConnectionState.done ||
+                thumbnail.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            return Center(child: Text(
+              t(currentLocale.value, 'notes_local_image_unavailable'),
+              style: const TextStyle(color: Colors.white),
+            ));
+          }
+          return InteractiveViewer(
+            minScale: 1, maxScale: 5,
+            child: Center(child: Image.memory(bytes,
+              fit: BoxFit.contain, gaplessPlayback: true)),
+          );
+        },
+      ),
+    ),
+  );
 }
 
 enum NotesImageSourceChoice { files, gallery, camera }
@@ -279,7 +352,7 @@ Future<String?> showNotesImageCropper({
   required BuildContext context,
   required String dataUrl,
 }) async {
-  final bytes = await readNotesImagePreview(dataUrl);
+  final bytes = await readNotesImagePreview(dataUrl, detail: true);
   if (!context.mounted || bytes == null) return null;
   return Navigator.of(context).push<String>(
     MaterialPageRoute<String>(
@@ -491,7 +564,7 @@ Future<String?> saveNotesImage(String dataUrl) async {
 }
 
 Future<Uint8List> notesImagePngBytes(String dataUrl) async {
-  final bytes = await readNotesImagePreview(dataUrl);
+  final bytes = await readNotesImagePreview(dataUrl, detail: true);
   if (bytes == null || bytes.isEmpty) throw StateError('image_decode_failed');
   final codec = await ui.instantiateImageCodec(bytes);
   final frame = await codec.getNextFrame();
