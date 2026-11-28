@@ -884,12 +884,6 @@ wholeBlockBest = List<NoteBlock>.from(window);
       return;
     }
     _selectBlock(blockId);
-    final block = _editor.blockById(blockId);
-    final image = block?.imageData;
-    if (!widget.parityPreview && block?.type == NoteBlockType.image &&
-        isLocalNotesImage(image)) {
-      unawaited(showNotesImageViewer(context, image!));
-    }
   }
   void _deleteBlockFromMenu(String blockId) {
     if (_selectedBlockIds.contains(blockId)) {
@@ -1138,13 +1132,9 @@ _editor.insertAfter(
       final picked = await pickNotesImage(context: context);
       if (!mounted || picked == null) return;
       if (replaceBlockId == null) {
-        _applyInsertedNonTextWithTrailingParagraph(
-_editor.insertAfter(
-  _editor.activeBlockId,
-  NoteBlockType.image,
-  imageData: picked.dataUrl,
-),
-        );
+        _applyMutation(_editor.insertAfter(
+          _editor.activeBlockId, NoteBlockType.image, imageData: picked.dataUrl,
+        ));
       } else {
         _applyMutation(
 _editor.updateMedia(replaceBlockId, imageData: picked.dataUrl),
@@ -1450,6 +1440,8 @@ block.type == NoteBlockType.image ||
 ? _captionControllerFor(block)
 : null,
       onTap: () => _handleBlockTap(block.id),
+      onOpenImage: !widget.parityPreview && !_blockSelectionMode && isLocalNotesImage(block.imageData)
+          ? () => unawaited(showNotesImageViewer(context, block.imageData!)) : null,
       onKeyEvent: (event) => _onBlockKeyEvent(block, event),
       onTextChanged: editable
 ? (value) => _onBlockTextChanged(block, value)

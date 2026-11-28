@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/notes/notes_editor_document_controller.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
+import 'package:counter/features/notes/notes_image_tools.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:counter/features/notes/widgets/note_editor_block_widgets.dart';
 import 'package:counter/features/notes/notes_figma_tokens.dart';
 import 'package:counter/features/shared/edit_sheet/record_edit_save_policy.dart';
@@ -12,6 +14,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('record local photo association survives stale remote reopen and deletion', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    const ref = 'lifeos-local-image:v1:12345678-1234-1234-1234-123456789abc.jpg';
+    const base = NoteDocument(blocks: [
+      NoteBlock(id: 'before', type: NoteBlockType.paragraph, text: 'before'),
+      NoteBlock(id: 'after', type: NoteBlockType.paragraph, text: 'after'),
+    ]);
+    final edited = base.copyWith(blocks: [
+      base.blocks.first,
+      const NoteBlock(id: 'photo', type: NoteBlockType.image, imageData: ref),
+      base.blocks.last,
+    ]);
+    final first = RecordLocalPhotoJournal(prefs, 'test-record');
+    first.save(edited);
+    await first.pending;
+    final reopened = RecordLocalPhotoJournal(prefs, 'test-record');
+    final restored = reopened.restore(base);
+    expect(restored.blocks.map((b) => b.id), ['before', 'photo', 'after']);
+    expect(restored.blocks[1].imageData, ref);
+    reopened.save(base);
+    await reopened.pending;
+    expect(RecordLocalPhotoJournal(prefs, 'test-record').restore(edited)
+        .blocks.map((b) => b.id), ['before', 'after']);
+    expect(RecordLocalPhotoJournal(prefs, 'different-record').restore(base).blocks.length, 2);
+  });
+
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Embedded Record Notes Android IME geometry', () {
