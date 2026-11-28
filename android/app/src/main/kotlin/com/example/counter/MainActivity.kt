@@ -176,7 +176,7 @@ class MainActivity : FlutterFragmentActivity() {
                 ) { decoder, info, _ ->
                     val longest = maxOf(info.size.width, info.size.height)
                     if (longest > limit) {
-                        val scale = limit.0 / longest
+                        val scale = limit.toDouble() / longest
                         decoder.setTargetSize(maxOf(1, (info.size.width * scale).toInt()),
                             maxOf(1, (info.size.height * scale).toInt()))
                     }
